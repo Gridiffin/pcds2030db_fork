@@ -1,27 +1,20 @@
 </div> <!-- Close container-fluid from admin_nav.php -->
     
-<!-- Footer -->
-<footer class="footer mt-auto py-3 bg-white border-top">
+<!-- Footer with reduced height -->
+<footer class="footer py-2 bg-white border-top">
     <div class="container-fluid px-4">
         <div class="row align-items-center">
             <div class="col-md-4">
                 <div class="d-flex align-items-center">
-                    <img src="<?php echo APP_URL; ?>/assets/images/logo-small.png" alt="PCDS Logo" height="30" class="me-2 d-none d-md-block">
-                    <span>&copy; <?php echo date('Y'); ?> <?php echo APP_NAME; ?></span>
+                    <img src="<?php echo APP_URL; ?>/assets/images/logo.png" alt="PCDS Logo" height="24" class="me-2 d-none d-md-block">
                 </div>
             </div>
-            <div class="col-md-4 text-center py-2 py-md-0">
-                <div class="quick-links">
-                    <a href="<?php echo APP_URL; ?>/about.php" class="text-muted mx-2">About</a>
-                    <span class="text-muted">|</span>
-                    <a href="<?php echo APP_URL; ?>/help.php" class="text-muted mx-2">Help</a>
-                    <span class="text-muted">|</span>
-                    <a href="<?php echo APP_URL; ?>/contact.php" class="text-muted mx-2">Contact</a>
-                </div>
+            <div class="col-md-4 text-center">
+                <span>&copy; <?php echo date('Y'); ?> <?php echo APP_NAME; ?></span>
             </div>
             <div class="col-md-4 text-md-end">
                 <div class="d-flex justify-content-md-end align-items-center">
-                    <span class="text-muted me-2">Version 1.0.0</span>
+                    <span class="text-muted small me-2">Version 1.0.0</span>
                     <span class="badge rounded-pill bg-secondary">Beta</span>
                 </div>
             </div>

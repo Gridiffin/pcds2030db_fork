@@ -295,6 +295,28 @@ footer, .bg-light.border-top {
     z-index: 10;
 }
 
+/* Footer styling - adjusted for reduced height */
+.footer {
+    flex-shrink: 0;
+    width: 100%;
+    box-shadow: 0 -2px 5px rgba(0,0,0,0.05); /* Reduced shadow size */
+    min-height: auto;
+    padding: 0.5rem 0; /* Reduced padding */
+}
+
+.footer .badge {
+    font-size: 0.65rem; /* Smaller badge */
+    padding: 0.25em 0.5em;
+}
+
+.footer .row {
+    min-height: 28px; /* Set a minimum height for the footer content */
+}
+
+.footer img {
+    margin-bottom: 2px; /* Adjust image vertical alignment */
+}
+
 .footer a {
     text-decoration: none;
     transition: color 0.2s;

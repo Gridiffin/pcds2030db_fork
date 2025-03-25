@@ -56,7 +56,7 @@ require_once '../layouts/admin_nav.php';
 <div class="container-fluid px-4 py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h1 class="h2 mb-0">Ministry Dashboard</h1>
+            <h1 class="h2 mb-0">Admin Dashboard</h1>
             <p class="text-muted mb-0">Overview of all agency reporting activities</p>
         </div>
         <div class="d-flex align-items-center">
