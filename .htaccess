@@ -1,0 +1,25 @@
+# Security and access settings
+
+# Prevent directory listing
+Options -Indexes
+
+# Protect configuration files
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Protect sensitive directories
+<FilesMatch "(config\.php|database_schema\.sql)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Redirect all requests not pointing to real files to index.php (optional for future routing)
+# Uncomment if you want to implement URL rewriting/routing
+#<IfModule mod_rewrite.c>
+#    RewriteEngine On
+#    RewriteCond %{REQUEST_FILENAME} !-f
+#    RewriteCond %{REQUEST_FILENAME} !-d
+#    RewriteRule ^(.*)$ index.php [QSA,L]
+#</IfModule>

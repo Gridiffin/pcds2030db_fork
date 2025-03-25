@@ -1,0 +1,108 @@
+# PCDS 2030 Dashboard - System Context and Design Document
+
+## ORGANIZATIONAL CONTEXT
+
+Sarawak's Ministry of Natural Resources and Urban Development oversees several agencies:
+
+State departments:
+- Forestry Department
+- Land and Survey Department
+
+State statutory bodies:
+- Land Custody and Development Authority (LCDA)
+- Natural Resources and Environment Board (NREB)
+- Sarawak Forestry Corporation (SFC)
+- Sarawak Timber Industry Development Corporation
+
+## PROBLEM STATEMENT
+
+Currently, agencies compile quarterly reports using Excel, generating tables and graphs which are then copied/converted into PowerPoint slides. This process is time-consuming and inefficient.
+
+The goal is to develop a progressive web app (PWA) that replaces Excel-based reporting with a streamlined web-based solution. The system should:
+- Allow agencies to submit their sector-specific data
+- Allow agencies to track programs with targets and achievements
+- Enable the Ministry (admin) to generate consolidated PowerPoint/PDF reports
+
+## SYSTEM ARCHITECTURE
+
+- Frontend: HTML (in PHP), CSS, JavaScript, Bootstrap
+- Backend: PHP
+- Database: MySQL
+- Hosting: cPanel
+- Libraries: PHPPresentation, Dompdf
+
+## DATABASE DESIGN
+
+The database structure supports:
+
+1. **Users/Agencies**:
+   - Admin users (Ministry staff)
+   - Agency users (one per agency)
+   - Each agency belongs to one sector
+
+2. **Sectors**:
+   - Categories for programs and metrics (forestry, land, etc.)
+
+3. **Programs**:
+   - Each agency manages their own programs
+   - Programs have targets, achievements, and status
+
+4. **Sector-Specific Metrics**:
+   - Each sector has unique metrics (e.g., timber export value for forestry)
+   - Metrics can be created by agencies or admins
+   - Admin approval required for agency-created metrics
+
+5. **Reporting Periods**:
+   - Quarterly reporting structure
+   - Admin controls open/close status for submissions
+
+6. **Reports**:
+   - Generated PowerPoint/PDF files for each reporting period
+   - Only admin can generate reports
+
+## USER ROLES & PERMISSIONS
+
+### Admin Users (Ministry)
+- Create/manage reporting periods
+- Approve/reject agency-created metrics
+- Generate consolidated reports
+- View all data across sectors
+- Create programs for any sector
+
+### Agency Users
+- Submit data for their programs (targets/achievements)
+- Submit values for sector-specific metrics
+- Create new sector-specific metrics (pending admin approval)
+- View (but not modify) data from other agencies
+
+## DATA SUBMISSION FLOW
+
+1. Admin opens a new reporting period (quarter)
+2. Agencies log in and see the open reporting period
+3. For each program they own:
+   - Submit target, achievement, and status
+   - Add remarks as needed
+4. For their sector:
+   - Submit values for required metrics
+   - Create new metrics if needed
+5. Admin reviews submissions and generates reports
+6. System creates PowerPoint slides with graphs and tables
+7. Admin can also generate PDF versions of reports
+
+## DESIGN DECISIONS
+
+1. **Single Metrics Table**: 
+   - Using one table for all sector metrics allows flexibility
+   - Keeps implementation simpler than per-sector tables
+
+2. **Agency-Created Metrics**:
+   - Allows agencies to create custom metrics for their sector
+   - Admin approval maintains data quality
+
+3. **Direct Agency-Sector Link**:
+   - Each agency belongs to exactly one sector
+   - Simplifies permissions and data structure
+
+4. **PowerPoint Generation**:
+   - Flexible template approach
+   - Admin can select which metrics to include in reports

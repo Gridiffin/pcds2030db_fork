@@ -1,0 +1,329 @@
+/**
+ * Common styles shared across multiple pages
+ * Import this file in pages that need these styles
+ */
+
+/* Base styles */
+body {
+    font-family: var(--font-primary);
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    color: var(--dark-color);
+    overflow-x: hidden;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    background-attachment: fixed;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+/* Material Design Elements */
+.material-card {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+}
+
+/* Enhanced card styling for better visual appeal */
+.card {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.card-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* Material Design Button */
+.material-btn {
+    background-color: var(--button-color);
+    border: none;
+    border-radius: 4px;
+    color: #ffffff;
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 12px 15px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.2), 0 2px 10px 0 rgba(0, 0, 0, 0.1);
+}
+
+.material-btn:hover, .material-btn:focus {
+    background-color: var(--button-hover);
+    box-shadow: 0 5px 11px 0 rgba(0, 0, 0, 0.18), 0 4px 15px 0 rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+.material-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.2), 0 2px 10px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* Updated button styles */
+.btn {
+    border-radius: 6px;
+    transition: all 0.25s ease;
+}
+
+/* Alert styling */
+.alert {
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 25px;
+    background-color: #f5f2ee;
+    border-left: 4px solid #8591a4;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.alert-danger {
+    border-left-color: var(--danger-color);
+}
+
+.alert-dismissible {
+    padding-right: 3rem;
+}
+
+.alert-dismissible .btn-close {
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+    transform: translateY(-50%);
+    padding: 0.5rem;
+}
+
+/* Form elements */
+.form-group label {
+    font-weight: 500;
+    margin-bottom: 10px;
+    color: var(--secondary-color);
+    letter-spacing: 0.5px;
+}
+
+.input-group-text {
+    background-color: var(--secondary-color);
+    border: 1px solid var(--secondary-color);
+    color: #ffffff;
+}
+
+.form-control {
+    height: 45px;
+    border-radius: 0 4px 4px 0;
+    box-shadow: none;
+    border: 1px solid #bab1a2;
+    background-color: #ffffff;
+    color: var(--dark-color);
+    padding-left: 15px;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(133, 145, 164, 0.25);
+    background-color: #ffffff;
+    outline: var(--focus-outline);
+}
+
+/* Color variables updated for consistency */
+:root {
+    /* Font variables */
+    --font-primary: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    --font-weight-light: 300;
+    --font-weight-regular: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    
+    /* Color variables */
+    --primary-color: #8591a4;    /* Blue grey */
+    --secondary-color: #A49885;  /* Taupe */
+    --button-color: #7D8B99;     /* Button color */
+    --button-hover: #697684;     /* Button hover color */
+    --light-color: #f5f2ee;      /* Light background */
+    --dark-color: #2d2a25;       /* Dark text */
+    --danger-color: #b06a6a;     /* Error red */
+    --focus-outline: 3px solid #fcb70d;  /* High-visibility focus outline */
+    --text-high-contrast: #2d2a25;       /* For better readability */
+}
+
+/* Common typography classes */
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-primary);
+    font-weight: var(--font-weight-semibold);
+    color: var(--dark-color);
+    line-height: 1.2;
+}
+
+p {
+    font-family: var(--font-primary);
+    font-weight: var(--font-weight-regular);
+    line-height: 1.6;
+}
+
+.text-light {
+    font-weight: var(--font-weight-light);
+}
+
+.text-regular {
+    font-weight: var(--font-weight-regular);
+}
+
+.text-medium {
+    font-weight: var(--font-weight-medium);
+}
+
+.text-semibold {
+    font-weight: var(--font-weight-semibold);
+}
+
+.text-bold {
+    font-weight: var(--font-weight-bold);
+}
+
+/* Animation utilities */
+.animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: .7;
+    }
+}
+
+/* Enhanced focus states for accessibility */
+*:focus-visible {
+    outline: 3px solid var(--focus-outline);
+    outline-offset: 2px;
+}
+
+/* Add scrollbar styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    opacity: 0.7;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-color);
+    opacity: 1;
+}
+
+/* Print-friendly styles for reports */
+@media print {
+    .no-print {
+        display: none;
+    }
+    
+    body {
+        font-size: 12pt;
+        color: #000;
+        background: #fff;
+    }
+    
+    /* Ensure tables break properly across pages */
+    table {
+        page-break-inside: avoid;
+    }
+}
+
+/* Page layout for sticky footer - improved */
+.page-wrapper {
+    display: flex;
+    flex-direction: column;
+    flex: 1 0 auto;
+    min-height: 100vh;
+    position: relative;
+    width: 100%;
+}
+
+/* Main container adjustments */
+.container-fluid {
+    flex: 1 0 auto;
+    width: 100%;
+    position: relative;
+    padding-bottom: 0; /* Remove extra padding that causes stretching */
+    z-index: 2; /* Position above the background effects */
+}
+
+/* Fix footer positioning - targeting the actual footer element */
+footer, .bg-light.border-top {
+    position: relative;
+    z-index: 2; /* Keep above background effects */
+    width: 100%;
+    margin-top: auto; /* Push footer to bottom */
+}
+
+/* Fix for container before pseudo-element */
+.container-fluid::before {
+    z-index: 1; /* Lower z-index to prevent layout issues */
+    height: 180px; /* Slightly reduce height */
+    max-height: 30vh; /* Limit height on smaller screens */
+    pointer-events: none; /* Prevents interference with clicks */
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(180deg, rgba(133, 145, 164, 0.08) 0%, rgba(133, 145, 164, 0) 100%);
+}
+
+/* Footer styling */
+.footer {
+    background-color: #ffffff;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 -3px 10px rgba(0, 0, 0, 0.05);
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    margin-top: auto;
+    flex-shrink: 0;
+}
+
+.footer a {
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.footer a:hover {
+    color: var(--primary-color) !important;
+    text-decoration: none;
+}
+
+.footer .badge {
+    font-size: 0.7rem;
+    padding: 0.35em 0.65em;
+}
+
+.quick-links {
+    font-size: 0.9rem;
+}
+
+/* Ensure proper spacing around content */
+.container-fluid > .row:first-child {
+    margin-top: 0.5rem;
+}

@@ -1,0 +1,89 @@
+/**
+ * Main application styles for dashboard and content pages
+ */
+
+/* Import common styles */
+@import url('common.css');
+
+/* Dashboard-specific layout */
+.sidebar {
+    background-color: var(--primary-color);
+    min-height: 100vh;
+    color: #ffffff;
+}
+
+.content-area {
+    padding: 20px;
+}
+
+/* Navigation */
+.navbar-custom {
+    background-color: #ffffff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand {
+    font-weight: var(--font-weight-medium);
+}
+
+/* Dashboard cards */
+.dashboard-card {
+    height: 100%;
+    margin-bottom: 20px;
+}
+
+.dashboard-card .card-header {
+    background-color: var(--primary-color);
+    color: #ffffff;
+    font-weight: 500;
+}
+
+.dashboard-card .card-title {
+    font-weight: var(--font-weight-semibold);
+    font-size: 1.25rem;
+}
+
+.dashboard-card .card-text {
+    font-weight: var(--font-weight-regular);
+    font-size: 0.95rem;
+}
+
+/* Tables */
+.table-custom {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.table-custom th {
+    background-color: var(--light-color);
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.table-custom td, .table-custom th {
+    padding: 12px 15px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+/* Stats cards */
+.stat-card {
+    border-left: 4px solid var(--primary-color);
+    background-color: #ffffff;
+}
+
+.stat-card.primary {
+    border-left-color: var(--primary-color);
+}
+
+.stat-card.secondary {
+    border-left-color: var(--secondary-color);
+}
+
+.stat-card .stat-icon {
+    opacity: 0.2;
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    font-size: 48px;
+}
