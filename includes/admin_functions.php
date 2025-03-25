@@ -395,4 +395,240 @@ function get_recent_programs($limit = 5) {
     
     return $programs;
 }
+
+/**
+ * Get all system users
+ * @return array List of all users with their details
+ */
+function get_all_users() {
+    global $conn;
+    
+    // Only admin can view all users
+    if (!is_admin()) {
+        return ['error' => 'Permission denied'];
+    }
+    
+    // First, check if is_active column exists in the users table
+    $check_column = "SHOW COLUMNS FROM users LIKE 'is_active'";
+    $column_exists = $conn->query($check_column);
+    
+    // Add the column if it doesn't exist
+    if ($column_exists->num_rows === 0) {
+        $add_column = "ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT TRUE";
+        $conn->query($add_column);
+    }
+    
+    // Improved query with proper join to sectors table
+    $query = "SELECT u.user_id, u.username, u.role, u.agency_name, u.sector_id, 
+                u.created_at, s.sector_name, 
+                CASE WHEN u.is_active = 1 OR u.is_active IS NULL THEN 1 ELSE 0 END as is_active
+              FROM users u 
+              LEFT JOIN sectors s ON u.sector_id = s.sector_id
+              ORDER BY u.role ASC, u.username ASC";
+    
+    $result = $conn->query($query);
+    
+    $users = [];
+    while ($row = $result->fetch_assoc()) {
+        $users[] = $row;
+    }
+    
+    return $users;
+}
+
+/**
+ * Add a new user
+ * @param array $data User data
+ * @return array Result of operation
+ */
+function add_user($data) {
+    global $conn;
+    
+    // Only admin can add users
+    if (!is_admin()) {
+        return ['error' => 'Permission denied'];
+    }
+    
+    // Extract and sanitize data
+    $username = trim($conn->real_escape_string($data['username']));
+    $password = $data['password'];
+    $role = $conn->real_escape_string($data['role']);
+    $agency_name = $conn->real_escape_string($data['agency_name'] ?? null);
+    $sector_id = !empty($data['sector_id']) ? intval($data['sector_id']) : null;
+    
+    // Validate input
+    if (empty($username) || empty($password)) {
+        return ['error' => 'Username and password are required'];
+    }
+    
+    if ($role === 'agency' && (empty($agency_name) || empty($sector_id))) {
+        return ['error' => 'Agency name and sector are required for agency users'];
+    }
+    
+    // Check if username already exists
+    $check_query = "SELECT user_id FROM users WHERE username = ?";
+    $stmt = $conn->prepare($check_query);
+    $stmt->bind_param("s", $username);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        return ['error' => 'Username already exists'];
+    }
+    
+    // Ensure sector_id is valid when role is 'agency'
+    if ($role === 'agency' && !empty($sector_id)) {
+        $check_sector = "SELECT sector_id FROM sectors WHERE sector_id = ?";
+        $stmt = $conn->prepare($check_sector);
+        $stmt->bind_param("i", $sector_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($result->num_rows === 0) {
+            return ['error' => 'Invalid sector selected'];
+        }
+    }
+    
+    // Hash password
+    $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+    
+    // Insert new user
+    if ($role === 'admin') {
+        // Admin doesn't need sector_id
+        $query = "INSERT INTO users (username, password, role, agency_name) VALUES (?, ?, ?, ?)";
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("ssss", $username, $hashed_password, $role, $agency_name);
+    } else {
+        // Agency needs sector_id
+        $query = "INSERT INTO users (username, password, role, agency_name, sector_id) VALUES (?, ?, ?, ?, ?)";
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("ssssi", $username, $hashed_password, $role, $agency_name, $sector_id);
+    }
+    
+    if ($stmt->execute()) {
+        return ['success' => true, 'user_id' => $stmt->insert_id];
+    } else {
+        return ['error' => 'Failed to add user: ' . $stmt->error];
+    }
+}
+
+/**
+ * Update an existing user
+ * @param array $data User data
+ * @return array Result of operation
+ */
+function update_user($data) {
+    global $conn;
+    
+    // Only admin can update users
+    if (!is_admin()) {
+        return ['error' => 'Permission denied'];
+    }
+    
+    // Extract and sanitize data
+    $user_id = intval($data['user_id']);
+    $username = trim($conn->real_escape_string($data['username']));
+    $password = $data['password']; // May be empty if not changing
+    $role = $conn->real_escape_string($data['role']);
+    $agency_name = $conn->real_escape_string($data['agency_name'] ?? null);
+    $sector_id = !empty($data['sector_id']) ? intval($data['sector_id']) : null;
+    
+    // Validate input
+    if (empty($username)) {
+        return ['error' => 'Username is required'];
+    }
+    
+    if ($role === 'agency' && (empty($agency_name) || empty($sector_id))) {
+        return ['error' => 'Agency name and sector are required for agency users'];
+    }
+    
+    // Check if username exists for a different user
+    $check_query = "SELECT user_id FROM users WHERE username = ? AND user_id != ?";
+    $stmt = $conn->prepare($check_query);
+    $stmt->bind_param("si", $username, $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        return ['error' => 'Username already exists'];
+    }
+    
+    // Ensure sector_id is valid when role is 'agency'
+    if ($role === 'agency' && !empty($sector_id)) {
+        $check_sector = "SELECT sector_id FROM sectors WHERE sector_id = ?";
+        $stmt = $conn->prepare($check_sector);
+        $stmt->bind_param("i", $sector_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($result->num_rows === 0) {
+            return ['error' => 'Invalid sector selected'];
+        }
+    }
+    
+    // Update user
+    if (!empty($password)) {
+        // Update with new password
+        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+        
+        if ($role === 'admin') {
+            $query = "UPDATE users SET username = ?, password = ?, role = ?, agency_name = ?, sector_id = NULL WHERE user_id = ?";
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param("ssssi", $username, $hashed_password, $role, $agency_name, $user_id);
+        } else {
+            $query = "UPDATE users SET username = ?, password = ?, role = ?, agency_name = ?, sector_id = ? WHERE user_id = ?";
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param("ssssii", $username, $hashed_password, $role, $agency_name, $sector_id, $user_id);
+        }
+    } else {
+        // Update without changing password
+        if ($role === 'admin') {
+            $query = "UPDATE users SET username = ?, role = ?, agency_name = ?, sector_id = NULL WHERE user_id = ?";
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param("sssi", $username, $role, $agency_name, $user_id);
+        } else {
+            $query = "UPDATE users SET username = ?, role = ?, agency_name = ?, sector_id = ? WHERE user_id = ?";
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param("sssii", $username, $role, $agency_name, $sector_id, $user_id);
+        }
+    }
+    
+    if ($stmt->execute()) {
+        return ['success' => true];
+    } else {
+        return ['error' => 'Failed to update user: ' . $stmt->error];
+    }
+}
+
+/**
+ * Delete a user
+ * @param int $user_id User ID to delete
+ * @return array Result of operation
+ */
+function delete_user($user_id) {
+    global $conn;
+    
+    // Only admin can delete users
+    if (!is_admin()) {
+        return ['error' => 'Permission denied'];
+    }
+    
+    // Prevent deleting self
+    if ($user_id == $_SESSION['user_id']) {
+        return ['error' => 'You cannot delete your own account'];
+    }
+    
+    $user_id = intval($user_id);
+    
+    // Delete the user
+    $query = "DELETE FROM users WHERE user_id = ?";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("i", $user_id);
+    
+    if ($stmt->execute()) {
+        return ['success' => true];
+    } else {
+        return ['error' => 'Failed to delete user: ' . $stmt->error];
+    }
+}
 ?>

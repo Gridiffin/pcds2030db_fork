@@ -52,7 +52,7 @@ require_once '../layouts/header.php';
 require_once '../layouts/admin_nav.php';
 ?>
 
-<!-- Properly structured container -->
+<!-- Main content wrapper modification -->
 <div class="container-fluid px-4 py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>

@@ -28,7 +28,6 @@
         </div>
     </div>
     
-    <!-- Page wrapper -->
-    <div class="page-wrapper">
-        <!-- Main content container -->
-        <div class="container-fluid px-4 py-4">
+    <!-- Main content -->
+    <div class="d-flex flex-column min-vh-100">
+        <!-- Content container will be inserted by specific view files -->
