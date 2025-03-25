@@ -1,0 +1,200 @@
+/**
+ * Agency-specific styles
+ */
+
+/* Import common styles */
+@import url('common.css');
+
+/* Agency badge styling */
+.agency-badge {
+    background-color: var(--secondary-color);
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+}
+
+/* Submission card styling */
+.submission-card {
+    border: none;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+}
+
+.submission-card:hover {
+    transform: translateY(-3px);
+}
+
+.submission-card .display-4 {
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+/* Status dots for program status */
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+/* Program status badges */
+.badge.bg-success {
+    background-color: #28a745 !important;
+}
+
+.badge.bg-warning {
+    background-color: #ffc107 !important;
+}
+
+.badge.bg-info {
+    background-color: #17a2b8 !important;
+}
+
+.badge.bg-secondary {
+    background-color: #6c757d !important;
+}
+
+/* Metrics list styling */
+.metric-icon {
+    width: 30px;
+    height: 30px;
+    background-color: rgba(133, 145, 164, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-color);
+}
+
+/* Program submission form */
+.program-form {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.program-form label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: var(--dark-color);
+}
+
+.program-form .form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(133, 145, 164, 0.25);
+}
+
+.program-form .form-text {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+/* Status selection pills */
+.status-pills {
+    display: flex;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.status-pill {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 30px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+}
+
+.status-pill.on-track {
+    background-color: rgba(40, 167, 69, 0.1);
+    color: #28a745;
+    border-color: rgba(40, 167, 69, 0.2);
+}
+
+.status-pill.delayed {
+    background-color: rgba(255, 193, 7, 0.1);
+    color: #ffc107;
+    border-color: rgba(255, 193, 7, 0.2);
+}
+
+.status-pill.completed {
+    background-color: rgba(23, 162, 184, 0.1);
+    color: #17a2b8;
+    border-color: rgba(23, 162, 184, 0.2);
+}
+
+.status-pill.not-started {
+    background-color: rgba(108, 117, 125, 0.1);
+    color: #6c757d;
+    border-color: rgba(108, 117, 125, 0.2);
+}
+
+.status-pill:hover {
+    transform: translateY(-2px);
+}
+
+.status-pill.active {
+    border-width: 2px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.status-pill.on-track.active {
+    background-color: rgba(40, 167, 69, 0.2);
+    border-color: #28a745;
+}
+
+.status-pill.delayed.active {
+    background-color: rgba(255, 193, 7, 0.2);
+    border-color: #ffc107;
+}
+
+.status-pill.completed.active {
+    background-color: rgba(23, 162, 184, 0.2);
+    border-color: #17a2b8;
+}
+
+.status-pill.not-started.active {
+    background-color: rgba(108, 117, 125, 0.2);
+    border-color: #6c757d;
+}
+
+/* Table customization */
+.table-custom {
+    margin-bottom: 0;
+}
+
+.table-custom th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: var(--dark-color);
+    border-bottom: 2px solid #dee2e6;
+}
+
+.table-custom tbody tr:nth-of-type(odd) {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.table-custom td {
+    vertical-align: middle;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 767.98px) {
+    .submission-card {
+        margin-bottom: 1rem;
+    }
+    
+    .status-pills {
+        flex-direction: column;
+    }
+    
+    .status-pill {
+        width: 100%;
+        text-align: center;
+    }
+}
