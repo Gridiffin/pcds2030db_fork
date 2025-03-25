@@ -74,10 +74,18 @@ body {
     box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.2), 0 2px 10px 0 rgba(0, 0, 0, 0.1);
 }
 
-/* Updated button styles */
+/* Button styles */
 .btn {
     border-radius: 6px;
     transition: all 0.25s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+}
+
+.btn-sm {
+    line-height: 1.5;
 }
 
 /* Alert styling */
@@ -254,67 +262,47 @@ p {
     }
 }
 
-/* Page layout for sticky footer - improved */
-.page-wrapper {
-    display: none;
-}
-
-/* Main container adjustments */
+/* Layout and container styles */
 .container-fluid {
-    flex: 1 0 auto; /* Modified to allow shrinking */
-    padding-bottom: 1rem;
-    display: flex; /* Added to enable flex layout inside */
-    flex-direction: column; /* Stack content vertically */
-    min-height: auto; /* Remove fixed minimum height */
-    z-index: 2; /* Position above the background effects */
+    flex: 1 0 auto;
     width: 100%;
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    min-height: auto;
+    z-index: 2;
 }
 
-/* Fix footer positioning - targeting the actual footer element */
-footer, .bg-light.border-top {
-    position: relative;
-    z-index: 2; /* Keep above background effects */
-    width: 100%;
-}
-
-/* Fix for container before pseudo-element */
 .container-fluid::before {
     display: none;
 }
 
-/* Footer styling */
-.footer {
-    flex-shrink: 0; /* Prevent shrinking */
-    background-color: #ffffff;
-    border-top: 1px solid rgba(0, 0, 0, 0.05);
-    box-shadow: 0 -3px 10px rgba(0, 0, 0, 0.05);
-    padding: 0.75rem 0; /* Slightly reduced padding */
-    position: relative;
-    z-index: 10;
+.content-wrap {
+    flex: 1 0 auto;
 }
 
-/* Footer styling - adjusted for reduced height */
+/* Ensure proper spacing around content */
+.container-fluid > .row:first-child {
+    margin-top: 0.5rem;
+}
+
+/* Better flex layout to prevent stretching */
+.min-vh-100 {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Footer styling */
 .footer {
     flex-shrink: 0;
     width: 100%;
-    box-shadow: 0 -2px 5px rgba(0,0,0,0.05); /* Reduced shadow size */
+    background-color: #ffffff;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
+    padding: 0.5rem 0;
     min-height: auto;
-    padding: 0.5rem 0; /* Reduced padding */
-}
-
-.footer .badge {
-    font-size: 0.65rem; /* Smaller badge */
-    padding: 0.25em 0.5em;
-}
-
-.footer .row {
-    min-height: 28px; /* Set a minimum height for the footer content */
-}
-
-.footer img {
-    margin-bottom: 2px; /* Adjust image vertical alignment */
+    position: relative;
+    z-index: 10;
 }
 
 .footer a {
@@ -328,135 +316,44 @@ footer, .bg-light.border-top {
 }
 
 .footer .badge {
-    font-size: 0.7rem;
-    padding: 0.35em 0.65em;
+    font-size: 0.65rem;
+    padding: 0.25em 0.5em;
 }
 
-.quick-links {
-    font-size: 0.9rem;
+.footer .row {
+    min-height: 28px;
 }
 
-/* Ensure proper spacing around content */
-.container-fluid > .row:first-child {
-    margin-top: 0.5rem;
+.footer img {
+    margin-bottom: 2px;
 }
 
-/* Ensure content wraps properly */
-.content-wrap {
-    flex: 1 0 auto;
-}
-
-/* Fixed header/navbar styling */
+/* Navbar and navigation styles */
 .navbar {
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    background-color: white !important;
+    position: relative;
+    background-color: #fff !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     z-index: 1030;
     width: 100%;
     min-height: 64px;
     padding: 0.5rem 1rem;
 }
 
-/* Fix navbar layout issues */
-.navbar {
-    padding: 0.5rem 1rem;
-}
-
-/* Ensure navbar items and brand are aligned correctly */
 .navbar-brand {
     display: flex;
     align-items: center;
-}
-
-/* Fix spacing and alignment for navbar links */
-.navbar-nav .nav-link {
-    padding: 0.5rem 1rem;
-    display: flex;
-    align-items: center;
-}
-
-.navbar-nav .nav-link.active {
-    background-color: rgba(133, 145, 164, 0.1);
-    color: var(--primary-color);
-    border-radius: 6px;
-}
-
-/* Icons in navbar links */
-.navbar-nav .nav-link i {
-    width: 18px;
-    text-align: center;
-}
-
-/* Override any problematic flex settings that might have been introduced */
-.navbar-collapse {
-    flex-basis: 100%;
-}
-
-/* Ensure user info is properly aligned */
-.navbar .btn-sm {
-    line-height: 1.5;
-}
-
-.navbar-brand {
     font-weight: 600;
     color: var(--primary-color);
-}
-
-.navbar-nav .nav-link {
-    padding: 0.75rem 1rem;
-    position: relative;
-    font-weight: 500;
-}
-
-.navbar-nav .nav-link.active {
-    color: var(--primary-color);
-    background-color: rgba(133, 145, 164, 0.1);
-    border-radius: 6px;
-}
-
-/* Fix for sticky-top navbar */
-.sticky-top {
-    position: sticky;
-    top: 0;
-}
-
-/* Better flex layout to prevent stretching */
-.min-vh-100 {
-    display: flex;
-    flex-direction: column;
-}
-
-/* Improved user info display */
-.user-info {
-    background-color: #f8f9fa;
-    padding: 0.5rem 0.75rem;
-    border-radius: 6px;
-    min-width: 120px;
-}
-
-/* Navbar specific styling */
-.navbar {
-    position: relative;
-    background-color: #fff !important;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    z-index: 100;
+    margin-right: 1rem;
+    white-space: nowrap;
 }
 
 .navbar-light .navbar-nav .nav-link {
     color: rgba(0,0,0,0.65);
     font-weight: 500;
     margin: 0 3px;
+    padding: 0.75rem 1rem;
     display: flex;
-    align-items: center;
-}
-
-/* Icon alignment in navbar */
-.nav-icon {
-    width: 20px;
-    text-align: center;
-    margin-right: 8px;
-    font-size: 0.9rem;
-    display: inline-flex;
-    justify-content: center;
     align-items: center;
 }
 
@@ -470,7 +367,29 @@ footer, .bg-light.border-top {
     color: var(--primary-color);
 }
 
-/* User info alignment */
+/* Icon alignment in navbar */
+.nav-icon {
+    width: 20px;
+    text-align: center;
+    margin-right: 8px;
+    font-size: 0.9rem;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.navbar-nav .nav-link i {
+    width: 18px;
+    text-align: center;
+}
+
+/* Fix for sticky-top navbar */
+.sticky-top {
+    position: sticky;
+    top: 0;
+}
+
+/* Improved user info display */
 .user-info {
     background-color: #f8f9fa;
     padding: 0.5rem 0.75rem;
@@ -478,83 +397,12 @@ footer, .bg-light.border-top {
     min-width: 120px;
 }
 
-/* Navbar button alignment */
-.navbar .btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.25rem;
-}
-
-/* Mobile responsive fixes */
-@media (max-width: 991.98px) {
-    .navbar-collapse {
-        padding: 1rem 0;
-    }
-    
-    .navbar-nav {
-        margin-bottom: 1rem;
-    }
-    
-    .navbar-nav .nav-link {
-        padding: 0.75rem 0;
-    }
-    
-    .nav-icon {
-        width: 24px;
-        margin-right: 10px;
-        font-size: 1rem;
-    }
-}
-
-/* Content container */
-.container-fluid {
-    flex: 1 0 auto;
-    width: 100%;
-    padding: 1.5rem;
-}
-
-/* Footer styling */
-.footer {
-    flex-shrink: 0;
-    width: 100%;
-    box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
-}
-
-/* Fixed navbar layout for proper alignment */
-.navbar .container-fluid {
-    padding-left: 1rem;
-    padding-right: 1rem;
-}
-
-/* Ensure navbar brand stays on the left */
-.navbar-brand {
-    margin-right: 1rem;
-    white-space: nowrap;
-}
-
 /* Center navigation items properly */
 @media (min-width: 992px) {
-    /* Center aligned navbar items */
     .navbar-nav.mx-auto {
         position: absolute;
         left: 50%;
         transform: translateX(-50%);
-    }
-}
-
-/* Make sure user info and logout are properly spaced */
-.navbar .ms-auto {
-    white-space: nowrap;
-}
-
-/* Responsive fixes for the admin navbar */
-@media (max-width: 991.98px) {
-    /* Move the user info and logout button to the top on mobile */
-    #adminNavbar .ms-auto {
-        margin-bottom: 1rem;
-        margin-top: 1rem;
-        justify-content: center;
     }
 }
 
@@ -565,6 +413,7 @@ footer, .bg-light.border-top {
     position: sticky;
     top: 0;
     z-index: 1000;
+    background-color: white;
 }
 
 /* Header elements aligned at opposite ends */
@@ -629,8 +478,34 @@ footer, .bg-light.border-top {
     font-weight: 600;
 }
 
-/* Mobile styles */
-@media (max-width: 991px) {
+/* Mobile responsive fixes */
+@media (max-width: 991.98px) {
+    .navbar-collapse {
+        padding: 1rem 0;
+    }
+    
+    .navbar-nav {
+        margin-bottom: 1rem;
+    }
+    
+    .navbar-nav .nav-link {
+        padding: 0.75rem 0;
+    }
+    
+    .nav-icon {
+        width: 24px;
+        margin-right: 10px;
+        font-size: 1rem;
+    }
+    
+    /* User info and logout button on mobile */
+    #adminNavbar .ms-auto {
+        margin-bottom: 1rem;
+        margin-top: 1rem;
+        justify-content: center;
+    }
+    
+    /* Mobile header navigation */
     .header-center {
         position: absolute;
         top: 100%;
