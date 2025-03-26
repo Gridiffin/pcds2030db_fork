@@ -10,6 +10,11 @@ if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
+// Call auto-manage reporting periods - ensure this comes after db_connect.php is included
+if (function_exists('auto_manage_reporting_periods')) {
+    auto_manage_reporting_periods();
+}
+
 /**
  * Check if user is logged in
  * @return boolean True if logged in, false otherwise

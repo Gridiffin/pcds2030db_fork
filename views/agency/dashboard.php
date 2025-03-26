@@ -28,11 +28,15 @@ $programs = get_agency_programs();
 // Get current reporting period
 $current_period = get_current_reporting_period();
 
-// Get agency's submission status
-$submission_status = get_agency_submission_status($_SESSION['user_id'], $current_period['period_id'] ?? null);
+// Add period_id handling for historical views
+$period_id = isset($_GET['period_id']) ? intval($_GET['period_id']) : ($current_period['period_id'] ?? null);
+$viewing_period = $period_id ? get_reporting_period($period_id) : $current_period;
+
+// Get agency's submission status for the selected period
+$submission_status = get_agency_submission_status($_SESSION['user_id'], $period_id);
 
 // Get agency's sector metrics
-$metrics = get_agency_sector_metrics($_SESSION['sector_id']);
+$metrics = get_agency_sector_metrics($_SESSION['sector_id'], $period_id); // Update this function to accept period_id
 
 // Additional styles
 $additionalStyles = [
@@ -43,7 +47,8 @@ $additionalStyles = [
 $additionalScripts = [
     APP_URL . '/assets/js/charts/chart.min.js',
     APP_URL . '/assets/js/agency/dashboard_charts.js',
-    APP_URL . '/assets/js/agency/dashboard.js'
+    APP_URL . '/assets/js/agency/dashboard.js',
+    APP_URL . '/assets/js/period_selector.js' // Add period selector script
 ];
 
 // Include header
@@ -60,25 +65,14 @@ require_once '../layouts/agency_nav.php';
             <p class="text-muted">Welcome, <?php echo $_SESSION['agency_name']; ?></p>
         </div>
         <div class="d-flex align-items-center">
-            <?php if ($current_period): ?>
-                <div class="me-2 text-end">
-                    <small class="d-block text-muted mb-1">Current Reporting Period</small>
-                    <span class="badge bg-success">Q<?php echo $current_period['quarter']; ?>-<?php echo $current_period['year']; ?></span>
-                    <span class="badge <?php echo $current_period['status'] === 'open' ? 'bg-success' : 'bg-danger'; ?>">
-                        <?php echo ucfirst($current_period['status']); ?>
-                    </span>
-                </div>
-            <?php else: ?>
-                <div class="me-2 text-end">
-                    <small class="d-block text-muted mb-1">Reporting Period</small>
-                    <span class="badge bg-warning">No active period</span>
-                </div>
-            <?php endif; ?>
             <button class="btn btn-sm btn-outline-primary ms-2" id="refreshPage">
                 <i class="fas fa-sync-alt me-1"></i> Refresh
             </button>
         </div>
     </div>
+
+    <!-- Period Selector Component -->
+    <?php require_once '../../includes/period_selector.php'; ?>
 
     <!-- Quick Actions Section -->
     <div class="row mb-4">
@@ -368,81 +362,6 @@ require_once '../layouts/agency_nav.php';
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Cross-sector Programs Overview -->
-    <div class="card shadow-sm mt-4">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="card-title m-0"><i class="fas fa-sitemap me-2"></i> Cross-sector Programs</h5>
-            <a href="<?php echo APP_URL; ?>/views/agency/view_all_sectors.php" class="btn btn-sm btn-outline-primary">
-                View All Sectors <i class="fas fa-arrow-right ms-1"></i>
-            </a>
-        </div>
-        <div class="card-body">
-            <?php
-            // Get programs from all sectors (limit to 5 most recent)
-            $other_sectors_programs = get_all_sectors_programs($current_period ? $current_period['period_id'] : null);
-            
-            // Filter out current sector's programs
-            $other_sectors_programs = array_filter($other_sectors_programs, function($p) {
-                return $p['sector_id'] != $_SESSION['sector_id'];
-            });
-            
-            // Take only 5 latest programs
-            $other_sectors_programs = array_slice($other_sectors_programs, 0, 5);
-            
-            if (empty($other_sectors_programs)):
-            ?>
-                <p class="text-muted mb-0">No programs from other sectors available to display.</p>
-            <?php else: ?>
-                <div class="table-responsive">
-                    <table class="table table-hover table-sm">
-                        <thead>
-                            <tr>
-                                <th>Program</th>
-                                <th>Sector</th>
-                                <th>Agency</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($other_sectors_programs as $program): ?>
-                                <tr>
-                                    <td>
-                                        <strong><?php echo $program['program_name']; ?></strong>
-                                    </td>
-                                    <td><span class="badge bg-secondary"><?php echo $program['sector_name']; ?></span></td>
-                                    <td><?php echo $program['agency_name']; ?></td>
-                                    <td>
-                                        <?php if (isset($program['status']) && $program['status']): ?>
-                                            <?php
-                                                $status_class = 'secondary';
-                                                switch ($program['status']) {
-                                                    case 'on-track': $status_class = 'success'; break;
-                                                    case 'delayed': $status_class = 'warning'; break;
-                                                    case 'completed': $status_class = 'primary'; break;
-                                                    case 'not-started': $status_class = 'secondary'; break;
-                                                }
-                                            ?>
-                                            <span class="badge bg-<?php echo $status_class; ?>">
-                                                <?php echo ucfirst(str_replace('-', ' ', $program['status'])); ?>
-                                            </span>
-                                        <?php else: ?>
-                                            <span class="badge bg-light text-dark">Not Reported</span>
-                                        <?php endif; ?>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            <?php endif; ?>
-        </div>
-        <div class="card-footer bg-white">
-            <small class="text-muted">
-                <i class="fas fa-info-circle me-1"></i> This is a preview. View the "All Sectors" page for complete information.
-            </small>
         </div>
     </div>
 </div>

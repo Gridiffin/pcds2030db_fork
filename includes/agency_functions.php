@@ -53,40 +53,9 @@ function get_agency_programs() {
     return $programs;
 }
 
-/**
- * Get current reporting period
- * @return array|null Current active reporting period or null if none
- */
-function get_current_reporting_period() {
-    global $conn;
-    
-    $query = "SELECT * FROM reporting_periods WHERE status = 'open' ORDER BY year DESC, quarter DESC LIMIT 1";
-    $result = $conn->query($query);
-    
-    if ($result->num_rows > 0) {
-        return $result->fetch_assoc();
-    }
-    
-    return null;
-}
-
-/**
- * Get all reporting periods
- * @return array List of all reporting periods
- */
-function get_all_reporting_periods() {
-    global $conn;
-    
-    $query = "SELECT * FROM reporting_periods ORDER BY year DESC, quarter DESC";
-    $result = $conn->query($query);
-    
-    $periods = [];
-    while ($row = $result->fetch_assoc()) {
-        $periods[] = $row;
-    }
-    
-    return $periods;
-}
+// Remove these two functions as they're now in functions.php
+// get_current_reporting_period()
+// get_all_reporting_periods()
 
 /**
  * Get submission status for an agency in a reporting period
@@ -163,9 +132,10 @@ function get_agency_submission_status($user_id, $period_id) {
 /**
  * Get metrics for the current agency's sector
  * @param int $sector_id Agency's sector ID
+ * @param int $period_id Optional - specific period ID (defaults to current period)
  * @return array List of metrics for the sector
  */
-function get_agency_sector_metrics($sector_id) {
+function get_agency_sector_metrics($sector_id, $period_id = null) {
     global $conn;
     
     if (!$sector_id) {
@@ -173,11 +143,16 @@ function get_agency_sector_metrics($sector_id) {
     }
     
     $user_id = $_SESSION['user_id'];
-    $current_period = get_current_reporting_period();
-    $period_id = $current_period['period_id'] ?? null;
+    
+    // If period_id not provided, use current period
+    if (!$period_id) {
+        $current_period = get_current_reporting_period();
+        $period_id = $current_period['period_id'] ?? null;
+    }
     
     $query = "SELECT smd.*, 
-                CASE WHEN smv.value_id IS NOT NULL THEN 1 ELSE 0 END as is_submitted
+                CASE WHEN smv.value_id IS NOT NULL THEN 1 ELSE 0 END as is_submitted,
+                smv.numeric_value, smv.text_value, smv.notes as current_notes
               FROM sector_metrics_definition smd
               LEFT JOIN sector_metric_values smv ON smd.metric_id = smv.metric_id 
                                                AND smv.agency_id = ? 
@@ -192,6 +167,15 @@ function get_agency_sector_metrics($sector_id) {
     
     $metrics = [];
     while ($row = $result->fetch_assoc()) {
+        // Format the current value based on the metric type
+        if ($row['is_submitted']) {
+            if ($row['metric_type'] === 'numeric' || $row['metric_type'] === 'percentage') {
+                $row['current_value'] = $row['numeric_value'];
+            } else {
+                $row['current_value'] = $row['text_value'];
+            }
+        }
+        
         $metrics[] = $row;
     }
     

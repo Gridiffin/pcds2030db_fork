@@ -310,23 +310,6 @@ function get_agencies_for_assignment($sector_id = null) {
 }
 
 /**
- * Get current reporting period
- * @return array|null Current active reporting period or null if none
- */
-function get_current_reporting_period() {
-    global $conn;
-    
-    $query = "SELECT * FROM reporting_periods WHERE status = 'open' ORDER BY year DESC, quarter DESC LIMIT 1";
-    $result = $conn->query($query);
-    
-    if ($result->num_rows > 0) {
-        return $result->fetch_assoc();
-    }
-    
-    return null;
-}
-
-/**
  * Get agency submission status for a reporting period
  * @param int $period_id Reporting period ID
  * @return array List of agencies with submission status
@@ -630,5 +613,223 @@ function delete_user($user_id) {
     } else {
         return ['error' => 'Failed to delete user: ' . $stmt->error];
     }
+}
+
+/**
+ * Get submission statistics for a specific reporting period
+ * 
+ * @param int $period_id Reporting period ID
+ * @return array Statistics about agency submissions for the period
+ */
+function get_period_submission_stats($period_id) {
+    global $conn;
+    
+    if (!$period_id) {
+        return [
+            'agencies_reported' => 0,
+            'total_agencies' => 0,
+            'on_track_programs' => 0,
+            'delayed_programs' => 0,
+            'completion_percentage' => 0
+        ];
+    }
+    
+    // Get total agencies count
+    $agencies_query = "SELECT COUNT(*) as total FROM users WHERE role = 'agency'";
+    $agencies_result = $conn->query($agencies_query);
+    $total_agencies = $agencies_result->fetch_assoc()['total'] ?? 0;
+    
+    // Get agencies that submitted data for this period
+    $reported_query = "SELECT COUNT(DISTINCT agency_id) as reported 
+                       FROM sector_metric_values 
+                       WHERE period_id = ?";
+    $stmt = $conn->prepare($reported_query);
+    $stmt->bind_param('i', $period_id);
+    $stmt->execute();
+    $reported_result = $stmt->get_result();
+    $agencies_reported = $reported_result->fetch_assoc()['reported'] ?? 0;
+    
+    // Get program status statistics
+    $status_query = "SELECT status, COUNT(*) as count
+                     FROM program_submissions
+                     WHERE period_id = ?
+                     GROUP BY status";
+    $stmt = $conn->prepare($status_query);
+    $stmt->bind_param('i', $period_id);
+    $stmt->execute();
+    $status_result = $stmt->get_result();
+    
+    $on_track = 0;
+    $delayed = 0;
+    $completed = 0;
+    $not_started = 0;
+    
+    while ($row = $status_result->fetch_assoc()) {
+        switch ($row['status']) {
+            case 'on-track': $on_track = $row['count']; break;
+            case 'delayed': $delayed = $row['count']; break;
+            case 'completed': $completed = $row['count']; break;
+            case 'not-started': $not_started = $row['count']; break;
+        }
+    }
+    
+    // Calculate overall completion percentage
+    $total_possible_submissions = $total_agencies * 
+        (get_required_metrics_count() + get_active_programs_count());
+    
+    $total_submissions = "SELECT 
+                            (SELECT COUNT(*) FROM program_submissions WHERE period_id = ?) +
+                            (SELECT COUNT(*) FROM sector_metric_values WHERE period_id = ?) as total";
+    $stmt = $conn->prepare($total_submissions);
+    $stmt->bind_param('ii', $period_id, $period_id);
+    $stmt->execute();
+    $submissions_result = $stmt->get_result();
+    $actual_submissions = $submissions_result->fetch_assoc()['total'] ?? 0;
+    
+    // Calculate percentage (prevent division by zero)
+    $completion_percentage = $total_possible_submissions > 0 ? 
+        min(100, round(($actual_submissions / $total_possible_submissions) * 100)) : 0;
+    
+    return [
+        'agencies_reported' => $agencies_reported,
+        'total_agencies' => $total_agencies,
+        'on_track_programs' => $on_track,
+        'delayed_programs' => $delayed, 
+        'completed_programs' => $completed,
+        'not_started_programs' => $not_started,
+        'completion_percentage' => $completion_percentage
+    ];
+}
+
+/**
+ * Get data about each sector for a specific reporting period
+ * 
+ * @param int $period_id Reporting period ID
+ * @return array Data about each sector's submissions
+ */
+function get_sector_data_for_period($period_id) {
+    global $conn;
+    
+    if (!$period_id) {
+        return [];
+    }
+    
+    // Get all sectors
+    $sectors_query = "SELECT sector_id, sector_name FROM sectors ORDER BY sector_name";
+    $sectors_result = $conn->query($sectors_query);
+    
+    $sector_data = [];
+    
+    while ($sector = $sectors_result->fetch_assoc()) {
+        $sector_id = $sector['sector_id'];
+        
+        // Get agency count for this sector
+        $agency_query = "SELECT COUNT(*) as count FROM users WHERE sector_id = ? AND role = 'agency'";
+        $stmt = $conn->prepare($agency_query);
+        $stmt->bind_param('i', $sector_id);
+        $stmt->execute();
+        $agency_result = $stmt->get_result();
+        $agency_count = $agency_result->fetch_assoc()['count'] ?? 0;
+        
+        // Get program count for this sector
+        $program_query = "SELECT COUNT(*) as count FROM programs WHERE sector_id = ?";
+        $stmt = $conn->prepare($program_query);
+        $stmt->bind_param('i', $sector_id);
+        $stmt->execute();
+        $program_result = $stmt->get_result();
+        $program_count = $program_result->fetch_assoc()['count'] ?? 0;
+        
+        // Get submission percentage
+        $submission_query = "SELECT 
+            (SELECT COUNT(*) FROM sector_metric_values smv 
+             JOIN sector_metrics_definition smd ON smv.metric_id = smd.metric_id
+             WHERE smv.period_id = ? AND smd.sector_id = ?) as metric_submissions,
+            (SELECT COUNT(*) FROM program_submissions ps 
+             JOIN programs p ON ps.program_id = p.program_id
+             WHERE ps.period_id = ? AND p.sector_id = ?) as program_submissions,
+            (SELECT COUNT(*) FROM sector_metrics_definition WHERE sector_id = ?) as required_metrics,
+            (SELECT COUNT(*) FROM programs WHERE sector_id = ?) as total_programs";
+        
+        $stmt = $conn->prepare($submission_query);
+        $stmt->bind_param('iiiiii', $period_id, $sector_id, $period_id, $sector_id, $sector_id, $sector_id);
+        $stmt->execute();
+        $sub_result = $stmt->get_result();
+        $sub_data = $sub_result->fetch_assoc();
+        
+        // Calculate submission percentage
+        $total_expected = ($sub_data['required_metrics'] * $agency_count) + $sub_data['total_programs'];
+        $total_submitted = $sub_data['metric_submissions'] + $sub_data['program_submissions'];
+        
+        $submission_pct = $total_expected > 0 ? 
+            min(100, round(($total_submitted / $total_expected) * 100)) : 0;
+        
+        // Add to sector data array
+        $sector_data[] = [
+            'sector_id' => $sector_id,
+            'sector_name' => $sector['sector_name'],
+            'agency_count' => $agency_count,
+            'program_count' => $program_count,
+            'submission_pct' => $submission_pct
+        ];
+    }
+    
+    return $sector_data;
+}
+
+/**
+ * Get recent program submissions
+ * 
+ * @param int $period_id Reporting period ID
+ * @param int $limit Number of submissions to return
+ * @return array Recent program submissions
+ */
+function get_recent_submissions($period_id, $limit = 5) {
+    global $conn;
+    
+    if (!$period_id) {
+        return [];
+    }
+    
+    $query = "SELECT ps.*, p.program_name, u.agency_name
+              FROM program_submissions ps
+              JOIN programs p ON ps.program_id = p.program_id
+              JOIN users u ON ps.submitted_by = u.user_id
+              WHERE ps.period_id = ?
+              ORDER BY ps.submission_date DESC
+              LIMIT ?";
+    
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param('ii', $period_id, $limit);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    $submissions = [];
+    while ($row = $result->fetch_assoc()) {
+        $submissions[] = $row;
+    }
+    
+    return $submissions;
+}
+
+/**
+ * Get count of required metrics across all sectors
+ * @return int Count of metrics
+ */
+function get_required_metrics_count() {
+    global $conn;
+    $query = "SELECT COUNT(*) as count FROM sector_metrics_definition WHERE is_required = 1";
+    $result = $conn->query($query);
+    return $result->fetch_assoc()['count'] ?? 0;
+}
+
+/**
+ * Get count of active programs
+ * @return int Count of programs
+ */
+function get_active_programs_count() {
+    global $conn;
+    $query = "SELECT COUNT(*) as count FROM programs";
+    $result = $conn->query($query);
+    return $result->fetch_assoc()['count'] ?? 0;
 }
 ?>

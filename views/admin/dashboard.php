@@ -2,8 +2,7 @@
 /**
  * Admin Dashboard
  * 
- * Main interface for admin users (Ministry staff).
- * Shows overview of all sectors, agencies, and reporting status.
+ * Main interface for admin users.
  */
 
 // Include necessary files
@@ -22,17 +21,17 @@ if (!is_admin()) {
 // Set page title
 $pageTitle = 'Admin Dashboard';
 
-// Get dashboard statistics
-$stats = get_admin_dashboard_stats();
-
 // Get current reporting period
 $current_period = get_current_reporting_period();
 
-// Get agency submission status
-$agency_submissions = get_agency_submission_status($current_period['period_id'] ?? null);
+// Add period_id handling for historical views
+$period_id = isset($_GET['period_id']) ? intval($_GET['period_id']) : ($current_period['period_id'] ?? null);
+$viewing_period = $period_id ? get_reporting_period($period_id) : $current_period;
 
-// Get recent programs
-$recent_programs = get_recent_programs(5);
+// Get data for the dashboard
+$submission_stats = get_period_submission_stats($period_id);
+$sector_data = get_sector_data_for_period($period_id);
+$recent_submissions = get_recent_submissions($period_id, 5);
 
 // Additional styles
 $additionalStyles = [
@@ -42,7 +41,8 @@ $additionalStyles = [
 // Additional scripts
 $additionalScripts = [
     APP_URL . '/assets/js/charts/chart.min.js',
-    APP_URL . '/assets/js/charts/admin_dashboard_charts.js'
+    APP_URL . '/assets/js/admin/dashboard_charts.js',
+    APP_URL . '/assets/js/period_selector.js'
 ];
 
 // Include header
@@ -52,36 +52,22 @@ require_once '../layouts/header.php';
 require_once '../layouts/admin_nav.php';
 ?>
 
-<!-- Main content wrapper modification -->
 <div class="container-fluid px-4 py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h1 class="h2 mb-0">Admin Dashboard</h1>
-            <p class="text-muted mb-0">Overview of all agency reporting activities</p>
+            <p class="text-muted">Welcome, <?php echo $_SESSION['username']; ?></p>
         </div>
-        <div class="d-flex align-items-center">
-            <?php if ($current_period): ?>
-                <div class="me-2 text-end">
-                    <small class="d-block text-muted mb-1">Current Reporting Period</small>
-                    <span class="badge bg-success">Q<?php echo $current_period['quarter']; ?>-<?php echo $current_period['year']; ?></span>
-                    <span class="badge <?php echo $current_period['status'] === 'open' ? 'bg-success' : 'bg-danger'; ?>">
-                        <?php echo ucfirst($current_period['status']); ?>
-                    </span>
-                </div>
-            <?php else: ?>
-                <div class="me-2 text-end">
-                    <small class="d-block text-muted mb-1">Reporting Period</small>
-                    <span class="badge bg-warning">No active period</span>
-                </div>
-            <?php endif; ?>
-            <button class="btn btn-sm btn-outline-primary ms-2" id="refreshPage">
-                <i class="fas fa-sync-alt me-1"></i> Refresh
-            </button>
-        </div>
+        <button class="btn btn-sm btn-outline-primary" id="refreshPage">
+            <i class="fas fa-sync-alt me-1"></i> Refresh
+        </button>
     </div>
 
-    <!-- Quick Actions Section (Improved) -->
-    <div class="row mb-4 quick-actions-container">
+    <!-- Period Selector Component -->
+    <?php require_once '../../includes/period_selector.php'; ?>
+
+    <!-- Quick Actions Section -->
+    <div class="row mb-4">
         <div class="col-12">
             <div class="card shadow-sm">
                 <div class="card-header d-flex justify-content-between align-items-center">
@@ -89,34 +75,28 @@ require_once '../layouts/admin_nav.php';
                 </div>
                 <div class="card-body">
                     <div class="row justify-content-center text-center g-3">
-                        <div class="col-lg-2 col-md-4 col-6">
-                            <a href="add_program.php" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3">
-                                <i class="fas fa-plus-circle fa-lg mb-2"></i>
-                                <span>New Program</span>
+                        <div class="col-lg-3 col-md-4 col-6">
+                            <a href="manage_programs.php" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3">
+                                <i class="fas fa-project-diagram fa-lg mb-2"></i>
+                                <span>Manage Programs</span>
                             </a>
                         </div>
-                        <div class="col-lg-2 col-md-4 col-6">
-                            <a href="reporting_periods.php" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3">
-                                <i class="fas fa-calendar-alt fa-lg mb-2"></i>
-                                <span>Manage Periods</span>
-                            </a>
-                        </div>
-                        <div class="col-lg-2 col-md-4 col-6">
-                            <a href="generate_report.php" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3">
-                                <i class="fas fa-file-powerpoint fa-lg mb-2"></i>
-                                <span>Generate Report</span>
-                            </a>
-                        </div>
-                        <div class="col-lg-2 col-md-4 col-6">
+                        <div class="col-lg-3 col-md-4 col-6">
                             <a href="manage_users.php" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3">
-                                <i class="fas fa-users-cog fa-lg mb-2"></i>
+                                <i class="fas fa-users fa-lg mb-2"></i>
                                 <span>Manage Users</span>
                             </a>
                         </div>
-                        <div class="col-lg-2 col-md-4 col-6">
-                            <a href="export_data.php" class="btn btn-outline-success w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3">
-                                <i class="fas fa-file-excel fa-lg mb-2"></i>
-                                <span>Export Data</span>
+                        <div class="col-lg-3 col-md-4 col-6">
+                            <a href="manage_metrics.php" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3">
+                                <i class="fas fa-chart-line fa-lg mb-2"></i>
+                                <span>Manage Metrics</span>
+                            </a>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-6">
+                            <a href="generate_reports.php" class="btn btn-outline-success w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3">
+                                <i class="fas fa-file-powerpoint fa-lg mb-2"></i>
+                                <span>Generate Reports</span>
                             </a>
                         </div>
                     </div>
@@ -125,72 +105,86 @@ require_once '../layouts/admin_nav.php';
         </div>
     </div>
 
-    <!-- Stats Overview (Improved) -->
-    <div class="row mb-4 g-3">
-        <div class="col-xl-3 col-md-6">
-            <div class="card stat-card h-100 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="text-xs text-uppercase text-muted mb-1">Agencies</div>
-                            <div class="d-flex align-items-end">
-                                <h3 class="mb-0 me-2"><?php echo $stats['total_agencies'] ?? 0; ?></h3>
-                                <small class="text-success"><i class="fas fa-check"></i> Active</small>
+    <!-- Stats Overview -->
+    <div data-period-content="stats_section">
+        <div class="row">
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-primary shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Agencies Reporting</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                    <?php echo $submission_stats['agencies_reported']; ?>/<?php echo $submission_stats['total_agencies']; ?>
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-users fa-2x text-gray-300"></i>
                             </div>
                         </div>
-                        <div class="stat-icon-container">
-                            <i class="fas fa-building stat-icon"></i>
-                        </div>
-                    </div>
-                    <div class="mt-3">
-                        <a href="agencies.php" class="btn btn-sm btn-outline-primary w-100">Manage</a>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card stat-card h-100">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col">
-                            <div class="text-xs text-muted text-uppercase mb-1">Total Programs</div>
-                            <div class="h3 mb-0 text-dark"><?php echo $stats['total_programs'] ?? 0; ?></div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-project-diagram stat-icon"></i>
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-success shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Programs On Track</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                    <?php echo $submission_stats['on_track_programs']; ?>
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card stat-card secondary h-100">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col">
-                            <div class="text-xs text-muted text-uppercase mb-1">Submissions Complete</div>
-                            <div class="h3 mb-0 text-dark"><?php echo $stats['submissions_complete'] ?? 0; ?></div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-check-circle stat-icon"></i>
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-warning shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Programs Delayed</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                    <?php echo $submission_stats['delayed_programs']; ?>
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card stat-card h-100">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col">
-                            <div class="text-xs text-muted text-uppercase mb-1">Pending Submissions</div>
-                            <div class="h3 mb-0 text-dark"><?php echo $stats['submissions_pending'] ?? 0; ?></div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-hourglass-half stat-icon"></i>
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-info shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Overall Completion</div>
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col-auto">
+                                        <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800">
+                                            <?php echo $submission_stats['completion_percentage']; ?>%
+                                        </div>
+                                    </div>
+                                    <div class="col">
+                                        <div class="progress progress-sm mr-2">
+                                            <div class="progress-bar bg-info" role="progressbar" 
+                                                 style="width: <?php echo $submission_stats['completion_percentage']; ?>%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -198,168 +192,107 @@ require_once '../layouts/admin_nav.php';
         </div>
     </div>
 
-    <!-- Main Content Area -->
     <div class="row">
-        <!-- Submission Status -->
+        <!-- Sector Overview -->
         <div class="col-lg-8 mb-4">
-            <div class="card dashboard-card">
-                <div class="card-header">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="card-title m-0">Agency Submission Status</h5>
-                        <?php if (!empty($agency_submissions)): ?>
-                            <button class="btn btn-sm btn-outline-light" id="refreshSubmissions">
-                                <i class="fas fa-sync-alt"></i> Refresh
-                            </button>
-                        <?php endif; ?>
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title m-0">Sector Overview</h5>
+                    <a href="sector_details.php" class="btn btn-sm btn-outline-primary">View Details</a>
+                </div>
+                <div class="card-body" data-period-content="sectors_section">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>Sector</th>
+                                    <th>Agencies</th>
+                                    <th>Programs</th>
+                                    <th>Submissions</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($sector_data as $sector): ?>
+                                    <tr>
+                                        <td><?php echo $sector['sector_name']; ?></td>
+                                        <td><?php echo $sector['agency_count']; ?></td>
+                                        <td><?php echo $sector['program_count']; ?></td>
+                                        <td>
+                                            <div class="progress" style="height: 20px;">
+                                                <div class="progress-bar bg-<?php echo $sector['submission_pct'] >= 100 ? 'success' : 'primary'; ?>" 
+                                                     style="width: <?php echo $sector['submission_pct']; ?>%">
+                                                    <?php echo $sector['submission_pct']; ?>%
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <?php if ($sector['submission_pct'] >= 100): ?>
+                                                <span class="badge bg-success">Complete</span>
+                                            <?php elseif ($sector['submission_pct'] >= 75): ?>
+                                                <span class="badge bg-info">Almost Complete</span>
+                                            <?php elseif ($sector['submission_pct'] >= 25): ?>
+                                                <span class="badge bg-warning">In Progress</span>
+                                            <?php else: ?>
+                                                <span class="badge bg-danger">Just Started</span>
+                                            <?php endif; ?>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-                <div class="card-body">
-                    <?php if ($current_period): ?>
-                        <?php if (!empty($agency_submissions)): ?>
-                            <div class="table-responsive">
-                                <table class="table table-hover table-custom">
-                                    <thead>
-                                        <tr>
-                                            <th>Agency</th>
-                                            <th>Sector</th>
-                                            <th>Programs</th>
-                                            <th>Metrics</th>
-                                            <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php foreach ($agency_submissions as $agency): ?>
-                                            <tr>
-                                                <td><?php echo $agency['agency_name']; ?></td>
-                                                <td><?php echo $agency['sector_name']; ?></td>
-                                                <td>
-                                                    <div class="progress" style="height: 15px;">
-                                                        <?php $programPercent = ($agency['programs_submitted'] / $agency['total_programs']) * 100; ?>
-                                                        <div class="progress-bar bg-success" role="progressbar" 
-                                                             style="width: <?php echo $programPercent; ?>%;" 
-                                                             aria-valuenow="<?php echo $programPercent; ?>" 
-                                                             aria-valuemin="0" aria-valuemax="100">
-                                                             <?php echo $agency['programs_submitted']; ?>/<?php echo $agency['total_programs']; ?>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div class="progress" style="height: 15px;">
-                                                        <?php $metricPercent = ($agency['metrics_submitted'] / $agency['total_metrics']) * 100; ?>
-                                                        <div class="progress-bar bg-info" role="progressbar" 
-                                                             style="width: <?php echo $metricPercent; ?>%;" 
-                                                             aria-valuenow="<?php echo $metricPercent; ?>" 
-                                                             aria-valuemin="0" aria-valuemax="100">
-                                                             <?php echo $agency['metrics_submitted']; ?>/<?php echo $agency['total_metrics']; ?>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <?php if ($programPercent == 100 && $metricPercent == 100): ?>
-                                                        <span class="badge bg-success">Complete</span>
-                                                    <?php elseif ($programPercent > 0 || $metricPercent > 0): ?>
-                                                        <span class="badge bg-warning">In Progress</span>
-                                                    <?php else: ?>
-                                                        <span class="badge bg-danger">Not Started</span>
-                                                    <?php endif; ?>
-                                                </td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                        <?php else: ?>
-                            <p class="text-muted text-center">No agencies have submitted data yet.</p>
-                        <?php endif; ?>
-                    <?php else: ?>
-                        <div class="alert alert-warning">
-                            <i class="fas fa-exclamation-triangle"></i> No active reporting period. 
-                            <a href="reporting_periods.php">Create a new reporting period</a> to start collecting data.
-                        </div>
-                    <?php endif; ?>
-                </div>
             </div>
         </div>
 
-        <!-- Program Status Chart -->
+        <!-- Recent Submissions -->
         <div class="col-lg-4 mb-4">
-            <div class="card dashboard-card h-100">
+            <div class="card shadow-sm">
                 <div class="card-header">
-                    <h5 class="card-title m-0">Program Status</h5>
+                    <h5 class="card-title m-0">Recent Submissions</h5>
                 </div>
-                <div class="card-body">
-                    <canvas id="programStatusChart"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row">
-        <!-- Recent Programs -->
-        <div class="col-lg-6 mb-4">
-            <div class="card dashboard-card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="card-title m-0">Recent Programs</h5>
-                    <a href="programs.php" class="btn btn-sm btn-outline-primary">View All</a>
-                </div>
-                <div class="card-body">
-                    <?php if (!empty($recent_programs)): ?>
-                        <div class="table-responsive">
-                            <table class="table table-hover table-custom mb-0">
-                                <thead>
+                <div class="card-body" data-period-content="submissions_section">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Agency</th>
+                                    <th>Program</th>
+                                    <th>Status</th>
+                                    <th>Submitted</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (empty($recent_submissions)): ?>
                                     <tr>
-                                        <th>Program Name</th>
-                                        <th>Sector</th>
-                                        <th>Agency</th>
-                                        <th>Status</th>
+                                        <td colspan="4" class="text-center py-3">No recent submissions for this period</td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($recent_programs as $program): ?>
+                                <?php else: ?>
+                                    <?php foreach ($recent_submissions as $submission): ?>
                                         <tr>
-                                            <td>
-                                                <a href="program_details.php?id=<?php echo $program['program_id']; ?>">
-                                                    <?php echo $program['program_name']; ?>
-                                                </a>
-                                            </td>
-                                            <td><?php echo $program['sector_name']; ?></td>
-                                            <td><?php echo $program['agency_name']; ?></td>
+                                            <td><?php echo $submission['agency_name']; ?></td>
+                                            <td><?php echo $submission['program_name']; ?></td>
                                             <td>
                                                 <?php 
-                                                    $status_class = '';
-                                                    switch($program['status']) {
+                                                    $status_class = 'secondary';
+                                                    switch ($submission['status']) {
                                                         case 'on-track': $status_class = 'success'; break;
                                                         case 'delayed': $status_class = 'warning'; break;
-                                                        case 'completed': $status_class = 'info'; break;
-                                                        default: $status_class = 'secondary';
+                                                        case 'completed': $status_class = 'primary'; break;
+                                                        case 'not-started': $status_class = 'secondary'; break;
                                                     }
                                                 ?>
                                                 <span class="badge bg-<?php echo $status_class; ?>">
-                                                    <?php echo ucfirst($program['status']); ?>
+                                                    <?php echo ucfirst(str_replace('-', ' ', $submission['status'])); ?>
                                                 </span>
                                             </td>
+                                            <td><?php echo date('M j, g:i a', strtotime($submission['submission_date'])); ?></td>
                                         </tr>
                                     <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    <?php else: ?>
-                        <p class="text-muted text-center">No programs have been created yet.</p>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-
-        <!-- Sector Metrics -->
-        <div class="col-lg-6 mb-4">
-            <div class="card dashboard-card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="card-title m-0">Sector Overview</h5>
-                    <a href="sectors.php" class="btn btn-sm btn-outline-primary">Manage Sectors</a>
-                </div>
-                <div class="card-body">
-                    <div class="mb-4">
-                        <canvas id="sectorProgramsChart" height="200"></canvas>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -367,19 +300,7 @@ require_once '../layouts/admin_nav.php';
     </div>
 </div>
 
-<!-- Pass data to charts -->
-<script>
-    const programStatusData = <?php echo json_encode($stats['program_status'] ?? []); ?>;
-    const sectorProgramsData = <?php echo json_encode($stats['sector_programs'] ?? []); ?>;
-    
-    // Add a variable to track if there's an active reporting period
-    const hasActivePeriod = <?php echo $current_period ? 'true' : 'false'; ?>;
-</script>
-
-<!-- Add additional script for dashboard functionality -->
-<script src="<?php echo APP_URL; ?>/assets/js/admin/dashboard.js"></script>
-
 <?php
-// Include footer - important to close container properly
+// Include footer
 require_once '../layouts/footer.php';
 ?>
