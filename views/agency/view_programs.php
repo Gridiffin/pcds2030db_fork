@@ -2,7 +2,7 @@
 /**
  * View Programs
  * 
- * Interface for agency users to view, create, and submit data for their programs.
+ * Interface for agency users to view and manage their programs.
  */
 
 // Include necessary files
@@ -11,6 +11,7 @@ require_once '../../includes/db_connect.php';
 require_once '../../includes/session.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/agency_functions.php';
+require_once '../../includes/status_helpers.php';
 
 // Verify user is an agency
 if (!is_agency()) {
@@ -18,54 +19,30 @@ if (!is_agency()) {
     exit;
 }
 
+// Get message from session if available
+$message = $_SESSION['message'] ?? '';
+$messageType = $_SESSION['message_type'] ?? 'info';
+
+// Clear message from session
+if (isset($_SESSION['message'])) {
+    unset($_SESSION['message']);
+    unset($_SESSION['message_type']);
+}
+
 // Set page title
-$pageTitle = 'My Programs';
+$pageTitle = 'Manage Programs';
 
-// Get current reporting period
-$current_period = get_current_reporting_period();
+// Get programs for agency
+$programs = get_agency_programs_by_type();
 
-// Get agency's programs
-$programs = get_agency_programs();
-
-// Handle program creation form submission
-$message = '';
-$messageType = '';
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_program'])) {
-    // Process program creation
-    $result = agency_create_program($_POST);
-    
-    if (isset($result['success']) && $result['success']) {
-        $messageType = 'success';
-        $message = $result['message'] ?? 'Program created successfully.';
-        
-        // Reload page to show new program
-        header("Refresh: 2; URL=view_programs.php");
-    } else {
-        $messageType = 'danger';
-        $message = $result['error'] ?? 'An unknown error occurred';
-    }
-}
-
-// Handle program data submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_program_data'])) {
-    $result = submit_program_data($_POST);
-    
-    if (isset($result['success'])) {
-        $messageType = 'success';
-        $message = $result['message'] ?? 'Program data submitted successfully.';
-    } else {
-        $messageType = 'danger';
-        $message = $result['error'] ?? 'Failed to submit program data.';
-    }
-}
-
-// Additional styles and scripts
+// Additional styles
 $additionalStyles = [
     APP_URL . '/assets/css/custom/agency.css'
 ];
 
+// Additional scripts
 $additionalScripts = [
+    APP_URL . '/assets/js/utilities/status_utils.js',
     APP_URL . '/assets/js/agency/view_programs.js'
 ];
 
@@ -78,20 +55,12 @@ require_once '../layouts/agency_nav.php';
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h1 class="h2 mb-0">My Programs</h1>
-        <p class="text-muted">View and manage all programs assigned to your agency</p>
+        <h1 class="h2 mb-0">Manage Programs</h1>
+        <p class="text-muted">View, update, and create programs for your agency</p>
     </div>
-    
-    <div>
-        <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#createProgramModal">
-            <i class="fas fa-plus-circle me-1"></i> Create New Program
-        </button>
-        <?php if ($current_period && $current_period['status'] === 'open' && !empty($programs)): ?>
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#selectProgramModal">
-                <i class="fas fa-edit me-1"></i> Submit Program Data
-            </button>
-        <?php endif; ?>
-    </div>
+    <a href="create_program.php" class="btn btn-primary">
+        <i class="fas fa-plus-circle me-1"></i> Create New Program
+    </a>
 </div>
 
 <?php if (!empty($message)): ?>
@@ -104,22 +73,50 @@ require_once '../layouts/agency_nav.php';
     </div>
 <?php endif; ?>
 
-<!-- Programs List -->
+<!-- Filter Controls -->
 <div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label for="programSearch" class="form-label">Search Programs</label>
+                <input type="text" class="form-control" id="programSearch" placeholder="Search by program name...">
+            </div>
+            <div class="col-md-3">
+                <label for="statusFilter" class="form-label">Filter by Status</label>
+                <select class="form-select" id="statusFilter">
+                    <option value="">All Statuses</option>
+                    <option value="on-track">On Track</option>
+                    <option value="delayed">Delayed</option>
+                    <option value="completed">Completed</option>
+                    <option value="not-started">Not Started</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="programTypeFilter" class="form-label">Program Type</label>
+                <select class="form-select" id="programTypeFilter">
+                    <option value="all">All Programs</option>
+                    <option value="assigned">Assigned Programs</option>
+                    <option value="created">Agency Created</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Assigned Programs -->
+<div class="card shadow-sm mb-4 program-section" id="assignedPrograms">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="card-title m-0">Your Assigned Programs</h5>
-        <span class="badge bg-primary"><?php echo count($programs); ?> Programs</span>
+        <h5 class="card-title m-0">Assigned Programs</h5>
+        <span class="badge bg-primary"><?php echo count($programs['assigned']); ?> Programs</span>
     </div>
     <div class="card-body">
-        <?php if (empty($programs)): ?>
+        <?php if (empty($programs['assigned'])): ?>
             <div class="text-center py-5">
                 <div class="mb-3">
                     <i class="fas fa-project-diagram fa-3x text-muted"></i>
                 </div>
-                <h5>No programs found</h5>
-                <p class="text-muted">
-                    You don't have any programs yet. Click "Create New Program" to add your first program.
-                </p>
+                <h5>No assigned programs found</h5>
+                <p class="text-muted">Programs assigned by administrators will appear here.</p>
             </div>
         <?php else: ?>
             <div class="table-responsive">
@@ -127,65 +124,36 @@ require_once '../layouts/agency_nav.php';
                     <thead>
                         <tr>
                             <th>Program Name</th>
-                            <th>Description</th>
-                            <th>Timeline</th>
-                            <th>Current Status</th>
+                            <th>Target</th>
+                            <th>Target Date</th>
+                            <th>Status</th>
+                            <th>Status Date</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($programs as $program): ?>
+                        <?php foreach ($programs['assigned'] as $program): ?>
                             <tr>
                                 <td>
-                                    <a href="program_details.php?id=<?php echo $program['program_id']; ?>" class="fw-medium text-decoration-none text-primary">
-                                        <?php echo $program['program_name']; ?>
-                                    </a>
+                                    <div class="fw-medium"><?php echo $program['program_name']; ?></div>
+                                    <?php if (!empty($program['description'])): ?>
+                                        <div class="small text-muted"><?php echo substr($program['description'], 0, 100); ?><?php echo strlen($program['description']) > 100 ? '...' : ''; ?></div>
+                                    <?php endif; ?>
                                 </td>
+                                <td><?php echo $program['current_target'] ?? 'Not set'; ?></td>
+                                <td><?php echo $program['target_date'] ? date('M j, Y', strtotime($program['target_date'])) : 'Not set'; ?></td>
                                 <td>
-                                    <?php 
-                                        $description = $program['description'] ?? '';
-                                        echo (strlen($description) > 100) ? substr($description, 0, 100) . '...' : $description; 
-                                    ?>
+                                    <?php echo get_status_badge($program['status'] ?? 'not-started'); ?>
                                 </td>
-                                <td>
-                                    <small class="text-muted">
-                                        <i class="fas fa-calendar-alt me-1"></i> 
-                                        <?php echo date('M Y', strtotime($program['start_date'])); ?> - 
-                                        <?php echo date('M Y', strtotime($program['end_date'])); ?>
-                                    </small>
-                                </td>
-                                <td>
-                                    <?php 
-                                        $status_class = '';
-                                        $status_text = $program['status'] ?? 'not-started';
-                                        switch($status_text) {
-                                            case 'on-track': $status_class = 'success'; break;
-                                            case 'delayed': $status_class = 'warning'; break;
-                                            case 'completed': $status_class = 'info'; break;
-                                            default: $status_class = 'secondary'; $status_text = 'not-started';
-                                        }
-                                    ?>
-                                    <span class="badge bg-<?php echo $status_class; ?>">
-                                        <?php echo ucwords(str_replace('-', ' ', $status_text)); ?>
-                                    </span>
-                                </td>
+                                <td><?php echo $program['status_date'] ? date('M j, Y', strtotime($program['status_date'])) : 'Not set'; ?></td>
                                 <td>
                                     <div class="btn-group btn-group-sm">
                                         <a href="program_details.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="View Details">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        
-                                        <?php if ($current_period && $current_period['status'] === 'open'): ?>
-                                            <button type="button" class="btn btn-outline-success submit-data-btn" 
-                                                    data-bs-toggle="modal" data-bs-target="#submitDataModal"
-                                                    data-program-id="<?php echo $program['program_id']; ?>"
-                                                    data-program-name="<?php echo htmlspecialchars($program['program_name']); ?>"
-                                                    data-status="<?php echo $status_text; ?>"
-                                                    data-target="<?php echo htmlspecialchars($program['current_target'] ?? ''); ?>"
-                                                    title="Submit Data">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                        <?php endif; ?>
+                                        <a href="update_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-secondary" title="Update Status">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
                                     </div>
                                 </td>
                             </tr>
@@ -197,7 +165,69 @@ require_once '../layouts/agency_nav.php';
     </div>
 </div>
 
-<!-- Program Status Meaning Card -->
+<!-- Agency-Created Programs -->
+<div class="card shadow-sm mb-4 program-section" id="createdPrograms">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title m-0">Agency-Created Programs</h5>
+        <span class="badge bg-success"><?php echo count($programs['created']); ?> Programs</span>
+    </div>
+    <div class="card-body">
+        <?php if (empty($programs['created'])): ?>
+            <div class="text-center py-5">
+                <div class="mb-3">
+                    <i class="fas fa-folder-plus fa-3x text-muted"></i>
+                </div>
+                <h5>No agency-created programs found</h5>
+                <p class="text-muted">Create your own programs using the "Create New Program" button at the top of the page.</p>
+            </div>
+        <?php else: ?>
+            <div class="table-responsive">
+                <table class="table table-hover table-custom">
+                    <thead>
+                        <tr>
+                            <th>Program Name</th>
+                            <th>Target</th>
+                            <th>Target Date</th>
+                            <th>Status</th>
+                            <th>Status Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($programs['created'] as $program): ?>
+                            <tr>
+                                <td>
+                                    <div class="fw-medium"><?php echo $program['program_name']; ?></div>
+                                    <?php if (!empty($program['description'])): ?>
+                                        <div class="small text-muted"><?php echo substr($program['description'], 0, 100); ?><?php echo strlen($program['description']) > 100 ? '...' : ''; ?></div>
+                                    <?php endif; ?>
+                                </td>
+                                <td><?php echo $program['current_target'] ?? 'Not set'; ?></td>
+                                <td><?php echo $program['target_date'] ? date('M j, Y', strtotime($program['target_date'])) : 'Not set'; ?></td>
+                                <td>
+                                    <?php echo get_status_badge($program['status'] ?? 'not-started'); ?>
+                                </td>
+                                <td><?php echo $program['status_date'] ? date('M j, Y', strtotime($program['status_date'])) : 'Not set'; ?></td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="program_details.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="update_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-secondary" title="Update Program">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
+    </div>
+</div>
+
+<!-- Status Definitions Card -->
 <div class="card shadow-sm">
     <div class="card-header">
         <h5 class="card-title m-0">Program Status Definitions</h5>
@@ -227,7 +257,7 @@ require_once '../layouts/agency_nav.php';
                     <span class="status-dot bg-info me-2"></span>
                     <div>
                         <strong>Completed</strong>
-                        <p class="small text-muted mb-0">Program has been successfully completed</p>
+                        <p class="small text-muted mb-0">Program has been completed</p>
                     </div>
                 </div>
             </div>
@@ -236,216 +266,13 @@ require_once '../layouts/agency_nav.php';
                     <span class="status-dot bg-secondary me-2"></span>
                     <div>
                         <strong>Not Started</strong>
-                        <p class="small text-muted mb-0">Program has not yet begun</p>
+                        <p class="small text-muted mb-0">Program has not begun yet</p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-
-<!-- Remove the Bootstrap CREATE PROGRAM MODAL -->
-<!-- Instead, add a container for the dynamic form -->
-<div id="formContainer"></div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize the program management
-    initProgramManagement();
-    
-    // Handle status pill selection
-    const statusPills = document.querySelectorAll('.status-pill');
-    if (statusPills.length) {
-        statusPills.forEach(pill => {
-            pill.addEventListener('click', function() {
-                statusPills.forEach(p => p.classList.remove('active'));
-                this.classList.add('active');
-                document.getElementById('submission_status').value = this.dataset.status;
-            });
-        });
-    }
-});
-
-/**
- * Initialize program management
- */
-function initProgramManagement() {
-    // Create program button
-    const createProgramButton = document.querySelector('button[data-bs-target="#createProgramModal"]');
-    if (createProgramButton) {
-        // Remove the bootstrap data attribute
-        createProgramButton.removeAttribute('data-bs-target');
-        // Add our custom click handler
-        createProgramButton.addEventListener('click', function(e) {
-            e.preventDefault();
-            showCreateProgramForm();
-        });
-    }
-    
-    // Handle selection from program select modal
-    // ...existing code...
-    
-    // Handle direct submission button clicks
-    // ...existing code...
-}
-
-/**
- * Show the create program form using custom modal
- */
-function showCreateProgramForm() {
-    const formContainer = document.getElementById('formContainer');
-    
-    const formHtml = `
-        <div class="form-overlay">
-            <div class="form-wrapper">
-                <div class="form-header">
-                    <h3>Create New Program</h3>
-                    <button type="button" class="close-form">&times;</button>
-                </div>
-                <form method="POST" action="${window.location.href}" class="p-3" id="createProgramForm">
-                    <input type="hidden" name="create_program" value="1">
-                    
-                    <div class="row mb-3">
-                        <div class="col-md-8">
-                            <label for="program_name" class="form-label">Program Name <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="program_name" name="program_name" required>
-                        </div>
-                        <div class="col-md-4">
-                            <label for="sector_id" class="form-label">Sector</label>
-                            <input type="text" class="form-control" value="${get_sector_name()}" readonly>
-                            <small class="form-text text-muted">Programs can only be created in your sector</small>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="description" class="form-label">Program Description</label>
-                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
-                    </div>
-                    
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="start_date" class="form-label">Start Date</label>
-                            <input type="date" class="form-control" id="start_date" name="start_date">
-                        </div>
-                        <div class="col-md-6">
-                            <label for="end_date" class="form-label">End Date</label>
-                            <input type="date" class="form-control" id="end_date" name="end_date">
-                        </div>
-                    </div>
-                    
-                    ${getCurrentPeriodHtml()}
-                    
-                    <div class="d-flex justify-content-end gap-2 mt-4">
-                        <button type="button" class="btn btn-secondary close-form">Cancel</button>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-plus-circle me-1"></i> Create Program
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    `;
-    
-    formContainer.innerHTML = formHtml;
-    
-    // Set up event listeners for closing
-    formContainer.querySelectorAll('.close-form').forEach(button => {
-        button.addEventListener('click', hideForm);
-    });
-    
-    // Close on overlay click
-    const overlay = formContainer.querySelector('.form-overlay');
-    overlay.addEventListener('click', function(e) {
-        if (e.target === this) hideForm();
-    });
-    
-    // Set minimum date for start date to today
-    const startDateField = document.getElementById('start_date');
-    if (startDateField) {
-        const today = new Date().toISOString().split('T')[0];
-        startDateField.setAttribute('min', today);
-    }
-    
-    // Prevent scrolling on the body
-    document.body.style.overflow = 'hidden';
-    
-    // Add validation to the form
-    const form = document.getElementById('createProgramForm');
-    if (form) {
-        form.addEventListener('submit', validateCreateForm);
-    }
-}
-
-/**
- * Hide the form
- */
-function hideForm() {
-    const formContainer = document.getElementById('formContainer');
-    formContainer.innerHTML = '';
-    document.body.style.overflow = '';
-}
-
-/**
- * Validate the create program form
- */
-function validateCreateForm(e) {
-    const programName = document.getElementById('program_name').value.trim();
-    const startDate = document.getElementById('start_date').value;
-    const endDate = document.getElementById('end_date').value;
-    
-    if (programName === '') {
-        e.preventDefault();
-        alert('Program name is required');
-        return;
-    }
-    
-    if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
-        e.preventDefault();
-        alert('End date cannot be before start date');
-        return;
-    }
-}
-
-/**
- * Get sector name
- */
-function get_sector_name() {
-    // Get sector name from the badge in the header
-    const sectorBadge = document.querySelector('.agency-badge');
-    return sectorBadge ? sectorBadge.textContent.trim() : '';
-}
-
-/**
- * Get current period HTML
- */
-function getCurrentPeriodHtml() {
-    // Check if there's a current period label available
-    const periodLabel = document.querySelector('.period-badge .badge');
-    if (!periodLabel) return '';
-    
-    // Extract quarter and year from period label
-    const periodText = periodLabel.textContent.trim();
-    const match = periodText.match(/Q(\d+)-(\d+)/);
-    
-    if (!match) return '';
-    
-    const quarter = match[1];
-    const year = match[2];
-    
-    return `
-    <div class="mb-3 border-top pt-3">
-        <label for="target" class="form-label">
-            Initial Target for Q${quarter}-${year}
-        </label>
-        <textarea class="form-control" id="target" name="target" rows="2" 
-                  placeholder="Example: Plant 100 trees, Train 50 people, etc."></textarea>
-        <small class="form-text text-muted">
-            Specify what you aim to achieve with this program in the current reporting period
-        </small>
-    </div>
-    `;
-}
-</script>
 
 <?php
 // Include footer

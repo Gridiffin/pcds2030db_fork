@@ -24,6 +24,9 @@
     
 <!-- JavaScript dependencies -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Utility scripts -->
+<script src="<?php echo APP_URL; ?>/assets/js/utilities/status_utils.js"></script>
     
 <!-- Core App JavaScript -->
 <script>

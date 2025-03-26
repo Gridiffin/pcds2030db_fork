@@ -1,70 +1,58 @@
-<!-- Agency User Navigation Header -->
-<header class="main-header bg-white shadow-sm py-2">
-    <div class="d-flex justify-content-between align-items-center px-3">
-        <!-- LEFT SIDE: Logo -->
-        <div class="header-left">
-            <a href="<?php echo APP_URL; ?>/views/agency/dashboard.php" class="logo-link">
-                <img src="<?php echo APP_URL; ?>/assets/images/logo.png" alt="PCDS Logo" height="40">
-            </a>
-        </div>
-        
-        <!-- CENTER: Navigation links -->
-        <nav class="header-center">
-            <ul class="nav-list">
-                <?php
-                $menu_items = [
-                    ['dashboard.php', 'Dashboard', 'tachometer-alt'],
-                    ['view_programs.php', 'Programs', 'project-diagram'], // Combined "Programs" section now includes create and submit
-                    ['submit_metrics.php', 'Metrics', 'chart-line'],
-                    ['view_reports.php', 'Reports', 'file-powerpoint'],
-                    ['view_all_sectors.php', 'All Sectors', 'sitemap']
-                ];
-                
-                foreach ($menu_items as $item):
-                    $is_active = strpos($_SERVER['PHP_SELF'], '/'.$item[0]) !== false;
-                ?>
+<?php
+/**
+ * Agency Navigation
+ * 
+ * Main navigation menu for agency users.
+ */
+
+// Get current page
+$current_page = basename($_SERVER['PHP_SELF']);
+?>
+
+<!-- Main Navigation -->
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand" href="<?php echo APP_URL; ?>/views/agency/dashboard.php">
+            <img src="<?php echo APP_URL; ?>/assets/images/logo.png" alt="PCDS Logo" height="30" class="me-2">
+            <?php echo APP_NAME; ?>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
                 <li class="nav-item">
-                    <a class="nav-link <?php echo $is_active ? 'active' : ''; ?>" 
-                       href="<?php echo APP_URL; ?>/views/agency/<?php echo $item[0]; ?>">
-                        <i class="fas fa-<?php echo $item[2]; ?>"></i> <?php echo $item[1]; ?>
+                    <a class="nav-link <?php if ($current_page == 'dashboard.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/views/agency/dashboard.php">
+                        <i class="fas fa-tachometer-alt me-1"></i> Dashboard
                     </a>
                 </li>
-                <?php endforeach; ?>
+                <li class="nav-item">
+                    <a class="nav-link <?php if ($current_page == 'view_programs.php' || $current_page == 'create_program.php' || $current_page == 'update_program.php' || $current_page == 'program_details.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/views/agency/view_programs.php">
+                        <i class="fas fa-project-diagram me-1"></i> My Programs
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?php if ($current_page == 'view_all_sectors.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/views/agency/view_all_sectors.php">
+                        <i class="fas fa-globe me-1"></i> All Sectors
+                    </a>
+                </li>
             </ul>
-        </nav>
-        
-        <!-- RIGHT SIDE: Logout button -->
-        <div class="header-right">
-            <div class="d-flex align-items-center">
-                <span class="badge bg-secondary me-3 agency-badge">
-                    <?php echo get_sector_name($_SESSION['sector_id'] ?? 0); ?>
-                </span>
-                <a href="<?php echo APP_URL; ?>/logout.php" class="btn btn-danger btn-sm d-flex align-items-center">
-                    <i class="fas fa-sign-out-alt me-2"></i> Logout (<?php echo htmlspecialchars($_SESSION['username'] ?? 'User'); ?>)
-                </a>
-            </div>
+            
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user-circle me-1"></i> <?php echo htmlspecialchars($_SESSION['agency_name']); ?>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href="<?php echo APP_URL; ?>/views/profile.php"><i class="fas fa-user-cog me-1"></i> Profile</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="<?php echo APP_URL; ?>/logout.php"><i class="fas fa-sign-out-alt me-1"></i> Logout</a></li>
+                    </ul>
+                </li>
+            </ul>
         </div>
-        
-        <!-- Mobile Navigation Toggle Button -->
-        <button class="nav-toggle d-lg-none">
-            <i class="fas fa-bars"></i>
-        </button>
     </div>
-</header>
+</nav>
 
-<!-- JavaScript for mobile navigation toggle -->
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const navToggle = document.querySelector('.nav-toggle');
-        const headerCenter = document.querySelector('.header-center');
-        
-        if (navToggle && headerCenter) {
-            navToggle.addEventListener('click', function() {
-                headerCenter.classList.toggle('show');
-            });
-        }
-    });
-</script>
-
-<!-- Main content container -->
-<div class="container-fluid px-4 py-4">
+<!-- Content wrapper -->
+<div class="container-fluid px-4 mt-5 pt-4">

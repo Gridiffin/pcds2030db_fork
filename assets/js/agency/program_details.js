@@ -1,122 +1,104 @@
 /**
- * Program Details Page
- * Creates visualizations for program progress over time
+ * Program Details Functionality
+ * Handles visualization and interaction on the program details page
  */
 document.addEventListener('DOMContentLoaded', function() {
-    // Check if we have program data and chart element
-    if (typeof programData !== 'undefined' && document.getElementById('progressChart')) {
-        createProgressChart();
+    // Initialize charts if submission data is available
+    if (typeof submissionData !== 'undefined' && submissionData.length > 0) {
+        initProgressChart();
     }
+});
+
+/**
+ * Initialize the progress chart visualization
+ */
+function initProgressChart() {
+    const ctx = document.getElementById('progressChart');
+    if (!ctx) return;
     
-    function createProgressChart() {
-        // Extract data from programData
-        const submissions = programData.submissions || [];
-        
-        // If no submissions, don't attempt to draw chart
-        if (submissions.length === 0) return;
-        
-        // Prepare data for chart
-        const periods = [];
-        const achievements = [];
-        const targets = [];
-        const statuses = [];
-        const statusColors = {
-            'on-track': '#28a745',
-            'delayed': '#ffc107',
-            'completed': '#17a2b8',
-            'not-started': '#6c757d'
-        };
-        
-        // Process submissions in chronological order (oldest first)
-        [...submissions].reverse().forEach(submission => {
-            periods.push(`Q${submission.quarter}-${submission.year}`);
-            
-            // Extract numeric values for achievements and targets if possible
-            let achievement = parseFloat(submission.achievement);
-            let target = parseFloat(submission.target);
-            
-            // Handle cases where values are not numeric
-            if (isNaN(achievement)) {
-                // Try to extract percentage
-                const percentMatch = submission.achievement.match(/(\d+)%/);
-                achievement = percentMatch ? parseFloat(percentMatch[1]) : 0;
-            }
-            
-            if (isNaN(target)) {
-                const percentMatch = submission.target.match(/(\d+)%/);
-                target = percentMatch ? parseFloat(percentMatch[1]) : 100;
-            }
-            
-            achievements.push(achievement);
-            targets.push(target);
-            statuses.push(statusColors[submission.status] || statusColors['not-started']);
-        });
-        
-        // Create the chart
-        const ctx = document.getElementById('progressChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: periods,
-                datasets: [
-                    {
-                        label: 'Achievement',
-                        data: achievements,
-                        borderColor: '#8591a4',
-                        backgroundColor: 'rgba(133, 145, 164, 0.1)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.4,
-                        pointBackgroundColor: statuses,
-                        pointBorderColor: '#fff',
-                        pointRadius: 6,
-                        pointHoverRadius: 8
+    // Prepare labels and datasets
+    const periods = submissionData.map(item => item.period).reverse();
+    const targets = submissionData.map(item => item.target).reverse();
+    const achievements = submissionData.map(item => item.achievement || 0).reverse();
+    
+    // Create the chart
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: periods,
+            datasets: [
+                {
+                    label: 'Target',
+                    data: targets,
+                    borderColor: '#4e73df',
+                    backgroundColor: 'rgba(78, 115, 223, 0.1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#4e73df',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    fill: false,
+                    tension: 0.1
+                },
+                {
+                    label: 'Achievement',
+                    data: achievements,
+                    borderColor: '#1cc88a',
+                    backgroundColor: 'rgba(28, 200, 138, 0.1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#1cc88a',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    fill: false,
+                    tension: 0.1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Program Progress Over Time',
+                    padding: {
+                        top: 10,
+                        bottom: 20
                     },
-                    {
-                        label: 'Target',
-                        data: targets,
-                        borderColor: 'rgba(164, 152, 133, 0.7)',
-                        backgroundColor: 'transparent',
-                        borderWidth: 2,
-                        borderDash: [5, 5],
-                        fill: false,
-                        pointRadius: 0
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'top'
-                    },
-                    tooltip: {
-                        callbacks: {
-                            afterLabel: function(context) {
-                                const index = context.dataIndex;
-                                const status = [...submissions].reverse()[index].status.replace('-', ' ');
-                                return `Status: ${status.charAt(0).toUpperCase() + status.slice(1)}`;
-                            }
-                        }
+                    font: {
+                        size: 16
                     }
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Value'
-                        }
-                    },
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Reporting Period'
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                },
+                legend: {
+                    position: 'top',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 15
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        drawOnChartArea: false
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            // Determine if we're dealing with a numeric value
+                            if (!isNaN(parseFloat(value)) && isFinite(value)) {
+                                return value;
+                            }
+                            // For non-numeric values, add a placeholder
+                            return '';
                         }
                     }
                 }
             }
-        });
-    }
-});
+        }
+    });
+}

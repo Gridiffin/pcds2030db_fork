@@ -11,6 +11,7 @@ require_once '../../includes/db_connect.php';
 require_once '../../includes/session.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/agency_functions.php';
+require_once '../../includes/status_helpers.php';
 
 // Verify user is an agency
 if (!is_agency()) {
@@ -41,6 +42,7 @@ $additionalStyles = [
 
 // Additional scripts
 $additionalScripts = [
+    APP_URL . '/assets/js/utilities/status_utils.js',
     APP_URL . '/assets/js/agency/view_programs.js',
     APP_URL . '/assets/js/period_selector.js'
 ];
@@ -119,6 +121,7 @@ require_once '../layouts/agency_nav.php';
                                         <th>Program Name</th>
                                         <th>Sector</th>
                                         <th>Agency</th>
+                                        <th>Target/Timeline</th>
                                         <th>Status</th>
                                         <th>Achievement</th>
                                     </tr>
@@ -127,34 +130,38 @@ require_once '../layouts/agency_nav.php';
                                     <?php foreach ($all_programs as $program): ?>
                                         <tr class="<?php echo ($program['sector_id'] == $current_sector_id) ? 'current-sector-row' : ''; ?>">
                                             <td>
-                                                <strong><?php echo $program['program_name']; ?></strong>
+                                                <strong><?php echo htmlspecialchars($program['program_name']); ?></strong>
                                                 <?php if (!empty($program['description'])): ?>
-                                                    <div class="small text-muted"><?php echo substr($program['description'], 0, 100); ?><?php echo strlen($program['description']) > 100 ? '...' : ''; ?></div>
+                                                    <div class="small text-muted"><?php echo substr(htmlspecialchars($program['description']), 0, 100); ?><?php echo strlen($program['description']) > 100 ? '...' : ''; ?></div>
                                                 <?php endif; ?>
                                             </td>
-                                            <td><?php echo $program['sector_name']; ?></td>
-                                            <td><?php echo $program['agency_name']; ?></td>
+                                            <td><?php echo htmlspecialchars($program['sector_name']); ?></td>
+                                            <td><?php echo htmlspecialchars($program['agency_name']); ?></td>
+                                            <td>
+                                                <?php if (isset($program['target']) && $program['target']): ?>
+                                                    <div><?php echo htmlspecialchars($program['target']); ?></div>
+                                                    <?php if (isset($program['target_date']) && $program['target_date']): ?>
+                                                        <small class="text-muted">By: <?php echo date('M j, Y', strtotime($program['target_date'])); ?></small>
+                                                    <?php endif; ?>
+                                                <?php else: ?>
+                                                    <span class="text-muted">Not reported</span>
+                                                <?php endif; ?>
+                                            </td>
                                             <td>
                                                 <?php if (isset($program['status']) && $program['status']): ?>
-                                                    <?php
-                                                        $status_class = 'secondary';
-                                                        switch ($program['status']) {
-                                                            case 'on-track': $status_class = 'success'; break;
-                                                            case 'delayed': $status_class = 'warning'; break;
-                                                            case 'completed': $status_class = 'primary'; break;
-                                                            case 'not-started': $status_class = 'secondary'; break;
-                                                        }
-                                                    ?>
-                                                    <span class="badge bg-<?php echo $status_class; ?>">
-                                                        <?php echo ucfirst(str_replace('-', ' ', $program['status'])); ?>
-                                                    </span>
+                                                    <?php echo get_status_badge($program['status']); ?>
+                                                    <?php if (isset($program['status_date']) && $program['status_date']): ?>
+                                                        <div class="small text-muted mt-1">
+                                                            <i class="fas fa-calendar-day"></i> <?php echo date('M j, Y', strtotime($program['status_date'])); ?>
+                                                        </div>
+                                                    <?php endif; ?>
                                                 <?php else: ?>
                                                     <span class="badge bg-light text-dark">Not Reported</span>
                                                 <?php endif; ?>
                                             </td>
                                             <td>
                                                 <?php if (isset($program['achievement']) && $program['achievement']): ?>
-                                                    <?php echo $program['achievement']; ?>
+                                                    <?php echo htmlspecialchars($program['achievement']); ?>
                                                 <?php else: ?>
                                                     <span class="text-muted">Not reported</span>
                                                 <?php endif; ?>
@@ -169,7 +176,7 @@ require_once '../layouts/agency_nav.php';
                     <!-- Individual Sector Tabs -->
                     <?php foreach ($sectors as $id => $name): ?>
                         <div class="tab-pane fade" id="sector-<?php echo $id; ?>" role="tabpanel">
-                            <h5 class="mb-3"><?php echo $name; ?> Sector Programs</h5>
+                            <h5 class="mb-3"><?php echo htmlspecialchars($name); ?> Sector Programs</h5>
                             
                             <div class="table-responsive">
                                 <table class="table table-hover">
@@ -177,8 +184,10 @@ require_once '../layouts/agency_nav.php';
                                         <tr>
                                             <th>Program Name</th>
                                             <th>Agency</th>
-                                            <th>Status</th>
                                             <th>Target</th>
+                                            <th>Target Date</th>
+                                            <th>Status</th>
+                                            <th>Status Date</th>
                                             <th>Achievement</th>
                                         </tr>
                                     </thead>
@@ -192,40 +201,43 @@ require_once '../layouts/agency_nav.php';
                                         ?>
                                             <tr>
                                                 <td>
-                                                    <strong><?php echo $program['program_name']; ?></strong>
+                                                    <strong><?php echo htmlspecialchars($program['program_name']); ?></strong>
                                                     <?php if (!empty($program['description'])): ?>
-                                                        <div class="small text-muted"><?php echo $program['description']; ?></div>
+                                                        <div class="small text-muted"><?php echo htmlspecialchars($program['description']); ?></div>
                                                     <?php endif; ?>
                                                 </td>
-                                                <td><?php echo $program['agency_name']; ?></td>
-                                                <td>
-                                                    <?php if (isset($program['status']) && $program['status']): ?>
-                                                        <?php
-                                                            $status_class = 'secondary';
-                                                            switch ($program['status']) {
-                                                                case 'on-track': $status_class = 'success'; break;
-                                                                case 'delayed': $status_class = 'warning'; break;
-                                                                case 'completed': $status_class = 'primary'; break;
-                                                                case 'not-started': $status_class = 'secondary'; break;
-                                                            }
-                                                        ?>
-                                                        <span class="badge bg-<?php echo $status_class; ?>">
-                                                            <?php echo ucfirst(str_replace('-', ' ', $program['status'])); ?>
-                                                        </span>
-                                                    <?php else: ?>
-                                                        <span class="badge bg-light text-dark">Not Reported</span>
-                                                    <?php endif; ?>
-                                                </td>
+                                                <td><?php echo htmlspecialchars($program['agency_name']); ?></td>
                                                 <td>
                                                     <?php if (isset($program['target']) && $program['target']): ?>
-                                                        <?php echo $program['target']; ?>
+                                                        <?php echo htmlspecialchars($program['target']); ?>
                                                     <?php else: ?>
                                                         <span class="text-muted">Not reported</span>
                                                     <?php endif; ?>
                                                 </td>
                                                 <td>
+                                                    <?php if (isset($program['target_date']) && $program['target_date']): ?>
+                                                        <?php echo date('M j, Y', strtotime($program['target_date'])); ?>
+                                                    <?php else: ?>
+                                                        <span class="text-muted">Not set</span>
+                                                    <?php endif; ?>
+                                                </td>
+                                                <td>
+                                                    <?php if (isset($program['status']) && $program['status']): ?>
+                                                        <?php echo get_status_badge($program['status']); ?>
+                                                    <?php else: ?>
+                                                        <span class="badge bg-light text-dark">Not Reported</span>
+                                                    <?php endif; ?>
+                                                </td>
+                                                <td>
+                                                    <?php if (isset($program['status_date']) && $program['status_date']): ?>
+                                                        <?php echo date('M j, Y', strtotime($program['status_date'])); ?>
+                                                    <?php else: ?>
+                                                        <span class="text-muted">Not set</span>
+                                                    <?php endif; ?>
+                                                </td>
+                                                <td>
                                                     <?php if (isset($program['achievement']) && $program['achievement']): ?>
-                                                        <?php echo $program['achievement']; ?>
+                                                        <?php echo htmlspecialchars($program['achievement']); ?>
                                                     <?php else: ?>
                                                         <span class="text-muted">Not reported</span>
                                                     <?php endif; ?>

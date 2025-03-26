@@ -1,66 +1,35 @@
 /**
- * Period Selector Component
+ * Period Selector JavaScript
  * 
- * Handles the reporting period selection and persistence with seamless AJAX updates.
+ * Handles period selection and content updating based on selected period
  */
 document.addEventListener('DOMContentLoaded', function() {
-    // Get period selector elements
-    const periodSelector = document.getElementById('periodSelector');
-    const currentPeriodLabel = document.getElementById('currentPeriodLabel');
-    
-    if (!periodSelector) return;
-    
-    // Handle period change
-    periodSelector.addEventListener('change', function() {
-        const selectedPeriod = this.value;
-        const selectedPeriodText = this.options[this.selectedIndex].text;
-        
-        // Set session storage for selected period
-        sessionStorage.setItem('selectedPeriodId', selectedPeriod);
-        
-        // Update URL with selected period
-        const url = new URL(window.location.href);
-        url.searchParams.set('period_id', selectedPeriod);
-        window.history.pushState({}, '', url);
-        
-        // Update period display
-        if (currentPeriodLabel) {
-            currentPeriodLabel.textContent = selectedPeriodText;
-            
-            // Add or remove historical badge
-            const historicalBadge = currentPeriodLabel.querySelector('.badge');
-            const isHistorical = !selectedPeriodText.includes('(Current)');
-            
-            if (isHistorical && !historicalBadge) {
-                const badge = document.createElement('span');
-                badge.className = 'badge bg-info ms-2';
-                badge.textContent = 'Historical';
-                currentPeriodLabel.appendChild(badge);
-            } else if (!isHistorical && historicalBadge) {
-                historicalBadge.remove();
-            }
-        }
-        
-        // AJAX update for different content sections
-        updatePageContent(selectedPeriod);
-    });
-    
-    // Initialize selected period from URL or session storage
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlPeriod = urlParams.get('period_id');
-    const storedPeriod = sessionStorage.getItem('selectedPeriodId');
-    
-    if (urlPeriod) {
-        periodSelector.value = urlPeriod;
-    } else if (storedPeriod) {
-        periodSelector.value = storedPeriod;
-        
-        // Update URL with stored period
-        const url = new URL(window.location.href);
-        url.searchParams.set('period_id', storedPeriod);
-        window.history.replaceState({}, '', url);
-    }
+    // Initialize the period selector on load
+    initPeriodSelector();
 });
+
+/**
+ * Initialize the period selector
+ */
+function initPeriodSelector() {
+    const periodSelector = document.getElementById('periodSelector');
+    
+    if (periodSelector) {
+        // Handle period change
+        periodSelector.addEventListener('change', function() {
+            const selectedPeriodId = this.value;
+            
+            // Get current URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            // Update period_id parameter
+            urlParams.set('period_id', selectedPeriodId);
+            
+            // Redirect to the current page with updated parameters
+            window.location.href = window.location.pathname + '?' + urlParams.toString();
+        });
+    }
+}
 
 /**
  * Update page content via AJAX based on the selected period

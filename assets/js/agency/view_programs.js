@@ -1,50 +1,112 @@
 /**
- * Programs Viewing
+ * View Programs Functionality
+ * Handles filtering and interactions on the programs list page
  */
-
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize search functionality if it exists
+    // Initialize filtering
     const searchInput = document.getElementById('programSearch');
+    const statusFilter = document.getElementById('statusFilter');
+    const typeFilter = document.getElementById('programTypeFilter');
+    
     if (searchInput) {
-        searchInput.addEventListener('keyup', filterPrograms);
+        searchInput.addEventListener('input', filterPrograms);
     }
     
-    // Initialize status filter if it exists
-    const statusFilter = document.getElementById('statusFilter');
     if (statusFilter) {
         statusFilter.addEventListener('change', filterPrograms);
     }
+    
+    if (typeFilter) {
+        typeFilter.addEventListener('change', filterProgramsByType);
+    }
+    
+    // Initial filtering
+    filterPrograms();
 });
 
 /**
- * Filter programs based on search input and status filter
+ * Filter programs based on search text and status
  */
 function filterPrograms() {
     const searchInput = document.getElementById('programSearch');
     const statusFilter = document.getElementById('statusFilter');
     
-    if (!searchInput || !statusFilter) return;
+    if (!searchInput && !statusFilter) return;
     
-    const searchValue = searchInput.value.toLowerCase();
-    const statusValue = statusFilter.value.toLowerCase();
-    const programsTable = document.querySelector('.table-custom');
+    const searchValue = searchInput ? searchInput.value.toLowerCase() : '';
+    const statusValue = statusFilter ? statusFilter.value.toLowerCase() : '';
     
-    if (!programsTable) return;
+    // Get all program tables
+    const tables = document.querySelectorAll('.table-custom');
     
-    const rows = programsTable.querySelectorAll('tbody tr');
-    
-    rows.forEach(row => {
-        const nameCell = row.cells[0];
-        const statusCell = row.cells[3];
+    tables.forEach(table => {
+        const rows = table.querySelectorAll('tbody tr');
         
-        if (!nameCell || !statusCell) return;
+        rows.forEach(row => {
+            const nameCell = row.cells[0];
+            const statusCell = row.cells[3];
+            
+            if (!nameCell || !statusCell) return;
+            
+            const name = nameCell.textContent.toLowerCase();
+            const status = statusCell.textContent.toLowerCase();
+            
+            const nameMatch = name.includes(searchValue);
+            const statusMatch = statusValue === '' || status.includes(statusValue);
+            
+            row.style.display = nameMatch && statusMatch ? '' : 'none';
+        });
         
-        const name = nameCell.textContent.toLowerCase();
-        const status = statusCell.textContent.toLowerCase();
+        // Check if any rows are visible, if not, show a message
+        const visibleRows = Array.from(rows).filter(row => row.style.display !== 'none');
+        const programSection = table.closest('.program-section');
         
-        const nameMatch = name.includes(searchValue);
-        const statusMatch = statusValue === '' || status.includes(statusValue);
-        
-        row.style.display = nameMatch && statusMatch ? '' : 'none';
+        if (programSection) {
+            const noResultsMsg = programSection.querySelector('.no-results-message');
+            
+            if (visibleRows.length === 0) {
+                if (!noResultsMsg) {
+                    const noResultsDiv = document.createElement('div');
+                    noResultsDiv.className = 'no-results-message text-center py-3';
+                    noResultsDiv.innerHTML = '<i class="fas fa-search me-2"></i> No matching programs found';
+                    table.parentNode.appendChild(noResultsDiv);
+                }
+            } else if (noResultsMsg) {
+                noResultsMsg.remove();
+            }
+        }
     });
+}
+
+/**
+ * Filter programs by type (assigned/created)
+ */
+function filterProgramsByType() {
+    const typeFilter = document.getElementById('programTypeFilter');
+    if (!typeFilter) return;
+    
+    const typeValue = typeFilter.value;
+    
+    // Get all program sections
+    const assignedSection = document.getElementById('assignedPrograms');
+    const createdSection = document.getElementById('createdPrograms');
+    
+    if (assignedSection && createdSection) {
+        switch (typeValue) {
+            case 'assigned':
+                assignedSection.style.display = 'block';
+                createdSection.style.display = 'none';
+                break;
+            case 'created':
+                assignedSection.style.display = 'none';
+                createdSection.style.display = 'block';
+                break;
+            default:
+                assignedSection.style.display = 'block';
+                createdSection.style.display = 'block';
+        }
+    }
+    
+    // Also apply the other filters
+    filterPrograms();
 }

@@ -31,4 +31,54 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 50);
         }, index * 100);
     });
+    
+    // Initialize charts if data exists
+    if (typeof programStatusChartData !== 'undefined') {
+        initProgramStatusChart();
+    }
 });
+
+/**
+ * Initialize the program status chart
+ */
+function initProgramStatusChart() {
+    const ctx = document.getElementById('programStatusChart');
+    if (!ctx) return;
+    
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['On Track', 'Delayed', 'Completed', 'Not Started'],
+            datasets: [{
+                data: programStatusChartData.data,
+                backgroundColor: programStatusChartData.colors,
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '65%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 15
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = Math.round((value / total) * 100);
+                            return `${label}: ${value} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}

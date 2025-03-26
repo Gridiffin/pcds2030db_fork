@@ -150,6 +150,29 @@ function get_current_reporting_period() {
         return $result->fetch_assoc();
     }
     
+    // If no open period, get the next upcoming one
+    $query = "SELECT * FROM reporting_periods 
+              WHERE start_date > NOW() 
+              ORDER BY start_date ASC 
+              LIMIT 1";
+    
+    $result = $conn->query($query);
+    
+    if ($result && $result->num_rows > 0) {
+        return $result->fetch_assoc();
+    }
+    
+    // If no upcoming period, get the most recent one
+    $query = "SELECT * FROM reporting_periods 
+              ORDER BY year DESC, quarter DESC 
+              LIMIT 1";
+    
+    $result = $conn->query($query);
+    
+    if ($result && $result->num_rows > 0) {
+        return $result->fetch_assoc();
+    }
+    
     return null;
 }
 

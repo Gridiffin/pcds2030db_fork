@@ -99,6 +99,7 @@
     gap: 0.5rem;
 }
 
+/* Status pill styling enhancements */
 .status-pill {
     display: inline-block;
     padding: 0.5rem 1rem;
@@ -108,6 +109,13 @@
     cursor: pointer;
     transition: all 0.2s;
     border: 2px solid transparent;
+    text-align: center;
+}
+
+.status-pill.large {
+    padding: 0.75rem 1.5rem;
+    font-size: 1.1rem;
+    cursor: default;
 }
 
 .status-pill.on-track {
@@ -134,33 +142,61 @@
     border-color: rgba(108, 117, 125, 0.2);
 }
 
-.status-pill:hover {
-    transform: translateY(-2px);
-}
-
+.status-pill:hover:not(.large),
 .status-pill.active {
-    border-width: 2px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
 }
 
+.status-pill.on-track:hover:not(.large),
 .status-pill.on-track.active {
     background-color: rgba(40, 167, 69, 0.2);
     border-color: #28a745;
 }
 
+.status-pill.delayed:hover:not(.large),
 .status-pill.delayed.active {
     background-color: rgba(255, 193, 7, 0.2);
     border-color: #ffc107;
 }
 
+.status-pill.completed:hover:not(.large),
 .status-pill.completed.active {
     background-color: rgba(23, 162, 184, 0.2);
     border-color: #17a2b8;
 }
 
+.status-pill.not-started:hover:not(.large),
 .status-pill.not-started.active {
     background-color: rgba(108, 117, 125, 0.2);
     border-color: #6c757d;
+}
+
+/* Status dots for legend */
+.status-dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+/* Info box for program details */
+.info-box {
+    background-color: #f8f9fa;
+    border-radius: 0.5rem;
+    padding: 1rem;
+}
+
+.info-item {
+    margin-bottom: 1rem;
+}
+
+.info-item:last-child {
+    margin-bottom: 0;
+}
+
+/* Program sections */
+.program-section {
+    transition: all 0.3s ease;
 }
 
 /* Table customization */
@@ -196,6 +232,11 @@
     .status-pill {
         width: 100%;
         text-align: center;
+        margin-bottom: 0.5rem;
+    }
+    
+    .info-box {
+        margin-top: 1rem;
     }
 }
 
