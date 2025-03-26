@@ -137,28 +137,6 @@ function auto_manage_reporting_periods() {
 }
 
 /**
- * Get a specific reporting period by ID
- * 
- * @param int $period_id The ID of the reporting period to retrieve
- * @return array|null The reporting period data or null if not found
- */
-function get_reporting_period($period_id) {
-    global $conn;
-    
-    $query = "SELECT * FROM reporting_periods WHERE period_id = ?";
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param("i", $period_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($result->num_rows > 0) {
-        return $result->fetch_assoc();
-    }
-    
-    return null;
-}
-
-/**
  * Get current reporting period
  * @return array|null Current active reporting period or null if none
  */
@@ -191,5 +169,27 @@ function get_all_reporting_periods() {
     }
     
     return $periods;
+}
+
+/**
+ * Get a specific reporting period by ID
+ * 
+ * @param int $period_id The ID of the reporting period to retrieve
+ * @return array|null The reporting period data or null if not found
+ */
+function get_reporting_period($period_id) {
+    global $conn;
+    
+    $query = "SELECT * FROM reporting_periods WHERE period_id = ?";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("i", $period_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        return $result->fetch_assoc();
+    }
+    
+    return null;
 }
 ?>
