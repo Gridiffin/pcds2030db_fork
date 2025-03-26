@@ -198,3 +198,13 @@
         text-align: center;
     }
 }
+
+/* Styles for View All Sectors page */
+.current-sector {
+    border-bottom: 2px solid var(--primary-color);
+    font-weight: bold;
+}
+
+.current-sector-row {
+    background-color: rgba(133, 145, 164, 0.1); /* Light primary color */
+}

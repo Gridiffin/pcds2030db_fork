@@ -514,4 +514,65 @@ function get_agency_reports($user_id, $period_id) {
     
     return $reports;
 }
+
+/**
+ * Get programs from all sectors
+ * 
+ * This function allows agency users to view programs from other sectors (read-only)
+ * 
+ * @param int $current_period_id Optional - filter by reporting period
+ * @return array Programs from all sectors with their details
+ */
+function get_all_sectors_programs($current_period_id = null) {
+    global $conn;
+    
+    // Base query to get all programs with their sector and agency details
+    $query = "SELECT p.program_id, p.program_name, p.description,
+                    s.sector_id, s.sector_name,
+                    u.user_id AS agency_id, u.agency_name,
+                    p.start_date, p.end_date
+              FROM programs p
+              JOIN sectors s ON p.sector_id = s.sector_id
+              JOIN users u ON p.owner_agency_id = u.user_id
+              ORDER BY s.sector_name, u.agency_name, p.program_name";
+              
+    $result = $conn->query($query);
+    
+    if (!$result) {
+        return ['error' => 'Database error: ' . $conn->error];
+    }
+    
+    $programs = [];
+    
+    while ($row = $result->fetch_assoc()) {
+        // Get latest submission data if period is specified
+        if ($current_period_id) {
+            $sub_query = "SELECT target, achievement, status, remarks
+                          FROM program_submissions
+                          WHERE program_id = ? AND period_id = ?
+                          ORDER BY submission_date DESC
+                          LIMIT 1";
+                          
+            $stmt = $conn->prepare($sub_query);
+            $stmt->bind_param('ii', $row['program_id'], $current_period_id);
+            $stmt->execute();
+            $sub_result = $stmt->get_result();
+            
+            if ($sub_result && $sub_result->num_rows > 0) {
+                $sub_data = $sub_result->fetch_assoc();
+                $row = array_merge($row, $sub_data);
+            } else {
+                $row['target'] = null;
+                $row['achievement'] = null;
+                $row['status'] = null;
+                $row['remarks'] = null;
+            }
+            $stmt->close();
+        }
+        
+        $programs[] = $row;
+    }
+    
+    return $programs;
+}
 ?>

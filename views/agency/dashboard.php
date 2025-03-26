@@ -370,6 +370,81 @@ require_once '../layouts/agency_nav.php';
             </div>
         </div>
     </div>
+
+    <!-- Cross-sector Programs Overview -->
+    <div class="card shadow-sm mt-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title m-0"><i class="fas fa-sitemap me-2"></i> Cross-sector Programs</h5>
+            <a href="<?php echo APP_URL; ?>/views/agency/view_all_sectors.php" class="btn btn-sm btn-outline-primary">
+                View All Sectors <i class="fas fa-arrow-right ms-1"></i>
+            </a>
+        </div>
+        <div class="card-body">
+            <?php
+            // Get programs from all sectors (limit to 5 most recent)
+            $other_sectors_programs = get_all_sectors_programs($current_period ? $current_period['period_id'] : null);
+            
+            // Filter out current sector's programs
+            $other_sectors_programs = array_filter($other_sectors_programs, function($p) {
+                return $p['sector_id'] != $_SESSION['sector_id'];
+            });
+            
+            // Take only 5 latest programs
+            $other_sectors_programs = array_slice($other_sectors_programs, 0, 5);
+            
+            if (empty($other_sectors_programs)):
+            ?>
+                <p class="text-muted mb-0">No programs from other sectors available to display.</p>
+            <?php else: ?>
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm">
+                        <thead>
+                            <tr>
+                                <th>Program</th>
+                                <th>Sector</th>
+                                <th>Agency</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($other_sectors_programs as $program): ?>
+                                <tr>
+                                    <td>
+                                        <strong><?php echo $program['program_name']; ?></strong>
+                                    </td>
+                                    <td><span class="badge bg-secondary"><?php echo $program['sector_name']; ?></span></td>
+                                    <td><?php echo $program['agency_name']; ?></td>
+                                    <td>
+                                        <?php if (isset($program['status']) && $program['status']): ?>
+                                            <?php
+                                                $status_class = 'secondary';
+                                                switch ($program['status']) {
+                                                    case 'on-track': $status_class = 'success'; break;
+                                                    case 'delayed': $status_class = 'warning'; break;
+                                                    case 'completed': $status_class = 'primary'; break;
+                                                    case 'not-started': $status_class = 'secondary'; break;
+                                                }
+                                            ?>
+                                            <span class="badge bg-<?php echo $status_class; ?>">
+                                                <?php echo ucfirst(str_replace('-', ' ', $program['status'])); ?>
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="badge bg-light text-dark">Not Reported</span>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </div>
+        <div class="card-footer bg-white">
+            <small class="text-muted">
+                <i class="fas fa-info-circle me-1"></i> This is a preview. View the "All Sectors" page for complete information.
+            </small>
+        </div>
+    </div>
 </div>
 
 <!-- Pass chart data to JavaScript -->

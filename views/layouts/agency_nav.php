@@ -30,6 +30,13 @@
                     </a>
                 </li>
                 <?php endforeach; ?>
+                <!-- Add this new menu item in the appropriate spot in the navigation -->
+                <li class="nav-item">
+                    <a class="nav-link <?php echo strpos($_SERVER['PHP_SELF'], 'view_all_sectors.php') !== false ? 'active' : ''; ?>" href="<?php echo APP_URL; ?>/views/agency/view_all_sectors.php">
+                        <i class="fas fa-sitemap me-2"></i>
+                        View All Sectors
+                    </a>
+                </li>
             </ul>
         </nav>
         
