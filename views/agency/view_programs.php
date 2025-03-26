@@ -49,11 +49,16 @@ require_once '../layouts/agency_nav.php';
         <p class="text-muted">View and manage all programs assigned to your agency</p>
     </div>
     
-    <?php if ($current_period && $current_period['status'] === 'open'): ?>
-        <a href="submit_program_data.php" class="btn btn-primary">
-            <i class="fas fa-edit me-1"></i> Submit Program Data
+    <div>
+        <a href="create_program.php" class="btn btn-success me-2">
+            <i class="fas fa-plus-circle me-1"></i> Create New Program
         </a>
-    <?php endif; ?>
+        <?php if ($current_period && $current_period['status'] === 'open'): ?>
+            <a href="submit_program_data.php" class="btn btn-primary">
+                <i class="fas fa-edit me-1"></i> Submit Program Data
+            </a>
+        <?php endif; ?>
+    </div>
 </div>
 
 <!-- Programs List -->

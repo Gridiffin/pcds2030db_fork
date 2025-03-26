@@ -104,9 +104,9 @@ require_once '../layouts/agency_nav.php';
                             </a>
                         </div>
                         <div class="col-lg-3 col-md-4 col-6">
-                            <a href="view_reports.php" class="btn btn-outline-success w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3">
-                                <i class="fas fa-file-powerpoint fa-lg mb-2"></i>
-                                <span>View Reports</span>
+                            <a href="create_program.php" class="btn btn-outline-success w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3">
+                                <i class="fas fa-plus-circle fa-lg mb-2"></i>
+                                <span>Create New Program</span>
                             </a>
                         </div>
                     </div>

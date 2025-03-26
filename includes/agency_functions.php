@@ -559,4 +559,79 @@ function get_all_sectors_programs($current_period_id = null) {
     
     return $programs;
 }
+
+/**
+ * Create a new program for agency
+ * @param array $data Program data from form submission
+ * @return array Result of program creation with success/error message
+ */
+function agency_create_program($data) {
+    global $conn;
+    
+    if (!is_agency()) {
+        return ['error' => 'Permission denied'];
+    }
+    
+    // Extract and sanitize data
+    $program_name = trim($conn->real_escape_string($data['program_name'] ?? ''));
+    $description = $conn->real_escape_string($data['description'] ?? '');
+    $start_date = $conn->real_escape_string($data['start_date'] ?? '');
+    $end_date = $conn->real_escape_string($data['end_date'] ?? '');
+    $target = $conn->real_escape_string($data['target'] ?? '');
+    
+    // Set owner to current agency
+    $owner_agency_id = $_SESSION['user_id'];
+    $sector_id = $_SESSION['sector_id'];
+    
+    // Validate input
+    if (empty($program_name)) {
+        return ['error' => 'Program name is required'];
+    }
+    
+    if (!empty($start_date) && !empty($end_date)) {
+        // Validate date range
+        if (strtotime($start_date) > strtotime($end_date)) {
+            return ['error' => 'End date cannot be before start date'];
+        }
+    }
+    
+    // Insert new program
+    $query = "INSERT INTO programs (program_name, description, owner_agency_id, sector_id, start_date, end_date) 
+              VALUES (?, ?, ?, ?, ?, ?)";
+    
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("ssiiss", $program_name, $description, $owner_agency_id, $sector_id, $start_date, $end_date);
+    
+    if (!$stmt->execute()) {
+        return ['error' => 'Failed to create program: ' . $stmt->error];
+    }
+    
+    $program_id = $stmt->insert_id;
+    
+    // If target is provided and current period exists, create initial submission
+    if (!empty($target)) {
+        $current_period = get_current_reporting_period();
+        
+        if ($current_period && $current_period['status'] === 'open') {
+            $period_id = $current_period['period_id'];
+            $status = 'not-started'; // Default status for new programs
+            
+            $sub_query = "INSERT INTO program_submissions 
+                          (program_id, period_id, submitted_by, target, achievement, status, remarks) 
+                          VALUES (?, ?, ?, ?, '', ?, '')";
+            
+            $stmt = $conn->prepare($sub_query);
+            $stmt->bind_param("iiiss", $program_id, $period_id, $owner_agency_id, $target, $status);
+            $stmt->execute();
+            // We don't need to check for errors here - if initial submission fails,
+            // the program is still created successfully
+        }
+    }
+    
+    return [
+        'success' => true, 
+        'program_id' => $program_id,
+        'message' => 'Program created successfully'
+    ];
+}
 ?>

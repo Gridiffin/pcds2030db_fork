@@ -17,7 +17,9 @@
                     ['submit_program_data.php', 'Submit Data', 'edit'],
                     ['submit_metrics.php', 'Metrics', 'chart-line'],
                     ['view_programs.php', 'Programs', 'project-diagram'],
-                    ['view_reports.php', 'Reports', 'file-powerpoint']
+                    ['create_program.php', 'Create Program', 'plus-circle'], // Added new menu item
+                    ['view_reports.php', 'Reports', 'file-powerpoint'],
+                    ['view_all_sectors.php', 'All Sectors', 'sitemap']
                 ];
                 
                 foreach ($menu_items as $item):
@@ -30,13 +32,6 @@
                     </a>
                 </li>
                 <?php endforeach; ?>
-                <!-- Add this new menu item in the appropriate spot in the navigation -->
-                <li class="nav-item">
-                    <a class="nav-link <?php echo strpos($_SERVER['PHP_SELF'], 'view_all_sectors.php') !== false ? 'active' : ''; ?>" href="<?php echo APP_URL; ?>/views/agency/view_all_sectors.php">
-                        <i class="fas fa-sitemap me-2"></i>
-                        View All Sectors
-                    </a>
-                </li>
             </ul>
         </nav>
         

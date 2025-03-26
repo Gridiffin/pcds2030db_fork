@@ -207,18 +207,16 @@ require_once '../layouts/agency_nav.php';
                     <div class="row mb-4">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="target" class="form-label">Target for Q<?php echo $current_period['quarter']; ?>-<?php echo $current_period['year']; ?></label>
-                                <input type="text" class="form-control" id="target" name="target" placeholder="e.g., 50% completion" 
-                                       value="<?php echo $current_submission['target'] ?? ''; ?>" required>
-                                <div class="form-text">Enter your target for this reporting period</div>
+                                <label for="target" class="form-label">Target <span class="text-danger">*</span></label>
+                                <textarea class="form-control" id="target" name="target" rows="2" required><?php echo $current_submission['target'] ?? ''; ?></textarea>
+                                <small class="form-text text-muted">Specify what you aim to achieve (e.g., "Plant 100 trees", "Train 50 staff members")</small>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="achievement" class="form-label">Achievement</label>
-                                <input type="text" class="form-control" id="achievement" name="achievement" placeholder="e.g., 35% completed" 
-                                       value="<?php echo $current_submission['achievement'] ?? ''; ?>" required>
-                                <div class="form-text">Enter what you've achieved so far</div>
+                                <label for="achievement" class="form-label">Achievement <span class="text-danger">*</span></label>
+                                <textarea class="form-control" id="achievement" name="achievement" rows="2" required><?php echo $current_submission['achievement'] ?? ''; ?></textarea>
+                                <small class="form-text text-muted">Describe what has been achieved so far (e.g., "Planted 50 trees", "Trained 30 staff members")</small>
                             </div>
                         </div>
                     </div>
