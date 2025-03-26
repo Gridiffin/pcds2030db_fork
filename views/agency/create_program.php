@@ -26,18 +26,43 @@ $message = '';
 $messageType = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Process program creation
-    $result = agency_create_program($_POST);
+    // Extract and sanitize form data
+    $program_name = trim($_POST['program_name'] ?? '');
+    $description = $_POST['description'] ?? '';
+    $start_date = $_POST['start_date'] ?? '';
+    $end_date = $_POST['end_date'] ?? '';
+    $target = $_POST['target'] ?? '';
     
-    if (isset($result['success']) && $result['success']) {
-        $messageType = 'success';
-        $message = $result['message'];
-        
-        // Redirect to program details after brief delay
-        header("Refresh: 2; URL=program_details.php?id=" . $result['program_id']);
-    } else {
+    // Basic validation
+    if (empty($program_name)) {
         $messageType = 'danger';
-        $message = $result['error'] ?? 'An unknown error occurred';
+        $message = 'Program name is required';
+    } else if (!empty($start_date) && !empty($end_date) && strtotime($start_date) > strtotime($end_date)) {
+        $messageType = 'danger';
+        $message = 'End date cannot be before start date';
+    } else {
+        // Prepare data for function
+        $program_data = [
+            'program_name' => $program_name,
+            'description' => $description,
+            'start_date' => $start_date,
+            'end_date' => $end_date,
+            'target' => $target
+        ];
+        
+        // Create the program
+        $result = agency_create_program($program_data);
+        
+        if (isset($result['success']) && $result['success']) {
+            $messageType = 'success';
+            $message = $result['message'] ?? 'Program created successfully';
+            
+            // Redirect to program details after brief delay
+            header("Refresh: 2; URL=program_details.php?id=" . $result['program_id']);
+        } else {
+            $messageType = 'danger';
+            $message = $result['error'] ?? 'An unknown error occurred';
+        }
     }
 }
 
@@ -49,9 +74,9 @@ $additionalStyles = [
     APP_URL . '/assets/css/custom/agency.css'
 ];
 
-// Additional scripts
+// Additional scripts - updated to use the unified JS file
 $additionalScripts = [
-    APP_URL . '/assets/js/agency/create_program.js'
+    APP_URL . '/assets/js/agency/program_management.js'
 ];
 
 // Include header

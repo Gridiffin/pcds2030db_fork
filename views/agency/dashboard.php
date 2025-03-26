@@ -85,9 +85,9 @@ require_once '../layouts/agency_nav.php';
                     <div class="row justify-content-center text-center g-3">
                         <?php if ($current_period && $current_period['status'] === 'open'): ?>
                             <div class="col-lg-3 col-md-4 col-6">
-                                <a href="submit_program_data.php" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3">
+                                <a href="view_programs.php" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3">
                                     <i class="fas fa-edit fa-lg mb-2"></i>
-                                    <span>Submit Program Data</span>
+                                    <span>Manage Programs</span>
                                 </a>
                             </div>
                             <div class="col-lg-3 col-md-4 col-6">
@@ -104,7 +104,8 @@ require_once '../layouts/agency_nav.php';
                             </a>
                         </div>
                         <div class="col-lg-3 col-md-4 col-6">
-                            <a href="create_program.php" class="btn btn-outline-success w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3">
+                            <a href="view_programs.php" class="btn btn-outline-success w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3" 
+                               data-target-modal="createProgramModal">
                                 <i class="fas fa-plus-circle fa-lg mb-2"></i>
                                 <span>Create New Program</span>
                             </a>
@@ -379,6 +380,22 @@ require_once '../layouts/agency_nav.php';
         ],
         colors: ['#28a745', '#ffc107', '#17a2b8', '#6c757d']
     };
+
+    // Add this to your existing script
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle buttons that should open modals on the programs page
+        const modalButtons = document.querySelectorAll('[data-target-modal]');
+        modalButtons.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetUrl = this.getAttribute('href');
+                const targetModal = this.getAttribute('data-target-modal');
+                
+                // Redirect to programs page with modal param
+                window.location.href = targetUrl + '?modal=' + targetModal;
+            });
+        });
+    });
 </script>
 
 <?php

@@ -14,10 +14,8 @@
                 <?php
                 $menu_items = [
                     ['dashboard.php', 'Dashboard', 'tachometer-alt'],
-                    ['submit_program_data.php', 'Submit Data', 'edit'],
+                    ['view_programs.php', 'Programs', 'project-diagram'], // Combined "Programs" section now includes create and submit
                     ['submit_metrics.php', 'Metrics', 'chart-line'],
-                    ['view_programs.php', 'Programs', 'project-diagram'],
-                    ['create_program.php', 'Create Program', 'plus-circle'], // Added new menu item
                     ['view_reports.php', 'Reports', 'file-powerpoint'],
                     ['view_all_sectors.php', 'All Sectors', 'sitemap']
                 ];

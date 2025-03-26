@@ -623,8 +623,6 @@ function agency_create_program($data) {
             $stmt = $conn->prepare($sub_query);
             $stmt->bind_param("iiiss", $program_id, $period_id, $owner_agency_id, $target, $status);
             $stmt->execute();
-            // We don't need to check for errors here - if initial submission fails,
-            // the program is still created successfully
         }
     }
     

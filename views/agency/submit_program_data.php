@@ -46,6 +46,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_program'])) {
     }
 }
 
+// Handle quick updates from the view_programs page
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['quick_update']) && isset($_POST['program_id'])) {
+    $result = submit_program_data($_POST);
+    
+    if (isset($result['success'])) {
+        $message = $result['message'] ?? 'Program data submitted successfully.';
+        $message_type = 'success';
+        
+        // Redirect back to programs page after brief delay
+        header("Refresh: 1; URL=view_programs.php");
+    } else {
+        $message = $result['error'] ?? 'Failed to submit program data.';
+        $message_type = 'danger';
+    }
+}
+
 // Check if a specific program is requested
 $selected_program = null;
 $program_id = isset($_GET['id']) ? intval($_GET['id']) : null;
@@ -74,7 +90,7 @@ $additionalStyles = [
 ];
 
 $additionalScripts = [
-    APP_URL . '/assets/js/agency/program_submission.js'
+    APP_URL . '/assets/js/agency/program_management.js'
 ];
 
 // Include header
