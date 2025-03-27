@@ -2,12 +2,27 @@
  * Login page specific styles
  */
 
+:root {
+    --bg-color: #f8f9fa;
+    --card-bg: #ffffff;
+    --primary-text: #333333;
+    --secondary-text: #6c757d;
+    --button-color: #4d84e2;
+    --button-hover: #3570d4;
+    --accent-color: #32a852;
+}
+
 /* Import common styles */
 @import url('common.css');
 
 /* Override body for login page */
 body {
-    background-color: #A49885; /* Taupe body background for login page */
+    background-color: var(--bg-color);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Poppins', sans-serif;
 }
 
 /* Unified card styling - specific to login */
@@ -149,6 +164,26 @@ body {
     font-size: 0.95rem;
     font-weight: 400;
     margin-bottom: 30px;
+}
+
+/* Button styles */
+.material-btn {
+    background-color: var(--button-color);
+    border-color: var(--button-color);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    font-weight: 500;
+    padding: 0.8rem 0;
+    text-transform: uppercase;
+    font-size: 1rem;
+    letter-spacing: 0.5px;
+}
+
+.material-btn:hover, .material-btn:focus {
+    background-color: var(--button-hover);
+    border-color: var(--button-hover);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    transform: translateY(-2px);
 }
 
 /* Password toggle button */

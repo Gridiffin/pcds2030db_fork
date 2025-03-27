@@ -1,410 +1,389 @@
 /**
  * User Form Manager
- * Handles form creation, validation and submission for user management
+ * Handles user form interactions for admin user management
  */
-function UserFormManager() {
-    const formContainer = document.getElementById('formContainer');
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize the user form manager
+    initUserFormManager();
+});
+
+/**
+ * Initialize user form functionality
+ */
+function initUserFormManager() {
+    // Get elements
+    const addUserBtn = document.getElementById('addUserBtn');
+    const userForms = document.querySelectorAll('.user-form');
+    const editUserBtns = document.querySelectorAll('.edit-user-btn');
+    const deleteUserBtns = document.querySelectorAll('.delete-user-btn');
     
-    // Form display functions
-    function showAddUserForm() {
-        const sectors = getSectorsData();
-        
-        const formHtml = `
-            <div class="form-overlay">
-                <div class="form-wrapper">
-                    <div class="form-header">
-                        <h3>Add New User</h3>
-                        <button type="button" class="close-form">&times;</button>
-                    </div>
-                    <form method="post" class="p-3" id="addUserForm">
-                        <input type="hidden" name="action" value="add_user">
-                        
-                        <div class="mb-3">
-                            <label for="username" class="form-label">Username</label>
-                            <input type="text" class="form-control" id="username" name="username" required autocomplete="off">
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="password" class="form-label">Password</label>
-                            <div class="input-group">
-                                <input type="password" class="form-control" id="password" name="password" required autocomplete="new-password">
-                                <button type="button" class="btn btn-outline-secondary password-toggle">
-                                    <i class="far fa-eye"></i>
-                                </button>
-                            </div>
-                            <div class="form-text password-hint">Password should be at least 8 characters</div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="role" class="form-label">Role</label>
-                            <select class="form-select" id="role" name="role" required>
-                                <option value="admin">Admin</option>
-                                <option value="agency" selected>Agency</option>
-                            </select>
-                        </div>
-                        
-                        <div class="mb-3 agency-field">
-                            <label for="agency_name" class="form-label">Agency Name</label>
-                            <input type="text" class="form-control" id="agency_name" name="agency_name">
-                        </div>
-                        
-                        <div class="mb-3 agency-field">
-                            <label for="sector_id" class="form-label">Sector</label>
-                            <select class="form-select" id="sector_id" name="sector_id">
-                                <option value="">Select Sector</option>
-                                ${sectors.map(sector => `<option value="${sector.id}">${sector.name}</option>`).join('')}
-                            </select>
-                        </div>
-                        
-                        <div class="d-flex justify-content-end gap-2 mt-4">
-                            <button type="button" class="btn btn-secondary close-form">Cancel</button>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-user-plus me-1"></i> Add User
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        `;
-        
-        showForm(formHtml);
-        
-        // Setup role toggle
-        const roleSelect = document.getElementById('role');
-        roleSelect.addEventListener('change', () => toggleAgencyFields(roleSelect.value));
-        
-        // Initial toggle
-        toggleAgencyFields(roleSelect.value);
-        
-        // Setup password validation
-        setupPasswordValidation();
-        
-        // Add form submit handler
-        const form = document.getElementById('addUserForm');
-        const passwordInput = document.getElementById('password');
-        const passwordHint = document.querySelector('.password-hint');
-        
-        handleFormSubmit(form, 'Adding User...', 'User added successfully!', passwordInput, passwordHint);
+    // Setup event listeners
+    if (addUserBtn) {
+        addUserBtn.addEventListener('click', showAddUserForm);
     }
     
-    function showEditUserForm(userData) {
-        const sectors = getSectorsData();
-        
-        const formHtml = `
-            <div class="form-overlay">
-                <div class="form-wrapper">
-                    <div class="form-header">
-                        <h3>Edit User</h3>
-                        <button type="button" class="close-form">&times;</button>
-                    </div>
-                    <form method="post" class="p-3" id="editUserForm">
-                        <input type="hidden" name="action" value="edit_user">
-                        <input type="hidden" name="user_id" value="${userData.userId}">
-                        
-                        <div class="mb-3">
-                            <label for="edit_username" class="form-label">Username</label>
-                            <input type="text" class="form-control" id="edit_username" name="username" value="${userData.username}" required>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="edit_password" class="form-label">Password</label>
-                            <div class="input-group">
-                                <input type="password" class="form-control" id="edit_password" name="password" placeholder="Leave blank to keep current">
-                                <button type="button" class="btn btn-outline-secondary password-toggle">
-                                    <i class="far fa-eye"></i>
-                                </button>
-                            </div>
-                            <div class="form-text">Leave blank to keep current password</div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="edit_role" class="form-label">Role</label>
-                            <select class="form-select" id="edit_role" name="role" required>
-                                <option value="admin" ${userData.role === 'admin' ? 'selected' : ''}>Admin</option>
-                                <option value="agency" ${userData.role === 'agency' ? 'selected' : ''}>Agency</option>
-                            </select>
-                        </div>
-                        
-                        <div class="mb-3 edit-agency-field">
-                            <label for="edit_agency_name" class="form-label">Agency Name</label>
-                            <input type="text" class="form-control" id="edit_agency_name" name="agency_name" value="${userData.agency || ''}">
-                        </div>
-                        
-                        <div class="mb-3 edit-agency-field">
-                            <label for="edit_sector_id" class="form-label">Sector</label>
-                            <select class="form-select" id="edit_sector_id" name="sector_id">
-                                <option value="">Select Sector</option>
-                                ${sectors.map(sector => `<option value="${sector.id}" ${sector.id == userData.sectorId ? 'selected' : ''}>${sector.name}</option>`).join('')}
-                            </select>
-                        </div>
-                        
-                        <div class="d-flex justify-content-end gap-2 mt-4">
-                            <button type="button" class="btn btn-secondary close-form">Cancel</button>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save me-1"></i> Update User
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        `;
-        
-        showForm(formHtml);
-        
-        // Setup role toggle
-        const roleSelect = document.getElementById('edit_role');
-        roleSelect.addEventListener('change', () => toggleAgencyFields(roleSelect.value, '.edit-agency-field'));
-        
-        // Initial toggle
-        toggleAgencyFields(roleSelect.value, '.edit-agency-field');
-        
-        // Add form submit handler
-        const form = document.getElementById('editUserForm');
-        handleFormSubmit(form, 'Updating User...', 'User updated successfully!');
-    }
-    
-    function showDeleteForm(userId, username) {
-        const formHtml = `
-            <div class="form-overlay">
-                <div class="form-wrapper form-wrapper-sm">
-                    <div class="form-header form-header-danger">
-                        <h3>Confirm Deletion</h3>
-                        <button type="button" class="close-form">&times;</button>
-                    </div>
-                    <div class="text-center p-4">
-                        <i class="fas fa-trash fa-3x text-danger mb-3"></i>
-                        <p>Are you sure you want to delete user <strong>${username}</strong>?</p>
-                        <p class="text-danger">This action cannot be undone.</p>
-                        
-                        <form method="post" id="deleteUserForm">
-                            <input type="hidden" name="action" value="delete_user">
-                            <input type="hidden" name="user_id" value="${userId}">
-                            
-                            <div class="d-flex justify-content-center gap-2 mt-4">
-                                <button type="button" class="btn btn-secondary close-form">Cancel</button>
-                                <button type="submit" class="btn btn-danger">
-                                    <i class="fas fa-trash me-1"></i> Delete User
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        showForm(formHtml);
-        
-        // Handle form submission with animated row deletion
-        const form = document.getElementById('deleteUserForm');
-        handleDeleteFormSubmit(form, userId, username);
-    }
-    
-    // Form utility functions
-    function showForm(html) {
-        formContainer.innerHTML = html;
-        
-        // Setup event listeners for closing
-        formContainer.querySelectorAll('.close-form').forEach(button => {
-            button.addEventListener('click', hideForm);
-        });
-        
-        // Close on overlay click
-        const overlay = formContainer.querySelector('.form-overlay');
-        overlay.addEventListener('click', function(e) {
-            if (e.target === this) hideForm();
-        });
-        
-        // Setup password toggle functionality
-        formContainer.querySelectorAll('.password-toggle').forEach(button => {
-            button.addEventListener('click', togglePasswordVisibility);
-        });
-        
-        // Prevent scrolling on the body
-        document.body.style.overflow = 'hidden';
-        
-        // Focus on first input field
-        setTimeout(() => {
-            const firstInput = formContainer.querySelector('input:not([type="hidden"]), select');
-            if (firstInput) firstInput.focus();
-        }, 100);
-    }
-    
-    function hideForm() {
-        formContainer.innerHTML = '';
-        document.body.style.overflow = '';
-    }
-    
-    function togglePasswordVisibility() {
-        const input = this.closest('.input-group').querySelector('input');
-        const icon = this.querySelector('i');
-        
-        input.type = input.type === 'password' ? 'text' : 'password';
-        icon.className = input.type === 'password' ? 'far fa-eye' : 'far fa-eye-slash';
-    }
-    
-    function toggleAgencyFields(role, selector = '.agency-field') {
-        document.querySelectorAll(selector).forEach(field => {
-            const inputs = field.querySelectorAll('input, select');
-            const isAdmin = role === 'admin';
-            
-            field.style.display = isAdmin ? 'none' : 'block';
-            inputs.forEach(input => isAdmin 
-                ? input.removeAttribute('required') 
-                : input.setAttribute('required', '')
-            );
-        });
-    }
-    
-    function setupPasswordValidation() {
-        const passwordInput = document.getElementById('password');
-        const passwordHint = document.querySelector('.password-hint');
-        
-        if (passwordInput && passwordHint) {
-            passwordInput.addEventListener('input', function() {
-                const value = this.value;
-                
-                if (value.length > 0 && value.length < 8) {
-                    passwordHint.textContent = `Password must be at least 8 characters (${value.length}/8)`;
-                    passwordHint.className = 'form-text text-danger';
-                } else if (value.length >= 8) {
-                    passwordHint.textContent = 'Password meets minimum length requirement';
-                    passwordHint.className = 'form-text text-success';
-                } else {
-                    passwordHint.textContent = 'Password should be at least 8 characters';
-                    passwordHint.className = 'form-text';
-                }
-            });
-        }
-    }
-    
-    // Form submission handlers
-    function handleFormSubmit(form, loadingText, successMessage, passwordInput = null, passwordHint = null) {
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Password validation if needed
-            if (passwordInput && passwordHint && passwordInput.required && passwordInput.value.length < 8) {
-                passwordHint.textContent = 'Password must be at least 8 characters';
-                passwordHint.className = 'form-text text-danger';
-                passwordInput.focus();
-                return;
-            }
-            
-            // Show loading state
-            const submitBtn = this.querySelector('button[type="submit"]');
-            const originalBtnText = submitBtn.innerHTML;
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i> ${loadingText}`;
-            
-            // Submit form via AJAX
-            const formData = new FormData(this);
-            
-            // Add a flag to indicate this is an AJAX request
-            formData.append('ajax_request', '1');
-            
-            fetch(window.location.href, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())  // Expect JSON response instead of HTML
-            .then(data => {
-                if (data.error) {
-                    // Show error message
-                    window.ToastManager().show('Error', data.error, 'danger');
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalBtnText;
-                } else if (data.success) {
-                    // Success case
-                    hideForm();
-                    window.ToastManager().show('Success', successMessage, 'success');
-                    window.UserTableManager().refreshTable();
-                }
-            })
-            .catch(error => {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalBtnText;
-                window.ToastManager().show('Error', 'An error occurred. Please try again.', 'danger');
-                console.error('Form submission error:', error);
+    if (editUserBtns.length) {
+        editUserBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const userId = this.getAttribute('data-user-id');
+                showEditUserForm(userId);
             });
         });
     }
     
-    function handleDeleteFormSubmit(form, userId, username) {
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const submitBtn = this.querySelector('button[type="submit"]');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Deleting...';
-            
-            const formData = new FormData(this);
-            
-            // Add a flag to indicate this is an AJAX request
-            formData.append('ajax_request', '1');
-            
-            fetch(window.location.href, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())  // Expect JSON response instead of HTML
-            .then(data => {
-                if (data.error) {
-                    // Show error message
-                    window.ToastManager().show('Error', data.error, 'danger');
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="fas fa-trash me-1"></i> Delete User';
-                } else if (data.success) {
-                    // Success case
-                    hideForm();
-                    window.ToastManager().show('Success', `User "${username}" deleted successfully.`, 'success');
-                    
-                    // Animate deletion effect and refresh table
-                    window.UserTableManager().animateRowDeletion(userId);
-                }
-            })
-            .catch(error => {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-trash me-1"></i> Delete User';
-                window.ToastManager().show('Error', 'Failed to delete user. Please try again.', 'danger');
-                console.error('Delete form submission error:', error);
+    if (deleteUserBtns.length) {
+        deleteUserBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const userId = this.getAttribute('data-user-id');
+                const userName = this.getAttribute('data-user-name');
+                showDeleteConfirmation(userId, userName);
             });
         });
     }
     
-    // Data utility functions
-    function getSectorsData() {
-        // Try to get sectors from global variable first
-        if (window.sectorsData && Array.isArray(window.sectorsData) && window.sectorsData.length > 0) {
-            return window.sectorsData.map(sector => ({
-                id: sector.sector_id,
-                name: sector.sector_name
-            }));
-        }
-        
-        // Otherwise use the fallback sectors
-        return getFallbackSectors();
-    }
+    // Initialize form validations
+    userForms.forEach(form => {
+        form.addEventListener('submit', validateUserForm);
+    });
     
-    function getFallbackSectors() {
-        return [
-            { id: '1', name: 'Forestry' },
-            { id: '2', name: 'Land' },
-            { id: '3', name: 'Environment' },
-            { id: '4', name: 'Natural Resources' },
-            { id: '5', name: 'Urban Development' }
-        ];
-    }
+    // Initialize password toggles
+    const passwordToggles = document.querySelectorAll('.toggle-password');
+    passwordToggles.forEach(toggle => {
+        toggle.addEventListener('click', togglePasswordVisibility);
+    });
     
-    // Return public API
-    return {
-        showAddUserForm,
-        showEditUserForm,
-        showDeleteForm,
-        hideForm
-    };
+    // Initialize role change handlers
+    const roleSelects = document.querySelectorAll('select[name="role"]');
+    roleSelects.forEach(select => {
+        select.addEventListener('change', handleRoleChange);
+    });
 }
 
-// Make function globally available (with safety check for multiple loads)
-if (typeof window.UserFormManager === 'undefined') {
-    window.UserFormManager = UserFormManager;
+/**
+ * Show the add user form
+ */
+function showAddUserForm() {
+    const addUserModal = document.getElementById('addUserModal');
+    if (!addUserModal) return;
+    
+    // Reset form
+    const form = addUserModal.querySelector('form');
+    if (form) form.reset();
+    
+    // Show the modal
+    addUserModal.classList.add('modal-active');
+    
+    // Focus on first input field
+    setTimeout(() => {
+        const firstInput = addUserModal.querySelector('input:not([type="hidden"])');
+        if (firstInput) firstInput.focus();
+    }, 300);
 }
+
+/**
+ * Show the edit user form
+ * @param {string} userId - The ID of the user to edit
+ */
+function showEditUserForm(userId) {
+    // Load user data via AJAX
+    fetch(`${APP_URL}/admin/get_user.php?id=${userId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                populateEditForm(data.user);
+                
+                // Show the modal
+                const editUserModal = document.getElementById('editUserModal');
+                if (editUserModal) editUserModal.classList.add('modal-active');
+            } else {
+                showToast('Error', data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error', 'Failed to load user data', 'danger');
+        });
+}
+
+/**
+ * Populate the edit user form with user data
+ * @param {object} user - The user data to populate the form with
+ */
+function populateEditForm(user) {
+    const form = document.getElementById('editUserForm');
+    if (!form) return;
+    
+    // Set user ID
+    const userIdInput = form.querySelector('input[name="user_id"]');
+    if (userIdInput) userIdInput.value = user.user_id;
+    
+    // Set user data
+    const inputs = {
+        'username': user.username,
+        'email': user.email,
+        'first_name': user.first_name,
+        'last_name': user.last_name,
+        'agency_name': user.agency_name || '',
+        'phone': user.phone || '',
+        'address': user.address || '',
+        'active': user.active
+    };
+    
+    for (const field in inputs) {
+        const input = form.querySelector(`[name="${field}"]`);
+        if (input) {
+            if (input.type === 'checkbox') {
+                input.checked = inputs[field] === '1' || inputs[field] === true;
+            } else {
+                input.value = inputs[field];
+            }
+        }
+    }
+    
+    // Set role
+    const roleSelect = form.querySelector('select[name="role"]');
+    if (roleSelect) {
+        roleSelect.value = user.role;
+        handleRoleChange.call(roleSelect); // Update form based on role
+    }
+    
+    // Set sector
+    const sectorSelect = form.querySelector('select[name="sector_id"]');
+    if (sectorSelect && user.sector_id) {
+        sectorSelect.value = user.sector_id;
+    }
+}
+
+/**
+ * Show delete confirmation dialog
+ * @param {string} userId - The ID of the user to delete
+ * @param {string} userName - The name of the user to delete
+ */
+function showDeleteConfirmation(userId, userName) {
+    const modal = createModal({
+        title: 'Confirm Deletion',
+        content: `<p>Are you sure you want to delete the user "${userName}"?</p>
+                  <p>This action cannot be undone.</p>`,
+        isDanger: true,
+        buttons: [
+            {
+                text: 'Cancel',
+                type: 'secondary'
+            },
+            {
+                text: 'Delete User',
+                type: 'danger',
+                handler: () => {
+                    deleteUser(userId);
+                    modal.hide();
+                }
+            }
+        ]
+    });
+    
+    modal.show();
+}
+
+/**
+ * Delete a user
+ * @param {string} userId - The ID of the user to delete
+ */
+function deleteUser(userId) {
+    const formData = new FormData();
+    formData.append('user_id', userId);
+    formData.append('action', 'delete');
+    
+    fetch(`${APP_URL}/admin/process_user.php`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Success', data.message, 'success');
+            
+            // Remove the user row from the table
+            const userRow = document.getElementById(`user-row-${userId}`);
+            if (userRow) {
+                userRow.classList.add('fade-out');
+                setTimeout(() => {
+                    userRow.remove();
+                    
+                    // Update user count
+                    const userCountElement = document.getElementById('userCount');
+                    if (userCountElement) {
+                        const currentCount = parseInt(userCountElement.textContent, 10);
+                        userCountElement.textContent = currentCount - 1;
+                    }
+                }, 500);
+            }
+        } else {
+            showToast('Error', data.message, 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Error', 'Failed to delete user', 'danger');
+    });
+}
+
+/**
+ * Close a modal
+ * @param {Event} event - The click event
+ */
+function closeModal(event) {
+    const modal = event.target.closest('.user-modal');
+    if (modal) {
+        modal.classList.remove('modal-active');
+    }
+}
+
+/**
+ * Toggle password visibility
+ */
+function togglePasswordVisibility() {
+    const passwordField = this.previousElementSibling;
+    if (passwordField) {
+        const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordField.setAttribute('type', type);
+        
+        // Change icon
+        this.innerHTML = type === 'password' ? '<i class="far fa-eye"></i>' : '<i class="far fa-eye-slash"></i>';
+    }
+}
+
+/**
+ * Handle role change to show/hide sector selection
+ */
+function handleRoleChange() {
+    const sectorField = this.closest('form').querySelector('.sector-field');
+    const agencyField = this.closest('form').querySelector('.agency-field');
+    
+    if (sectorField) {
+        sectorField.style.display = this.value === 'agency' ? 'block' : 'none';
+    }
+    
+    if (agencyField) {
+        agencyField.style.display = this.value === 'agency' ? 'block' : 'none';
+    }
+}
+
+/**
+ * Validate the user form before submission
+ * @param {Event} e - The form submit event
+ */
+function validateUserForm(e) {
+    let isValid = true;
+    const form = e.target;
+    
+    // Required fields
+    const requiredFields = ['username', 'email'];
+    
+    // Role-specific required fields
+    const role = form.querySelector('[name="role"]').value;
+    if (role === 'agency') {
+        requiredFields.push('agency_name', 'sector_id');
+    }
+    
+    // Check if password is required for new users
+    const userIdField = form.querySelector('[name="user_id"]');
+    if (!userIdField || !userIdField.value) {
+        requiredFields.push('password');
+    }
+    
+    // Validate each required field
+    requiredFields.forEach(fieldName => {
+        const field = form.querySelector(`[name="${fieldName}"]`);
+        if (field && !field.value.trim()) {
+            isValid = false;
+            field.classList.add('is-invalid');
+            
+            // Add error message if it doesn't exist
+            if (!field.nextElementSibling || !field.nextElementSibling.classList.contains('invalid-feedback')) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'invalid-feedback';
+                errorDiv.textContent = 'This field is required';
+                field.insertAdjacentElement('afterend', errorDiv);
+            }
+        } else if (field) {
+            field.classList.remove('is-invalid');
+        }
+    });
+    
+    // Validate email format
+    const emailField = form.querySelector('[name="email"]');
+    if (emailField && emailField.value.trim()) {
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailPattern.test(emailField.value.trim())) {
+            isValid = false;
+            emailField.classList.add('is-invalid');
+            
+            // Update or add error message
+            let errorDiv = emailField.nextElementSibling;
+            if (!errorDiv || !errorDiv.classList.contains('invalid-feedback')) {
+                errorDiv = document.createElement('div');
+                errorDiv.className = 'invalid-feedback';
+                emailField.insertAdjacentElement('afterend', errorDiv);
+            }
+            errorDiv.textContent = 'Please enter a valid email address';
+        }
+    }
+    
+    // Password validation for new users or password changes
+    const passwordField = form.querySelector('[name="password"]');
+    if (passwordField && passwordField.value.trim()) {
+        const confirmField = form.querySelector('[name="confirm_password"]');
+        
+        // Check password length
+        if (passwordField.value.length < 8) {
+            isValid = false;
+            passwordField.classList.add('is-invalid');
+            
+            // Add error message
+            let errorDiv = passwordField.nextElementSibling;
+            if (!errorDiv || !errorDiv.classList.contains('invalid-feedback')) {
+                errorDiv = document.createElement('div');
+                errorDiv.className = 'invalid-feedback';
+                passwordField.insertAdjacentElement('afterend', errorDiv);
+            }
+            errorDiv.textContent = 'Password must be at least 8 characters';
+        }
+        
+        // Check if passwords match
+        if (confirmField && passwordField.value !== confirmField.value) {
+            isValid = false;
+            confirmField.classList.add('is-invalid');
+            
+            // Add error message
+            let errorDiv = confirmField.nextElementSibling;
+            if (!errorDiv || !errorDiv.classList.contains('invalid-feedback')) {
+                errorDiv = document.createElement('div');
+                errorDiv.className = 'invalid-feedback';
+                confirmField.insertAdjacentElement('afterend', errorDiv);
+            }
+            errorDiv.textContent = 'Passwords do not match';
+        }
+    }
+    
+    if (!isValid) {
+        e.preventDefault();
+    } else {
+        // Disable submit button to prevent double submission
+        const submitBtn = form.querySelector('[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+        }
+    }
+    
+    return isValid;
+}
+
+// Set up close buttons
+document.addEventListener('DOMContentLoaded', function() {
+    const closeButtons = document.querySelectorAll('.close-modal, .cancel-btn');
+    closeButtons.forEach(button => {
+        button.addEventListener('click', closeModal);
+    });
+});

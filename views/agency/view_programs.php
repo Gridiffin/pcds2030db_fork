@@ -51,17 +51,20 @@ require_once '../layouts/header.php';
 
 // Include agency navigation
 require_once '../layouts/agency_nav.php';
-?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h1 class="h2 mb-0">Manage Programs</h1>
-        <p class="text-muted">View, update, and create programs for your agency</p>
-    </div>
-    <a href="create_program.php" class="btn btn-primary">
-        <i class="fas fa-plus-circle me-1"></i> Create New Program
-    </a>
-</div>
+// Set dashboard header variables and include component
+$title = "Manage Programs";
+$subtitle = "View, update, and create programs for your agency";
+$actions = [
+    [
+        'url' => 'create_program.php',
+        'class' => 'btn-primary',
+        'icon' => 'fas fa-plus-circle',
+        'text' => 'Create New Program'
+    ]
+];
+require_once '../../includes/dashboard_header.php';
+?>
 
 <?php if (!empty($message)): ?>
     <div class="alert alert-<?php echo $messageType; ?> alert-dismissible fade show" role="alert">
@@ -73,16 +76,20 @@ require_once '../layouts/agency_nav.php';
     </div>
 <?php endif; ?>
 
-<!-- Filter Controls -->
+<!-- Filters Section -->
 <div class="card shadow-sm mb-4">
+    <div class="card-header">
+        <h5 class="card-title">Program Filters</h5>
+    </div>
     <div class="card-body">
         <div class="row g-3">
             <div class="col-md-6">
-                <label for="programSearch" class="form-label">Search Programs</label>
-                <input type="text" class="form-control" id="programSearch" placeholder="Search by program name...">
+                <div class="input-group">
+                    <span class="input-group-text bg-light"><i class="fas fa-search"></i></span>
+                    <input type="text" class="form-control" id="programSearch" placeholder="Search programs...">
+                </div>
             </div>
             <div class="col-md-3">
-                <label for="statusFilter" class="form-label">Filter by Status</label>
                 <select class="form-select" id="statusFilter">
                     <option value="">All Statuses</option>
                     <option value="on-track">On Track</option>
@@ -92,11 +99,10 @@ require_once '../layouts/agency_nav.php';
                 </select>
             </div>
             <div class="col-md-3">
-                <label for="programTypeFilter" class="form-label">Program Type</label>
                 <select class="form-select" id="programTypeFilter">
-                    <option value="all">All Programs</option>
+                    <option value="">All Programs</option>
                     <option value="assigned">Assigned Programs</option>
-                    <option value="created">Agency Created</option>
+                    <option value="created">My Created Programs</option>
                 </select>
             </div>
         </div>

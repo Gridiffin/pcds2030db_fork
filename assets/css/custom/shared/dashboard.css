@@ -1,0 +1,813 @@
+/**
+ * Shared Dashboard Styles
+ * Common styling for admin and agency dashboards
+ */
+
+body {
+    background-color: #f5f7fa; /* Subtle light gray background instead of pure white */
+}
+
+/* Page Header Styling */
+.page-header {
+    padding: 1.5rem 0;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+    background-color: var(--primary-color);
+    color: #ffffff;
+}
+
+.page-title h3 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 0.25rem;
+}
+
+.text-subtitle {
+    font-size: 0.9rem;
+    margin-bottom: 0;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Section Styling */
+.section {
+    padding-bottom: 2rem;
+}
+
+/* Card Enhancements */
+.card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08); /* Stronger shadow for better visibility */
+    border: none;
+    border-radius: 0.75rem; /* Slightly larger border radius */
+    transition: all 0.2s ease;
+    overflow: hidden; /* Ensure content doesn't overflow the rounded corners */
+    background: #ffffff;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05); /* Subtle bottom border */
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12); /* Deeper shadow on hover */
+}
+
+.card-body {
+    display: flex;
+    align-items: center;
+    padding: 1.5rem;
+    background-color: #ffffff;
+}
+
+.card-body .fa-calendar-check {
+    color: var(--success-color);
+    margin-right: 1rem;
+}
+
+.card-header {
+    background-color: var(--primary-color) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1.25rem 1.5rem; /* More generous padding */
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    color: #ffffff !important; /* Explicitly set text color for contrast */
+}
+
+.card-title {
+    font-weight: 600;
+    margin-bottom: 0;
+    color: #ffffff !important; /* Change from primary to dark for better contrast */
+    font-size: 1.1rem;
+}
+
+/* Fix text visibility in card headers */
+.card-header h6.text-primary,
+.card-header h6.font-weight-bold.text-primary,
+.card-header .m-0.font-weight-bold.text-primary {
+    color: #ffffff !important; /* Force white text for contrast against blue background */
+}
+
+/* Additional card header text fixes */
+.card-header .text-primary {
+    color: #ffffff !important;
+}
+
+/* Status Styles - shared between dashboards */
+.status-pill {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 30px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+    text-align: center;
+}
+
+.status-pill.large {
+    padding: 0.75rem 1.5rem;
+    font-size: 1.1rem;
+    cursor: default;
+}
+
+/* Ensure proper contrast for all badges used in dashboards */
+.status-pill.on-track, .badge.bg-success {
+    background-color: rgba(50, 168, 82, 0.1);
+    color: var(--secondary-color);
+    border-color: rgba(50, 168, 82, 0.2);
+}
+
+/* Override for actual badge elements to ensure they have white text on colored backgrounds */
+span.badge.bg-success, div.badge.bg-success {
+    background-color: var(--secondary-color) !important;
+    color: white !important;
+}
+
+.period-selector-card .badge.bg-success {
+    background-color: var(--secondary-color) !important; /* Use stronger green */
+    color: white !important; /* Force white text for contrast */
+}
+
+.period-selector-card .badge.bg-secondary {
+    background-color: #6c757d !important; /* Ensure standard secondary color */
+    color: white !important; /* Force white text for contrast */
+}
+
+.status-pill.delayed, .badge.bg-warning {
+    background-color: rgba(255, 193, 7, 0.1);
+    color: #ffc107;
+    border-color: rgba(255, 193, 7, 0.2);
+}
+
+span.badge.bg-warning, div.badge.bg-warning {
+    background-color: var(--warning-color) !important;
+    color: #212529 !important;
+}
+
+.status-pill.completed, .badge.bg-info {
+    background-color: rgba(23, 162, 184, 0.1);
+    color: #17a2b8;
+    border-color: rgba(23, 162, 184, 0.2);
+}
+
+span.badge.bg-info, div.badge.bg-info {
+    background-color: var(--info-color) !important;
+    color: white !important;
+}
+
+.status-pill.not-started, .badge.bg-secondary {
+    background-color: rgba(108, 117, 125, 0.1);
+    color: #6c757d;
+    border-color: rgba(108, 117, 125, 0.2);
+}
+
+span.badge.bg-secondary, div.badge.bg-secondary {
+    background-color: #6c757d !important;
+    color: white !important;
+}
+
+.status-pill:hover:not(.large),
+.status-pill.active {
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.status-pill.on-track:hover:not(.large),
+.status-pill.on-track.active {
+    background-color: rgba(50, 168, 82, 0.2);
+    border-color: var(--secondary-color);
+}
+
+.status-pill.delayed:hover:not(.large),
+.status-pill.delayed.active {
+    background-color: rgba(255, 193, 7, 0.2);
+    border-color: #ffc107;
+}
+
+.status-pill.completed:hover:not(.large),
+.status-pill.completed.active {
+    background-color: rgba(23, 162, 184, 0.2);
+    border-color: #17a2b8;
+}
+
+.status-pill.not-started:hover:not(.large),
+.status-pill.not-started.active {
+    background-color: rgba(108, 117, 125, 0.2);
+    border-color: #6c757d;
+}
+
+/* Button Enhancements */
+.btn-light-primary {
+    background-color: rgba(var(--primary-rgb), 0.1);
+    color: var(--primary-color);
+    border: none;
+}
+
+.btn-light-primary:hover {
+    background-color: rgba(var(--primary-rgb), 0.2);
+    color: var(--primary-color);
+}
+
+.btn-light-success {
+    background-color: rgba(50, 168, 82, 0.1);
+    color: var(--secondary-color);
+    border: none;
+}
+
+.btn-light-success:hover {
+    background-color: rgba(50, 168, 82, 0.2);
+    color: var(--secondary-color);
+}
+
+/* Status summary cards */
+.status-card {
+    border-radius: 0.75rem;
+    border-left: none; /* Remove the left border */
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08); /* Use shadow instead */
+    padding: 1.5rem;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+
+.status-card:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 5px; /* Left border indicator */
+    border-radius: 3px 0 0 3px;
+}
+
+.status-card.primary:before {
+    background-color: var(--primary-color);
+}
+
+.status-card.success:before {
+    background-color: var(--secondary-color);
+}
+
+.status-card.warning:before {
+    background-color: var(--warning-color);
+}
+
+.status-card.info:before {
+    background-color: var(--info-color);
+}
+
+.status-card .card-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #6c757d;
+}
+
+.status-card .status-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.status-card .status-icon {
+    color: rgba(0, 0, 0, 0.15);
+    font-size: 1.75rem;
+}
+
+/* Chart container */
+.chart-container {
+    position: relative;
+    height: 250px;
+    width: 100%;
+}
+
+/* Table customization */
+.table-custom {
+    margin-bottom: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.table-custom th {
+    background-color: rgba(var(--primary-rgb), 0.05);
+    font-weight: 600;
+    color: var(--dark-color);
+    border-bottom: 2px solid rgba(var(--primary-rgb), 0.2);
+    padding: 1rem;
+}
+
+.table-custom tbody tr {
+    transition: background-color 0.2s;
+}
+
+.table-custom tbody tr:nth-of-type(odd) {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.table-custom tbody tr:hover {
+    background-color: rgba(var(--primary-rgb), 0.05);
+}
+
+.table-custom td {
+    vertical-align: middle;
+    padding: 0.85rem 1rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* Status dots */
+.status-dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+/* Period Selector Card Styling */
+.period-selector-card {
+    border-left: 5px solid var(--primary-color);
+    transition: all 0.2s ease;
+    background: white;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+    position: relative;
+}
+
+.period-selector-card:hover {
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12) !important;
+}
+
+.period-selector-card .card-body {
+    background-color: white;
+}
+
+/* Loading state */
+.period-selector-card.loading::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(to right, 
+        var(--primary-color) 0%, 
+        var(--primary-color) 50%, 
+        transparent 50%, 
+        transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: loading-stripe 1.5s linear infinite;
+}
+
+/* Updated state - flash effect */
+.period-selector-card.updated {
+    animation: flash-success 1s ease-out;
+}
+
+@keyframes loading-stripe {
+    0% { background-position: 100% 0; }
+    100% { background-position: 0 0; }
+}
+
+@keyframes flash-success {
+    0%, 100% { background-color: #f8f9fa; }
+    30% { background-color: rgba(var(--secondary-rgb), 0.2); }
+}
+
+.selector-spinner {
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+}
+
+#periodSelector {
+    border-radius: 20px;
+    border: 1px solid #dee2e6;
+    padding-left: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+#periodSelector:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(var(--primary-rgb), 0.25);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .page-header {
+        padding: 1rem 0;
+        margin-bottom: 1rem;
+    }
+    
+    .page-title h3 {
+        font-size: 1.5rem;
+    }
+    
+    .submission-card {
+        margin-bottom: 1rem;
+    }
+    
+    .status-pills {
+        flex-direction: column;
+    }
+    
+    .status-pill {
+        width: 100%;
+        text-align: center;
+        margin-bottom: 0.5rem;
+    }
+    
+    .period-selector-card .row {
+        flex-direction: column;
+    }
+    
+    .period-selector-card .col-md-6:last-child {
+        margin-top: 1rem;
+    }
+}
+
+/* Summary Cards - More vibrant with gentle gradient backgrounds */
+.border-left-primary {
+    position: relative;
+    overflow: hidden;
+    border-left: none !important; /* Remove standard border-left */
+}
+
+.border-left-primary:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 5px;
+    background-color: var(--primary-color);
+}
+
+.border-left-success:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 5px;
+    background-color: var(--secondary-color);
+}
+
+.border-left-warning:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 5px;
+    background-color: var(--warning-color);
+}
+
+.border-left-info:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 5px;
+    background-color: var(--info-color);
+}
+
+/* Center-align text in dashboard summary cards */
+.border-left-primary .card-body,
+.border-left-success .card-body,
+.border-left-warning .card-body,
+.border-left-info .card-body {
+    text-align: center;
+}
+
+.border-left-primary .card-body .row,
+.border-left-success .card-body .row,
+.border-left-warning .card-body .row,
+.border-left-info .card-body .row {
+    justify-content: center;
+}
+
+.border-left-primary .card-body .col-auto,
+.border-left-success .card-body .col-auto,
+.border-left-warning .card-body .col-auto,
+.border-left-info .card-body .col-auto {
+    margin-bottom: 0.5rem;
+}
+
+/* Adjust icon positioning for centered layout */
+.border-left-primary .card-body .text-gray-300,
+.border-left-success .card-body .text-gray-300,
+.border-left-warning .card-body .text-gray-300,
+.border-left-info .card-body .text-gray-300 {
+    display: block;
+    margin: 0 auto 0.5rem auto;
+}
+
+/* Improved Section Headers */
+.section-header {
+    margin-bottom: 1.5rem;
+    position: relative;
+    padding-bottom: 0.75rem;
+}
+
+.section-header:after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 50px;
+    height: 3px;
+    background-color: var(--primary-color);
+    border-radius: 3px;
+}
+
+.section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--dark-color);
+    margin-bottom: 0.25rem;
+}
+
+/* Add a specific style for card headers with dark backgrounds */
+.card-header.bg-primary, 
+.card-header.bg-secondary,
+.card-header.bg-dark {
+    color: #ffffff !important; /* Ensure text is white on dark backgrounds */
+}
+
+/* Ensure proper contrast for all card variations */
+.card.border-left-primary .card-header,
+.card.border-left-success .card-header,
+.card.border-left-info .card-header,
+.card.border-left-warning .card-header {
+    color: var(--dark-color);
+}
+
+/* Links in card headers need to be white */
+.card-header a {
+    color: #ffffff !important;
+}
+
+.card-header a:hover {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Icons in card headers */
+.card-header i {
+    color: #ffffff;
+}
+
+/* Dashboard card title text color fix */
+.card-body .text-xs.font-weight-bold.text-primary,
+.card-body .text-xs.font-weight-bold.text-success,
+.card-body .text-xs.font-weight-bold.text-warning,
+.card-body .text-xs.font-weight-bold.text-info {
+    color: inherit !important;
+}
+
+/* Center and enhance dashboard card icons */
+.border-left-primary .card-body .col-auto,
+.border-left-success .card-body .col-auto,
+.border-left-warning .card-body .col-auto,
+.border-left-info .card-body .col-auto {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+.border-left-primary .card-body .col-auto i,
+.border-left-success .card-body .col-auto i,
+.border-left-warning .card-body .col-auto i,
+.border-left-info .card-body .col-auto i {
+    font-size: 2.5rem;
+    opacity: 0.7;
+    margin-bottom: 0.5rem;
+}
+
+.border-left-primary .card-body .col-auto i {
+    color: var(--primary-color);
+}
+
+.border-left-success .card-body .col-auto i {
+    color: var(--secondary-color);
+}
+
+.border-left-warning .card-body .col-auto i {
+    color: var(--warning-color);
+}
+
+.border-left-info .card-body .col-auto i {
+    color: var(--info-color);
+}
+
+/* Adjust the order of elements in dashboard cards for better vertical alignment */
+.border-left-primary .card-body .row,
+.border-left-success .card-body .row,
+.border-left-warning .card-body .row,
+.border-left-info .card-body .row {
+    flex-direction: column;
+}
+
+.border-left-primary .card-body .col-mr-2,
+.border-left-success .card-body .col-mr-2, 
+.border-left-warning .card-body .col-mr-2,
+.border-left-info .card-body .col-mr-2 {
+    text-align: center;
+}
+
+/* Redesigned Dashboard Stats Cards */
+.stat-card {
+    border-radius: 0.75rem;
+    border: none;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+    background-color: white;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 5px;
+}
+
+.stat-card.primary::before {
+    background-color: var(--primary-color);
+}
+
+.stat-card.success::before {
+    background-color: var(--secondary-color);
+}
+
+.stat-card.warning::before {
+    background-color: var(--warning-color);
+}
+
+.stat-card.info::before {
+    background-color: var(--info-color);
+}
+
+/* New card layout with proper spacing */
+.stat-card .card-body {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 200px;
+}
+
+.stat-card-header {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.icon-container {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    margin-bottom: 0.5rem;
+    background-color: rgba(0, 0, 0, 0.03);
+    position: relative; /* Add position relative */
+    overflow: hidden; /* Prevent icon from overflowing */
+}
+
+/* Override absolute positioning for stat icons */
+.stat-card .stat-icon {
+    position: static !important; /* Override any absolute positioning */
+    font-size: 2rem;
+    margin: 0;
+    bottom: auto;
+    right: auto;
+    opacity: 0.8;
+    color: #555;
+}
+
+/* Remove any absolute positioning for stat icons */
+.stat-icon {
+    /* Reset any absolute positioning that might be inherited */
+    position: static !important;
+}
+
+.stat-card-content {
+    width: 100%;
+    text-align: center;
+    z-index: 2;
+}
+
+.stat-card .stat-icon {
+    font-size: 2rem;
+    color: #555;
+}
+
+.stat-card.primary .stat-icon {
+    color: var(--primary-color);
+}
+
+.stat-card.success .stat-icon {
+    color: var(--secondary-color);
+}
+
+.stat-card.warning .stat-icon {
+    color: var(--warning-color);
+}
+
+.stat-card.info .stat-icon {
+    color: var(--info-color);
+}
+
+.stat-card .stat-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.75rem;
+    color: #6c757d;
+}
+
+.stat-card .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    color: #333333;
+}
+
+.stat-card .stat-subtitle {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+
+/* Ensure consistent sizing for stat cards */
+.stat-card .card-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    text-align: center;
+    min-height: 200px; /* Set a fixed minimum height for all stat cards */
+    padding: 1.5rem;
+}
+
+/* Improved stat card icon positioning */
+.stat-card .stat-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    opacity: 0.8;
+    color: #333333;
+    flex-shrink: 0; /* Prevent icon from shrinking */
+}
+
+/* Consistent sizing for stat values */
+.stat-card .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0.5rem 0;
+    color: #333333;
+    line-height: 1.2;
+}
+
+/* Ensure subtitle has consistent spacing */
+.stat-card .stat-subtitle {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-top: 0.75rem;
+    width: 100%; /* Ensure full width for progress bars */
+}
+
+/* Layout structure for stat card content */
+.stat-card .card-body > * {
+    width: 100%; /* Full width for all direct children */
+}
+
+/* Progress bar specific adjustments */
+.stat-card .progress {
+    margin-top: 0.5rem;
+    width: 100%;
+}
+
+/* Remove old card styles that conflict */
+.border-left-primary .card-body .row,
+.border-left-success .card-body .row,
+.border-left-warning .card-body .row,
+.border-left-info .card-body .row {
+    flex-direction: row;
+}

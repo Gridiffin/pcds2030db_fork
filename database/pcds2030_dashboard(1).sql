@@ -23,6 +23,20 @@ SET time_zone = "+00:00";
 
 -- --------------------------------------------------------
 
+-- PCDS 2030 Dashboard Database Schema
+-- --------------------------------------------------------
+
+-- This database structure supports the revised file organization which includes:
+-- - Shared CSS styling in assets/css/custom/shared directory
+-- - Shared JavaScript utilities in assets/js/utilities directory
+-- - Clear separation between agency and admin functionality
+
+-- The updated schema includes new columns for program management:
+-- - programs table: is_assigned, created_by  
+-- - program_submissions table: target_date, status_date, updated_at
+
+-- --------------------------------------------------------
+
 --
 -- Table structure for table `programs`
 --

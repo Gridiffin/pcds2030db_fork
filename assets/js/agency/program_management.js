@@ -34,11 +34,6 @@ function stopLoadingSpinner() {
     
     // Reset cursor that might be stuck in loading state
     document.body.style.cursor = 'default';
-    
-    // Fix for Firefox download notification
-    setTimeout(function() {
-        if (window.stop) window.stop();
-    }, 500);
 }
 
 /**
@@ -143,23 +138,28 @@ function initProgramCreation() {
  * Initialize program submission functionality
  */
 function initProgramSubmission() {
-    // Initialize status pill selection
-    const statusPills = document.querySelectorAll('.status-pill');
-    const statusInput = document.getElementById('status');
-    
-    if (statusPills.length && statusInput) {
-        statusPills.forEach(pill => {
-            pill.addEventListener('click', function() {
-                // Remove active class from all pills
-                statusPills.forEach(p => p.classList.remove('active'));
-                
-                // Add active class to clicked pill
-                this.classList.add('active');
-                
-                // Update hidden input
-                statusInput.value = this.getAttribute('data-status');
+    // Use shared status pill selection from status_utils.js
+    if (typeof initStatusPills === 'function') {
+        initStatusPills();
+    } else {
+        // Fallback implementation
+        const statusPills = document.querySelectorAll('.status-pill');
+        const statusInput = document.getElementById('status');
+        
+        if (statusPills.length && statusInput) {
+            statusPills.forEach(pill => {
+                pill.addEventListener('click', function() {
+                    // Remove active class from all pills
+                    statusPills.forEach(p => p.classList.remove('active'));
+                    
+                    // Add active class to clicked pill
+                    this.classList.add('active');
+                    
+                    // Update hidden input
+                    statusInput.value = this.getAttribute('data-status');
+                });
             });
-        });
+        }
     }
     
     // Handle program selection
@@ -250,18 +250,16 @@ function showValidationError(fieldId, message) {
     const field = document.getElementById(fieldId);
     if (!field) return;
     
-    // Add error class
     field.classList.add('is-invalid');
     
-    // Create or update error message
-    let errorElement = field.nextElementSibling;
-    if (!errorElement || !errorElement.classList.contains('invalid-feedback')) {
-        errorElement = document.createElement('div');
-        errorElement.className = 'invalid-feedback';
-        field.parentNode.insertBefore(errorElement, field.nextSibling);
+    // Add error message if it doesn't exist
+    if (!document.getElementById(`${fieldId}-error`)) {
+        const errorDiv = document.createElement('div');
+        errorDiv.id = `${fieldId}-error`;
+        errorDiv.className = 'invalid-feedback';
+        errorDiv.textContent = message;
+        field.parentNode.appendChild(errorDiv);
     }
-    
-    errorElement.textContent = message;
 }
 
 /**
@@ -273,8 +271,7 @@ function clearValidationError(fieldId) {
     
     field.classList.remove('is-invalid');
     
-    const errorElement = field.nextElementSibling;
-    if (errorElement && errorElement.classList.contains('invalid-feedback')) {
-        errorElement.textContent = '';
-    }
+    // Remove error message if it exists
+    const errorDiv = document.getElementById(`${fieldId}-error`);
+    if (errorDiv) errorDiv.remove();
 }

@@ -44,3 +44,66 @@ function formatStatusName(status) {
         .map(word => word.charAt(0).toUpperCase() + word.slice(1))
         .join(' ');
 }
+
+/**
+ * Initialize status pill selection behavior
+ * @param {string} containerId - ID of container with status pills (optional)
+ */
+function initStatusPills(containerId = null) {
+    const container = containerId ? document.getElementById(containerId) : document;
+    if (!container) return;
+    
+    const statusPills = container.querySelectorAll('.status-pill');
+    const statusInput = container.querySelector('input[name="status"]') || document.getElementById('status');
+    
+    if (!statusPills.length || !statusInput) return;
+    
+    statusPills.forEach(pill => {
+        pill.addEventListener('click', function() {
+            // Ignore if this is a read-only pill (large)
+            if (this.classList.contains('large')) return;
+            
+            // Remove active class from all pills
+            statusPills.forEach(p => p.classList.remove('active'));
+            
+            // Add active class to clicked pill
+            this.classList.add('active');
+            
+            // Update hidden input value
+            statusInput.value = this.getAttribute('data-status');
+            
+            // Trigger a custom event that other components can listen for
+            const event = new CustomEvent('statusChanged', {
+                detail: { status: statusInput.value }
+            });
+            document.dispatchEvent(event);
+            
+            // Validate related fields if needed (e.g., date validation)
+            if (typeof validateDates === 'function') {
+                validateDates();
+            }
+        });
+    });
+}
+
+/**
+ * Create a status badge element
+ * @param {string} status - The status value
+ * @param {boolean} usePill - Whether to use pill style (default: false)
+ * @return {HTMLElement} The status badge element
+ */
+function createStatusBadge(status, usePill = false) {
+    const statusClass = getStatusClass(status);
+    const statusText = formatStatusName(status);
+    
+    const badge = document.createElement('span');
+    badge.className = usePill ? `badge rounded-pill ${statusClass}` : `badge ${statusClass}`;
+    badge.textContent = statusText;
+    
+    return badge;
+}
+
+// Initialize status pills when the DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    initStatusPills();
+});

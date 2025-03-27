@@ -3,20 +3,12 @@
 <!-- Footer with reduced height -->
 <footer class="footer py-2 bg-white border-top">
     <div class="container-fluid px-4">
-        <div class="row align-items-center">
-            <div class="col-md-4">
-                <div class="d-flex align-items-center">
-                    <img src="<?php echo APP_URL; ?>/assets/images/logo.png" alt="PCDS Logo" height="24" class="me-2 d-none d-md-block">
-                </div>
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="text-muted small">
+                &copy; <?php echo date('Y'); ?> <?php echo APP_NAME; ?>
             </div>
-            <div class="col-md-4 text-center">
-                <span>&copy; <?php echo date('Y'); ?> <?php echo APP_NAME; ?></span>
-            </div>
-            <div class="col-md-4 text-md-end">
-                <div class="d-flex justify-content-md-end align-items-center">
-                    <span class="text-muted small me-2">Version 1.0.0</span>
-                    <span class="badge rounded-pill bg-secondary">Beta</span>
-                </div>
+            <div class="text-muted small">
+                Version <span class="badge bg-light text-dark"><?php echo defined('APP_VERSION') ? APP_VERSION : '1.0.0'; ?></span>
             </div>
         </div>
     </div>
@@ -46,6 +38,50 @@
     <?php foreach($additionalScripts as $script): ?>
         <script src="<?php echo $script; ?>"></script>
     <?php endforeach; ?>
+<?php endif; ?>
+
+<!-- Toast container for notifications -->
+<div id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3"></div>
+
+<!-- Core JS files -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Dropdown initialization - Fixed for dropdowns not working -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize all dropdowns
+        var dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'));
+        var dropdownList = dropdownElementList.map(function(dropdownToggleEl) {
+            return new bootstrap.Dropdown(dropdownToggleEl);
+        });
+        
+        // Additional event to ensure proper working
+        document.querySelectorAll('.dropdown-toggle').forEach(function(element) {
+            element.addEventListener('click', function(e) {
+                e.stopPropagation();
+                bootstrap.Dropdown.getOrCreateInstance(this).toggle();
+            });
+        });
+    });
+</script>
+
+<!-- Shared utilities -->
+<script src="<?php echo APP_URL; ?>/assets/js/utilities/initialization.js"></script>
+<script src="<?php echo APP_URL; ?>/assets/js/utilities/form_utils.js"></script>
+<script src="<?php echo APP_URL; ?>/assets/js/main.js"></script>
+
+<!-- Additional scripts -->
+<?php if (isset($additionalScripts) && is_array($additionalScripts)): ?>
+    <?php foreach($additionalScripts as $script): ?>
+        <script src="<?php echo $script; ?>"></script>
+    <?php endforeach; ?>
+<?php endif; ?>
+
+<!-- Inline page-specific scripts -->
+<?php if (isset($inlineScripts)): ?>
+    <script>
+        <?php echo $inlineScripts; ?>
+    </script>
 <?php endif; ?>
 </body>
 </html>

@@ -625,13 +625,27 @@ function get_period_submission_stats($period_id) {
     global $conn;
     
     if (!$period_id) {
+        $current_period = get_current_reporting_period();
+        $period_id = $current_period ? $current_period['period_id'] : null;
+    }
+    
+    if (!$period_id) {
         return [
             'agencies_reported' => 0,
             'total_agencies' => 0,
             'on_track_programs' => 0,
             'delayed_programs' => 0,
+            'completed_programs' => 0,
+            'not_started_programs' => 0,
+            'total_programs' => 0, // Ensure this key always exists
             'completion_percentage' => 0
         ];
+
+        if (!isset($stats['total_programs'])) {
+            $stats['total_programs'] = 0;
+        }
+        
+        return $stats;
     }
     
     // Get total agencies count

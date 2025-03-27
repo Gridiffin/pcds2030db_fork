@@ -1,47 +1,68 @@
-<!-- Brand new header with completely separate elements -->
-<header class="main-header bg-white shadow-sm py-2">
-    <div class="d-flex justify-content-between align-items-center px-3">
-        <!-- LEFT SIDE: Logo -->
-        <div class="header-left">
-            <a href="<?php echo APP_URL; ?>/views/admin/dashboard.php" class="logo-link">
-                <img src="<?php echo APP_URL; ?>/assets/images/logo.png" alt="PCDS Logo" height="40">
-            </a>
-        </div>
-        
-        <!-- CENTER: Navigation links -->
-        <nav class="header-center">
-            <ul class="nav-list">
-                <?php
-                $menu_items = [
-                    ['dashboard.php', 'Dashboard', 'tachometer-alt'],
-                    ['programs.php', 'Programs', 'project-diagram'],
-                    ['sectors.php', 'Sectors', 'layer-group'],
-                    ['reporting_periods.php', 'Periods', 'calendar-alt'],
-                    ['reports.php', 'Reports', 'file-powerpoint'],
-                    ['manage_users.php', 'Users', 'users']
-                ];
-                
-                foreach ($menu_items as $item):
-                    $is_active = strpos($_SERVER['PHP_SELF'], '/'.$item[0]) !== false;
-                ?>
+<?php
+/**
+ * Admin Navigation
+ * 
+ * Main navigation menu for admin users.
+ */
+
+// Get current page
+$current_page = basename($_SERVER['PHP_SELF']);
+?>
+
+<!-- Main Navigation -->
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand" href="<?php echo APP_URL; ?>/views/admin/dashboard.php">
+            <?php echo APP_NAME; ?>
+            <span class="badge bg-primary ms-2">Admin</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav mx-auto">
                 <li class="nav-item">
-                    <a class="nav-link <?php echo $is_active ? 'active' : ''; ?>" 
-                       href="<?php echo APP_URL; ?>/views/admin/<?php echo $item[0]; ?>">
-                        <i class="fas fa-<?php echo $item[2]; ?>"></i> <?php echo $item[1]; ?>
+                    <a class="nav-link <?php if ($current_page == 'dashboard.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/views/admin/dashboard.php">
+                        <i class="fas fa-tachometer-alt me-1"></i> Dashboard
                     </a>
                 </li>
-                <?php endforeach; ?>
+                <li class="nav-item">
+                    <a class="nav-link <?php if ($current_page == 'manage_programs.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/views/admin/manage_programs.php">
+                        <i class="fas fa-project-diagram me-1"></i> Programs
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?php if ($current_page == 'manage_users.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/views/admin/manage_users.php">
+                        <i class="fas fa-users me-1"></i> Users
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?php if ($current_page == 'manage_metrics.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/views/admin/manage_metrics.php">
+                        <i class="fas fa-chart-line me-1"></i> Metrics
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?php if ($current_page == 'manage_periods.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/views/admin/manage_periods.php">
+                        <i class="fas fa-calendar-alt me-1"></i> Periods
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?php if ($current_page == 'reports.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/views/admin/reports.php">
+                        <i class="fas fa-file-alt me-1"></i> Reports
+                    </a>
+                </li>
             </ul>
-        </nav>
-        
-        <!-- RIGHT SIDE: Logout button -->
-        <div class="header-right">
-            <a href="<?php echo APP_URL; ?>/logout.php" class="btn btn-danger btn-sm d-flex align-items-center">
-                <i class="fas fa-sign-out-alt me-2"></i> Logout (<?php echo $_SESSION['username']; ?>)
-            </a>
+            <div class="d-flex align-items-center ms-auto">
+                <div class="user-info me-3 text-dark">
+                    <i class="fas fa-user-shield me-1"></i> Administrator
+                </div>
+                <a href="<?php echo APP_URL; ?>/logout.php" class="btn btn-outline-danger btn-sm logout-btn">
+                    <i class="fas fa-sign-out-alt me-1"></i> Logout
+                </a>
+            </div>
         </div>
     </div>
-</header>
+</nav>
 
-<!-- Main content container -->
-<div class="container-fluid px-4 py-4">
+<!-- Content wrapper -->
+<div class="container-fluid px-4 content-wrapper">

@@ -15,11 +15,13 @@ define('DB_NAME', 'pcds2030_dashboard'); // Updated to correct database name
 // Application settings
 define('APP_NAME', 'PCDS2030 Dashboard');
 define('APP_URL', 'http://localhost/pcds2030_dashboard');
+define('APP_VERSION', '1.0.0');
 
 // File paths
 define('ROOT_PATH', dirname(__DIR__) . '/');
 define('UPLOAD_PATH', ROOT_PATH . 'uploads/');
 define('REPORT_PATH', ROOT_PATH . 'reports/');
+
 
 // Error reporting
 error_reporting(E_ALL);

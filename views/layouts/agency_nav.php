@@ -13,14 +13,13 @@ $current_page = basename($_SERVER['PHP_SELF']);
 <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
     <div class="container-fluid px-4">
         <a class="navbar-brand" href="<?php echo APP_URL; ?>/views/agency/dashboard.php">
-            <img src="<?php echo APP_URL; ?>/assets/images/logo.png" alt="PCDS Logo" height="30" class="me-2">
             <?php echo APP_NAME; ?>
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav">
+            <ul class="navbar-nav mx-auto">
                 <li class="nav-item">
                     <a class="nav-link <?php if ($current_page == 'dashboard.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/views/agency/dashboard.php">
                         <i class="fas fa-tachometer-alt me-1"></i> Dashboard
@@ -36,20 +35,20 @@ $current_page = basename($_SERVER['PHP_SELF']);
                         <i class="fas fa-globe me-1"></i> All Sectors
                     </a>
                 </li>
-            </ul>
-            
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-user-circle me-1"></i> <?php echo htmlspecialchars($_SESSION['agency_name']); ?>
+                <li class="nav-item">
+                    <a class="nav-link <?php if ($current_page == 'submit_metrics.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/views/agency/submit_metrics.php">
+                        <i class="fas fa-chart-line me-1"></i> Metrics
                     </a>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                        <li><a class="dropdown-item" href="<?php echo APP_URL; ?>/views/profile.php"><i class="fas fa-user-cog me-1"></i> Profile</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="<?php echo APP_URL; ?>/logout.php"><i class="fas fa-sign-out-alt me-1"></i> Logout</a></li>
-                    </ul>
                 </li>
             </ul>
+            <div class="d-flex align-items-center ms-auto">
+                <div class="user-info me-3 text-dark">
+                    <i class="fas fa-user-circle me-1"></i> <?php echo htmlspecialchars($_SESSION['agency_name']); ?>
+                </div>
+                <a href="<?php echo APP_URL; ?>/logout.php" class="btn btn-outline-danger btn-sm logout-btn">
+                    <i class="fas fa-sign-out-alt me-1"></i> Logout
+                </a>
+            </div>
         </div>
     </div>
 </nav>
