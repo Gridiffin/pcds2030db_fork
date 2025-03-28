@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 26, 2025 at 08:33 AM
+-- Generation Time: Mar 28, 2025 at 01:52 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -23,20 +23,6 @@ SET time_zone = "+00:00";
 
 -- --------------------------------------------------------
 
--- PCDS 2030 Dashboard Database Schema
--- --------------------------------------------------------
-
--- This database structure supports the revised file organization which includes:
--- - Shared CSS styling in assets/css/custom/shared directory
--- - Shared JavaScript utilities in assets/js/utilities directory
--- - Clear separation between agency and admin functionality
-
--- The updated schema includes new columns for program management:
--- - programs table: is_assigned, created_by  
--- - program_submissions table: target_date, status_date, updated_at
-
--- --------------------------------------------------------
-
 --
 -- Table structure for table `programs`
 --
@@ -50,15 +36,17 @@ CREATE TABLE `programs` (
   `start_date` date DEFAULT NULL,
   `end_date` date DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `is_assigned` tinyint(1) NOT NULL DEFAULT 1,
+  `created_by` int(11) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `programs`
 --
 
-INSERT INTO `programs` (`program_id`, `program_name`, `description`, `owner_agency_id`, `sector_id`, `start_date`, `end_date`, `created_at`, `updated_at`) VALUES
-(1, 'Program 1', 'fhbsfbsh', 12, 2, '0000-00-00', '0000-00-00', '2025-03-26 03:03:36', '2025-03-26 03:03:36');
+INSERT INTO `programs` (`program_id`, `program_name`, `description`, `owner_agency_id`, `sector_id`, `start_date`, `end_date`, `created_at`, `updated_at`, `is_assigned`, `created_by`) VALUES
+(1, 'Program 1', 'fhbsfbsh', 12, 2, NULL, NULL, '2025-03-26 03:03:36', '2025-03-27 07:43:20', 1, 12);
 
 -- --------------------------------------------------------
 
@@ -71,11 +59,35 @@ CREATE TABLE `program_submissions` (
   `program_id` int(11) NOT NULL,
   `period_id` int(11) NOT NULL,
   `submitted_by` int(11) NOT NULL,
+  `target_date` date DEFAULT NULL,
+  `achievement_date` date DEFAULT NULL,
+  `status` enum('on-track','delayed','completed','not-started') NOT NULL,
+  `status_indicator` enum('on-track','delayed','completed','not-started') DEFAULT NULL,
+  `status_date` date DEFAULT NULL,
+  `content_json` text DEFAULT NULL,
+  `submission_date` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `is_draft` tinyint(1) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `program_submissions_backup`
+--
+
+CREATE TABLE `program_submissions_backup` (
+  `submission_id` int(11) NOT NULL DEFAULT 0,
+  `program_id` int(11) NOT NULL,
+  `period_id` int(11) NOT NULL,
+  `submitted_by` int(11) NOT NULL,
   `target` text DEFAULT NULL,
   `target_date` date DEFAULT NULL,
   `achievement` text DEFAULT NULL,
   `achievement_date` date DEFAULT NULL,
   `status` enum('on-track','delayed','completed','not-started') NOT NULL,
+  `status_indicator` enum('on-track','delayed','completed','not-started') DEFAULT NULL,
+  `status_description` text DEFAULT NULL,
   `status_date` date DEFAULT NULL,
   `remarks` text DEFAULT NULL,
   `submission_date` timestamp NOT NULL DEFAULT current_timestamp(),

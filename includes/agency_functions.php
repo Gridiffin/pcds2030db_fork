@@ -17,6 +17,56 @@ function is_agency() {
 }
 
 /**
+ * Check if the schema has shifted to using content_json
+ * @return boolean
+ */
+function has_content_json_schema() {
+    global $conn;
+    static $has_content_json = null;
+    
+    if ($has_content_json === null) {
+        $content_json_check = $conn->query("SHOW COLUMNS FROM `program_submissions` LIKE 'content_json'");
+        $has_content_json = $content_json_check->num_rows > 0;
+    }
+    
+    return $has_content_json;
+}
+
+/**
+ * Check if programs table has is_assigned column
+ * @return boolean
+ */
+function has_is_assigned_column() {
+    global $conn;
+    static $has_is_assigned = null;
+    
+    if ($has_is_assigned === null) {
+        $column_check = $conn->query("SHOW COLUMNS FROM `programs` LIKE 'is_assigned'");
+        $has_is_assigned = $column_check->num_rows > 0;
+    }
+    
+    return $has_is_assigned;
+}
+
+/**
+ * Process row data with content_json if needed
+ * @param array $row Row data from database
+ * @return array Updated row data
+ */
+function process_content_json($row) {
+    if (has_content_json_schema() && isset($row['content_json'])) {
+        $content = json_decode($row['content_json'], true);
+        if ($content) {
+            $row['current_target'] = $content['target'] ?? null;
+            $row['achievement'] = $content['achievement'] ?? null;
+            $row['remarks'] = $content['remarks'] ?? null;
+        }
+        unset($row['content_json']); // Remove JSON from result
+    }
+    return $row;
+}
+
+/**
  * Get programs owned by current agency, separated by type
  * @return array Lists of assigned and created programs
  */
@@ -28,34 +78,43 @@ function get_agency_programs_by_type() {
     }
     
     $user_id = $_SESSION['user_id'];
+    $has_is_assigned = has_is_assigned_column();
+    $has_content_json = has_content_json_schema();
     
-    // Check if is_assigned column exists
-    $column_check = $conn->query("SHOW COLUMNS FROM `programs` LIKE 'is_assigned'");
-    $has_is_assigned = $column_check->num_rows > 0;
-    
-    // If database isn't updated yet with the new schema, treat all programs as assigned
+    // If old schema without is_assigned column, return all programs as assigned
     if (!$has_is_assigned) {
-        // Get all programs (no separation)
-        $query = "SELECT p.program_id, p.program_name, p.description, p.start_date, p.end_date, 
-                  p.created_at, p.updated_at,
-                  (SELECT ps.target FROM program_submissions ps 
-                   WHERE ps.program_id = p.program_id 
-                   ORDER BY ps.submission_id DESC LIMIT 1) AS current_target,
-                  (SELECT ps.target_date FROM program_submissions ps 
-                   WHERE ps.program_id = p.program_id 
-                   ORDER BY ps.submission_id DESC LIMIT 1) AS target_date,
-                  (SELECT ps.status FROM program_submissions ps 
-                   WHERE ps.program_id = p.program_id 
-                   ORDER BY ps.submission_id DESC LIMIT 1) AS status,
-                  (SELECT ps.status_date FROM program_submissions ps 
-                   WHERE ps.program_id = p.program_id 
-                   ORDER BY ps.submission_id DESC LIMIT 1) AS status_date,
-                  (SELECT ps.achievement FROM program_submissions ps 
-                   WHERE ps.program_id = p.program_id 
-                   ORDER BY ps.submission_id DESC LIMIT 1) AS achievement
-                FROM programs p
-                WHERE p.owner_agency_id = ?
-                ORDER BY p.created_at DESC";
+        // Build query based on schema version
+        if ($has_content_json) {
+            $select_fields = "p.program_id, p.program_name, p.description, p.start_date, p.end_date, 
+                      p.created_at, p.updated_at,
+                      (SELECT ps.content_json FROM program_submissions ps 
+                       WHERE ps.program_id = p.program_id 
+                       ORDER BY ps.submission_id DESC LIMIT 1) AS content_json";
+        } else {
+            $select_fields = "p.program_id, p.program_name, p.description, p.start_date, p.end_date, 
+                      p.created_at, p.updated_at,
+                      (SELECT ps.target FROM program_submissions ps 
+                       WHERE ps.program_id = p.program_id 
+                       ORDER BY ps.submission_id DESC LIMIT 1) AS current_target,
+                      (SELECT ps.achievement FROM program_submissions ps 
+                       WHERE ps.program_id = p.program_id 
+                       ORDER BY ps.submission_id DESC LIMIT 1) AS achievement";
+        }
+        
+        // Common fields for both schemas
+        $common_fields = "(SELECT ps.target_date FROM program_submissions ps 
+                       WHERE ps.program_id = p.program_id 
+                       ORDER BY ps.submission_id DESC LIMIT 1) AS target_date,
+                      (SELECT ps.status FROM program_submissions ps 
+                       WHERE ps.program_id = p.program_id 
+                       ORDER BY ps.submission_id DESC LIMIT 1) AS status,
+                      (SELECT ps.status_date FROM program_submissions ps 
+                       WHERE ps.program_id = p.program_id 
+                       ORDER BY ps.submission_id DESC LIMIT 1) AS status_date";
+        
+        $query = "SELECT $select_fields, $common_fields FROM programs p
+                  WHERE p.owner_agency_id = ?
+                  ORDER BY p.created_at DESC";
         
         $stmt = $conn->prepare($query);
         $stmt->bind_param("i", $user_id);
@@ -64,7 +123,7 @@ function get_agency_programs_by_type() {
         
         $all_programs = [];
         while ($row = $result->fetch_assoc()) {
-            $all_programs[] = $row;
+            $all_programs[] = process_content_json($row);
         }
         
         return [
@@ -74,14 +133,42 @@ function get_agency_programs_by_type() {
     }
     
     // Database has updated schema - can separate programs
+    $assigned_programs = get_typed_programs($conn, $user_id, 1, $has_content_json);
+    $created_programs = get_typed_programs($conn, $user_id, 0, $has_content_json);
     
-    // Get assigned programs (created by admin)
-    $assigned_query = "SELECT p.program_id, p.program_name, p.description, p.start_date, p.end_date, 
-                    p.created_at, p.updated_at, p.created_by, p.is_assigned,
-                    (SELECT ps.target FROM program_submissions ps 
-                     WHERE ps.program_id = p.program_id 
-                     ORDER BY ps.submission_id DESC LIMIT 1) AS current_target,
-                    (SELECT ps.target_date FROM program_submissions ps 
+    return [
+        'assigned' => $assigned_programs,
+        'created' => $created_programs
+    ];
+}
+
+/**
+ * Helper function to get programs of a specific type
+ * @param mysqli $conn Database connection
+ * @param int $user_id User ID
+ * @param int $is_assigned Whether program is assigned (1) or created (0)
+ * @param bool $has_content_json Whether content_json schema is used
+ * @return array List of programs
+ */
+function get_typed_programs($conn, $user_id, $is_assigned, $has_content_json) {
+    if ($has_content_json) {
+        $select_fields = "p.program_id, p.program_name, p.description, p.start_date, p.end_date, 
+                        p.created_at, p.updated_at, p.created_by, p.is_assigned,
+                        (SELECT ps.content_json FROM program_submissions ps 
+                         WHERE ps.program_id = p.program_id 
+                         ORDER BY ps.submission_id DESC LIMIT 1) AS content_json";
+    } else {
+        $select_fields = "p.program_id, p.program_name, p.description, p.start_date, p.end_date, 
+                        p.created_at, p.updated_at, p.created_by, p.is_assigned,
+                        (SELECT ps.target FROM program_submissions ps 
+                         WHERE ps.program_id = p.program_id 
+                         ORDER BY ps.submission_id DESC LIMIT 1) AS current_target,
+                        (SELECT ps.achievement FROM program_submissions ps 
+                         WHERE ps.program_id = p.program_id 
+                         ORDER BY ps.submission_id DESC LIMIT 1) AS achievement";
+    }
+    
+    $common_fields = "(SELECT ps.target_date FROM program_submissions ps 
                      WHERE ps.program_id = p.program_id 
                      ORDER BY ps.submission_id DESC LIMIT 1) AS target_date,
                     (SELECT ps.status FROM program_submissions ps 
@@ -89,60 +176,23 @@ function get_agency_programs_by_type() {
                      ORDER BY ps.submission_id DESC LIMIT 1) AS status,
                     (SELECT ps.status_date FROM program_submissions ps 
                      WHERE ps.program_id = p.program_id 
-                     ORDER BY ps.submission_id DESC LIMIT 1) AS status_date,
-                    (SELECT ps.achievement FROM program_submissions ps 
-                     WHERE ps.program_id = p.program_id 
-                     ORDER BY ps.submission_id DESC LIMIT 1) AS achievement
-                  FROM programs p
-                  WHERE p.owner_agency_id = ? AND p.is_assigned = 1
-                  ORDER BY p.created_at DESC";
+                     ORDER BY ps.submission_id DESC LIMIT 1) AS status_date";
     
-    $stmt = $conn->prepare($assigned_query);
-    $stmt->bind_param("i", $user_id);
+    $query = "SELECT $select_fields, $common_fields FROM programs p
+              WHERE p.owner_agency_id = ? AND p.is_assigned = ?
+              ORDER BY p.created_at DESC";
+    
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("ii", $user_id, $is_assigned);
     $stmt->execute();
     $result = $stmt->get_result();
     
-    $assigned_programs = [];
+    $programs = [];
     while ($row = $result->fetch_assoc()) {
-        $assigned_programs[] = $row;
+        $programs[] = process_content_json($row);
     }
     
-    // Get agency-created programs
-    $created_query = "SELECT p.program_id, p.program_name, p.description, p.start_date, p.end_date, 
-                   p.created_at, p.updated_at, p.created_by, p.is_assigned,
-                   (SELECT ps.target FROM program_submissions ps 
-                    WHERE ps.program_id = p.program_id 
-                    ORDER BY ps.submission_id DESC LIMIT 1) AS current_target,
-                   (SELECT ps.target_date FROM program_submissions ps 
-                    WHERE ps.program_id = p.program_id 
-                    ORDER BY ps.submission_id DESC LIMIT 1) AS target_date,
-                   (SELECT ps.status FROM program_submissions ps 
-                    WHERE ps.program_id = p.program_id 
-                    ORDER BY ps.submission_id DESC LIMIT 1) AS status,
-                   (SELECT ps.status_date FROM program_submissions ps 
-                    WHERE ps.program_id = p.program_id 
-                    ORDER BY ps.submission_id DESC LIMIT 1) AS status_date,
-                   (SELECT ps.achievement FROM program_submissions ps 
-                    WHERE ps.program_id = p.program_id 
-                    ORDER BY ps.submission_id DESC LIMIT 1) AS achievement
-                 FROM programs p
-                 WHERE p.owner_agency_id = ? AND p.is_assigned = 0
-                 ORDER BY p.created_at DESC";
-  
-    $stmt = $conn->prepare($created_query);
-    $stmt->bind_param("i", $user_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    $created_programs = [];
-    while ($row = $result->fetch_assoc()) {
-        $created_programs[] = $row;
-    }
-    
-    return [
-        'assigned' => $assigned_programs,
-        'created' => $created_programs
-    ];
+    return $programs;
 }
 
 /**
@@ -181,15 +231,13 @@ function create_agency_program($data) {
     
     $user_id = $_SESSION['user_id'];
     $sector_id = $_SESSION['sector_id'];
+    $has_content_json = has_content_json_schema();
+    $has_is_assigned = has_is_assigned_column();
     
     // Begin transaction
     $conn->begin_transaction();
     
     try {
-        // Check if is_assigned column exists
-        $column_check = $conn->query("SHOW COLUMNS FROM `programs` LIKE 'is_assigned'");
-        $has_is_assigned = $column_check->num_rows > 0;
-        
         if ($has_is_assigned) {
             // Insert program with is_assigned
             $query = "INSERT INTO programs (program_name, description, start_date, end_date, 
@@ -219,14 +267,31 @@ function create_agency_program($data) {
             throw new Exception('No active reporting period found');
         }
         
-        // Insert initial submission
-        $sub_query = "INSERT INTO program_submissions (program_id, period_id, submitted_by, 
-                                                    target, target_date, status, status_date) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?)";
+        // Insert initial submission based on schema
+        if ($has_content_json) {
+            $content = json_encode([
+                'target' => $target,
+                'achievement' => '',
+                'remarks' => ''
+            ]);
+            
+            $sub_query = "INSERT INTO program_submissions (program_id, period_id, submitted_by, 
+                        content_json, target_date, status, status_date) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?)";
+            
+            $stmt = $conn->prepare($sub_query);
+            $stmt->bind_param("iiissss", $program_id, $current_period['period_id'], $user_id, 
+                            $content, $target_date, $status, $status_date);
+        } else {
+            $sub_query = "INSERT INTO program_submissions (program_id, period_id, submitted_by, 
+                        target, target_date, status, status_date) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?)";
+            
+            $stmt = $conn->prepare($sub_query);
+            $stmt->bind_param("iiissss", $program_id, $current_period['period_id'], $user_id, 
+                            $target, $target_date, $status, $status_date);
+        }
         
-        $stmt = $conn->prepare($sub_query);
-        $stmt->bind_param("iiissss", $program_id, $current_period['period_id'], $user_id, 
-                        $target, $target_date, $status, $status_date);
         $stmt->execute();
         
         // Commit transaction
@@ -286,17 +351,12 @@ function update_agency_program($data) {
     }
     
     $user_id = $_SESSION['user_id'];
-    
-    // Check if is_assigned column exists
-    $column_check = $conn->query("SHOW COLUMNS FROM `programs` LIKE 'is_assigned'");
-    $has_is_assigned = $column_check->num_rows > 0;
+    $has_content_json = has_content_json_schema();
+    $has_is_assigned = has_is_assigned_column();
     
     // Verify ownership
-    if ($has_is_assigned) {
-        $check_query = "SELECT program_id, is_assigned FROM programs WHERE program_id = ? AND owner_agency_id = ?";
-    } else {
-        $check_query = "SELECT program_id FROM programs WHERE program_id = ? AND owner_agency_id = ?";
-    }
+    $check_query = "SELECT program_id" . ($has_is_assigned ? ", is_assigned" : "") . 
+                  " FROM programs WHERE program_id = ? AND owner_agency_id = ?";
     
     $stmt = $conn->prepare($check_query);
     $stmt->bind_param("ii", $program_id, $user_id);
@@ -315,9 +375,8 @@ function update_agency_program($data) {
     
     try {
         // Update program details
-        // For assigned programs, only allow updating certain fields
         if ($is_assigned) {
-            // For assigned programs, we don't update program_name, start_date, end_date
+            // For assigned programs, only update description
             $update_query = "UPDATE programs SET description = ?, updated_at = NOW() WHERE program_id = ?";
             $stmt = $conn->prepare($update_query);
             $stmt->bind_param("si", $description, $program_id);
@@ -343,22 +402,50 @@ function update_agency_program($data) {
         $sub_result = $stmt->get_result();
         
         if ($sub_result->num_rows > 0) {
-            // Update existing submission
             $sub_id = $sub_result->fetch_assoc()['submission_id'];
             
-            $sub_query = "UPDATE program_submissions SET target = ?, target_date = ?, status = ?, 
-                          status_date = ?, achievement = ?, remarks = ?, updated_at = NOW() 
-                          WHERE submission_id = ?";
-            $stmt = $conn->prepare($sub_query);
-            $stmt->bind_param("ssssssi", $target, $target_date, $status, $status_date, $achievement, $remarks, $sub_id);
+            // Update existing submission based on schema
+            if ($has_content_json) {
+                $content = json_encode([
+                    'target' => $target,
+                    'achievement' => $achievement,
+                    'remarks' => $remarks
+                ]);
+                
+                $sub_query = "UPDATE program_submissions SET content_json = ?, target_date = ?, status = ?, 
+                             status_date = ?, updated_at = NOW() WHERE submission_id = ?";
+                $stmt = $conn->prepare($sub_query);
+                $stmt->bind_param("ssssi", $content, $target_date, $status, $status_date, $sub_id);
+            } else {
+                $sub_query = "UPDATE program_submissions SET target = ?, target_date = ?, status = ?, 
+                             status_date = ?, achievement = ?, remarks = ?, updated_at = NOW() 
+                             WHERE submission_id = ?";
+                $stmt = $conn->prepare($sub_query);
+                $stmt->bind_param("ssssssi", $target, $target_date, $status, $status_date, $achievement, $remarks, $sub_id);
+            }
         } else {
-            // Create new submission for current period
-            $sub_query = "INSERT INTO program_submissions (program_id, period_id, submitted_by, target, 
-                          target_date, status, status_date, achievement, remarks) 
-                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            $stmt = $conn->prepare($sub_query);
-            $stmt->bind_param("iiissssss", $program_id, $current_period['period_id'], $user_id, 
-                             $target, $target_date, $status, $status_date, $achievement, $remarks);
+            // Create new submission for current period based on schema
+            if ($has_content_json) {
+                $content = json_encode([
+                    'target' => $target,
+                    'achievement' => $achievement,
+                    'remarks' => $remarks
+                ]);
+                
+                $sub_query = "INSERT INTO program_submissions (program_id, period_id, submitted_by, content_json, 
+                             target_date, status, status_date) 
+                             VALUES (?, ?, ?, ?, ?, ?, ?)";
+                $stmt = $conn->prepare($sub_query);
+                $stmt->bind_param("iiissss", $program_id, $current_period['period_id'], $user_id, 
+                                $content, $target_date, $status, $status_date);
+            } else {
+                $sub_query = "INSERT INTO program_submissions (program_id, period_id, submitted_by, target, 
+                             target_date, status, status_date, achievement, remarks) 
+                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                $stmt = $conn->prepare($sub_query);
+                $stmt->bind_param("iiissssss", $program_id, $current_period['period_id'], $user_id, 
+                                $target, $target_date, $status, $status_date, $achievement, $remarks);
+            }
         }
         $stmt->execute();
         
@@ -390,21 +477,13 @@ function get_program_details($program_id) {
     
     $user_id = $_SESSION['user_id'];
     $program_id = intval($program_id);
-    
-    // Check if is_assigned column exists
-    $column_check = $conn->query("SHOW COLUMNS FROM `programs` LIKE 'is_assigned'");
-    $has_is_assigned = $column_check->num_rows > 0;
+    $has_is_assigned = has_is_assigned_column();
+    $has_content_json = has_content_json_schema();
     
     // Get program info
-    if ($has_is_assigned) {
-        $program_query = "SELECT p.*, s.sector_name FROM programs p
-                        JOIN sectors s ON p.sector_id = s.sector_id
-                        WHERE p.program_id = ? AND p.owner_agency_id = ?";
-    } else {
-        $program_query = "SELECT p.*, s.sector_name, 1 as is_assigned FROM programs p
-                        JOIN sectors s ON p.sector_id = s.sector_id
-                        WHERE p.program_id = ? AND p.owner_agency_id = ?";
-    }
+    $program_query = "SELECT p.*, s.sector_name" . ($has_is_assigned ? "" : ", 1 as is_assigned") . 
+                    " FROM programs p JOIN sectors s ON p.sector_id = s.sector_id
+                     WHERE p.program_id = ? AND p.owner_agency_id = ?";
     
     $stmt = $conn->prepare($program_query);
     $stmt->bind_param("ii", $program_id, $user_id);
@@ -431,6 +510,9 @@ function get_program_details($program_id) {
     
     $submissions = [];
     while ($row = $submissions_result->fetch_assoc()) {
+        if ($has_content_json && isset($row['content_json'])) {
+            $row = process_content_json($row);
+        }
         $submissions[] = $row;
     }
     
@@ -448,7 +530,11 @@ function get_program_details($program_id) {
         $current_result = $stmt->get_result();
         
         if ($current_result->num_rows > 0) {
-            $program['current_submission'] = $current_result->fetch_assoc();
+            $current_submission = $current_result->fetch_assoc();
+            if ($has_content_json && isset($current_submission['content_json'])) {
+                $current_submission = process_content_json($current_submission);
+            }
+            $program['current_submission'] = $current_submission;
         }
     }
     
@@ -465,6 +551,8 @@ function get_program_details($program_id) {
  */
 function get_all_sectors_programs($current_period_id = null) {
     global $conn;
+    
+    $has_content_json = has_content_json_schema();
     
     // Base query to get all programs with their sector and agency details
     $query = "SELECT p.program_id, p.program_name, p.description,
@@ -487,11 +575,19 @@ function get_all_sectors_programs($current_period_id = null) {
     while ($row = $result->fetch_assoc()) {
         // Get latest submission data if period is specified
         if ($current_period_id) {
-            $sub_query = "SELECT target, target_date, achievement, status, status_date, remarks
-                          FROM program_submissions
-                          WHERE program_id = ? AND period_id = ?
-                          ORDER BY submission_date DESC
-                          LIMIT 1";
+            if ($has_content_json) {
+                $sub_query = "SELECT content_json, target_date, status, status_date
+                              FROM program_submissions
+                              WHERE program_id = ? AND period_id = ?
+                              ORDER BY submission_date DESC
+                              LIMIT 1";
+            } else {
+                $sub_query = "SELECT target, target_date, achievement, status, status_date, remarks
+                              FROM program_submissions
+                              WHERE program_id = ? AND period_id = ?
+                              ORDER BY submission_date DESC
+                              LIMIT 1";
+            }
                           
             $stmt = $conn->prepare($sub_query);
             $stmt->bind_param('ii', $row['program_id'], $current_period_id);
@@ -500,6 +596,9 @@ function get_all_sectors_programs($current_period_id = null) {
             
             if ($sub_result && $sub_result->num_rows > 0) {
                 $sub_data = $sub_result->fetch_assoc();
+                if ($has_content_json) {
+                    $sub_data = process_content_json($sub_data);
+                }
                 $row = array_merge($row, $sub_data);
             } else {
                 $row['target'] = null;
