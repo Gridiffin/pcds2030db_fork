@@ -227,3 +227,41 @@
     font-size: 0.75rem;
     margin-top: 3px;
 }
+
+/* Fix for white background card headers */
+.card-header.bg-white {
+    position: relative;
+    background-color: #fff !important;
+    color: var(--dark-color) !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Remove the ::before element for white background card headers */
+.card-header.bg-white::before {
+    display: none !important;
+}
+
+/* Fix title color for white background headers */
+.card-header.bg-white .card-title {
+    color: var(--dark-color) !important;
+}
+
+/* Fix icon color in white background headers */
+.card-header.bg-white i {
+    color: var(--primary-color);
+}
+
+/* Blue card header with white text and icon */
+.card-header.bg-primary {
+    background-color: var(--primary-color) !important;
+    color: #ffffff !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.card-header.bg-primary .card-title {
+    color: #ffffff !important;
+}
+
+.card-header.bg-primary i {
+    color: #ffffff !important;
+}

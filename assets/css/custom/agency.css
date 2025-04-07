@@ -604,3 +604,25 @@
     height: 100%;
     background-color: var(--agency-primary);
 }
+
+/* Reset filter button styling */
+#resetFilters {
+    transition: all 0.2s ease;
+    height: 38px; /* Match height with other filter controls */
+}
+
+#resetFilters:hover {
+    background-color: var(--light-color);
+    color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Align filter controls on mobile */
+@media (max-width: 767.98px) {
+    #resetFilters {
+        margin-top: 0.5rem;
+        width: 100%;
+        justify-content: center;
+    }
+}

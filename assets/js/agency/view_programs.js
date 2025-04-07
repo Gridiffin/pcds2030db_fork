@@ -30,6 +30,21 @@ document.addEventListener('DOMContentLoaded', function() {
             <option value="not-started">Not Started</option>
         `;
     }
+    
+    // Add event listener specifically for the reset button
+    const resetButton = document.getElementById('resetFilters');
+    if (resetButton) {
+        resetButton.addEventListener('click', function() {
+            // Reset all filter inputs
+            document.getElementById('programSearch').value = '';
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('programTypeFilter').value = '';
+            
+            // Trigger filtering to update the view
+            const event = new Event('change');
+            document.getElementById('statusFilter').dispatchEvent(event);
+        });
+    }
 });
 
 /**

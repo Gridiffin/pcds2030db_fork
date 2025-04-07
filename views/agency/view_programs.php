@@ -111,36 +111,42 @@ require_once '../layouts/agency_nav.php';
 
 <!-- Filter Card -->
 <div class="card shadow-sm mb-4">
-    <div class="card-header">
-        <h5 class="card-title m-0">Program Filters</h5>
+    <div class="card-header bg-primary text-white">
+        <h5 class="card-title m-0">
+            <i class="fas fa-filter me-2 text-white"></i>Filter Programs
+        </h5>
     </div>
     <div class="card-body">
         <div class="row g-3">
-            <div class="col-md-6">
-                <label for="programSearch" class="form-label">Search Programs</label>
+            <div class="col-md-5 col-sm-12">
+                <label for="programSearch" class="form-label">Search</label>
                 <div class="input-group">
-                    <span class="input-group-text bg-light"><i class="fas fa-search"></i></span>
-                    <input type="text" class="form-control" id="programSearch" placeholder="Search by program name...">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="text" class="form-control" id="programSearch" placeholder="Search by program name">
                 </div>
-                <small class="form-text text-muted">Search by program name or description</small>
             </div>
-            <div class="col-md-3">
-                <label for="statusFilter" class="form-label">Status Filter</label>
+            <div class="col-md-3 col-sm-6">
+                <label for="statusFilter" class="form-label">Status</label>
                 <select class="form-select" id="statusFilter">
                     <option value="">All Statuses</option>
-                    <option value="on-track">On Track</option>
-                    <option value="delayed">Delayed</option>
-                    <option value="completed">Completed</option>
+                    <option value="target-achieved">Monthly Target Achieved</option>
+                    <option value="on-track-yearly">On Track for Year</option>
+                    <option value="severe-delay">Severe Delays</option>
                     <option value="not-started">Not Started</option>
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-3 col-sm-6">
                 <label for="programTypeFilter" class="form-label">Program Type</label>
                 <select class="form-select" id="programTypeFilter">
-                    <option value="">All Programs</option>
+                    <option value="">All Types</option>
                     <option value="assigned">Assigned Programs</option>
-                    <option value="created">Agency-Created Programs</option>
+                    <option value="agency">Agency-Created Programs</option>
                 </select>
+            </div>
+            <div class="col-md-1 col-sm-12 d-flex align-items-end">
+                <button id="resetFilters" class="btn btn-outline-light w-100">
+                    <i class="fas fa-undo me-1"></i> Reset
+                </button>
             </div>
         </div>
     </div>
