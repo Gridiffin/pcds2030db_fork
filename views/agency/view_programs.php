@@ -35,6 +35,24 @@ $pageTitle = 'Manage Programs';
 // Get programs for agency
 $programs = get_agency_programs_by_type();
 
+// Combine both program types into a single array for display
+$all_programs = [];
+foreach ($programs['assigned'] as $program) {
+    $program['program_type'] = 'assigned';
+    $all_programs[] = $program;
+}
+foreach ($programs['created'] as $program) {
+    $program['program_type'] = 'created';
+    $all_programs[] = $program;
+}
+
+// Sort programs by updated_at or created_at (most recent first)
+usort($all_programs, function($a, $b) {
+    $a_date = !empty($a['updated_at']) ? $a['updated_at'] : $a['created_at'];
+    $b_date = !empty($b['updated_at']) ? $b['updated_at'] : $b['created_at'];
+    return strtotime($b_date) - strtotime($a_date);
+});
+
 // Additional styles
 $additionalStyles = [
     APP_URL . '/assets/css/custom/agency.css'
@@ -76,6 +94,70 @@ require_once '../../includes/dashboard_header.php';
     </div>
 <?php endif; ?>
 
+<!-- Program Statistics -->
+<div class="row mb-4">
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card bg-light h-100">
+            <div class="card-body d-flex align-items-center">
+                <div class="icon-container bg-primary">
+                    <i class="fas fa-project-diagram text-white"></i>
+                </div>
+                <div class="ms-3">
+                    <h6 class="mb-0">Total Programs</h6>
+                    <div class="h4 mb-0"><?php echo count($all_programs); ?></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card bg-light h-100">
+            <div class="card-body d-flex align-items-center">
+                <div class="icon-container bg-primary">
+                    <i class="fas fa-tasks text-white"></i>
+                </div>
+                <div class="ms-3">
+                    <h6 class="mb-0">Assigned Programs</h6>
+                    <div class="h4 mb-0"><?php echo count($programs['assigned']); ?></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card bg-light h-100">
+            <div class="card-body d-flex align-items-center">
+                <div class="icon-container bg-success">
+                    <i class="fas fa-folder-plus text-white"></i>
+                </div>
+                <div class="ms-3">
+                    <h6 class="mb-0">Agency-Created</h6>
+                    <div class="h4 mb-0"><?php echo count($programs['created']); ?></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card bg-light h-100">
+            <div class="card-body d-flex align-items-center">
+                <div class="icon-container bg-info">
+                    <i class="fas fa-chart-line text-white"></i>
+                </div>
+                <div class="ms-3">
+                    <h6 class="mb-0">On Track</h6>
+                    <?php 
+                    $on_track_count = 0;
+                    foreach ($all_programs as $program) {
+                        if (($program['status'] ?? '') === 'on-track') {
+                            $on_track_count++;
+                        }
+                    }
+                    ?>
+                    <div class="h4 mb-0"><?php echo $on_track_count; ?></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Filters Section -->
 <div class="card shadow-sm mb-4">
     <div class="card-header">
@@ -102,118 +184,67 @@ require_once '../../includes/dashboard_header.php';
                 <select class="form-select" id="programTypeFilter">
                     <option value="">All Programs</option>
                     <option value="assigned">Assigned Programs</option>
-                    <option value="created">My Created Programs</option>
+                    <option value="created">Agency-Created Programs</option>
                 </select>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Assigned Programs -->
-<div class="card shadow-sm mb-4 program-section" id="assignedPrograms">
+<!-- All Programs -->
+<div class="card shadow-sm mb-4 program-section" id="allPrograms">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="card-title m-0">Assigned Programs</h5>
-        <span class="badge bg-primary"><?php echo count($programs['assigned']); ?> Programs</span>
+        <h5 class="card-title m-0">All Programs</h5>
+        <span class="badge bg-primary"><?php echo count($all_programs); ?> Programs</span>
     </div>
     <div class="card-body">
-        <?php if (empty($programs['assigned'])): ?>
+        <?php if (empty($all_programs)): ?>
             <div class="text-center py-5">
                 <div class="mb-3">
                     <i class="fas fa-project-diagram fa-3x text-muted"></i>
                 </div>
-                <h5>No assigned programs found</h5>
-                <p class="text-muted">Programs assigned by administrators will appear here.</p>
+                <h5>No programs found</h5>
+                <p class="text-muted">Create your first program or wait for your administrator to assign programs to you.</p>
+                <a href="create_program.php" class="btn btn-primary">
+                    <i class="fas fa-plus-circle me-1"></i> Create New Program
+                </a>
             </div>
         <?php else: ?>
             <div class="table-responsive">
-                <table class="table table-hover table-custom">
+                <table class="table table-hover table-custom" id="programsTable">
                     <thead>
                         <tr>
                             <th>Program Name</th>
+                            <th>Type</th>
                             <th>Target</th>
-                            <th>Target Date</th>
+                            <!-- Removed Target Date column -->
                             <th>Status</th>
                             <th>Status Date</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($programs['assigned'] as $program): ?>
-                            <tr>
+                        <?php foreach ($all_programs as $program): ?>
+                            <tr data-program-type="<?php echo $program['program_type']; ?>">
                                 <td>
                                     <div class="fw-medium"><?php echo $program['program_name']; ?></div>
                                     <?php if (!empty($program['description'])): ?>
                                         <div class="small text-muted"><?php echo substr($program['description'], 0, 100); ?><?php echo strlen($program['description']) > 100 ? '...' : ''; ?></div>
                                     <?php endif; ?>
                                 </td>
-                                <td><?php echo $program['current_target'] ?? 'Not set'; ?></td>
-                                <td><?php echo $program['target_date'] ? date('M j, Y', strtotime($program['target_date'])) : 'Not set'; ?></td>
                                 <td>
-                                    <?php echo get_status_badge($program['status'] ?? 'not-started'); ?>
-                                </td>
-                                <td><?php echo $program['status_date'] ? date('M j, Y', strtotime($program['status_date'])) : 'Not set'; ?></td>
-                                <td>
-                                    <div class="btn-group btn-group-sm">
-                                        <a href="program_details.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="View Details">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                        <a href="update_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-secondary" title="Update Status">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-        <?php endif; ?>
-    </div>
-</div>
-
-<!-- Agency-Created Programs -->
-<div class="card shadow-sm mb-4 program-section" id="createdPrograms">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="card-title m-0">Agency-Created Programs</h5>
-        <span class="badge bg-success"><?php echo count($programs['created']); ?> Programs</span>
-    </div>
-    <div class="card-body">
-        <?php if (empty($programs['created'])): ?>
-            <div class="text-center py-5">
-                <div class="mb-3">
-                    <i class="fas fa-folder-plus fa-3x text-muted"></i>
-                </div>
-                <h5>No agency-created programs found</h5>
-                <p class="text-muted">Create your own programs using the "Create New Program" button at the top of the page.</p>
-            </div>
-        <?php else: ?>
-            <div class="table-responsive">
-                <table class="table table-hover table-custom">
-                    <thead>
-                        <tr>
-                            <th>Program Name</th>
-                            <th>Target</th>
-                            <th>Target Date</th>
-                            <th>Status</th>
-                            <th>Status Date</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($programs['created'] as $program): ?>
-                            <tr>
-                                <td>
-                                    <div class="fw-medium"><?php echo $program['program_name']; ?></div>
-                                    <?php if (!empty($program['description'])): ?>
-                                        <div class="small text-muted"><?php echo substr($program['description'], 0, 100); ?><?php echo strlen($program['description']) > 100 ? '...' : ''; ?></div>
+                                    <?php if ($program['program_type'] === 'assigned'): ?>
+                                        <span class="badge bg-primary">Assigned</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-success">Agency-Created</span>
                                     <?php endif; ?>
                                 </td>
                                 <td><?php echo $program['current_target'] ?? 'Not set'; ?></td>
-                                <td><?php echo $program['target_date'] ? date('M j, Y', strtotime($program['target_date'])) : 'Not set'; ?></td>
+                                <!-- Removed Target Date column -->
                                 <td>
                                     <?php echo get_status_badge($program['status'] ?? 'not-started'); ?>
                                 </td>
-                                <td><?php echo $program['status_date'] ? date('M j, Y', strtotime($program['status_date'])) : 'Not set'; ?></td>
+                                <td><?php echo isset($program['status_date']) && $program['status_date'] ? date('M j, Y', strtotime($program['status_date'])) : 'Not set'; ?></td>
                                 <td>
                                     <div class="btn-group btn-group-sm">
                                         <a href="program_details.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="View Details">

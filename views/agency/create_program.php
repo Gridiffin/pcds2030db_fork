@@ -24,6 +24,9 @@ $message = '';
 $messageType = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_program'])) {
+    // Debug: Log the POST data
+    error_log('Program form data: ' . print_r($_POST, true));
+    
     $result = create_agency_program($_POST);
     
     if (isset($result['success'])) {
@@ -103,6 +106,7 @@ require_once '../layouts/agency_nav.php';
                     <div class="col-md-12">
                         <label for="description" class="form-label">Description</label>
                         <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                        <div class="form-text character-counter">0/500 characters</div>
                     </div>
                     <div class="col-md-6">
                         <label for="start_date" class="form-label">Start Date</label>
@@ -119,15 +123,10 @@ require_once '../layouts/agency_nav.php';
             <div class="mb-4">
                 <h6 class="fw-bold mb-3">Target Information</h6>
                 <div class="row g-3">
-                    <div class="col-md-6">
+                    <div class="col-md-12">
                         <label for="target" class="form-label">Target *</label>
                         <input type="text" class="form-control" id="target" name="target" required>
-                        <div class="form-text">Define a measurable target for this program</div>
-                    </div>
-                    <div class="col-md-6">
-                        <label for="target_date" class="form-label">Target Date *</label>
-                        <input type="date" class="form-control" id="target_date" name="target_date" required>
-                        <div class="form-text">When do you expect to reach this target?</div>
+                        <div class="form-text">Define a measurable target for this program.</div>
                     </div>
                 </div>
             </div>
@@ -137,30 +136,30 @@ require_once '../layouts/agency_nav.php';
                 <h6 class="fw-bold mb-3">Status Information</h6>
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label">Current Status *</label>
-                        <input type="hidden" id="status" name="status" value="not-started">
-                        <div class="status-pills">
-                            <div class="status-pill on-track" data-status="on-track">
-                                <i class="fas fa-check-circle me-2"></i> On Track
-                            </div>
-                            <div class="status-pill delayed" data-status="delayed">
-                                <i class="fas fa-exclamation-triangle me-2"></i> Delayed
-                            </div>
-                            <div class="status-pill completed" data-status="completed">
-                                <i class="fas fa-flag-checkered me-2"></i> Completed
-                            </div>
-                            <div class="status-pill not-started active" data-status="not-started">
-                                <i class="fas fa-hourglass-start me-2"></i> Not Started
-                            </div>
-                        </div>
+                        <label for="status" class="form-label">Current Status *</label>
+                        <select class="form-select" id="status" name="status" required>
+                            <option value="on-track">On Track</option>
+                            <option value="delayed">Delayed</option>
+                            <option value="completed">Completed</option>
+                            <option value="not-started" selected>Not Started</option>
+                        </select>
+                        <div class="form-text">Current status category of the program</div>
                     </div>
                     <div class="col-md-6">
                         <label for="status_date" class="form-label">Status Date *</label>
                         <input type="date" class="form-control" id="status_date" name="status_date" required value="<?php echo date('Y-m-d'); ?>">
                         <div class="form-text">When was this status determined?</div>
                     </div>
+                    <div class="col-md-12">
+                        <label for="status_text" class="form-label">Status Description</label>
+                        <textarea class="form-control" id="status_text" name="status_text" rows="2"></textarea>
+                        <div class="form-text">Describe the current status of this program in detail</div>
+                    </div>
                 </div>
             </div>
+            
+            <!-- Optional: Hidden fields for JSON structure -->
+            <input type="hidden" name="content_structure" value="json">
             
             <div class="d-flex justify-content-end mt-4">
                 <a href="view_programs.php" class="btn btn-outline-secondary me-2">

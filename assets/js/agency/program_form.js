@@ -1,10 +1,27 @@
 /**
  * Program Form Functionality
- * Handles form validation and status selection for program creation/update
+ * Handles form validation and form field interactions
  */
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize status pill selection
-    initStatusPills();
+    // Character counter for description
+    const descriptionField = document.getElementById('description');
+    if (descriptionField) {
+        const counter = document.querySelector('.character-counter');
+        const maxLength = 500;
+        
+        descriptionField.addEventListener('input', function() {
+            const currentLength = this.value.length;
+            counter.textContent = `${currentLength}/${maxLength} characters`;
+            
+            if (currentLength > maxLength) {
+                counter.classList.add('text-danger');
+                descriptionField.classList.add('is-invalid');
+            } else {
+                counter.classList.remove('text-danger');
+                descriptionField.classList.remove('is-invalid');
+            }
+        });
+    }
     
     // Add form validation
     const form = document.querySelector('.program-form');
@@ -15,6 +32,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Date validation for target and status dates
     const targetDateInput = document.getElementById('target_date');
     const statusDateInput = document.getElementById('status_date');
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
     
     if (targetDateInput && statusDateInput) {
         // Initially set status date to today if empty
@@ -23,149 +42,151 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Handle date validation
-        [targetDateInput, statusDateInput].forEach(input => {
-            input.addEventListener('change', validateDates);
+        [targetDateInput, statusDateInput, startDateInput, endDateInput].forEach(input => {
+            if (input) {
+                input.addEventListener('change', validateDates);
+            }
         });
     }
 });
 
 /**
- * Initialize status pill selection behavior
- */
-function initStatusPills() {
-    const statusPills = document.querySelectorAll('.status-pill');
-    const statusInput = document.getElementById('status');
-    
-    if (!statusPills.length || !statusInput) return;
-    
-    statusPills.forEach(pill => {
-        pill.addEventListener('click', function() {
-            // Remove active class from all pills
-            statusPills.forEach(p => p.classList.remove('active'));
-            
-            // Add active class to clicked pill
-            this.classList.add('active');
-            
-            // Update hidden input value
-            statusInput.value = this.getAttribute('data-status');
-            
-            // Validate dates when status changes
-            validateDates();
-        });
-    });
-}
-
-/**
  * Validate the program form before submission
  */
 function validateProgramForm(e) {
-    let isValid = true;
-    
-    // Check required fields
+    // Get form fields
     const programName = document.getElementById('program_name');
     const target = document.getElementById('target');
-    const targetDate = document.getElementById('target_date');
+    // Removed targetDate
+    const status = document.getElementById('status');
     const statusDate = document.getElementById('status_date');
-    
-    // Basic validation for required fields
-    [programName, target, targetDate, statusDate].forEach(field => {
-        if (field && !field.value.trim()) {
-            field.classList.add('is-invalid');
-            isValid = false;
-        } else if (field) {
-            field.classList.remove('is-invalid');
-        }
-    });
-    
-    // Validate start/end dates if both are provided
+    const description = document.getElementById('description');
     const startDate = document.getElementById('start_date');
     const endDate = document.getElementById('end_date');
     
+    let isValid = true;
+    let errorMessage = '';
+    
+    // Validate program name
+    if (!programName.value.trim()) {
+        isValid = false;
+        errorMessage += 'Program name is required.<br>';
+        programName.classList.add('is-invalid');
+    } else {
+        programName.classList.remove('is-invalid');
+    }
+    
+    // Validate target
+    if (!target.value.trim()) {
+        isValid = false;
+        errorMessage += 'Target is required.<br>';
+        target.classList.add('is-invalid');
+    } else {
+        target.classList.remove('is-invalid');
+    }
+    
+    // Removed target date validation
+    
+    // Validate status selection
+    if (!status.value) {
+        isValid = false;
+        errorMessage += 'Status is required.<br>';
+        status.classList.add('is-invalid');
+    } else {
+        status.classList.remove('is-invalid');
+    }
+    
+    // Validate status date
+    if (!statusDate.value) {
+        isValid = false;
+        errorMessage += 'Status date is required.<br>';
+        statusDate.classList.add('is-invalid');
+    } else {
+        statusDate.classList.remove('is-invalid');
+    }
+    
+    // Validate description length
+    if (description && description.value.length > 500) {
+        isValid = false;
+        errorMessage += 'Description exceeds maximum length of 500 characters.<br>';
+        description.classList.add('is-invalid');
+    }
+    
+    // Validate date ranges
     if (startDate && endDate && startDate.value && endDate.value) {
         if (new Date(startDate.value) > new Date(endDate.value)) {
-            startDate.classList.add('is-invalid');
-            endDate.classList.add('is-invalid');
-            
-            // Show error message
-            if (!document.getElementById('date-error')) {
-                const errorDiv = document.createElement('div');
-                errorDiv.id = 'date-error';
-                errorDiv.className = 'alert alert-danger mt-3';
-                errorDiv.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i> End date cannot be before start date.';
-                endDate.parentNode.appendChild(errorDiv);
-            }
-            
             isValid = false;
+            errorMessage += 'End date cannot be before start date.<br>';
+            endDate.classList.add('is-invalid');
         } else {
-            startDate.classList.remove('is-invalid');
             endDate.classList.remove('is-invalid');
-            
-            // Remove error message if exists
-            const errorDiv = document.getElementById('date-error');
-            if (errorDiv) errorDiv.remove();
         }
     }
     
-    // Validate target and status dates
-    if (!validateDates()) {
-        isValid = false;
-    }
-    
+    // If form is invalid, show error and prevent submission
     if (!isValid) {
         e.preventDefault();
         
-        // Scroll to first invalid field
-        const firstInvalid = document.querySelector('.is-invalid');
-        if (firstInvalid) {
-            firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            firstInvalid.focus();
+        // Create or update error alert
+        let errorAlert = document.querySelector('.form-error-alert');
+        if (!errorAlert) {
+            errorAlert = document.createElement('div');
+            errorAlert.className = 'alert alert-danger form-error-alert mt-3';
+            errorAlert.innerHTML = '<strong>Please fix the following errors:</strong><br>' + errorMessage;
+            
+            // Add error alert before the submit button
+            const submitBtn = document.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.parentNode.insertBefore(errorAlert, submitBtn);
+            } else {
+                document.getElementById('createProgramForm').appendChild(errorAlert);
+            }
+        } else {
+            errorAlert.innerHTML = '<strong>Please fix the following errors:</strong><br>' + errorMessage;
         }
+        
+        // Scroll to error
+        errorAlert.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        return false;
     } else {
-        // Disable submit button to prevent double submission
-        const submitButton = document.querySelector('button[type="submit"]');
-        if (submitButton) {
-            submitButton.disabled = true;
-            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Processing...';
+        // Remove any existing error alerts
+        const errorAlert = document.querySelector('.form-error-alert');
+        if (errorAlert) {
+            errorAlert.remove();
         }
+        
+        return true;
     }
 }
 
 /**
- * Validate dates for logical consistency
- * @returns {boolean} True if valid, false otherwise
+ * Validate date ranges
  */
 function validateDates() {
-    const targetDate = document.getElementById('target_date');
-    const statusDate = document.getElementById('status_date');
+    const startDate = document.getElementById('start_date');
+    const endDate = document.getElementById('end_date');
+    // Removed targetDate
     
-    if (!targetDate || !statusDate || !targetDate.value || !statusDate.value) return true;
+    // Clear previous validation
+    if (endDate) endDate.classList.remove('is-invalid');
+    // Removed targetDate validation
     
-    // Clear any existing error
-    const errorDiv = document.getElementById('status-date-error');
-    if (errorDiv) errorDiv.remove();
-    
-    // Get date values
-    const targetDateVal = new Date(targetDate.value);
-    const statusDateVal = new Date(statusDate.value);
-    
-    // Get status
-    const status = document.getElementById('status').value;
-    
-    // If status is "completed", target date should be on or before status date
-    if (status === 'completed' && targetDateVal > statusDateVal) {
-        statusDate.classList.add('is-invalid');
-        
-        // Show error message
-        const newErrorDiv = document.createElement('div');
-        newErrorDiv.id = 'status-date-error';
-        newErrorDiv.className = 'invalid-feedback';
-        newErrorDiv.textContent = 'For completed status, target date should be on or before status date.';
-        statusDate.parentNode.appendChild(newErrorDiv);
-        
-        return false;
+    // Validate start/end date
+    if (startDate && endDate && startDate.value && endDate.value) {
+        if (new Date(startDate.value) > new Date(endDate.value)) {
+            endDate.classList.add('is-invalid');
+            
+            // Show validation message
+            let feedbackElement = endDate.nextElementSibling;
+            if (!feedbackElement || !feedbackElement.classList.contains('invalid-feedback')) {
+                feedbackElement = document.createElement('div');
+                feedbackElement.className = 'invalid-feedback';
+                endDate.parentNode.appendChild(feedbackElement);
+            }
+            feedbackElement.textContent = 'End date cannot be before start date';
+        }
     }
     
-    // Reset validation state
-    statusDate.classList.remove('is-invalid');
-    return true;
+    // Removed target date against end date validation
 }

@@ -19,21 +19,46 @@ if (!is_agency()) {
     exit;
 }
 
-// Get program ID from URL
-$program_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+// Get program ID from URL with validation
+$program_id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 
 if (!$program_id) {
-    $_SESSION['message'] = 'No program specified.';
+    $_SESSION['message'] = 'No program specified or invalid program ID.';
     $_SESSION['message_type'] = 'warning';
     header('Location: view_programs.php');
     exit;
 }
 
-// Get program details
-$program = get_program_details($program_id);
+// Use try-catch for error handling with database operations
+try {
+    // Get program details with optimized query
+    $program = get_program_details($program_id);
 
-if (!$program || isset($program['error'])) {
-    $_SESSION['message'] = $program['error'] ?? 'Program not found or access denied.';
+    if (!$program || isset($program['error'])) {
+        throw new Exception($program['error'] ?? 'Program not found or access denied.');
+    }
+
+    // Organize submissions by period for display (newest first)
+    $submissions_by_period = [];
+    if (!empty($program['submissions'])) {
+        foreach ($program['submissions'] as $submission) {
+            $period_name = "Q{$submission['quarter']}-{$submission['year']}";
+            $submissions_by_period[$period_name] = $submission;
+        }
+    }
+
+    // Get latest submission for current status display
+    $latest = !empty($program['submissions']) ? $program['submissions'][0] : null;
+    $latest_status = $latest ? $latest['status'] : 'not-started';
+    $latest_target = $latest ? $latest['current_target'] : 'Not set';
+    $latest_achievement = $latest && !empty($latest['achievement']) ? $latest['achievement'] : 'Not reported';
+    $latest_status_date = $latest ? ($latest['status_date'] ?? null) : null;
+    $latest_status_text = $latest ? ($latest['status_text'] ?? '') : '';
+
+    // Get current reporting period
+    $current_period = get_current_reporting_period();
+} catch (Exception $e) {
+    $_SESSION['message'] = 'Error: ' . $e->getMessage();
     $_SESSION['message_type'] = 'danger';
     header('Location: view_programs.php');
     exit;
@@ -49,18 +74,8 @@ if (isset($_SESSION['message'])) {
     unset($_SESSION['message_type']);
 }
 
-// Organize submissions by period for display
-$submissions_by_period = [];
-foreach ($program['submissions'] as $submission) {
-    $period_name = "Q{$submission['quarter']}-{$submission['year']}";
-    $submissions_by_period[$period_name] = $submission;
-}
-
-// Get current reporting period
-$current_period = get_current_reporting_period();
-
 // Set page title
-$pageTitle = 'Program Details';
+$pageTitle = htmlspecialchars($program['program_name']) . ' | Program Details';
 
 // Additional styles
 $additionalStyles = [
@@ -83,8 +98,15 @@ require_once '../layouts/agency_nav.php';
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h1 class="h2 mb-0">Program Details</h1>
-        <p class="text-muted">View and manage program information</p>
+        <h1 class="h2 mb-0"><?php echo htmlspecialchars($program['program_name']); ?></h1>
+        <p class="text-muted mb-0">
+            <span class="badge bg-<?php echo $program['is_assigned'] ? 'primary' : 'success'; ?> me-2">
+                <?php echo $program['is_assigned'] ? 'Assigned Program' : 'Agency Created'; ?>
+            </span>
+            <span class="text-muted">
+                <i class="fas fa-layer-group me-1"></i> <?php echo htmlspecialchars($program['sector_name']); ?>
+            </span>
+        </p>
     </div>
     <div>
         <?php if ($current_period && $current_period['status'] === 'open'): ?>
@@ -109,123 +131,94 @@ require_once '../layouts/agency_nav.php';
 <?php endif; ?>
 
 <!-- Program Information Cards -->
-<div class="row">
+<div class="row program-details">
     <!-- Program Main Info -->
-    <div class="col-lg-8 mb-4">
-        <div class="card shadow-sm">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="card-title m-0"><?php echo htmlspecialchars($program['program_name']); ?></h5>
-                <span class="badge bg-<?php echo $program['is_assigned'] ? 'primary' : 'success'; ?>">
-                    <?php echo $program['is_assigned'] ? 'Assigned Program' : 'Agency Created'; ?>
-                </span>
+    <div class="col-lg-7 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header">
+                <h5 class="card-title m-0"><i class="fas fa-info-circle me-2"></i>Program Information</h5>
             </div>
             <div class="card-body">
-                <div class="row">
-                    <div class="col-md-8">
-                        <h6 class="text-muted mb-3">Description</h6>
-                        <p><?php echo !empty($program['description']) ? htmlspecialchars($program['description']) : 'No description available.'; ?></p>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="info-box">
-                            <div class="info-item">
-                                <small class="text-muted d-block">Sector</small>
-                                <div class="d-flex align-items-center">
-                                    <i class="fas fa-layer-group me-2 text-primary"></i>
-                                    <span><?php echo htmlspecialchars($program['sector_name']); ?></span>
-                                </div>
+                <!-- Timeline Section -->
+                <div class="info-group">
+                    <h6>Timeline</h6>
+                    <div class="d-flex align-items-center">
+                        <div class="timeline-point">
+                            <div class="small text-muted">Start Date</div>
+                            <div class="timeline-date">
+                                <?php echo $program['start_date'] ? date('M j, Y', strtotime($program['start_date'])) : '<span class="text-muted">Not specified</span>'; ?>
                             </div>
-                            
-                            <?php if ($program['start_date']): ?>
-                            <div class="info-item">
-                                <small class="text-muted d-block">Start Date</small>
-                                <div class="d-flex align-items-center">
-                                    <i class="fas fa-calendar-alt me-2 text-primary"></i>
-                                    <span><?php echo date('M j, Y', strtotime($program['start_date'])); ?></span>
-                                </div>
+                        </div>
+                        <div class="timeline-divider">
+                            <div class="progress w-100">
+                                <div class="progress-bar bg-<?php echo $latest_status === 'completed' ? 'primary' : 'success'; ?>" style="width: <?php echo $progress; ?>%;"></div>
                             </div>
-                            <?php endif; ?>
-                            
-                            <?php if ($program['end_date']): ?>
-                            <div class="info-item">
-                                <small class="text-muted d-block">End Date</small>
-                                <div class="d-flex align-items-center">
-                                    <i class="fas fa-calendar-check me-2 text-primary"></i>
-                                    <span><?php echo date('M j, Y', strtotime($program['end_date'])); ?></span>
-                                </div>
-                            </div>
-                            <?php endif; ?>
-                            
-                            <div class="info-item">
-                                <small class="text-muted d-block">Created On</small>
-                                <div class="d-flex align-items-center">
-                                    <i class="fas fa-clock me-2 text-primary"></i>
-                                    <span><?php echo date('M j, Y', strtotime($program['created_at'])); ?></span>
-                                </div>
+                        </div>
+                        <div class="timeline-point">
+                            <div class="small text-muted">End Date</div>
+                            <div class="timeline-date">
+                                <?php echo $program['end_date'] ? date('M j, Y', strtotime($program['end_date'])) : '<span class="text-muted">Not specified</span>'; ?>
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <!-- Description Section -->
+                <div class="info-group">
+                    <h6>Description</h6>
+                    <p><?php echo $program['description'] ? nl2br(htmlspecialchars($program['description'])) : '<em class="text-muted">No description available.</em>'; ?></p>
+                </div>
+
+                <!-- Metadata Section -->
+                <div class="info-group">
+                    <h6>Metadata</h6>
+                    <p><strong>Created On:</strong> <?php echo date('M j, Y', strtotime($program['created_at'])); ?></p>
+                    <?php if (!empty($program['updated_at']) && $program['updated_at'] !== $program['created_at']): ?>
+                        <p><strong>Last Updated:</strong> <?php echo date('M j, Y', strtotime($program['updated_at'])); ?></p>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <!-- Current Status -->
-    <div class="col-lg-4 mb-4">
+    <div class="col-lg-5 mb-4">
         <div class="card shadow-sm h-100">
             <div class="card-header">
-                <h5 class="card-title m-0">Current Status</h5>
+                <h5 class="card-title m-0"><i class="fas fa-tasks me-2"></i>Current Status</h5>
             </div>
-            <div class="card-body text-center">
-                <?php 
-                $latest_status = 'not-started';
-                $latest_target = 'Not set';
-                $latest_achievement = 'Not reported';
-                $latest_target_date = null;
-                $latest_status_date = null;
-                
-                if (!empty($program['submissions'])) {
-                    $latest = $program['submissions'][0]; // First item is latest due to ordering
-                    $latest_status = $latest['status'];
-                    $latest_target = $latest['target'];
-                    $latest_achievement = !empty($latest['achievement']) ? $latest['achievement'] : 'Not reported';
-                    $latest_target_date = $latest['target_date'] ?? null;
-                    $latest_status_date = $latest['status_date'] ?? null;
-                }
-                ?>
-                
-                <div class="status-badge mb-4">
+            <div class="card-body">
+                <!-- Status Badge -->
+                <div class="status-badge-lg">
                     <div class="status-pill large <?php echo $latest_status; ?> active">
-                        <i class="fas fa-<?php 
-                            switch($latest_status) {
-                                case 'on-track': echo 'check-circle'; break;
-                                case 'delayed': echo 'exclamation-triangle'; break;
-                                case 'completed': echo 'flag-checkered'; break;
-                                default: echo 'hourglass-start';
-                            }
-                        ?> me-2"></i>
+                        <i class="fas fa-<?php echo $latest_status === 'completed' ? 'flag-checkered' : 'hourglass-start'; ?> me-2"></i>
                         <?php echo ucwords(str_replace('-', ' ', $latest_status)); ?>
                     </div>
                 </div>
-                
-                <div class="target-info mb-4">
-                    <h6 class="text-muted">TARGET</h6>
-                    <div class="h4"><?php echo htmlspecialchars($latest_target); ?></div>
-                    <?php if ($latest_target_date): ?>
-                        <div class="small text-muted">
-                            Target Date: <?php echo date('M j, Y', strtotime($latest_target_date)); ?>
+
+                <!-- Metrics Section -->
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="metric-card">
+                            <h6>Target</h6>
+                            <div class="h5"><?php echo htmlspecialchars($latest_target); ?></div>
                         </div>
-                    <?php endif; ?>
-                </div>
-                
-                <div class="achievement-info">
-                    <h6 class="text-muted">ACHIEVEMENT</h6>
-                    <div class="h4"><?php echo htmlspecialchars($latest_achievement); ?></div>
-                    <?php if ($latest_status_date): ?>
-                        <div class="small text-muted">
-                            Last Updated: <?php echo date('M j, Y', strtotime($latest_status_date)); ?>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="metric-card">
+                            <h6>Achievement</h6>
+                            <div class="h5"><?php echo htmlspecialchars($latest_achievement); ?></div>
                         </div>
-                    <?php endif; ?>
+                    </div>
                 </div>
+
+                <!-- Status Details -->
+                <?php if (!empty($latest_status_text)): ?>
+                    <div class="info-group mt-4">
+                        <h6>Status Details</h6>
+                        <p><?php echo nl2br(htmlspecialchars($latest_status_text)); ?></p>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -235,7 +228,7 @@ require_once '../layouts/agency_nav.php';
 <?php if (!empty($program['submissions'])): ?>
 <div class="card shadow-sm mb-4">
     <div class="card-header">
-        <h5 class="card-title m-0">Submission History</h5>
+        <h5 class="card-title m-0"><i class="fas fa-history me-2"></i>Submission History</h5>
     </div>
     <div class="card-body">
         <div class="table-responsive">
@@ -244,7 +237,6 @@ require_once '../layouts/agency_nav.php';
                     <tr>
                         <th>Period</th>
                         <th>Target</th>
-                        <th>Target Date</th>
                         <th>Achievement</th>
                         <th>Status</th>
                         <th>Status Date</th>
@@ -257,8 +249,7 @@ require_once '../layouts/agency_nav.php';
                             <td>
                                 <strong><?php echo $period; ?></strong>
                             </td>
-                            <td><?php echo htmlspecialchars($submission['target']); ?></td>
-                            <td><?php echo $submission['target_date'] ? date('M j, Y', strtotime($submission['target_date'])) : 'Not set'; ?></td>
+                            <td><?php echo htmlspecialchars($submission['current_target'] ?? $submission['target'] ?? 'Not set'); ?></td>
                             <td><?php echo !empty($submission['achievement']) ? htmlspecialchars($submission['achievement']) : '-'; ?></td>
                             <td>
                                 <?php echo get_status_badge($submission['status']); ?>
@@ -276,10 +267,16 @@ require_once '../layouts/agency_nav.php';
 <!-- Progress Visualization -->
 <div class="card shadow-sm mb-4">
     <div class="card-header">
-        <h5 class="card-title m-0">Progress Visualization</h5>
+        <h5 class="card-title m-0"><i class="fas fa-chart-line me-2"></i>Progress Visualization</h5>
     </div>
     <div class="card-body">
-        <canvas id="progressChart" height="300"></canvas>
+        <div class="chart-container" style="position: relative; height:300px; width:100%">
+            <canvas id="progressChart"></canvas>
+        </div>
+        <div id="chartNoData" class="text-center py-4 d-none">
+            <i class="fas fa-chart-area fa-3x text-muted mb-3"></i>
+            <p class="text-muted">Not enough data to display chart</p>
+        </div>
     </div>
 </div>
 <?php else: ?>
@@ -295,11 +292,17 @@ require_once '../layouts/agency_nav.php';
     const submissionData = <?php echo json_encode(array_map(function($sub) {
         return [
             'period' => "Q{$sub['quarter']}-{$sub['year']}",
-            'target' => $sub['target'],
+            'target' => $sub['current_target'] ?? $sub['target'] ?? null,
             'achievement' => $sub['achievement'] ?? null,
             'status' => $sub['status']
         ];
     }, $program['submissions'] ?? [])); ?>;
+    
+    const programName = "<?php echo addslashes(htmlspecialchars($program['program_name'])); ?>";
+    const programDates = {
+        startDate: "<?php echo $program['start_date'] ? date('Y-m-d', strtotime($program['start_date'])) : ''; ?>",
+        endDate: "<?php echo $program['end_date'] ? date('Y-m-d', strtotime($program['end_date'])) : ''; ?>"
+    };
 </script>
 
 <?php

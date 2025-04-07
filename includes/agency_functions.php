@@ -57,8 +57,12 @@ function process_content_json($row) {
     if (has_content_json_schema() && isset($row['content_json'])) {
         $content = json_decode($row['content_json'], true);
         if ($content) {
+            // Extract all content fields into the row
             $row['current_target'] = $content['target'] ?? null;
+            $row['status_date'] = $content['status_date'] ?? null;
+            $row['status_text'] = $content['status_text'] ?? null;
             $row['achievement'] = $content['achievement'] ?? null;
+            $row['achievement_date'] = $content['achievement_date'] ?? null;
             $row['remarks'] = $content['remarks'] ?? null;
         }
         unset($row['content_json']); // Remove JSON from result
@@ -101,16 +105,10 @@ function get_agency_programs_by_type() {
                        ORDER BY ps.submission_id DESC LIMIT 1) AS achievement";
         }
         
-        // Common fields for both schemas
-        $common_fields = "(SELECT ps.target_date FROM program_submissions ps 
+        // Common fields for both schemas - updated for JSON structure
+        $common_fields = "(SELECT ps.status FROM program_submissions ps 
                        WHERE ps.program_id = p.program_id 
-                       ORDER BY ps.submission_id DESC LIMIT 1) AS target_date,
-                      (SELECT ps.status FROM program_submissions ps 
-                       WHERE ps.program_id = p.program_id 
-                       ORDER BY ps.submission_id DESC LIMIT 1) AS status,
-                      (SELECT ps.status_date FROM program_submissions ps 
-                       WHERE ps.program_id = p.program_id 
-                       ORDER BY ps.submission_id DESC LIMIT 1) AS status_date";
+                       ORDER BY ps.submission_id DESC LIMIT 1) AS status";
         
         $query = "SELECT $select_fields, $common_fields FROM programs p
                   WHERE p.owner_agency_id = ?
@@ -168,15 +166,10 @@ function get_typed_programs($conn, $user_id, $is_assigned, $has_content_json) {
                          ORDER BY ps.submission_id DESC LIMIT 1) AS achievement";
     }
     
-    $common_fields = "(SELECT ps.target_date FROM program_submissions ps 
+    // Updated common fields to only include status which remains a column
+    $common_fields = "(SELECT ps.status FROM program_submissions ps 
                      WHERE ps.program_id = p.program_id 
-                     ORDER BY ps.submission_id DESC LIMIT 1) AS target_date,
-                    (SELECT ps.status FROM program_submissions ps 
-                     WHERE ps.program_id = p.program_id 
-                     ORDER BY ps.submission_id DESC LIMIT 1) AS status,
-                    (SELECT ps.status_date FROM program_submissions ps 
-                     WHERE ps.program_id = p.program_id 
-                     ORDER BY ps.submission_id DESC LIMIT 1) AS status_date";
+                     ORDER BY ps.submission_id DESC LIMIT 1) AS status";
     
     $query = "SELECT $select_fields, $common_fields FROM programs p
               WHERE p.owner_agency_id = ? AND p.is_assigned = ?
@@ -213,9 +206,9 @@ function create_agency_program($data) {
     $start_date = $conn->real_escape_string($data['start_date'] ?? null);
     $end_date = $conn->real_escape_string($data['end_date'] ?? null);
     $target = $conn->real_escape_string($data['target'] ?? '');
-    $target_date = $conn->real_escape_string($data['target_date'] ?? null);
     $status = $conn->real_escape_string($data['status'] ?? 'not-started');
     $status_date = $conn->real_escape_string($data['status_date'] ?? null);
+    $status_text = $conn->real_escape_string($data['status_text'] ?? '');
     
     if (empty($program_name)) {
         return ['error' => 'Program name is required'];
@@ -271,25 +264,26 @@ function create_agency_program($data) {
         if ($has_content_json) {
             $content = json_encode([
                 'target' => $target,
-                'achievement' => '',
-                'remarks' => ''
+                'status_date' => $status_date,
+                'status_text' => $status_text
             ]);
             
+            // Simplified query with minimal columns
             $sub_query = "INSERT INTO program_submissions (program_id, period_id, submitted_by, 
-                        content_json, target_date, status, status_date) 
-                        VALUES (?, ?, ?, ?, ?, ?, ?)";
+                        content_json, status) 
+                        VALUES (?, ?, ?, ?, ?)";
             
             $stmt = $conn->prepare($sub_query);
-            $stmt->bind_param("iiissss", $program_id, $current_period['period_id'], $user_id, 
-                            $content, $target_date, $status, $status_date);
+            $stmt->bind_param("iiiss", $program_id, $current_period['period_id'], $user_id, 
+                            $content, $status);
         } else {
             $sub_query = "INSERT INTO program_submissions (program_id, period_id, submitted_by, 
-                        target, target_date, status, status_date) 
-                        VALUES (?, ?, ?, ?, ?, ?, ?)";
+                        target, status, status_date) 
+                        VALUES (?, ?, ?, ?, ?, ?)";
             
             $stmt = $conn->prepare($sub_query);
-            $stmt->bind_param("iiissss", $program_id, $current_period['period_id'], $user_id, 
-                            $target, $target_date, $status, $status_date);
+            $stmt->bind_param("iiisss", $program_id, $current_period['period_id'], $user_id, 
+                            $target, $status, $status_date);
         }
         
         $stmt->execute();
@@ -328,9 +322,9 @@ function update_agency_program($data) {
     $start_date = $conn->real_escape_string($data['start_date'] ?? null);
     $end_date = $conn->real_escape_string($data['end_date'] ?? null);
     $target = $conn->real_escape_string($data['target'] ?? '');
-    $target_date = $conn->real_escape_string($data['target_date'] ?? null);
     $status = $conn->real_escape_string($data['status'] ?? '');
     $status_date = $conn->real_escape_string($data['status_date'] ?? null);
+    $status_text = $conn->real_escape_string($data['status_text'] ?? '');
     $achievement = $conn->real_escape_string($data['achievement'] ?? '');
     $remarks = $conn->real_escape_string($data['remarks'] ?? '');
     
@@ -408,43 +402,45 @@ function update_agency_program($data) {
             if ($has_content_json) {
                 $content = json_encode([
                     'target' => $target,
-                    'achievement' => $achievement,
-                    'remarks' => $remarks
+                    'status_date' => $status_date,
+                    'status_text' => $status_text
                 ]);
                 
-                $sub_query = "UPDATE program_submissions SET content_json = ?, target_date = ?, status = ?, 
-                             status_date = ?, updated_at = NOW() WHERE submission_id = ?";
+                // Simplified update with minimal columns
+                $sub_query = "UPDATE program_submissions SET content_json = ?, status = ?, 
+                             updated_at = NOW() WHERE submission_id = ?";
                 $stmt = $conn->prepare($sub_query);
-                $stmt->bind_param("ssssi", $content, $target_date, $status, $status_date, $sub_id);
+                $stmt->bind_param("ssi", $content, $status, $sub_id);
             } else {
-                $sub_query = "UPDATE program_submissions SET target = ?, target_date = ?, status = ?, 
+                $sub_query = "UPDATE program_submissions SET target = ?, status = ?, 
                              status_date = ?, achievement = ?, remarks = ?, updated_at = NOW() 
                              WHERE submission_id = ?";
                 $stmt = $conn->prepare($sub_query);
-                $stmt->bind_param("ssssssi", $target, $target_date, $status, $status_date, $achievement, $remarks, $sub_id);
+                $stmt->bind_param("sssssi", $target, $status, $status_date, $achievement, $remarks, $sub_id);
             }
         } else {
-            // Create new submission for current period based on schema
+            // Create new submission for current period
             if ($has_content_json) {
                 $content = json_encode([
                     'target' => $target,
-                    'achievement' => $achievement,
-                    'remarks' => $remarks
+                    'status_date' => $status_date,
+                    'status_text' => $status_text
                 ]);
                 
-                $sub_query = "INSERT INTO program_submissions (program_id, period_id, submitted_by, content_json, 
-                             target_date, status, status_date) 
-                             VALUES (?, ?, ?, ?, ?, ?, ?)";
+                // Simplified insert with minimal columns
+                $sub_query = "INSERT INTO program_submissions (program_id, period_id, submitted_by, 
+                             content_json, status) 
+                             VALUES (?, ?, ?, ?, ?)";
                 $stmt = $conn->prepare($sub_query);
-                $stmt->bind_param("iiissss", $program_id, $current_period['period_id'], $user_id, 
-                                $content, $target_date, $status, $status_date);
+                $stmt->bind_param("iiiss", $program_id, $current_period['period_id'], $user_id, 
+                                $content, $status);
             } else {
                 $sub_query = "INSERT INTO program_submissions (program_id, period_id, submitted_by, target, 
-                             target_date, status, status_date, achievement, remarks) 
-                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                             status, status_date, achievement, remarks) 
+                             VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
                 $stmt = $conn->prepare($sub_query);
-                $stmt->bind_param("iiissssss", $program_id, $current_period['period_id'], $user_id, 
-                                $target, $target_date, $status, $status_date, $achievement, $remarks);
+                $stmt->bind_param("iiisssss", $program_id, $current_period['period_id'], $user_id, 
+                                $target, $status, $status_date, $achievement, $remarks);
             }
         }
         $stmt->execute();
@@ -576,13 +572,13 @@ function get_all_sectors_programs($current_period_id = null) {
         // Get latest submission data if period is specified
         if ($current_period_id) {
             if ($has_content_json) {
-                $sub_query = "SELECT content_json, target_date, status, status_date
+                $sub_query = "SELECT content_json, status
                               FROM program_submissions
                               WHERE program_id = ? AND period_id = ?
                               ORDER BY submission_date DESC
                               LIMIT 1";
             } else {
-                $sub_query = "SELECT target, target_date, achievement, status, status_date, remarks
+                $sub_query = "SELECT target, achievement, status, status_date, remarks
                               FROM program_submissions
                               WHERE program_id = ? AND period_id = ?
                               ORDER BY submission_date DESC
@@ -602,7 +598,6 @@ function get_all_sectors_programs($current_period_id = null) {
                 $row = array_merge($row, $sub_data);
             } else {
                 $row['target'] = null;
-                $row['target_date'] = null;
                 $row['achievement'] = null;
                 $row['status'] = null;
                 $row['status_date'] = null;
@@ -743,5 +738,35 @@ function get_agency_reporting_period($period_id) {
     }
     
     return $result->fetch_assoc();
+}
+
+/**
+ * Enhanced submission with better JSON usage
+ */
+function submit_program_data_enhanced($data) {
+    global $conn;
+    
+    // Core fields stay as columns for performance/integrity
+    $program_id = intval($data['program_id']);
+    $period_id = intval($data['period_id']);
+    $status = $conn->real_escape_string($data['status']);
+    $status_date = $data['status_date'];
+    
+    // Put all variable content in JSON
+    $content = [
+        'target' => $data['target'],
+        'achievement' => $data['achievement'] ?? null,
+        'remarks' => $data['remarks'] ?? null,
+        // Add any new fields without schema changes
+        'custom_metrics' => $data['custom_metrics'] ?? null,
+        'attachments' => $data['attachments'] ?? null
+    ];
+    
+    $content_json = json_encode($content);
+    
+    // Insert with minimal columns + rich JSON content
+    $query = "INSERT INTO program_submissions (program_id, period_id, status, status_date, content_json) 
+              VALUES (?, ?, ?, ?, ?)";
+    // ...existing code...
 }
 ?>

@@ -140,9 +140,7 @@ require_once '../layouts/agency_nav.php';
                                             <td>
                                                 <?php if (isset($program['target']) && $program['target']): ?>
                                                     <div><?php echo htmlspecialchars($program['target']); ?></div>
-                                                    <?php if (isset($program['target_date']) && $program['target_date']): ?>
-                                                        <small class="text-muted">By: <?php echo date('M j, Y', strtotime($program['target_date'])); ?></small>
-                                                    <?php endif; ?>
+                                                    <!-- Removed target_date display -->
                                                 <?php else: ?>
                                                     <span class="text-muted">Not reported</span>
                                                 <?php endif; ?>
@@ -185,7 +183,7 @@ require_once '../layouts/agency_nav.php';
                                             <th>Program Name</th>
                                             <th>Agency</th>
                                             <th>Target</th>
-                                            <th>Target Date</th>
+                                            <!-- Removed Target Date column -->
                                             <th>Status</th>
                                             <th>Status Date</th>
                                             <th>Achievement</th>
@@ -214,13 +212,7 @@ require_once '../layouts/agency_nav.php';
                                                         <span class="text-muted">Not reported</span>
                                                     <?php endif; ?>
                                                 </td>
-                                                <td>
-                                                    <?php if (isset($program['target_date']) && $program['target_date']): ?>
-                                                        <?php echo date('M j, Y', strtotime($program['target_date'])); ?>
-                                                    <?php else: ?>
-                                                        <span class="text-muted">Not set</span>
-                                                    <?php endif; ?>
-                                                </td>
+                                                <!-- Removed Target Date column -->
                                                 <td>
                                                     <?php if (isset($program['status']) && $program['status']): ?>
                                                         <?php echo get_status_badge($program['status']); ?>

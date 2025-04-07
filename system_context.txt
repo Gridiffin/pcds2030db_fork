@@ -28,81 +28,78 @@ The goal is to develop a progressive web app (PWA) that replaces Excel-based rep
 - Frontend: HTML (in PHP), CSS, JavaScript, Bootstrap
 - Backend: PHP
 - Database: MySQL
-- Hosting: cPanel
-- Libraries: PHPPresentation, Dompdf
+- Server Environment: XAMPP (Apache)
+- Libraries: Chart.js (data visualization)
+- Hosting (in the future): cPanel
 
-## DATABASE DESIGN
+## Key Components
+1. Authentication System - Handles user login and session management
+2. Agency Module - Program creation, updating, and tracking for agency users
+3. Admin Module - User management, sector administration, and reporting periods
+4. Reporting System - Periodical submissions and historical data visualization
+5. Dashboard - Summary statistics and progress visualization
 
-The database structure supports:
+## Data Model
+### Core Entities:
+- Users - User accounts with roles (admin, agency)
+- Programs - Core entity representing agency initiatives
+- Sectors - Organizational categories (e.g., Health, Education)
+- Program Submissions - Progress reports for programs in specific periods
+- Reporting Periods - Quarterly reporting timeframes
 
-1. **Users/Agencies**:
-   - Admin users (Ministry staff)
-   - Agency users (one per agency)
-   - Each agency belongs to one sector
+### Schema Evolution:
+The database schema has evolved to use JSON storage for flexible content:
+- `program_submissions.content_json` stores variable program data
+- Core status fields remain as columns for efficient querying
+- This allows adding new fields without schema changes
 
-2. **Sectors**:
-   - Categories for programs and metrics (forestry, land, etc.)
+## User Roles
+- Agency Users: Create/update their own programs, view programs from other sectors
+- Admin Users: Manage users, sectors, reporting periods, generate reports
 
-3. **Programs**:
-   - Each agency manages their own programs
-   - Programs have targets, achievements, and status
+## Development Environment
+- Local development with XAMPP
+- Debug tools available in `/debug` directory for troubleshooting
+- Version tracking via APP_VERSION constant
 
-4. **Sector-Specific Metrics**:
-   - Each sector has unique metrics (e.g., timber export value for forestry)
-   - Metrics can be created by agencies or admins
-   - Admin approval required for agency-created metrics
+## File Structure
+- `/assets` - CSS, JavaScript, and other static resources
+- `/config` - Application configuration
+- `/database` - SQL scripts for schema setup
+- `/debug` - Development debugging tools
+- `/includes` - Shared PHP functions and utilities
+- `/views` - User interface templates organized by role
+  - `/views/admin` - Admin interfaces
+  - `/views/agency` - Agency user interfaces
+  - `/views/layouts` - Shared layout templates
 
-5. **Reporting Periods**:
-   - Quarterly reporting structure
-   - Admin controls open/close status for submissions
+## Reporting Workflow
+1. Admin creates reporting periods (quarters)
+2. Agencies submit program data during open reporting periods
+3. Programs track status (on-track, delayed, completed, not-started)
+4. Historical data is preserved for trend analysis
+5. Dashboards visualize progress across programs and sectors
 
-6. **Reports**:
-   - Generated PowerPoint/PDF files for each reporting period
-   - Only admin can generate reports
+## JSON Content Structure
+The application uses a flexible JSON storage approach for program data:
+```json
+{
+  "target": "Example target value",
+  "achievement": "Current achievement value",
+  "remarks": "Additional notes",
+  "status_text": "Detailed status description",
+  "custom_metrics": {
+    "metric1": "value1",
+    "metric2": "value2"
+  }
+}
+```
 
-## USER ROLES & PERMISSIONS
+This allows adding new program attributes without database schema changes.
 
-### Admin Users (Ministry)
-- Create/manage reporting periods
-- Approve/reject agency-created metrics
-- Generate consolidated reports
-- View all data across sectors
-- Create programs for any sector
+## Development Notes
+- Status values must be one of: 'on-track', 'delayed', 'completed', 'not-started'
+- Target dates have been removed in favor of start/end dates for timeline tracking
+- The system supports both assigned programs (by admins) and agency-created programs
+- Debug tools are available at `/debug/check_program_creation.php` and `/debug/check_status_values.php`
 
-### Agency Users
-- Submit data for their programs (targets/achievements)
-- Submit values for sector-specific metrics
-- Create new sector-specific metrics (pending admin approval)
-- View (but not modify) data from other agencies
-
-## DATA SUBMISSION FLOW
-
-1. Admin opens a new reporting period (quarter)
-2. Agencies log in and see the open reporting period
-3. For each program they own:
-   - Submit target, achievement, and status
-   - Add remarks as needed
-4. For their sector:
-   - Submit values for required metrics
-   - Create new metrics if needed
-5. Admin reviews submissions and generates reports
-6. System creates PowerPoint slides with graphs and tables
-7. Admin can also generate PDF versions of reports
-
-## DESIGN DECISIONS
-
-1. **Single Metrics Table**: 
-   - Using one table for all sector metrics allows flexibility
-   - Keeps implementation simpler than per-sector tables
-
-2. **Agency-Created Metrics**:
-   - Allows agencies to create custom metrics for their sector
-   - Admin approval maintains data quality
-
-3. **Direct Agency-Sector Link**:
-   - Each agency belongs to exactly one sector
-   - Simplifies permissions and data structure
-
-4. **PowerPoint Generation**:
-   - Flexible template approach
-   - Admin can select which metrics to include in reports
