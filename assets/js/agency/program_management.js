@@ -176,7 +176,41 @@ function initProgramSubmission() {
     // Program submission form validation
     const programSubmissionForm = document.getElementById('programSubmissionForm');
     if (programSubmissionForm) {
-        programSubmissionForm.addEventListener('submit', validateProgramSubmission);
+        // Different validation for draft vs final submission
+        const saveAsDraftBtn = document.querySelector('button[name="save_draft"]');
+        const submitFinalBtn = document.querySelector('button[name="submit_program"]');
+        
+        if (saveAsDraftBtn) {
+            saveAsDraftBtn.addEventListener('click', function(e) {
+                // Minimal validation for drafts - allow submission with incomplete data
+                const form = this.closest('form');
+                
+                // Set a flag to indicate this is a draft submission
+                const draftIndicator = document.createElement('input');
+                draftIndicator.type = 'hidden';
+                draftIndicator.name = 'is_draft';
+                draftIndicator.value = '1';
+                form.appendChild(draftIndicator);
+                
+                // Disable submit button to prevent double submission
+                this.disabled = true;
+                this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Saving...';
+            });
+        }
+        
+        if (submitFinalBtn) {
+            submitFinalBtn.addEventListener('click', function(e) {
+                // Full validation for final submission
+                if (!validateProgramSubmission(e)) {
+                    e.preventDefault();
+                    return false;
+                }
+                
+                // Disable submit button to prevent double submission
+                this.disabled = true;
+                this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Submitting...';
+            });
+        }
     }
 }
 
@@ -204,21 +238,39 @@ function validateProgramForm(e) {
 }
 
 /**
- * Validate program submission form
+ * Validate program submission form (for final submissions)
  */
 function validateProgramSubmission(e) {
-    const target = document.getElementById('target').value.trim();
-    const achievement = document.getElementById('achievement').value.trim();
+    const form = e.target.closest('form');
+    const target = form.querySelector('#target').value.trim();
+    const status = form.querySelector('#status').value.trim();
+    
+    let isValid = true;
+    let errorMessage = '';
     
     if (target === '') {
-        e.preventDefault();
+        isValid = false;
+        errorMessage += 'Target is required for final submission.<br>';
         showValidationError('target', 'Target is required');
-        return false;
     }
     
-    if (achievement === '') {
-        e.preventDefault();
-        showValidationError('achievement', 'Achievement is required');
+    if (status === '') {
+        isValid = false;
+        errorMessage += 'Status is required for final submission.<br>';
+        showValidationError('status', 'Status is required');
+    }
+    
+    if (!isValid) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-danger mt-3';
+        alertDiv.innerHTML = '<strong>Please fix the following errors:</strong><br>' + errorMessage;
+        
+        const existingAlert = form.querySelector('.alert');
+        if (existingAlert) {
+            existingAlert.remove();
+        }
+        
+        form.prepend(alertDiv);
         return false;
     }
     

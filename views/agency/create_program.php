@@ -23,23 +23,37 @@ if (!is_agency()) {
 $message = '';
 $messageType = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_program'])) {
-    // Debug: Log the POST data
-    error_log('Program form data: ' . print_r($_POST, true));
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Set is_draft flag based on which button was clicked
+    $is_draft = isset($_POST['save_draft']);
     
-    $result = create_agency_program($_POST);
+    // Prepare data for submission
+    $program_data = [
+        'program_name' => $_POST['program_name'] ?? '',
+        'description' => $_POST['description'] ?? '',
+        'start_date' => $_POST['start_date'] ?? '',
+        'end_date' => $_POST['end_date'] ?? '',
+        'target' => $_POST['target'] ?? '',
+        'status' => $_POST['status'] ?? 'not-started',
+        'status_date' => date('Y-m-d')
+    ];
+    
+    // Submit as draft or final based on button clicked
+    if ($is_draft) {
+        // Less validation for drafts
+        $result = create_agency_program_draft($program_data);
+    } else {
+        // Full validation for final submission
+        $result = create_agency_program($program_data);
+    }
     
     if (isset($result['success'])) {
-        // Store success message in session
-        $_SESSION['message'] = $result['message'];
+        // Set success message
+        $_SESSION['message'] = $is_draft ? 'Program saved as draft successfully.' : 'Program created successfully.';
         $_SESSION['message_type'] = 'success';
         
-        // Redirect to program list or details page
-        if (isset($result['program_id'])) {
-            header('Location: program_details.php?id=' . $result['program_id']);
-        } else {
-            header('Location: view_programs.php');
-        }
+        // Redirect to the program list
+        header('Location: view_programs.php');
         exit;
     } else {
         $message = $result['error'] ?? 'An error occurred while creating the program.';
@@ -165,8 +179,11 @@ require_once '../layouts/agency_nav.php';
                 <a href="view_programs.php" class="btn btn-outline-secondary me-2">
                     <i class="fas fa-times me-1"></i> Cancel
                 </a>
+                <button type="submit" name="save_draft" class="btn btn-secondary me-2">
+                    <i class="fas fa-save me-1"></i> Save as Draft
+                </button>
                 <button type="submit" name="submit_program" class="btn btn-primary">
-                    <i class="fas fa-save me-1"></i> Create Program
+                    <i class="fas fa-paper-plane me-1"></i> Submit Final
                 </button>
             </div>
         </form>

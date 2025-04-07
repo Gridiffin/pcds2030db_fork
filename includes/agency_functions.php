@@ -285,6 +285,91 @@ function create_agency_program($data) {
 }
 
 /**
+ * Create a new program as a draft
+ * This version has relaxed validation requirements
+ * 
+ * @param array $data Program data
+ * @return array Result of creation
+ */
+function create_agency_program_draft($data) {
+    global $conn;
+    
+    if (!is_agency()) {
+        return format_error('Permission denied', 403);
+    }
+    
+    // Basic validation - only program name is required for drafts
+    if (empty($data['program_name'])) {
+        return format_error('Program name is required even for drafts');
+    }
+    
+    // Sanitize inputs
+    $program_name = $conn->real_escape_string($data['program_name']);
+    $description = $conn->real_escape_string($data['description'] ?? '');
+    $start_date = $conn->real_escape_string($data['start_date'] ?? null);
+    $end_date = $conn->real_escape_string($data['end_date'] ?? null);
+    $target = $conn->real_escape_string($data['target'] ?? '');
+    $status = $conn->real_escape_string($data['status'] ?? 'not-started');
+    $status_date = $conn->real_escape_string($data['status_date'] ?? date('Y-m-d'));
+    
+    // Basic date validation if dates are provided
+    if ($start_date && $end_date && strtotime($start_date) > strtotime($end_date)) {
+        return format_error('End date cannot be before start date');
+    }
+    
+    $user_id = $_SESSION['user_id'];
+    $sector_id = $_SESSION['sector_id'];
+    
+    // Begin transaction
+    $conn->begin_transaction();
+    
+    try {
+        // Insert program
+        $query = "INSERT INTO programs (program_name, description, start_date, end_date, 
+                                    owner_agency_id, sector_id, created_by, is_assigned) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, 0)";
+        
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("ssssiii", $program_name, $description, $start_date, $end_date, 
+                        $user_id, $sector_id, $user_id);
+        $stmt->execute();
+        $program_id = $conn->insert_id;
+        
+        // Get current period
+        $current_period = get_current_reporting_period();
+        if (!$current_period) {
+            throw new Exception('No active reporting period found');
+        }
+        
+        // Create content JSON
+        $content = json_encode([
+            'target' => $target,
+            'status_date' => $status_date,
+            'status_text' => '',
+            'achievement' => '',
+            'remarks' => ''
+        ]);
+        
+        // Insert as draft submission
+        $sub_query = "INSERT INTO program_submissions (program_id, period_id, submitted_by, 
+                    content_json, status, is_draft) 
+                    VALUES (?, ?, ?, ?, ?, 1)";
+        
+        $stmt = $conn->prepare($sub_query);
+        $stmt->bind_param("iiiss", $program_id, $current_period['period_id'], $user_id, 
+                        $content, $status);
+        $stmt->execute();
+        
+        $conn->commit();
+        
+        return format_success('Program saved as draft successfully', ['program_id' => $program_id]);
+    } catch (Exception $e) {
+        $conn->rollback();
+        return format_error('Failed to create program draft: ' . $e->getMessage());
+    }
+}
+
+/**
  * Update program details and submission
  * @param array $data Program data
  * @return array Result of update
@@ -749,5 +834,184 @@ function submit_program_data_enhanced($data) {
     $query = "INSERT INTO program_submissions (program_id, period_id, status, status_date, content_json) 
               VALUES (?, ?, ?, ?, ?)";
     // ...existing code...
+}
+
+/**
+ * Submit data for a program
+ * @param array $data Program data
+ * @param bool $is_draft Whether this is a draft submission
+ * @return array Result of submission
+ */
+function submit_program_data($data, $is_draft = false) {
+    global $conn;
+    
+    if (!is_agency()) {
+        return ['error' => 'Permission denied'];
+    }
+    
+    // Validate and sanitize inputs
+    $program_id = intval($data['program_id'] ?? 0);
+    $period_id = intval($data['period_id'] ?? 0);
+    
+    if (!$program_id || !$period_id) {
+        return ['error' => 'Missing required parameters'];
+    }
+    
+    // Only perform full validation if not a draft
+    if (!$is_draft) {
+        $validation_fields = ['target', 'status'];
+        $validated = validate_form_input($data, $validation_fields);
+        if (isset($validated['error'])) {
+            return $validated;
+        }
+    } else {
+        // Basic validation even for drafts
+        $validated = [];
+        foreach ($data as $key => $value) {
+            $validated[$key] = $conn->real_escape_string($value);
+        }
+    }
+    
+    // Extract data
+    $target = $validated['target'] ?? '';
+    $achievement = $validated['achievement'] ?? '';
+    $status = $validated['status'] ?? 'not-started';
+    $status_date = $validated['status_date'] ?? date('Y-m-d');
+    $status_text = $validated['status_text'] ?? '';
+    $remarks = $validated['remarks'] ?? '';
+    
+    // Create JSON content
+    $content = [
+        'target' => $target,
+        'status_date' => $status_date,
+        'status_text' => $status_text,
+        'achievement' => $achievement,
+        'remarks' => $remarks
+    ];
+    
+    $content_json = json_encode($content);
+    $user_id = $_SESSION['user_id'];
+    
+    // Check if a submission already exists for this program and period
+    $check_query = "SELECT submission_id FROM program_submissions 
+                   WHERE program_id = ? AND period_id = ?";
+    $stmt = $conn->prepare($check_query);
+    $stmt->bind_param("ii", $program_id, $period_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        // Update existing submission
+        $submission_id = $result->fetch_assoc()['submission_id'];
+        $query = "UPDATE program_submissions SET content_json = ?, status = ?, is_draft = ?, 
+                 updated_at = NOW() WHERE submission_id = ?";
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("ssii", $content_json, $status, $is_draft, $submission_id);
+    } else {
+        // Create new submission
+        $query = "INSERT INTO program_submissions (program_id, period_id, submitted_by, 
+                 content_json, status, is_draft) VALUES (?, ?, ?, ?, ?, ?)";
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("iiissi", $program_id, $period_id, $user_id, $content_json, $status, $is_draft);
+    }
+    
+    if ($stmt->execute()) {
+        return [
+            'success' => true,
+            'message' => $is_draft ? 'Program data saved as draft' : 'Program data submitted successfully'
+        ];
+    } else {
+        return ['error' => 'Failed to submit program data: ' . $stmt->error];
+    }
+}
+
+/**
+ * Finalize a draft submission
+ * @param int $submission_id The ID of the draft submission to finalize
+ * @return array Result of finalization
+ */
+function finalize_draft_submission($submission_id) {
+    global $conn;
+    
+    if (!is_agency()) {
+        return ['error' => 'Permission denied'];
+    }
+    
+    $submission_id = intval($submission_id);
+    $user_id = $_SESSION['user_id'];
+    
+    // Verify ownership and draft status
+    $check_query = "SELECT ps.* FROM program_submissions ps
+                   JOIN programs p ON ps.program_id = p.program_id
+                   WHERE ps.submission_id = ? AND p.owner_agency_id = ? AND ps.is_draft = 1";
+    $stmt = $conn->prepare($check_query);
+    $stmt->bind_param("ii", $submission_id, $user_id);
+    $stmt->execute();
+    
+    if ($stmt->get_result()->num_rows === 0) {
+        return ['error' => 'Draft not found or not owned by your agency'];
+    }
+    
+    // Perform validation on the draft before finalizing
+    $get_data = "SELECT * FROM program_submissions WHERE submission_id = ?";
+    $stmt = $conn->prepare($get_data);
+    $stmt->bind_param("i", $submission_id);
+    $stmt->execute();
+    $submission = $stmt->get_result()->fetch_assoc();
+    
+    // Decode JSON content
+    $content = json_decode($submission['content_json'], true);
+    
+    // Validate required fields
+    if (empty($content['target'])) {
+        return ['error' => 'Target is required before finalizing'];
+    }
+    
+    if (empty($submission['status'])) {
+        return ['error' => 'Status is required before finalizing'];
+    }
+    
+    // Update to mark as finalized (not a draft)
+    $query = "UPDATE program_submissions SET is_draft = 0, updated_at = NOW() WHERE submission_id = ?";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("i", $submission_id);
+    
+    if ($stmt->execute()) {
+        return [
+            'success' => true,
+            'message' => 'Draft finalized successfully'
+        ];
+    } else {
+        return ['error' => 'Failed to finalize draft: ' . $stmt->error];
+    }
+}
+
+/**
+ * Check if a program has a draft submission for the current period
+ * @param int $program_id The program ID to check
+ * @return bool True if the program has a draft submission
+ */
+function is_program_draft($program_id) {
+    global $conn;
+    $current_period = get_current_reporting_period();
+    
+    if (!$current_period) {
+        return false;
+    }
+    
+    $period_id = $current_period['period_id'];
+    $query = "SELECT is_draft FROM program_submissions 
+             WHERE program_id = ? AND period_id = ?";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("ii", $program_id, $period_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        $row = $result->fetch_assoc();
+        return $row['is_draft'] == 1;
+    }
+    
+    return false;
 }
 ?>

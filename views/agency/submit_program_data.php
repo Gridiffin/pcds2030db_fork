@@ -34,15 +34,39 @@ if (!$current_period || $current_period['status'] !== 'open') {
 $message = '';
 $message_type = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_program'])) {
-    $result = submit_program_data($_POST);
-    
-    if (isset($result['success'])) {
-        $message = $result['message'] ?? 'Program data submitted successfully.';
-        $message_type = 'success';
-    } else {
-        $message = $result['error'] ?? 'Failed to submit program data.';
-        $message_type = 'danger';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Handle draft submission
+    if (isset($_POST['save_draft'])) {
+        $result = submit_program_data($_POST, true);
+        if (isset($result['success'])) {
+            $message = $result['message'] ?? 'Program data saved as draft.';
+            $message_type = 'success';
+        } else {
+            $message = $result['error'] ?? 'Failed to save draft.';
+            $message_type = 'danger';
+        }
+    }
+    // Handle final submission
+    else if (isset($_POST['submit_program'])) {
+        $result = submit_program_data($_POST, false);
+        if (isset($result['success'])) {
+            $message = $result['message'] ?? 'Program data submitted successfully.';
+            $message_type = 'success';
+        } else {
+            $message = $result['error'] ?? 'Failed to submit program data.';
+            $message_type = 'danger';
+        }
+    }
+    // Handle finalizing a draft
+    else if (isset($_POST['finalize_draft'])) {
+        $result = finalize_draft_submission($_POST['submission_id']);
+        if (isset($result['success'])) {
+            $message = $result['message'] ?? 'Draft finalized successfully.';
+            $message_type = 'success';
+        } else {
+            $message = $result['error'] ?? 'Failed to finalize draft.';
+            $message_type = 'danger';
+        }
     }
 }
 
@@ -67,7 +91,7 @@ $selected_program = null;
 $program_id = isset($_GET['id']) ? intval($_GET['id']) : null;
 
 // Get agency's programs
-$programs = get_agency_programs();
+$programs = get_agency_programs_by_type();
 
 // If a program ID is provided, get its data
 if ($program_id) {
@@ -266,9 +290,27 @@ require_once '../layouts/agency_nav.php';
                         <a href="view_programs.php" class="btn btn-outline-secondary me-2">
                             <i class="fas fa-times me-1"></i> Cancel
                         </a>
-                        <button type="submit" name="submit_program" class="btn btn-primary">
-                            <i class="fas fa-save me-1"></i> Save Program Data
-                        </button>
+                        
+                        <?php if (isset($current_submission) && $current_submission['is_draft'] == 1): ?>
+                            <!-- For drafts, show Submit Final button -->
+                            <form method="post" class="d-inline me-2">
+                                <input type="hidden" name="submission_id" value="<?php echo $current_submission['submission_id']; ?>">
+                                <button type="submit" name="finalize_draft" class="btn btn-success">
+                                    <i class="fas fa-check-circle me-1"></i> Submit Final
+                                </button>
+                            </form>
+                            <button type="submit" name="save_draft" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Update Draft
+                            </button>
+                        <?php else: ?>
+                            <!-- For new submissions or updates to finalized submissions -->
+                            <button type="submit" name="save_draft" class="btn btn-secondary me-2">
+                                <i class="fas fa-save me-1"></i> Save as Draft
+                            </button>
+                            <button type="submit" name="submit_program" class="btn btn-primary">
+                                <i class="fas fa-paper-plane me-1"></i> Submit Final
+                            </button>
+                        <?php endif; ?>
                     </div>
                 </form>
                 

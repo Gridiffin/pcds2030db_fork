@@ -52,24 +52,65 @@ if (!$current_period || $current_period['status'] !== 'open') {
 $current_submission = $program['current_submission'] ?? null;
 
 // Process form submission
-$message = '';
-$messageType = '';
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_program'])) {
-    // Add program_id to data
-    $_POST['program_id'] = $program_id;
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Check which button was clicked
+    $is_draft = isset($_POST['save_draft']);
+    $finalize_draft = isset($_POST['finalize_draft']);
     
-    $result = update_agency_program($_POST);
+    // Prepare program data
+    $program_id = intval($_POST['program_id'] ?? 0);
+    $program_data = [
+        'program_id' => $program_id,
+        'program_name' => $_POST['program_name'] ?? '',
+        'description' => $_POST['description'] ?? '',
+        'start_date' => $_POST['start_date'] ?? '',
+        'end_date' => $_POST['end_date'] ?? '',
+        'target' => $_POST['target'] ?? '',
+        'status' => $_POST['status'] ?? 'not-started',
+        'status_date' => $_POST['status_date'] ?? date('Y-m-d'),
+        'status_text' => $_POST['status_text'] ?? '',
+        'achievement' => $_POST['achievement'] ?? '',
+        'remarks' => $_POST['remarks'] ?? ''
+    ];
+    
+    if ($finalize_draft && isset($_POST['submission_id'])) {
+        // Option 1: Finalize an existing draft
+        $result = finalize_draft_submission($_POST['submission_id']);
+    } else {
+        // Option 2: Submit as draft or final based on button clicked
+        $result = submit_program_data($program_data, $is_draft);
+    }
     
     if (isset($result['success'])) {
-        $_SESSION['message'] = $result['message'];
+        // Set success message
+        if ($finalize_draft) {
+            $_SESSION['message'] = 'Draft finalized successfully.';
+        } else if ($is_draft) {
+            $_SESSION['message'] = 'Program saved as draft successfully.';
+        } else {
+            $_SESSION['message'] = 'Program updated successfully.';
+        }
         $_SESSION['message_type'] = 'success';
         
-        header('Location: program_details.php?id=' . $program_id);
+        // Redirect to programs page
+        header('Location: view_programs.php');
         exit;
     } else {
         $message = $result['error'] ?? 'An error occurred while updating the program.';
         $messageType = 'danger';
+    }
+}
+
+// Check if the program has a draft submission for the current period
+$is_draft = false;
+$submission_id = null;
+
+// Check for current submission
+if (isset($program['current_submission'])) {
+    $current_submission = $program['current_submission'];
+    $is_draft = isset($current_submission['is_draft']) && $current_submission['is_draft'] == 1;
+    if ($is_draft) {
+        $submission_id = $current_submission['submission_id'];
     }
 }
 
@@ -131,6 +172,14 @@ require_once '../layouts/agency_nav.php';
     </div>
 </div>
 
+<!-- Include any draft notification banner if this is a draft -->
+<?php if ($is_draft): ?>
+<div class="draft-banner mb-4">
+    <i class="fas fa-exclamation-triangle"></i>
+    <strong>Draft Mode:</strong> This program submission is currently saved as a draft. You can continue editing or submit the final version.
+</div>
+<?php endif; ?>
+
 <!-- Program Update Form -->
 <div class="card shadow-sm mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
@@ -140,8 +189,11 @@ require_once '../layouts/agency_nav.php';
         </span>
     </div>
     <div class="card-body">
-        <form method="post" class="program-form">
+        <form method="post" id="updateProgramForm" class="program-form">
             <input type="hidden" name="program_id" value="<?php echo $program['program_id']; ?>">
+            <?php if ($is_draft && $submission_id): ?>
+            <input type="hidden" name="submission_id" value="<?php echo $submission_id; ?>">
+            <?php endif; ?>
             
             <!-- Basic Information -->
             <div class="mb-4">
@@ -229,9 +281,23 @@ require_once '../layouts/agency_nav.php';
                 <a href="program_details.php?id=<?php echo $program_id; ?>" class="btn btn-outline-secondary me-2">
                     <i class="fas fa-times me-1"></i> Cancel
                 </a>
-                <button type="submit" name="update_program" class="btn btn-primary">
-                    <i class="fas fa-save me-1"></i> Update Program
+                <?php if ($is_draft): ?>
+                <!-- For drafts: show option to update draft or finalize -->
+                <button type="submit" name="save_draft" class="btn btn-secondary me-2">
+                    <i class="fas fa-save me-1"></i> Update Draft
                 </button>
+                <button type="submit" name="finalize_draft" class="btn btn-success">
+                    <i class="fas fa-check-circle me-1"></i> Submit Final
+                </button>
+                <?php else: ?>
+                <!-- For regular updates: Show save as draft or submit final -->
+                <button type="submit" name="save_draft" class="btn btn-secondary me-2">
+                    <i class="fas fa-save me-1"></i> Save as Draft
+                </button>
+                <button type="submit" name="submit_program" class="btn btn-primary">
+                    <i class="fas fa-paper-plane me-1"></i> Submit Final
+                </button>
+                <?php endif; ?>
             </div>
         </form>
     </div>

@@ -249,3 +249,39 @@
         padding: 0.75rem !important;
     }
 }
+
+/* Draft indicator styles */
+.badge.bg-warning {
+    background-color: #ffc107 !important;
+    color: #212529 !important;
+}
+
+.draft-indicator {
+    position: relative;
+    padding-left: 18px;
+}
+
+.draft-indicator:before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #ffc107;
+}
+
+.draft-banner {
+    background-color: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    border-radius: 0.25rem;
+    color: #856404;
+}
+
+.draft-banner i {
+    margin-right: 0.5rem;
+}

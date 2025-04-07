@@ -35,14 +35,22 @@ $pageTitle = 'Manage Programs';
 // Get programs for agency
 $programs = get_agency_programs_by_type();
 
-// Combine both program types into a single array for display
+// Get programs with draft information
 $all_programs = [];
 foreach ($programs['assigned'] as $program) {
     $program['program_type'] = 'assigned';
+    
+    // Check if there's a draft for current period
+    $program['is_draft'] = is_program_draft($program['program_id']);
+    
     $all_programs[] = $program;
 }
 foreach ($programs['created'] as $program) {
     $program['program_type'] = 'created';
+    
+    // Check if there's a draft for current period
+    $program['is_draft'] = is_program_draft($program['program_id']);
+    
     $all_programs[] = $program;
 }
 
@@ -227,7 +235,12 @@ require_once '../../includes/dashboard_header.php';
                         <?php foreach ($all_programs as $program): ?>
                             <tr data-program-type="<?php echo $program['program_type']; ?>">
                                 <td>
-                                    <div class="fw-medium"><?php echo $program['program_name']; ?></div>
+                                    <div class="fw-medium">
+                                        <?php echo $program['program_name']; ?>
+                                        <?php if (isset($program['is_draft']) && $program['is_draft']): ?>
+                                            <span class="badge bg-warning ms-2">Draft</span>
+                                        <?php endif; ?>
+                                    </div>
                                     <?php if (!empty($program['description'])): ?>
                                         <div class="small text-muted"><?php echo substr($program['description'], 0, 100); ?><?php echo strlen($program['description']) > 100 ? '...' : ''; ?></div>
                                     <?php endif; ?>
