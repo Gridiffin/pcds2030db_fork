@@ -247,7 +247,7 @@ require_once '../../includes/dashboard_header.php';
                                 <td><?php echo isset($program['status_date']) && $program['status_date'] ? date('M j, Y', strtotime($program['status_date'])) : 'Not set'; ?></td>
                                 <td>
                                     <div class="btn-group btn-group-sm">
-                                        <a href="program_details.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="View Details">
+                                        <a href="program_details.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="View Details (Under Maintenance)">
                                             <i class="fas fa-eye"></i>
                                         </a>
                                         <a href="update_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-secondary" title="Update Program">

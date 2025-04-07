@@ -1,109 +1,98 @@
 /**
  * Status Utilities
- * Shared functions for handling program status display and interactions
+ * 
+ * Shared functions for handling program status in the frontend.
  */
-
-/**
- * Get the appropriate CSS class for a status
- * @param {string} status - The program status ('on-track', 'delayed', 'completed', 'not-started')
- * @param {string} prefix - CSS class prefix (default: 'bg')
- * @return {string} CSS class name
- */
-function getStatusClass(status, prefix = 'bg') {
-    let statusClass = 'secondary';
-    
-    switch (status) {
-        case 'on-track': 
-            statusClass = 'success'; 
-            break;
-        case 'delayed': 
-            statusClass = 'warning'; 
-            break;
-        case 'completed': 
-            statusClass = 'info'; 
-            break;
-        case 'not-started': 
-            statusClass = 'secondary'; 
-            break;
-    }
-    
-    return `${prefix}-${statusClass}`;
-}
-
-/**
- * Format a status name for display (capitalize, replace hyphens)
- * @param {string} status - The program status 
- * @return {string} Formatted status name
- */
-function formatStatusName(status) {
-    if (!status) return 'Not Reported';
-    
-    // Replace hyphens with spaces and capitalize each word
-    return status
-        .split('-')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
-}
 
 /**
  * Initialize status pill selection behavior
- * @param {string} containerId - ID of container with status pills (optional)
  */
-function initStatusPills(containerId = null) {
-    const container = containerId ? document.getElementById(containerId) : document;
-    if (!container) return;
+function initStatusPills() {
+    const statusPills = document.querySelectorAll('.status-pill');
+    const statusInput = document.getElementById('status');
     
-    const statusPills = container.querySelectorAll('.status-pill');
-    const statusInput = container.querySelector('input[name="status"]') || document.getElementById('status');
-    
-    if (!statusPills.length || !statusInput) return;
-    
-    statusPills.forEach(pill => {
-        pill.addEventListener('click', function() {
-            // Ignore if this is a read-only pill (large)
-            if (this.classList.contains('large')) return;
-            
-            // Remove active class from all pills
-            statusPills.forEach(p => p.classList.remove('active'));
-            
-            // Add active class to clicked pill
-            this.classList.add('active');
-            
-            // Update hidden input value
-            statusInput.value = this.getAttribute('data-status');
-            
-            // Trigger a custom event that other components can listen for
-            const event = new CustomEvent('statusChanged', {
-                detail: { status: statusInput.value }
+    if (statusPills.length && statusInput) {
+        statusPills.forEach(pill => {
+            pill.addEventListener('click', function() {
+                // Remove active class from all pills
+                statusPills.forEach(p => p.classList.remove('active'));
+                
+                // Add active class to clicked pill
+                this.classList.add('active');
+                
+                // Update hidden input
+                statusInput.value = this.getAttribute('data-status');
             });
-            document.dispatchEvent(event);
-            
-            // Validate related fields if needed (e.g., date validation)
-            if (typeof validateDates === 'function') {
-                validateDates();
-            }
         });
-    });
+    }
+}
+
+/**
+ * Get color class for a status value
+ * @param {string} status - Status value
+ * @returns {string} CSS color class
+ */
+function getStatusColorClass(status) {
+    switch (status) {
+        case 'on-track': return 'success';
+        case 'delayed': return 'warning';
+        case 'completed': return 'primary';
+        case 'not-started': 
+        default: return 'secondary';
+    }
+}
+
+/**
+ * Get icon class for a status value
+ * @param {string} status - Status value
+ * @returns {string} FontAwesome icon class
+ */
+function getStatusIconClass(status) {
+    switch (status) {
+        case 'on-track': return 'fas fa-check-circle';
+        case 'delayed': return 'fas fa-exclamation-triangle';
+        case 'completed': return 'fas fa-flag-checkered';
+        case 'not-started': 
+        default: return 'fas fa-hourglass-start';
+    }
 }
 
 /**
  * Create a status badge element
- * @param {string} status - The status value
- * @param {boolean} usePill - Whether to use pill style (default: false)
- * @return {HTMLElement} The status badge element
+ * @param {string} status - Status value
+ * @returns {HTMLElement} Badge element
  */
-function createStatusBadge(status, usePill = false) {
-    const statusClass = getStatusClass(status);
-    const statusText = formatStatusName(status);
-    
+function createStatusBadge(status) {
     const badge = document.createElement('span');
-    badge.className = usePill ? `badge rounded-pill ${statusClass}` : `badge ${statusClass}`;
-    badge.textContent = statusText;
+    badge.className = `badge bg-${getStatusColorClass(status)}`;
+    badge.textContent = status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
+    return badge;
+}
+
+/**
+ * Create a rich status badge with icon
+ * @param {string} status - Status value
+ * @returns {HTMLElement} Badge element with icon
+ */
+function createRichStatusBadge(status) {
+    const badge = document.createElement('span');
+    badge.className = `badge bg-${getStatusColorClass(status)}`;
+    
+    const icon = document.createElement('i');
+    icon.className = `${getStatusIconClass(status)} me-1`;
+    
+    badge.appendChild(icon);
+    badge.appendChild(document.createTextNode(
+        status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())
+    ));
     
     return badge;
 }
 
-// Initialize status pills when the DOM is loaded
+// Initialize on document load if auto-init is needed
 document.addEventListener('DOMContentLoaded', function() {
-    initStatusPills();
+    // Auto-initialize status pills if data-auto-init attribute exists
+    if (document.querySelector('.status-pills[data-auto-init]')) {
+        initStatusPills();
+    }
 });

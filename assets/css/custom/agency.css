@@ -1,11 +1,17 @@
 /**
  * Agency-specific styles
+ * Optimized and cleaned up version
  */
 
 /* Import common styles */
 @import url('common.css');
 
-/* Agency badge styling */
+:root {
+    --primary-rgb: 133, 145, 164;
+    --transition-speed: 0.3s;
+}
+
+/* Base Agency Styling */
 .agency-badge {
     background-color: var(--secondary-color);
     font-weight: 500;
@@ -13,128 +19,38 @@
     font-size: 0.9rem;
 }
 
-/* Submission card styling */
-.submission-card {
-    border: none;
-    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s, box-shadow 0.3s;
+/* Card Styling */
+.card {
+    margin-bottom: 1.5rem;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
     border-radius: 0.75rem;
     overflow: hidden;
     position: relative;
+    border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-.submission-card:before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 4px;
-    background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+.card-header {
+    background-color: var(--primary-color) !important;
+    color: #ffffff !important;
+    padding: 0.75rem 1rem !important;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
-.submission-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+.card-header .card-title {
+    color: #ffffff !important;
+    font-size: 1.1rem !important;
+    font-weight: 600 !important;
+    margin: 0;
 }
 
-.submission-card .display-4 {
-    font-size: 2rem;
-    font-weight: 600;
-    color: var(--primary-color);
-}
-
-.submission-card .card-body {
+.card-body {
+    padding: 1.25rem !important;
     background-color: #ffffff;
 }
 
-/* Metrics list styling */
-.metric-icon {
-    width: 30px;
-    height: 30px;
-    background-color: rgba(133, 145, 164, 0.1);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--primary-color);
-}
-
-/* Program submission form */
-.program-form {
-    background: linear-gradient(to right, rgba(var(--primary-rgb), 0.03), transparent);
-    border-radius: 8px;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
-    border-left: 4px solid var(--primary-color);
-}
-
-.program-form label {
-    font-weight: 500;
-    margin-bottom: 0.5rem;
-    color: var(--dark-color);
-}
-
-.program-form .form-control:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 0.2rem rgba(133, 145, 164, 0.25);
-}
-
-.program-form .form-text {
-    font-size: 0.85rem;
-    color: #6c757d;
-}
-
-/* Program submission form - improved alignment */
-.program-form {
-    padding: 0;
-    margin: 0;
-    border: none;
-    background: transparent;
-    width: 100%;
-}
-
-.card .program-form .form-label {
-    font-weight: 500;
-    margin-bottom: 0.5rem;
-    color: var(--dark-color);
-}
-
-.card .program-form .form-control:focus,
-.card .program-form .form-select:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 0.2rem rgba(133, 145, 164, 0.25);
-}
-
-/* Form section styling */
-.program-form .mb-4 {
-    background-color: #f8f9fa;
-    border-radius: 0.5rem;
-    padding: 1.25rem;
-    margin-bottom: 1.5rem !important;
-    border-left: 3px solid var(--primary-color);
-}
-
-.program-form h6.fw-bold {
-    color: var(--primary-color);
-    margin-bottom: 1rem !important;
-}
-
-/* Consistent form spacing */
-.program-form .row.g-3 {
-    margin-left: 0;
-    margin-right: 0;
-}
-
-/* Mobile-friendly adjustments */
-@media (max-width: 768px) {
-    .program-form .mb-4 {
-        padding: 1rem;
-    }
-}
-
-/* Status selection pills */
+/* Status Pills */
 .status-pills {
     display: flex;
     margin-bottom: 1rem;
@@ -146,7 +62,12 @@
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     border-radius: 30px;
     padding: 0.6rem 1.2rem;
-    transition: all 0.2s ease;
+    transition: all var(--transition-speed) ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
 }
 
 .status-pill:hover:not(.large),
@@ -155,322 +76,90 @@
     transform: translateY(-2px);
 }
 
-/* Info box for program details */
-.info-box {
+.status-badge-lg .status-pill {
+    padding: 0.6rem 1.2rem;
+    font-size: 1rem;
+}
+
+/* Status colors */
+.status-pill.on-track, .bg-on-track {
+    background-color: #28a745;
+    color: white;
+}
+
+.status-pill.delayed, .bg-delayed {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.status-pill.completed, .bg-completed {
+    background-color: #0d6efd;
+    color: white;
+}
+
+.status-pill.not-started, .bg-not-started {
+    background-color: #6c757d;
+    color: white;
+}
+
+/* Form Styling */
+.program-form {
+    width: 100%;
+}
+
+.program-form .form-label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: var(--dark-color);
+}
+
+.program-form .form-control:focus,
+.program-form .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(133, 145, 164, 0.25);
+}
+
+.program-form .form-text {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.program-form .mb-4 {
     background-color: #f8f9fa;
     border-radius: 0.5rem;
     padding: 1.25rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    position: relative;
-    border-left: 4px solid var(--primary-color);
+    margin-bottom: 1.5rem !important;
+    border-left: 3px solid var(--primary-color);
 }
 
-.info-item {
-    margin-bottom: 1rem;
-}
-
-.info-item:last-child {
-    margin-bottom: 0;
-}
-
-/* Program sections */
-.program-section {
-    transition: all 0.3s ease;
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-    border-radius: 0.75rem;
-    background-color: white;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
-    position: relative;
-    overflow: hidden;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.program-section:before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 5px;
-    background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
-}
-
-.program-section .card-header {
-    background-color: var(--primary-color) !important;
-    color: #ffffff !important;
-}
-
-/* Styles for View All Sectors page */
-.current-sector {
-    border-bottom: 2px solid var(--primary-color);
-    font-weight: bold;
-}
-
-.current-sector-row {
-    background-color: rgba(133, 145, 164, 0.1); /* Light primary color */
-}
-
-/* Custom Form Modal Styles */
-.form-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-    animation: fadeIn 0.2s ease-out;
-}
-
-.form-wrapper {
-    background-color: white;
-    border-radius: 8px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-    width: 100%;
-    max-width: 700px;
-    position: relative;
-    overflow: hidden;
-    animation: modalFadeIn 0.3s;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-@keyframes modalFadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.form-header {
-    background-color: var(--primary-color);
-    color: white;
-    padding: 1rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.form-header h3 {
-    margin: 0;
-    font-size: 1.25rem;
-    color: white;
-}
-
-.close-form {
-    background: transparent;
-    border: none;
-    font-size: 1.25rem;
-    cursor: pointer;
-    color: white;
-    opacity: 0.8;
-    transition: opacity 0.2s;
-    padding: 0;
-    width: 30px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.close-form:hover {
-    opacity: 1;
-}
-
-/* Ensure buttons inside modals look good */
-.form-wrapper .btn-secondary.close-form {
-    background-color: var(--secondary-color);
-    border: 1px solid var(--secondary-color);
-    color: #fff;
-    opacity: 1;
-    width: auto;
-    height: auto;
-    padding: 0.375rem 0.75rem;
-}
-
-.form-wrapper .btn-secondary.close-form:hover {
-    background-color: #6c757d;
-    border-color: #6c757d;
-}
-
-/* Fix contrast issues in agency view */
-.card-header {
-    color: var(--dark-color);
-}
-
-.card-header {
-    background-color: var(--primary-color) !important;
-    color: #ffffff !important;
-}
-
-.card-header .card-title {
-    color: #ffffff !important;
-}
-
-.card-title {
-    color: var(--dark-color);
-}
-
-.card-title {
-    color: #ffffff !important;
-}
-
-/* Improve section headers */
-.section-title {
-    color: var(--dark-color);
-    font-size: 1.25rem;
-    font-weight: 600;
-    position: relative;
-    padding-bottom: 0.5rem;
-    margin-bottom: 1.5rem;
-}
-
-.section-title:after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 50px;
-    height: 3px;
-    background-color: var(--primary-color);
-    border-radius: 3px;
-}
-
-/* Ensure consistent card styling */
-.card-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background-color: var(--primary-color) !important;
-    color: #ffffff !important;
-}
-
-.card-header .card-title {
-    color: #ffffff !important;
-}
-
-/* Make View All Programs button border white */
-.card-header .btn.btn-primary {
-    border-color: #ffffff !important;
-}
-
-/* Fix submission card display */
-.submission-card .display-4 {
-    font-size: 2rem;
-    font-weight: 600;
+.program-form h6.fw-bold {
     color: var(--primary-color);
+    margin-bottom: 1rem !important;
+    font-size: 0.95rem !important;
 }
 
-.submission-card .card-body {
-    background-color: #ffffff;
+/* Tables */
+.table-custom th {
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.75rem;
 }
 
-/* Fix color contrast in program section headers */
-.program-section .card-header {
-    background-color: var(--primary-color) !important;
-    color: #ffffff !important;
+.table-custom td {
+    padding: 0.75rem;
+    font-size: 0.9rem;
+    vertical-align: middle;
 }
 
-/* Program Type Badge styling */
 .table-custom .badge {
     font-size: 0.75rem;
     padding: 0.35em 0.65em;
     font-weight: 500;
 }
 
-/* Statistics Cards */
-.icon-container {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.icon-container i {
-    font-size: 1.25rem;
-}
-
-/* Make program description wrap nicely */
-.table-custom td {
-    vertical-align: middle;
-}
-
 .table-custom td .small {
     max-width: 300px;
     white-space: normal;
-}
-
-/* Improve table fitting in containers */
-.table-responsive {
-    padding: 0;
-    margin: 0;
-    width: 100%;
-}
-
-#programsTable {
-    width: 100%;
-    margin-bottom: 0;
-    table-layout: fixed;
-}
-
-#programsTable th,
-#programsTable td {
-    white-space: normal;
-    word-wrap: break-word;
-}
-
-#programsTable th:nth-child(1),
-#programsTable td:nth-child(1) {
-    width: 30%; /* Program name column */
-}
-
-#programsTable th:nth-child(2),
-#programsTable td:nth-child(2) {
-    width: 10%; /* Type column */
-}
-
-#programsTable th:nth-child(3),
-#programsTable td:nth-child(3) {
-    width: 20%; /* Target column */
-}
-
-#programsTable th:nth-child(4),
-#programsTable td:nth-child(4) {
-    width: 15%; /* Status column */
-}
-
-#programsTable th:nth-child(5),
-#programsTable td:nth-child(5) {
-    width: 15%; /* Status Date column */
-}
-
-#programsTable th:nth-child(6),
-#programsTable td:nth-child(6) {
-    width: 10%; /* Actions column */
-}
-
-/* Ensure the card body doesn't add unnecessary padding */
-#allPrograms .card-body {
-    padding: 1rem;
-}
-
-/* Make small description text wrap nicely */
-#programsTable td .small {
-    max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     display: -webkit-box;
@@ -479,59 +168,15 @@
     -webkit-box-orient: vertical;
 }
 
-/* Timeline styling for program details */
-.timeline-point {
-    position: relative;
-    z-index: 2;
-    text-align: center;
-}
+/* Remove Program Details Page Specific Styles */
+/* The following sections have been removed:
+ * - Program Timeline
+ * - Program Details Page Specific Styles
+ * - Info Box Styling
+ * - Status Badge Styling
+ */
 
-.timeline-divider {
-    margin: 0 15px;
-    position: relative;
-    z-index: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.timeline-date {
-    font-weight: 500;
-    color: var(--primary-color);
-    font-size: 0.9rem;
-}
-
-/* Status badge enhancements */
-.status-badge-lg {
-    margin-bottom: 1rem;
-}
-
-.status-badge-lg .status-pill {
-    padding: 0.75rem 1.5rem;
-    font-size: 1.1rem;
-    border-radius: 30px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-}
-
-/* Metric cards */
-.metric-card {
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    gap: 0.5rem;
-}
-
-.metric-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-}
-
-/* Icon containers */
+/* Icons and Metrics */
 .icon-container {
     width: 40px;
     height: 40px;
@@ -542,95 +187,34 @@
     flex-shrink: 0;
 }
 
-/* Program timeline progress */
-.program-timeline {
-    margin-top: 1.5rem;
-}
-
-.program-timeline .progress {
-    height: 10px;
-    border-radius: 5px;
-}
-
-/* Align table headers and cells */
-.table th,
-.table td {
-    vertical-align: middle;
-    text-align: left;
-}
-
-/* Fix alignment for form labels and inputs */
-.form-label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-}
-
-.form-control,
-.form-select {
-    display: block;
-    width: 100%;
-    margin-bottom: 1rem;
-}
-
-/* Align status badges and icons */
-.status-pill {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-}
-
-/* Improved element sizing and alignment */
-.card-title {
-    font-size: 1.1rem !important;
-    font-weight: 600 !important;
-}
-
-.card-header {
-    padding: 0.75rem 1rem !important;
-}
-
-.card-body {
-    padding: 1.25rem !important;
-}
-
-h6.fw-bold, h6.text-muted {
-    font-size: 0.95rem !important;
-    margin-bottom: 0.75rem !important;
-}
-
-/* Improve table sizing */
-.table th {
-    font-size: 0.9rem;
-    font-weight: 600;
-    padding: 0.75rem;
-}
-
-.table td {
-    padding: 0.75rem;
-    font-size: 0.9rem;
-}
-
-/* Status badge sizing */
-.status-badge-lg .status-pill {
-    padding: 0.6rem 1.2rem;
+.icon-container i {
     font-size: 1rem;
 }
 
-.status-pill {
-    font-size: 0.85rem;
+.metric-card {
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    transition: all var(--transition-speed) ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 0.5rem;
+    padding: 1rem !important;
+    height: 100%;
+    min-height: 80px;
 }
 
-/* Better metrics cards */
-.metric-card {
-    padding: 1rem !important;
+.metric-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .metric-card h6 {
     font-size: 0.8rem !important;
-    letter-spacing: 0.5px;
     margin-bottom: 0.5rem !important;
+    letter-spacing: 0.5px;
 }
 
 .metric-card .h5 {
@@ -638,67 +222,12 @@ h6.fw-bold, h6.text-muted {
     margin-bottom: 0 !important;
 }
 
-/* Timeline elements */
-.timeline-point {
-    width: 120px;
-}
-
-.timeline-point .small {
-    font-size: 0.8rem;
-}
-
-.timeline-date {
-    font-size: 0.85rem;
-}
-
-/* Description text */
-p.p-3.bg-light {
-    padding: 0.75rem !important;
-    font-size: 0.9rem;
-    margin-bottom: 0;
-}
-
-/* Status text details */
-.status-text-detail .p-3 {
-    padding: 0.75rem !important;
-    font-size: 0.9rem;
-}
-
-/* Program progress chart container */
-.chart-container {
-    height: 280px !important;
-}
-
-/* Progress visualization */
-.program-timeline .progress {
-    height: 8px;
-}
-
-.program-timeline .small {
-    font-size: 0.8rem;
-}
-
-/* Fix spacing in program details cards */
-.program-details .row {
+/* Adjust spacing between rows */
+.row.g-3 > [class*="col-"] {
     margin-bottom: 1rem;
 }
 
-/* Make icon containers consistent */
-.icon-container {
-    width: 36px !important;
-    height: 36px !important;
-}
-
-.icon-container i {
-    font-size: 1rem !important;
-}
-
-/* Fix alignment in tables */
-.table-responsive {
-    overflow-x: auto;
-}
-
-/* Mobile optimizations */
+/* Responsive adjustments */
 @media (max-width: 768px) {
     .timeline-point {
         width: 90px;
@@ -712,236 +241,11 @@ p.p-3.bg-light {
         font-size: 1.5rem;
     }
     
-    .timeline-date {
-        font-size: 0.8rem;
+    .program-form .mb-4 {
+        padding: 1rem;
     }
     
     .metric-card {
         padding: 0.75rem !important;
     }
-}
-
-/* Card element consistency fixes */
-.program-details .card-body {
-    padding: 1.25rem !important;
-}
-
-/* Timeline elements consistency */
-.program-details .timeline-point {
-    width: 120px;
-    min-width: 120px;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
-
-.program-details .timeline-divider {
-    margin: 0 15px;
-    padding: 0 5px;
-    align-self: center;
-    height: 4px;
-}
-
-.program-details .timeline-divider .progress {
-    height: 4px;
-    border-radius: 2px;
-    width: 100%;
-    margin: 0;
-}
-
-.program-details .progress-bar {
-    transition: width 0.6s ease;
-}
-
-.program-details .timeline-date {
-    font-size: 0.85rem;
-    white-space: nowrap;
-    margin-top: 5px;
-}
-
-.program-details .small.text-muted {
-    font-size: 0.75rem !important;
-    margin-bottom: 5px !important;
-}
-
-/* Description container consistency */
-.program-details .p-3.bg-light.rounded {
-    padding: 1rem !important;
-    margin-bottom: 0;
-    min-height: 80px;
-}
-
-/* Status card consistency */
-.program-details .status-badge-lg {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 1rem;
-}
-
-.program-details .metric-card {
-    height: 100%;
-    min-height: 80px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem !important;
-}
-
-.program-details .metric-card h6 {
-    font-size: 0.8rem !important;
-    margin-bottom: 0.5rem !important;
-    letter-spacing: 0.5px;
-}
-
-.program-details .metric-card .h5 {
-    font-size: 1rem !important;
-    margin-bottom: 0 !important;
-    word-break: break-word;
-}
-
-/* Ensure responsive alignment */
-@media (max-width: 576px) {
-    .program-details .d-flex.justify-content-between.align-items-center.mb-4 {
-        flex-direction: column;
-        align-items: flex-start !important;
-    }
-    
-    .program-details .timeline-point {
-        width: auto;
-        min-width: 100px;
-        padding: 0 5px;
-    }
-    
-    .program-details .timeline-divider {
-        margin: 0 10px;
-    }
-}
-
-/* Two-column layout for program details */
-.program-details .card-body {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-}
-
-/* Align timeline points and progress bar */
-.program-details .timeline-point {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-}
-
-.program-details .timeline-divider {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 1rem;
-}
-
-.program-details .progress {
-    height: 6px;
-    border-radius: 3px;
-    background-color: rgba(0, 0, 0, 0.1);
-}
-
-.program-details .progress-bar {
-    height: 6px;
-    border-radius: 3px;
-    transition: width 0.4s ease;
-}
-
-/* Grouped sections for better readability */
-.program-details .info-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.program-details .info-group h6 {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--dark-color);
-    margin-bottom: 0.5rem;
-}
-
-.program-details .info-group p {
-    font-size: 0.85rem;
-    color: var(--secondary-color);
-    margin: 0;
-}
-
-/* Status and metrics alignment */
-.program-details .status-badge-lg {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 1rem;
-}
-
-.program-details .metric-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 1rem;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 0.5rem;
-    background-color: #f8f9fa;
-}
-
-.program-details .metric-card h6 {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--dark-color);
-    margin-bottom: 0.5rem;
-}
-
-.program-details .metric-card .h5 {
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: var(--primary-color);
-}
-
-/* Table without card styling */
-#allPrograms.card {
-    background: white !important;
-    border: 1px solid rgba(0, 0, 0, 0.1) !important;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08) !important;
-    border-radius: 0.75rem !important;
-    overflow: hidden !important;
-    margin-bottom: 2rem !important;
-    position: relative !important;
-}
-
-#allPrograms.card:before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 5px;
-    background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
-    display: block !important;
-}
-
-#allPrograms .card-header {
-    background-color: var(--primary-color) !important;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important;
-    padding: 0.75rem 1rem !important;
-    color: #ffffff !important;
-}
-
-#allPrograms .card-header .card-title {
-    color: #ffffff !important;
-}
-
-#allPrograms .card-body {
-    padding: 1.25rem !important;
-    background: white !important;
 }

@@ -5,6 +5,9 @@
  * Functions used by agency users to manage programs and submit data.
  */
 
+// Include utilities
+require_once 'utilities.php';
+
 /**
  * Check if current user is an agency
  * @return boolean
@@ -21,15 +24,7 @@ function is_agency() {
  * @return boolean
  */
 function has_content_json_schema() {
-    global $conn;
-    static $has_content_json = null;
-    
-    if ($has_content_json === null) {
-        $content_json_check = $conn->query("SHOW COLUMNS FROM `program_submissions` LIKE 'content_json'");
-        $has_content_json = $content_json_check->num_rows > 0;
-    }
-    
-    return $has_content_json;
+    return has_database_column('program_submissions', 'content_json');
 }
 
 /**
@@ -37,15 +32,7 @@ function has_content_json_schema() {
  * @return boolean
  */
 function has_is_assigned_column() {
-    global $conn;
-    static $has_is_assigned = null;
-    
-    if ($has_is_assigned === null) {
-        $column_check = $conn->query("SHOW COLUMNS FROM `programs` LIKE 'is_assigned'");
-        $has_is_assigned = $column_check->num_rows > 0;
-    }
-    
-    return $has_is_assigned;
+    return has_database_column('programs', 'is_assigned');
 }
 
 /**
@@ -197,29 +184,32 @@ function create_agency_program($data) {
     global $conn;
     
     if (!is_agency()) {
-        return ['error' => 'Permission denied'];
+        return format_error('Permission denied', 403);
     }
     
-    // Validate inputs
-    $program_name = trim($conn->real_escape_string($data['program_name'] ?? ''));
-    $description = $conn->real_escape_string($data['description'] ?? '');
-    $start_date = $conn->real_escape_string($data['start_date'] ?? null);
-    $end_date = $conn->real_escape_string($data['end_date'] ?? null);
-    $target = $conn->real_escape_string($data['target'] ?? '');
-    $status = $conn->real_escape_string($data['status'] ?? 'not-started');
-    $status_date = $conn->real_escape_string($data['status_date'] ?? null);
-    $status_text = $conn->real_escape_string($data['status_text'] ?? '');
-    
-    if (empty($program_name)) {
-        return ['error' => 'Program name is required'];
+    // Validate and sanitize inputs
+    $validated = validate_form_input($data, ['program_name', 'target', 'status']);
+    if (isset($validated['error'])) {
+        return $validated;
     }
     
+    $program_name = $validated['program_name'];
+    $description = $validated['description'] ?? '';
+    $start_date = $validated['start_date'] ?? null;
+    $end_date = $validated['end_date'] ?? null;
+    $target = $validated['target'];
+    $status = $validated['status'];
+    $status_date = $validated['status_date'] ?? null;
+    $status_text = $validated['status_text'] ?? '';
+    
+    // Validate dates
     if ($start_date && $end_date && strtotime($start_date) > strtotime($end_date)) {
-        return ['error' => 'End date cannot be before start date'];
+        return format_error('End date cannot be before start date');
     }
     
-    if (!in_array($status, ['on-track', 'delayed', 'completed', 'not-started'])) {
-        return ['error' => 'Invalid status'];
+    // Validate status
+    if (!is_valid_status($status)) {
+        return format_error('Invalid status');
     }
     
     $user_id = $_SESSION['user_id'];
@@ -231,8 +221,8 @@ function create_agency_program($data) {
     $conn->begin_transaction();
     
     try {
+        // Insert program
         if ($has_is_assigned) {
-            // Insert program with is_assigned
             $query = "INSERT INTO programs (program_name, description, start_date, end_date, 
                                         owner_agency_id, sector_id, created_by, is_assigned) 
                     VALUES (?, ?, ?, ?, ?, ?, ?, 0)";
@@ -241,7 +231,6 @@ function create_agency_program($data) {
             $stmt->bind_param("ssssiii", $program_name, $description, $start_date, $end_date, 
                             $user_id, $sector_id, $user_id);
         } else {
-            // Insert program without is_assigned
             $query = "INSERT INTO programs (program_name, description, start_date, end_date, 
                                         owner_agency_id, sector_id) 
                     VALUES (?, ?, ?, ?, ?, ?)";
@@ -260,7 +249,7 @@ function create_agency_program($data) {
             throw new Exception('No active reporting period found');
         }
         
-        // Insert initial submission based on schema
+        // Insert submission based on schema
         if ($has_content_json) {
             $content = json_encode([
                 'target' => $target,
@@ -268,7 +257,6 @@ function create_agency_program($data) {
                 'status_text' => $status_text
             ]);
             
-            // Simplified query with minimal columns
             $sub_query = "INSERT INTO program_submissions (program_id, period_id, submitted_by, 
                         content_json, status) 
                         VALUES (?, ?, ?, ?, ?)";
@@ -281,25 +269,18 @@ function create_agency_program($data) {
                         target, status, status_date) 
                         VALUES (?, ?, ?, ?, ?, ?)";
             
-            $stmt = $conn->prepare($sub_query);
+            $stmt->prepare($sub_query);
             $stmt->bind_param("iiisss", $program_id, $current_period['period_id'], $user_id, 
                             $target, $status, $status_date);
         }
         
         $stmt->execute();
-        
-        // Commit transaction
         $conn->commit();
         
-        return [
-            'success' => true,
-            'program_id' => $program_id,
-            'message' => 'Program created successfully'
-        ];
+        return format_success('Program created successfully', ['program_id' => $program_id]);
     } catch (Exception $e) {
-        // Rollback on error
         $conn->rollback();
-        return ['error' => 'Failed to create program: ' . $e->getMessage()];
+        return format_error('Failed to create program: ' . $e->getMessage());
     }
 }
 

@@ -103,3 +103,13 @@ This allows adding new program attributes without database schema changes.
 - The system supports both assigned programs (by admins) and agency-created programs
 - Debug tools are available at `/debug/check_program_creation.php` and `/debug/check_status_values.php`
 
+## To Do List
+- Implement data export functionality for all program reports
+- Add reporting period comparison views in agency dashboard
+- Create program archive feature for completed programs
+- Improve mobile responsiveness for agency submission forms 
+- Add batch program import functionality for administrators
+- Implement notification system for upcoming reporting deadlines
+- Optimize database queries for large program datasets
+- Add data visualization options for sector-specific metrics
+

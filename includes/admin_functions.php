@@ -1,6 +1,8 @@
 <?php
 // Admin-specific functions
 
+require_once 'utilities.php';
+
 /**
  * Check if current user is admin
  * @return boolean
@@ -10,6 +12,17 @@ function is_admin() {
         return false;
     }
     return $_SESSION['role'] === 'admin';
+}
+
+/**
+ * Check admin permission
+ * @return array|null Error message if not an admin
+ */
+function check_admin_permission() {
+    if (!is_admin()) {
+        return format_error('Permission denied', 403);
+    }
+    return null;
 }
 
 /**
@@ -845,5 +858,72 @@ function get_active_programs_count() {
     $query = "SELECT COUNT(*) as count FROM programs";
     $result = $conn->query($query);
     return $result->fetch_assoc()['count'] ?? 0;
+}
+
+/**
+ * Create a new user
+ * @param array $data User data
+ * @return array Result of operation
+ */
+function create_user($data) {
+    global $conn;
+    
+    // Check permission
+    $permission_check = check_admin_permission();
+    if ($permission_check) return $permission_check;
+    
+    // Validate and sanitize inputs
+    $validated = validate_form_input($data, ['username', 'password', 'role']);
+    if (isset($validated['error'])) {
+        return $validated;
+    }
+    
+    $username = $validated['username'];
+    $password = $validated['password'];
+    $role = $validated['role'];
+    $agency_name = $validated['agency_name'] ?? null;
+    $sector_id = !empty($validated['sector_id']) ? intval($validated['sector_id']) : null;
+    
+    // Additional validation
+    if (strlen($password) < 8) {
+        return format_error('Password must be at least 8 characters');
+    }
+    
+    if ($role === 'agency' && (empty($agency_name) || empty($sector_id))) {
+        return format_error('Agency name and sector are required for agency users');
+    }
+    
+    // Check if username already exists
+    $check_query = "SELECT user_id FROM users WHERE username = ?";
+    $stmt = $conn->prepare($check_query);
+    $stmt->bind_param("s", $username);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        return format_error('Username already exists');
+    }
+    
+    // Hash password
+    $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+    
+    // Insert user
+    if ($role === 'admin') {
+        $query = "INSERT INTO users (username, password, agency_name, role, is_active) 
+                  VALUES (?, ?, ?, 'admin', 1)";
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("sss", $username, $hashed_password, $agency_name);
+    } else {
+        $query = "INSERT INTO users (username, password, agency_name, role, sector_id, is_active) 
+                  VALUES (?, ?, ?, 'agency', ?, 1)";
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("sssi", $username, $hashed_password, $agency_name, $sector_id);
+    }
+    
+    if ($stmt->execute()) {
+        return format_success('User created successfully', ['user_id' => $conn->insert_id]);
+    } else {
+        return format_error('Failed to create user: ' . $stmt->error);
+    }
 }
 ?>
