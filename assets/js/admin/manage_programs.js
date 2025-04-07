@@ -1,4 +1,4 @@
-/**
+    /**
  * Manage Programs Functionality
  * Handles filtering and interactions on the admin programs list page
  */
@@ -90,6 +90,23 @@ document.addEventListener('DOMContentLoaded', function() {
             filterRow.appendChild(resetCol);
             console.log('Reset filter button added in filter row'); // Debugging
         }
+    }
+    
+    // Update status filter dropdown with new values
+    if (statusFilter) {
+        // Clear existing options
+        statusFilter.innerHTML = '';
+        
+        // Add new options with updated status values
+        statusFilter.innerHTML = `
+            <option value="">All Statuses</option>
+            <option value="target-achieved">Monthly Target Achieved</option>
+            <option value="on-track-yearly">On Track for Year</option>
+            <option value="severe-delay">Severe Delays</option>
+            <option value="not-started">Not Started</option>
+        `;
+        
+        statusFilter.addEventListener('change', filterPrograms);
     }
 });
 
@@ -449,3 +466,35 @@ function initDeleteButtons() {
         });
     });
 }
+
+// Replace the old statusFilter options with the new ones
+if (statusFilter) {
+    // Clear existing options
+    statusFilter.innerHTML = '';
+    
+    // Add new options with updated status values
+    statusFilter.innerHTML = `
+        <option value="">All Statuses</option>
+        <option value="target-achieved">Monthly Target Achieved</option>
+        <option value="on-track-yearly">On Track for Year</option>
+        <option value="severe-delay">Severe Delays</option>
+        <option value="not-started">Not Started</option>
+    `;
+    
+    statusFilter.addEventListener('change', filterPrograms);
+}
+
+/* ...existing code... */
+
+<div class="col-md-3">
+    <label for="statusFilter" class="form-label">Status Filter</label>
+    <select class="form-select" id="statusFilter">
+        <option value="">All Statuses</option>
+        <option value="target-achieved">Monthly Target Achieved</option>
+        <option value="on-track-yearly">On Track for Year</option>
+        <option value="severe-delay">Severe Delays</option>
+        <option value="not-started">Not Started</option>
+    </select>
+</div>
+
+/* ...existing code... */

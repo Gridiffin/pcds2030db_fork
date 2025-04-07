@@ -195,7 +195,7 @@
     color: var(--info-color) !important;
 }
 
-/* Status badges */
+/* Status badges - Updated for new status values */
 .badge {
     padding: 0.4em 0.7em;
     font-weight: 500;
@@ -203,23 +203,73 @@
 }
 
 .badge.bg-success {
-    background-color: #28a745 !important;
+    background-color: #28a745 !important; /* Green - Monthly Target Achieved */
     color: white !important;
 }
 
 .badge.bg-warning {
-    background-color: #ffc107 !important;
+    background-color: #ffc107 !important; /* Yellow - On Track for Year */
     color: #212529 !important;
 }
 
 .badge.bg-danger {
-    background-color: var(--danger-color) !important;
+    background-color: #dc3545 !important; /* Red - Severe Delays */
     color: white !important;
 }
 
-.badge.bg-info {
-    background-color: var(--primary-color) !important;
+.badge.bg-secondary {
+    background-color: #6c757d !important; /* Grey - Not Started */
     color: white !important;
+}
+
+/* Status pills - Updated for new status values */
+.status-pill.target-achieved, .badge.bg-success {
+    background-color: rgba(40, 167, 69, 0.1);
+    color: var(--secondary-color);
+    border-color: rgba(40, 167, 69, 0.2);
+}
+
+.status-pill.on-track-yearly, .badge.bg-warning {
+    background-color: rgba(255, 193, 7, 0.1);
+    color: #ffc107;
+    border-color: rgba(255, 193, 7, 0.2);
+}
+
+.status-pill.severe-delay, .badge.bg-danger {
+    background-color: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+    border-color: rgba(220, 53, 69, 0.2);
+}
+
+.status-pill.not-started, .badge.bg-secondary {
+    background-color: rgba(108, 117, 125, 0.1);
+    color: #6c757d;
+    border-color: rgba(108, 117, 125, 0.2);
+}
+
+/* Status pill hover effects */
+.status-pill.target-achieved:hover:not(.large),
+.status-pill.target-achieved.active {
+    background-color: rgba(40, 167, 69, 0.2);
+    border-color: var(--secondary-color);
+}
+
+.status-pill.on-track-yearly:hover:not(.large),
+.status-pill.on-track-yearly.active {
+    background-color: rgba(255, 193, 7, 0.2);
+    border-color: #ffc107;
+}
+
+.status-pill.severe-delay:hover:not(.large),
+.status-pill.severe-delay.active {
+    background-color: rgba(220, 53, 69, 0.2);
+    border-color: #dc3545;
+}
+
+.status-pill.not-started:hover:not(.large),
+.status-pill.not-started.active {
+    background-color: rgba(108, 117, 125, 0.2);
+    border-color: #6c757d;
 }
 
 /* Progress bars */

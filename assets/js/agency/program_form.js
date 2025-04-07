@@ -1,38 +1,63 @@
 /**
  * Program Form Functionality
- * Handles form validation and form field interactions
+ * Handles enhancements and validation for program forms
  */
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize character counter for description
-    initCharacterCounter('description', 500);
+    // Initialize form enhancements
+    initFormValidation();
+    initCharacterCounter();
+    initStatusPills();
+});
+
+/**
+ * Initialize character counter for text areas
+ */
+function initCharacterCounter() {
+    const textAreas = document.querySelectorAll('textarea[maxlength]');
     
-    // Add form validation
-    const form = document.querySelector('.program-form');
-    if (form) {
-        form.addEventListener('submit', validateProgramForm);
-    }
-    
-    // Set up date validation
-    const startDateInput = document.getElementById('start_date');
-    const endDateInput = document.getElementById('end_date');
-    
-    if (startDateInput && endDateInput) {
-        // Handle date validation
-        [startDateInput, endDateInput].forEach(input => {
-            if (input) {
-                input.addEventListener('change', function() {
-                    validateDateRange(startDateInput, endDateInput);
-                });
+    textAreas.forEach(textarea => {
+        const maxLength = textarea.getAttribute('maxlength');
+        
+        // Create counter element
+        const counterContainer = document.createElement('div');
+        counterContainer.className = 'char-counter text-muted small mt-1';
+        counterContainer.innerHTML = `<span class="current-count">${textarea.value.length}</span>/${maxLength} characters`;
+        
+        // Insert after textarea
+        textarea.parentNode.insertBefore(counterContainer, textarea.nextSibling);
+        
+        // Update counter on input
+        textarea.addEventListener('input', function() {
+            const currentLength = this.value.length;
+            const counter = counterContainer.querySelector('.current-count');
+            counter.textContent = currentLength;
+            
+            // Add warning class if approaching limit
+            if (currentLength > maxLength * 0.9) {
+                counterContainer.classList.add('text-warning');
+            } else {
+                counterContainer.classList.remove('text-warning');
             }
         });
-    }
+    });
+}
+
+/**
+ * Initialize form validation
+ */
+function initFormValidation() {
+    const form = document.querySelector('form.needs-validation');
+    if (!form) return;
     
-    // Set today's date on status date if empty
-    const statusDateInput = document.getElementById('status_date');
-    if (statusDateInput && !statusDateInput.value) {
-        statusDateInput.valueAsDate = new Date();
-    }
-});
+    form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        
+        form.classList.add('was-validated');
+    });
+}
 
 /**
  * Validate the program form before submission

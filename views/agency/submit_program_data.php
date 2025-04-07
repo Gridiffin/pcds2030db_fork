@@ -266,14 +266,14 @@ require_once '../layouts/agency_nav.php';
                         <input type="hidden" id="status" name="status" value="<?php echo $current_submission['status'] ?? 'not-started'; ?>">
                         
                         <div class="status-pills">
-                            <div class="status-pill on-track <?php echo ($current_submission['status'] ?? '') == 'on-track' ? 'active' : ''; ?>" data-status="on-track">
-                                <i class="fas fa-check-circle me-2"></i> On Track
+                            <div class="status-pill target-achieved <?php echo ($current_submission['status'] ?? '') == 'target-achieved' ? 'active' : ''; ?>" data-status="target-achieved">
+                                <i class="fas fa-check-circle me-2"></i> Monthly Target Achieved
                             </div>
-                            <div class="status-pill delayed <?php echo ($current_submission['status'] ?? '') == 'delayed' ? 'active' : ''; ?>" data-status="delayed">
-                                <i class="fas fa-clock me-2"></i> Delayed
+                            <div class="status-pill on-track-yearly <?php echo ($current_submission['status'] ?? '') == 'on-track-yearly' ? 'active' : ''; ?>" data-status="on-track-yearly">
+                                <i class="fas fa-calendar-check me-2"></i> On Track for Year
                             </div>
-                            <div class="status-pill completed <?php echo ($current_submission['status'] ?? '') == 'completed' ? 'active' : ''; ?>" data-status="completed">
-                                <i class="fas fa-flag-checkered me-2"></i> Completed
+                            <div class="status-pill severe-delay <?php echo ($current_submission['status'] ?? '') == 'severe-delay' ? 'active' : ''; ?>" data-status="severe-delay">
+                                <i class="fas fa-exclamation-triangle me-2"></i> Severe Delays
                             </div>
                             <div class="status-pill not-started <?php echo ($current_submission['status'] ?? '') == 'not-started' ? 'active' : ''; ?>" data-status="not-started">
                                 <i class="fas fa-hourglass-start me-2"></i> Not Started

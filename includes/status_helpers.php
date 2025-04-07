@@ -18,12 +18,12 @@ require_once 'utilities.php';
 if (!function_exists('get_status_badge')) {
     function get_status_badge($status) {
         switch ($status) {
-            case 'on-track':
-                return '<span class="badge bg-success">On Track</span>';
-            case 'delayed':
-                return '<span class="badge bg-warning">Delayed</span>';
-            case 'completed':
-                return '<span class="badge bg-info">Completed</span>';
+            case 'target-achieved':
+                return '<span class="badge bg-success">Monthly Target Achieved</span>';
+            case 'on-track-yearly':
+                return '<span class="badge bg-warning">On Track for Year</span>';
+            case 'severe-delay':
+                return '<span class="badge bg-danger">Severe Delays</span>';
             case 'not-started':
             default:
                 return '<span class="badge bg-secondary">Not Started</span>';
@@ -39,9 +39,9 @@ if (!function_exists('get_status_badge')) {
 if (!function_exists('get_status_color_class')) {
     function get_status_color_class($status) {
         switch ($status) {
-            case 'on-track': return 'success';
-            case 'delayed': return 'warning';
-            case 'completed': return 'primary';
+            case 'target-achieved': return 'success';
+            case 'on-track-yearly': return 'warning';
+            case 'severe-delay': return 'danger';
             case 'not-started': default: return 'secondary';
         }
     }
@@ -55,9 +55,9 @@ if (!function_exists('get_status_color_class')) {
 if (!function_exists('get_status_icon')) {
     function get_status_icon($status) {
         switch ($status) {
-            case 'on-track': return 'fas fa-check-circle';
-            case 'delayed': return 'fas fa-exclamation-triangle';
-            case 'completed': return 'fas fa-flag-checkered';
+            case 'target-achieved': return 'fas fa-check-circle';
+            case 'on-track-yearly': return 'fas fa-calendar-check';
+            case 'severe-delay': return 'fas fa-exclamation-triangle';
             case 'not-started': default: return 'fas fa-hourglass-start';
         }
     }
@@ -72,7 +72,7 @@ if (!function_exists('get_status_badge_html')) {
     function get_status_badge_html($status) {
         $color_class = get_status_color_class($status);
         $icon_class = get_status_icon($status);
-        $status_text = ucwords(str_replace('-', ' ', $status));
+        $status_text = get_status_display_name($status);
         
         return sprintf(
             '<span class="badge bg-%s"><i class="%s me-1"></i> %s</span>',
@@ -90,7 +90,12 @@ if (!function_exists('get_status_badge_html')) {
  */
 if (!function_exists('get_status_display_name')) {
     function get_status_display_name($status) {
-        return ucfirst(str_replace('-', ' ', $status));
+        switch($status) {
+            case 'target-achieved': return 'Monthly Target Achieved';
+            case 'on-track-yearly': return 'On Track for Year';
+            case 'severe-delay': return 'Severe Delays';
+            case 'not-started': default: return 'Not Started';
+        }
     }
 }
 
@@ -101,9 +106,9 @@ if (!function_exists('get_status_display_name')) {
 if (!function_exists('get_all_status_values')) {
     function get_all_status_values() {
         return [
-            'on-track' => 'On Track',
-            'delayed' => 'Delayed',
-            'completed' => 'Completed',
+            'target-achieved' => 'Monthly Target Achieved',
+            'on-track-yearly' => 'On Track for Year',
+            'severe-delay' => 'Severe Delays',
             'not-started' => 'Not Started'
         ];
     }
@@ -116,7 +121,7 @@ if (!function_exists('get_all_status_values')) {
  */
 if (!function_exists('is_valid_status')) {
     function is_valid_status($status) {
-        return in_array($status, ['on-track', 'delayed', 'completed', 'not-started']);
+        return in_array($status, ['target-achieved', 'on-track-yearly', 'severe-delay', 'not-started']);
     }
 }
 ?>

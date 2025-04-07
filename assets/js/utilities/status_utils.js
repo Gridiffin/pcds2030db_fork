@@ -34,9 +34,9 @@ function initStatusPills() {
  */
 function getStatusColorClass(status) {
     switch (status) {
-        case 'on-track': return 'success';
-        case 'delayed': return 'warning';
-        case 'completed': return 'primary';
+        case 'target-achieved': return 'success';
+        case 'on-track-yearly': return 'warning';
+        case 'severe-delay': return 'danger';
         case 'not-started': 
         default: return 'secondary';
     }
@@ -49,9 +49,9 @@ function getStatusColorClass(status) {
  */
 function getStatusIconClass(status) {
     switch (status) {
-        case 'on-track': return 'fas fa-check-circle';
-        case 'delayed': return 'fas fa-exclamation-triangle';
-        case 'completed': return 'fas fa-flag-checkered';
+        case 'target-achieved': return 'fas fa-check-circle';
+        case 'on-track-yearly': return 'fas fa-calendar-check';
+        case 'severe-delay': return 'fas fa-exclamation-triangle';
         case 'not-started': 
         default: return 'fas fa-hourglass-start';
     }

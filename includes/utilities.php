@@ -76,7 +76,7 @@ function get_status_badge_html($status) {
  * @return boolean Whether status is valid
  */
 function is_valid_status($status) {
-    return in_array($status, ['on-track', 'delayed', 'completed', 'not-started']);
+    return in_array($status, ['target-achieved', 'on-track-yearly', 'severe-delay', 'not-started']);
 }
 
 /**

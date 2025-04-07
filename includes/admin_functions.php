@@ -954,6 +954,10 @@ function get_all_programs() {
     
     $programs = [];
     while ($row = $result->fetch_assoc()) {
+        // Convert legacy status values to new status values if needed
+        if (isset($row['status'])) {
+            $row['status'] = convert_legacy_status($row['status']);
+        }
         $programs[] = $row;
     }
     

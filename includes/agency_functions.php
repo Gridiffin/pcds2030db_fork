@@ -207,9 +207,9 @@ function create_agency_program($data) {
         return format_error('End date cannot be before start date');
     }
     
-    // Validate status
-    if (!is_valid_status($status)) {
-        return format_error('Invalid status');
+    // Validate status value - use the new status values
+    if (!in_array($status, ['target-achieved', 'on-track-yearly', 'severe-delay', 'not-started'])) {
+        return ['error' => 'Invalid status value'];
     }
     
     $user_id = $_SESSION['user_id'];
@@ -1148,5 +1148,167 @@ if (!function_exists('get_agency_programs_by_type')) {
             'created' => $created
         ];
     }
+}
+
+/**
+ * Update program submission
+ * 
+ * @param int $program_id Program ID
+ * @param int $period_id Reporting period ID
+ * @param string $status Program status
+ * @param float $progress Progress percentage
+ * @param string $current_target Current target
+ * @param string $year_end_target Year-end target
+ * @param string $narrative Progress narrative
+ * @param string $challenges Challenges encountered
+ * @param string $next_steps Next steps planned
+ * @param bool $is_draft Whether this is a draft submission
+ * @return array Result of the operation
+ */
+function update_program_submission($program_id, $period_id, $status, $progress, $current_target, $year_end_target, $narrative, $challenges, $next_steps, $is_draft = true) {
+    global $conn;
+    
+    // Validate inputs
+    if (!$program_id || !$period_id) {
+        return ['error' => 'Invalid program or reporting period.'];
+    }
+    
+    // Ensure status is valid
+    if (!is_valid_status($status)) {
+        return ['error' => 'Invalid status value.'];
+    }
+    
+    // Check if user has permission to update this program
+    if (!can_access_program($program_id)) {
+        return ['error' => 'You do not have permission to update this program.'];
+    }
+    
+    // Check if this program already has a submission for this period
+    $check_query = "SELECT submission_id FROM program_submissions 
+                    WHERE program_id = ? AND period_id = ?";
+    $stmt = $conn->prepare($check_query);
+    $stmt->bind_param("ii", $program_id, $period_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        // Update existing submission
+        $submission = $result->fetch_assoc();
+        $submission_id = $submission['submission_id'];
+        
+        // Check if this is a final submission that's already been submitted
+        $check_draft_query = "SELECT is_draft FROM program_submissions WHERE submission_id = ?";
+        $stmt = $conn->prepare($check_draft_query);
+        $stmt->bind_param("i", $submission_id);
+        $stmt->execute();
+        $draft_result = $stmt->get_result();
+        $draft_status = $draft_result->fetch_assoc();
+        
+        // If the submission is already finalized (is_draft = 0), don't allow updates
+        if (isset($draft_status['is_draft']) && $draft_status['is_draft'] == 0 && !is_admin()) {
+            return ['error' => 'This program has been submitted as final and cannot be edited.'];
+        }
+        
+        $update_query = "UPDATE program_submissions SET 
+                        status = ?, 
+                        progress_percentage = ?, 
+                        current_target = ?, 
+                        year_end_target = ?, 
+                        narrative = ?, 
+                        challenges = ?, 
+                        next_steps = ?,
+                        is_draft = ?,
+                        submission_date = NOW(), 
+                        submitted_by = ? 
+                        WHERE submission_id = ?";
+        
+        $stmt = $conn->prepare($update_query);
+        $user_id = $_SESSION['user_id'];
+        $is_draft_int = $is_draft ? 1 : 0;
+        
+        $stmt->bind_param("sdsssssiis", $status, $progress, $current_target, $year_end_target, 
+                         $narrative, $challenges, $next_steps, $is_draft_int, $user_id, $submission_id);
+    } else {
+        // Create new submission
+        $insert_query = "INSERT INTO program_submissions 
+                        (program_id, period_id, status, progress_percentage, current_target, 
+                         year_end_target, narrative, challenges, next_steps, is_draft, submission_date, submitted_by) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)";
+        
+        $stmt = $conn->prepare($insert_query);
+        $user_id = $_SESSION['user_id'];
+        $is_draft_int = $is_draft ? 1 : 0;
+        
+        $stmt->bind_param("iisdsssssis", $program_id, $period_id, $status, $progress, $current_target, 
+                        $year_end_target, $narrative, $challenges, $next_steps, $is_draft_int, $user_id);
+    }
+    
+    if ($stmt->execute()) {
+        // Also update the status in the programs table
+        $update_program = "UPDATE programs SET 
+                           last_status = ?, 
+                           last_update = NOW() 
+                           WHERE program_id = ?";
+        $stmt = $conn->prepare($update_program);
+        $stmt->bind_param("si", $status, $program_id);
+        $stmt->execute();
+        
+        return ['success' => true];
+    } else {
+        return ['error' => 'Database error: ' . $stmt->error];
+    }
+}
+
+/**
+ * Check if a program has been submitted as final
+ * @param int $program_id Program ID
+ * @param int $period_id Period ID
+ * @return bool True if program has been submitted as final
+ */
+function is_program_submitted_final($program_id, $period_id) {
+    global $conn;
+    
+    $query = "SELECT is_draft FROM program_submissions 
+              WHERE program_id = ? AND period_id = ?
+              ORDER BY submission_id DESC LIMIT 1";
+    
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("ii", $program_id, $period_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        $submission = $result->fetch_assoc();
+        return $submission['is_draft'] == 0;
+    }
+    
+    return false;
+}
+
+/**
+ * Check if user can access a program
+ * @param int $program_id Program ID to check
+ * @return bool True if user can access the program
+ */
+function can_access_program($program_id) {
+    global $conn;
+    
+    // Admin can access all programs
+    if (is_admin()) {
+        return true;
+    }
+    
+    // Agency can only access their own programs
+    $user_id = $_SESSION['user_id'] ?? 0;
+    
+    $query = "SELECT program_id FROM programs 
+              WHERE program_id = ? AND owner_agency_id = ?";
+    
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("ii", $program_id, $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    return $result->num_rows > 0;
 }
 ?>

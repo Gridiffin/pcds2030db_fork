@@ -152,9 +152,7 @@ require_once '../layouts/agency_nav.php';
 <div class="card shadow-sm mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="card-title m-0" id="allPrograms">All Programs <span class="badge bg-light text-dark ms-2"><?php echo count($programs); ?> Programs</span></h5>
-        <a href="create_program.php" class="btn btn-sm btn-primary">
-            <i class="fas fa-plus-circle me-1"></i> Create Program
-        </a>
+        
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -195,7 +193,11 @@ require_once '../layouts/agency_nav.php';
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <?php echo get_status_badge($program['status'] ?? 'not-started'); ?>
+                                    <?php 
+                                    // Ensure we're using the new status values by converting any legacy status
+                                    $current_status = isset($program['status']) ? convert_legacy_status($program['status']) : 'not-started';
+                                    echo get_status_badge($current_status); 
+                                    ?>
                                 </td>
                                 <td>
                                     <?php 
@@ -258,52 +260,6 @@ require_once '../layouts/agency_nav.php';
     </div>
 </div>
 
-<!-- Status Definitions Card -->
-<div class="card shadow-sm">
-    <div class="card-header">
-        <h5 class="card-title m-0">Program Status Definitions</h5>
-    </div>
-    <div class="card-body pb-2">
-        <div class="row">
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="d-flex align-items-center">
-                    <span class="status-dot bg-success me-2"></span>
-                    <div>
-                        <strong>On Track</strong>
-                        <p class="small text-muted mb-0">Program is progressing according to plan</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="d-flex align-items-center">
-                    <span class="status-dot bg-warning me-2"></span>
-                    <div>
-                        <strong>Delayed</strong>
-                        <p class="small text-muted mb-0">Program is behind schedule</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="d-flex align-items-center">
-                    <span class="status-dot bg-info me-2"></span>
-                    <div>
-                        <strong>Completed</strong>
-                        <p class="small text-muted mb-0">Program has been completed</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="d-flex align-items-center">
-                    <span class="status-dot bg-secondary me-2"></span>
-                    <div>
-                        <strong>Not Started</strong>
-                        <p class="small text-muted mb-0">Program has not begun yet</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
 <?php
 // Include footer

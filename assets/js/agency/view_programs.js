@@ -76,6 +76,9 @@ document.addEventListener('DOMContentLoaded', function() {
             cardBody.appendChild(resetBtnContainer);
         }
     }
+    
+    // Update status filter dropdown
+    updateStatusFilterOptions();
 });
 
 /**
@@ -344,4 +347,24 @@ function initDeleteButtons() {
             bsModal.show();
         });
     });
+}
+
+/**
+ * Update status filter dropdown options
+ */
+function updateStatusFilterOptions() {
+    const statusFilter = document.getElementById('statusFilter');
+    if (statusFilter) {
+        // Clear existing options
+        statusFilter.innerHTML = '';
+        
+        // Add new options with updated status values
+        statusFilter.innerHTML = `
+            <option value="">All Statuses</option>
+            <option value="target-achieved">Monthly Target Achieved</option>
+            <option value="on-track-yearly">On Track for Year</option>
+            <option value="severe-delay">Severe Delays</option>
+            <option value="not-started">Not Started</option>
+        `;
+    }
 }

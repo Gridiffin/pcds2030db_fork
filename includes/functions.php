@@ -215,4 +215,19 @@ function get_reporting_period($period_id) {
     
     return null;
 }
+
+/**
+ * Convert old status values to new values for backwards compatibility
+ * @param string $status Old status value
+ * @return string New status value
+ */
+function convert_legacy_status($status) {
+    switch($status) {
+        case 'on-track': return 'target-achieved';
+        case 'delayed': return 'on-track-yearly';
+        case 'completed': return 'severe-delay';
+        case 'not-started': return 'not-started';
+        default: return $status; // If it's already a new status, return as is
+    }
+}
 ?>

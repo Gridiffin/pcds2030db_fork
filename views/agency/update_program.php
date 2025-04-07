@@ -51,6 +51,17 @@ if (!$current_period || $current_period['status'] !== 'open') {
 // Get current submission if exists
 $current_submission = $program['current_submission'] ?? null;
 
+// Check if program has been submitted as final and is not a draft
+$is_final_submitted = isset($current_submission['is_draft']) && $current_submission['is_draft'] == 0;
+
+// If program has been submitted as final, redirect with message
+if ($is_final_submitted) {
+    $_SESSION['message'] = 'This program has been submitted as final and cannot be edited. Please contact an administrator if changes are needed.';
+    $_SESSION['message_type'] = 'warning';
+    header('Location: view_programs.php');
+    exit;
+}
+
 // Process form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Check which button was clicked
@@ -253,9 +264,9 @@ require_once '../layouts/agency_nav.php';
                     <div class="col-md-6">
                         <label for="status" class="form-label">Current Status *</label>
                         <select class="form-select" id="status" name="status" required>
-                            <option value="on-track" <?php echo ($current_submission['status'] ?? '') == 'on-track' ? 'selected' : ''; ?>>On Track</option>
-                            <option value="delayed" <?php echo ($current_submission['status'] ?? '') == 'delayed' ? 'selected' : ''; ?>>Delayed</option>
-                            <option value="completed" <?php echo ($current_submission['status'] ?? '') == 'completed' ? 'selected' : ''; ?>>Completed</option>
+                            <option value="target-achieved" <?php echo ($current_submission['status'] ?? '') == 'target-achieved' ? 'selected' : ''; ?>>Monthly Target Achieved</option>
+                            <option value="on-track-yearly" <?php echo ($current_submission['status'] ?? '') == 'on-track-yearly' ? 'selected' : ''; ?>>On Track for Year</option>
+                            <option value="severe-delay" <?php echo ($current_submission['status'] ?? '') == 'severe-delay' ? 'selected' : ''; ?>>Severe Delays</option>
                             <option value="not-started" <?php echo ($current_submission['status'] ?? '') == 'not-started' ? 'selected' : ''; ?>>Not Started</option>
                         </select>
                         <div class="form-text">Current status category of the program</div>
@@ -294,7 +305,8 @@ require_once '../layouts/agency_nav.php';
                 <button type="submit" name="save_draft" class="btn btn-secondary me-2">
                     <i class="fas fa-save me-1"></i> Save as Draft
                 </button>
-                <button type="submit" name="submit_program" class="btn btn-primary">
+                <button type="submit" name="submit_program" class="btn btn-primary" 
+                    onclick="return confirm('Are you sure you want to submit this program as final? You will not be able to make further edits.')">
                     <i class="fas fa-paper-plane me-1"></i> Submit Final
                 </button>
                 <?php endif; ?>

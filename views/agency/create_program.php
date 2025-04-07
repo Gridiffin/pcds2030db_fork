@@ -152,9 +152,9 @@ require_once '../layouts/agency_nav.php';
                     <div class="col-md-6">
                         <label for="status" class="form-label">Current Status *</label>
                         <select class="form-select" id="status" name="status" required>
-                            <option value="on-track">On Track</option>
-                            <option value="delayed">Delayed</option>
-                            <option value="completed">Completed</option>
+                            <option value="target-achieved">Monthly Target Achieved</option>
+                            <option value="on-track-yearly">On Track for Year</option>
+                            <option value="severe-delay">Severe Delays</option>
                             <option value="not-started" selected>Not Started</option>
                         </select>
                         <div class="form-text">Current status category of the program</div>
