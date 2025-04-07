@@ -121,6 +121,10 @@
     border-radius: 3px 3px 0 0;
 }
 
+.navbar .nav-link:hover {
+    text-decoration: none;
+}
+
 /* Clean semantic navbar styling */
 .admin-navbar {
     background-color: white;
@@ -157,6 +161,16 @@
     background-color: var(--primary-color) !important;
     color: #ffffff !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Card header links need to be white */
+.card-header a {
+    color: #ffffff !important;
+}
+
+.card-header a:hover {
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
 }
 
 /* Override for colored card headers */

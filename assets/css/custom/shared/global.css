@@ -1,0 +1,26 @@
+/**
+ * Global Overrides
+ * 
+ * Contains fixes and overrides that apply to the entire application
+ */
+
+/* Remove underline from all buttons on hover */
+.btn:hover,
+button:hover,
+a.btn:hover,
+.nav-link:hover,
+.navbar-brand:hover,
+.dropdown-item:hover {
+    text-decoration: none !important;
+}
+
+/* Keep link hover effects but remove underlines for specific UI components */
+.card-header a:hover,
+.table-custom a:hover {
+    text-decoration: none !important;
+}
+
+/* Ensure Bootstrap's built-in classes don't apply underlines */
+.text-decoration-none:hover {
+    text-decoration: none !important;
+}

@@ -50,6 +50,14 @@ require_once '../layouts/header.php';
 
 // Include admin navigation
 require_once '../layouts/admin_nav.php';
+
+// Set up the dashboard header variables
+$title = "Admin Dashboard";
+$subtitle = "System overview and management";
+$background = 'dark'; // Use dark background for proper contrast
+
+// Include the dashboard header component
+require_once '../../includes/dashboard_header.php';
 ?>
 
 <!-- Page Header -->

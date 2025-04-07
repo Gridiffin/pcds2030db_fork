@@ -1,0 +1,229 @@
+/**
+ * Shared Components
+ * Common UI components used across the application
+ */
+
+/* Status Badges - Used in both admin and agency views */
+.badge {
+    padding: 0.4em 0.7em;
+    font-weight: 500;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+/* Badge hover effects */
+.badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.badge.bg-success {
+    background-color: #28a745 !important; /* Green - Monthly Target Achieved */
+    color: white !important;
+}
+
+.badge.bg-warning {
+    background-color: #ffc107 !important; /* Yellow - On Track for Year */
+    color: #212529 !important;
+}
+
+.badge.bg-danger {
+    background-color: #dc3545 !important; /* Red - Severe Delays */
+    color: white !important;
+}
+
+.badge.bg-secondary {
+    background-color: #6c757d !important; /* Grey - Not Started */
+    color: white !important;
+}
+
+/* Status Pills - Used in multiple views */
+.status-pill {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 30px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 2px solid transparent;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Status Pill hover animation */
+.status-pill:hover:not(.large) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.status-pill.large {
+    padding: 0.75rem 1.5rem;
+    font-size: 1.1rem;
+    cursor: default;
+}
+
+/* Status Pill variations */
+.status-pill.target-achieved, .badge.bg-success {
+    background-color: rgba(40, 167, 69, 0.1);
+    color: var(--secondary-color);
+    border-color: rgba(40, 167, 69, 0.2);
+}
+
+.status-pill.on-track-yearly, .badge.bg-warning {
+    background-color: rgba(255, 193, 7, 0.1);
+    color: #ffc107;
+    border-color: rgba(255, 193, 7, 0.2);
+}
+
+.status-pill.severe-delay, .badge.bg-danger {
+    background-color: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+    border-color: rgba(220, 53, 69, 0.2);
+}
+
+.status-pill.not-started, .badge.bg-secondary {
+    background-color: rgba(108, 117, 125, 0.1);
+    color: #6c757d;
+    border-color: rgba(108, 117, 125, 0.2);
+}
+
+/* Status pill hover effects */
+.status-pill:hover:not(.large),
+.status-pill.active {
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25); /* Updated to match blue primary color */
+}
+
+.status-pill.target-achieved:hover:not(.large),
+.status-pill.target-achieved.active {
+    background-color: rgba(40, 167, 69, 0.2);
+    border-color: var(--secondary-color);
+}
+
+.status-pill.on-track-yearly:hover:not(.large),
+.status-pill.on-track-yearly.active {
+    background-color: rgba(255, 193, 7, 0.2);
+    border-color: #ffc107;
+}
+
+.status-pill.severe-delay:hover:not(.large),
+.status-pill.severe-delay.active {
+    background-color: rgba(220, 53, 69, 0.2);
+    border-color: #dc3545;
+}
+
+.status-pill.not-started:hover:not(.large),
+.status-pill.not-started.active {
+    background-color: rgba(108, 117, 125, 0.2);
+    border-color: #6c757d;
+}
+
+/* Tables - Used across admin and agency views */
+.table-custom {
+    margin-bottom: 0;
+}
+
+.table-custom th {
+    font-weight: var(--font-weight-semibold);
+    color: var(--dark-color);
+    background-color: var(--light-color);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+
+.table-custom a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: var(--font-weight-medium);
+    transition: all 0.2s ease;
+}
+
+.table-custom a:hover {
+    color: #0a58ca; /* Darker blue for hover */
+    transform: translateY(-1px);
+    /* Remove text-decoration: underline; */
+}
+
+.table-custom tr {
+    transition: all 0.2s ease;
+}
+
+.table-custom tr:hover {
+    background-color: rgba(var(--primary-rgb), 0.05) !important;
+    transform: translateX(3px);
+}
+
+/* Enhanced button hover effects in tables */
+.table-custom .btn {
+    transition: all 0.2s ease;
+}
+
+.table-custom .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-decoration: none !important;
+}
+
+.table-custom .btn:active {
+    transform: translateY(0);
+}
+
+/* Draft program styling */
+.draft-program td:first-child {
+    position: relative;
+}
+
+.draft-program td:first-child::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background-color: #ffc107; /* Warning yellow */
+}
+
+.draft-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background-color: #ffc107;
+    border-radius: 50%;
+    margin-left: 5px;
+    position: relative;
+    top: -2px;
+}
+
+.draft-indicator::after {
+    content: "Draft";
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    font-size: 0.75rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s;
+    pointer-events: none;
+    margin-bottom: 5px;
+}
+
+.draft-indicator:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
+
+.program-type-indicator {
+    color: #6c757d;
+    font-size: 0.75rem;
+    margin-top: 3px;
+}

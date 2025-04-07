@@ -1,52 +1,141 @@
 /**
  * Form Utilities
- * Shared functions for form validation and handling
+ * 
+ * Reusable functions for form handling across the application
  */
 
 /**
- * Validate a date range between two date fields
- * @param {HTMLElement} startField - The start date field
- * @param {HTMLElement} endField - The end date field
- * @param {string} errorMessage - Custom error message (optional)
- * @returns {boolean} True if valid, false otherwise
+ * Validate a form with custom rules
+ * @param {HTMLFormElement} form - The form to validate
+ * @param {Object} rules - Validation rules for fields
+ * @returns {boolean} Whether the form is valid
  */
-function validateDateRange(startField, endField, errorMessage) {
-    if (!startField || !endField || !startField.value || !endField.value) {
-        return true; // Nothing to validate if fields are empty
-    }
+function validateForm(form, rules = {}) {
+    if (!form) return false;
     
-    const startDate = new Date(startField.value);
-    const endDate = new Date(endField.value);
+    let isValid = true;
     
-    if (startDate > endDate) {
-        const message = errorMessage || 'End date cannot be before start date';
-        
-        // Mark fields as invalid
-        startField.classList.add('is-invalid');
-        endField.classList.add('is-invalid');
-        
-        // Show error message
-        const errorId = 'date-range-error';
-        if (!document.getElementById(errorId)) {
-            const errorDiv = document.createElement('div');
-            errorDiv.id = errorId;
-            errorDiv.className = 'invalid-feedback';
-            errorDiv.textContent = message;
-            endField.parentNode.appendChild(errorDiv);
+    // Reset previous validation
+    form.querySelectorAll('.is-invalid').forEach(element => {
+        element.classList.remove('is-invalid');
+    });
+    
+    form.querySelectorAll('.invalid-feedback').forEach(element => {
+        if (element.parentNode) {
+            element.parentNode.removeChild(element);
         }
+    });
+    
+    // Check required fields
+    form.querySelectorAll('[required]').forEach(field => {
+        if (!field.value.trim()) {
+            isValid = false;
+            showValidationError(field.id || field.name, 'This field is required');
+            field.classList.add('is-invalid');
+        }
+    });
+    
+    // Apply custom rules
+    for (const [fieldId, fieldRules] of Object.entries(rules)) {
+        const field = document.getElementById(fieldId);
+        if (!field) continue;
         
-        return false;
+        for (const [rule, params] of Object.entries(fieldRules)) {
+            if (rule === 'minLength' && field.value.length < params.value) {
+                isValid = false;
+                showValidationError(fieldId, params.message || `Minimum length is ${params.value} characters`);
+            }
+            else if (rule === 'maxLength' && field.value.length > params.value) {
+                isValid = false;
+                showValidationError(fieldId, params.message || `Maximum length is ${params.value} characters`);
+            }
+            else if (rule === 'pattern' && !new RegExp(params.value).test(field.value)) {
+                isValid = false;
+                showValidationError(fieldId, params.message || 'Invalid format');
+            }
+        }
     }
     
-    // Clear validation errors
-    startField.classList.remove('is-invalid');
-    endField.classList.remove('is-invalid');
+    return isValid;
+}
+
+/**
+ * Show validation error message for a field
+ * @param {string} fieldId - The ID of the field with error
+ * @param {string} message - Error message to display
+ */
+function showValidationError(fieldId, message) {
+    const field = document.getElementById(fieldId);
+    if (!field) return;
     
-    // Remove error message if exists
-    const errorDiv = document.getElementById('date-range-error');
-    if (errorDiv) errorDiv.remove();
+    field.classList.add('is-invalid');
     
-    return true;
+    // Check if error message already exists
+    let errorDiv = field.nextElementSibling;
+    if (errorDiv && errorDiv.classList.contains('invalid-feedback')) {
+        errorDiv.textContent = message;
+    } else {
+        // Create new error message
+        errorDiv = document.createElement('div');
+        errorDiv.className = 'invalid-feedback';
+        errorDiv.textContent = message;
+        field.parentNode.insertBefore(errorDiv, field.nextSibling);
+    }
+}
+
+/**
+ * Clear validation error for a field
+ * @param {string} fieldId - The ID of the field to clear error
+ */
+function clearValidationError(fieldId) {
+    const field = document.getElementById(fieldId);
+    if (!field) return;
+    
+    field.classList.remove('is-invalid');
+    
+    const errorDiv = field.nextElementSibling;
+    if (errorDiv && errorDiv.classList.contains('invalid-feedback')) {
+        errorDiv.remove();
+    }
+}
+
+/**
+ * Create an alert in a form
+ * @param {string} message - Alert message (HTML supported)
+ * @param {HTMLElement} container - Container to add alert to 
+ * @param {string} type - Alert type (success, danger, warning, info)
+ */
+function createFormAlert(message, container, type = 'danger') {
+    if (!container) return;
+    
+    // Remove existing alerts
+    container.querySelectorAll('.alert').forEach(alert => alert.remove());
+    
+    // Create new alert
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    
+    // Add to form
+    container.prepend(alertDiv);
+}
+
+/**
+ * Validate date range between two date fields
+ * @param {HTMLInputElement} startDateField - Start date field
+ * @param {HTMLInputElement} endDateField - End date field
+ * @returns {boolean} Whether the date range is valid
+ */
+function validateDateRange(startDateField, endDateField) {
+    if (!startDateField || !endDateField) return true;
+    
+    const startDate = new Date(startDateField.value);
+    const endDate = new Date(endDateField.value);
+    
+    return !startDateField.value || !endDateField.value || startDate <= endDate;
 }
 
 /**
@@ -79,48 +168,13 @@ function addCharacterCounter(field, maxLength) {
 }
 
 /**
- * Show validation error message for a field
- * @param {string} fieldId - ID of the field
- * @param {string} message - Error message to display
- */
-function showValidationError(fieldId, message) {
-    const field = document.getElementById(fieldId);
-    if (!field) return;
-    
-    field.classList.add('is-invalid');
-    
-    // Add error message if it doesn't exist
-    if (!document.getElementById(`${fieldId}-error`)) {
-        const errorDiv = document.createElement('div');
-        errorDiv.id = `${fieldId}-error`;
-        errorDiv.className = 'invalid-feedback';
-        errorDiv.textContent = message;
-        field.parentNode.appendChild(errorDiv);
-    }
-}
-
-/**
- * Clear validation error for a field
- * @param {string} fieldId - ID of the field
- */
-function clearValidationError(fieldId) {
-    const field = document.getElementById(fieldId);
-    if (!field) return;
-    
-    field.classList.remove('is-invalid');
-    
-    // Remove error message if it exists
-    const errorDiv = document.getElementById(`${fieldId}-error`);
-    if (errorDiv) errorDiv.remove();
-}
-
-/**
  * Add loading state to a submit button
  * @param {HTMLElement} button - The submit button
  * @param {string} loadingText - Text to display during loading (optional)
+ * @returns {Function} Function to reset the button
  */
 function setButtonLoading(button, loadingText) {
-    if (!button) return;
+    if (!button) return () => {};
     
     const originalText = button.innerHTML;
     const text = loadingText || 'Processing...';

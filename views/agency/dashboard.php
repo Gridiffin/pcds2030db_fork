@@ -65,28 +65,24 @@ require_once '../layouts/header.php';
 
 // Include agency navigation
 require_once '../layouts/agency_nav.php';
-?>
 
-<!-- Page Header -->
-<div class="page-header pb-10">
-    <div class="container-fluid">
-        <div class="row align-items-center">
-            <div class="col">
-                <div class="page-title">
-                    <h3>Agency Dashboard</h3>
-                    <p class="text-subtitle text-white">
-                        <?php echo $_SESSION['agency_name']; ?> - <?php echo $agency_sector; ?> Sector
-                    </p>
-                </div>
-            </div>
-            <div class="col-auto">
-                <button id="refreshPage" class="btn btn-light">
-                    <i class="fas fa-sync-alt me-1"></i> Refresh Data
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
+// Set up the dashboard header variables
+$title = "Agency Dashboard";
+$subtitle = $_SESSION['agency_name'] . ' - ' . $agency_sector . ' Sector';
+$background = 'dark'; // Use dark background for proper contrast
+$actions = [
+    [
+        'url' => '#',
+        'text' => 'Refresh Data',
+        'class' => 'btn-light',
+        'icon' => 'fas fa-sync-alt',
+        'id' => 'refreshPage'
+    ]
+];
+
+// Include the dashboard header component
+require_once '../../includes/dashboard_header.php';
+?>
 
 <!-- Dashboard Content -->
 <section class="section">
@@ -203,7 +199,7 @@ require_once '../layouts/agency_nav.php';
             <div class="col-lg-4 mb-4">
                 <div class="card shadow-sm h-100">
                     <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Program Status Distribution</h6>
+                        <h6 class="m-0 font-weight-bold text-white">Program Status Distribution</h6>
                     </div>
                     <div class="card-body">
                         <div class="chart-container" style="position: relative; height:250px; width:100%">

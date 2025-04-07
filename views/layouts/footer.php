@@ -16,6 +16,7 @@
     
 <!-- JavaScript dependencies -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
 
 <!-- Utility scripts -->
 <script src="<?php echo APP_URL; ?>/assets/js/utilities/status_utils.js"></script>
@@ -68,6 +69,8 @@
 <!-- Shared utilities -->
 <script src="<?php echo APP_URL; ?>/assets/js/utilities/initialization.js"></script>
 <script src="<?php echo APP_URL; ?>/assets/js/utilities/form_utils.js"></script>
+<script src="<?php echo APP_URL; ?>/assets/js/utilities/filter_utils.js"></script>
+<script src="<?php echo APP_URL; ?>/assets/js/utilities/status_utils.js"></script>
 <script src="<?php echo APP_URL; ?>/assets/js/main.js"></script>
 
 <!-- Additional scripts -->

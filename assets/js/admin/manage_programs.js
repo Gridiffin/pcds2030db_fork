@@ -1,98 +1,25 @@
-    /**
+/**
  * Manage Programs Functionality
  * Handles filtering and interactions on the admin programs list page
  */
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Manage Programs JS loaded'); // Debugging
+    console.log('Manage Programs JS loaded');
     
-    // Initialize filtering
-    const searchInput = document.getElementById('programSearch');
-    const statusFilter = document.getElementById('statusFilter');
-    const typeFilter = document.getElementById('programTypeFilter');
-    const resetFiltersBtn = document.getElementById('resetFilters');
-    
-    if (searchInput) {
-        console.log('Search input found'); // Debugging
-        // Use input event with debounce for smoother filtering
-        let searchTimeout;
-        searchInput.addEventListener('input', function() {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(filterPrograms, 300); // Debounce by 300ms
-        });
-        
-        // Clear button functionality
-        const clearButton = document.createElement('button');
-        clearButton.type = 'button';
-        clearButton.className = 'btn btn-sm btn-outline-secondary position-absolute end-0 me-2';
-        clearButton.innerHTML = '<i class="fas fa-times"></i>';
-        clearButton.style.top = '50%';
-        clearButton.style.transform = 'translateY(-50%)';
-        clearButton.style.display = 'none';
-        clearButton.style.zIndex = '10';
-        clearButton.addEventListener('click', function() {
-            searchInput.value = '';
-            this.style.display = 'none';
-            filterPrograms();
-            searchInput.focus();
-        });
-        
-        // Add the clear button to search input's parent
-        const inputGroup = searchInput.closest('.input-group');
-        if (inputGroup) {
-            inputGroup.style.position = 'relative';
-            inputGroup.appendChild(clearButton);
-            
-            // Show/hide clear button based on input content
-            searchInput.addEventListener('input', function() {
-                clearButton.style.display = this.value ? 'block' : 'none';
-            });
-        }
-    }
-    
-    if (statusFilter) {
-        console.log('Status filter found'); // Debugging
-        statusFilter.addEventListener('change', filterPrograms);
-    }
-    
-    if (typeFilter) {
-        console.log('Type filter found'); // Debugging
-        typeFilter.addEventListener('change', filterPrograms);
-    }
-    
-    // Add reset filters functionality
-    if (resetFiltersBtn) {
-        resetFiltersBtn.addEventListener('click', resetAllFilters);
-    }
-    
-    // Initialize delete functionality
+    // Initialize delete buttons functionality
     initDeleteButtons();
     
-    // Initial filtering to ensure it's working from the start
-    filterPrograms();
-    
-    // Add filter reset button in the same row as the other filter elements
-    const filterCard = document.querySelector('.card:has(#programSearch)');
-    if (filterCard && !document.getElementById('resetFilters')) {
-        // Find the row containing the filters
-        const filterRow = filterCard.querySelector('.row');
-        if (filterRow) {
-            // Create a new column for the reset button that aligns with the inputs
-            const resetCol = document.createElement('div');
-            resetCol.className = 'col-12 d-flex align-items-end justify-content-end mt-3 filter-reset-container';
-            
-            const resetBtn = document.createElement('button');
-            resetBtn.id = 'resetFilters';
-            resetBtn.className = 'btn btn-sm btn-outline-secondary filter-reset-btn';
-            resetBtn.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Reset Filters';
-            resetBtn.addEventListener('click', resetAllFilters);
-            
-            resetCol.appendChild(resetBtn);
-            filterRow.appendChild(resetCol);
-            console.log('Reset filter button added in filter row'); // Debugging
-        }
-    }
+    // Initialize filters using the shared filter utility
+    initializeFilters({
+        tableId: 'programsTable',
+        searchInputId: 'programSearch',
+        statusFilterId: 'statusFilter',
+        typeFilterId: 'programTypeFilter',
+        resetButtonId: 'resetFilters',
+        customFilter: customFilterPrograms
+    });
     
     // Update status filter dropdown with new values
+    const statusFilter = document.getElementById('statusFilter');
     if (statusFilter) {
         // Clear existing options
         statusFilter.innerHTML = '';
@@ -105,88 +32,25 @@ document.addEventListener('DOMContentLoaded', function() {
             <option value="severe-delay">Severe Delays</option>
             <option value="not-started">Not Started</option>
         `;
-        
-        statusFilter.addEventListener('change', filterPrograms);
     }
 });
 
 /**
- * Reset all filters to default state
+ * Custom filter function for programs table
  */
-function resetAllFilters() {
-    console.log('Resetting all filters'); // Debugging
-    const searchInput = document.getElementById('programSearch');
-    const statusFilter = document.getElementById('statusFilter');
-    const typeFilter = document.getElementById('programTypeFilter');
-    
-    if (searchInput) searchInput.value = '';
-    if (statusFilter) statusFilter.value = '';
-    if (typeFilter) typeFilter.value = '';
-    
-    // Hide clear button if it exists
-    const clearButton = searchInput?.closest('.input-group')?.querySelector('button');
-    if (clearButton) clearButton.style.display = 'none';
-    
-    // Apply filtering
-    filterPrograms();
-    
-    // Show brief animation on the reset button
-    const resetBtn = document.getElementById('resetFilters');
-    if (resetBtn) {
-        resetBtn.classList.add('btn-secondary');
-        resetBtn.classList.remove('btn-outline-secondary');
-        setTimeout(() => {
-            resetBtn.classList.remove('btn-secondary');
-            resetBtn.classList.add('btn-outline-secondary');
-        }, 300);
-    }
-}
-
-/**
- * Filter programs based on search input and filters
- */
-function filterPrograms() {
-    console.log('Filtering programs'); // Debugging
-    const searchInput = document.getElementById('programSearch');
-    const statusFilter = document.getElementById('statusFilter');
-    const typeFilter = document.getElementById('programTypeFilter');
-    
-    if (!searchInput && !statusFilter && !typeFilter) {
-        console.log('No filter inputs found');
-        return;
-    }
-    
-    const searchValue = searchInput ? searchInput.value.toLowerCase() : '';
-    const statusValue = statusFilter ? statusFilter.value.toLowerCase() : '';
-    const typeValue = typeFilter ? typeFilter.value.toLowerCase() : '';
-    
-    console.log(`Filter values - Search: "${searchValue}", Status: "${statusValue}", Type: "${typeValue}"`); // Debugging
-    
-    // Get program table
+function customFilterPrograms(searchValue, statusValue, typeValue) {
     const table = document.getElementById('programsTable');
-    if (!table) {
-        console.error('Programs table not found!');
-        return;
-    }
-    
-    // Update filter indicator in the UI
-    updateFilterIndicator(searchValue, statusValue, typeValue);
+    if (!table) return;
     
     const rows = table.querySelectorAll('tbody tr');
-    console.log(`Found ${rows.length} rows to filter`); // Debugging
-    
     let visibleCount = 0;
     
     rows.forEach(row => {
         // Get cell values for filtering
         const nameCell = row.cells[0];
-        const typeCell = row.cells[1];
-        const statusCell = row.cells[2];
+        const statusCell = row.cells[1];
         
-        if (!nameCell || !typeCell || !statusCell) {
-            console.warn('Missing required cells in row');
-            return;
-        }
+        if (!nameCell || !statusCell) return;
         
         // Get the program name text, excluding badges
         let name = '';
@@ -221,63 +85,48 @@ function filterPrograms() {
                 highlightProgramName(nameElement, searchValue);
             } else if (!searchValue && nameElement) {
                 // Remove any existing highlights but preserve badges
-                const badgeElements = [];
-                const badges = nameElement.querySelectorAll('.badge');
-                badges.forEach(badge => {
-                    badgeElements.push(badge.outerHTML);
-                });
-                
-                nameElement.innerHTML = name + (badgeElements.length > 0 ? ' ' + badgeElements.join('') : '');
+                removeHighlightsPreserveBadges(nameElement);
             }
         } else {
             row.style.display = 'none';
         }
     });
     
-    console.log(`Visible rows after filtering: ${visibleCount}`); // Debugging
-    
-    // Show/hide "no results" message
-    const tableContainer = table.closest('.table-responsive');
-    let noResultsMsg = tableContainer.querySelector('.no-results-message');
-    
-    if (visibleCount === 0) {
-        if (!noResultsMsg) {
-            noResultsMsg = document.createElement('div');
-            noResultsMsg.className = 'no-results-message text-center py-5 w-100';
-            noResultsMsg.innerHTML = `
-                <div class="mb-3">
-                    <i class="fas fa-search fa-3x text-muted"></i>
-                </div>
-                <h5>No matching programs found</h5>
-                <p class="text-muted">Try adjusting your search criteria</p>
-                <button id="clearFiltersBtn" class="btn btn-outline-primary btn-sm mt-2">
-                    <i class="fas fa-times me-1"></i>Clear Filters
-                </button>
-            `;
-            tableContainer.appendChild(noResultsMsg);
-            
-            // Add event listener to clear filters button
-            const clearFiltersBtn = noResultsMsg.querySelector('#clearFiltersBtn');
-            if (clearFiltersBtn) {
-                clearFiltersBtn.addEventListener('click', resetAllFilters);
-            }
-        }
-    } else if (noResultsMsg) {
-        noResultsMsg.remove();
-    }
+    // Update filter indicator is handled by the shared utility
     
     // Update counters if needed
     const programCounter = document.querySelector('#allPrograms .badge');
     if (programCounter) {
         programCounter.textContent = `${visibleCount} Programs`;
     }
+}
+
+/**
+ * Remove highlights but preserve badges
+ */
+function removeHighlightsPreserveBadges(element) {
+    // Save badges
+    const badgeElements = [];
+    const badges = element.querySelectorAll('.badge');
+    badges.forEach(badge => {
+        badgeElements.push(badge.outerHTML);
+    });
     
-    // Update filter badge if it exists
-    const filterBadge = document.querySelector('.filter-badge');
-    if (filterBadge) {
-        const hasFilters = searchValue || statusValue || typeValue;
-        filterBadge.style.display = hasFilters ? 'inline-flex' : 'none';
-    }
+    // Get original text without marks
+    const clone = element.cloneNode(true);
+    const marks = clone.querySelectorAll('mark');
+    marks.forEach(mark => {
+        const text = document.createTextNode(mark.textContent);
+        mark.parentNode.replaceChild(text, mark);
+    });
+    
+    // Get text without badges
+    const badgesToRemove = clone.querySelectorAll('.badge');
+    badgesToRemove.forEach(badge => badge.remove());
+    const text = clone.textContent.trim();
+    
+    // Reconstruct content
+    element.innerHTML = text + (badgeElements.length > 0 ? ' ' + badgeElements.join('') : '');
 }
 
 /**
@@ -325,112 +174,6 @@ function highlightProgramName(element, searchTerm) {
 }
 
 /**
- * Update the filter indicator in the UI
- */
-function updateFilterIndicator(searchValue, statusValue, typeValue) {
-    // Find or create the filter indicator
-    let filterIndicator = document.querySelector('.filter-indicator');
-    
-    if (!filterIndicator) {
-        filterIndicator = document.createElement('div');
-        filterIndicator.className = 'filter-indicator mt-2 mb-3';
-        
-        // Insert after the filter card
-        const filterCard = document.querySelector('.card:has(#programSearch)');
-        if (filterCard) {
-            filterCard.parentNode.insertBefore(filterIndicator, filterCard.nextSibling);
-        }
-    }
-    
-    const hasFilters = searchValue || statusValue || typeValue;
-    
-    if (!hasFilters) {
-        filterIndicator.innerHTML = '';
-        return;
-    }
-    
-    let filterText = '<div class="d-flex align-items-center flex-wrap gap-2">';
-    filterText += '<span class="me-2"><i class="fas fa-filter text-primary"></i> Active filters:</span>';
-    
-    if (searchValue) {
-        filterText += `<span class="badge bg-light text-dark me-1">Search: "${searchValue}"</span>`;
-    }
-    
-    if (statusValue) {
-        filterText += `<span class="badge bg-light text-dark me-1">Status: ${statusValue}</span>`;
-    }
-    
-    if (typeValue) {
-        const typeName = typeValue === 'assigned' ? 'Assigned Programs' : 'Agency-Created Programs';
-        filterText += `<span class="badge bg-light text-dark me-1">Type: ${typeName}</span>`;
-    }
-    
-    filterText += '</div>';
-    filterIndicator.innerHTML = filterText;
-}
-
-/**
- * Highlight text in an element based on search term
- */
-function highlightText(element, searchTerm) {
-    // Skip elements with no firstChild (no text content)
-    if (!element.firstChild) return;
-    
-    // Store original content and create a temporary container
-    const originalContent = element.innerHTML;
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = originalContent;
-    
-    // Function to process text nodes
-    function processNode(node) {
-        if (node.nodeType === 3) { // Text node
-            const text = node.nodeValue;
-            const lowerText = text.toLowerCase();
-            let index = lowerText.indexOf(searchTerm);
-            
-            if (index >= 0) {
-                const span = document.createElement('span');
-                span.innerHTML = '';
-                
-                let lastIndex = 0;
-                while (index >= 0) {
-                    // Add text before the match
-                    span.innerHTML += text.substring(lastIndex, index);
-                    
-                    // Add highlighted match
-                    span.innerHTML += `<mark>${text.substr(index, searchTerm.length)}</mark>`;
-                    
-                    // Move to after this match
-                    lastIndex = index + searchTerm.length;
-                    index = lowerText.indexOf(searchTerm, lastIndex);
-                }
-                
-                // Add any remaining text
-                span.innerHTML += text.substring(lastIndex);
-                node.parentNode.replaceChild(span, node);
-                return span;
-            }
-        } else if (node.nodeType === 1) { // Element node
-            // Skip if it's already a mark element
-            if (node.nodeName !== 'MARK') {
-                // Process child nodes
-                const childNodes = Array.from(node.childNodes);
-                childNodes.forEach(processNode);
-            }
-        }
-        return node;
-    }
-    
-    // Process all nodes in the element
-    Array.from(tempDiv.childNodes).forEach(processNode);
-    
-    // Replace original content only if changes were made
-    if (tempDiv.innerHTML !== originalContent) {
-        element.innerHTML = tempDiv.innerHTML;
-    }
-}
-
-/**
  * Initialize delete buttons functionality
  */
 function initDeleteButtons() {
@@ -450,8 +193,6 @@ function initDeleteButtons() {
         return;
     }
     
-    console.log(`Found ${deleteButtons.length} delete buttons`); // Debugging
-    
     deleteButtons.forEach(button => {
         button.addEventListener('click', function() {
             const programId = this.getAttribute('data-id');
@@ -466,35 +207,3 @@ function initDeleteButtons() {
         });
     });
 }
-
-// Replace the old statusFilter options with the new ones
-if (statusFilter) {
-    // Clear existing options
-    statusFilter.innerHTML = '';
-    
-    // Add new options with updated status values
-    statusFilter.innerHTML = `
-        <option value="">All Statuses</option>
-        <option value="target-achieved">Monthly Target Achieved</option>
-        <option value="on-track-yearly">On Track for Year</option>
-        <option value="severe-delay">Severe Delays</option>
-        <option value="not-started">Not Started</option>
-    `;
-    
-    statusFilter.addEventListener('change', filterPrograms);
-}
-
-/* ...existing code... */
-
-<div class="col-md-3">
-    <label for="statusFilter" class="form-label">Status Filter</label>
-    <select class="form-select" id="statusFilter">
-        <option value="">All Statuses</option>
-        <option value="target-achieved">Monthly Target Achieved</option>
-        <option value="on-track-yearly">On Track for Year</option>
-        <option value="severe-delay">Severe Delays</option>
-        <option value="not-started">Not Started</option>
-    </select>
-</div>
-
-/* ...existing code... */

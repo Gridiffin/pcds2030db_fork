@@ -7,7 +7,7 @@ body {
     background-color: #f5f7fa; /* Subtle light gray background instead of pure white */
 }
 
-/* Page Header Styling */
+/* Page Header Styling - Improve contrast and fix invisible text */
 .page-header {
     padding: 1.5rem 0;
     margin-bottom: 1.5rem;
@@ -16,6 +16,7 @@ body {
     color: #ffffff;
 }
 
+/* Fix for page title text visibility */
 .page-title h3 {
     font-size: 1.75rem;
     font-weight: 600;
@@ -23,10 +24,34 @@ body {
     margin-bottom: 0.25rem;
 }
 
-.text-subtitle {
+/* Update subtitle text to be visible regardless of theme */
+.page-title .text-subtitle {
     font-size: 0.9rem;
     margin-bottom: 0;
     color: rgba(255, 255, 255, 0.8);
+}
+
+/* Add this class for when the header is on light background */
+.page-header.light-background {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.page-header.light-background .page-title h3 {
+    color: var(--dark-color);
+}
+
+.page-header.light-background .page-title .text-subtitle {
+    color: #6c757d;
+}
+
+/* Utility classes for text color based on background context */
+.text-on-dark {
+    color: #ffffff !important;
+}
+
+.text-on-light {
+    color: var(--dark-color) !important;
 }
 
 /* Section Styling */
@@ -914,4 +939,156 @@ span.badge.bg-secondary, div.badge.bg-secondary {
 .card-body.p-0 .text-center.py-5.px-4 {
     padding: 2rem !important;
     width: 100%;
+}
+
+/* Enhanced navigation hover effects */
+.navbar .nav-link {
+    position: relative;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.navbar .nav-link:hover {
+    color: var(--primary-color);
+    transform: translateY(-2px);
+}
+
+.navbar .nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background-color: var(--primary-color);
+    transition: all 0.3s ease;
+    transform: translateX(-50%);
+}
+
+.navbar .nav-link:hover::after {
+    width: 70%;
+}
+
+.navbar .nav-link.active::after {
+    width: 100%;
+}
+
+/* Enhanced button hover effects */
+.btn {
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.btn:active {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.btn::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.1);
+    z-index: -1;
+    transform: scale(0);
+    transition: transform 0.3s ease;
+    border-radius: 50%;
+}
+
+.btn:hover::after {
+    transform: scale(2);
+}
+
+/* Enhanced sidebar navigation elements */
+.sidebar-nav .nav-link {
+    transition: all 0.3s ease;
+    border-radius: 8px;
+    margin-bottom: 5px;
+}
+
+.sidebar-nav .nav-link:hover {
+    background-color: rgba(var(--primary-rgb), 0.1);
+    transform: translateX(5px);
+}
+
+.sidebar-nav .nav-link.active {
+    background-color: var(--primary-color);
+    color: white;
+    box-shadow: 0 4px 10px rgba(var(--primary-rgb), 0.3);
+}
+
+/* Improved card header and button contrast */
+.card-header .btn {
+    border-color: rgba(255, 255, 255, 0.5);
+    color: white;
+}
+
+.card-header .btn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-color: white;
+}
+
+/* Enhanced dropdown hover effects */
+.dropdown-item {
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.dropdown-item:hover {
+    background-color: rgba(var(--primary-rgb), 0.1);
+    color: var(--primary-color);
+    padding-left: 1.5rem;
+}
+
+.dropdown-item::before {
+    content: '';
+    position: absolute;
+    left: 0.5rem;
+    top: 50%;
+    width: 0;
+    height: 2px;
+    background-color: var(--primary-color);
+    transition: all 0.3s ease;
+    transform: translateY(-50%);
+    opacity: 0;
+}
+
+.dropdown-item:hover::before {
+    width: 0.5rem;
+    opacity: 1;
+}
+
+/* Enhanced table row hover effects */
+.table-custom tbody tr {
+    transition: all 0.3s ease;
+}
+
+.table-custom tbody tr:hover {
+    transform: translateX(5px);
+    background-color: rgba(var(--primary-rgb), 0.05) !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.table-custom tbody tr:hover td:first-child {
+    position: relative;
+}
+
+.table-custom tbody tr:hover td:first-child::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 3px;
+    height: 100%;
+    background-color: var(--primary-color);
 }
