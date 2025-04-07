@@ -1109,3 +1109,19 @@ mark, .mark {
     margin-left: auto; /* Ensure it stays on the far right */
     z-index: 1; /* Ensure it is above other elements */
 }
+
+/* Improved draft program styling */
+.draft-program {
+    position: relative;
+}
+
+/* Add a subtle left indicator that spans the entire height */
+.draft-program::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background-color: #ffc107; /* Warning yellow */
+}

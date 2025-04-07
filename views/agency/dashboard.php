@@ -288,9 +288,12 @@ require_once '../layouts/agency_nav.php';
                                                         <a href="program_details.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="View Details">
                                                             <i class="fas fa-eye"></i>
                                                         </a>
+                                                        
+                                                        <?php if (isset($program['is_draft']) && $program['is_draft']): ?>
                                                         <a href="update_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-secondary" title="Update Status">
                                                             <i class="fas fa-edit"></i>
                                                         </a>
+                                                        <?php endif; ?>
                                                     </div>
                                                 </td>
                                             </tr>

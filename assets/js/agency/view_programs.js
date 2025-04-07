@@ -77,6 +77,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Listen for tab changes to update filtering
+    const programTabs = document.querySelectorAll('#programTypeTabs .nav-link');
+    programTabs.forEach(tab => {
+        tab.addEventListener('shown.bs.tab', function() {
+            // When changing tabs, apply the search filter to the new tab's content
+            filterPrograms();
+        });
+    });
+    
     // Update status filter dropdown
     updateStatusFilterOptions();
 });
@@ -126,9 +135,18 @@ function filterPrograms() {
     const statusValue = statusFilter ? statusFilter.value.toLowerCase() : '';
     const typeValue = typeFilter ? typeFilter.value.toLowerCase() : '';
     
-    // Get program table
-    const table = document.getElementById('programsTable');
-    if (!table) return;
+    // Get the active tab to determine which table we're filtering
+    const activeTab = document.querySelector('#programTypeTabs .nav-link.active');
+    const activeTabId = activeTab ? activeTab.id : 'all-programs-tab';
+    
+    // Get the table within the active tab
+    const activeTabContent = document.getElementById(activeTabId.replace('-tab', '-content'));
+    const table = activeTabContent ? activeTabContent.querySelector('table') : document.querySelector('table');
+    
+    if (!table) {
+        console.error('Programs table not found!');
+        return;
+    }
     
     // Update filter indicator in the UI
     updateFilterIndicator(searchValue, statusValue, typeValue);

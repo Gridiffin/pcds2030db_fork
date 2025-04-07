@@ -319,3 +319,79 @@
 .draft-banner i {
     margin-right: 0.5rem;
 }
+
+/* Program Table Styling - Improved Draft Indicator */
+.created-program {
+    background-color: rgba(40, 167, 69, 0.03);
+}
+
+.assigned-program {
+    background-color: rgba(0, 123, 255, 0.03);
+}
+
+/* Remove the individual cell borders for draft programs */
+/* .draft-program td rule removed as it was empty */
+
+/* Add a better draft row indicator */
+.draft-program {
+    position: relative; /* For absolute positioning of pseudo-element */
+}
+
+/* Improved draft program styling */
+.draft-program td:first-child {
+    position: relative;
+}
+
+/* Add a subtle left indicator that spans the height of the first cell */
+.draft-program td:first-child::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background-color: #ffc107; /* Warning yellow */
+}
+
+/* Improve draft indicator dot */
+.draft-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background-color: #ffc107;
+    border-radius: 50%;
+    margin-left: 5px;
+    position: relative;
+    top: -2px;
+}
+
+/* Improve hover tooltip for draft indicator */
+.draft-indicator::after {
+    content: "Draft";
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    font-size: 0.75rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s;
+    pointer-events: none;
+    margin-bottom: 5px;
+}
+
+.draft-indicator:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
+
+.program-type-indicator {
+    color: #6c757d;
+    font-size: 0.75rem;
+    margin-top: 3px;
+}

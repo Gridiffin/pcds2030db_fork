@@ -148,19 +148,18 @@ require_once '../layouts/agency_nav.php';
 
 <!-- Filter indicator will be inserted here by JavaScript -->
 
-<!-- Programs List - COMPLETELY REPLACED TABLE -->
+<!-- All Programs Card -->
 <div class="card shadow-sm mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="card-title m-0" id="allPrograms">All Programs <span class="badge bg-light text-dark ms-2"><?php echo count($programs); ?> Programs</span></h5>
-        
+        <h5 class="card-title m-0">All Programs</h5>
     </div>
+    
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover table-custom mb-0" id="programsTable">
                 <thead class="table-light">
                     <tr>
                         <th>Program Name</th>
-                        <th>Type</th>
                         <th>Status</th>
                         <th>Last Updated</th>
                         <th class="text-end">Actions</th>
@@ -169,28 +168,22 @@ require_once '../layouts/agency_nav.php';
                 <tbody>
                     <?php if (empty($programs)): ?>
                         <tr>
-                            <td colspan="5" class="text-center py-4">No programs found.</td>
+                            <td colspan="4" class="text-center py-4">No programs found.</td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($programs as $program): ?>
-                            <tr data-program-type="<?php echo isset($program['is_assigned']) && $program['is_assigned'] ? 'assigned' : 'created'; ?>">
+                            <tr class="<?php echo isset($program['is_draft']) && $program['is_draft'] ? 'draft-program' : ''; ?>" data-program-type="<?php echo $program['is_assigned'] ? 'assigned' : 'created'; ?>">
                                 <td>
                                     <div class="fw-medium">
-                                        <?php echo htmlspecialchars($program['program_name'] ?? 'Unnamed Program'); ?>
+                                        <?php echo htmlspecialchars($program['program_name']); ?>
                                         <?php if (isset($program['is_draft']) && $program['is_draft']): ?>
-                                            <span class="badge bg-warning ms-2">Draft</span>
+                                            <span class="draft-indicator" title="Draft"></span>
                                         <?php endif; ?>
                                     </div>
-                                    <?php if (!empty($program['description'])): ?>
-                                        <div class="small text-muted"><?php echo substr(htmlspecialchars($program['description']), 0, 100); ?><?php echo strlen($program['description']) > 100 ? '...' : ''; ?></div>
-                                    <?php endif; ?>
-                                </td>
-                                <td>
-                                    <?php if (isset($program['is_assigned']) && $program['is_assigned']): ?>
-                                        <span class="badge bg-primary">Assigned</span>
-                                    <?php else: ?>
-                                        <span class="badge bg-success">Agency-Created</span>
-                                    <?php endif; ?>
+                                    <div class="small text-muted program-type-indicator">
+                                        <i class="fas fa-<?php echo $program['is_assigned'] ? 'tasks' : 'folder-plus'; ?> me-1"></i>
+                                        <?php echo $program['is_assigned'] ? 'Assigned Program' : 'Custom Program'; ?>
+                                    </div>
                                 </td>
                                 <td>
                                     <?php 
@@ -212,19 +205,23 @@ require_once '../layouts/agency_nav.php';
                                 </td>
                                 <td>
                                     <div class="btn-group btn-group-sm float-end">
-                                        <a href="program_details.php?id=<?php echo $program['program_id'] ?? 0; ?>" class="btn btn-outline-primary" title="View Details">
+                                        <a href="program_details.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="View Details">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        <a href="update_program.php?id=<?php echo $program['program_id'] ?? 0; ?>" class="btn btn-outline-secondary" title="Update Program">
+                                        
+                                        <?php if (isset($program['is_draft']) && $program['is_draft']): ?>
+                                        <a href="update_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-secondary" title="Edit Program">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <?php if (!isset($program['is_assigned']) || !$program['is_assigned']): ?>
-                                            <button type="button" class="btn btn-outline-danger delete-program-btn" 
-                                                data-id="<?php echo $program['program_id'] ?? 0; ?>"
-                                                data-name="<?php echo htmlspecialchars($program['program_name'] ?? 'Unnamed Program'); ?>"
-                                                title="Delete Program">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
+                                        <?php endif; ?>
+                                        
+                                        <?php if (!$program['is_assigned']): ?>
+                                        <button type="button" class="btn btn-outline-danger delete-program-btn" 
+                                            data-id="<?php echo $program['program_id']; ?>"
+                                            data-name="<?php echo htmlspecialchars($program['program_name']); ?>"
+                                            title="Delete Program">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
                                         <?php endif; ?>
                                     </div>
                                 </td>

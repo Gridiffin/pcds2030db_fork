@@ -199,7 +199,6 @@ require_once '../../includes/dashboard_header.php';
                 <thead class="table-light">
                     <tr>
                         <th>Program Name</th>
-                        <th>Type</th>
                         <th>Status</th>
                         <th>Status Date</th>
                         <th class="text-end">Actions</th>
@@ -208,27 +207,24 @@ require_once '../../includes/dashboard_header.php';
                 <tbody>
                     <?php if (empty($programs)): ?>
                         <tr>
-                            <td colspan="5" class="text-center py-4">No programs found.</td>
+                            <td colspan="4" class="text-center py-4">No programs found.</td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($programs as $program): ?>
-                            <tr data-program-type="<?php echo $program['is_assigned'] ? 'assigned' : 'created'; ?>">
+                            <tr class="<?php echo isset($program['is_draft']) && $program['is_draft'] ? 'draft-program' : ''; ?>" data-program-type="<?php echo $program['is_assigned'] ? 'assigned' : 'created'; ?>">
                                 <td>
                                     <div class="fw-medium">
                                         <?php echo htmlspecialchars($program['program_name']); ?>
                                         <?php if (isset($program['is_draft']) && $program['is_draft']): ?>
-                                            <span class="badge bg-warning ms-2">Draft</span>
+                                            <span class="draft-indicator" title="Draft"></span>
                                         <?php endif; ?>
+                                    </div>
+                                    <div class="small text-muted program-type-indicator">
+                                        <i class="fas fa-<?php echo $program['is_assigned'] ? 'tasks' : 'folder-plus'; ?> me-1"></i>
+                                        <?php echo $program['is_assigned'] ? 'Assigned Program' : 'Custom Program'; ?>
                                     </div>
                                     <?php if (!empty($program['description'])): ?>
                                         <div class="small text-muted"><?php echo substr(htmlspecialchars($program['description']), 0, 100); ?><?php echo strlen($program['description']) > 100 ? '...' : ''; ?></div>
-                                    <?php endif; ?>
-                                </td>
-                                <td>
-                                    <?php if ($program['is_assigned']): ?>
-                                        <span class="badge bg-primary">Assigned</span>
-                                    <?php else: ?>
-                                        <span class="badge bg-success">Agency-Created</span>
                                     <?php endif; ?>
                                 </td>
                                 <td>
@@ -238,11 +234,15 @@ require_once '../../includes/dashboard_header.php';
                                 <td>
                                     <div class="btn-group btn-group-sm float-end">
                                         <a href="program_details.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="View Details">
-                                            <i class="fas fa-eye"></i>
+                                            <i class="fas fa-eye"></i>  
                                         </a>
+                                        
+                                        <?php if (isset($program['is_draft']) && $program['is_draft']): ?>
                                         <a href="update_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-secondary" title="Edit Program">
                                             <i class="fas fa-edit"></i>
                                         </a>
+                                        <?php endif; ?>
+                                        
                                         <button type="button" class="btn btn-outline-danger delete-program-btn" 
                                             data-id="<?php echo $program['program_id']; ?>"
                                             data-name="<?php echo htmlspecialchars($program['program_name']); ?>"
@@ -258,6 +258,99 @@ require_once '../../includes/dashboard_header.php';
             </table>
         </div>
     </div>
+</div>
+
+<!-- Program Type Tabs -->
+<ul class="nav nav-tabs px-3 pt-2 border-0" id="programTypeTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="all-programs-tab" data-bs-toggle="tab" data-bs-target="#all-programs-content" type="button" role="tab" aria-controls="all-programs-content" aria-selected="true">
+            All Programs <span class="badge bg-primary ms-1"><?php echo count($programs); ?></span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="created-programs-tab" data-bs-toggle="tab" data-bs-target="#created-programs-content" type="button" role="tab" aria-controls="created-programs-content" aria-selected="false">
+            Agency-Created <span class="badge bg-success ms-1"><?php echo count(array_filter($programs, function($p) { return !$p['is_assigned']; })); ?></span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="assigned-programs-tab" data-bs-toggle="tab" data-bs-target="#assigned-programs-content" type="button" role="tab" aria-controls="assigned-programs-content" aria-selected="false">
+            Assigned <span class="badge bg-info ms-1"><?php echo count(array_filter($programs, function($p) { return $p['is_assigned']; })); ?></span>
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="programTypeTabsContent">
+    <div class="tab-pane fade show active" id="all-programs-content" role="tabpanel" aria-labelledby="all-programs-tab">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-custom mb-0" id="programsTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Program Name</th>
+                            <th>Status</th>
+                            <th>Status Date</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (empty($programs)): ?>
+                            <tr>
+                                <td colspan="4" class="text-center py-4">No programs found.</td>
+                            </tr>
+                        <?php else: ?>
+                            <?php foreach ($programs as $program): ?>
+                                <tr class="<?php echo $program['is_assigned'] ? 'assigned-program' : 'created-program'; ?> <?php echo isset($program['is_draft']) && $program['is_draft'] ? 'draft-program' : ''; ?>">
+                                    <td>
+                                        <div class="fw-medium">
+                                            <?php echo htmlspecialchars($program['program_name']); ?>
+                                            <?php if (isset($program['is_draft']) && $program['is_draft']): ?>
+                                                <span class="draft-indicator" title="Draft"></span>
+                                            <?php endif; ?>
+                                        </div>
+                                        <div class="small text-muted program-type-indicator">
+                                            <i class="fas fa-<?php echo $program['is_assigned'] ? 'tasks' : 'folder-plus'; ?> me-1"></i>
+                                            <?php echo $program['is_assigned'] ? 'Assigned Program' : 'Custom Program'; ?>
+                                        </div>
+                                        <?php if (!empty($program['description'])): ?>
+                                            <div class="small text-muted"><?php echo substr(htmlspecialchars($program['description']), 0, 100); ?><?php echo strlen($program['description']) > 100 ? '...' : ''; ?></div>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php echo get_status_badge($program['status'] ?? 'not-started'); ?>
+                                    </td>
+                                    <td><?php echo isset($program['status_date']) && $program['status_date'] ? date('M j, Y', strtotime($program['status_date'])) : 'Not set'; ?></td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm float-end">
+                                            <a href="program_details.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            
+                                            <?php if (isset($program['is_draft']) && $program['is_draft']): ?>
+                                            <a href="update_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-secondary" title="Edit Program">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <?php endif; ?>
+                                            
+                                            <button type="button" class="btn btn-outline-danger delete-program-btn" 
+                                                data-id="<?php echo $program['program_id']; ?>"
+                                                data-name="<?php echo htmlspecialchars($program['program_name']); ?>"
+                                                title="Delete Program">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Similar content for other tabs - created and assigned programs -->
+    <!-- ...created-programs-content tab pane... -->
+    <!-- ...assigned-programs-content tab pane... -->
 </div>
 
 <!-- Delete Confirmation Modal -->
