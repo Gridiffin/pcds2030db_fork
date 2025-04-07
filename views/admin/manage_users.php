@@ -144,86 +144,78 @@ require_once '../layouts/admin_nav.php';
         </div>
     <?php endif; ?>
 
-    <!-- Users Table -->
+    <!-- Users Table Card -->
     <div class="card shadow-sm mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="card-title m-0">System Users</h5>
-            <span class="badge bg-primary"><?php echo count($users); ?> Users</span>
+            <button type="button" class="btn btn-sm btn-primary" id="addUserBtn">
+                <i class="fas fa-user-plus me-1"></i> Add New User
+            </button>
         </div>
-        <div class="card-body">
-            <?php if (!empty($users)): ?>
-                <div class="table-responsive">
-                    <table class="table table-hover table-custom">
-                        <thead>
+        <div class="card-body p-0">
+            <div class="table-responsive w-100">
+                <table class="table table-hover table-custom mb-0" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Role</th>
+                            <th>Agency</th>
+                            <th>Sector</th>
+                            <th>Created</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach($users as $user): ?>
                             <tr>
-                                <th>Username</th>
-                                <th>Role</th>
-                                <th>Agency</th>
-                                <th>Sector</th>
-                                <th>Created</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach($users as $user): ?>
-                                <tr>
-                                    <td>
-                                        <div class="fw-medium"><?php echo $user['username']; ?></div>
-                                        <?php if ($user['user_id'] == $_SESSION['user_id']): ?>
-                                            <small class="text-muted">(You)</small>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-<?php echo $user['role'] === 'admin' ? 'primary' : 'secondary'; ?>">
-                                            <?php echo ucfirst($user['role']); ?>
-                                        </span>
-                                    </td>
-                                    <td><?php echo $user['agency_name'] ?? '-'; ?></td>
-                                    <td><?php echo $user['sector_name'] ?? '-'; ?></td>
-                                    <td><?php echo date('M d, Y', strtotime($user['created_at'])); ?></td>
-                                    <td>
-                                        <?php if ($user['is_active']): ?>
-                                            <span class="badge bg-success">Active</span>
-                                        <?php else: ?>
-                                            <span class="badge bg-danger">Inactive</span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm">
-                                            <a href="#" class="btn btn-outline-primary edit-user-btn" 
-                                                title="Edit User"
+                                <td>
+                                    <div class="fw-medium"><?php echo $user['username']; ?></div>
+                                    <?php if ($user['user_id'] == $_SESSION['user_id']): ?>
+                                        <small class="text-muted">(You)</small>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <span class="badge bg-<?php echo $user['role'] === 'admin' ? 'primary' : 'secondary'; ?>">
+                                        <?php echo ucfirst($user['role']); ?>
+                                    </span>
+                                </td>
+                                <td><?php echo $user['agency_name'] ?? '-'; ?></td>
+                                <td><?php echo $user['sector_name'] ?? '-'; ?></td>
+                                <td><?php echo date('M d, Y', strtotime($user['created_at'])); ?></td>
+                                <td>
+                                    <?php if ($user['is_active']): ?>
+                                        <span class="badge bg-success">Active</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-danger">Inactive</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="#" class="btn btn-outline-primary edit-user-btn" 
+                                            title="Edit User"
+                                            data-user-id="<?php echo $user['user_id']; ?>"
+                                            data-username="<?php echo $user['username']; ?>"
+                                            data-role="<?php echo $user['role']; ?>"
+                                            data-agency="<?php echo $user['agency_name']; ?>"
+                                            data-sector="<?php echo $user['sector_id']; ?>">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <?php if ($user['user_id'] != $_SESSION['user_id']): ?>
+                                            <a href="#" class="btn btn-outline-danger delete-user-btn" 
+                                                title="Delete User"
                                                 data-user-id="<?php echo $user['user_id']; ?>"
-                                                data-username="<?php echo $user['username']; ?>"
-                                                data-role="<?php echo $user['role']; ?>"
-                                                data-agency="<?php echo $user['agency_name']; ?>"
-                                                data-sector="<?php echo $user['sector_id']; ?>">
-                                                <i class="fas fa-edit"></i>
+                                                data-username="<?php echo $user['username']; ?>">
+                                                <i class="fas fa-trash"></i>
                                             </a>
-                                            <?php if ($user['user_id'] != $_SESSION['user_id']): ?>
-                                                <a href="#" class="btn btn-outline-danger delete-user-btn" 
-                                                    title="Delete User"
-                                                    data-user-id="<?php echo $user['user_id']; ?>"
-                                                    data-username="<?php echo $user['username']; ?>">
-                                                    <i class="fas fa-trash"></i>
-                                                </a>
-                                            <?php endif; ?>
-                                        </div>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            <?php else: ?>
-                <div class="text-center py-5">
-                    <div class="mb-3">
-                        <i class="fas fa-users fa-3x text-muted"></i>
-                    </div>
-                    <h5>No users found</h5>
-                    <p class="text-muted">Get started by adding a new user</p>
-                </div>
-            <?php endif; ?>
+                                        <?php endif; ?>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 

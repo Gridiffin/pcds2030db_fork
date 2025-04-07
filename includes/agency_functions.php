@@ -1014,4 +1014,139 @@ function is_program_draft($program_id) {
     
     return false;
 }
+
+/**
+ * Delete a program
+ * @param int $program_id The program ID to delete
+ * @return array Result of deletion operation
+ */
+function delete_agency_program($program_id) {
+    global $conn;
+    
+    if (!is_agency()) {
+        return format_error('Permission denied', 403);
+    }
+    
+    $program_id = intval($program_id);
+    $user_id = $_SESSION['user_id'];
+    
+    // Verify program exists and belongs to this agency
+    $query = "SELECT * FROM programs WHERE program_id = ? AND owner_agency_id = ? AND is_assigned = 0";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("ii", $program_id, $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 0) {
+        return format_error('Program not found or you do not have permission to delete it');
+    }
+    
+    // Begin transaction
+    $conn->begin_transaction();
+    
+    try {
+        // Delete program submissions first
+        $delete_submissions = "DELETE FROM program_submissions WHERE program_id = ?";
+        $stmt = $conn->prepare($delete_submissions);
+        $stmt->bind_param("i", $program_id);
+        $stmt->execute();
+        
+        // Then delete the program
+        $delete_program = "DELETE FROM programs WHERE program_id = ?";
+        $stmt = $conn->prepare($delete_program);
+        $stmt->bind_param("i", $program_id);
+        $stmt->execute();
+        
+        // Commit transaction
+        $conn->commit();
+        
+        return format_success('Program deleted successfully');
+    } catch (Exception $e) {
+        // Rollback on error
+        $conn->rollback();
+        return format_error('Failed to delete program: ' . $e->getMessage());
+    }
+}
+
+/**
+ * Get all programs for an agency
+ * @param int $agency_id Agency ID
+ * @return array List of programs for the agency
+ */
+if (!function_exists('get_agency_programs')) {
+    function get_agency_programs($agency_id) {
+        global $conn;
+        
+        $query = "SELECT p.*, 
+                  (SELECT ps.status FROM program_submissions ps 
+                   WHERE ps.program_id = p.program_id 
+                   ORDER BY ps.submission_date DESC LIMIT 1) as status,
+                  (SELECT ps.is_draft FROM program_submissions ps 
+                   WHERE ps.program_id = p.program_id 
+                   ORDER BY ps.submission_date DESC LIMIT 1) as is_draft,
+                  (SELECT ps.submission_date FROM program_submissions ps 
+                   WHERE ps.program_id = p.program_id 
+                   ORDER BY ps.submission_date DESC LIMIT 1) as updated_at
+                  FROM programs p 
+                  WHERE p.owner_agency_id = ?
+                  ORDER BY p.program_name";
+                  
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param('i', $agency_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $programs = [];
+        while ($row = $result->fetch_assoc()) {
+            $programs[] = $row;
+        }
+        
+        return $programs;
+    }
+}
+
+/**
+ * Get programs grouped by type (assigned/created)
+ * @param int $period_id Optional reporting period ID
+ * @return array Programs grouped by type
+ */
+if (!function_exists('get_agency_programs_by_type')) {
+    function get_agency_programs_by_type($period_id = null) {
+        global $conn;
+        $agency_id = $_SESSION['user_id'];
+        
+        // Base query
+        $query = "SELECT p.*, 
+                  (SELECT ps.status FROM program_submissions ps 
+                   WHERE ps.program_id = p.program_id 
+                   ORDER BY ps.submission_date DESC LIMIT 1) as status,
+                  (SELECT ps.submission_date FROM program_submissions ps 
+                   WHERE ps.program_id = p.program_id 
+                   ORDER BY ps.submission_date DESC LIMIT 1) as updated_at
+                  FROM programs p 
+                  WHERE p.owner_agency_id = ?";
+                  
+        // Add filters
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param('i', $agency_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $assigned = [];
+        $created = [];
+        
+        while ($row = $result->fetch_assoc()) {
+            if ($row['is_assigned']) {
+                $assigned[] = $row;
+            } else {
+                $created[] = $row;
+            }
+        }
+        
+        return [
+            'assigned' => $assigned,
+            'created' => $created
+        ];
+    }
+}
 ?>

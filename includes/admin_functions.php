@@ -584,7 +584,7 @@ function update_user($data) {
             $stmt->bind_param("sssi", $username, $role, $agency_name, $user_id);
         } else {
             $query = "UPDATE users SET username = ?, role = ?, agency_name = ?, sector_id = ? WHERE user_id = ?";
-            $stmt = $conn->prepare($query);
+            $stmt->prepare($query);
             $stmt->bind_param("sssii", $username, $role, $agency_name, $sector_id, $user_id);
         }
     }
@@ -924,6 +924,223 @@ function create_user($data) {
         return format_success('User created successfully', ['user_id' => $conn->insert_id]);
     } else {
         return format_error('Failed to create user: ' . $stmt->error);
+    }
+}
+
+/**
+ * Get all programs across all agencies
+ * @return array All programs with details
+ */
+function get_all_programs() {
+    global $conn;
+    
+    $query = "SELECT p.*, u.agency_name, s.sector_name, 
+              ps.status, ps.status_date, ps.is_draft
+              FROM programs p
+              LEFT JOIN users u ON p.owner_agency_id = u.user_id
+              LEFT JOIN sectors s ON p.sector_id = s.sector_id
+              LEFT JOIN (
+                  SELECT program_id, status, status_date, is_draft,
+                  ROW_NUMBER() OVER (PARTITION BY program_id ORDER BY submission_id DESC) as rn
+                  FROM program_submissions
+              ) ps ON p.program_id = ps.program_id AND ps.rn = 1
+              ORDER BY p.created_at DESC";
+              
+    $result = $conn->query($query);
+    
+    if (!$result) {
+        return [];
+    }
+    
+    $programs = [];
+    while ($row = $result->fetch_assoc()) {
+        $programs[] = $row;
+    }
+    
+    return $programs;
+}
+
+/**
+ * Add a new reporting period
+ * @param int $year Year
+ * @param int $quarter Quarter (1-4)
+ * @param string $start_date Start date (YYYY-MM-DD)
+ * @param string $end_date End date (YYYY-MM-DD)
+ * @param string $status Status (open/closed)
+ * @return array Result of operation
+ */
+function add_reporting_period($year, $quarter, $start_date, $end_date, $status = 'open') {
+    global $conn;
+    
+    // Validate inputs
+    if (!$year || !$quarter || !$start_date || !$end_date) {
+        return ['error' => 'All fields are required'];
+    }
+    
+    if ($quarter < 1 || $quarter > 4) {
+        return ['error' => 'Quarter must be between 1 and 4'];
+    }
+    
+    if (strtotime($start_date) > strtotime($end_date)) {
+        return ['error' => 'End date cannot be before start date'];
+    }
+    
+    // Check if period already exists
+    $check_query = "SELECT * FROM reporting_periods WHERE year = ? AND quarter = ?";
+    $stmt = $conn->prepare($check_query);
+    $stmt->bind_param("ii", $year, $quarter);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        return ['error' => "Period Q{$quarter}-{$year} already exists"];
+    }
+    
+    // Insert new period
+    $insert_query = "INSERT INTO reporting_periods (year, quarter, start_date, end_date, status) 
+                     VALUES (?, ?, ?, ?, ?)";
+    $stmt = $conn->prepare($insert_query);
+    $stmt->bind_param("iisss", $year, $quarter, $start_date, $end_date, $status);
+    
+    if ($stmt->execute()) {
+        return [
+            'success' => true,
+            'message' => "Reporting period Q{$quarter}-{$year} added successfully"
+        ];
+    } else {
+        return ['error' => 'Failed to add reporting period: ' . $stmt->error];
+    }
+}
+
+/**
+ * Update an existing reporting period
+ * @param int $period_id Period ID
+ * @param int $year Year
+ * @param int $quarter Quarter (1-4)
+ * @param string $start_date Start date (YYYY-MM-DD)
+ * @param string $end_date End date (YYYY-MM-DD)
+ * @param string $status Status (open/closed)
+ * @return array Result of operation
+ */
+function update_reporting_period($period_id, $year, $quarter, $start_date, $end_date, $status) {
+    global $conn;
+    
+    // Validate inputs
+    if (!$period_id || !$year || !$quarter || !$start_date || !$end_date) {
+        return ['error' => 'All fields are required'];
+    }
+    
+    if ($quarter < 1 || $quarter > 4) {
+        return ['error' => 'Quarter must be between 1 and 4'];
+    }
+    
+    if (strtotime($start_date) > strtotime($end_date)) {
+        return ['error' => 'End date cannot be before start date'];
+    }
+    
+    // Check if another period already exists with same year/quarter
+    $check_query = "SELECT * FROM reporting_periods WHERE year = ? AND quarter = ? AND period_id != ?";
+    $stmt = $conn->prepare($check_query);
+    $stmt->bind_param("iii", $year, $quarter, $period_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        return ['error' => "Another period with Q{$quarter}-{$year} already exists"];
+    }
+    
+    // Update period
+    $update_query = "UPDATE reporting_periods 
+                     SET year = ?, quarter = ?, start_date = ?, end_date = ?, status = ? 
+                     WHERE period_id = ?";
+    $stmt = $conn->prepare($update_query);
+    $stmt->bind_param("iisssi", $year, $quarter, $start_date, $end_date, $status, $period_id);
+    
+    if ($stmt->execute()) {
+        return [
+            'success' => true,
+            'message' => "Reporting period Q{$quarter}-{$year} updated successfully"
+        ];
+    } else {
+        return ['error' => 'Failed to update reporting period: ' . $stmt->error];
+    }
+}
+
+/**
+ * Delete a reporting period
+ * @param int $period_id Period ID
+ * @return array Result of operation
+ */
+function delete_reporting_period($period_id) {
+    global $conn;
+    
+    if (!$period_id) {
+        return ['error' => 'Invalid period ID'];
+    }
+    
+    // Check if period exists
+    $check_query = "SELECT * FROM reporting_periods WHERE period_id = ?";
+    $stmt = $conn->prepare($check_query);
+    $stmt->bind_param("i", $period_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 0) {
+        return ['error' => 'Reporting period not found'];
+    }
+    
+    $period = $result->fetch_assoc();
+    
+    // Check if there are submissions for this period
+    $submissions_query = "SELECT COUNT(*) as count FROM program_submissions WHERE period_id = ?";
+    $stmt = $conn->prepare($submissions_query);
+    $stmt->bind_param("i", $period_id);
+    $stmt->execute();
+    $submissions_result = $stmt->get_result();
+    $submissions_count = $submissions_result->fetch_assoc()['count'];
+    
+    if ($submissions_count > 0) {
+        return [
+            'error' => "Cannot delete period Q{$period['quarter']}-{$period['year']} because it has {$submissions_count} submissions"
+        ];
+    }
+    
+    // Delete period
+    $delete_query = "DELETE FROM reporting_periods WHERE period_id = ?";
+    $stmt = $conn->prepare($delete_query);
+    $stmt->bind_param("i", $period_id);
+    
+    if ($stmt->execute()) {
+        return [
+            'success' => true,
+            'message' => "Reporting period Q{$period['quarter']}-{$period['year']} deleted successfully"
+        ];
+    } else {
+        return ['error' => 'Failed to delete reporting period: ' . $stmt->error];
+    }
+}
+
+/**
+ * Get all reporting periods
+ * @return array List of reporting periods
+ */
+if (!function_exists('get_all_reporting_periods')) {
+    function get_all_reporting_periods() {
+        global $conn;
+        
+        $query = "SELECT * FROM reporting_periods ORDER BY year DESC, quarter DESC";
+        $result = $conn->query($query);
+        
+        if (!$result) {
+            return [];
+        }
+        
+        $periods = [];
+        while ($row = $result->fetch_assoc()) {
+            $periods[] = $row;
+        }
+        
+        return $periods;
     }
 }
 ?>

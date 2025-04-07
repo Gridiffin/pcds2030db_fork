@@ -70,6 +70,35 @@ require_once '../layouts/agency_nav.php';
     </div>
 </div>
 
+<!-- Program Submissions History -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header">
+        <h5 class="card-title m-0">Submission History</h5>
+    </div>
+    <div class="card-body p-0">
+        <?php if (empty($program['submissions'])): ?>
+            <div class="text-center py-5 px-4">
+                <div class="mb-3">
+                    <i class="fas fa-history fa-3x text-muted"></i>
+                </div>
+                <h5>No submission history</h5>
+                <p class="text-muted">No data has been submitted for this program yet.</p>
+            </div>
+        <?php else: ?>
+            <div class="table-responsive w-100">
+                <table class="table table-hover table-custom mb-0" style="width: 100%;">
+                    <thead class="table-light">
+                        <!-- ...existing code... -->
+                    </thead>
+                    <tbody>
+                        <!-- ...existing code... -->
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
+    </div>
+</div>
+
 <?php
 // Include footer
 require_once '../layouts/footer.php';

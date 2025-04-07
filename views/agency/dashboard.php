@@ -310,6 +310,58 @@ require_once '../layouts/agency_nav.php';
                     </div>
                 </div>
             </div>
+
+            <!-- Recent Programs Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title m-0"><i class="fas fa-tasks me-2"></i>Recent Programs</h5>
+                    <a href="view_programs.php" class="btn btn-sm btn-outline-light">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <?php if (empty($recent_programs)): ?>
+                        <div class="text-center py-5 px-4">
+                            <div class="mb-3">
+                                <i class="fas fa-project-diagram fa-3x text-muted"></i>
+                            </div>
+                            <h5>No programs found</h5>
+                            <p class="text-muted">You don't have any programs assigned or created yet.</p>
+                            <a href="create_program.php" class="btn btn-primary">
+                                <i class="fas fa-plus-circle me-1"></i> Create New Program
+                            </a>
+                        </div>
+                    <?php else: ?>
+                        <div class="table-responsive w-100">
+                            <table class="table table-hover table-custom mb-0" style="width: 100%;">
+                                <!-- ...existing code... -->
+                            </table>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- Other Sectors Programs Card -->
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title m-0"><i class="fas fa-sitemap me-2"></i>Other Sectors Programs</h5>
+                </div>
+                <div class="card-body p-0">
+                    <?php if (empty($other_sectors_programs)): ?>
+                        <div class="text-center py-5 px-4">
+                            <div class="mb-3">
+                                <i class="fas fa-sitemap fa-3x text-muted"></i>
+                            </div>
+                            <h5>No programs from other sectors</h5>
+                            <p class="text-muted">There are no programs from other sectors available for viewing.</p>
+                        </div>
+                    <?php else: ?>
+                        <div class="table-responsive w-100">
+                            <table class="table table-hover table-custom mb-0" style="width: 100%;">
+                                <!-- ...existing code... -->
+                            </table>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
         </div>
     </div>
 </section>

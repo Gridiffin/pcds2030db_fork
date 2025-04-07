@@ -811,3 +811,107 @@ span.badge.bg-secondary, div.badge.bg-secondary {
 .border-left-info .card-body .row {
     flex-direction: row;
 }
+
+/* Consistent card-table styling */
+.card-body.p-0 {
+    padding: 0 !important;
+}
+
+.card-body.p-0 .table-responsive {
+    border-radius: 0 0 0.75rem 0.75rem;
+    overflow: hidden;
+}
+
+.card-body.p-0 .table-custom {
+    border-collapse: collapse;
+    width: 100% !important;
+    margin-bottom: 0 !important;
+}
+
+.card-body.p-0 .table-custom th:first-child {
+    padding-left: 1.25rem;
+}
+
+.card-body.p-0 .table-custom td:first-child {
+    padding-left: 1.25rem;
+}
+
+.card-body.p-0 .table-custom th:last-child {
+    padding-right: 1.25rem;
+}
+
+.card-body.p-0 .table-custom td:last-child {
+    padding-right: 1.25rem;
+}
+
+/* Empty state inside card with p-0 */
+.card-body.p-0 .text-center.py-5.px-4 {
+    padding: 2rem !important;
+}
+
+/* Ensure all table elements inside cards take full width */
+.card .table-responsive {
+    width: 100% !important;
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+.card .table-responsive table,
+.card table.table-custom,
+.card .table {
+    width: 100% !important;
+    margin-bottom: 0 !important;
+}
+
+/* Card with no padding should have tables that use full width */
+.card-body.p-0 .table-responsive {
+    border-radius: 0 0 0.75rem 0.75rem;
+    overflow: hidden;
+    width: 100% !important;
+}
+
+.card-body.p-0 .table-custom,
+.card-body.p-0 .table {
+    border-collapse: collapse;
+    width: 100% !important;
+    margin-bottom: 0 !important;
+}
+
+/* Ensure proper padding in first and last cells of tables in cards */
+.card-body.p-0 .table-custom th:first-child,
+.card-body.p-0 .table td:first-child,
+.card-body.p-0 .table th:first-child {
+    padding-left: 1.25rem;
+}
+
+.card-body.p-0 .table-custom td:first-child {
+    padding-left: 1.25rem;
+}
+
+.card-body.p-0 .table-custom th:last-child,
+.card-body.p-0 .table th:last-child {
+    padding-right: 1.25rem;
+}
+
+.card-body.p-0 .table-custom td:last-child,
+.card-body.p-0 .table td:last-child {
+    padding-right: 1.25rem;
+}
+
+/* Ensure chart containers take full width */
+.card .chart-container {
+    width: 100% !important;
+    margin: 0 auto;
+}
+
+/* Ensure all content elements in cards have proper width */
+.card-body > div:not(.row):not(.col):not(.col-md-*):not(.form-group) {
+    width: 100%;
+}
+
+/* Empty state inside card with p-0 */
+.card-body.p-0 .text-center.py-5.px-4 {
+    padding: 2rem !important;
+    width: 100%;
+}

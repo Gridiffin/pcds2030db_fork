@@ -1,8 +1,8 @@
 <?php
 /**
- * View Programs
+ * Manage Programs
  * 
- * Interface for agency users to view their programs.
+ * Interface for admin users to manage all programs.
  */
 
 // Include necessary files
@@ -10,11 +10,10 @@ require_once '../../config/config.php';
 require_once '../../includes/db_connect.php';
 require_once '../../includes/session.php';
 require_once '../../includes/functions.php';
-require_once '../../includes/agency_functions.php';
-require_once '../../includes/status_helpers.php'; // Make sure this file is included
+require_once '../../includes/admin_functions.php';
 
-// Verify user is an agency
-if (!is_agency()) {
+// Verify user is an admin
+if (!is_admin()) {
     header('Location: ../../login.php');
     exit;
 }
@@ -30,74 +29,41 @@ if (isset($_SESSION['message'])) {
 }
 
 // Set page title
-$pageTitle = 'View Programs';
+$pageTitle = 'Manage Programs';
 
-// Get agency programs
-$agency_id = $_SESSION['user_id'];
-
-// Define the function if it doesn't exist
-if (!function_exists('get_agency_programs')) {
-    function get_agency_programs($agency_id) {
-        global $conn;
-        
-        $query = "SELECT p.*, 
-                  (SELECT ps.status FROM program_submissions ps 
-                   WHERE ps.program_id = p.program_id 
-                   ORDER BY ps.submission_date DESC LIMIT 1) as status,
-                  (SELECT ps.is_draft FROM program_submissions ps 
-                   WHERE ps.program_id = p.program_id 
-                   ORDER BY ps.submission_date DESC LIMIT 1) as is_draft,
-                  (SELECT ps.submission_date FROM program_submissions ps 
-                   WHERE ps.program_id = p.program_id 
-                   ORDER BY ps.submission_date DESC LIMIT 1) as updated_at
-                  FROM programs p 
-                  WHERE p.owner_agency_id = ?
-                  ORDER BY p.program_name";
-                  
-        $stmt = $conn->prepare($query);
-        $stmt->bind_param('i', $agency_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        $programs = [];
-        while ($row = $result->fetch_assoc()) {
-            $programs[] = $row;
-        }
-        
-        return $programs;
-    }
-}
-
-// Get programs data
-$programs = get_agency_programs($agency_id);
+// Get all programs
+$programs = get_all_programs();
 
 // Additional styles
 $additionalStyles = [
-    APP_URL . '/assets/css/custom/agency.css'
+    APP_URL . '/assets/css/custom/admin.css'
 ];
 
-// Additional scripts - Make sure view_programs.js is loaded
+// Additional scripts - Ensure manage_programs.js is loaded
 $additionalScripts = [
     APP_URL . '/assets/js/utilities/status_utils.js',
-    APP_URL . '/assets/js/agency/view_programs.js' // Ensure this script is included
+    APP_URL . '/assets/js/admin/manage_programs.js'  // Ensure this script is included
 ];
 
 // Include header
 require_once '../layouts/header.php';
 
-// Include agency navigation
-require_once '../layouts/agency_nav.php';
-?>
+// Include admin navigation
+require_once '../layouts/admin_nav.php';
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h1 class="h2 mb-0">Agency Programs</h1>
-        <p class="text-muted">View and manage your agency's programs</p>
-    </div>
-    <a href="create_program.php" class="btn btn-primary">
-        <i class="fas fa-plus-circle me-1"></i> Create New Program
-    </a>
-</div>
+// Set dashboard header variables and include component
+$title = "Manage Programs";
+$subtitle = "View, update, and create programs for all agencies";
+$actions = [
+    [
+        'url' => 'create_program.php',
+        'class' => 'btn-primary',
+        'icon' => 'fas fa-plus-circle',
+        'text' => 'Create New Program'
+    ]
+];
+require_once '../../includes/dashboard_header.php';
+?>
 
 <?php if (!empty($message)): ?>
     <div class="alert alert-<?php echo $messageType; ?> alert-dismissible fade show" role="alert">
@@ -109,10 +75,74 @@ require_once '../layouts/agency_nav.php';
     </div>
 <?php endif; ?>
 
-<!-- Filter Card -->
+<!-- Program Statistics -->
+<div class="row mb-4">
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card bg-light h-100">
+            <div class="card-body d-flex align-items-center">
+                <div class="icon-container bg-primary">
+                    <i class="fas fa-project-diagram text-white"></i>
+                </div>
+                <div class="ms-3">
+                    <h6 class="mb-0">Total Programs</h6>
+                    <div class="h4 mb-0"><?php echo count($programs); ?></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card bg-light h-100">
+            <div class="card-body d-flex align-items-center">
+                <div class="icon-container bg-primary">
+                    <i class="fas fa-tasks text-white"></i>
+                </div>
+                <div class="ms-3">
+                    <h6 class="mb-0">Assigned Programs</h6>
+                    <div class="h4 mb-0"><?php echo count(array_filter($programs, function($program) { return $program['is_assigned'] == 1; })); ?></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card bg-light h-100">
+            <div class="card-body d-flex align-items-center">
+                <div class="icon-container bg-success">
+                    <i class="fas fa-folder-plus text-white"></i>
+                </div>
+                <div class="ms-3">
+                    <h6 class="mb-0">Agency-Created</h6>
+                    <div class="h4 mb-0"><?php echo count(array_filter($programs, function($program) { return $program['is_assigned'] == 0; })); ?></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card bg-light h-100">
+            <div class="card-body d-flex align-items-center">
+                <div class="icon-container bg-info">
+                    <i class="fas fa-chart-line text-white"></i>
+                </div>
+                <div class="ms-3">
+                    <h6 class="mb-0">On Track</h6>
+                    <?php 
+                    $on_track_count = 0;
+                    foreach ($programs as $program) {
+                        if (($program['status'] ?? '') === 'on-track') {
+                            $on_track_count++;
+                        }
+                    }
+                    ?>
+                    <div class="h4 mb-0"><?php echo $on_track_count; ?></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters Section -->
 <div class="card shadow-sm mb-4">
     <div class="card-header">
-        <h5 class="card-title m-0">Program Filters</h5>
+        <h5 class="card-title">Program Filters</h5>
     </div>
     <div class="card-body">
         <div class="row g-3">
@@ -143,18 +173,25 @@ require_once '../layouts/agency_nav.php';
                 </select>
             </div>
         </div>
+        
+        <!-- Add a separate div for the reset button with clear styling -->
+        <div class="filter-actions mt-3 text-end">
+            <button type="button" id="resetFilters" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-sync-alt me-1"></i> Reset Filters
+            </button>
+        </div>
     </div>
 </div>
 
 <!-- Filter indicator will be inserted here by JavaScript -->
 
-<!-- Programs List - COMPLETELY REPLACED TABLE -->
+<!-- All Programs Card -->
 <div class="card shadow-sm mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="card-title m-0" id="allPrograms">All Programs <span class="badge bg-light text-dark ms-2"><?php echo count($programs); ?> Programs</span></h5>
-        <a href="create_program.php" class="btn btn-sm btn-primary">
+        <h5 class="card-title m-0">All Programs</h5>
+        <button type="button" class="btn btn-sm btn-primary" id="createProgramBtn">
             <i class="fas fa-plus-circle me-1"></i> Create Program
-        </a>
+        </button>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -164,7 +201,7 @@ require_once '../layouts/agency_nav.php';
                         <th>Program Name</th>
                         <th>Type</th>
                         <th>Status</th>
-                        <th>Last Updated</th>
+                        <th>Status Date</th>
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>
@@ -175,10 +212,10 @@ require_once '../layouts/agency_nav.php';
                         </tr>
                     <?php else: ?>
                         <?php foreach ($programs as $program): ?>
-                            <tr data-program-type="<?php echo isset($program['is_assigned']) && $program['is_assigned'] ? 'assigned' : 'created'; ?>">
+                            <tr data-program-type="<?php echo $program['is_assigned'] ? 'assigned' : 'created'; ?>">
                                 <td>
                                     <div class="fw-medium">
-                                        <?php echo htmlspecialchars($program['program_name'] ?? 'Unnamed Program'); ?>
+                                        <?php echo htmlspecialchars($program['program_name']); ?>
                                         <?php if (isset($program['is_draft']) && $program['is_draft']): ?>
                                             <span class="badge bg-warning ms-2">Draft</span>
                                         <?php endif; ?>
@@ -188,7 +225,7 @@ require_once '../layouts/agency_nav.php';
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <?php if (isset($program['is_assigned']) && $program['is_assigned']): ?>
+                                    <?php if ($program['is_assigned']): ?>
                                         <span class="badge bg-primary">Assigned</span>
                                     <?php else: ?>
                                         <span class="badge bg-success">Agency-Created</span>
@@ -197,33 +234,21 @@ require_once '../layouts/agency_nav.php';
                                 <td>
                                     <?php echo get_status_badge($program['status'] ?? 'not-started'); ?>
                                 </td>
-                                <td>
-                                    <?php 
-                                    if (isset($program['updated_at']) && $program['updated_at']) {
-                                        echo date('M j, Y', strtotime($program['updated_at']));
-                                    } elseif (isset($program['created_at']) && $program['created_at']) {
-                                        echo date('M j, Y', strtotime($program['created_at']));
-                                    } else {
-                                        echo 'Not set';
-                                    }
-                                    ?>
-                                </td>
+                                <td><?php echo isset($program['status_date']) && $program['status_date'] ? date('M j, Y', strtotime($program['status_date'])) : 'Not set'; ?></td>
                                 <td>
                                     <div class="btn-group btn-group-sm float-end">
-                                        <a href="program_details.php?id=<?php echo $program['program_id'] ?? 0; ?>" class="btn btn-outline-primary" title="View Details">
+                                        <a href="program_details.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="View Details">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        <a href="update_program.php?id=<?php echo $program['program_id'] ?? 0; ?>" class="btn btn-outline-secondary" title="Update Program">
+                                        <a href="update_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-secondary" title="Edit Program">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <?php if (!isset($program['is_assigned']) || !$program['is_assigned']): ?>
-                                            <button type="button" class="btn btn-outline-danger delete-program-btn" 
-                                                data-id="<?php echo $program['program_id'] ?? 0; ?>"
-                                                data-name="<?php echo htmlspecialchars($program['program_name'] ?? 'Unnamed Program'); ?>"
-                                                title="Delete Program">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        <?php endif; ?>
+                                        <button type="button" class="btn btn-outline-danger delete-program-btn" 
+                                            data-id="<?php echo $program['program_id']; ?>"
+                                            data-name="<?php echo htmlspecialchars($program['program_name']); ?>"
+                                            title="Delete Program">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -239,9 +264,9 @@ require_once '../layouts/agency_nav.php';
 <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
+            <div class="modal-header">
                 <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <p>Are you sure you want to delete the program: <strong id="program-name-display"></strong>?</p>
