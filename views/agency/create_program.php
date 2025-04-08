@@ -35,7 +35,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'end_date' => $_POST['end_date'] ?? '',
         'target' => $_POST['target'] ?? '',
         'status' => $_POST['status'] ?? 'not-started',
-        'status_date' => date('Y-m-d')
+        'status_date' => date('Y-m-d'),
+        'status_text' => $_POST['status_text'] ?? '' // Added this line to include status_text
     ];
     
     // Submit as draft or final based on button clicked
@@ -80,19 +81,25 @@ require_once '../layouts/header.php';
 
 // Include agency navigation
 require_once '../layouts/agency_nav.php';
-?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h1 class="h2 mb-0">Create New Program</h1>
-        <p class="text-muted">Create a new program for your agency</p>
-    </div>
-    <a href="view_programs.php" class="btn btn-outline-secondary">
-        <i class="fas fa-arrow-left me-1"></i> Back to Programs
-    </a>
-</div>
+// Set up the page header variables
+$title = "Create New Program";
+$subtitle = "Create a new program for your agency";
+$headerStyle = 'light'; // Use light (white) style for inner pages
+$actions = [
+    [
+        'url' => 'view_programs.php',
+        'text' => 'Back to Programs',
+        'icon' => 'fas fa-arrow-left',
+        'class' => 'btn-outline-secondary'
+    ]
+];
 
-<?php if (!empty($message)): ?>
+// Include the dashboard header component
+require_once '../../includes/dashboard_header.php';
+
+// Display any messages
+if (!empty($message)): ?>
     <div class="alert alert-<?php echo $messageType; ?> alert-dismissible fade show" role="alert">
         <div class="d-flex align-items-center">
             <i class="fas fa-<?php echo $messageType === 'success' ? 'check-circle' : 'exclamation-circle'; ?> me-2"></i>
@@ -164,10 +171,11 @@ require_once '../layouts/agency_nav.php';
                         <input type="date" class="form-control" id="status_date" name="status_date" required value="<?php echo date('Y-m-d'); ?>">
                         <div class="form-text">When was this status determined?</div>
                     </div>
-                    <div class="col-md-12">
-                        <label for="status_text" class="form-label">Status Description</label>
-                        <textarea class="form-control" id="status_text" name="status_text" rows="2"></textarea>
-                        <div class="form-text">Describe the current status of this program in detail</div>
+                    <!-- Status Description Field - Updated title -->
+                    <div class="mb-3">
+                        <label for="status_text" class="form-label">Status Description / Achievement</label>
+                        <textarea class="form-control" id="status_text" name="status_text" rows="3" placeholder="Describe current progress or achievements for this program..."><?php echo htmlspecialchars($status_text ?? ''); ?></textarea>
+                        <div class="form-text">Explain the current status in detail and describe what has been achieved so far.</div>
                     </div>
                 </div>
             </div>

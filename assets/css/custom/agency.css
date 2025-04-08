@@ -709,3 +709,46 @@
     font-size: 0.7rem;
     letter-spacing: 0.5px;
 }
+
+/* Program Details Page Styles */
+.program-info {
+    padding: 0.5rem 0;
+}
+
+.info-group label {
+    font-size: 0.85rem;
+    margin-bottom: 0.25rem;
+    display: block;
+    color: #6c757d;
+}
+
+.info-group .fw-medium {
+    font-weight: 500;
+}
+
+.description-box {
+    background-color: #f8f9fa;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    max-height: 150px;
+    overflow-y: auto;
+    font-size: 0.9rem;
+    border: 1px solid rgba(0,0,0,.1);
+}
+
+/* Enhanced draft banner */
+.draft-banner {
+    background-color: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    border-radius: 0.25rem;
+    color: #856404;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.draft-banner i {
+    font-size: 1.1rem;
+}
