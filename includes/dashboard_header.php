@@ -8,7 +8,8 @@
  * - $title: Main title text
  * - $subtitle: Subtitle text (optional)
  * - $actions: Array of action buttons (optional)
- * - $background: 'dark' or 'light' (default 'dark')
+ * - $headerStyle: 'primary' or 'light' (default 'primary')
+ * - $breadcrumbs: Array of breadcrumb items (optional)
  */
 
 // Default values
@@ -17,38 +18,39 @@ $subtitle = $subtitle ?? '';
 $actions = $actions ?? [];
 $breadcrumbs = $breadcrumbs ?? [];
 
-// Use dark as default background (which means primary-color background)
-$background = $background ?? 'dark';
+// Header style: 'primary' (blue) or 'light' (white)
+$headerStyle = $headerStyle ?? 'primary';
+$headerClass = ($headerStyle === 'light') ? 'page-header-light' : 'page-header-primary';
 ?>
 
-<!-- Consistent styling with admin dashboard for all pages using this component -->
-<div class="page-header pb-10" style="padding-top: 40px; margin-bottom: 2rem; background-color: var(--primary-color); color: white;">
-    <div class="container-fluid">
-        <div class="row align-items-center">
-            <?php if (!empty($breadcrumbs)): ?>
-            <div class="col-12 mb-2">
+<!-- Standardized page header using CSS classes -->
+<div class="<?php echo $headerClass; ?>">
+    <div class="container-fluid p-0">
+        <?php if (!empty($breadcrumbs)): ?>
+        <div class="row mb-2">
+            <div class="col-12">
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb">
-                        <li class="breadcrumb-item"><a href="<?php echo APP_URL; ?>/index.php" class="text-white">Home</a></li>
+                        <li class="breadcrumb-item"><a href="<?php echo APP_URL; ?>/index.php" class="<?php echo $headerStyle === 'light' ? 'text-primary' : 'text-white'; ?>">Home</a></li>
                         <?php foreach ($breadcrumbs as $index => $crumb): ?>
                             <?php if ($index === count($breadcrumbs) - 1): ?>
-                                <li class="breadcrumb-item active text-white-50" aria-current="page"><?php echo $crumb['text']; ?></li>
+                                <li class="breadcrumb-item active" aria-current="page"><?php echo $crumb['text']; ?></li>
                             <?php else: ?>
-                                <li class="breadcrumb-item"><a href="<?php echo $crumb['url']; ?>" class="text-white"><?php echo $crumb['text']; ?></a></li>
+                                <li class="breadcrumb-item"><a href="<?php echo $crumb['url']; ?>" class="<?php echo $headerStyle === 'light' ? 'text-primary' : 'text-white'; ?>"><?php echo $crumb['text']; ?></a></li>
                             <?php endif; ?>
                         <?php endforeach; ?>
                     </ol>
                 </nav>
             </div>
-            <?php endif; ?>
-            
+        </div>
+        <?php endif; ?>
+        
+        <div class="row align-items-center">
             <div class="col">
                 <div class="page-title">
-                    <h3 style="color: white;"><?php echo htmlspecialchars($title); ?></h3>
+                    <h3><?php echo htmlspecialchars($title); ?></h3>
                     <?php if (isset($subtitle) && !empty($subtitle)): ?>
-                        <p class="text-subtitle text-white">
-                            <?php echo htmlspecialchars($subtitle); ?>
-                        </p>
+                        <p><?php echo htmlspecialchars($subtitle); ?></p>
                     <?php endif; ?>
                 </div>
             </div>
@@ -57,7 +59,7 @@ $background = $background ?? 'dark';
                 <div class="col-auto">
                     <?php foreach ($actions as $action): ?>
                         <button <?php if(isset($action['id'])): ?>id="<?php echo $action['id']; ?>"<?php endif; ?> 
-                           class="btn <?php echo $action['class'] ?? 'btn-primary'; ?> <?php echo $action['size'] ?? ''; ?>">
+                            class="btn <?php echo $action['class'] ?? ($headerStyle === 'light' ? 'btn-primary' : 'btn-light'); ?> <?php echo $action['size'] ?? ''; ?>">
                             <?php if (isset($action['icon'])): ?>
                                 <i class="<?php echo $action['icon']; ?> me-1"></i>
                             <?php endif; ?>

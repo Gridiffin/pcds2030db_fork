@@ -69,19 +69,19 @@ require_once '../layouts/agency_nav.php';
 // Set up the dashboard header variables
 $title = "Agency Dashboard";
 $subtitle = $_SESSION['agency_name'] . ' - ' . $agency_sector . ' Sector';
-$background = 'dark'; // Use dark background for proper contrast
+$headerStyle = 'primary'; // Use primary (blue) style for the dashboard home
 $actions = [
     [
         'url' => '#',
         'text' => 'Refresh Data',
-        'class' => 'btn-light',
         'icon' => 'fas fa-sync-alt',
         'id' => 'refreshPage'
     ]
 ];
 
-// Include the dashboard header component
+// Include the dashboard header component with the primary style
 require_once '../../includes/dashboard_header.php';
+
 ?>
 
 <!-- Dashboard Content -->

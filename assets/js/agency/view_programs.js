@@ -6,46 +6,183 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize delete functionality
     initDeleteButtons();
     
-    // Initialize filters using the shared utility
-    initializeFilters({
-        tableId: 'programsTable',
-        searchInputId: 'programSearch',
-        statusFilterId: 'statusFilter',
-        typeFilterId: 'programTypeFilter',
-        resetButtonId: 'resetFilters'
-    });
-    
-    // Update status filter dropdown with new values
+    // Initialize filters
+    const searchInput = document.getElementById('programSearch');
     const statusFilter = document.getElementById('statusFilter');
-    if (statusFilter) {
-        // Clear existing options
-        statusFilter.innerHTML = '';
-        
-        // Add new options with updated status values
-        statusFilter.innerHTML = `
-            <option value="">All Statuses</option>
-            <option value="target-achieved">Monthly Target Achieved</option>
-            <option value="on-track-yearly">On Track for Year</option>
-            <option value="severe-delay">Severe Delays</option>
-            <option value="not-started">Not Started</option>
-        `;
-    }
-    
-    // Add event listener specifically for the reset button
+    const typeFilter = document.getElementById('programTypeFilter');
     const resetButton = document.getElementById('resetFilters');
+    
+    if (searchInput) searchInput.addEventListener('keyup', filterPrograms);
+    if (statusFilter) statusFilter.addEventListener('change', filterPrograms);
+    if (typeFilter) typeFilter.addEventListener('change', filterPrograms);
+    
     if (resetButton) {
         resetButton.addEventListener('click', function() {
-            // Reset all filter inputs
-            document.getElementById('programSearch').value = '';
-            document.getElementById('statusFilter').value = '';
-            document.getElementById('programTypeFilter').value = '';
-            
-            // Trigger filtering to update the view
-            const event = new Event('change');
-            document.getElementById('statusFilter').dispatchEvent(event);
+            if (searchInput) searchInput.value = '';
+            if (statusFilter) statusFilter.value = '';
+            if (typeFilter) typeFilter.value = '';
+            filterPrograms();
         });
     }
+    
+    // Initialize pagination if we have program data
+    if (typeof allPrograms !== 'undefined' && allPrograms.length > 0) {
+        initializePagination();
+    }
 });
+
+/**
+ * Filter programs based on search input, status, and type
+ */
+function filterPrograms() {
+    const searchValue = document.getElementById('programSearch')?.value.toLowerCase() || '';
+    const statusValue = document.getElementById('statusFilter')?.value.toLowerCase() || '';
+    const typeValue = document.getElementById('programTypeFilter')?.value.toLowerCase() || '';
+    
+    const table = document.getElementById('programsTable');
+    if (!table) return;
+    
+    const rows = table.querySelectorAll('tbody tr');
+    let visibleCount = 0;
+    
+    rows.forEach(row => {
+        // Get data to filter on
+        const programNameCell = row.querySelector('td:nth-child(1)');
+        const statusCell = row.querySelector('td:nth-child(2)');
+        
+        if (!programNameCell || !statusCell) return;
+        
+        // Get program name text, excluding any badges
+        let programName = '';
+        const nameElement = programNameCell.querySelector('.fw-medium');
+        if (nameElement) {
+            programName = nameElement.textContent.toLowerCase();
+        } else {
+            programName = programNameCell.textContent.toLowerCase();
+        }
+        
+        // Get program status
+        const statusText = statusCell.textContent.toLowerCase();
+        
+        // Get program type from data attribute or program type indicator
+        let programType = '';
+        const typeIndicator = programNameCell.querySelector('.program-type-indicator');
+        if (typeIndicator) {
+            // Check if text contains "Assigned" or "Custom"
+            const typeText = typeIndicator.textContent.toLowerCase();
+            programType = typeText.includes('assigned') ? 'assigned' : 'created';
+        } else {
+            // Fallback to data attribute
+            programType = row.getAttribute('data-program-type') || '';
+        }
+        
+        // Check if row matches all filter criteria
+        const matchesSearch = searchValue === '' || programName.includes(searchValue);
+        const matchesStatus = statusValue === '' || statusText.includes(statusValue);
+        const matchesType = typeValue === '' || programType === typeValue;
+        
+        // Show or hide row based on filter matches
+        if (matchesSearch && matchesStatus && matchesType) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    // Update filter indicator if it exists
+    updateFilterIndicator(visibleCount, searchValue, statusValue, typeValue);
+    
+    // After filtering, update pagination
+    if (typeof allPrograms !== 'undefined') {
+        // Calculate filtered programs
+        const filteredPrograms = allPrograms.filter(program => {
+            const matchesSearch = searchValue === '' || 
+                program.program_name.toLowerCase().includes(searchValue);
+            
+            // Handle status matching with proper conversion
+            let matchesStatus = false;
+            if (statusValue === '') {
+                matchesStatus = true;
+            } else if (program.status) {
+                // Map filter values to database values for comparison
+                const statusFilterMap = {
+                    'target-achieved': ['target-achieved'],
+                    'on-track-yearly': ['on-track-yearly', 'on-track'],
+                    'severe-delay': ['severe-delay', 'delayed'],
+                    'not-started': ['not-started']
+                };
+                
+                // Check if the program's status is in the array of statuses for the filter
+                const validStatusesForFilter = statusFilterMap[statusValue] || [];
+                matchesStatus = validStatusesForFilter.includes(program.status);
+            }
+            
+            const programType = program.is_assigned ? 'assigned' : 'created';
+            const matchesType = typeValue === '' || programType === typeValue;
+            
+            return matchesSearch && matchesStatus && matchesType;
+        });
+        
+        // Update pagination with filtered results
+        const totalPages = Math.ceil(filteredPrograms.length / paginationOptions.itemsPerPage);
+        paginationOptions.currentPage = 1; // Reset to first page on filter
+        renderPagination(totalPages || 1, 1);
+        
+        // Update the showing entries text
+        const showingEntries = document.getElementById('showing-entries');
+        if (showingEntries) {
+            const start = filteredPrograms.length > 0 ? 1 : 0;
+            const end = Math.min(paginationOptions.itemsPerPage, filteredPrograms.length);
+            showingEntries.textContent = `Showing ${start}-${end} of ${filteredPrograms.length} entries`;
+        }
+        
+        // Render first page of filtered results
+        renderProgramPage(1, filteredPrograms);
+    }
+}
+
+/**
+ * Update the filter indicator showing active filters
+ */
+function updateFilterIndicator(count, search, status, type) {
+    const container = document.querySelector('.filter-indicator-container');
+    if (!container) return;
+    
+    let html = '';
+    const hasFilters = search || status || type;
+    
+    if (hasFilters) {
+        html = `<div class="alert alert-info filter-indicator">
+            <div class="d-flex align-items-center">
+                <div>
+                    <i class="fas fa-filter me-2"></i>
+                    <strong>Filtered Results:</strong> Showing ${count} program(s)
+                </div>
+                <div class="ms-auto">
+                    <button id="clearFilters" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-times me-1"></i> Clear Filters
+                    </button>
+                </div>
+            </div>
+            <div class="mt-2 d-flex flex-wrap gap-2">
+                ${search ? `<span class="badge bg-primary">Search: ${search}</span>` : ''}
+                ${status ? `<span class="badge bg-primary">Status: ${status}</span>` : ''}
+                ${type ? `<span class="badge bg-primary">Type: ${type === 'assigned' ? 'Assigned' : 'Custom'}</span>` : ''}
+            </div>
+        </div>`;
+    }
+    
+    container.innerHTML = html;
+    
+    // Add event listener to clear filters button
+    const clearButton = document.getElementById('clearFilters');
+    if (clearButton) {
+        clearButton.addEventListener('click', function() {
+            document.getElementById('resetFilters').click();
+        });
+    }
+}
 
 /**
  * Initialize delete buttons functionality
@@ -74,4 +211,191 @@ function initDeleteButtons() {
             bsModal.show();
         });
     });
+}
+
+/**
+ * Initialize pagination for the programs table
+ */
+function initializePagination() {
+    const pagination = document.getElementById('programPagination');
+    if (!pagination) return;
+    
+    const totalPages = Math.ceil(allPrograms.length / paginationOptions.itemsPerPage);
+    
+    // Render initial pagination
+    renderPagination(totalPages, paginationOptions.currentPage);
+    
+    // Render initial page
+    renderProgramPage(paginationOptions.currentPage);
+}
+
+/**
+ * Render pagination controls
+ */
+function renderPagination(totalPages, currentPage) {
+    const pagination = document.getElementById('programPagination');
+    if (!pagination) return;
+    
+    let html = '';
+    
+    // Previous button
+    html += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+        <a class="page-link" href="#" data-page="${currentPage - 1}" aria-label="Previous">
+            <span aria-hidden="true">&laquo;</span>
+        </a>
+    </li>`;
+    
+    // Page numbers
+    for (let i = 1; i <= totalPages; i++) {
+        html += `<li class="page-item ${i === currentPage ? 'active' : ''}">
+            <a class="page-link" href="#" data-page="${i}">${i}</a>
+        </li>`;
+    }
+    
+    // Next button
+    html += `<li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+        <a class="page-link" href="#" data-page="${currentPage + 1}" aria-label="Next">
+            <span aria-hidden="true">&raquo;</span>
+        </a>
+    </li>`;
+    
+    pagination.innerHTML = html;
+    
+    // Add event listeners to pagination links
+    const links = pagination.querySelectorAll('.page-link');
+    links.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const page = parseInt(this.getAttribute('data-page'));
+            if (page < 1 || page > totalPages || page === currentPage) return;
+            
+            paginationOptions.currentPage = page;
+            renderPagination(totalPages, page);
+            renderProgramPage(page);
+        });
+    });
+}
+
+/**
+ * Render a specific page of programs
+ * @param {number} page - The page number to render
+ * @param {Array} filteredPrograms - Optional array of filtered programs
+ */
+function renderProgramPage(page, filteredPrograms = null) {
+    const table = document.getElementById('programsTable');
+    if (!table) return;
+    
+    const tbody = table.querySelector('tbody');
+    if (!tbody) return;
+    
+    // Use provided filtered programs or all programs
+    const programsToRender = filteredPrograms || allPrograms;
+    
+    // Calculate start and end indices
+    const startIndex = (page - 1) * paginationOptions.itemsPerPage;
+    const endIndex = Math.min(startIndex + paginationOptions.itemsPerPage, programsToRender.length);
+    
+    // Clear existing rows
+    tbody.innerHTML = '';
+    
+    // If no programs to display
+    if (programsToRender.length === 0) {
+        const emptyRow = document.createElement('tr');
+        emptyRow.innerHTML = '<td colspan="4" class="text-center py-4">No programs found.</td>';
+        tbody.appendChild(emptyRow);
+        return;
+    }
+    
+    // Render programs for current page
+    for (let i = startIndex; i < endIndex; i++) {
+        const program = programsToRender[i];
+        
+        // Create row
+        const row = document.createElement('tr');
+        row.className = (program.is_draft ? 'draft-program' : '');
+        row.setAttribute('data-program-type', program.is_assigned ? 'assigned' : 'created');
+        
+        // Format status for display
+        let statusClass = 'secondary';
+        let statusText = 'Not Started';
+        
+        if (program.status) {
+            // Map database status values to display labels and classes
+            const statusMap = {
+                'on-track': { label: 'On Track', class: 'warning' },
+                'on-track-yearly': { label: 'On Track for Year', class: 'warning' },
+                'target-achieved': { label: 'Monthly Target Achieved', class: 'success' },
+                'delayed': { label: 'Delayed', class: 'danger' },
+                'severe-delay': { label: 'Severe Delays', class: 'danger' },
+                'completed': { label: 'Completed', class: 'primary' },
+                'not-started': { label: 'Not Started', class: 'secondary' }
+            };
+            
+            // Use the status mapping if available, otherwise default
+            if (statusMap[program.status]) {
+                statusClass = statusMap[program.status].class;
+                statusText = statusMap[program.status].label;
+            }
+        }
+        
+        // Format date
+        const dateFormatted = program.updated_at 
+            ? new Date(program.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            : (program.created_at 
+                ? new Date(program.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                : 'Not set');
+        
+        // Set row HTML
+        row.innerHTML = `
+            <td>
+                <div class="fw-medium">
+                    ${program.program_name}
+                    ${program.is_draft ? '<span class="draft-indicator" title="Draft"></span>' : ''}
+                </div>
+                <div class="small text-muted program-type-indicator">
+                    <i class="fas fa-${program.is_assigned ? 'tasks' : 'folder-plus'} me-1"></i>
+                    ${program.is_assigned ? 'Assigned Program' : 'Custom Program'}
+                </div>
+            </td>
+            <td>
+                <span class="badge bg-${statusClass}">${statusText}</span>
+            </td>
+            <td>${dateFormatted}</td>
+            <td>
+                <div class="btn-group btn-group-sm float-end">
+                    <a href="program_details.php?id=${program.program_id}" class="btn btn-outline-primary" title="View Details">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                    
+                    ${program.is_draft ? 
+                        `<a href="update_program.php?id=${program.program_id}" class="btn btn-outline-secondary" title="Edit Program">
+                            <i class="fas fa-edit"></i>
+                        </a>` : ''
+                    }
+                    
+                    ${!program.is_assigned ? 
+                        `<button type="button" class="btn btn-outline-danger delete-program-btn" 
+                            data-id="${program.program_id}"
+                            data-name="${program.program_name}"
+                            title="Delete Program">
+                            <i class="fas fa-trash"></i>
+                        </button>` : ''
+                    }
+                </div>
+            </td>
+        `;
+        
+        // Add row to table
+        tbody.appendChild(row);
+    }
+    
+    // Update the showing entries text
+    const showingEntries = document.getElementById('showing-entries');
+    if (showingEntries) {
+        const start = programsToRender.length > 0 ? startIndex + 1 : 0;
+        showingEntries.textContent = `Showing ${start}-${endIndex} of ${programsToRender.length} entries`;
+    }
+    
+    // Reinitialize delete buttons for the new rows
+    initDeleteButtons();
 }

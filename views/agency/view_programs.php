@@ -87,17 +87,23 @@ require_once '../layouts/header.php';
 
 // Include agency navigation
 require_once '../layouts/agency_nav.php';
-?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h1 class="h2 mb-0">Agency Programs</h1>
-        <p class="text-muted">View and manage your agency's programs</p>
-    </div>
-    <a href="create_program.php" class="btn btn-primary">
-        <i class="fas fa-plus-circle me-1"></i> Create New Program
-    </a>
-</div>
+// Set up header variables
+$title = "Agency Programs";
+$subtitle = "View and manage your agency's programs";
+$headerStyle = 'light'; // Use light (white) style for inner pages
+$actions = [
+    [
+        'url' => 'create_program.php',
+        'text' => 'Create New Program',
+        'icon' => 'fas fa-plus-circle',
+        'class' => 'btn-primary'
+    ]
+];
+
+// Include the dashboard header component with the light style
+require_once '../../includes/dashboard_header.php';
+?>
 
 <?php if (!empty($message)): ?>
     <div class="alert alert-<?php echo $messageType; ?> alert-dismissible fade show" role="alert">
@@ -140,11 +146,11 @@ require_once '../layouts/agency_nav.php';
                 <select class="form-select" id="programTypeFilter">
                     <option value="">All Types</option>
                     <option value="assigned">Assigned Programs</option>
-                    <option value="agency">Agency-Created Programs</option>
+                    <option value="created">Custom Programs</option>
                 </select>
             </div>
             <div class="col-md-1 col-sm-12 d-flex align-items-end">
-                <button id="resetFilters" class="btn btn-outline-light w-100">
+                <button id="resetFilters" class="btn btn-outline-secondary w-100">
                     <i class="fas fa-undo me-1"></i> Reset
                 </button>
             </div>
@@ -195,8 +201,33 @@ require_once '../layouts/agency_nav.php';
                                     <?php 
                                     // Ensure we're using the new status values by converting any legacy status
                                     $current_status = isset($program['status']) ? convert_legacy_status($program['status']) : 'not-started';
-                                    echo get_status_badge($current_status); 
+                                    
+                                    // Debug the status to see what's coming from the database
+                                    // echo "<!-- Status: " . $current_status . " -->";
+                                    
+                                    // Map database status values to display labels and classes
+                                    $status_map = [
+                                        'on-track' => ['label' => 'On Track', 'class' => 'warning'],
+                                        'on-track-yearly' => ['label' => 'On Track for Year', 'class' => 'warning'],
+                                        'target-achieved' => ['label' => 'Monthly Target Achieved', 'class' => 'success'],
+                                        'delayed' => ['label' => 'Delayed', 'class' => 'danger'],
+                                        'severe-delay' => ['label' => 'Severe Delays', 'class' => 'danger'],
+                                        'completed' => ['label' => 'Completed', 'class' => 'primary'],
+                                        'not-started' => ['label' => 'Not Started', 'class' => 'secondary']
+                                    ];
+                                    
+                                    // Set default if status is not in our map
+                                    if (!isset($status_map[$current_status])) {
+                                        $current_status = 'not-started';
+                                    }
+                                    
+                                    // Get the label and class from our map
+                                    $status_label = $status_map[$current_status]['label'];
+                                    $status_class = $status_map[$current_status]['class'];
                                     ?>
+                                    <span class="badge bg-<?php echo $status_class; ?>">
+                                        <?php echo $status_label; ?>
+                                    </span>
                                 </td>
                                 <td>
                                     <?php 
@@ -239,6 +270,30 @@ require_once '../layouts/agency_nav.php';
         </div>
     </div>
 </div>
+
+<!-- Pagination component -->
+<div class="pagination-container mt-3 d-flex justify-content-between align-items-center">
+    <div>
+        <span id="showing-entries">Showing 1-<?php echo min(count($programs), 10); ?> of <?php echo count($programs); ?> entries</span>
+    </div>
+    <nav aria-label="Program pagination">
+        <ul class="pagination pagination-sm" id="programPagination">
+            <!-- Pagination will be populated by JavaScript -->
+        </ul>
+    </nav>
+</div>
+
+<!-- Add program data for JavaScript pagination -->
+<script>
+    // Make program data available to JavaScript for client-side pagination
+    const allPrograms = <?php echo json_encode($programs); ?>;
+    
+    // Set pagination options
+    const paginationOptions = {
+        itemsPerPage: 10,
+        currentPage: 1
+    };
+</script>
 
 <!-- Delete Confirmation Modal -->
 <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">

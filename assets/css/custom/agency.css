@@ -632,3 +632,19 @@
 /* Remove redundant logout button styles */
 
 /* Remove redundant content-wrapper styles */
+
+/* Remove page header styling - now defined in components.css */
+/* 
+.page-header {
+    margin-top: 1rem;
+    background-color: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+}
+
+.page-header h3.fw-bold.mb-1 {
+    color: #ffffff !important;
+}
+*/

@@ -265,3 +265,62 @@
 .card-header.bg-primary i {
     color: #ffffff !important;
 }
+
+/* Page Header Styles */
+/* Two distinct header types for different contexts */
+
+/* Primary header - blue background, used on dashboard homepage */
+.page-header-primary {
+    margin-top: 1rem;
+    background-color: var(--primary-color);
+    color: #ffffff;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.page-header-primary h3 {
+    color: #ffffff;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.page-header-primary p {
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 0;
+}
+
+.page-header-primary .btn-light {
+    font-weight: 500;
+}
+
+/* Light header - white background, used on inner pages */
+.page-header-light {
+    margin-top: 1rem;
+    background-color: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.page-header-light h3 {
+    color: var(--dark-color);
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.page-header-light p {
+    color: #6c757d;
+    margin-bottom: 0;
+}
+
+/* Responsive adjustments for both header types */
+@media (max-width: 768px) {
+    .page-header-primary,
+    .page-header-light {
+        padding: 1rem;
+    }
+}
