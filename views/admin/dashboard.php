@@ -35,7 +35,7 @@ $recent_submissions = get_recent_submissions($period_id, 5);
 
 // Additional styles
 $additionalStyles = [
-    APP_URL . '/assets/css/custom/admin.css'
+    APP_URL . '/assets/css/custom/admin.css' // Removed navigation.css
 ];
 
 // Additional scripts
@@ -51,22 +51,19 @@ require_once '../layouts/header.php';
 // Include admin navigation
 require_once '../layouts/admin_nav.php';
 
-// Set up the dashboard header variables
+// Set variables but don't include the dashboard header component
 $title = "Admin Dashboard";
 $subtitle = "System overview and management";
-$background = 'dark'; // Use dark background for proper contrast
-
-// Include the dashboard header component
-require_once '../../includes/dashboard_header.php';
+$background = 'dark';
 ?>
 
-<!-- Page Header -->
-<div class="page-header pb-10">
+<!-- Page Header with reduced top padding -->
+<div class="page-header pb-10" style="padding-top: 40px; margin-bottom: 2rem; background-color: var(--primary-color); color: white;">
     <div class="container-fluid">
         <div class="row align-items-center">
             <div class="col">
                 <div class="page-title">
-                    <h3>Admin Dashboard</h3>
+                    <h3 style="color: white;">Admin Dashboard</h3>
                     <p class="text-subtitle text-white">
                         PCDS 2030 System Performance Overview
                     </p>

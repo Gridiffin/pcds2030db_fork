@@ -14,6 +14,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
     <div class="container-fluid px-4">
         <a class="navbar-brand" href="<?php echo APP_URL; ?>/views/agency/dashboard.php">
             <?php echo APP_NAME; ?>
+            <span class="badge bg-success ms-2">Agency</span>
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -54,4 +55,4 @@ $current_page = basename($_SERVER['PHP_SELF']);
 </nav>
 
 <!-- Content wrapper -->
-<div class="container-fluid px-4 mt-5 pt-4">
+<div class="container-fluid px-4 content-wrapper"> <!-- Ensure content-wrapper styles are applied -->

@@ -65,4 +65,4 @@ $current_page = basename($_SERVER['PHP_SELF']);
 </nav>
 
 <!-- Content wrapper -->
-<div class="container-fluid px-4 content-wrapper">
+<div class="container-fluid px-4 content-wrapper"> <!-- Ensure content-wrapper styles are applied -->

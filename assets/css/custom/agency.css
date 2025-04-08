@@ -626,3 +626,9 @@
         justify-content: center;
     }
 }
+
+/* Remove redundant navbar styles already defined in navigation.css */
+
+/* Remove redundant logout button styles */
+
+/* Remove redundant content-wrapper styles */

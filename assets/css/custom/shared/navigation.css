@@ -5,9 +5,12 @@
 
 /* Main navigation bar */
 .navbar {
-    background-color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     padding: 0.75rem 1rem;
+    z-index: 1030;
 }
 
 .navbar-brand {
@@ -25,11 +28,12 @@
     padding: 0.75rem 1rem;
     font-weight: 500;
     color: #555555 !important;
-    transition: color 0.2s;
+    transition: all 0.3s ease;
 }
 
 .navbar-nav .nav-link:hover {
     color: var(--primary-color) !important;
+    transform: translateY(-2px);
 }
 
 .navbar-nav .nav-link.active {
@@ -82,8 +86,8 @@
 
 /* Page content wrapper */
 .content-wrapper {
-    padding-top: 4.5rem;
-    min-height: calc(100vh - 56px);
+    padding-top: 56px; /* Matches the navbar's height */
+    min-height: calc(100vh - 56px); /* Ensures full height minus navbar */
 }
 
 /* Dashboard header */

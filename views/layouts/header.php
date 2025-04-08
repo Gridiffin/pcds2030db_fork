@@ -19,6 +19,7 @@
     <!-- Shared Components -->
     <link href="<?php echo APP_URL; ?>/assets/css/custom/shared/components.css" rel="stylesheet">
     <link href="<?php echo APP_URL; ?>/assets/css/custom/shared/global.css" rel="stylesheet">
+    <link href="<?php echo APP_URL; ?>/assets/css/custom/shared/navigation.css" rel="stylesheet"> <!-- Ensure navigation.css is included -->
     
     <!-- Additional styles from page -->
     <?php if (isset($additionalStyles) && is_array($additionalStyles)): ?>
