@@ -481,7 +481,7 @@ function update_agency_program($data) {
                 $sub_query = "UPDATE program_submissions SET target = ?, status = ?, 
                              status_date = ?, achievement = ?, remarks = ?, updated_at = NOW() 
                              WHERE submission_id = ?";
-                $stmt = $conn->prepare($sub_query);
+                $stmt->prepare($sub_query);
                 $stmt->bind_param("sssssi", $target, $status, $status_date, $achievement, $remarks, $sub_id);
             }
         } else {
@@ -504,7 +504,7 @@ function update_agency_program($data) {
                 $sub_query = "INSERT INTO program_submissions (program_id, period_id, submitted_by, target, 
                              status, status_date, achievement, remarks) 
                              VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-                $stmt = $conn->prepare($sub_query);
+                $stmt->prepare($sub_query);
                 $stmt->bind_param("iiisssss", $program_id, $current_period['period_id'], $user_id, 
                                 $target, $status, $status_date, $achievement, $remarks);
             }
@@ -684,77 +684,117 @@ function get_all_sectors_programs($current_period_id = null) {
  * @param int $period_id Reporting period ID
  * @return array|null Submission status or null if no data
  */
-function get_agency_submission_status($user_id, $period_id) {
+function get_agency_submission_status($user_id, $period_id = null) {
     global $conn;
     
-    if (!$user_id || !$period_id) {
-        return null;
+    // If no period_id provided, get current period
+    if (!$period_id) {
+        $current_period = get_current_reporting_period();
+        $period_id = $current_period['period_id'] ?? null;
     }
     
-    // Get the number of programs and submissions
-    $programs_query = "SELECT 
-                            COUNT(p.program_id) AS total_programs,
-                            (SELECT COUNT(DISTINCT ps.program_id) FROM program_submissions ps 
-                             WHERE ps.period_id = ? AND ps.program_id IN (SELECT program_id FROM programs WHERE owner_agency_id = ?)) AS programs_submitted
-                        FROM programs p
-                        WHERE p.owner_agency_id = ?";
+    // Initialize result array with defaults
+    $result = [
+        'total_programs' => 0,
+        'programs_submitted' => 0,
+        'percent_complete' => 0,
+        'program_status' => [
+            'on-track' => 0,
+            'delayed' => 0,
+            'completed' => 0,
+            'not-started' => 0
+        ]
+    ];
     
+    if (!$period_id) {
+        return $result; // Return defaults if no period found
+    }
+    
+    // First get total number of programs for this agency
+    $programs_query = "SELECT COUNT(*) as total FROM programs WHERE owner_agency_id = ?";
     $stmt = $conn->prepare($programs_query);
-    $stmt->bind_param("iii", $period_id, $user_id, $user_id);
+    $stmt->bind_param("i", $user_id);
     $stmt->execute();
-    $programs_result = $stmt->get_result();
-    $programs_data = $programs_result->fetch_assoc();
+    $prog_result = $stmt->get_result();
+    $total_row = $prog_result->fetch_assoc();
+    $total_programs = $total_row['total'] ?? 0;
+    $result['total_programs'] = $total_programs;
     
-    // Get the number of metrics and submissions - check if tables exist first
-    $metrics_data = ['total_metrics' => 0, 'metrics_submitted' => 0];
-    $metric_tables_check = $conn->query("SHOW TABLES LIKE 'sector_metrics_definition'");
-    
-    if ($metric_tables_check->num_rows > 0) {
-        $metrics_query = "SELECT 
-                        (SELECT COUNT(*) FROM sector_metrics_definition smd 
-                         WHERE smd.sector_id = (SELECT sector_id FROM users WHERE user_id = ?)) AS total_metrics,
-                        (SELECT COUNT(*) FROM sector_metric_values smv 
-                         WHERE smv.period_id = ? AND smv.agency_id = ?) AS metrics_submitted";
-        
-        $stmt = $conn->prepare($metrics_query);
-        $stmt->bind_param("iii", $user_id, $period_id, $user_id);
-        $stmt->execute();
-        $metrics_result = $stmt->get_result();
-        if ($metrics_result->num_rows > 0) {
-            $metrics_data = $metrics_result->fetch_assoc();
-        }
+    if ($total_programs === 0) {
+        return $result; // No programs to check
     }
     
-    // Get program status distribution
-    $status_query = "SELECT ps.status, COUNT(*) AS count
-                     FROM program_submissions ps
-                     JOIN programs p ON ps.program_id = p.program_id
-                     WHERE ps.period_id = ? AND p.owner_agency_id = ?
-                     GROUP BY ps.status";
+    // Now get status counts directly using proper grouping
+    $status_query = "SELECT 
+                    ps.status, 
+                    COUNT(DISTINCT ps.program_id) as count 
+                    FROM program_submissions ps
+                    JOIN programs p ON ps.program_id = p.program_id
+                    WHERE p.owner_agency_id = ? 
+                    AND ps.period_id = ?
+                    GROUP BY ps.status";
     
     $stmt = $conn->prepare($status_query);
-    $stmt->bind_param("ii", $period_id, $user_id);
+    $stmt->bind_param("ii", $user_id, $period_id);
     $stmt->execute();
     $status_result = $stmt->get_result();
     
-    $program_status = [
-        'on-track' => 0,
-        'delayed' => 0,
-        'completed' => 0,
-        'not-started' => 0
-    ];
-    
+    // Process each status row to map into our standardized status categories
+    $programs_submitted = 0;
     while ($row = $status_result->fetch_assoc()) {
-        $program_status[$row['status']] = (int)$row['count'];
+        $status = strtolower(trim($row['status']));
+        $count = (int)$row['count'];
+        $programs_submitted += $count;
+        
+        // Map to standard status categories
+        switch ($status) {
+            case 'on-track':
+            case 'on-track-yearly':
+                $result['program_status']['on-track'] += $count;
+                break;
+            case 'delayed':
+            case 'severe-delay':
+                $result['program_status']['delayed'] += $count;
+                break;
+            case 'completed':
+            case 'target-achieved': // Move "target-achieved" here to categorize as completed
+                $result['program_status']['completed'] += $count;
+                break;
+            case 'not-started':
+                $result['program_status']['not-started'] += $count;
+                break;
+            default:
+                // If we encounter an unknown status, count as not-started
+                $result['program_status']['not-started'] += $count;
+        }
     }
     
-    // Calculate "not-started" programs
-    if ($programs_data) {
-        $submitted_statuses = $program_status['on-track'] + $program_status['delayed'] + $program_status['completed'];
-        $program_status['not-started'] = $programs_data['total_programs'] - $submitted_statuses;
+    // Update programs_submitted count
+    $result['programs_submitted'] = $programs_submitted;
+    
+    // Calculate not-started programs by subtracting submitted from total
+    // Only if there's at least one submission
+    if ($programs_submitted > 0) {
+        $submitted_with_status = $result['program_status']['on-track'] + 
+                                $result['program_status']['delayed'] + 
+                                $result['program_status']['completed'] + 
+                                $result['program_status']['not-started'];
+        
+        // If we're missing any programs, they're effectively not started
+        if ($submitted_with_status < $total_programs) {
+            $result['program_status']['not-started'] += ($total_programs - $submitted_with_status);
+        }
+    } else {
+        // If no submissions at all, all programs are not started
+        $result['program_status']['not-started'] = $total_programs;
     }
     
-    return array_merge($programs_data, $metrics_data, ['program_status' => $program_status]);
+    // Calculate completion percentage
+    if ($total_programs > 0) {
+        $result['percent_complete'] = round(($programs_submitted / $total_programs) * 100);
+    }
+    
+    return $result;
 }
 
 /**
@@ -1311,4 +1351,12 @@ function can_access_program($program_id) {
     
     return $result->num_rows > 0;
 }
+
+/**
+ * Get agency submission status for a reporting period
+ * 
+ * @param int $agency_id The agency ID
+ * @param int $period_id The reporting period ID (optional)
+ * @return array Status information including program counts by status
+ */
 ?>

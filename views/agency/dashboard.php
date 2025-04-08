@@ -47,6 +47,62 @@ $program_status_data = [
     'not-started' => $submission_status['program_status']['not-started'] ?? 0
 ];
 
+// Calculate total for verification
+$total_in_chart = array_sum($program_status_data);
+$total_programs = count($programs);
+
+// If the normal method isn't working (all zeros or incorrect data),
+// count directly from programs array as a fallback
+if ($total_in_chart === 0 && $total_programs > 0) {
+    // Reset the counts
+    $direct_status_counts = [
+        'on-track' => 0,
+        'delayed' => 0,
+        'completed' => 0,
+        'not-started' => 0
+    ];
+    
+    foreach ($programs as $program) {
+        // Extract and normalize the status
+        $status = isset($program['status']) ? strtolower(trim($program['status'])) : 'not-started';
+        
+        // Map status to standard categories
+        switch($status) {
+            case 'on-track':
+            case 'on-track-yearly':
+                $direct_status_counts['on-track']++;
+                break;
+            case 'delayed':
+            case 'severe-delay':
+                $direct_status_counts['delayed']++;
+                break;
+            case 'completed':
+            case 'target-achieved': // Move "target-achieved" here to categorize as completed
+                $direct_status_counts['completed']++;
+                break;
+            default:
+                $direct_status_counts['not-started']++;
+                break;
+        }
+    }
+    
+    // If we found at least one status, use the direct counts instead
+    if (array_sum($direct_status_counts) > 0) {
+        $program_status_data = $direct_status_counts;
+        // Log the override
+        error_log("Override program status data: " . json_encode($direct_status_counts));
+    } else if ($total_programs > 0) {
+        // If we still have no statuses but do have programs, they must all be not-started
+        $program_status_data = [
+            'on-track' => 0,
+            'delayed' => 0,
+            'completed' => 0,
+            'not-started' => $total_programs  // All programs must be not started
+        ];
+        error_log("All programs set to not-started: " . $total_programs);
+    }
+}
+
 // Additional styles
 $additionalStyles = [
     APP_URL . '/assets/css/custom/agency.css'
@@ -57,6 +113,7 @@ $additionalScripts = [
     'https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js',
     APP_URL . '/assets/js/utilities/status_utils.js',
     APP_URL . '/assets/js/agency/dashboard.js',
+    APP_URL . '/assets/js/agency/dashboard_chart.js', // Add the new chart JS file
     APP_URL . '/assets/js/period_selector.js'
 ];
 
@@ -81,8 +138,32 @@ $actions = [
 
 // Include the dashboard header component with the primary style
 require_once '../../includes/dashboard_header.php';
-
 ?>
+
+<!-- Debug output for chart data -->
+<div style="display: none;" id="chartDebugData">
+    <pre>
+    <?php 
+        echo "Program Status Data from submission_status:\n";
+        echo "Total programs: " . ($submission_status['total_programs'] ?? '0') . "\n";
+        var_dump($submission_status['program_status'] ?? []); 
+        
+        echo "\n\nProgram Status Data after processing:\n";
+        var_dump($program_status_data);
+        
+        echo "\n\nTotal Programs in array: " . count($programs) . "\n";
+        
+        // Show first 3 programs with their status for debugging
+        echo "Sample Programs:\n";
+        $counter = 0;
+        foreach ($programs as $program) {
+            if ($counter++ < 3) {
+                echo "Program: " . $program['program_name'] . ", Status: " . ($program['status'] ?? 'none') . "\n";
+            }
+        }
+    ?>
+    </pre>
+</div>
 
 <!-- Dashboard Content -->
 <section class="section">
@@ -205,17 +286,17 @@ require_once '../../includes/dashboard_header.php';
                         <div class="chart-container" style="position: relative; height:250px; width:100%">
                             <canvas id="programStatusChart"></canvas>
                         </div>
-                        <div class="mt-4 text-center small">
-                            <span class="me-2">
-                                <i class="fas fa-circle text-success"></i> On Track
+                        <div class="mt-4 text-center small" id="programStatusLegend">
+                            <span class="me-3 chart-legend-item">
+                                <i class="fas fa-circle text-warning"></i> On Track
                             </span>
-                            <span class="me-2">
-                                <i class="fas fa-circle text-warning"></i> Delayed
+                            <span class="me-3 chart-legend-item">
+                                <i class="fas fa-circle text-danger"></i> Delayed
                             </span>
-                            <span class="me-2">
-                                <i class="fas fa-circle text-info"></i> Completed
+                            <span class="me-3 chart-legend-item">
+                                <i class="fas fa-circle text-success"></i> Monthly Target Achieved
                             </span>
-                            <span>
+                            <span class="chart-legend-item">
                                 <i class="fas fa-circle text-secondary"></i> Not Started
                             </span>
                         </div>
@@ -228,9 +309,6 @@ require_once '../../includes/dashboard_header.php';
                 <div class="card shadow-sm h-100">
                     <div class="card-header py-3 d-flex justify-content-between align-items-center">
                         <h6 class="m-0 font-weight-bold text-white">Recent Program Updates</h6>
-                        <a href="view_programs.php" class="btn btn-sm btn-primary">
-                            View All Programs
-                        </a>
                     </div>
                     <div class="card-body">
                         <?php if (empty($programs)): ?>
@@ -309,64 +387,15 @@ require_once '../../includes/dashboard_header.php';
                     </div>
                 </div>
             </div>
-
-            <!-- Recent Programs Card -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="card-title m-0"><i class="fas fa-tasks me-2"></i>Recent Programs</h5>
-                    <a href="view_programs.php" class="btn btn-sm btn-outline-light">View All</a>
-                </div>
-                <div class="card-body p-0">
-                    <?php if (empty($recent_programs)): ?>
-                        <div class="text-center py-5 px-4">
-                            <div class="mb-3">
-                                <i class="fas fa-project-diagram fa-3x text-muted"></i>
-                            </div>
-                            <h5>No programs found</h5>
-                            <p class="text-muted">You don't have any programs assigned or created yet.</p>
-                            <a href="create_program.php" class="btn btn-primary">
-                                <i class="fas fa-plus-circle me-1"></i> Create New Program
-                            </a>
-                        </div>
-                    <?php else: ?>
-                        <div class="table-responsive w-100">
-                            <table class="table table-hover table-custom mb-0" style="width: 100%;">
-                                <!-- ...existing code... -->
-                            </table>
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </div>
-
-            <!-- Other Sectors Programs Card -->
-            <div class="card shadow-sm">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="card-title m-0"><i class="fas fa-sitemap me-2"></i>Other Sectors Programs</h5>
-                </div>
-                <div class="card-body p-0">
-                    <?php if (empty($other_sectors_programs)): ?>
-                        <div class="text-center py-5 px-4">
-                            <div class="mb-3">
-                                <i class="fas fa-sitemap fa-3x text-muted"></i>
-                            </div>
-                            <h5>No programs from other sectors</h5>
-                            <p class="text-muted">There are no programs from other sectors available for viewing.</p>
-                        </div>
-                    <?php else: ?>
-                        <div class="table-responsive w-100">
-                            <table class="table table-hover table-custom mb-0" style="width: 100%;">
-                                <!-- ...existing code... -->
-                            </table>
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </div>
         </div>
     </div>
 </section>
 
 <!-- Pass data to chart -->
 <script>
+    // Add debug console logging
+    console.log("Passing data to chart:", <?php echo json_encode($program_status_data); ?>);
+    
     // Initialize with current data
     const programStatusChartData = {
         data: [
@@ -374,45 +403,21 @@ require_once '../../includes/dashboard_header.php';
             <?php echo $program_status_data['delayed']; ?>,
             <?php echo $program_status_data['completed']; ?>,
             <?php echo $program_status_data['not-started']; ?>
-        ],
-        colors: ['#28a745', '#ffc107', '#17a2b8', '#6c757d']
+        ]
     };
     
-    // Function to update chart after AJAX load
-    function initProgramStatusChart() {
-        const ctx = document.getElementById('programStatusChart');
-        
-        // Destroy existing chart if it exists
-        if (Chart.getChart(ctx)) {
-            Chart.getChart(ctx).destroy();
-        }
-        
-        // Create new chart
-        new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: ['On Track', 'Delayed', 'Completed', 'Not Started'],
-                datasets: [{
-                    data: programStatusChartData.data,
-                    backgroundColor: programStatusChartData.colors,
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                cutout: '70%'
-            }
-        });
-    }
+    // Debug output to verify data structure
+    console.log("Chart data being sent:", programStatusChartData);
     
-    // Initialize chart on page load
-    document.addEventListener('DOMContentLoaded', initProgramStatusChart);
+    // Initialize the chart on page load using the new method
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof initializeDashboardChart === 'function') {
+            console.log("Initializing chart with data:", programStatusChartData);
+            initializeDashboardChart(programStatusChartData);
+        } else {
+            console.error("initializeDashboardChart function not found!");
+        }
+    });
 </script>
 
 <?php

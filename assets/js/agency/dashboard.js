@@ -1,84 +1,33 @@
 /**
- * Agency Dashboard Functionality
- * Handles interactions on the agency dashboard
+ * Agency Dashboard JavaScript
+ * Handles dashboard functionality
  */
 document.addEventListener('DOMContentLoaded', function() {
-    // Refresh button functionality
-    const refreshBtn = document.getElementById('refreshPage');
-    if (refreshBtn) {
-        refreshBtn.addEventListener('click', function() {
-            // Add spinner to indicate loading
-            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Refreshing...';
-            this.disabled = true;
-            
-            // Reload the page
-            setTimeout(() => {
-                window.location.reload();
-            }, 500);
+    // Initialize refresh button
+    const refreshButton = document.getElementById('refreshPage');
+    if (refreshButton) {
+        refreshButton.addEventListener('click', function() {
+            location.reload();
         });
     }
     
-    // Add animation to cards
-    document.querySelectorAll('.card').forEach((card, index) => {
-        setTimeout(() => {
-            card.style.opacity = '0';
-            card.style.transform = 'translateY(20px)';
-            card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-            
-            setTimeout(() => {
-                card.style.opacity = '1';
-                card.style.transform = 'translateY(0)';
-            }, 50);
-        }, index * 100);
-    });
-    
-    // Initialize charts if data exists
-    if (typeof programStatusChartData !== 'undefined') {
-        initProgramStatusChart();
+    // Initialize tooltips if any
+    const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    if (tooltips.length) {
+        tooltips.forEach(tooltip => {
+            new bootstrap.Tooltip(tooltip);
+        });
     }
+    
+    // DO NOT initialize chart here - it's now handled by dashboard_chart.js
+    // The old initProgramStatusChart function is kept for reference but not called
 });
 
 /**
- * Initialize the program status chart
+ * This function is no longer used but kept for reference
+ * Chart initialization is now handled by ProgramStatusChart in dashboard_chart.js
  */
 function initProgramStatusChart() {
-    const ctx = document.getElementById('programStatusChart');
-    if (!ctx) return;
-    
-    new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: ['On Track', 'Delayed', 'Completed', 'Not Started'],
-            datasets: [{
-                data: programStatusChartData.data,
-                backgroundColor: programStatusChartData.colors,
-                borderWidth: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: '65%',
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        usePointStyle: true,
-                        padding: 15
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            const label = context.label || '';
-                            const value = context.raw || 0;
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percentage = Math.round((value / total) * 100);
-                            return `${label}: ${value} (${percentage}%)`;
-                        }
-                    }
-                }
-            }
-        }
-    });
+    // This function is deprecated - Chart initialization is now in dashboard_chart.js
+    console.log("Chart initialization moved to dashboard_chart.js");
 }

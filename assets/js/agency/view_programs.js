@@ -107,8 +107,8 @@ function filterPrograms() {
             } else if (program.status) {
                 // Map filter values to database values for comparison
                 const statusFilterMap = {
-                    'target-achieved': ['target-achieved'],
-                    'on-track-yearly': ['on-track-yearly', 'on-track'],
+                    'target-achieved': ['target-achieved', 'completed'], // Add 'completed' to target-achieved
+                    'on-track-yearly': ['on-track-yearly', 'on-track'], 
                     'severe-delay': ['severe-delay', 'delayed'],
                     'not-started': ['not-started']
                 };
@@ -327,7 +327,7 @@ function renderProgramPage(page, filteredPrograms = null) {
                 'target-achieved': { label: 'Monthly Target Achieved', class: 'success' },
                 'delayed': { label: 'Delayed', class: 'danger' },
                 'severe-delay': { label: 'Severe Delays', class: 'danger' },
-                'completed': { label: 'Completed', class: 'primary' },
+                'completed': { label: 'Monthly Target Achieved', class: 'success' },
                 'not-started': { label: 'Not Started', class: 'secondary' }
             };
             
