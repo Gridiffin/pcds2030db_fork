@@ -58,13 +58,26 @@ $headerClass = ($headerStyle === 'light') ? 'page-header-light' : 'page-header-p
             <?php if (isset($actions) && !empty($actions)): ?>
                 <div class="col-auto">
                     <?php foreach ($actions as $action): ?>
-                        <button <?php if(isset($action['id'])): ?>id="<?php echo $action['id']; ?>"<?php endif; ?> 
-                            class="btn <?php echo $action['class'] ?? ($headerStyle === 'light' ? 'btn-primary' : 'btn-light'); ?> <?php echo $action['size'] ?? ''; ?>">
-                            <?php if (isset($action['icon'])): ?>
-                                <i class="<?php echo $action['icon']; ?> me-1"></i>
-                            <?php endif; ?>
-                            <?php echo htmlspecialchars($action['text']); ?>
-                        </button>
+                        <?php if (isset($action['url'])): ?>
+                            <!-- Render as anchor tag if URL is provided -->
+                            <a href="<?php echo $action['url']; ?>" 
+                                <?php if(isset($action['id'])): ?>id="<?php echo $action['id']; ?>"<?php endif; ?> 
+                                class="btn <?php echo $action['class'] ?? ($headerStyle === 'light' ? 'btn-primary' : 'btn-light'); ?> <?php echo $action['size'] ?? ''; ?>">
+                                <?php if (isset($action['icon'])): ?>
+                                    <i class="<?php echo $action['icon']; ?> me-1"></i>
+                                <?php endif; ?>
+                                <?php echo htmlspecialchars($action['text']); ?>
+                            </a>
+                        <?php else: ?>
+                            <!-- Render as button if no URL -->
+                            <button <?php if(isset($action['id'])): ?>id="<?php echo $action['id']; ?>"<?php endif; ?> 
+                                class="btn <?php echo $action['class'] ?? ($headerStyle === 'light' ? 'btn-primary' : 'btn-light'); ?> <?php echo $action['size'] ?? ''; ?>">
+                                <?php if (isset($action['icon'])): ?>
+                                    <i class="<?php echo $action['icon']; ?> me-1"></i>
+                                <?php endif; ?>
+                                <?php echo htmlspecialchars($action['text']); ?>
+                            </button>
+                        <?php endif; ?>
                     <?php endforeach; ?>
                 </div>
             <?php endif; ?>

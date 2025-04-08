@@ -62,7 +62,12 @@ if ($total_in_chart === 0 && $total_programs > 0) {
         'not-started' => 0
     ];
     
-    foreach ($programs as $program) {
+    // Get non-draft programs first
+    $non_draft_programs = array_filter($programs, function($program) {
+        return !isset($program['is_draft']) || $program['is_draft'] == 0;
+    });
+    
+    foreach ($non_draft_programs as $program) {
         // Extract and normalize the status
         $status = isset($program['status']) ? strtolower(trim($program['status'])) : 'not-started';
         
@@ -93,13 +98,18 @@ if ($total_in_chart === 0 && $total_programs > 0) {
         error_log("Override program status data: " . json_encode($direct_status_counts));
     } else if ($total_programs > 0) {
         // If we still have no statuses but do have programs, they must all be not-started
+        // Make sure to count only non-draft programs
+        $non_draft_count = count(array_filter($programs, function($program) {
+            return !isset($program['is_draft']) || $program['is_draft'] == 0;
+        }));
+        
         $program_status_data = [
             'on-track' => 0,
             'delayed' => 0,
             'completed' => 0,
-            'not-started' => $total_programs  // All programs must be not started
+            'not-started' => $non_draft_count  // Only count non-draft programs as not started
         ];
-        error_log("All programs set to not-started: " . $total_programs);
+        error_log("All non-draft programs set to not-started: " . $non_draft_count);
     }
 }
 
@@ -212,7 +222,14 @@ require_once '../../includes/dashboard_header.php';
                         <div class="card-body">
                             <i class="fas fa-clipboard-list stat-icon"></i>
                             <div class="stat-title">Total Programs</div>
-                            <div class="stat-value"><?php echo $submission_status['total_programs'] ?? 0; ?></div>
+                            <div class="stat-value">
+                                <?php 
+                                // Count non-draft programs if submission_status doesn't already filter them
+                                echo $submission_status['total_programs'] ?? count(array_filter($programs, function($p) {
+                                    return !isset($p['is_draft']) || $p['is_draft'] == 0;
+                                })); 
+                                ?>
+                            </div>
                             <div class="stat-subtitle">
                                 <i class="fas fa-check me-1"></i>
                                 <?php echo $submission_status['programs_submitted'] ?? 0; ?> Programs Submitted
@@ -260,7 +277,7 @@ require_once '../../includes/dashboard_header.php';
                     <div class="card stat-card info">
                         <div class="card-body">
                             <i class="fas fa-trophy stat-icon"></i>
-                            <div class="stat-title">Completed Programs</div>
+                            <div class="stat-title">Monthly Target Achieved</div>
                             <div class="stat-value"><?php echo $program_status_data['completed']; ?></div>
                             <?php if ($submission_status['total_programs'] > 0): ?>
                             <div class="stat-subtitle">
@@ -311,12 +328,14 @@ require_once '../../includes/dashboard_header.php';
                         <h6 class="m-0 font-weight-bold text-white">Recent Program Updates</h6>
                     </div>
                     <div class="card-body">
-                        <?php if (empty($programs)): ?>
+                        <?php 
+                        if (empty($programs)): 
+                        ?>
                             <div class="text-center py-5">
                                 <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
                                 <p>No programs found for your agency.</p>
-                                <a href="view_programs.php" class="btn btn-primary btn-sm">
-                                    <i class="fas fa-plus-circle me-1"></i> Create Program
+                                <a href="<?php echo APP_URL; ?>/views/agency/create_program.php" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-plus-circle me-1"></i> Create New Program
                                 </a>
                             </div>
                         <?php else: ?>
@@ -324,65 +343,129 @@ require_once '../../includes/dashboard_header.php';
                                 <table class="table table-hover">
                                     <thead>
                                         <tr>
-                                            <th>Program</th>
-                                            <th>Target</th>
+                                            <th>Program Name</th>
                                             <th>Status</th>
+                                            <th>Last Updated</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <?php 
-                                        // Sort programs by updated_at
-                                        usort($programs, function($a, $b) {
-                                            return strtotime($b['updated_at'] ?? $b['created_at']) - strtotime($a['updated_at'] ?? $a['created_at']);
-                                        });
+                                        // Get the programs using the exact same query as view_programs.php
+                                        $dashboard_programs_query = "SELECT p.*, 
+                                              (SELECT ps.status FROM program_submissions ps 
+                                               WHERE ps.program_id = p.program_id 
+                                               ORDER BY ps.submission_date DESC LIMIT 1) as status,
+                                              (SELECT ps.is_draft FROM program_submissions ps 
+                                               WHERE ps.program_id = p.program_id 
+                                               ORDER BY ps.submission_date DESC LIMIT 1) as is_draft,
+                                              (SELECT ps.submission_date FROM program_submissions ps 
+                                               WHERE ps.program_id = p.program_id 
+                                               ORDER BY ps.submission_date DESC LIMIT 1) as updated_at
+                                              FROM programs p 
+                                              WHERE p.owner_agency_id = ?
+                                              ORDER BY p.updated_at DESC, p.created_at DESC";
                                         
-                                        // Display up to 5 most recent programs
-                                        $recent_programs = array_slice($programs, 0, 5);
+                                        $stmt = $conn->prepare($dashboard_programs_query);
+                                        $stmt->bind_param('i', $_SESSION['user_id']);
+                                        $stmt->execute();
+                                        $result = $stmt->get_result();
                                         
-                                        foreach ($recent_programs as $program): 
+                                        $dashboard_programs = [];
+                                        while ($row = $result->fetch_assoc()) {
+                                            $dashboard_programs[] = $row;
+                                        }
+                                        
+                                        // Take the most recent 5 programs
+                                        $recent_programs = array_slice($dashboard_programs, 0, 5);
+                                        
+                                        if (empty($recent_programs)):
                                         ?>
                                             <tr>
-                                                <td>
-                                                    <div class="fw-medium"><?php echo $program['program_name']; ?></div>
-                                                    <div class="small text-muted">
-                                                        <?php if ($program['updated_at']): ?>
-                                                            Updated: <?php echo date('M j, Y', strtotime($program['updated_at'])); ?>
-                                                        <?php else: ?>
-                                                            Created: <?php echo date('M j, Y', strtotime($program['created_at'])); ?>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </td>
-                                                <td><?php echo $program['current_target'] ?? 'Not set'; ?></td>
-                                                <td>
-                                                    <?php echo get_status_badge($program['status'] ?? 'not-started'); ?>
-                                                </td>
-                                                <td>
-                                                    <div class="btn-group btn-group-sm">
-                                                        <a href="program_details.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="View Details">
-                                                            <i class="fas fa-eye"></i>
-                                                        </a>
-                                                        
-                                                        <?php if (isset($program['is_draft']) && $program['is_draft']): ?>
-                                                        <a href="update_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-secondary" title="Update Status">
-                                                            <i class="fas fa-edit"></i>
-                                                        </a>
-                                                        <?php endif; ?>
-                                                    </div>
+                                                <td colspan="4" class="text-center py-4">
+                                                    <i class="fas fa-info-circle text-info me-2"></i>
+                                                    No programs found for your agency.
                                                 </td>
                                             </tr>
-                                        <?php endforeach; ?>
+                                        <?php else: ?>
+                                            <?php foreach ($recent_programs as $program): ?>
+                                                <tr class="<?php echo isset($program['is_draft']) && $program['is_draft'] ? 'draft-program' : ''; ?>" data-program-type="<?php echo isset($program['is_assigned']) && $program['is_assigned'] ? 'assigned' : 'created'; ?>">
+                                                    <td>
+                                                        <div class="fw-medium">
+                                                            <?php echo htmlspecialchars($program['program_name']); ?>
+                                                            <?php if (isset($program['is_draft']) && $program['is_draft']): ?>
+                                                                <span class="draft-indicator" title="Draft"></span>
+                                                            <?php endif; ?>
+                                                        </div>
+                                                        <div class="small text-muted program-type-indicator">
+                                                            <i class="fas fa-<?php echo isset($program['is_assigned']) && $program['is_assigned'] ? 'tasks' : 'folder-plus'; ?> me-1"></i>
+                                                            <?php echo isset($program['is_assigned']) && $program['is_assigned'] ? 'Assigned Program' : 'Custom Program'; ?>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <?php 
+                                                        // Ensure we're using the new status values by converting any legacy status
+                                                        $current_status = isset($program['status']) ? (function_exists('convert_legacy_status') ? convert_legacy_status($program['status']) : $program['status']) : 'not-started';
+                                                        
+                                                        // Map database status values to display labels and classes
+                                                        $status_map = [
+                                                            'on-track' => ['label' => 'On Track', 'class' => 'warning'],
+                                                            'on-track-yearly' => ['label' => 'On Track for Year', 'class' => 'warning'],
+                                                            'target-achieved' => ['label' => 'Monthly Target Achieved', 'class' => 'success'],
+                                                            'delayed' => ['label' => 'Delayed', 'class' => 'danger'],
+                                                            'severe-delay' => ['label' => 'Severe Delays', 'class' => 'danger'],
+                                                            'completed' => ['label' => 'Completed', 'class' => 'primary'],
+                                                            'not-started' => ['label' => 'Not Started', 'class' => 'secondary']
+                                                        ];
+                                                        
+                                                        // Set default if status is not in our map
+                                                        if (!isset($status_map[$current_status])) {
+                                                            $current_status = 'not-started';
+                                                        }
+                                                        
+                                                        // Get the label and class from our map
+                                                        $status_label = $status_map[$current_status]['label'];
+                                                        $status_class = $status_map[$current_status]['class'];
+                                                        ?>
+                                                        <span class="badge bg-<?php echo $status_class; ?>">
+                                                            <?php echo $status_label; ?>
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <?php 
+                                                        if (isset($program['updated_at']) && $program['updated_at']) {
+                                                            echo date('M j, Y', strtotime($program['updated_at']));
+                                                        } elseif (isset($program['created_at']) && $program['created_at']) {
+                                                            echo date('M j, Y', strtotime($program['created_at']));
+                                                        } else {
+                                                            echo 'Not set';
+                                                        }
+                                                        ?>
+                                                    </td>
+                                                    <td>
+                                                        <div class="btn-group btn-group-sm">
+                                                            <a href="program_details.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="View Details">
+                                                                <i class="fas fa-eye"></i>
+                                                            </a>
+                                                            <?php if (isset($program['is_draft']) && $program['is_draft']): ?>
+                                                            <a href="update_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-secondary" title="Edit Draft">
+                                                                <i class="fas fa-edit"></i>
+                                                            </a>
+                                                            <?php endif; ?>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        <?php endif; ?>
                                     </tbody>
                                 </table>
                             </div>
                             
-                            <?php if (count($programs) > 5): ?>
-                                <div class="text-center mt-3">
-                                    <a href="view_programs.php" class="btn btn-outline-primary btn-sm">
-                                        View All <?php echo count($programs); ?> Programs <i class="fas fa-arrow-right ms-1"></i>
-                                    </a>
-                                </div>
-                            <?php endif; ?>
+                            <div class="text-center mt-3">
+                                <a href="view_programs.php" class="btn btn-outline-primary btn-sm">
+                                    View All Programs <i class="fas fa-arrow-right ms-1"></i>
+                                </a>
+                            </div>
                         <?php endif; ?>
                     </div>
                 </div>

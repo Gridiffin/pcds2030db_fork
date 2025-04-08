@@ -648,3 +648,64 @@
     color: #ffffff !important;
 }
 */
+
+/* Enhanced draft indicator styles */
+.draft-program td:first-child {
+    position: relative;
+}
+
+.draft-program td:first-child::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background-color: #ffc107; /* Warning yellow */
+}
+
+.draft-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background-color: #ffc107;
+    border-radius: 50%;
+    margin-left: 5px;
+    position: relative;
+    top: -2px;
+}
+
+.draft-indicator::after {
+    content: "Draft";
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    font-size: 0.75rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s;
+    pointer-events: none;
+    margin-bottom: 5px;
+    z-index: 100;
+}
+
+.draft-indicator:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Make the badge more visible */
+.badge.bg-warning.text-dark {
+    background-color: #ffc107 !important;
+    color: #212529 !important;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 0.5px;
+}

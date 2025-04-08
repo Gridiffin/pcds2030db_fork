@@ -725,6 +725,7 @@ function get_agency_submission_status($user_id, $period_id = null) {
     }
     
     // Now get status counts directly using proper grouping
+    // Exclude draft submissions by adding is_draft = 0 to WHERE clause
     $status_query = "SELECT 
                     ps.status, 
                     COUNT(DISTINCT ps.program_id) as count 
@@ -732,6 +733,7 @@ function get_agency_submission_status($user_id, $period_id = null) {
                     JOIN programs p ON ps.program_id = p.program_id
                     WHERE p.owner_agency_id = ? 
                     AND ps.period_id = ?
+                    AND (ps.is_draft = 0 OR ps.is_draft IS NULL)
                     GROUP BY ps.status";
     
     $stmt = $conn->prepare($status_query);
@@ -757,7 +759,7 @@ function get_agency_submission_status($user_id, $period_id = null) {
                 $result['program_status']['delayed'] += $count;
                 break;
             case 'completed':
-            case 'target-achieved': // Move "target-achieved" here to categorize as completed
+            case 'target-achieved': 
                 $result['program_status']['completed'] += $count;
                 break;
             case 'not-started':
@@ -772,26 +774,32 @@ function get_agency_submission_status($user_id, $period_id = null) {
     // Update programs_submitted count
     $result['programs_submitted'] = $programs_submitted;
     
-    // Calculate not-started programs by subtracting submitted from total
-    // Only if there's at least one submission
-    if ($programs_submitted > 0) {
-        $submitted_with_status = $result['program_status']['on-track'] + 
-                                $result['program_status']['delayed'] + 
-                                $result['program_status']['completed'] + 
-                                $result['program_status']['not-started'];
-        
-        // If we're missing any programs, they're effectively not started
-        if ($submitted_with_status < $total_programs) {
-            $result['program_status']['not-started'] += ($total_programs - $submitted_with_status);
-        }
-    } else {
-        // If no submissions at all, all programs are not started
-        $result['program_status']['not-started'] = $total_programs;
+    // Now count the total non-draft programs for accurate calculation
+    $non_draft_query = "SELECT COUNT(DISTINCT p.program_id) as non_draft_total
+                        FROM programs p
+                        LEFT JOIN program_submissions ps ON p.program_id = ps.program_id AND ps.period_id = ?
+                        WHERE p.owner_agency_id = ?
+                        AND (ps.is_draft = 0 OR ps.is_draft IS NULL OR ps.submission_id IS NULL)";
+    
+    $stmt = $conn->prepare($non_draft_query);
+    $stmt->bind_param("ii", $period_id, $user_id);
+    $stmt->execute();
+    $non_draft_result = $stmt->get_result();
+    $non_draft_row = $non_draft_result->fetch_assoc();
+    $non_draft_total = $non_draft_row['non_draft_total'] ?? $total_programs;
+    
+    // Update total to only count non-draft programs
+    $result['total_programs'] = $non_draft_total;
+    
+    // Update not-started count for non-submitted programs
+    $not_submitted = $non_draft_total - $programs_submitted;
+    if ($not_submitted > 0) {
+        $result['program_status']['not-started'] += $not_submitted;
     }
     
-    // Calculate completion percentage
-    if ($total_programs > 0) {
-        $result['percent_complete'] = round(($programs_submitted / $total_programs) * 100);
+    // Calculate completion percentage using non-draft total
+    if ($non_draft_total > 0) {
+        $result['percent_complete'] = round(($programs_submitted / $non_draft_total) * 100);
     }
     
     return $result;
@@ -1155,20 +1163,42 @@ if (!function_exists('get_agency_programs_by_type')) {
         global $conn;
         $agency_id = $_SESSION['user_id'];
         
-        // Base query
+        // Base query - explicitly include is_draft from latest submission
         $query = "SELECT p.*, 
                   (SELECT ps.status FROM program_submissions ps 
                    WHERE ps.program_id = p.program_id 
                    ORDER BY ps.submission_date DESC LIMIT 1) as status,
+                  (SELECT ps.is_draft FROM program_submissions ps 
+                   WHERE ps.program_id = p.program_id 
+                   ORDER BY ps.submission_date DESC LIMIT 1) as is_draft,
                   (SELECT ps.submission_date FROM program_submissions ps 
                    WHERE ps.program_id = p.program_id 
                    ORDER BY ps.submission_date DESC LIMIT 1) as updated_at
                   FROM programs p 
                   WHERE p.owner_agency_id = ?";
-                  
-        // Add filters
-        $stmt = $conn->prepare($query);
-        $stmt->bind_param('i', $agency_id);
+        
+        // Add period filter if provided
+        if ($period_id) {
+            $query = "SELECT p.*, 
+                     ps.status,
+                     ps.is_draft,
+                     ps.submission_date as updated_at
+                     FROM programs p 
+                     LEFT JOIN program_submissions ps ON p.program_id = ps.program_id 
+                          AND ps.period_id = ? 
+                          AND ps.submission_id = (
+                              SELECT MAX(ps2.submission_id) 
+                              FROM program_submissions ps2 
+                              WHERE ps2.program_id = p.program_id AND ps2.period_id = ?
+                          )
+                     WHERE p.owner_agency_id = ?";
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param('iii', $period_id, $period_id, $agency_id);
+        } else {
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param('i', $agency_id);
+        }
+        
         $stmt->execute();
         $result = $stmt->get_result();
         
@@ -1176,7 +1206,15 @@ if (!function_exists('get_agency_programs_by_type')) {
         $created = [];
         
         while ($row = $result->fetch_assoc()) {
-            if ($row['is_assigned']) {
+            // Process JSON content if needed
+            if (isset($row['content_json'])) {
+                $row = process_content_json($row);
+            }
+            
+            // Add debug information
+            error_log("Program: {$row['program_name']}, IsDraft: " . ($row['is_draft'] ? "true" : "false"));
+            
+            if (isset($row['is_assigned']) && $row['is_assigned']) {
                 $assigned[] = $row;
             } else {
                 $created[] = $row;

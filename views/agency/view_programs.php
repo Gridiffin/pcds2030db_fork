@@ -94,7 +94,7 @@ $subtitle = "View and manage your agency's programs";
 $headerStyle = 'light'; // Use light (white) style for inner pages
 $actions = [
     [
-        'url' => 'create_program.php',
+        'url' => APP_URL . '/views/agency/create_program.php', // Fix: use absolute URL with APP_URL
         'text' => 'Create New Program',
         'icon' => 'fas fa-plus-circle',
         'class' => 'btn-primary'
