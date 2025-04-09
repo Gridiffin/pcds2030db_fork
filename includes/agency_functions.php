@@ -1397,4 +1397,29 @@ function can_access_program($program_id) {
  * @param int $period_id The reporting period ID (optional)
  * @return array Status information including program counts by status
  */
+
+/**
+ * Get all sectors from the database
+ * @return array List of all sectors
+ */
+if (!function_exists('get_all_sectors')) {
+    function get_all_sectors() {
+        global $conn;
+        
+        $query = "SELECT sector_id, sector_name, description FROM sectors ORDER BY sector_name";
+        $result = $conn->query($query);
+        
+        if (!$result) {
+            return [];
+        }
+        
+        $sectors = [];
+        while ($row = $result->fetch_assoc()) {
+            $sectors[] = $row;
+        }
+        
+        return $sectors;
+    }
+}
+
 ?>

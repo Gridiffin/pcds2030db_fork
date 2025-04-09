@@ -35,16 +35,21 @@ $all_programs = get_all_sectors_programs($period_id);
 // Get current agency's sector
 $current_sector_id = $_SESSION['sector_id'];
 
+// Get all sectors from the database instead of extracting them from programs
+$sectors = get_all_sectors();
+
 // Additional styles
 $additionalStyles = [
-    APP_URL . '/assets/css/custom/agency.css'
+    APP_URL . '/assets/css/custom/agency.css',
+    APP_URL . '/assets/css/custom/all_sectors.css' // New CSS file for sectors-specific styling
 ];
 
 // Additional scripts
 $additionalScripts = [
     APP_URL . '/assets/js/utilities/status_utils.js',
     APP_URL . '/assets/js/agency/view_programs.js',
-    APP_URL . '/assets/js/period_selector.js'
+    APP_URL . '/assets/js/period_selector.js',
+    APP_URL . '/assets/js/agency/all_sectors.js' // New JS file for sectors-specific functionality
 ];
 
 // Include header
@@ -52,99 +57,136 @@ require_once '../layouts/header.php';
 
 // Include agency navigation
 require_once '../layouts/agency_nav.php';
+
+// Set up the page header variables
+$title = "Cross-Sector Programs";
+$subtitle = "View and track programs across all sectors";
+$headerStyle = 'light'; // Use light (white) style for inner pages
+$actions = []; // No actions needed for this view
+
+// Include the dashboard header component
+require_once '../../includes/dashboard_header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h1 class="h2 mb-0">All Sectors Programs</h1>
-        <p class="text-muted">View programs across all sectors (read-only)</p>
-    </div>
-</div>
+<div class="container-fluid px-4">
+    <!-- Period Selector Component -->
+    <?php require_once '../../includes/period_selector.php'; ?>
 
-<!-- Period Selector Component -->
-<?php require_once '../../includes/period_selector.php'; ?>
-
-<div data-period-content="programs_content">
-    <?php if (empty($all_programs) || isset($all_programs['error'])): ?>
-        <div class="alert alert-info">
-            <i class="fas fa-info-circle me-2"></i>
-            <?php echo isset($all_programs['error']) ? $all_programs['error'] : 'No programs found across sectors.'; ?>
+    <!-- Enhanced Filtering Controls -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary">
+            <h5 class="card-title m-0 text-white"><i class="fas fa-filter me-2 text-white"></i>Search & Filter</h5>
         </div>
-    <?php else: ?>
-        <!-- Sector Tabs -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-white">
-                <ul class="nav nav-tabs card-header-tabs" id="sectorTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab" aria-controls="all" aria-selected="true">
-                            All Sectors
-                        </button>
-                    </li>
-                    
-                    <?php 
-                    // Get unique sectors
-                    $sectors = [];
-                    foreach ($all_programs as $program) {
-                        if (!isset($sectors[$program['sector_id']])) {
-                            $sectors[$program['sector_id']] = $program['sector_name'];
-                        }
-                    }
-                    
-                    // Display sector tabs
-                    foreach ($sectors as $id => $name): 
-                        $isCurrentSector = ($id == $current_sector_id);
-                    ?>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link <?php echo $isCurrentSector ? 'current-sector' : ''; ?>" 
-                                    id="sector-<?php echo $id; ?>-tab" 
-                                    data-bs-toggle="tab" 
-                                    data-bs-target="#sector-<?php echo $id; ?>" 
-                                    type="button" role="tab">
-                                <?php echo $name; ?>
-                                <?php if ($isCurrentSector): ?>
-                                    <span class="badge bg-primary ms-1">Your Sector</span>
-                                <?php endif; ?>
-                            </button>
-                        </li>
-                    <?php endforeach; ?>
-                </ul>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-5">
+                    <label for="searchPrograms" class="form-label">Search Programs</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" class="form-control" id="searchPrograms" placeholder="Search by program name or description...">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label for="sectorFilter" class="form-label">Sector</label>
+                    <select class="form-select" id="sectorFilter">
+                        <option value="">All Sectors</option>
+                        <?php foreach ($sectors as $sector): ?>
+                            <option value="<?php echo $sector['sector_id']; ?>">
+                                <?php echo htmlspecialchars($sector['sector_name']); ?>
+                                <?php if ($sector['sector_id'] == $current_sector_id): ?> (Your Sector)<?php endif; ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="statusFilter" class="form-label">Status</label>
+                    <select class="form-select" id="statusFilter">
+                        <option value="">All Statuses</option>
+                        <option value="target-achieved">Monthly Target Achieved</option>
+                        <option value="on-track-yearly">On Track for Year</option>
+                        <option value="severe-delay">Severe Delays</option>
+                        <option value="not-started">Not Started</option>
+                    </select>
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="button" class="btn btn-outline-secondary w-100" id="resetFilters">
+                        <i class="fas fa-undo"></i> Reset
+                    </button>
+                </div>
             </div>
             
-            <div class="card-body">
-                <div class="tab-content" id="sectorTabsContent">
-                    <!-- All Sectors Tab -->
-                    <div class="tab-pane fade show active" id="all" role="tabpanel" aria-labelledby="all-tab">
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
+            <!-- Active filters indicator -->
+            <div class="filter-indicators mt-3" id="activeFilters" style="display: none;">
+                <div class="d-flex align-items-center">
+                    <span class="badge rounded-pill bg-light text-dark border me-2">
+                        <i class="fas fa-filter me-1"></i> Active Filters:
+                    </span>
+                    <div id="filterBadges" class="d-flex flex-wrap gap-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div data-period-content="programs_content">
+        <?php if (empty($all_programs) || isset($all_programs['error'])): ?>
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                <?php echo isset($all_programs['error']) ? $all_programs['error'] : 'No programs found across sectors.'; ?>
+            </div>
+        <?php else: ?>
+            <!-- Unified Programs Table (replacing tabs) -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary d-flex justify-content-between align-items-center">
+                    <h5 class="card-title m-0 text-white"><i class="fas fa-list me-2 text-white"></i>Programs</h5>
+                    <span class="badge bg-light text-primary" id="programCount"><?php echo count($all_programs); ?> Programs</span>
+                </div>
+                <div class="card-body">
+                    <!-- No Results Message (initially hidden) -->
+                    <div id="noResultsMessage" class="alert alert-info" style="display: none;">
+                        <i class="fas fa-search me-2"></i>
+                        No programs match your search criteria. Try adjusting your filters.
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="programsTable">
+                            <thead>
+                                <tr>
+                                    <th>Program Name</th>
+                                    <th>Sector</th>
+                                    <th>Agency</th>
+                                    <th>Status</th>
+                                    <th>Timeline</th>
+                                    <th>Current Progress</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (empty($all_programs)): ?>
                                     <tr>
-                                        <th>Program Name</th>
-                                        <th>Sector</th>
-                                        <th>Agency</th>
-                                        <th>Target/Timeline</th>
-                                        <th>Status</th>
-                                        <th>Achievement</th>
+                                        <td colspan="6" class="text-center py-4">
+                                            <div class="alert alert-info mb-0">
+                                                <i class="fas fa-info-circle me-2"></i>
+                                                No programs found for this view.
+                                            </div>
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody>
+                                <?php else: ?>
                                     <?php foreach ($all_programs as $program): ?>
-                                        <tr class="<?php echo ($program['sector_id'] == $current_sector_id) ? 'current-sector-row' : ''; ?>">
+                                        <tr class="<?php echo ($program['sector_id'] == $current_sector_id) ? 'current-sector-row' : ''; ?>"
+                                            data-program-name="<?php echo htmlspecialchars($program['program_name']); ?>"
+                                            data-agency="<?php echo htmlspecialchars($program['agency_name']); ?>"
+                                            data-sector="<?php echo htmlspecialchars($program['sector_name']); ?>"
+                                            data-sector-id="<?php echo $program['sector_id']; ?>"
+                                            data-status="<?php echo htmlspecialchars(convert_legacy_status($program['status'] ?? 'not-reported')); ?>">
                                             <td>
                                                 <strong><?php echo htmlspecialchars($program['program_name']); ?></strong>
                                                 <?php if (!empty($program['description'])): ?>
                                                     <div class="small text-muted"><?php echo substr(htmlspecialchars($program['description']), 0, 100); ?><?php echo strlen($program['description']) > 100 ? '...' : ''; ?></div>
                                                 <?php endif; ?>
                                             </td>
-                                            <td><?php echo htmlspecialchars($program['sector_name']); ?></td>
-                                            <td><?php echo htmlspecialchars($program['agency_name']); ?></td>
                                             <td>
-                                                <?php if (isset($program['target']) && $program['target']): ?>
-                                                    <div><?php echo htmlspecialchars($program['target']); ?></div>
-                                                    <!-- Removed target_date display -->
-                                                <?php else: ?>
-                                                    <span class="text-muted">Not reported</span>
-                                                <?php endif; ?>
+                                                <span class="badge bg-secondary"><?php echo htmlspecialchars($program['sector_name']); ?></span>
                                             </td>
+                                            <td><?php echo htmlspecialchars($program['agency_name']); ?></td>
                                             <td>
                                                 <?php if (isset($program['status']) && $program['status']): ?>
                                                     <?php echo get_status_badge($program['status']); ?>
@@ -158,93 +200,37 @@ require_once '../layouts/agency_nav.php';
                                                 <?php endif; ?>
                                             </td>
                                             <td>
+                                                <?php if (isset($program['start_date']) && $program['start_date']): ?>
+                                                    <div>
+                                                        <i class="fas fa-calendar-alt me-1 text-muted"></i>
+                                                        <?php echo date('M j, Y', strtotime($program['start_date'])); ?>
+                                                        <?php if (isset($program['end_date']) && $program['end_date']): ?>
+                                                            - <?php echo date('M j, Y', strtotime($program['end_date'])); ?>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                <?php else: ?>
+                                                    <span class="text-muted">Not specified</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td>
                                                 <?php if (isset($program['achievement']) && $program['achievement']): ?>
                                                     <?php echo htmlspecialchars($program['achievement']); ?>
+                                                <?php elseif (isset($program['status_text']) && $program['status_text']): ?>
+                                                    <?php echo htmlspecialchars($program['status_text']); ?>
                                                 <?php else: ?>
-                                                    <span class="text-muted">Not reported</span>
+                                                    <span class="text-muted">No progress reported</span>
                                                 <?php endif; ?>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
                     </div>
-                    
-                    <!-- Individual Sector Tabs -->
-                    <?php foreach ($sectors as $id => $name): ?>
-                        <div class="tab-pane fade" id="sector-<?php echo $id; ?>" role="tabpanel">
-                            <h5 class="mb-3"><?php echo htmlspecialchars($name); ?> Sector Programs</h5>
-                            
-                            <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>Program Name</th>
-                                            <th>Agency</th>
-                                            <th>Target</th>
-                                            <!-- Removed Target Date column -->
-                                            <th>Status</th>
-                                            <th>Status Date</th>
-                                            <th>Achievement</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php 
-                                        $sectorPrograms = array_filter($all_programs, function($p) use ($id) {
-                                            return $p['sector_id'] == $id;
-                                        });
-                                        
-                                        foreach ($sectorPrograms as $program): 
-                                        ?>
-                                            <tr>
-                                                <td>
-                                                    <strong><?php echo htmlspecialchars($program['program_name']); ?></strong>
-                                                    <?php if (!empty($program['description'])): ?>
-                                                        <div class="small text-muted"><?php echo htmlspecialchars($program['description']); ?></div>
-                                                    <?php endif; ?>
-                                                </td>
-                                                <td><?php echo htmlspecialchars($program['agency_name']); ?></td>
-                                                <td>
-                                                    <?php if (isset($program['target']) && $program['target']): ?>
-                                                        <?php echo htmlspecialchars($program['target']); ?>
-                                                    <?php else: ?>
-                                                        <span class="text-muted">Not reported</span>
-                                                    <?php endif; ?>
-                                                </td>
-                                                <!-- Removed Target Date column -->
-                                                <td>
-                                                    <?php if (isset($program['status']) && $program['status']): ?>
-                                                        <?php echo get_status_badge($program['status']); ?>
-                                                    <?php else: ?>
-                                                        <span class="badge bg-light text-dark">Not Reported</span>
-                                                    <?php endif; ?>
-                                                </td>
-                                                <td>
-                                                    <?php if (isset($program['status_date']) && $program['status_date']): ?>
-                                                        <?php echo date('M j, Y', strtotime($program['status_date'])); ?>
-                                                    <?php else: ?>
-                                                        <span class="text-muted">Not set</span>
-                                                    <?php endif; ?>
-                                                </td>
-                                                <td>
-                                                    <?php if (isset($program['achievement']) && $program['achievement']): ?>
-                                                        <?php echo htmlspecialchars($program['achievement']); ?>
-                                                    <?php else: ?>
-                                                        <span class="text-muted">Not reported</span>
-                                                    <?php endif; ?>
-                                                </td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
                 </div>
             </div>
-        </div>
-    <?php endif; ?>
+        <?php endif; ?>
+    </div>
 </div>
 
 <?php

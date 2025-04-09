@@ -113,3 +113,84 @@ This allows adding new program attributes without database schema changes.
 - Optimize database queries for large program datasets
 - Add data visualization options for sector-specific metrics
 
+PCDS2030 Dashboard System Context
+=================================
+
+Overview:
+---------
+The PCDS2030 Dashboard is a web-based system for agencies to report progress on their programs 
+and sector-specific metrics. The system allows for quarterly reporting and generates consolidated 
+reports for the government.
+
+User Roles:
+-----------
+1. Administrators - Can manage users, sectors, reporting periods, and view all data
+2. Agency Users - Can submit data for their programs and sector metrics, view cross-sector data
+
+Key Features:
+------------
+- Agency submission of program progress data
+- Collaborative sector-specific metrics reporting
+- Dashboard views for performance monitoring
+- Period-based reporting (quarterly)
+- Cross-sector program visibility
+- Report generation (PPTX/PDF)
+
+System Modules:
+--------------
+1. User Management
+2. Program Management
+3. Reporting Period Management
+4. Data Submission
+5. Dashboard Visualization
+6. Report Generation
+7. Sector Metrics Management
+
+Database Structure:
+------------------
+- users: Stores user account information
+- sectors: Different government sectors (e.g., Education, Health)
+- programs: Programs owned by agencies
+- program_submissions: Periodic progress reports for programs
+- reporting_periods: Quarterly reporting periods
+- sector_metrics_definition: Defines metrics specific to sectors
+- sector_metric_values: Values submitted for sector metrics
+- sector_metric_permissions: Controls which agencies can edit which metrics
+- sector_metric_value_history: Tracks all changes to metric values
+
+New Features - Sector Metrics System:
+------------------------------------
+- Collaborative sector metrics where multiple agencies can contribute data
+- Permissions model for metric editing:
+  * creator_only: Only the creator can edit
+  * selected_agencies: Specific agencies can edit
+  * all_sector: Any agency in the sector can edit
+- Version history tracking for all metric values
+- Support for charts/graphs generation for presentations
+- Agency users can create their own sector-specific metrics
+- Admin users can also create sector metrics
+- Metric types: numeric, percentage, text
+
+Cross-Sector Visibility:
+-----------------------
+- All agencies can view programs from other sectors (read-only)
+- Unified cross-sector view with filtering capabilities
+- Filter by sector, status, or search terms
+- Visual highlighting of the agency's own sector
+
+Technical Details:
+-----------------
+- PHP 8.x backend
+- MySQL database
+- Bootstrap 5 frontend
+- Chart.js for visualizations
+- AJAX for dynamic data loading
+
+Report Generation:
+-----------------
+- Administrators can export reports in PPTX/PDF formats
+- Agency users can preview reports but cannot export them
+- Reports include program progress and sector metrics
+- Template-based generation for consistent formatting
+- Custom filtering options for targeted reporting
+

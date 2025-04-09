@@ -1,134 +1,90 @@
 <?php
 /**
- * Status Helpers
+ * Status Helper Functions
  * 
- * Functions for working with program status values.
+ * Functions for working with program statuses across the application
  */
 
 /**
- * Get HTML badge for a status
- * @param string $status Status value
- * @return string HTML badge markup
+ * Convert legacy status values to new status values
+ * 
+ * @param string $status The status to convert
+ * @return string The converted status
+ */
+function convert_legacy_status($status) {
+    if (!$status) return 'not-started';
+    
+    $status = strtolower(trim($status));
+    
+    // Map of old status values to new ones
+    $status_map = [
+        'on track' => 'on-track',
+        'on-track' => 'on-track',
+        'on track for year' => 'on-track-yearly',
+        'on-track-yearly' => 'on-track-yearly',
+        'target achieved' => 'target-achieved',
+        'monthly target achieved' => 'target-achieved',
+        'target-achieved' => 'target-achieved',
+        'delayed' => 'delayed',
+        'severe delays' => 'severe-delay',
+        'severe delay' => 'severe-delay',
+        'severe-delay' => 'severe-delay',
+        'completed' => 'completed',
+        'not started' => 'not-started',
+        'not-started' => 'not-started'
+    ];
+    
+    return $status_map[$status] ?? 'not-started';
+}
+
+/**
+ * Get appropriate badge HTML for a status
+ * 
+ * @param string $status The status to get a badge for
+ * @return string HTML for the status badge
  */
 function get_status_badge($status) {
-    // Convert legacy status if needed
     $status = convert_legacy_status($status);
     
-    switch ($status) {
-        case 'target-achieved':
-            return '<span class="badge bg-success">Monthly Target Achieved</span>';
-        case 'on-track-yearly':
-            return '<span class="badge bg-warning">On Track for Year</span>';
-        case 'severe-delay':
-            return '<span class="badge bg-danger">Severe Delays</span>';
-        case 'not-started':
-        default:
-            return '<span class="badge bg-secondary">Not Started</span>';
-    }
+    $badges = [
+        'on-track' => ['class' => 'warning', 'icon' => 'check-circle', 'label' => 'On Track'],
+        'on-track-yearly' => ['class' => 'warning', 'icon' => 'calendar-check', 'label' => 'On Track for Year'],
+        'target-achieved' => ['class' => 'success', 'icon' => 'trophy', 'label' => 'Target Achieved'],
+        'delayed' => ['class' => 'danger', 'icon' => 'exclamation-triangle', 'label' => 'Delayed'],
+        'severe-delay' => ['class' => 'danger', 'icon' => 'exclamation-circle', 'label' => 'Severe Delay'],
+        'completed' => ['class' => 'primary', 'icon' => 'flag-checkered', 'label' => 'Completed'],
+        'not-started' => ['class' => 'secondary', 'icon' => 'clock', 'label' => 'Not Started']
+    ];
+    
+    $badge = $badges[$status] ?? $badges['not-started'];
+    
+    return '<span class="badge bg-' . $badge['class'] . '"><i class="fas fa-' . $badge['icon'] . ' me-1"></i> ' . $badge['label'] . '</span>';
 }
 
 /**
- * Get status color class
- * @param string $status Status value
- * @return string CSS class name
+ * Get all valid status values
+ * 
+ * @return array Array of valid status values
  */
-function get_status_color_class($status) {
-    $status = convert_legacy_status($status);
-    
-    switch ($status) {
-        case 'target-achieved': return 'success';
-        case 'on-track-yearly': return 'warning';
-        case 'severe-delay': return 'danger';
-        case 'not-started': default: return 'secondary';
-    }
-}
-
-/**
- * Get status icon class
- * @param string $status Status value
- * @return string FontAwesome icon class
- */
-function get_status_icon($status) {
-    $status = convert_legacy_status($status);
-    
-    switch ($status) {
-        case 'target-achieved': return 'fas fa-check-circle';
-        case 'on-track-yearly': return 'fas fa-calendar-check';
-        case 'severe-delay': return 'fas fa-exclamation-triangle';
-        case 'not-started': default: return 'fas fa-hourglass-start';
-    }
-}
-
-/**
- * Get status badge with HTML and icon
- * @param string $status Status value
- * @return string HTML badge markup with icon
- */
-function get_status_badge_html($status) {
-    $status = convert_legacy_status($status);
-    $color_class = get_status_color_class($status);
-    $icon_class = get_status_icon($status);
-    $status_text = get_status_display_name($status);
-    
-    return sprintf(
-        '<span class="badge bg-%s"><i class="%s me-1"></i> %s</span>',
-        $color_class,
-        $icon_class,
-        $status_text
-    );
-}
-
-/**
- * Get status display name
- * @param string $status Status value
- * @return string Human-readable status name
- */
-function get_status_display_name($status) {
-    $status = convert_legacy_status($status);
-    
-    switch($status) {
-        case 'target-achieved': return 'Monthly Target Achieved';
-        case 'on-track-yearly': return 'On Track for Year';
-        case 'severe-delay': return 'Severe Delays';
-        case 'not-started': default: return 'Not Started';
-    }
-}
-
-/**
- * Get all valid status values as key-value pairs
- * @return array Status values and display names
- */
-function get_all_status_values() {
+function get_valid_statuses() {
     return [
-        'target-achieved' => 'Monthly Target Achieved',
-        'on-track-yearly' => 'On Track for Year',
-        'severe-delay' => 'Severe Delays',
-        'not-started' => 'Not Started'
+        'on-track',
+        'on-track-yearly',
+        'target-achieved', 
+        'delayed',
+        'severe-delay',
+        'completed',
+        'not-started'
     ];
 }
 
 /**
  * Check if a status value is valid
- * @param string $status Status to check
- * @return bool True if valid
+ * 
+ * @param string $status The status to check
+ * @return bool True if status is valid
  */
 function is_valid_status($status) {
-    $status = convert_legacy_status($status);
-    return array_key_exists($status, get_all_status_values());
-}
-
-/**
- * Convert old status values to new values for backwards compatibility
- * @param string $status Old status value
- * @return string New status value
- */
-function convert_legacy_status($status) {
-    switch($status) {
-        case 'on-track': return 'target-achieved';
-        case 'delayed': return 'on-track-yearly';
-        case 'completed': return 'severe-delay';
-        case 'not-started': return 'not-started';
-        default: return $status; // If it's already a new status, return as is
-    }
+    return in_array(convert_legacy_status($status), get_valid_statuses());
 }
 ?>
