@@ -218,4 +218,46 @@ function get_reporting_period($period_id) {
     
     return null;
 }
+
+/**
+ * Validate user login credentials
+ * @param string $username The username
+ * @param string $password The password
+ * @return array Result of login validation
+ */
+function validate_login($username, $password) {
+    global $conn;
+    
+    // Sanitize inputs
+    $username = $conn->real_escape_string(trim($username));
+    
+    // First check if username exists
+    $query = "SELECT * FROM users WHERE username = ?";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("s", $username);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 0) {
+        return ['error' => 'Invalid username or password'];
+    }
+    
+    $user = $result->fetch_assoc();
+    
+    // Check if account is active
+    if (isset($user['is_active']) && $user['is_active'] == 0) {
+        return ['error' => 'Your account has been deactivated. Please contact an administrator.'];
+    }
+    
+    // Verify password
+    if (password_verify($password, $user['password'])) {
+        // Store user data in session, but don't include password
+        unset($user['password']);
+        $_SESSION = $user;
+        
+        return ['success' => true, 'user' => $user];
+    } else {
+        return ['error' => 'Invalid username or password'];
+    }
+}
 ?>

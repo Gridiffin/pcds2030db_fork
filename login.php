@@ -31,33 +31,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (empty($username) || empty($password)) {
         $error = "Username and password are required.";
     } else {
-        // Check user credentials
-        $query = "SELECT user_id, username, password, role, agency_name, sector_id FROM users WHERE username = ?";
-        $stmt = $conn->prepare($query);
-        $stmt->bind_param("s", $username);
-        $stmt->execute();
-        $result = $stmt->get_result();
+        // Use the validate_login function which properly checks the is_active status
+        $result = validate_login($username, $password);
         
-        if ($result->num_rows == 1) {
-            $user = $result->fetch_assoc();
-            
-            // Verify password
-            if (password_verify($password, $user['password'])) {
-                // Password is correct, start session
-                $_SESSION['user_id'] = $user['user_id'];
-                $_SESSION['username'] = $user['username'];
-                $_SESSION['role'] = $user['role'];
-                $_SESSION['agency_name'] = $user['agency_name'];
-                $_SESSION['sector_id'] = $user['sector_id'];
-                
-                // Redirect to main page
-                header("Location: index.php");
-                exit;
-            } else {
-                $error = "Invalid username or password.";
-            }
+        if (isset($result['success'])) {
+            // Redirect to main page - all session variables are already set by validate_login
+            header("Location: index.php");
+            exit;
         } else {
-            $error = "Invalid username or password.";
+            $error = $result['error'] ?? "Invalid username or password.";
         }
     }
 }

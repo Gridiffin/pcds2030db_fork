@@ -509,90 +509,74 @@ function add_user($data) {
 }
 
 /**
- * Update an existing user
+ * Update a user
+ * 
  * @param array $data User data
- * @return array Result of operation
+ * @return array Result with success message or error
  */
 function update_user($data) {
     global $conn;
     
-    // Only admin can update users
-    if (!is_admin()) {
-        return ['error' => 'Permission denied'];
+    // Validate required fields
+    if (empty($data['user_id']) || empty($data['username']) || empty($data['role'])) {
+        return ['error' => 'Missing required fields'];
     }
     
-    // Extract and sanitize data
     $user_id = intval($data['user_id']);
-    $username = trim($conn->real_escape_string($data['username']));
-    $password = $data['password']; // May be empty if not changing
+    $username = $conn->real_escape_string(trim($data['username']));
     $role = $conn->real_escape_string($data['role']);
-    $agency_name = $conn->real_escape_string($data['agency_name'] ?? null);
+    $agency_name = $conn->real_escape_string($data['agency_name'] ?? '');
     $sector_id = !empty($data['sector_id']) ? intval($data['sector_id']) : null;
+    $is_active = isset($data['is_active']) ? 1 : 0;
     
-    // Validate input
-    if (empty($username)) {
-        return ['error' => 'Username is required'];
+    // Prevent deactivating your own account
+    if ($user_id == $_SESSION['user_id'] && $is_active == 0) {
+        return ['error' => 'You cannot deactivate your own account'];
     }
     
-    if ($role === 'agency' && (empty($agency_name) || empty($sector_id))) {
-        return ['error' => 'Agency name and sector are required for agency users'];
-    }
-    
-    // Check if username exists for a different user
+    // Check if username already exists (for another user)
     $check_query = "SELECT user_id FROM users WHERE username = ? AND user_id != ?";
-    $stmt = $conn->prepare($check_query);
-    $stmt->bind_param("si", $username, $user_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
+    $check_stmt = $conn->prepare($check_query);
+    $check_stmt->bind_param("si", $username, $user_id);
+    $check_stmt->execute();
+    $check_result = $check_stmt->get_result();
     
-    if ($result->num_rows > 0) {
+    if ($check_result->num_rows > 0) {
         return ['error' => 'Username already exists'];
     }
     
-    // Ensure sector_id is valid when role is 'agency'
-    if ($role === 'agency' && !empty($sector_id)) {
-        $check_sector = "SELECT sector_id FROM sectors WHERE sector_id = ?";
-        $stmt = $conn->prepare($check_sector);
-        $stmt->bind_param("i", $sector_id);
+    // Begin transaction
+    $conn->begin_transaction();
+    
+    try {
+        // Update user basic info - include is_active
+        $query = "UPDATE users SET 
+                  username = ?, 
+                  role = ?, 
+                  agency_name = ?, 
+                  sector_id = ?,
+                  is_active = ?
+                  WHERE user_id = ?";
+                  
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("sssiii", $username, $role, $agency_name, $sector_id, $is_active, $user_id);
         $stmt->execute();
-        $result = $stmt->get_result();
         
-        if ($result->num_rows === 0) {
-            return ['error' => 'Invalid sector selected'];
+        // If password is provided, update it
+        if (!empty($data['password'])) {
+            $password = password_hash($data['password'], PASSWORD_DEFAULT);
+            $pwd_query = "UPDATE users SET password = ? WHERE user_id = ?";
+            $pwd_stmt = $conn->prepare($pwd_query);
+            $pwd_stmt->bind_param("si", $password, $user_id);
+            $pwd_stmt->execute();
         }
-    }
-    
-    // Update user
-    if (!empty($password)) {
-        // Update with new password
-        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
         
-        if ($role === 'admin') {
-            $query = "UPDATE users SET username = ?, password = ?, role = ?, agency_name = ?, sector_id = NULL WHERE user_id = ?";
-            $stmt = $conn->prepare($query);
-            $stmt->bind_param("ssssi", $username, $hashed_password, $role, $agency_name, $user_id);
-        } else {
-            $query = "UPDATE users SET username = ?, password = ?, role = ?, agency_name = ?, sector_id = ? WHERE user_id = ?";
-            $stmt = $conn->prepare($query);
-            $stmt->bind_param("ssssii", $username, $hashed_password, $role, $agency_name, $sector_id, $user_id);
-        }
-    } else {
-        // Update without changing password
-        if ($role === 'admin') {
-            $query = "UPDATE users SET username = ?, role = ?, agency_name = ?, sector_id = NULL WHERE user_id = ?";
-            $stmt = $conn->prepare($query);
-            $stmt->bind_param("sssi", $username, $role, $agency_name, $user_id);
-        } else {
-            $query = "UPDATE users SET username = ?, role = ?, agency_name = ?, sector_id = ? WHERE user_id = ?";
-            $stmt->prepare($query);
-            $stmt->bind_param("sssii", $username, $role, $agency_name, $sector_id, $user_id);
-        }
-    }
-    
-    if ($stmt->execute()) {
-        return ['success' => true];
-    } else {
-        return ['error' => 'Failed to update user: ' . $stmt->error];
+        $conn->commit();
+        
+        return ['success' => true, 'message' => 'User updated successfully'];
+    } catch (Exception $e) {
+        $conn->rollback();
+        return ['error' => 'Database error: ' . $e->getMessage()];
     }
 }
 
