@@ -42,13 +42,8 @@ $current_page = basename($_SERVER['PHP_SELF']);
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <?php if ($current_page == 'manage_periods.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/views/admin/manage_periods.php">
+                    <a class="nav-link <?php if ($current_page == 'reporting_periods.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/views/admin/reporting_periods.php">
                         <i class="fas fa-calendar-alt me-1"></i> Periods
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link <?php if ($current_page == 'reports.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/views/admin/reports.php">
-                        <i class="fas fa-file-alt me-1"></i> Reports
                     </a>
                 </li>
             </ul>

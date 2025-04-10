@@ -187,429 +187,306 @@ function get_admin_dashboard_stats() {
  * Manage reporting periods (open/close)
  * @param int $period_id The reporting period to update
  * @param string $status New status ('open' or 'closed')
- * @return boolean Success status
+ * @return array Result of the status update operation
  */
 function update_reporting_period_status($period_id, $status) {
+    global $conn;
+    
     // Only admin can update period status
     if (!is_admin()) {
-        return false;
-    }
-    
-    // Implementation to update the period status...
-    
-    return true;
-}
-
-/**
- * Create a new program (admin can create for any sector)
- * @param string $program_name Program name
- * @param string $description Program description
- * @param int $sector_id The sector ID this program belongs to
- * @param int $owner_agency_id (Optional) The agency that will own this program
- * @param string $start_date (Optional) Start date in 'YYYY-MM-DD' format
- * @param string $end_date (Optional) End date in 'YYYY-MM-DD' format
- * @return array Result of program creation
- */
-function admin_create_program($program_name, $description, $sector_id, $owner_agency_id = null, $start_date = null, $end_date = null) {
-    global $conn;
-    
-    // Only admin can create programs for any sector
-    if (!is_admin()) {
         return ['error' => 'Permission denied'];
     }
     
-    // If owner_agency_id is not provided, set the current admin user as owner
-    if ($owner_agency_id === null) {
-        $owner_agency_id = $_SESSION['user_id'];
-    } 
-    // If provided, verify the owner_agency_id exists and is an agency
-    else {
-        // Check if the provided owner_agency_id is valid
-        $query = "SELECT user_id, role, sector_id FROM users WHERE user_id = ?";
-        $stmt = $conn->prepare($query);
-        $stmt->bind_param("i", $owner_agency_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        if ($result->num_rows === 0) {
-            return ['error' => 'Invalid owner agency ID'];
-        }
-        
-        $agency = $result->fetch_assoc();
-        
-        // If the selected owner is an agency, verify they belong to the correct sector
-        if ($agency['role'] === 'agency' && $agency['sector_id'] != $sector_id) {
-            return ['error' => 'Agency does not belong to the selected sector'];
-        }
-    }
-    
-    // Verify the sector exists
-    $query = "SELECT sector_id FROM sectors WHERE sector_id = ?";
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param("i", $sector_id);
-    $stmt->execute();
-    if ($stmt->get_result()->num_rows === 0) {
-        return ['error' => 'Invalid sector ID'];
-    }
-    
-    // Insert the new program
-    $query = "INSERT INTO programs (program_name, description, owner_agency_id, sector_id, start_date, end_date) 
-              VALUES (?, ?, ?, ?, ?, ?)";
-    
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param("ssiiss", $program_name, $description, $owner_agency_id, $sector_id, $start_date, $end_date);
-    
-    if ($stmt->execute()) {
-        $program_id = $stmt->insert_id;
-        return [
-            'success' => true,
-            'program_id' => $program_id,
-            'message' => 'Program created successfully'
-        ];
-    } else {
-        return ['error' => 'Failed to create program: ' . $stmt->error];
-    }
-}
-
-/**
- * Get all sectors for admin program creation
- * @return array List of all sectors
- */
-function get_all_sectors() {
-    global $conn;
-    
-    if (!is_admin()) {
-        return ['error' => 'Permission denied'];
-    }
-    
-    $query = "SELECT sector_id, sector_name, description FROM sectors ORDER BY sector_name";
-    $result = $conn->query($query);
-    
-    $sectors = [];
-    while ($row = $result->fetch_assoc()) {
-        $sectors[] = $row;
-    }
-    
-    return $sectors;
-}
-
-/**
- * Get all agencies for admin program assignment
- * @param int $sector_id (Optional) Filter by sector ID
- * @return array List of agencies
- */
-function get_agencies_for_assignment($sector_id = null) {
-    global $conn;
-    
-    if (!is_admin()) {
-        return ['error' => 'Permission denied'];
-    }
-    
-    $query = "SELECT user_id, agency_name, sector_id FROM users WHERE role = 'agency'";
-    
-    if ($sector_id !== null) {
-        $query .= " AND sector_id = " . intval($sector_id);
-    }
-    
-    $query .= " ORDER BY agency_name";
-    $result = $conn->query($query);
-    
-    $agencies = [];
-    while ($row = $result->fetch_assoc()) {
-        $agencies[] = $row;
-    }
-    
-    return $agencies;
-}
-
-/**
- * Get agency submission status for a reporting period
- * @param int $period_id Reporting period ID
- * @return array List of agencies with submission status
- */
-function get_agency_submission_status($period_id) {
-    global $conn;
-    
-    if (!$period_id) {
-        return [];
-    }
-    
-    $query = "SELECT u.user_id, u.agency_name, s.sector_name,
-                (SELECT COUNT(*) FROM programs p WHERE p.owner_agency_id = u.user_id) AS total_programs,
-                (SELECT COUNT(*) FROM program_submissions ps 
-                 JOIN programs p ON ps.program_id = p.program_id 
-                 WHERE p.owner_agency_id = u.user_id AND ps.period_id = ?) AS programs_submitted,
-                (SELECT COUNT(*) FROM sector_metrics_definition smd WHERE smd.sector_id = u.sector_id) AS total_metrics,
-                (SELECT COUNT(*) FROM sector_metric_values smv 
-                 JOIN sector_metrics_definition smd ON smv.metric_id = smd.metric_id
-                 WHERE smv.agency_id = u.user_id AND smv.period_id = ?) AS metrics_submitted
-              FROM users u
-              JOIN sectors s ON u.sector_id = s.sector_id
-              WHERE u.role = 'agency'
-              ORDER BY u.agency_name";
-    
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param("ii", $period_id, $period_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    $agencies = [];
-    while ($row = $result->fetch_assoc()) {
-        $agencies[] = $row;
-    }
-    
-    return $agencies;
-}
-
-/**
- * Get recent programs
- * @param int $limit Number of programs to retrieve
- * @return array List of recent programs
- */
-function get_recent_programs($limit = 5) {
-    global $conn;
-    
-    $query = "SELECT p.program_id, p.program_name, u.agency_name, s.sector_name,
-                (SELECT ps.status FROM program_submissions ps 
-                 WHERE ps.program_id = p.program_id 
-                 ORDER BY ps.submission_id DESC LIMIT 1) AS status
-              FROM programs p
-              JOIN users u ON p.owner_agency_id = u.user_id
-              JOIN sectors s ON p.sector_id = s.sector_id
-              ORDER BY p.created_at DESC
-              LIMIT ?";
-    
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param("i", $limit);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    $programs = [];
-    while ($row = $result->fetch_assoc()) {
-        $programs[] = $row;
-    }
-    
-    return $programs;
-}
-
-/**
- * Get all system users
- * @return array List of all users with their details
- */
-function get_all_users() {
-    global $conn;
-    
-    // Only admin can view all users
-    if (!is_admin()) {
-        return ['error' => 'Permission denied'];
-    }
-    
-    // First, check if is_active column exists in the users table
-    $check_column = "SHOW COLUMNS FROM users LIKE 'is_active'";
-    $column_exists = $conn->query($check_column);
-    
-    // Add the column if it doesn't exist
-    if ($column_exists->num_rows === 0) {
-        $add_column = "ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT TRUE";
-        $conn->query($add_column);
-    }
-    
-    // Improved query with proper join to sectors table
-    $query = "SELECT u.user_id, u.username, u.role, u.agency_name, u.sector_id, 
-                u.created_at, s.sector_name, 
-                CASE WHEN u.is_active = 1 OR u.is_active IS NULL THEN 1 ELSE 0 END as is_active
-              FROM users u 
-              LEFT JOIN sectors s ON u.sector_id = s.sector_id
-              ORDER BY u.role ASC, u.username ASC";
-    
-    $result = $conn->query($query);
-    
-    $users = [];
-    while ($row = $result->fetch_assoc()) {
-        $users[] = $row;
-    }
-    
-    return $users;
-}
-
-/**
- * Add a new user
- * @param array $data User data
- * @return array Result of operation
- */
-function add_user($data) {
-    global $conn;
-    
-    // Only admin can add users
-    if (!is_admin()) {
-        return ['error' => 'Permission denied'];
-    }
-    
-    // Extract and sanitize data
-    $username = trim($conn->real_escape_string($data['username']));
-    $password = $data['password'];
-    $role = $conn->real_escape_string($data['role']);
-    $agency_name = $conn->real_escape_string($data['agency_name'] ?? null);
-    $sector_id = !empty($data['sector_id']) ? intval($data['sector_id']) : null;
-    
-    // Validate input
-    if (empty($username) || empty($password)) {
-        return ['error' => 'Username and password are required'];
-    }
-    
-    if ($role === 'agency' && (empty($agency_name) || empty($sector_id))) {
-        return ['error' => 'Agency name and sector are required for agency users'];
-    }
-    
-    // Check if username already exists
-    $check_query = "SELECT user_id FROM users WHERE username = ?";
-    $stmt = $conn->prepare($check_query);
-    $stmt->bind_param("s", $username);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($result->num_rows > 0) {
-        return ['error' => 'Username already exists'];
-    }
-    
-    // Ensure sector_id is valid when role is 'agency'
-    if ($role === 'agency' && !empty($sector_id)) {
-        $check_sector = "SELECT sector_id FROM sectors WHERE sector_id = ?";
-        $stmt = $conn->prepare($check_sector);
-        $stmt->bind_param("i", $sector_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        if ($result->num_rows === 0) {
-            return ['error' => 'Invalid sector selected'];
-        }
-    }
-    
-    // Hash password
-    $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-    
-    // Insert new user
-    if ($role === 'admin') {
-        // Admin doesn't need sector_id
-        $query = "INSERT INTO users (username, password, role, agency_name) VALUES (?, ?, ?, ?)";
-        $stmt = $conn->prepare($query);
-        $stmt->bind_param("ssss", $username, $hashed_password, $role, $agency_name);
-    } else {
-        // Agency needs sector_id
-        $query = "INSERT INTO users (username, password, role, agency_name, sector_id) VALUES (?, ?, ?, ?, ?)";
-        $stmt = $conn->prepare($query);
-        $stmt->bind_param("ssssi", $username, $hashed_password, $role, $agency_name, $sector_id);
-    }
-    
-    if ($stmt->execute()) {
-        return ['success' => true, 'user_id' => $stmt->insert_id];
-    } else {
-        return ['error' => 'Failed to add user: ' . $stmt->error];
-    }
-}
-
-/**
- * Update a user
- * 
- * @param array $data User data
- * @return array Result with success message or error
- */
-function update_user($data) {
-    global $conn;
-    
-    // Validate required fields
-    if (empty($data['user_id']) || empty($data['username']) || empty($data['role'])) {
-        return ['error' => 'Missing required fields'];
-    }
-    
-    $user_id = intval($data['user_id']);
-    $username = $conn->real_escape_string(trim($data['username']));
-    $role = $conn->real_escape_string($data['role']);
-    $agency_name = $conn->real_escape_string($data['agency_name'] ?? '');
-    $sector_id = !empty($data['sector_id']) ? intval($data['sector_id']) : null;
-    $is_active = isset($data['is_active']) ? 1 : 0;
-    
-    // Prevent deactivating your own account
-    if ($user_id == $_SESSION['user_id'] && $is_active == 0) {
-        return ['error' => 'You cannot deactivate your own account'];
-    }
-    
-    // Check if username already exists (for another user)
-    $check_query = "SELECT user_id FROM users WHERE username = ? AND user_id != ?";
-    $check_stmt = $conn->prepare($check_query);
-    $check_stmt->bind_param("si", $username, $user_id);
-    $check_stmt->execute();
-    $check_result = $check_stmt->get_result();
-    
-    if ($check_result->num_rows > 0) {
-        return ['error' => 'Username already exists'];
+    if (!in_array($status, ['open', 'closed'])) {
+        return ['error' => 'Invalid status value'];
     }
     
     // Begin transaction
     $conn->begin_transaction();
     
     try {
-        // Update user basic info - include is_active
-        $query = "UPDATE users SET 
-                  username = ?, 
-                  role = ?, 
-                  agency_name = ?, 
-                  sector_id = ?,
-                  is_active = ?
-                  WHERE user_id = ?";
-                  
-        $stmt = $conn->prepare($query);
-        $stmt->bind_param("sssiii", $username, $role, $agency_name, $sector_id, $is_active, $user_id);
-        $stmt->execute();
-        
-        // If password is provided, update it
-        if (!empty($data['password'])) {
-            $password = password_hash($data['password'], PASSWORD_DEFAULT);
-            $pwd_query = "UPDATE users SET password = ? WHERE user_id = ?";
-            $pwd_stmt = $conn->prepare($pwd_query);
-            $pwd_stmt->bind_param("si", $password, $user_id);
-            $pwd_stmt->execute();
+        // If setting to open, first close all other periods
+        if ($status == 'open') {
+            $close_query = "UPDATE reporting_periods SET status = 'closed' WHERE period_id != ?";
+            $stmt = $conn->prepare($close_query);
+            $stmt->bind_param("i", $period_id);
+            $stmt->execute();
         }
         
+        // Now update the specific period
+        $query = "UPDATE reporting_periods SET status = ? WHERE period_id = ?";
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("si", $status, $period_id);
+        $stmt->execute();
+        
+        // Commit transaction
         $conn->commit();
         
-        return ['success' => true, 'message' => 'User updated successfully'];
+        // Get the period details for the response
+        $period_query = "SELECT year, quarter FROM reporting_periods WHERE period_id = ?";
+        $stmt = $conn->prepare($period_query);
+        $stmt->bind_param("i", $period_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $period = $result->fetch_assoc();
+        
+        return [
+            'success' => true,
+            'message' => "Period Q{$period['quarter']}-{$period['year']} has been " . 
+                        ($status == 'open' ? "opened" : "closed") . " for submissions.",
+            'period_id' => $period_id,
+            'new_status' => $status
+        ];
     } catch (Exception $e) {
+        // Roll back transaction on error
         $conn->rollback();
-        return ['error' => 'Database error: ' . $e->getMessage()];
+        return ['error' => 'Failed to update period status: ' . $e->getMessage()];
     }
 }
 
 /**
- * Delete a user
- * @param int $user_id User ID to delete
+ * Add a new reporting period
+ * @param int $year Year
+ * @param int $quarter Quarter (1-4)
+ * @param string $start_date Start date (YYYY-MM-DD)
+ * @param string $end_date End date (YYYY-MM-DD)
+ * @param string $status Status (open/closed)
  * @return array Result of operation
  */
-function delete_user($user_id) {
+function add_reporting_period($year, $quarter, $start_date, $end_date, $status = 'open') {
     global $conn;
     
-    // Only admin can delete users
+    // Validate inputs
+    if (!$year || !$quarter || !$start_date || !$end_date) {
+        return ['error' => 'All fields are required'];
+    }
+    
+    if ($quarter < 1 || $quarter > 4) {
+        return ['error' => 'Quarter must be between 1 and 4'];
+    }
+    
+    if (strtotime($start_date) > strtotime($end_date)) {
+        return ['error' => 'End date cannot be before start date'];
+    }
+    
+    // Check for standard dates
+    $is_standard = is_standard_quarter_date($year, $quarter, $start_date, $end_date);
+    
+    // Check if period already exists
+    $check_query = "SELECT * FROM reporting_periods WHERE year = ? AND quarter = ?";
+    $stmt = $conn->prepare($check_query);
+    $stmt->bind_param("ii", $year, $quarter);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        return ['error' => "Period Q{$quarter}-{$year} already exists"];
+    }
+    
+    // Check for date range overlap with other periods
+    $overlap_query = "SELECT * FROM reporting_periods WHERE 
+                      (? BETWEEN start_date AND end_date) OR 
+                      (? BETWEEN start_date AND end_date) OR 
+                      (start_date BETWEEN ? AND ?) OR 
+                      (end_date BETWEEN ? AND ?)";
+                      
+    $stmt = $conn->prepare($overlap_query);
+    $stmt->bind_param("ssssss", $start_date, $end_date, $start_date, $end_date, $start_date, $end_date);
+    $stmt->execute();
+    $overlap_result = $stmt->get_result();
+    
+    if ($overlap_result->num_rows > 0) {
+        return ['error' => 'Date range overlaps with existing period(s)'];
+    }
+    
+    // Insert new period
+    $insert_query = "INSERT INTO reporting_periods (year, quarter, start_date, end_date, status, is_standard_dates) 
+                     VALUES (?, ?, ?, ?, ?, ?)";
+    $stmt = $conn->prepare($insert_query);
+    $stmt->bind_param("iisssi", $year, $quarter, $start_date, $end_date, $status, $is_standard);
+    
+    if ($stmt->execute()) {
+        return [
+            'success' => true,
+            'message' => "Reporting period Q{$quarter}-{$year} added successfully" .
+                        (!$is_standard ? " (using custom date range)" : "")
+        ];
+    } else {
+        return ['error' => 'Failed to add reporting period: ' . $stmt->error];
+    }
+}
+
+/**
+ * Update an existing reporting period
+ * @param int $period_id Period ID
+ * @param int $year Year
+ * @param int $quarter Quarter (1-4)
+ * @param string $start_date Start date (YYYY-MM-DD)
+ * @param string $end_date End date (YYYY-MM-DD)
+ * @param string $status Status (open/closed)
+ * @return array Result of operation
+ */
+function update_reporting_period($period_id, $year, $quarter, $start_date, $end_date, $status) {
+    global $conn;
+    
+    // Validate inputs
+    if (!$period_id || !$year || !$quarter || !$start_date || !$end_date) {
+        return ['error' => 'All fields are required'];
+    }
+    
+    if ($quarter < 1 || $quarter > 4) {
+        return ['error' => 'Quarter must be between 1 and 4'];
+    }
+    
+    if (strtotime($start_date) > strtotime($end_date)) {
+        return ['error' => 'End date cannot be before start date'];
+    }
+    
+    // Check for standard dates
+    $is_standard = is_standard_quarter_date($year, $quarter, $start_date, $end_date);
+    
+    // Check if another period already exists with same year/quarter
+    $check_query = "SELECT * FROM reporting_periods WHERE year = ? AND quarter = ? AND period_id != ?";
+    $stmt = $conn->prepare($check_query);
+    $stmt->bind_param("iii", $year, $quarter, $period_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        return ['error' => "Another period with Q{$quarter}-{$year} already exists"];
+    }
+    
+    // Check for date range overlap with other periods
+    $overlap_query = "SELECT * FROM reporting_periods WHERE 
+                      ((? BETWEEN start_date AND end_date) OR 
+                      (? BETWEEN start_date AND end_date) OR 
+                      (start_date BETWEEN ? AND ?) OR 
+                      (end_date BETWEEN ? AND ?)) AND 
+                      period_id != ?";
+                      
+    $stmt = $conn->prepare($overlap_query);
+    $stmt->bind_param("ssssssi", $start_date, $end_date, $start_date, $end_date, $start_date, $end_date, $period_id);
+    $stmt->execute();
+    $overlap_result = $stmt->get_result();
+    
+    if ($overlap_result->num_rows > 0) {
+        return ['error' => 'Date range overlaps with existing period(s)'];
+    }
+    
+    // Update period
+    $update_query = "UPDATE reporting_periods 
+                     SET year = ?, quarter = ?, start_date = ?, end_date = ?, status = ?, is_standard_dates = ? 
+                     WHERE period_id = ?";
+    $stmt = $conn->prepare($update_query);
+    $stmt->bind_param("iisssii", $year, $quarter, $start_date, $end_date, $status, $is_standard, $period_id);
+    
+    if ($stmt->execute()) {
+        return [
+            'success' => true,
+            'message' => "Reporting period Q{$quarter}-{$year} updated successfully" .
+                        (!$is_standard ? " (using custom date range)" : "")
+        ];
+    } else {
+        return ['error' => 'Failed to update reporting period: ' . $stmt->error];
+    }
+}
+
+/**
+ * Delete a reporting period
+ * @param int $period_id Period ID to delete
+ * @return array Result of the operation
+ */
+function delete_reporting_period($period_id) {
+    global $conn;
+    
+    // Only admin can delete periods
     if (!is_admin()) {
         return ['error' => 'Permission denied'];
     }
     
-    // Prevent deleting self
-    if ($user_id == $_SESSION['user_id']) {
-        return ['error' => 'You cannot delete your own account'];
+    // Validate period ID
+    $period_id = intval($period_id);
+    if (!$period_id) {
+        return ['error' => 'Invalid period ID'];
     }
     
-    $user_id = intval($user_id);
+    // Check if period exists and get its details for the response message
+    $check_query = "SELECT year, quarter FROM reporting_periods WHERE period_id = ?";
+    $stmt = $conn->prepare($check_query);
+    $stmt->bind_param("i", $period_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
     
-    // Delete the user
-    $query = "DELETE FROM users WHERE user_id = ?";
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param("i", $user_id);
+    if ($result->num_rows === 0) {
+        return ['error' => 'Reporting period not found'];
+    }
+    
+    $period = $result->fetch_assoc();
+    
+    // Check if this period has any associated submissions
+    $submission_check = "SELECT COUNT(*) as count FROM program_submissions WHERE period_id = ?";
+    $stmt = $conn->prepare($submission_check);
+    $stmt->bind_param("i", $period_id);
+    $stmt->execute();
+    $submission_result = $stmt->get_result();
+    $submission_count = $submission_result->fetch_assoc()['count'];
+    
+    if ($submission_count > 0) {
+        return [
+            'error' => "Cannot delete period Q{$period['quarter']}-{$period['year']} because it has {$submission_count} associated submissions. Delete the submissions first or contact system administrator."
+        ];
+    }
+    
+    // Delete the reporting period
+    $delete_query = "DELETE FROM reporting_periods WHERE period_id = ?";
+    $stmt = $conn->prepare($delete_query);
+    $stmt->bind_param("i", $period_id);
     
     if ($stmt->execute()) {
-        return ['success' => true];
+        return [
+            'success' => true,
+            'message' => "Reporting period Q{$period['quarter']}-{$period['year']} deleted successfully"
+        ];
     } else {
-        return ['error' => 'Failed to delete user: ' . $stmt->error];
+        return ['error' => 'Failed to delete reporting period: ' . $stmt->error];
     }
+}
+
+/**
+ * Check if dates match standard quarter dates
+ * @param int $year Year
+ * @param int $quarter Quarter (1-4)
+ * @param string $start_date Start date (YYYY-MM-DD)
+ * @param string $end_date End date (YYYY-MM-DD)
+ * @return bool True if dates match standard quarter dates
+ */
+function is_standard_quarter_date($year, $quarter, $start_date, $end_date) {
+    $standard_dates = [
+        1 => [
+            'start' => "$year-01-01",
+            'end' => "$year-03-31"
+        ],
+        2 => [
+            'start' => "$year-04-01",
+            'end' => "$year-06-30"
+        ],
+        3 => [
+            'start' => "$year-07-01",
+            'end' => "$year-09-30"
+        ],
+        4 => [
+            'start' => "$year-10-01",
+            'end' => "$year-12-31"
+        ]
+    ];
+    
+    $quarter = intval($quarter);
+    if (!isset($standard_dates[$quarter])) {
+        return false;
+    }
+    
+    return ($start_date === $standard_dates[$quarter]['start'] && 
+            $end_date === $standard_dates[$quarter]['end']);
 }
 
 /**
@@ -634,15 +511,9 @@ function get_period_submission_stats($period_id) {
             'delayed_programs' => 0,
             'completed_programs' => 0,
             'not_started_programs' => 0,
-            'total_programs' => 0, // Ensure this key always exists
+            'total_programs' => 0,
             'completion_percentage' => 0
         ];
-
-        if (!isset($stats['total_programs'])) {
-            $stats['total_programs'] = 0;
-        }
-        
-        return $stats;
     }
     
     // Get total agencies count
@@ -651,9 +522,11 @@ function get_period_submission_stats($period_id) {
     $total_agencies = $agencies_result->fetch_assoc()['total'] ?? 0;
     
     // Get agencies that submitted data for this period
-    $reported_query = "SELECT COUNT(DISTINCT agency_id) as reported 
-                       FROM sector_metric_values 
-                       WHERE period_id = ?";
+    $reported_query = "SELECT COUNT(DISTINCT u.user_id) as reported 
+                      FROM users u
+                      INNER JOIN program_submissions ps 
+                      ON ps.submitted_by = u.user_id
+                      WHERE ps.period_id = ? AND u.role = 'agency'";
     $stmt = $conn->prepare($reported_query);
     $stmt->bind_param('i', $period_id);
     $stmt->execute();
@@ -662,52 +535,53 @@ function get_period_submission_stats($period_id) {
     
     // Get program status statistics
     $status_query = "SELECT status, COUNT(*) as count
-                     FROM program_submissions
-                     WHERE period_id = ?
-                     GROUP BY status";
+                   FROM program_submissions
+                   WHERE period_id = ?
+                   GROUP BY status";
     $stmt = $conn->prepare($status_query);
     $stmt->bind_param('i', $period_id);
     $stmt->execute();
     $status_result = $stmt->get_result();
     
-    $on_track = 0;
-    $delayed = 0;
-    $completed = 0;
-    $not_started = 0;
+    $on_track_programs = 0;
+    $delayed_programs = 0;
+    $completed_programs = 0;
+    $not_started_programs = 0;
+    $total_programs = 0;
     
     while ($row = $status_result->fetch_assoc()) {
         switch ($row['status']) {
-            case 'on-track': $on_track = $row['count']; break;
-            case 'delayed': $delayed = $row['count']; break;
-            case 'completed': $completed = $row['count']; break;
-            case 'not-started': $not_started = $row['count']; break;
+            case 'target-achieved':
+            case 'on-track': 
+                $on_track_programs += $row['count']; 
+                break;
+            case 'on-track-yearly':
+            case 'delayed': 
+                $delayed_programs += $row['count']; 
+                break;
+            case 'completed': 
+                $completed_programs += $row['count']; 
+                break;
+            case 'severe-delay':
+            case 'not-started': 
+                $not_started_programs += $row['count']; 
+                break;
         }
+        $total_programs += $row['count'];
     }
     
-    // Calculate overall completion percentage
-    $total_possible_submissions = $total_agencies * 
-        (get_required_metrics_count() + get_active_programs_count());
-    
-    $total_submissions = "SELECT 
-                            (SELECT COUNT(*) FROM program_submissions WHERE period_id = ?) +
-                            (SELECT COUNT(*) FROM sector_metric_values WHERE period_id = ?) as total";
-    $stmt = $conn->prepare($total_submissions);
-    $stmt->bind_param('ii', $period_id, $period_id);
-    $stmt->execute();
-    $submissions_result = $stmt->get_result();
-    $actual_submissions = $submissions_result->fetch_assoc()['total'] ?? 0;
-    
-    // Calculate percentage (prevent division by zero)
-    $completion_percentage = $total_possible_submissions > 0 ? 
-        min(100, round(($actual_submissions / $total_possible_submissions) * 100)) : 0;
+    // Calculate completion percentage
+    $completion_percentage = $total_agencies > 0 ? 
+        min(100, round(($agencies_reported / $total_agencies) * 100)) : 0;
     
     return [
         'agencies_reported' => $agencies_reported,
         'total_agencies' => $total_agencies,
-        'on_track_programs' => $on_track,
-        'delayed_programs' => $delayed, 
-        'completed_programs' => $completed,
-        'not_started_programs' => $not_started,
+        'on_track_programs' => $on_track_programs,
+        'delayed_programs' => $delayed_programs, 
+        'completed_programs' => $completed_programs,
+        'not_started_programs' => $not_started_programs,
+        'total_programs' => $total_programs,
         'completion_percentage' => $completion_percentage
     ];
 }
@@ -750,29 +624,20 @@ function get_sector_data_for_period($period_id) {
         $program_result = $stmt->get_result();
         $program_count = $program_result->fetch_assoc()['count'] ?? 0;
         
-        // Get submission percentage
-        $submission_query = "SELECT 
-            (SELECT COUNT(*) FROM sector_metric_values smv 
-             JOIN sector_metrics_definition smd ON smv.metric_id = smd.metric_id
-             WHERE smv.period_id = ? AND smd.sector_id = ?) as metric_submissions,
-            (SELECT COUNT(*) FROM program_submissions ps 
-             JOIN programs p ON ps.program_id = p.program_id
-             WHERE ps.period_id = ? AND p.sector_id = ?) as program_submissions,
-            (SELECT COUNT(*) FROM sector_metrics_definition WHERE sector_id = ?) as required_metrics,
-            (SELECT COUNT(*) FROM programs WHERE sector_id = ?) as total_programs";
-        
+        // Get submission count for this sector
+        $submission_query = "SELECT COUNT(*) as count 
+                           FROM program_submissions ps
+                           JOIN programs p ON ps.program_id = p.program_id
+                           WHERE ps.period_id = ? AND p.sector_id = ?";
         $stmt = $conn->prepare($submission_query);
-        $stmt->bind_param('iiiiii', $period_id, $sector_id, $period_id, $sector_id, $sector_id, $sector_id);
+        $stmt->bind_param('ii', $period_id, $sector_id);
         $stmt->execute();
-        $sub_result = $stmt->get_result();
-        $sub_data = $sub_result->fetch_assoc();
+        $submission_result = $stmt->get_result();
+        $submission_count = $submission_result->fetch_assoc()['count'] ?? 0;
         
         // Calculate submission percentage
-        $total_expected = ($sub_data['required_metrics'] * $agency_count) + $sub_data['total_programs'];
-        $total_submitted = $sub_data['metric_submissions'] + $sub_data['program_submissions'];
-        
-        $submission_pct = $total_expected > 0 ? 
-            min(100, round(($total_submitted / $total_expected) * 100)) : 0;
+        $submission_pct = $program_count > 0 ? 
+            min(100, round(($submission_count / $program_count) * 100)) : 0;
         
         // Add to sector data array
         $sector_data[] = [
@@ -820,315 +685,5 @@ function get_recent_submissions($period_id, $limit = 5) {
     }
     
     return $submissions;
-}
-
-/**
- * Get count of required metrics across all sectors
- * @return int Count of metrics
- */
-function get_required_metrics_count() {
-    global $conn;
-    $query = "SELECT COUNT(*) as count FROM sector_metrics_definition WHERE is_required = 1";
-    $result = $conn->query($query);
-    return $result->fetch_assoc()['count'] ?? 0;
-}
-
-/**
- * Get count of active programs
- * @return int Count of programs
- */
-function get_active_programs_count() {
-    global $conn;
-    $query = "SELECT COUNT(*) as count FROM programs";
-    $result = $conn->query($query);
-    return $result->fetch_assoc()['count'] ?? 0;
-}
-
-/**
- * Create a new user
- * @param array $data User data
- * @return array Result of operation
- */
-function create_user($data) {
-    global $conn;
-    
-    // Check permission
-    $permission_check = check_admin_permission();
-    if ($permission_check) return $permission_check;
-    
-    // Validate and sanitize inputs
-    $validated = validate_form_input($data, ['username', 'password', 'role']);
-    if (isset($validated['error'])) {
-        return $validated;
-    }
-    
-    $username = $validated['username'];
-    $password = $validated['password'];
-    $role = $validated['role'];
-    $agency_name = $validated['agency_name'] ?? null;
-    $sector_id = !empty($validated['sector_id']) ? intval($validated['sector_id']) : null;
-    
-    // Additional validation
-    if (strlen($password) < 8) {
-        return format_error('Password must be at least 8 characters');
-    }
-    
-    if ($role === 'agency' && (empty($agency_name) || empty($sector_id))) {
-        return format_error('Agency name and sector are required for agency users');
-    }
-    
-    // Check if username already exists
-    $check_query = "SELECT user_id FROM users WHERE username = ?";
-    $stmt = $conn->prepare($check_query);
-    $stmt->bind_param("s", $username);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($result->num_rows > 0) {
-        return format_error('Username already exists');
-    }
-    
-    // Hash password
-    $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-    
-    // Insert user
-    if ($role === 'admin') {
-        $query = "INSERT INTO users (username, password, agency_name, role, is_active) 
-                  VALUES (?, ?, ?, 'admin', 1)";
-        $stmt = $conn->prepare($query);
-        $stmt->bind_param("sss", $username, $hashed_password, $agency_name);
-    } else {
-        $query = "INSERT INTO users (username, password, agency_name, role, sector_id, is_active) 
-                  VALUES (?, ?, ?, 'agency', ?, 1)";
-        $stmt = $conn->prepare($query);
-        $stmt->bind_param("sssi", $username, $hashed_password, $agency_name, $sector_id);
-    }
-    
-    if ($stmt->execute()) {
-        return format_success('User created successfully', ['user_id' => $conn->insert_id]);
-    } else {
-        return format_error('Failed to create user: ' . $stmt->error);
-    }
-}
-
-/**
- * Get all programs across all agencies
- * @return array All programs with details
- */
-function get_all_programs() {
-    global $conn;
-    
-    $query = "SELECT p.*, u.agency_name, s.sector_name, 
-              ps.status, ps.status_date, ps.is_draft
-              FROM programs p
-              LEFT JOIN users u ON p.owner_agency_id = u.user_id
-              LEFT JOIN sectors s ON p.sector_id = s.sector_id
-              LEFT JOIN (
-                  SELECT program_id, status, status_date, is_draft,
-                  ROW_NUMBER() OVER (PARTITION BY program_id ORDER BY submission_id DESC) as rn
-                  FROM program_submissions
-              ) ps ON p.program_id = ps.program_id AND ps.rn = 1
-              ORDER BY p.created_at DESC";
-              
-    $result = $conn->query($query);
-    
-    if (!$result) {
-        return [];
-    }
-    
-    $programs = [];
-    while ($row = $result->fetch_assoc()) {
-        // Convert legacy status values to new status values if needed
-        if (isset($row['status'])) {
-            $row['status'] = convert_legacy_status($row['status']);
-        }
-        $programs[] = $row;
-    }
-    
-    return $programs;
-}
-
-/**
- * Add a new reporting period
- * @param int $year Year
- * @param int $quarter Quarter (1-4)
- * @param string $start_date Start date (YYYY-MM-DD)
- * @param string $end_date End date (YYYY-MM-DD)
- * @param string $status Status (open/closed)
- * @return array Result of operation
- */
-function add_reporting_period($year, $quarter, $start_date, $end_date, $status = 'open') {
-    global $conn;
-    
-    // Validate inputs
-    if (!$year || !$quarter || !$start_date || !$end_date) {
-        return ['error' => 'All fields are required'];
-    }
-    
-    if ($quarter < 1 || $quarter > 4) {
-        return ['error' => 'Quarter must be between 1 and 4'];
-    }
-    
-    if (strtotime($start_date) > strtotime($end_date)) {
-        return ['error' => 'End date cannot be before start date'];
-    }
-    
-    // Check if period already exists
-    $check_query = "SELECT * FROM reporting_periods WHERE year = ? AND quarter = ?";
-    $stmt = $conn->prepare($check_query);
-    $stmt->bind_param("ii", $year, $quarter);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($result->num_rows > 0) {
-        return ['error' => "Period Q{$quarter}-{$year} already exists"];
-    }
-    
-    // Insert new period
-    $insert_query = "INSERT INTO reporting_periods (year, quarter, start_date, end_date, status) 
-                     VALUES (?, ?, ?, ?, ?)";
-    $stmt = $conn->prepare($insert_query);
-    $stmt->bind_param("iisss", $year, $quarter, $start_date, $end_date, $status);
-    
-    if ($stmt->execute()) {
-        return [
-            'success' => true,
-            'message' => "Reporting period Q{$quarter}-{$year} added successfully"
-        ];
-    } else {
-        return ['error' => 'Failed to add reporting period: ' . $stmt->error];
-    }
-}
-
-/**
- * Update an existing reporting period
- * @param int $period_id Period ID
- * @param int $year Year
- * @param int $quarter Quarter (1-4)
- * @param string $start_date Start date (YYYY-MM-DD)
- * @param string $end_date End date (YYYY-MM-DD)
- * @param string $status Status (open/closed)
- * @return array Result of operation
- */
-function update_reporting_period($period_id, $year, $quarter, $start_date, $end_date, $status) {
-    global $conn;
-    
-    // Validate inputs
-    if (!$period_id || !$year || !$quarter || !$start_date || !$end_date) {
-        return ['error' => 'All fields are required'];
-    }
-    
-    if ($quarter < 1 || $quarter > 4) {
-        return ['error' => 'Quarter must be between 1 and 4'];
-    }
-    
-    if (strtotime($start_date) > strtotime($end_date)) {
-        return ['error' => 'End date cannot be before start date'];
-    }
-    
-    // Check if another period already exists with same year/quarter
-    $check_query = "SELECT * FROM reporting_periods WHERE year = ? AND quarter = ? AND period_id != ?";
-    $stmt = $conn->prepare($check_query);
-    $stmt->bind_param("iii", $year, $quarter, $period_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($result->num_rows > 0) {
-        return ['error' => "Another period with Q{$quarter}-{$year} already exists"];
-    }
-    
-    // Update period
-    $update_query = "UPDATE reporting_periods 
-                     SET year = ?, quarter = ?, start_date = ?, end_date = ?, status = ? 
-                     WHERE period_id = ?";
-    $stmt = $conn->prepare($update_query);
-    $stmt->bind_param("iisssi", $year, $quarter, $start_date, $end_date, $status, $period_id);
-    
-    if ($stmt->execute()) {
-        return [
-            'success' => true,
-            'message' => "Reporting period Q{$quarter}-{$year} updated successfully"
-        ];
-    } else {
-        return ['error' => 'Failed to update reporting period: ' . $stmt->error];
-    }
-}
-
-/**
- * Delete a reporting period
- * @param int $period_id Period ID
- * @return array Result of operation
- */
-function delete_reporting_period($period_id) {
-    global $conn;
-    
-    if (!$period_id) {
-        return ['error' => 'Invalid period ID'];
-    }
-    
-    // Check if period exists
-    $check_query = "SELECT * FROM reporting_periods WHERE period_id = ?";
-    $stmt = $conn->prepare($check_query);
-    $stmt->bind_param("i", $period_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($result->num_rows === 0) {
-        return ['error' => 'Reporting period not found'];
-    }
-    
-    $period = $result->fetch_assoc();
-    
-    // Check if there are submissions for this period
-    $submissions_query = "SELECT COUNT(*) as count FROM program_submissions WHERE period_id = ?";
-    $stmt = $conn->prepare($submissions_query);
-    $stmt->bind_param("i", $period_id);
-    $stmt->execute();
-    $submissions_result = $stmt->get_result();
-    $submissions_count = $submissions_result->fetch_assoc()['count'];
-    
-    if ($submissions_count > 0) {
-        return [
-            'error' => "Cannot delete period Q{$period['quarter']}-{$period['year']} because it has {$submissions_count} submissions"
-        ];
-    }
-    
-    // Delete period
-    $delete_query = "DELETE FROM reporting_periods WHERE period_id = ?";
-    $stmt = $conn->prepare($delete_query);
-    $stmt->bind_param("i", $period_id);
-    
-    if ($stmt->execute()) {
-        return [
-            'success' => true,
-            'message' => "Reporting period Q{$period['quarter']}-{$period['year']} deleted successfully"
-        ];
-    } else {
-        return ['error' => 'Failed to delete reporting period: ' . $stmt->error];
-    }
-}
-
-/**
- * Get all reporting periods
- * @return array List of reporting periods
- */
-if (!function_exists('get_all_reporting_periods')) {
-    function get_all_reporting_periods() {
-        global $conn;
-        
-        $query = "SELECT * FROM reporting_periods ORDER BY year DESC, quarter DESC";
-        $result = $conn->query($query);
-        
-        if (!$result) {
-            return [];
-        }
-        
-        $periods = [];
-        while ($row = $result->fetch_assoc()) {
-            $periods[] = $row;
-        }
-        
-        return $periods;
-    }
 }
 ?>

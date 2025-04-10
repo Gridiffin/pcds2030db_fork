@@ -38,16 +38,29 @@ function format_date($date, $format = 'Y-m-d') {
 }
 
 /**
- * Automatically manage reporting periods based on calendar quarters
+ * Auto-manage reporting periods
  * 
- * This function:
- * 1. Ensures all quarters for current year exist in the database
- * 2. Sets correct open/closed status based on current date
+ * 1. Creates missing periods for current year
+ * 2. Sets correct open/closed status based on current date or admin selection
  * 
+ * @param bool $respect_admin_open Respect manually opened periods by admin
  * @return bool True if successfully managed periods
  */
-function auto_manage_reporting_periods() {
+function auto_manage_reporting_periods($respect_admin_open = true) {
     global $conn;
+    
+    // First check if updated_at column exists, if not add it
+    $check_column = "SHOW COLUMNS FROM reporting_periods LIKE 'updated_at'";
+    $column_result = $conn->query($check_column);
+    
+    if ($column_result->num_rows === 0) {
+        // Column doesn't exist, add it
+        $alter_query = "ALTER TABLE reporting_periods 
+                        ADD COLUMN updated_at TIMESTAMP NOT NULL 
+                        DEFAULT CURRENT_TIMESTAMP 
+                        ON UPDATE CURRENT_TIMESTAMP";
+        $conn->query($alter_query);
+    }
     
     // Define the quarters with their start and end dates
     $current_year = date('Y');
@@ -86,6 +99,19 @@ function auto_manage_reporting_periods() {
     $today = date('Y-m-d');
     $current_quarter = ceil($current_month / 3);
     
+    // Check if admin has manually set a period to open
+    $admin_open_period = null;
+    if ($respect_admin_open) {
+        // Use safe query that doesn't rely on updated_at column ordering
+        $manual_query = "SELECT period_id, year, quarter FROM reporting_periods 
+                        WHERE status = 'open' LIMIT 1";
+        $manual_result = $conn->query($manual_query);
+        
+        if ($manual_result && $manual_result->num_rows > 0) {
+            $admin_open_period = $manual_result->fetch_assoc();
+        }
+    }
+    
     // Check and create missing periods
     foreach ($quarters as $quarter_num => $dates) {
         // Handle next year's Q1 special case
@@ -118,12 +144,21 @@ function auto_manage_reporting_periods() {
             $stmt->bind_param("iisss", $y, $q, $start, $end, $status);
             $stmt->execute();
         } else {
-            // Period exists, update its status based on current date
+            // Period exists, update its status based on current date or admin selection
             $period = $result->fetch_assoc();
             $period_id = $period['period_id'];
             
+            // If admin has manually set an open period, respect that
+            if ($respect_admin_open && $admin_open_period && 
+                $admin_open_period['period_id'] == $period_id) {
+                // Skip automatic status change for admin-selected open period
+                continue;
+            }
+            
             // Current quarter should be open, others closed
             $should_be_open = ($q == $current_quarter && $y == $current_year);
+            
+            // Only auto-update if no admin selection or this isn't the admin-selected period
             $current_status = $period['status'];
             
             if (($should_be_open && $current_status != 'open') || (!$should_be_open && $current_status != 'closed')) {
