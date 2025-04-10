@@ -10,6 +10,7 @@ require_once 'config/config.php';
 require_once 'includes/db_connect.php';
 require_once 'includes/functions.php';
 require_once 'includes/session.php';
+require_once 'includes/admin_functions.php'; // Add this line to include admin_functions.php
 
 // Initialize variables
 $username = '';
@@ -35,8 +36,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $result = validate_login($username, $password);
         
         if (isset($result['success'])) {
-            // Redirect to main page - all session variables are already set by validate_login
-            header("Location: index.php");
+            // Check user role using session variable (more robust than function)
+            if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
+                header('Location: ' . APP_URL . '/views/admin/dashboard.php');
+            } else {
+                header('Location: ' . APP_URL . '/views/agency/dashboard.php');
+            }
             exit;
         } else {
             $error = $result['error'] ?? "Invalid username or password.";
@@ -61,8 +66,7 @@ if (isset($_GET['error']) && $_GET['error'] === 'invalid_session') {
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link rel="stylesheet" href="assets/css/custom/common.css">
-    <link rel="stylesheet" href="assets/css/custom/login.css">
+    <link rel="stylesheet" href="assets/css/main.css">
 </head>
 <body>
     <div class="container">
@@ -136,9 +140,9 @@ if (isset($_GET['error']) && $_GET['error'] === 'invalid_session') {
                                     </div>
                                     
                                     <div class="d-grid gap-2">
-                                        <button type="submit" class="btn btn-primary material-btn" id="loginBtn">
-                                            <span>Login</span>
-                                            <span class="spinner-border spinner-border-sm ms-2 d-none" id="loginSpinner" role="status" aria-hidden="true"></span>
+                                        <button type="submit" class="btn btn-primary material-btn position-relative" id="loginBtn">
+                                            <span class="login-text">Login</span>
+                                            <span class="spinner-border spinner-border-sm position-absolute d-none" id="loginSpinner" role="status" aria-hidden="true"></span>
                                         </button>
                                     </div>
                                 </form>

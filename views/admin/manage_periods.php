@@ -23,11 +23,6 @@ $pageTitle = 'Manage Reporting Periods';
 // Get all reporting periods
 $periods = get_all_reporting_periods();
 
-// Additional styles
-$additionalStyles = [
-    APP_URL . '/assets/css/custom/admin.css'
-];
-
 // Additional scripts
 $additionalScripts = [
     APP_URL . '/assets/js/admin/manage_periods.js'

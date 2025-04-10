@@ -34,11 +34,6 @@ $pageTitle = 'Manage Programs';
 // Get all programs
 $programs = get_all_programs();
 
-// Additional styles
-$additionalStyles = [
-    APP_URL . '/assets/css/custom/admin.css'
-];
-
 // Additional scripts - Ensure manage_programs.js is loaded
 $additionalScripts = [
     APP_URL . '/assets/js/utilities/status_utils.js',

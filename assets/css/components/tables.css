@@ -1,0 +1,143 @@
+/**
+ * Table Components
+ */
+
+/* Base table styling */
+.table {
+  width: 100%;
+  margin-bottom: 1rem;
+  color: #212529;
+  border-collapse: collapse;
+}
+
+/* Table with borders */
+.table-bordered {
+  border: 1px solid #dee2e6;
+}
+
+.table-bordered th,
+.table-bordered td {
+  border: 1px solid #dee2e6;
+}
+
+/* Table without borders */
+.table-borderless th,
+.table-borderless td,
+.table-borderless thead th {
+  border: 0;
+}
+
+/* Hover effect for table rows */
+.table-hover tbody tr {
+  transition: all 0.2s ease;
+}
+
+.table-hover tbody tr:hover {
+  background-color: rgba(var(--primary-rgb), 0.05);
+  transform: translateX(3px);
+}
+
+/* Table header and cell spacing */
+.table th,
+.table td {
+  padding: 0.75rem;
+  vertical-align: top;
+  border-top: 1px solid #dee2e6;
+}
+
+.table thead th {
+  vertical-align: bottom;
+  border-bottom: 2px solid #dee2e6;
+  font-weight: var(--font-weight-semibold);
+  background-color: #f8f9fa;
+  color: #495057;
+}
+
+/* Compact table */
+.table-sm th,
+.table-sm td {
+  padding: 0.3rem;
+}
+
+/* Table variants */
+.table-primary,
+.table-primary > th,
+.table-primary > td {
+  background-color: rgba(var(--primary-rgb), 0.1);
+}
+
+.table-secondary,
+.table-secondary > th,
+.table-secondary > td {
+  background-color: rgba(var(--secondary-rgb), 0.1);
+}
+
+/* Table container for horizontal scrolling */
+.table-responsive {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Custom styled table */
+.table-custom {
+  margin-bottom: 0;
+  font-size: 0.9rem;
+}
+
+.table-custom th {
+  border-top: none;
+  font-weight: var(--font-weight-semibold);
+  color: var(--dark-color);
+  background-color: var(--light-color);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0.75rem 1rem;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+}
+
+.table-custom td {
+  vertical-align: middle;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid #e9ecef;
+}
+
+.table-custom tr:last-child td {
+  border-bottom: 1px solid #e9ecef;
+}
+
+.table-custom tbody tr {
+  transition: all 0.2s ease;
+}
+
+.table-custom tbody tr:hover {
+  background-color: rgba(var(--primary-rgb), 0.04);
+  transform: translateX(3px);
+}
+
+/* Row actions that appear on hover */
+.row-actions {
+  visibility: hidden;
+  opacity: 0;
+  transition: visibility 0s, opacity 0.2s linear;
+}
+
+.table tr:hover .row-actions {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Row highlight animation */
+.highlight-row {
+  animation: highlightRow 2s ease-in-out;
+}
+
+@keyframes highlightRow {
+  0%, 100% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: rgba(var(--primary-rgb), 0.1);
+  }
+}

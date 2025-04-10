@@ -88,11 +88,6 @@ $users = get_all_users();
 // Get all sectors for dropdown
 $sectors = get_all_sectors();
 
-// Additional styles
-$additionalStyles = [
-    APP_URL . '/assets/css/custom/admin.css'
-];
-
 // Additional scripts - fixed the script loading issue
 $additionalScripts = [
     APP_URL . '/assets/js/admin/toast_manager.js',

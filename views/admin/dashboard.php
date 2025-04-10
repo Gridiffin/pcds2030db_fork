@@ -33,15 +33,11 @@ $submission_stats = get_period_submission_stats($period_id);
 $sector_data = get_sector_data_for_period($period_id);
 $recent_submissions = get_recent_submissions($period_id, 5);
 
-// Additional styles
-$additionalStyles = [
-    APP_URL . '/assets/css/custom/admin.css' // Removed navigation.css
-];
-
 // Additional scripts
 $additionalScripts = [
     APP_URL . '/assets/js/charts/chart.min.js',
     APP_URL . '/assets/js/admin/dashboard_charts.js',
+    APP_URL . '/assets/js/admin/dashboard.js', // Add our new script
     APP_URL . '/assets/js/period_selector.js'
 ];
 
@@ -63,15 +59,16 @@ $background = 'dark';
         <div class="row align-items-center">
             <div class="col">
                 <div class="page-title">
-                    <h3 style="color: white;">Admin Dashboard</h3>
-                    <p class="text-subtitle text-white">
+                    <h3>Admin Dashboard</h3>
+                    <p class="text-subtitle">
                         PCDS 2030 System Performance Overview
                     </p>
                 </div>
             </div>
             <div class="col-auto">
                 <button id="refreshPage" class="btn btn-light">
-                    <i class="fas fa-sync-alt me-1"></i> Refresh Data
+                    <i class="fas fa-sync-alt"></i>
+                    <span>Refresh Data</span>
                 </button>
             </div>
         </div>

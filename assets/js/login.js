@@ -28,28 +28,19 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Toggle password visibility
-    document.addEventListener('click', function(e) {
-        // Find the clicked element or its parent with toggle-password class
-        let toggleElement = null;
-        if (e.target.classList.contains('toggle-password')) {
-            toggleElement = e.target;
-        } else if (e.target.parentElement && e.target.parentElement.classList.contains('toggle-password')) {
-            toggleElement = e.target.parentElement;
-        }
-        
-        if (toggleElement) {
-            const icon = toggleElement.querySelector('i') || toggleElement;
-            
+    // Handle password visibility toggle
+    const togglePassword = document.querySelector('.toggle-password');
+    if (togglePassword) {
+        togglePassword.addEventListener('click', function() {
             if (passwordField.type === 'password') {
                 passwordField.type = 'text';
-                icon.className = 'far fa-eye-slash';
+                this.querySelector('i').className = 'far fa-eye-slash';
             } else {
                 passwordField.type = 'password';
-                icon.className = 'far fa-eye';
+                this.querySelector('i').className = 'far fa-eye';
             }
-        }
-    });
+        });
+    }
     
     // Handle invalid session message
     if (new URLSearchParams(window.location.search).get('error') === 'invalid_session') {

@@ -128,11 +128,6 @@ if (isset($program['current_submission'])) {
 // Set page title
 $pageTitle = 'Update Program';
 
-// Additional styles
-$additionalStyles = [
-    APP_URL . '/assets/css/custom/agency.css'
-];
-
 // Additional scripts
 $additionalScripts = [
     APP_URL . '/assets/js/utilities/status_utils.js',

@@ -1,19 +1,23 @@
 /**
- * Admin Dashboard functionality
+ * Admin Dashboard JavaScript
  */
+
 document.addEventListener('DOMContentLoaded', function() {
-    // Refresh button functionality
-    const refreshBtn = document.getElementById('refreshPage');
-    if (refreshBtn) {
-        refreshBtn.addEventListener('click', function() {
-            // Add spinner to indicate loading
-            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Refreshing...';
-            this.disabled = true;
+    // Handle refresh button click
+    const refreshButton = document.getElementById('refreshPage');
+    if (refreshButton) {
+        refreshButton.addEventListener('click', function() {
+            // Add loading state
+            this.classList.add('loading');
+            
+            // Change button text
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="fas fa-sync-alt me-1"></i> Refreshing...';
             
             // Reload the page after a short delay
             setTimeout(() => {
                 window.location.reload();
-            }, 800);
+            }, 500);
         });
     }
     

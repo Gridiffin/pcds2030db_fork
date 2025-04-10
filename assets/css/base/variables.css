@@ -1,17 +1,5 @@
 /**
  * Global CSS Variables
- * 
- * COLOR SYSTEM
- * --primary-* - Main brand colors
- * --secondary-* - Supporting colors
- * --neutral-* - Grays and neutrals
- * --utility-* - Success, warning, danger colors
- * 
- * TYPOGRAPHY
- * --font-* - Font families and weights
- * 
- * SPACING
- * --spacing-* - Consistent spacing units
  */
 
 :root {
@@ -53,7 +41,7 @@
     --font-weight-semibold: 600;
     --font-weight-bold: 700;
     
-    /* Spacing - using 8pt grid */
+    /* Spacing */
     --spacing-0: 0;
     --spacing-1: 0.25rem; /* 4px */
     --spacing-2: 0.5rem;  /* 8px */
@@ -63,10 +51,10 @@
     --spacing-6: 3rem;    /* 48px */
     
     /* Border Radius */
-    --radius-sm: 0.25rem;
-    --radius-md: 0.5rem;
-    --radius-lg: 0.75rem;
-    --radius-pill: 50rem;
+    --border-radius-sm: 0.25rem;
+    --border-radius-md: 0.5rem;
+    --border-radius-lg: 0.75rem;
+    --border-radius-pill: 50rem;
     
     /* Transitions */
     --transition-speed: 0.3s;

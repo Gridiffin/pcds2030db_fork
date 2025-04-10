@@ -65,11 +65,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Set page title
 $pageTitle = 'Create New Program';
 
-// Additional styles
-$additionalStyles = [
-    APP_URL . '/assets/css/custom/agency.css'
-];
-
 // Additional scripts
 $additionalScripts = [
     APP_URL . '/assets/js/utilities/status_utils.js',

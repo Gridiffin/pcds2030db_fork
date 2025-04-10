@@ -46,10 +46,6 @@ $is_draft = isset($current_submission['is_draft']) && $current_submission['is_dr
 // Set page title
 $pageTitle = 'Program Details';
 
-// Additional styles
-$additionalStyles = [
-    APP_URL . '/assets/css/custom/agency.css'
-];
 
 // Additional scripts
 $additionalScripts = [

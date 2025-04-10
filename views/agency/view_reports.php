@@ -33,11 +33,6 @@ if ($selected_period) {
     $reports = get_agency_reports($_SESSION['user_id'], $selected_period);
 }
 
-// Additional styles and scripts
-$additionalStyles = [
-    APP_URL . '/assets/css/custom/agency.css'
-];
-
 $additionalScripts = [
     APP_URL . '/assets/js/agency/reports.js'
 ];

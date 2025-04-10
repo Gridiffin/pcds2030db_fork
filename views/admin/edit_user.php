@@ -76,11 +76,6 @@ $sectors = get_all_sectors();
 // Set page title
 $pageTitle = 'Edit User';
 
-// Additional styles
-$additionalStyles = [
-    APP_URL . '/assets/css/custom/admin.css'
-];
-
 // Additional scripts
 $additionalScripts = [
     APP_URL . '/assets/js/admin/user_form.js'

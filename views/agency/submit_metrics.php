@@ -52,10 +52,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_metrics'])) {
 // Get metrics for the agency's sector
 $metrics = get_agency_sector_metrics($_SESSION['sector_id']);
 
-// Additional styles and scripts
-$additionalStyles = [
-    APP_URL . '/assets/css/custom/agency.css'
-];
 
 $additionalScripts = [
     APP_URL . '/assets/js/agency/metric_submission.js'

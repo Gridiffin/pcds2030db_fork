@@ -1,0 +1,88 @@
+/**
+ * Admin-specific styles 
+ * Only includes styles specific to admin pages
+ */
+
+/* Admin dashboard stat cards */
+.stat-card .stat-card-header {
+  margin-bottom: 1rem;
+}
+
+.stat-card .icon-container {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Quick actions section */
+.quick-actions-container .btn {
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 1rem;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.quick-actions-container .btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.quick-actions-container .btn i {
+  font-size: 1.25rem;
+  transition: all 0.3s;
+  margin-bottom: 0.5rem;
+}
+
+.quick-actions-container .btn:hover i {
+  transform: scale(1.1);
+}
+
+/* Admin accordion styling for reporting periods */
+.accordion-item.year-group {
+  border: 1px solid rgba(0,0,0,.125);
+  border-radius: 0.375rem;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.accordion-button .collapse-indicator i {
+  transition: transform 0.3s ease;
+}
+
+.accordion-button:not(.collapsed) .collapse-indicator i {
+  transform: rotate(180deg);
+}
+
+.year-header {
+  border-left: 4px solid var(--primary-color);
+  color: var(--primary-color);
+}
+
+/* Filter UI Enhancements */
+.filter-indicator {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  transition: all 0.3s ease;
+  animation: fadeIn 0.3s ease;
+}
+
+.filter-indicator .badge {
+  font-weight: 500;
+  padding: 0.5em 0.75em;
+  border: 1px solid #dee2e6;
+  transition: all 0.2s ease;
+}
+
+.filter-actions {
+  padding-top: 15px;
+  margin-top: 15px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  display: flex;
+  justify-content: flex-end;
+}

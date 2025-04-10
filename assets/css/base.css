@@ -1,9 +1,11 @@
+@import 'variables.css';
+
 /**
  * Base Styles
  * Contains core styling elements for the application
  */
 
-/* Base styles */
+/* Base elements */
 html, body {
     font-family: var(--font-primary);
     color: var(--dark-color);

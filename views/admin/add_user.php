@@ -43,11 +43,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Get all sectors for dropdown
 $sectors = get_all_sectors();
 
-// Additional styles
-$additionalStyles = [
-    APP_URL . '/assets/css/custom/admin.css'
-];
-
 // Additional scripts
 $additionalScripts = [
     APP_URL . '/assets/js/admin/user_form.js'

@@ -108,10 +108,6 @@ if ($program_id) {
     }
 }
 
-// Additional styles and scripts
-$additionalStyles = [
-    APP_URL . '/assets/css/custom/agency.css'
-];
 
 $additionalScripts = [
     APP_URL . '/assets/js/agency/program_management.js'

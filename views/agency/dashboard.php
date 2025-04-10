@@ -146,17 +146,12 @@ if (!$has_period_data) {
     ];
 }
 
-// Additional styles
-$additionalStyles = [
-    APP_URL . '/assets/css/custom/agency.css'
-];
-
 // Additional scripts
 $additionalScripts = [
     'https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js',
     APP_URL . '/assets/js/utilities/status_utils.js',
     APP_URL . '/assets/js/agency/dashboard.js',
-    APP_URL . '/assets/js/agency/dashboard_chart.js', // Add the new chart JS file
+    APP_URL . '/assets/js/agency/dashboard_chart.js',
     APP_URL . '/assets/js/period_selector.js'
 ];
 
@@ -179,6 +174,7 @@ $actions = [
     ]
 ];
 
+$headerClass = 'homepage-header';
 // Include the dashboard header component with the primary style
 require_once '../../includes/dashboard_header.php';
 ?>

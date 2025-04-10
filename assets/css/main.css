@@ -1,0 +1,37 @@
+/**
+ * Main CSS Entry Point
+ * Imports all modular CSS files
+ */
+
+/* Base */
+@import 'base/reset.css';
+@import 'base/variables.css';
+@import 'base/typography.css';
+@import 'base/utilities.css';
+
+/* Components */
+@import 'components/animations.css'; /* New animations file */
+@import 'components/badges.css';
+@import 'components/buttons.css';
+@import 'components/cards.css';
+@import 'components/forms.css';
+@import 'components/modals.css';
+@import 'components/tables.css';
+@import 'components/toast.css';
+@import 'components/status-indicators.css';
+
+/* Layout */
+@import 'layout/navigation.css';
+@import 'layout/footer.css';
+@import 'layout/dashboard.css';
+
+/* Pages */
+@import 'pages/admin.css';
+@import 'pages/agency.css';
+@import 'pages/login.css';
+@import 'pages/home.css';
+
+/* Shared components (if these exist) */
+/* If these files don't exist yet, comment out these lines */
+/* @import 'shared/components.css'; */
+/* @import 'shared/global.css'; */

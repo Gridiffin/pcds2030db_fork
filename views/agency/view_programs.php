@@ -71,11 +71,6 @@ if (!function_exists('get_agency_programs')) {
 // Get programs data
 $programs = get_agency_programs($agency_id);
 
-// Additional styles
-$additionalStyles = [
-    APP_URL . '/assets/css/custom/agency.css'
-];
-
 // Additional scripts - Make sure view_programs.js is loaded
 $additionalScripts = [
     APP_URL . '/assets/js/utilities/status_utils.js',

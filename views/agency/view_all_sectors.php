@@ -38,12 +38,6 @@ $current_sector_id = $_SESSION['sector_id'];
 // Get all sectors from the database instead of extracting them from programs
 $sectors = get_all_sectors();
 
-// Additional styles
-$additionalStyles = [
-    APP_URL . '/assets/css/custom/agency.css',
-    APP_URL . '/assets/css/custom/all_sectors.css' // New CSS file for sectors-specific styling
-];
-
 // Additional scripts
 $additionalScripts = [
     APP_URL . '/assets/js/utilities/status_utils.js',

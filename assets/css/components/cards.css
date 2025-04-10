@@ -1,0 +1,164 @@
+/**
+ * Card Components
+ */
+
+/* Standard card */
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  word-wrap: break-word;
+  background-color: #fff;
+  background-clip: border-box;
+  border: 1px solid rgba(0, 0, 0, 0.125);
+  border-radius: var(--radius-md);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+/* Hover effect for cards */
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
+}
+
+/* Card header */
+.card-header {
+  padding: 1rem 1.25rem;
+  margin-bottom: 0;
+  background-color: var(--primary-color);
+  color: white;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-header h5, .card-header .card-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: var(--font-weight-medium);
+}
+
+.card-header .btn {
+  font-size: 0.875rem;
+  padding: 0.25rem 0.75rem;
+}
+
+/* Card body */
+.card-body {
+  flex: 1 1 auto;
+  padding: 1.25rem;
+}
+
+/* Card footer */
+.card-footer {
+  padding: 0.75rem 1.25rem;
+  background-color: rgba(0, 0, 0, 0.03);
+  border-top: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+/* Card title */
+.card-title {
+  margin-bottom: 0.75rem;
+  font-weight: var(--font-weight-semibold);
+  font-size: 1.25rem;
+}
+
+/* Card text */
+.card-text {
+  margin-bottom: 1rem;
+}
+
+/* Card with colored border */
+.card.border-primary {
+  border-color: var(--primary-color);
+}
+
+.card.border-success {
+  border-color: var(--secondary-color);
+}
+
+.card.border-warning {
+  border-color: var(--warning-color);
+}
+
+.card.border-danger {
+  border-color: var(--danger-color);
+}
+
+/* Stat card */
+.stat-card {
+  position: relative;
+  border-radius: 0.75rem;
+  border: none;
+  overflow: hidden;
+  z-index: 1;
+  margin-bottom: 1.5rem;
+  background-color: white;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 6px;
+  height: 100%;
+  background-color: var(--primary-color);
+  z-index: 1;
+}
+
+.stat-card.secondary::before {
+  background-color: var(--secondary-color);
+}
+
+.stat-card.warning::before {
+  background-color: var(--warning-color);
+}
+
+.stat-card.info::before {
+  background-color: var(--info-color);
+}
+
+.stat-card .stat-icon {
+  font-size: 2.5rem;
+  opacity: 0.15;
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+}
+
+.stat-card .stat-title {
+  font-size: 0.9rem;
+  color: #6c757d;
+}
+
+.stat-card .stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0.5rem 0;
+}
+
+.stat-card .stat-subtitle {
+  font-size: 0.9rem;
+  color: #6c757d;
+}
+
+/* Card deck */
+.card-deck {
+  display: flex;
+  flex-flow: row wrap;
+  margin-right: -15px;
+  margin-left: -15px;
+}
+
+.card-deck .card {
+  flex: 1 0 0%;
+  margin-right: 15px;
+  margin-bottom: 15px;
+  margin-left: 15px;
+}
