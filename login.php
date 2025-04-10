@@ -67,33 +67,34 @@ if (isset($_GET['error']) && $_GET['error'] === 'invalid_session') {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="assets/css/main.css">
+    <link rel="stylesheet" href="assets/css/pages/login.css">
 </head>
 <body>
     <div class="container">
         <div class="row justify-content-center align-items-center min-vh-100">
-            <div class="col-xl-10">
+            <div class="col-xl-10 col-lg-12">
                 <div class="card shadow unified-card">
-                    <div class="copyright-text">© <?php echo date('Y'); ?> PCDS2030</div>
+                    <div class="copyright-text">© <?php echo date('Y'); ?> <?php echo APP_NAME; ?></div>
                     
                     <div class="row g-0">
                         <!-- Welcome Section (Left side of card) -->
                         <div class="col-md-6 welcome-section">
                             <div class="welcome-content">
-                                <h1>Welcome to PCDS2030 Dashboard</h1>
-                                <p class="lead">Streamlined quarterly reporting for better resource management</p>
+                                <h1>Welcome to <?php echo APP_NAME; ?></h1>
+                                <p class="lead">Access your dashboard to monitor and manage program performance</p>
                                 
                                 <div class="features">
                                     <div class="feature-item">
-                                        <span class="feature-icon"><i class="fas fa-chart-line"></i></span>
-                                        <span class="feature-text">Simplified Data Collection</span>
+                                        <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
+                                        <span class="feature-text">Real-time Performance Tracking</span>
                                     </div>
                                     <div class="feature-item">
-                                        <span class="feature-icon"><i class="fas fa-file-powerpoint"></i></span>
-                                        <span class="feature-text">Automated Report Generation</span>
+                                        <div class="feature-icon"><i class="fas fa-file-alt"></i></div>
+                                        <span class="feature-text">Simplified Reporting System</span>
                                     </div>
                                     <div class="feature-item">
-                                        <span class="feature-icon"><i class="fas fa-users"></i></span>
-                                        <span class="feature-text">Agency Collaboration</span>
+                                        <div class="feature-icon"><i class="fas fa-tasks"></i></div>
+                                        <span class="feature-text">Program Management</span>
                                     </div>
                                 </div>
                             </div>
@@ -102,19 +103,17 @@ if (isset($_GET['error']) && $_GET['error'] === 'invalid_session') {
                         <!-- Login Section (Right side of card) -->
                         <div class="col-md-6 login-section">
                             <div class="login-content">
-                                <div class="login-top-section">
-                                    <div class="logo-container text-center mb-4">
-                                        <img src="assets/images/logo.png" alt="PCDS Logo" class="logo-image">
-                                    </div>
-                                    
-                                    <h3 class="login-title">Log In</h3>
-                                    <p class="login-subtitle text-center mb-4">Please login to access your dashboard</p>
+                                <div class="logo-container">
+                                    <img src="assets/images/logo.png" alt="Logo" class="logo-image">
                                 </div>
                                 
+                                <h3 class="login-title">Sign In</h3>
+                                <p class="login-subtitle text-center">Access your dashboard</p>
+                                
                                 <?php if (!empty($error)): ?>
-                                    <div class="alert alert-danger" role="alert">
+                                    <div class="alert alert-danger d-flex align-items-center" role="alert">
                                         <i class="fas fa-exclamation-circle me-2"></i>
-                                        <?php echo $error; ?>
+                                        <div><?php echo $error; ?></div>
                                     </div>
                                 <?php endif; ?>
                                 
@@ -139,10 +138,10 @@ if (isset($_GET['error']) && $_GET['error'] === 'invalid_session') {
                                         </div>
                                     </div>
                                     
-                                    <div class="d-grid gap-2">
-                                        <button type="submit" class="btn btn-primary material-btn position-relative" id="loginBtn">
-                                            <span class="login-text">Login</span>
-                                            <span class="spinner-border spinner-border-sm position-absolute d-none" id="loginSpinner" role="status" aria-hidden="true"></span>
+                                    <div class="d-grid gap-2 mt-4">
+                                        <button type="submit" class="btn btn-primary material-btn" id="loginBtn">
+                                            <span class="login-text">Sign In</span>
+                                            <span class="spinner-border spinner-border-sm d-none" id="loginSpinner" role="status" aria-hidden="true"></span>
                                         </button>
                                     </div>
                                 </form>
@@ -155,6 +154,37 @@ if (isset($_GET['error']) && $_GET['error'] === 'invalid_session') {
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="assets/js/login.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle password visibility toggle
+        const togglePassword = document.querySelector('.toggle-password');
+        if (togglePassword) {
+            togglePassword.addEventListener('click', function() {
+                const passwordInput = document.getElementById('password');
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    this.querySelector('i').className = 'far fa-eye-slash';
+                } else {
+                    passwordInput.type = 'password';
+                    this.querySelector('i').className = 'far fa-eye';
+                }
+            });
+        }
+        
+        // Handle form submission
+        const loginForm = document.getElementById('loginForm');
+        const loginButton = document.getElementById('loginBtn');
+        const loginSpinner = document.getElementById('loginSpinner');
+        
+        if (loginForm) {
+            loginForm.addEventListener('submit', function() {
+                // Show spinner and add loading class
+                loginButton.classList.add('loading');
+                loginSpinner.classList.remove('d-none');
+                loginButton.disabled = true;
+            });
+        }
+    });
+    </script>
 </body>
 </html>
