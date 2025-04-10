@@ -33,13 +33,13 @@ $viewing_period = $period_id ? get_reporting_period($period_id) : $current_perio
 $programs_by_type = get_agency_programs_by_type($period_id);
 $programs = array_merge($programs_by_type['assigned'], $programs_by_type['created']);
 
-// Get agency submission status
+// Get agency submission status - This already uses period_id
 $submission_status = get_agency_submission_status($_SESSION['user_id'], $period_id);
 
 // Get agency sector name
 $agency_sector = get_sector_name($_SESSION['sector_id']);
 
-// Prepare program status data for chart
+// Prepare program status data for chart - MODIFIED to be period-specific
 $program_status_data = [
     'on-track' => $submission_status['program_status']['on-track'] ?? 0,
     'delayed' => $submission_status['program_status']['delayed'] ?? 0,
@@ -49,11 +49,49 @@ $program_status_data = [
 
 // Calculate total for verification
 $total_in_chart = array_sum($program_status_data);
-$total_programs = count($programs);
 
-// If the normal method isn't working (all zeros or incorrect data),
-// count directly from programs array as a fallback
-if ($total_in_chart === 0 && $total_programs > 0) {
+// Filter programs to only include those with submissions for the selected period
+$period_specific_programs = [];
+if ($period_id) {
+    // Function to check if a program has a submission for the current period
+    foreach ($programs as $program) {
+        // Check if there is submission data for this program in this period
+        $has_submission_for_period = false;
+        
+        // Get submission data for this program in this period
+        $submission_query = "SELECT submission_id FROM program_submissions 
+                           WHERE program_id = ? AND period_id = ? LIMIT 1";
+        $stmt = $conn->prepare($submission_query);
+        $stmt->bind_param('ii', $program['program_id'], $period_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($result->num_rows > 0) {
+            $has_submission_for_period = true;
+            $period_specific_programs[] = $program;
+        }
+    }
+} else {
+    // If no period is specified, use all programs (fallback)
+    $period_specific_programs = $programs;
+}
+
+// Check if we have any data for this period
+$has_period_data = !empty($period_specific_programs);
+
+// Calculate period-specific program counts for cards
+$period_program_count = count($period_specific_programs);
+$period_submitted_count = 0;
+
+// Count submitted (non-draft) programs for this period
+if ($has_period_data) {
+    $period_submitted_count = count(array_filter($period_specific_programs, function($p) {
+        return !isset($p['is_draft']) || $p['is_draft'] == 0;
+    }));
+}
+
+// If submission_status data isn't providing accurate counts, count directly from filtered programs
+if ($total_in_chart === 0 && !empty($period_specific_programs)) {
     // Reset the counts
     $direct_status_counts = [
         'on-track' => 0,
@@ -63,7 +101,7 @@ if ($total_in_chart === 0 && $total_programs > 0) {
     ];
     
     // Get non-draft programs first
-    $non_draft_programs = array_filter($programs, function($program) {
+    $non_draft_programs = array_filter($period_specific_programs, function($program) {
         return !isset($program['is_draft']) || $program['is_draft'] == 0;
     });
     
@@ -82,7 +120,7 @@ if ($total_in_chart === 0 && $total_programs > 0) {
                 $direct_status_counts['delayed']++;
                 break;
             case 'completed':
-            case 'target-achieved': // Move "target-achieved" here to categorize as completed
+            case 'target-achieved':
                 $direct_status_counts['completed']++;
                 break;
             default:
@@ -94,23 +132,18 @@ if ($total_in_chart === 0 && $total_programs > 0) {
     // If we found at least one status, use the direct counts instead
     if (array_sum($direct_status_counts) > 0) {
         $program_status_data = $direct_status_counts;
-        // Log the override
-        error_log("Override program status data: " . json_encode($direct_status_counts));
-    } else if ($total_programs > 0) {
-        // If we still have no statuses but do have programs, they must all be not-started
-        // Make sure to count only non-draft programs
-        $non_draft_count = count(array_filter($programs, function($program) {
-            return !isset($program['is_draft']) || $program['is_draft'] == 0;
-        }));
-        
-        $program_status_data = [
-            'on-track' => 0,
-            'delayed' => 0,
-            'completed' => 0,
-            'not-started' => $non_draft_count  // Only count non-draft programs as not started
-        ];
-        error_log("All non-draft programs set to not-started: " . $non_draft_count);
+        error_log("Override program status data with period-specific counts: " . json_encode($direct_status_counts));
     }
+}
+
+// Set all values to zero if no data for this period
+if (!$has_period_data) {
+    $program_status_data = [
+        'on-track' => 0,
+        'delayed' => 0,
+        'completed' => 0,
+        'not-started' => 0
+    ];
 }
 
 // Additional styles
@@ -181,111 +214,90 @@ require_once '../../includes/dashboard_header.php';
         <!-- Period Selector Component -->
         <?php require_once '../../includes/period_selector.php'; ?>
 
-        <!-- Current Reporting Period Alert -->
-        <?php if ($current_period): ?>
-            <div class="alert alert-<?php echo $current_period['status'] === 'open' ? 'info' : 'secondary'; ?> mb-4">
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0 me-3">
-                        <i class="fas fa-<?php echo $current_period['status'] === 'open' ? 'calendar-check' : 'calendar-minus'; ?> fa-2x"></i>
-                    </div>
-                    <div class="flex-grow-1">
-                        <h5 class="alert-heading mb-1">
-                            <?php echo $current_period['status'] === 'open' ? 'Active Reporting Period' : 'Next Reporting Period'; ?>
-                        </h5>
-                        <p class="mb-0">
-                            Q<?php echo $current_period['quarter']; ?>-<?php echo $current_period['year']; ?>
-                            (<?php echo date('M j, Y', strtotime($current_period['start_date'])); ?> - 
-                            <?php echo date('M j, Y', strtotime($current_period['end_date'])); ?>)
-                            
-                            <?php if ($current_period['status'] === 'open'): ?>
-                                <span class="ms-2 badge bg-success">Open for Submissions</span>
-                            <?php else: ?>
-                                <span class="ms-2 badge bg-secondary">Closed</span>
-                            <?php endif; ?>
-                        </p>
+        <!-- Dashboard Content -->
+        <div class="row">
+            <!-- Programs Card -->
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card stat-card primary">
+                    <div class="card-body">
+                        <i class="fas fa-clipboard-list stat-icon"></i>
+                        <div class="stat-title">Total Programs</div>
+                        <div class="stat-value">
+                            <?php 
+                            // Use period-specific program count
+                            echo $has_period_data ? $period_program_count : 0;
+                            ?>
+                        </div>
+                        <div class="stat-subtitle">
+                            <i class="fas fa-check me-1"></i>
+                            <?php echo $has_period_data ? $period_submitted_count : 0; ?> Programs Submitted
+                        </div>
                     </div>
                 </div>
             </div>
-        <?php else: ?>
-            <div class="alert alert-warning mb-4">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                No active reporting period found. Please contact the administrator.
+
+            <!-- On Track Programs Card -->
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card stat-card success">
+                    <div class="card-body">
+                        <i class="fas fa-check-circle stat-icon"></i>
+                        <div class="stat-title">On Track Programs</div>
+                        <div class="stat-value"><?php echo $program_status_data['on-track']; ?></div>
+                        <?php if ($has_period_data && $period_program_count > 0): ?>
+                        <div class="stat-subtitle">
+                            <i class="fas fa-chart-line me-1"></i>
+                            <?php echo round(($program_status_data['on-track'] / $period_program_count) * 100); ?>% of total
+                        </div>
+                        <?php else: ?>
+                        <div class="stat-subtitle text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            No data for this period
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
             </div>
-        <?php endif; ?>
 
-        <!-- Dashboard Summary Cards -->
-        <div data-period-content="stats_section">
-            <div class="row">
-                <!-- Programs Card -->
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card stat-card primary">
-                        <div class="card-body">
-                            <i class="fas fa-clipboard-list stat-icon"></i>
-                            <div class="stat-title">Total Programs</div>
-                            <div class="stat-value">
-                                <?php 
-                                // Count non-draft programs if submission_status doesn't already filter them
-                                echo $submission_status['total_programs'] ?? count(array_filter($programs, function($p) {
-                                    return !isset($p['is_draft']) || $p['is_draft'] == 0;
-                                })); 
-                                ?>
-                            </div>
-                            <div class="stat-subtitle">
-                                <i class="fas fa-check me-1"></i>
-                                <?php echo $submission_status['programs_submitted'] ?? 0; ?> Programs Submitted
-                            </div>
+            <!-- Delayed Programs Card -->
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card stat-card warning">
+                    <div class="card-body">
+                        <i class="fas fa-exclamation-triangle stat-icon"></i>
+                        <div class="stat-title">Delayed Programs</div>
+                        <div class="stat-value"><?php echo $program_status_data['delayed']; ?></div>
+                        <?php if ($has_period_data && $period_program_count > 0): ?>
+                        <div class="stat-subtitle">
+                            <i class="fas fa-chart-line me-1"></i>
+                            <?php echo round(($program_status_data['delayed'] / $period_program_count) * 100); ?>% of total
                         </div>
+                        <?php else: ?>
+                        <div class="stat-subtitle text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            No data for this period
+                        </div>
+                        <?php endif; ?>
                     </div>
                 </div>
+            </div>
 
-                <!-- On Track Programs Card -->
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card stat-card success">
-                        <div class="card-body">
-                            <i class="fas fa-check-circle stat-icon"></i>
-                            <div class="stat-title">On Track Programs</div>
-                            <div class="stat-value"><?php echo $program_status_data['on-track']; ?></div>
-                            <?php if ($submission_status['total_programs'] > 0): ?>
-                            <div class="stat-subtitle">
-                                <i class="fas fa-chart-line me-1"></i>
-                                <?php echo round(($program_status_data['on-track'] / $submission_status['total_programs']) * 100); ?>% of total
-                            </div>
-                            <?php endif; ?>
+            <!-- Completed Programs Card -->
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card stat-card info">
+                    <div class="card-body">
+                        <i class="fas fa-trophy stat-icon"></i>
+                        <div class="stat-title">Monthly Target Achieved</div>
+                        <div class="stat-value"><?php echo $program_status_data['completed']; ?></div>
+                        <?php if ($has_period_data && $period_program_count > 0): ?>
+                        <div class="stat-subtitle">
+                            <i class="fas fa-chart-line me-1"></i>
+                            <?php echo round(($program_status_data['completed'] / $period_program_count) * 100); ?>% of total
                         </div>
-                    </div>
-                </div>
-
-                <!-- Delayed Programs Card -->
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card stat-card warning">
-                        <div class="card-body">
-                            <i class="fas fa-exclamation-triangle stat-icon"></i>
-                            <div class="stat-title">Delayed Programs</div>
-                            <div class="stat-value"><?php echo $program_status_data['delayed']; ?></div>
-                            <?php if ($submission_status['total_programs'] > 0): ?>
-                            <div class="stat-subtitle">
-                                <i class="fas fa-chart-line me-1"></i>
-                                <?php echo round(($program_status_data['delayed'] / $submission_status['total_programs']) * 100); ?>% of total
-                            </div>
-                            <?php endif; ?>
+                        <?php else: ?>
+                        <div class="stat-subtitle text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            No data for this period
                         </div>
-                    </div>
-                </div>
-
-                <!-- Completed Programs Card -->
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card stat-card info">
-                        <div class="card-body">
-                            <i class="fas fa-trophy stat-icon"></i>
-                            <div class="stat-title">Monthly Target Achieved</div>
-                            <div class="stat-value"><?php echo $program_status_data['completed']; ?></div>
-                            <?php if ($submission_status['total_programs'] > 0): ?>
-                            <div class="stat-subtitle">
-                                <i class="fas fa-chart-line me-1"></i>
-                                <?php echo round(($program_status_data['completed'] / $submission_status['total_programs']) * 100); ?>% of total
-                            </div>
-                            <?php endif; ?>
-                        </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -355,25 +367,31 @@ require_once '../../includes/dashboard_header.php';
                                         $dashboard_programs_query = "SELECT p.*, 
                                               (SELECT ps.status FROM program_submissions ps 
                                                WHERE ps.program_id = p.program_id 
+                                               AND ps.period_id = ? 
                                                ORDER BY ps.submission_date DESC LIMIT 1) as status,
                                               (SELECT ps.is_draft FROM program_submissions ps 
                                                WHERE ps.program_id = p.program_id 
+                                               AND ps.period_id = ?
                                                ORDER BY ps.submission_date DESC LIMIT 1) as is_draft,
                                               (SELECT ps.submission_date FROM program_submissions ps 
                                                WHERE ps.program_id = p.program_id 
+                                               AND ps.period_id = ?
                                                ORDER BY ps.submission_date DESC LIMIT 1) as updated_at
                                               FROM programs p 
                                               WHERE p.owner_agency_id = ?
                                               ORDER BY p.updated_at DESC, p.created_at DESC";
                                         
                                         $stmt = $conn->prepare($dashboard_programs_query);
-                                        $stmt->bind_param('i', $_SESSION['user_id']);
+                                        $stmt->bind_param('iiii', $period_id, $period_id, $period_id, $_SESSION['user_id']);
                                         $stmt->execute();
                                         $result = $stmt->get_result();
                                         
                                         $dashboard_programs = [];
                                         while ($row = $result->fetch_assoc()) {
-                                            $dashboard_programs[] = $row;
+                                            // Only include programs that have data for this period
+                                            if (!empty($row['status']) || !empty($row['updated_at'])) {
+                                                $dashboard_programs[] = $row;
+                                            }
                                         }
                                         
                                         // Take the most recent 5 programs
@@ -384,7 +402,11 @@ require_once '../../includes/dashboard_header.php';
                                             <tr>
                                                 <td colspan="4" class="text-center py-4">
                                                     <i class="fas fa-info-circle text-info me-2"></i>
-                                                    No programs found for your agency.
+                                                    <?php if (!empty($programs)): ?>
+                                                        No program updates for the selected reporting period.
+                                                    <?php else: ?>
+                                                        No programs found for your agency.
+                                                    <?php endif; ?>
                                                 </td>
                                             </tr>
                                         <?php else: ?>
@@ -486,7 +508,8 @@ require_once '../../includes/dashboard_header.php';
             <?php echo $program_status_data['delayed']; ?>,
             <?php echo $program_status_data['completed']; ?>,
             <?php echo $program_status_data['not-started']; ?>
-        ]
+        ],
+        hasPeriodData: <?php echo $has_period_data ? 'true' : 'false'; ?> // Flag to indicate if period has data
     };
     
     // Debug output to verify data structure

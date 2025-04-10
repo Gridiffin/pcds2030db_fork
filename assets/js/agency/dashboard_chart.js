@@ -30,15 +30,84 @@
                 return this;
             }
             
-            // Create chart
-            this.createChart();
+            // Check if we have data for this period
+            const containerElement = document.getElementById(this.chartId).parentElement;
+            const legendElement = document.getElementById(this.legendId);
             
-            // Set up legend interactivity
-            this.setupLegend();
+            // Handle no-data scenario - display message instead of empty chart
+            if (data.hasPeriodData === false) {
+                // Create a message element for no data
+                this.showNoDataMessage(containerElement);
+                
+                // Hide the legend when there's no data
+                if (legendElement) {
+                    legendElement.style.display = 'none';
+                }
+                
+                return this;
+            } else {
+                // Make sure previous no-data message is removed if it exists
+                const noDataMsg = containerElement.querySelector('.no-data-message');
+                if (noDataMsg) {
+                    noDataMsg.remove();
+                }
+                
+                // Show the legend again
+                if (legendElement) {
+                    legendElement.style.display = '';
+                }
+                
+                // Create chart
+                this.createChart();
+                
+                // Set up legend interactivity
+                this.setupLegend();
+            }
             
             return this;
         }
         
+        /**
+         * Show a message when no data is available for the period
+         * @param {HTMLElement} container - The container element
+         */
+        showNoDataMessage(container) {
+            // Check if no data message already exists
+            if (container.querySelector('.no-data-message')) {
+                return;
+            }
+            
+            // Create a message with styling - improved for better vertical centering
+            const message = document.createElement('div');
+            message.className = 'no-data-message d-flex justify-content-center align-items-center';
+            message.style.position = 'absolute';
+            message.style.top = '0';
+            message.style.left = '0';
+            message.style.width = '100%';
+            message.style.height = '100%';
+            message.innerHTML = `
+                <div class="text-center text-muted">
+                    <i class="fas fa-chart-pie fa-3x mb-3"></i>
+                    <p class="mb-1">No program data available for this period</p>
+                    <p class="small">Select a different reporting period or create new programs</p>
+                </div>
+            `;
+            
+            // Clear any existing chart
+            if (this.chart) {
+                this.chart.destroy();
+                this.chart = null;
+            }
+            
+            // Make sure container has position relative for absolute positioning
+            if (window.getComputedStyle(container).position === 'static') {
+                container.style.position = 'relative';
+            }
+            
+            // Add message to container
+            container.appendChild(message);
+        }
+
         /**
          * Create the chart instance
          */
