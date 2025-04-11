@@ -39,12 +39,23 @@
             overflow-x: hidden; /* Prevent horizontal scrolling */
         }
         
-        .content-wrapper {
-            overflow-x: hidden; /* Ensure no horizontal scrollbars */
-            max-width: 100%;
+        /* Fix content wrapper and its containers to use full width */
+        .d-flex.flex-column.min-vh-100 {
             width: 100%;
-            padding-left: 0;
-            padding-right: 0;
+            max-width: 100%;
+            overflow-x: visible !important; /* Allow content to use full width */
+        }
+        
+        .content-wrapper {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: visible; /* Allow content to expand properly */
+        }
+        
+        /* Ensure container-fluid uses full width */
+        .container-fluid {
+            width: 100%;
+            max-width: 100%;
         }
     </style>
 </head>
@@ -54,6 +65,6 @@
         <div class="spinner"></div>
     </div>
     
-    <!-- Main content wrapper -->
-    <div class="d-flex flex-column min-vh-100 overflow-hidden">
+    <!-- Main content wrapper - removed overflow-hidden -->
+    <div class="d-flex flex-column min-vh-100">
         <!-- Content container will be inserted by specific view files -->

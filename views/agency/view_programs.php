@@ -111,7 +111,7 @@ require_once '../../includes/dashboard_header.php';
 <?php endif; ?>
 
 <!-- Filter Card -->
-<div class="card shadow-sm mb-4">
+<div class="card shadow-sm mb-4 w-100">
     <div class="card-header bg-primary text-white">
         <h5 class="card-title m-0">
             <i class="fas fa-filter me-2 text-white"></i>Filter Programs
@@ -156,7 +156,7 @@ require_once '../../includes/dashboard_header.php';
 <!-- Filter indicator will be inserted here by JavaScript -->
 
 <!-- All Programs Card -->
-<div class="card shadow-sm mb-4">
+<div class="card shadow-sm mb-4 w-100">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="card-title m-0">All Programs</h5>
     </div>

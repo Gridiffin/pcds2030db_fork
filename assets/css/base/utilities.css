@@ -202,3 +202,18 @@ button.btn:hover,
 .position-relative { position: relative !important; }
 .position-absolute { position: absolute !important; }
 .position-fixed { position: fixed !important; }
+
+/* Width utilities */
+.w-100 { width: 100% !important; }
+.w-auto { width: auto !important; }
+.mw-100 { max-width: 100% !important; }
+
+/* Full-width container utility - removes padding from container-fluid */
+.container-full-width {
+  width: 100%;
+  max-width: 100%;
+  padding-left: 0;
+  padding-right: 0;
+  margin-left: 0;
+  margin-right: 0;
+}

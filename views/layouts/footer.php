@@ -1,4 +1,5 @@
-</div> <!-- Close container-fluid from admin_nav.php -->
+</div> <!-- Close container-fluid -->
+</div> <!-- Close content-wrapper -->
     
 <!-- Footer with reduced height -->
 <footer class="footer py-2 bg-white border-top">
