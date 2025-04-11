@@ -1,35 +1,124 @@
 /**
- * Simple Header Styles
+ * Simple header component styling
  */
 
 .simple-header {
-  background-color: #0d6efd; /* Bootstrap primary blue */
-  color: white;
-  padding: 2rem 0;
-  margin-bottom: 2rem;
-  width: 100%;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.header-title {
-  margin: 0;
-  font-size: 1.75rem;
-  font-weight: 600;
-}
-
-.header-subtitle {
-  margin: 0.5rem 0 0 0;
-  opacity: 0.9;
-}
-
-/* Simple responsive adjustments */
-@media (max-width: 768px) {
-  .simple-header {
     padding: 1.5rem 0;
-  }
-  
-  .simple-header .container-fluid {
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.simple-header .header-title {
+    margin-bottom: 0.25rem;
+    font-weight: var(--font-weight-semibold);
+    color: #212529;
+}
+
+.simple-header .header-subtitle {
+    margin-bottom: 0;
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+/* Header with light background (default) */
+.simple-header.light {
+    background-color: #fff;
+}
+
+/* Header with primary color background */
+.simple-header.primary {
+    background-color: var(--primary-color);
+    color: #fff;
+}
+
+.simple-header.primary .header-title,
+.simple-header.primary .header-subtitle {
+    color: #fff;
+}
+
+/* Header with dark background */
+.simple-header.dark {
+    background-color: #343a40;
+    color: #fff;
+}
+
+.simple-header.dark .header-title,
+.simple-header.dark .header-subtitle {
+    color: #fff;
+}
+
+/* Action buttons styling */
+.simple-header .btn-light {
+    background-color: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.simple-header .btn-outline-primary {
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+    background-color: white;
+}
+
+.simple-header .btn-outline-secondary {
+    border: 1px solid var(--secondary-color);
+    color: var(--secondary-color);
+    background-color: white;
+}
+
+/* Ensure consistent button styling in headers */
+.simple-header .btn-light.border.border-primary {
+    background-color: white;
+    border: 1px solid var(--primary-color) !important;
+    color: var(--primary-color);
+}
+
+.simple-header .btn-light.border.border-primary:hover {
+    background-color: rgba(var(--primary-rgb), 0.05);
+}
+
+/* Homepage header styling - consistent across admin and agency dashboards */
+.simple-header.homepage-header {
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+    border-bottom: none;
+    background-image: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.simple-header.homepage-header .header-title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: white;
+}
+
+.simple-header.homepage-header .header-subtitle {
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 400;
+    font-size: 1rem;
+}
+
+/* Button styling on homepage header */
+.simple-header.homepage-header .btn-light {
+    background-color: rgba(255, 255, 255, 0.15);
+    border-color: white !important;
+    color: white !important;
+}
+
+.simple-header.homepage-header .btn-light:hover {
+    background-color: rgba(255, 255, 255, 0.25);
+    border-color: white !important;
+    color: white !important;
+    transform: translateY(-2px);
+}
+
+/* Responsive adjustments for homepage header */
+@media (max-width: 768px) {
+    .simple-header.homepage-header {
+        padding: 1.5rem 0;
+    }
+    
+    .simple-header.homepage-header .header-title {
+        font-size: 1.5rem;
+    }
 }

@@ -141,3 +141,46 @@
     background-color: rgba(var(--primary-rgb), 0.1);
   }
 }
+
+/* Table action buttons alignment */
+.table td.text-center .btn-group {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  float: none;
+}
+
+.table .btn-group-sm .btn {
+  padding: 0.25rem;
+  line-height: 1.5;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;  /* Fixed width for square buttons */
+  height: 2rem; /* Fixed height for square buttons */
+}
+
+.table .btn-group-sm .btn i {
+  margin: 0; /* Remove any margin that might affect centering */
+  margin-right: 0.5rem; /* Increase spacing between icon and text */
+}
+
+.table .btn-group-sm .btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Ensure actions column has consistent width */
+.table th[style*="width: 100px"],
+.table td:last-child {
+  white-space: nowrap;
+  text-align: center;
+}
+
+/* Responsive adjustments for action buttons */
+@media (max-width: 768px) {
+  .table .btn-group-sm .btn {
+    padding: 0.25rem 0.35rem;
+  }
+}

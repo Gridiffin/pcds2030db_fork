@@ -3,35 +3,48 @@
  * Handles user table interactions, refreshing, and updates
  */
 function UserTableManager(formManagerParam, toastManagerParam) {
-    const formManager = formManagerParam || window.UserFormManager();
-    const toastManager = toastManagerParam || window.ToastManager();
+    // Use provided managers or create new ones if needed
+    const formManager = formManagerParam || (window.UserFormManager ? UserFormManager() : null);
+    const toastManager = toastManagerParam || (window.ToastManager ? ToastManager() : null);
+    
+    // Flag to track if event listeners have been attached
+    let listenersAttached = false;
     
     // Attach event listeners to table actions
     function attachEventListeners() {
-        // Edit User Buttons
-        document.querySelectorAll('.edit-user-btn').forEach(button => {
-            button.addEventListener('click', function(e) {
-                e.preventDefault();
-                const userData = {
-                    userId: this.getAttribute('data-user-id'),
-                    username: this.getAttribute('data-username'),
-                    role: this.getAttribute('data-role'),
-                    agency: this.getAttribute('data-agency'),
-                    sectorId: this.getAttribute('data-sector')
-                };
-                formManager.showEditUserForm(userData);
-            });
+        // Prevent attaching listeners multiple times
+        if (listenersAttached) {
+            console.log('Event listeners already attached, skipping');
+            return;
+        }
+        
+        // First remove any existing listeners (if possible)
+        document.querySelectorAll('.delete-user-btn').forEach(button => {
+            // Create new cloned button to remove all event listeners
+            const newButton = button.cloneNode(true);
+            button.parentNode.replaceChild(newButton, button);
         });
         
-        // Delete User Buttons
+        // Now attach listeners to delete buttons
         document.querySelectorAll('.delete-user-btn').forEach(button => {
             button.addEventListener('click', function(e) {
                 e.preventDefault();
                 const userId = this.getAttribute('data-user-id');
                 const username = this.getAttribute('data-username');
-                formManager.showDeleteForm(userId, username);
+                
+                if (formManager) {
+                    formManager.showDeleteForm(userId, username);
+                } else {
+                    console.error('Form manager not available');
+                    alert('Error: Could not initialize delete form');
+                }
             });
         });
+        
+        // Edit user buttons can be handled here too
+        
+        // Mark listeners as attached
+        listenersAttached = true;
     }
     
     // Refresh the users table without reloading the page
@@ -135,7 +148,18 @@ function UserTableManager(formManagerParam, toastManagerParam) {
     };
 }
 
-// Make function globally available (with safety check for multiple loads)
-if (typeof window.UserTableManager === 'undefined') {
-    window.UserTableManager = UserTableManager;
-}
+// Create a single instance when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize only if we're on the user management page (check for table presence)
+    if (document.querySelector('.table') && typeof UserFormManager === 'function') {
+        console.log('Initializing user table manager');
+        
+        // Create instances with proper dependency injection
+        const formManager = UserFormManager();
+        const toastManager = window.ToastManager ? ToastManager() : null;
+        const tableManager = UserTableManager(formManager, toastManager);
+        
+        // Attach event listeners once
+        tableManager.attachEventListeners();
+    }
+});

@@ -1,62 +1,74 @@
 /**
- * Toast Notification Manager
- * Handles creating and displaying toast notifications
+ * Toast Manager
+ * Handles displaying toast notifications
  */
 function ToastManager() {
-    // Create a toast notification
-    function show(title, message, type = 'info') {
-        // Create toast container if it doesn't exist
-        let toastContainer = document.getElementById('toast-container');
-        if (!toastContainer) {
-            toastContainer = document.createElement('div');
-            toastContainer.id = 'toast-container';
-            toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
-            document.body.appendChild(toastContainer);
+    /**
+     * Show a toast notification
+     * @param {string} title - Toast title
+     * @param {string} message - Toast message
+     * @param {string} type - Notification type (success, warning, danger, info)
+     * @param {number} duration - Duration in milliseconds (default: 5000)
+     */
+    function show(title, message, type = 'info', duration = 5000) {
+        // Set the toast container
+        let container = document.getElementById('toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'toast-container';
+            container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+            document.body.appendChild(container);
         }
         
-        // Create a unique ID for this toast
+        // Create toast element
         const toastId = 'toast-' + Date.now();
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.id = toastId;
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
         
-        // Create toast HTML
-        const toastHtml = `
-            <div id="${toastId}" class="toast align-items-center text-white bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
-                <div class="d-flex">
-                    <div class="toast-body">
-                        <strong>${title}</strong>: ${message}
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
+        // Set toast content
+        toast.innerHTML = `
+            <div class="toast-header bg-${type} text-white">
+                <strong class="me-auto">${title}</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                ${message}
             </div>
         `;
         
-        // Add toast to container
-        toastContainer.insertAdjacentHTML('beforeend', toastHtml);
-        
-        // Initialize Bootstrap toast
-        const toastElement = document.getElementById(toastId);
-        const toast = new bootstrap.Toast(toastElement, {
-            autohide: true,
-            delay: 5000
-        });
+        // Add the toast to the container
+        container.appendChild(toast);
         
         // Show the toast
-        toast.show();
+        if (typeof bootstrap !== 'undefined' && typeof bootstrap.Toast !== 'undefined') {
+            const bsToast = new bootstrap.Toast(toast, {
+                autohide: true,
+                delay: duration
+            });
+            bsToast.show();
+        } else {
+            // Fallback if Bootstrap isn't available
+            toast.style.display = 'block';
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, duration);
+        }
         
-        // Remove from DOM after hidden
-        toastElement.addEventListener('hidden.bs.toast', function() {
-            if (this.parentNode) {
-                this.parentNode.removeChild(this);
-            }
-        });
+        // Return the toast element
+        return toast;
     }
     
-    // Return public API
+    // Public API
     return {
         show
     };
 }
 
-// Make function globally available (with safety check for multiple loads)
-if (typeof window.ToastManager === 'undefined') {
-    window.ToastManager = ToastManager;
-}
+// Make the toast manager globally available
+window.ToastManager = ToastManager;

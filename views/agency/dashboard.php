@@ -170,7 +170,8 @@ $actions = [
         'url' => '#',
         'text' => 'Refresh Data',
         'icon' => 'fas fa-sync-alt',
-        'id' => 'refreshPage'
+        'id' => 'refreshPage',
+        'class' => 'btn-light border border-white text-white' // Updated to match admin dashboard
     ]
 ];
 

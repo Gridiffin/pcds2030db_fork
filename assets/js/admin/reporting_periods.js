@@ -166,91 +166,109 @@ if (!window.reportingPeriodsInitialized) {
                 }
             }
         }
-        
-        // Fix accordion behavior to properly handle both expanding and collapsing
-        const accordionButtons = document.querySelectorAll('.accordion-header button');
-        accordionButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                // Get target collapse element
-                const targetId = this.getAttribute('data-bs-target');
-                const targetCollapse = document.querySelector(targetId);
+
+        // Simple toggle functionality for year groups
+        function initializeYearToggle() {
+            document.querySelectorAll('.year-toggle').forEach(button => {
+                // Remove existing event listeners
+                const newButton = button.cloneNode(true);
+                button.parentNode.replaceChild(newButton, button);
                 
-                // Check if it's already expanded
-                const isExpanded = this.getAttribute('aria-expanded') === 'true';
-                
-                // Toggle the collapse state
-                if (isExpanded) {
-                    // Currently expanded, so collapse it
-                    this.setAttribute('aria-expanded', 'false');
-                    this.classList.add('collapsed');
-                    targetCollapse.classList.remove('show');
+                // Add click event handler
+                newButton.addEventListener('click', function() {
+                    const year = this.getAttribute('data-year');
+                    const content = document.getElementById('collapse' + year);
                     
-                    // Update the indicator icon
-                    const indicator = this.querySelector('.collapse-indicator i');
-                    indicator.style.transform = 'rotate(0deg)';
-                } else {
-                    // Currently collapsed, so expand it
-                    this.setAttribute('aria-expanded', 'true');
-                    this.classList.remove('collapsed');
-                    targetCollapse.classList.add('show');
+                    // Toggle expanded state
+                    const isExpanded = this.classList.contains('expanded');
                     
-                    // Update the indicator icon
-                    const indicator = this.querySelector('.collapse-indicator i');
-                    indicator.style.transform = 'rotate(180deg)';
-                }
+                    if (isExpanded) {
+                        // Collapse
+                        this.classList.remove('expanded');
+                        this.classList.add('collapsed');
+                        this.setAttribute('aria-expanded', 'false');
+                        content.classList.remove('show');
+                        content.classList.add('hide');
+                    } else {
+                        // Expand
+                        this.classList.remove('collapsed');
+                        this.classList.add('expanded');
+                        this.setAttribute('aria-expanded', 'true');
+                        content.classList.remove('hide');
+                        content.classList.add('show');
+                    }
+                });
             });
-        });
-        
-        // Search functionality
-        const searchInput = document.getElementById('periodSearch');
-        if (searchInput) {
-            searchInput.addEventListener('input', function() {
-                const searchTerm = this.value.toLowerCase();
-                const yearGroups = document.querySelectorAll('.year-group');
-                let foundAnyMatch = false;
-                
-                yearGroups.forEach(yearGroup => {
-                    const rows = yearGroup.querySelectorAll('.period-row');
-                    let foundInGroup = false;
+        }
+
+        // Initialize the simple toggle functionality
+        initializeYearToggle();
+
+        // Update search functionality for the new structure
+        function initializeSearchFunctionality() {
+            const searchInput = document.getElementById('periodSearch');
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    const searchTerm = this.value.toLowerCase().trim();
+                    const yearGroups = document.querySelectorAll('.year-group');
+                    let foundAnyMatch = false;
                     
-                    rows.forEach(row => {
-                        const year = row.getAttribute('data-year');
-                        const quarter = row.getAttribute('data-quarter');
-                        const searchableText = `${year} Q${quarter}`.toLowerCase();
-                        const match = searchableText.includes(searchTerm);
+                    yearGroups.forEach(yearGroup => {
+                        const rows = yearGroup.querySelectorAll('.period-row');
+                        let foundInGroup = false;
                         
-                        if (match) {
-                            row.classList.remove('d-none');
-                            foundInGroup = true;
-                            foundAnyMatch = true;
+                        // Search in each row of the year group
+                        rows.forEach(row => {
+                            const year = row.getAttribute('data-year');
+                            const quarter = row.getAttribute('data-quarter');
+                            const searchableText = `Q${quarter} ${year}`.toLowerCase();
+                            const match = searchableText.includes(searchTerm);
+                            
+                            if (match) {
+                                row.style.display = '';
+                                foundInGroup = true;
+                                foundAnyMatch = true;
+                            } else {
+                                row.style.display = 'none';
+                            }
+                        });
+                        
+                        // Show/hide the year group based on search results
+                        if (foundInGroup) {
+                            yearGroup.style.display = '';
+                            
+                            // Expand the group if it contains matching items
+                            const yearToggle = yearGroup.querySelector('.year-toggle');
+                            const yearContent = yearGroup.querySelector('.year-content');
+                            
+                            yearToggle.classList.remove('collapsed');
+                            yearToggle.classList.add('expanded');
+                            yearToggle.setAttribute('aria-expanded', 'true');
+                            
+                            yearContent.classList.remove('hide');
+                            yearContent.classList.add('show');
                         } else {
-                            row.classList.add('d-none');
+                            yearGroup.style.display = 'none';
                         }
                     });
                     
-                    // If no matches in this year group, hide it
-                    if (!foundInGroup) {
-                        yearGroup.classList.add('d-none');
-                    } else {
-                        yearGroup.classList.remove('d-none');
-                        // Expand the year group if it contains matches
-                        const collapseElement = yearGroup.querySelector('.accordion-collapse');
-                        const bsCollapse = new bootstrap.Collapse(collapseElement, {toggle: false});
-                        bsCollapse.show();
+                    // Show or hide the "no results" message
+                    const noResultsElement = document.getElementById('noPeriodsFound');
+                    if (noResultsElement) {
+                        if (!foundAnyMatch && searchTerm.length > 0) {
+                            noResultsElement.classList.remove('d-none');
+                        } else {
+                            noResultsElement.classList.add('d-none');
+                        }
                     }
                 });
-                
-                // Show or hide the "no results" message
-                const noResultsElement = document.getElementById('noPeriodsFound');
-                if (!foundAnyMatch && searchTerm.length > 0) {
-                    noResultsElement.classList.remove('d-none');
-                } else {
-                    noResultsElement.classList.add('d-none');
-                }
-            });
+            }
         }
-    
-        // Find all toggle buttons and attach click handlers, using a data attribute to prevent duplicates
+
+        // Initialize the updated search functionality
+        initializeSearchFunctionality();
+
+        // FIX #2: Improve toggle period status buttons
         document.querySelectorAll('.toggle-period-status').forEach(button => {
             // Mark this button as initialized to prevent duplicate handlers
             if (!button.hasAttribute('data-initialized')) {
@@ -260,18 +278,27 @@ if (!window.reportingPeriodsInitialized) {
         });
         
         // Handler function for the toggle buttons
-        function handleToggleClick() {
+        function handleToggleClick(event) {
+            event.preventDefault();
+            
             const periodId = this.getAttribute('data-period-id');
             const currentStatus = this.getAttribute('data-current-status');
             const newStatus = currentStatus === 'open' ? 'closed' : 'open';
+            const buttonText = this.querySelector('.button-text');
+            const buttonIcon = this.querySelector('i');
             
             // Ask for confirmation
             if (!confirm(`Are you sure you want to ${newStatus === 'open' ? 'open' : 'close'} this reporting period?${newStatus === 'open' ? '\n\nThis will close any other currently open periods.' : ''}`)) {
                 return;
             }
             
-            // Disable button to prevent multiple clicks
+            // Disable button and show loading state
             this.disabled = true;
+            if (buttonText) {
+                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            } else {
+                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            }
             
             // Create form data for the request
             const formData = new FormData();
@@ -279,17 +306,24 @@ if (!window.reportingPeriodsInitialized) {
             formData.append('status', newStatus);
             
             // Send AJAX request
-            fetch('/pcds2030_dashboard/ajax/toggle_period_status.php', {
+            fetch(`${window.location.origin}/pcds2030_dashboard/ajax/toggle_period_status.php`, {
                 method: 'POST',
                 body: formData
             })
             .then(response => response.json())
             .then(data => {
-                // Re-enable the button
+                // Re-enable the button and update its appearance
                 this.disabled = false;
                 
                 if (data.error) {
                     alert('Error: ' + data.error);
+                    
+                    // Restore original button state
+                    if (buttonText) {
+                        this.innerHTML = `<i class="fas fa-${currentStatus === 'open' ? 'lock' : 'lock-open'}"></i> ${currentStatus === 'open' ? 'Close' : 'Open'}`;
+                    } else {
+                        this.innerHTML = `<i class="fas fa-${currentStatus === 'open' ? 'lock' : 'lock-open'}"></i>`;
+                    }
                     return;
                 }
                 
@@ -327,6 +361,13 @@ if (!window.reportingPeriodsInitialized) {
             .catch(error => {
                 this.disabled = false;
                 alert('Error: ' + error.message);
+                
+                // Restore original button state
+                if (buttonText) {
+                    this.innerHTML = `<i class="fas fa-${currentStatus === 'open' ? 'lock' : 'lock-open'}"></i> ${currentStatus === 'open' ? 'Close' : 'Open'}`;
+                } else {
+                    this.innerHTML = `<i class="fas fa-${currentStatus === 'open' ? 'lock' : 'lock-open'}"></i>`;
+                }
             });
         }
         
@@ -349,6 +390,15 @@ if (!window.reportingPeriodsInitialized) {
                 document.getElementById('status').value = status;
                 
                 // Check if dates are standard
+                const standardDates = getStandardQuarterDates(year, quarter);
+                const isStandard = startDate === standardDates.startDate && endDate === standardDates.endDate;
+                
+                document.getElementById('useStandardDates').checked = isStandard;
+                document.getElementById('datesModeText').textContent = isStandard ? 'Standard dates' : 'Custom dates';
+                document.getElementById('start_date').readOnly = isStandard;
+                document.getElementById('end_date').readOnly = isStandard;
+                
+                // Update non-standard indicators
                 checkNonStandardDates();
                 
                 addPeriodModal.show();
@@ -368,6 +418,13 @@ if (!window.reportingPeriodsInitialized) {
                 const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
                 deleteModal.show();
             });
+        });
+        
+        // Refresh page button handler
+        document.getElementById('refreshPage').addEventListener('click', function() {
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+            window.location.reload();
         });
     });
 }

@@ -19,6 +19,7 @@
 @import 'components/tables.css';
 @import 'components/toast.css';
 @import 'components/status-indicators.css';
+@import 'components/admin.css'; /* Add the new admin components CSS */
 
 /* Layout */
 @import 'layout/navigation.css';

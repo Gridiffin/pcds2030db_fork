@@ -686,4 +686,499 @@ function get_recent_submissions($period_id, $limit = 5) {
     
     return $submissions;
 }
+
+/**
+ * ==============
+ * SECTOR MANAGEMENT
+ * ==============
+ */
+
+/**
+ * Get all sectors
+ * @return array List of all sectors
+ */
+function get_all_sectors() {
+    global $conn;
+    
+    // Get all sectors
+    $query = "SELECT * FROM sectors ORDER BY sector_name";
+    $result = $conn->query($query);
+    
+    $sectors = [];
+    
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $sectors[] = $row;
+        }
+    }
+    
+    return $sectors;
+}
+
+/**
+ * Add a new sector
+ * @param string $sector_name Sector name
+ * @param string $description Sector description (optional)
+ * @return array Result of the operation
+ */
+function add_sector($sector_name, $description = null) {
+    global $conn;
+    
+    // Verify admin permission
+    if (!is_admin()) {
+        return format_error('Permission denied', 403);
+    }
+    
+    // Validate sector name
+    if (empty($sector_name)) {
+        return format_error('Sector name is required');
+    }
+    
+    $sector_name = trim($conn->real_escape_string($sector_name));
+    $description = $description ? trim($conn->real_escape_string($description)) : null;
+    
+    // Check if sector already exists
+    $check_query = "SELECT * FROM sectors WHERE LOWER(sector_name) = LOWER(?)";
+    $stmt = $conn->prepare($check_query);
+    $stmt->bind_param("s", $sector_name);
+    $stmt->execute();
+    
+    if ($stmt->get_result()->num_rows > 0) {
+        return format_error('Sector with this name already exists');
+    }
+    
+    // Insert sector
+    $insert_query = "INSERT INTO sectors (sector_name, description) VALUES (?, ?)";
+    $stmt = $conn->prepare($insert_query);
+    $stmt->bind_param("ss", $sector_name, $description);
+    
+    if ($stmt->execute()) {
+        return format_success('Sector added successfully', ['sector_id' => $conn->insert_id]);
+    } else {
+        return format_error('Failed to add sector: ' . $stmt->error);
+    }
+}
+
+/**
+ * Update a sector
+ * @param int $sector_id Sector ID
+ * @param string $sector_name Sector name
+ * @param string $description Sector description (optional)
+ * @return array Result of the operation
+ */
+function update_sector($sector_id, $sector_name, $description = null) {
+    global $conn;
+    
+    // Verify admin permission
+    if (!is_admin()) {
+        return format_error('Permission denied', 403);
+    }
+    
+    // Validate inputs
+    $sector_id = intval($sector_id);
+    
+    if (empty($sector_name)) {
+        return format_error('Sector name is required');
+    }
+    
+    $sector_name = trim($conn->real_escape_string($sector_name));
+    $description = $description ? trim($conn->real_escape_string($description)) : null;
+    
+    // Check if sector exists
+    $check_query = "SELECT * FROM sectors WHERE sector_id = ?";
+    $stmt = $conn->prepare($check_query);
+    $stmt->bind_param("i", $sector_id);
+    $stmt->execute();
+    
+    if ($stmt->get_result()->num_rows === 0) {
+        return format_error('Sector not found');
+    }
+    
+    // Check if another sector has this name
+    $check_name_query = "SELECT * FROM sectors WHERE LOWER(sector_name) = LOWER(?) AND sector_id != ?";
+    $stmt = $conn->prepare($check_name_query);
+    $stmt->bind_param("si", $sector_name, $sector_id);
+    $stmt->execute();
+    
+    if ($stmt->get_result()->num_rows > 0) {
+        return format_error('Another sector with this name already exists');
+    }
+    
+    // Update sector
+    $update_query = "UPDATE sectors SET sector_name = ?, description = ? WHERE sector_id = ?";
+    $stmt = $conn->prepare($update_query);
+    $stmt->bind_param("ssi", $sector_name, $description, $sector_id);
+    
+    if ($stmt->execute()) {
+        return format_success('Sector updated successfully');
+    } else {
+        return format_error('Failed to update sector: ' . $stmt->error);
+    }
+}
+
+/**
+ * Delete a sector
+ * @param int $sector_id Sector ID to delete
+ * @return array Result of the operation
+ */
+function delete_sector($sector_id) {
+    global $conn;
+    
+    // Verify admin permission
+    if (!is_admin()) {
+        return format_error('Permission denied', 403);
+    }
+    
+    $sector_id = intval($sector_id);
+    
+    // Check if sector exists
+    $check_query = "SELECT * FROM sectors WHERE sector_id = ?";
+    $stmt = $conn->prepare($check_query);
+    $stmt->bind_param("i", $sector_id);
+    $stmt->execute();
+    
+    if ($stmt->get_result()->num_rows === 0) {
+        return format_error('Sector not found');
+    }
+    
+    // Check if any users are assigned to this sector
+    $check_users_query = "SELECT COUNT(*) as count FROM users WHERE sector_id = ?";
+    $stmt = $conn->prepare($check_users_query);
+    $stmt->bind_param("i", $sector_id);
+    $stmt->execute();
+    $user_count = $stmt->get_result()->fetch_assoc()['count'];
+    
+    if ($user_count > 0) {
+        return format_error('Cannot delete sector with associated users');
+    }
+    
+    // Check if any programs are assigned to this sector
+    $check_programs_query = "SELECT COUNT(*) as count FROM programs WHERE sector_id = ?";
+    $stmt = $conn->prepare($check_programs_query);
+    $stmt->bind_param("i", $sector_id);
+    $stmt->execute();
+    $program_count = $stmt->get_result()->fetch_assoc()['count'];
+    
+    if ($program_count > 0) {
+        return format_error('Cannot delete sector with associated programs');
+    }
+    
+    // Delete sector
+    $delete_query = "DELETE FROM sectors WHERE sector_id = ?";
+    $stmt = $conn->prepare($delete_query);
+    $stmt->bind_param("i", $sector_id);
+    
+    if ($stmt->execute()) {
+        return format_success('Sector deleted successfully');
+    } else {
+        return format_error('Failed to delete sector: ' . $stmt->error);
+    }
+}
+
+/**
+ * =============
+ * USER MANAGEMENT
+ * =============
+ */
+
+/**
+ * Get all user accounts
+ * @return array List of user accounts
+ */
+function get_all_users() {
+    global $conn;
+    
+    // Verify admin permission
+    if (!is_admin()) {
+        return format_error('Permission denied', 403);
+    }
+    
+    $query = "SELECT u.*, s.sector_name 
+              FROM users u 
+              LEFT JOIN sectors s ON u.sector_id = s.sector_id 
+              ORDER BY u.username ASC";
+    
+    $result = $conn->query($query);
+    $users = array();
+    
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $users[] = $row;
+        }
+    }
+    
+    return $users;
+}
+
+/**
+ * Add a new user account
+ * @param array $data User account data
+ * @return array Result of the operation
+ */
+function add_user($data) {
+    global $conn;
+    
+    // Verify admin permission
+    if (!is_admin()) {
+        return format_error('Permission denied', 403);
+    }
+    
+    // Validate required fields
+    $required_fields = ['username', 'password', 'role'];
+    foreach ($required_fields as $field) {
+        if (empty($data[$field])) {
+            return format_error("Missing required field: {$field}");
+        }
+    }
+    
+    // Validate inputs
+    $username = trim($conn->real_escape_string($data['username']));
+    $password = $data['password'];
+    $role = $conn->real_escape_string($data['role']);
+    $agency_name = ($role === 'agency') ? trim($conn->real_escape_string($data['agency_name'])) : null;
+    $sector_id = ($role === 'agency' && !empty($data['sector_id'])) ? intval($data['sector_id']) : null;
+    
+    // Check password strength
+    if (strlen($password) < 8) {
+        return format_error('Password must be at least 8 characters long');
+    }
+    
+    // Check if username already exists
+    $check_query = "SELECT * FROM users WHERE username = ?";
+    $stmt = $conn->prepare($check_query);
+    $stmt->bind_param("s", $username);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        return format_error('Username already exists');
+    }
+    
+    // For agency users, ensure sector_id is valid
+    if ($role === 'agency') {
+        if (empty($agency_name)) {
+            return format_error('Agency name is required for agency users');
+        }
+        
+        if (!$sector_id) {
+            return format_error('Sector is required for agency users');
+        }
+        
+        // Verify sector exists
+        $sector_check = "SELECT * FROM sectors WHERE sector_id = ?";
+        $stmt = $conn->prepare($sector_check);
+        $stmt->bind_param("i", $sector_id);
+        $stmt->execute();
+        $sector_result = $stmt->get_result();
+        
+        if ($sector_result->num_rows === 0) {
+            return format_error('Selected sector does not exist');
+        }
+    }
+    
+    // Hash password
+    $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+    
+    // Begin transaction
+    $conn->begin_transaction();
+    
+    try {
+        // Insert user
+        $insert_query = "INSERT INTO users (username, password, agency_name, role, sector_id, is_active) VALUES (?, ?, ?, ?, ?, 1)";
+        $stmt = $conn->prepare($insert_query);
+        $stmt->bind_param("ssssi", $username, $hashed_password, $agency_name, $role, $sector_id);
+        
+        if (!$stmt->execute()) {
+            throw new Exception($stmt->error);
+        }
+        
+        $user_id = $conn->insert_id;
+        
+        // Commit transaction
+        $conn->commit();
+        
+        return format_success('User added successfully', ['user_id' => $user_id]);
+        
+    } catch (Exception $e) {
+        // Rollback on error
+        $conn->rollback();
+        return format_error('Failed to add user: ' . $e->getMessage());
+    }
+}
+
+/**
+ * Update an existing user account
+ * @param array $data User account data
+ * @return array Result of the operation
+ */
+function update_user($data) {
+    global $conn;
+    
+    // Verify admin permission
+    if (!is_admin()) {
+        return format_error('Permission denied', 403);
+    }
+    
+    // Validate required fields
+    if (empty($data['user_id']) || empty($data['username']) || empty($data['role'])) {
+        return format_error('Missing required fields');
+    }
+    
+    // Validate inputs
+    $user_id = intval($data['user_id']);
+    $username = trim($conn->real_escape_string($data['username']));
+    $role = $conn->real_escape_string($data['role']);
+    $agency_name = ($role === 'agency') ? trim($conn->real_escape_string($data['agency_name'])) : null;
+    $sector_id = ($role === 'agency' && !empty($data['sector_id'])) ? intval($data['sector_id']) : null;
+    $is_active = isset($data['is_active']) ? 1 : 0;
+    
+    // Don't allow deactivating your own account
+    if ($user_id === $_SESSION['user_id'] && $is_active === 0) {
+        return format_error('You cannot deactivate your own account');
+    }
+    
+    // Check if username already exists for another user
+    $check_query = "SELECT * FROM users WHERE username = ? AND user_id != ?";
+    $stmt = $conn->prepare($check_query);
+    $stmt->bind_param("si", $username, $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        return format_error('Username already exists');
+    }
+    
+    // For agency users, ensure sector_id is valid
+    if ($role === 'agency') {
+        if (empty($agency_name)) {
+            return format_error('Agency name is required for agency users');
+        }
+        
+        if (!$sector_id) {
+            return format_error('Sector is required for agency users');
+        }
+        
+        // Verify sector exists
+        $sector_check = "SELECT * FROM sectors WHERE sector_id = ?";
+        $stmt = $conn->prepare($sector_check);
+        $stmt->bind_param("i", $sector_id);
+        $stmt->execute();
+        $sector_result = $stmt->get_result();
+        
+        if ($sector_result->num_rows === 0) {
+            return format_error('Selected sector does not exist');
+        }
+    }
+    
+    // Begin transaction
+    $conn->begin_transaction();
+    
+    try {
+        // Check if password is being updated
+        if (!empty($data['password'])) {
+            $password = $data['password'];
+            
+            // Check password strength
+            if (strlen($password) < 8) {
+                throw new Exception('Password must be at least 8 characters long');
+            }
+            
+            // Hash password
+            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+            
+            // Update user with password
+            $update_query = "UPDATE users SET username = ?, password = ?, agency_name = ?, role = ?, sector_id = ?, is_active = ? WHERE user_id = ?";
+            $stmt = $conn->prepare($update_query);
+            $stmt->bind_param("ssssiis", $username, $hashed_password, $agency_name, $role, $sector_id, $is_active, $user_id);
+        } else {
+            // Update user without changing password
+            $update_query = "UPDATE users SET username = ?, agency_name = ?, role = ?, sector_id = ?, is_active = ? WHERE user_id = ?";
+            $stmt = $conn->prepare($update_query);
+            $stmt->bind_param("ssssis", $username, $agency_name, $role, $sector_id, $is_active, $user_id);
+        }
+        
+        if (!$stmt->execute()) {
+            throw new Exception($stmt->error);
+        }
+        
+        // Commit transaction
+        $conn->commit();
+        
+        return format_success('User updated successfully');
+        
+    } catch (Exception $e) {
+        // Rollback on error
+        $conn->rollback();
+        return format_error('Failed to update user: ' . $e->getMessage());
+    }
+}
+
+/**
+ * Delete a user account
+ * @param int $user_id User ID to delete
+ * @return array Result of the operation
+ */
+function delete_user($user_id) {
+    global $conn;
+    
+    // Verify admin permission
+    if (!is_admin()) {
+        return format_error('Permission denied', 403);
+    }
+    
+    // Validate user ID
+    $user_id = intval($user_id);
+    
+    // Don't allow deleting your own account
+    if ($user_id === $_SESSION['user_id']) {
+        return format_error('You cannot delete your own account');
+    }
+    
+    // Check if user exists
+    $check_query = "SELECT * FROM users WHERE user_id = ?";
+    $stmt = $conn->prepare($check_query);
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 0) {
+        return format_error('User not found');
+    }
+    
+    // Begin transaction
+    $conn->begin_transaction();
+    
+    try {
+        // Check if user has associated programs or submissions
+        $program_check = "SELECT COUNT(*) as count FROM programs WHERE owner_agency_id = ?";
+        $stmt = $conn->prepare($program_check);
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $program_result = $stmt->get_result();
+        $program_count = $program_result->fetch_assoc()['count'];
+        
+        if ($program_count > 0) {
+            throw new Exception('Cannot delete user with associated programs');
+        }
+        
+        // Delete user
+        $delete_query = "DELETE FROM users WHERE user_id = ?";
+        $stmt = $conn->prepare($delete_query);
+        $stmt->bind_param("i", $user_id);
+        
+        if (!$stmt->execute()) {
+            throw new Exception($stmt->error);
+        }
+        
+        // Commit transaction
+        $conn->commit();
+        
+        return format_success('User deleted successfully');
+        
+    } catch (Exception $e) {
+        // Rollback on error
+        $conn->rollback();
+        return format_error('Failed to delete user: ' . $e->getMessage());
+    }
+}
 ?>

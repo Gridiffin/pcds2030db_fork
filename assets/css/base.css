@@ -5,13 +5,53 @@
  * Contains core styling elements for the application
  */
 
+/**
+ * Base styles for the application
+ */
+
+:root {
+  /* Color variables */
+  --primary-color: #0d6efd;
+  --primary-rgb: 13, 110, 253;
+  --secondary-color: #28a745;
+  --secondary-rgb: 40, 167, 69;
+  /* ...other color variables... */
+
+  /* Typography variables - unified across the app */
+  --font-family: 'Nunito', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-weight-light: 300;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  
+  /* ...other variables... */
+}
+
 /* Base elements */
 html, body {
-    font-family: var(--font-primary);
+    font-family: var(--font-family);
+    font-weight: var(--font-weight-regular);
     color: var(--dark-color);
     background-color: #f5f7fa;
     font-size: 16px;
     line-height: 1.6;
+}
+
+/* Apply font family consistently */
+body,
+button,
+input,
+optgroup,
+select,
+textarea {
+  font-family: var(--font-family);
+  font-weight: var(--font-weight-regular);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-family);
+  font-weight: var(--font-weight-semibold);
 }
 
 /* Preloader */
@@ -49,7 +89,6 @@ html, body {
 
 /* Typography */
 h1, h2, h3, h4, h5, h6 {
-    font-weight: var(--font-weight-semibold);
     margin-bottom: 1rem;
     line-height: 1.2;
 }

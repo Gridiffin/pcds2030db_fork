@@ -1,0 +1,85 @@
+/**
+ * Admin Component Styles
+ */
+
+/* Action buttons with consistent styling */
+.btn-action-light {
+    background-color: white;
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+    transition: all 0.2s;
+}
+
+.btn-action-light:hover {
+    background-color: rgba(var(--primary-rgb), 0.1);
+    transform: translateY(-2px);
+}
+
+/* User management table styles */
+.user-table .badge {
+    font-weight: normal;
+    padding: 0.4em 0.6em;
+}
+
+.user-table .user-role {
+    display: inline-block;
+    min-width: 70px;
+    text-align: center;
+}
+
+.user-table .action-buttons {
+    display: flex;
+    gap: 0.25rem;
+    justify-content: center;
+}
+
+/* User management card styles */
+.user-management-tips {
+    background-color: rgba(var(--primary-rgb), 0.03);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.5rem;
+    margin-top: 1rem;
+}
+
+.user-management-tips h5 {
+    font-size: 1.1rem;
+    color: var(--primary-color);
+    margin-bottom: 0.75rem;
+}
+
+.user-management-tips ul {
+    padding-left: 1.5rem;
+}
+
+.user-management-tips li {
+    margin-bottom: 0.5rem;
+}
+
+/* Agency fields toggle section */
+.agency-fields-section {
+    background-color: #f8f9fa;
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+/* Header action buttons with consistent white background styling */
+.simple-header .btn-header-action {
+    background-color: white;
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+}
+
+.simple-header .btn-header-action:hover {
+    background-color: rgba(var(--primary-rgb), 0.05);
+    color: var(--primary-color);
+}
+
+/* Ensure consistent spacing in dashboard header actions */
+.simple-header .btn {
+    margin-left: 0.5rem;
+}
+
+.simple-header .btn i {
+    margin-right: 0.5rem;
+}

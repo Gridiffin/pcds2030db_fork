@@ -8,10 +8,11 @@ $title = $title ?? ($pageTitle ?? 'Dashboard');
 $subtitle = $subtitle ?? '';
 $actions = $actions ?? [];
 $headerStyle = $headerStyle ?? 'primary';
+$headerClass = $headerClass ?? ''; // Added support for additional header classes
 ?>
 
 <!-- Simple full-width header -->
-<div class="simple-header">
+<div class="simple-header <?php echo $headerStyle; ?> <?php echo $headerClass; ?>">
     <div class="container-fluid">
         <div class="row align-items-center">
             <div class="col">
@@ -26,9 +27,9 @@ $headerStyle = $headerStyle ?? 'primary';
                     <?php foreach ($actions as $action): ?>
                         <a href="<?php echo $action['url'] ?? '#'; ?>" 
                             <?php if(isset($action['id'])): ?>id="<?php echo $action['id']; ?>"<?php endif; ?> 
-                            class="btn btn-light">
+                            class="btn <?php echo $action['class'] ?? 'btn-light border border-primary text-primary'; ?>">
                             <?php if (isset($action['icon'])): ?>
-                                <i class="<?php echo $action['icon']; ?>"></i>
+                                <i class="<?php echo $action['icon']; ?> me-1"></i>
                             <?php endif; ?>
                             <span><?php echo htmlspecialchars($action['text']); ?></span>
                         </a>

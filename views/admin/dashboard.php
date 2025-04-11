@@ -47,33 +47,24 @@ require_once '../layouts/header.php';
 // Include admin navigation
 require_once '../layouts/admin_nav.php';
 
-// Set variables but don't include the dashboard header component
+// Set up the dashboard header variables - use the same style as agency dashboard
 $title = "Admin Dashboard";
 $subtitle = "System overview and management";
-$background = 'dark';
-?>
+$headerStyle = 'primary'; // Use primary (blue) style like agency dashboard
+$headerClass = 'homepage-header'; // Same class as agency dashboard
+$actions = [
+    [
+        'url' => '#',
+        'id' => 'refreshPage',
+        'text' => 'Refresh Data',
+        'icon' => 'fas fa-sync-alt',
+        'class' => 'btn-light border border-white text-white' // White outline button on blue background
+    ]
+];
 
-<!-- Page Header with reduced top padding -->
-<div class="page-header pb-10" style="padding-top: 40px; margin-bottom: 2rem; background-color: var(--primary-color); color: white;">
-    <div class="container-fluid">
-        <div class="row align-items-center">
-            <div class="col">
-                <div class="page-title">
-                    <h3>Admin Dashboard</h3>
-                    <p class="text-subtitle">
-                        PCDS 2030 System Performance Overview
-                    </p>
-                </div>
-            </div>
-            <div class="col-auto">
-                <button id="refreshPage" class="btn btn-light">
-                    <i class="fas fa-sync-alt"></i>
-                    <span>Refresh Data</span>
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
+// Include the dashboard header component
+require_once '../../includes/dashboard_header.php';
+?>
 
 <!-- Dashboard Content -->
 <section class="section">

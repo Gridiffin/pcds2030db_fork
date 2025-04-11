@@ -26,6 +26,16 @@ $pageTitle = 'Manage Users';
 $message = '';
 $message_type = '';
 
+// Check if there's a message in the session and use it
+if (isset($_SESSION['message']) && !empty($_SESSION['message'])) {
+    $message = $_SESSION['message'];
+    $message_type = $_SESSION['message_type'] ?? 'info';
+    
+    // Clear the message from session after using it
+    unset($_SESSION['message']);
+    unset($_SESSION['message_type']);
+}
+
 // Handle user actions (add, edit, delete)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action'])) {
@@ -40,6 +50,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (isset($result['success'])) {
                     $message = 'User added successfully.';
                     $message_type = 'success';
+                    
+                    // Store in session for redirect
+                    $_SESSION['message'] = $message;
+                    $_SESSION['message_type'] = $message_type;
+                    
+                    // Redirect to clear the form and prevent resubmission
+                    header("Location: " . $_SERVER['PHP_SELF']);
+                    exit;
                 } else {
                     $message = $result['error'] ?? 'Failed to add user.';
                     $message_type = 'danger';
@@ -88,13 +106,12 @@ $users = get_all_users();
 // Get all sectors for dropdown
 $sectors = get_all_sectors();
 
-// Additional scripts - fixed the script loading issue
+// Additional scripts
 $additionalScripts = [
-    APP_URL . '/assets/js/admin/toast_manager.js',
+    APP_URL . '/assets/js/admin/toast_manager.js', 
     APP_URL . '/assets/js/admin/user_form_manager.js',
     APP_URL . '/assets/js/admin/user_table_manager.js',
-    // Renamed from simple_users.js to users.js to match actual file
-    APP_URL . '/assets/js/admin/users.js'
+    APP_URL . '/assets/js/admin/users.js'  // Make sure this file actually exists
 ];
 
 // Pass sectors data directly to JavaScript
@@ -112,10 +129,10 @@ $subtitle = "Create and manage user accounts for the system";
 $headerStyle = 'light'; // Use light style
 $actions = [
     [
-        'url' => APP_URL . '/views/admin/add_user.php', // Use absolute URL with APP_URL
+        'url' => APP_URL . '/views/admin/add_user.php',
         'text' => 'Add New User',
         'icon' => 'fas fa-user-plus',
-        'class' => 'btn-primary'
+        'class' => 'btn-light border border-primary text-primary'
     ]
 ];
 
@@ -155,7 +172,7 @@ require_once '../../includes/dashboard_header.php';
     </div>
     <div class="card-body p-0">
         <div class="table-responsive w-100">
-            <table class="table table-hover table-custom mb-0" style="width: 100%;">
+            <table class="table table-hover table-custom user-table mb-0">
                 <thead>
                     <tr>
                         <th>Username</th>
@@ -164,7 +181,7 @@ require_once '../../includes/dashboard_header.php';
                         <th>Sector</th>
                         <th>Created</th>
                         <th>Status</th>
-                        <th>Actions</th>
+                        <th class="text-center" style="width: 100px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -203,8 +220,8 @@ require_once '../../includes/dashboard_header.php';
                                     <span class="badge bg-danger">Inactive</span>
                                 <?php endif; ?>
                             </td>
-                            <td>
-                                <div class="btn-group btn-group-sm">
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm d-inline-flex align-items-center justify-content-center">
                                     <a href="edit_user.php?id=<?php echo $user['user_id']; ?>" class="btn btn-outline-primary" title="Edit User">
                                         <i class="fas fa-edit"></i>
                                     </a>
@@ -227,16 +244,14 @@ require_once '../../includes/dashboard_header.php';
 </div>
 
 <!-- User Management Tips -->
-<div class="card bg-light border-0 shadow-sm">
-    <div class="card-body">
-        <h5><i class="fas fa-info-circle me-2 text-primary"></i>User Management Tips</h5>
-        <ul class="mb-0">
-            <li>Admin users can access all features of the dashboard</li>
-            <li>Agency users can only submit data for their assigned sector</li>
-            <li>Deactivated users cannot log in to the system</li>
-            <li>You cannot deactivate your own account</li>
-        </ul>
-    </div>
+<div class="user-management-tips">
+    <h5><i class="fas fa-info-circle me-2 text-primary"></i>User Management Tips</h5>
+    <ul class="mb-0">
+        <li>Admin users can access all features of the dashboard</li>
+        <li>Agency users can only submit data for their assigned sector</li>
+        <li>Deactivated users cannot log in to the system</li>
+        <li>You cannot deactivate your own account</li>
+    </ul>
 </div>
 
 <!-- Form container for dynamic forms -->

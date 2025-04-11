@@ -78,22 +78,29 @@ $additionalScripts = [
     APP_URL . '/assets/js/admin/reporting_periods.js'
 ];
 
+// Setup header variables for common dashboard header
+$title = "Reporting Periods";
+$subtitle = "Manage system reporting periods for quarterly submissions";
+$headerStyle = 'light'; // Use light style to match other admin pages
+$actions = [
+    [
+        'url' => '#',
+        'id' => 'addPeriodBtn',
+        'text' => 'Add Period',
+        'icon' => 'fas fa-plus-circle',
+        'class' => 'btn-light border border-primary text-primary' // Changed to white background with primary border and text
+    ]
+];
+
 // Include header
 require_once '../layouts/header.php';
 
 // Include admin navigation
 require_once '../layouts/admin_nav.php';
-?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h1 class="h2 mb-0">Manage Periods</h1>
-        <p class="text-muted">Add, edit, and delete reporting periods</p>
-    </div>
-    <button type="button" class="btn btn-primary" id="addPeriodBtn">
-        <i class="fas fa-plus-circle me-1"></i> Add Period
-    </button>
-</div>
+// Include the dashboard header component
+require_once '../../includes/dashboard_header.php';
+?>
 
 <?php if (!empty($message)): ?>
     <div class="alert alert-<?php echo $messageType; ?> alert-dismissible fade show" role="alert">
@@ -109,8 +116,11 @@ require_once '../layouts/admin_nav.php';
 <div class="card shadow-sm mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="card-title m-0">Periods</h5>
-        <div>
-            <input type="text" id="periodSearch" class="form-control form-control-sm d-inline-block me-2" placeholder="Search periods..." style="width: auto;">
+        <div class="ms-auto d-flex align-items-center">
+            <input type="text" id="periodSearch" class="form-control form-control-sm me-2" placeholder="Search periods..." style="width: 200px;">
+            <button class="btn btn-light border border-primary text-primary" id="refreshPage"> <!-- Changed to white background with primary border and text -->
+                <i class="fas fa-sync-alt me-1"></i> Refresh
+            </button>
         </div>
     </div>
     <div class="card-body">
@@ -125,30 +135,28 @@ require_once '../layouts/admin_nav.php';
         krsort($periods_by_year);
         ?>
         
-        <div class="accordion" id="accordionPeriods">
+        <div class="year-accordion" id="yearGroups">
             <?php foreach ($periods_by_year as $year => $year_periods): ?>
-                <div class="accordion-item year-group mb-3">
-                    <h2 class="accordion-header position-relative" id="heading<?php echo $year; ?>">
-                        <button class="accordion-button <?php echo ($year === array_key_first($periods_by_year)) ? '' : 'collapsed'; ?>" 
-                                type="button" data-bs-toggle="collapse" 
-                                data-bs-target="#collapse<?php echo $year; ?>" 
-                                aria-expanded="<?php echo ($year === array_key_first($periods_by_year)) ? 'true' : 'false'; ?>" 
-                                aria-controls="collapse<?php echo $year; ?>">
+                <div class="year-group mb-3">
+                    <div class="year-header" id="heading<?php echo $year; ?>">
+                        <button class="year-toggle <?php echo ($year === array_key_first($periods_by_year)) ? 'expanded' : 'collapsed'; ?>" 
+                                type="button" 
+                                data-year="<?php echo $year; ?>"
+                                aria-expanded="<?php echo ($year === array_key_first($periods_by_year)) ? 'true' : 'false'; ?>">
                             <div class="d-flex align-items-center justify-content-between w-100">
                                 <div>
                                     <strong class="fs-5 me-2"><?php echo $year; ?></strong>
                                     <span class="badge bg-secondary"><?php echo count($year_periods); ?> quarters</span>
                                 </div>
-                                <div class="collapse-indicator">
+                                <div class="toggle-indicator">
                                     <i class="fas fa-chevron-down"></i>
                                 </div>
                             </div>
                         </button>
-                    </h2>
+                    </div>
                     <div id="collapse<?php echo $year; ?>" 
-                         class="accordion-collapse collapse <?php echo ($year === array_key_first($periods_by_year)) ? 'show' : ''; ?>" 
-                         aria-labelledby="heading<?php echo $year; ?>">
-                        <div class="accordion-body p-0">
+                        class="year-content <?php echo ($year === array_key_first($periods_by_year)) ? 'show' : 'hide'; ?>">
+                        <div class="year-body p-0">
                             <div class="table-responsive">
                                 <table class="table table-hover table-custom period-table mb-0">
                                     <thead class="table-light">
@@ -178,7 +186,7 @@ require_once '../layouts/admin_nav.php';
                                                 <td><?php echo date('M j, Y', strtotime($period['start_date'])); ?></td>
                                                 <td><?php echo date('M j, Y', strtotime($period['end_date'])); ?></td>
                                                 <td>
-                                                    <span class="badge bg-<?php echo $period['status'] === 'open' ? 'success' : 'secondary'; ?>">
+                                                    <span class="badge bg-<?php echo $period['status'] === 'open' ? 'success' : 'secondary'; ?> rounded-pill px-3">
                                                         <?php echo ucfirst($period['status']); ?>
                                                     </span>
                                                 </td>
@@ -188,8 +196,8 @@ require_once '../layouts/admin_nav.php';
                                                                 data-period-id="<?php echo $period['period_id']; ?>"
                                                                 data-current-status="<?php echo $period['status']; ?>"
                                                                 title="<?php echo $period['status'] === 'open' ? 'Close' : 'Open'; ?> this period">
-                                                            <i class="fas fa-<?php echo $period['status'] === 'open' ? 'lock' : 'lock-open'; ?>"></i>
-                                                            <?php echo $period['status'] === 'open' ? 'Close' : 'Open'; ?>
+                                                            <i class="fas fa-<?php echo $period['status'] === 'open' ? 'lock' : 'lock-open'; ?> me-2"></i>
+                                                            <span class="button-text"><?php echo $period['status'] === 'open' ? 'Close' : 'Open'; ?></span>
                                                         </button>
                                                         
                                                         <button type="button" class="btn btn-outline-secondary edit-period-btn" 
@@ -255,14 +263,17 @@ require_once '../layouts/admin_nav.php';
 
                     <div class="date-toggle-container mb-4">
                         <div class="form-check form-switch p-0 d-flex align-items-center justify-content-between">
-                            <span>Use custom date range</span>
+                            <span>Use standard quarter dates</span>
                             <div class="d-flex align-items-center">
                                 <span id="datesModeText" class="me-2">Standard dates</span>
-                                <input class="form-check-input m-0" type="checkbox" id="useStandardDates" checked>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="useStandardDates" checked>
+                                    <label class="form-check-label" for="useStandardDates"></label>
+                                </div>
                             </div>
                         </div>
                         <div class="toggle-description text-muted small mt-1">
-                            Toggle OFF to customize dates. Standard dates follow calendar quarters.
+                            When enabled, dates will automatically follow standard calendar quarters.
                         </div>
                     </div>
                     
@@ -270,7 +281,7 @@ require_once '../layouts/admin_nav.php';
                         <div class="col-md-6">
                             <label for="start_date" class="form-label">Start Date</label>
                             <div class="input-group">
-                                <input type="date" class="form-control" id="start_date" name="start_date" required>
+                                <input type="date" class="form-control" id="start_date" name="start_date" required readonly>
                                 <span class="input-group-text d-none" id="nonStandardStartIndicator" title="Non-standard date">
                                     <i class="fas fa-exclamation-triangle text-warning"></i>
                                 </span>
@@ -279,7 +290,7 @@ require_once '../layouts/admin_nav.php';
                         <div class="col-md-6">
                             <label for="end_date" class="form-label">End Date</label>
                             <div class="input-group">
-                                <input type="date" class="form-control" id="end_date" name="end_date" required>
+                                <input type="date" class="form-control" id="end_date" name="end_date" required readonly>
                                 <span class="input-group-text d-none" id="nonStandardEndIndicator" title="Non-standard date">
                                     <i class="fas fa-exclamation-triangle text-warning"></i>
                                 </span>
@@ -327,6 +338,126 @@ require_once '../layouts/admin_nav.php';
         </div>
     </div>
 </div>
+
+<!-- Add style for accordion arrows -->
+<style>
+    /* Improved accordion styling */
+    .year-header {
+        margin-bottom: 0;
+    }
+    
+    .year-toggle {
+        width: 100%;
+        text-align: left;
+        padding: 1rem 1.25rem;
+        background-color: #f8f9fa;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 0.375rem;
+        cursor: pointer;
+    }
+    
+    .year-toggle.expanded {
+        color: #212529;
+        background-color: #f1f3f5;
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+    
+    .year-toggle:focus {
+        outline: none;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    }
+    
+    .toggle-indicator i {
+        transition: transform 0.3s ease;
+    }
+    
+    .year-toggle.expanded .toggle-indicator i {
+        transform: rotate(180deg);
+    }
+    
+    .year-content {
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-top: none;
+        border-bottom-left-radius: 0.375rem;
+        border-bottom-right-radius: 0.375rem;
+    }
+    
+    .year-content.hide {
+        display: none;
+    }
+    
+    .year-content.show {
+        display: block;
+    }
+    
+    /* Improved styling for period status badge */
+    .badge.rounded-pill {
+        font-weight: normal;
+        padding: 0.4rem 0.8rem;
+        font-size: 0.8rem;
+    }
+    
+    /* Improve button spacing and hover effects */
+    .toggle-period-status {
+        min-width: 90px;
+        transition: all 0.2s;
+        border: 1px solid;
+    }
+    
+    /* Button group styling with borders and consistent spacing */
+    .btn-group-sm .btn {
+        padding: 0.375rem 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #dee2e6;
+        margin-right: -1px;
+    }
+    
+    /* Make all icon buttons square for consistency */
+    .btn-group-sm .btn:not(.toggle-period-status) {
+        width: 38px;
+        height: 38px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Remove right margin from icons in action buttons */
+    .btn-group-sm .btn:not(.toggle-period-status) i {
+        margin-right: 0;
+    }
+    
+    /* Keep spacing between icon and text for the toggle button */
+    .btn-group-sm .toggle-period-status i {
+        margin-right: 0.5rem;
+    }
+    
+    /* Improve table styling */
+    .table-custom thead th {
+        background-color: #f3f5f7;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .period-row {
+        transition: background-color 0.2s;
+    }
+    
+    .period-row:hover {
+        background-color: rgba(0, 123, 255, 0.03);
+    }
+    
+    /* Improve accordion item spacing */
+    .year-group {
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 0.375rem;
+        overflow: hidden;
+    }
+</style>
 
 <?php
 // Include footer
