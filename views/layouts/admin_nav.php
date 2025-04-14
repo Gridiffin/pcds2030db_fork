@@ -27,7 +27,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <?php if ($current_page == 'manage_programs.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/views/admin/manage_programs.php">
+                    <a class="nav-link <?php if ($current_page == 'programs.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/views/admin/programs.php">
                         <i class="fas fa-project-diagram me-1"></i> Programs
                     </a>
                 </li>

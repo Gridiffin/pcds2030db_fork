@@ -490,196 +490,263 @@ function is_standard_quarter_date($year, $quarter, $start_date, $end_date) {
 }
 
 /**
+ * Admin Functions
+ * 
+ * Functions specific to admin users
+ */
+
+/**
  * Get submission statistics for a specific reporting period
  * 
- * @param int $period_id Reporting period ID
- * @return array Statistics about agency submissions for the period
+ * @param int $period_id - The ID of the reporting period
+ * @return array - Array containing submission statistics
  */
 function get_period_submission_stats($period_id) {
     global $conn;
     
+    // Initialize stats array
+    $stats = [
+        'agencies_reported' => 0,
+        'total_agencies' => 0,
+        'on_track_programs' => 0,
+        'delayed_programs' => 0,
+        'total_programs' => 0,
+        'completion_percentage' => 0
+    ];
+    
+    // Get total agencies
+    $query = "SELECT COUNT(id) as total FROM agencies WHERE active = 1";
+    $result = mysqli_query($conn, $query);
+    if ($result && $row = mysqli_fetch_assoc($result)) {
+        $stats['total_agencies'] = $row['total'];
+    }
+    
+    // Get agencies that have reported
+    $query = "SELECT COUNT(DISTINCT agency_id) as reported FROM submissions WHERE period_id = ?";
+    $stmt = mysqli_prepare($conn, $query);
+    mysqli_stmt_bind_param($stmt, "i", $period_id);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    if ($result && $row = mysqli_fetch_assoc($result)) {
+        $stats['agencies_reported'] = $row['reported'];
+    }
+    
+    // Get program status counts
+    $query = "SELECT status, COUNT(*) as count FROM submissions WHERE period_id = ? GROUP BY status";
+    $stmt = mysqli_prepare($conn, $query);
+    mysqli_stmt_bind_param($stmt, "i", $period_id);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    
+    while ($result && $row = mysqli_fetch_assoc($result)) {
+        if (in_array($row['status'], ['on-track', 'on-track-yearly', 'completed', 'target-achieved'])) {
+            $stats['on_track_programs'] += $row['count'];
+        } elseif (in_array($row['status'], ['delayed', 'severe-delay'])) {
+            $stats['delayed_programs'] += $row['count'];
+        }
+    }
+    
+    // Get total programs
+    $query = "SELECT COUNT(*) as total FROM programs WHERE active = 1";
+    $result = mysqli_query($conn, $query);
+    if ($result && $row = mysqli_fetch_assoc($result)) {
+        $stats['total_programs'] = $row['total'];
+    }
+    
+    // Calculate completion percentage
+    if ($stats['total_agencies'] > 0) {
+        $stats['completion_percentage'] = round(($stats['agencies_reported'] / $stats['total_agencies']) * 100);
+    }
+    
+    return $stats;
+}
+
+/**
+ * Get all programs with detailed information for admin display
+ * 
+ * @param int $period_id Optional period ID to filter submissions
+ * @param array $filters Optional filters (status, sector_id, agency_id, search)
+ * @return array List of all programs with their details and status
+ */
+function get_admin_programs_list($period_id = null, $filters = []) {
+    global $conn;
+    
+    // If no period specified, use current period
     if (!$period_id) {
         $current_period = get_current_reporting_period();
         $period_id = $current_period ? $current_period['period_id'] : null;
     }
     
-    if (!$period_id) {
-        return [
-            'agencies_reported' => 0,
-            'total_agencies' => 0,
-            'on_track_programs' => 0,
-            'delayed_programs' => 0,
-            'completed_programs' => 0,
-            'not_started_programs' => 0,
-            'total_programs' => 0,
-            'completion_percentage' => 0
-        ];
+    // Base query with joins to get all required data
+    $query = "SELECT p.program_id, p.program_name, p.description, p.start_date, p.end_date, 
+                     p.created_at, p.updated_at, p.is_assigned,
+                     u.user_id AS agency_id, u.agency_name,
+                     s.sector_id, s.sector_name,
+                     ps.status, ps.submission_date, ps.is_draft,
+                     ps.content_json
+              FROM programs p
+              JOIN users u ON p.owner_agency_id = u.user_id
+              JOIN sectors s ON p.sector_id = s.sector_id
+              LEFT JOIN (
+                  SELECT ps1.*
+                  FROM program_submissions ps1
+                  LEFT JOIN program_submissions ps2 ON ps1.program_id = ps2.program_id 
+                       AND ps1.period_id = ps2.period_id 
+                       AND ps1.submission_date < ps2.submission_date
+                  WHERE ps1.period_id = ? AND ps2.submission_id IS NULL
+              ) ps ON p.program_id = ps.program_id";
+    
+    // Add conditions based on filters
+    $conditions = [];
+    $params = [$period_id]; // Starting with period_id
+    $types = "i"; // integer for period_id
+    
+    // If filtering by specific period (not current), only show programs with submissions for that period
+    if ($period_id) {
+        $conditions[] = "ps.submission_id IS NOT NULL";
     }
     
-    // Get total agencies count
-    $agencies_query = "SELECT COUNT(*) as total FROM users WHERE role = 'agency'";
-    $agencies_result = $conn->query($agencies_query);
-    $total_agencies = $agencies_result->fetch_assoc()['total'] ?? 0;
+    if (!empty($filters['status'])) {
+        $conditions[] = "ps.status = ?";
+        $params[] = $filters['status'];
+        $types .= "s";
+    }
     
-    // Get agencies that submitted data for this period
-    $reported_query = "SELECT COUNT(DISTINCT u.user_id) as reported 
-                      FROM users u
-                      INNER JOIN program_submissions ps 
-                      ON ps.submitted_by = u.user_id
-                      WHERE ps.period_id = ? AND u.role = 'agency'";
-    $stmt = $conn->prepare($reported_query);
-    $stmt->bind_param('i', $period_id);
+    if (!empty($filters['sector_id'])) {
+        $conditions[] = "s.sector_id = ?";
+        $params[] = $filters['sector_id'];
+        $types .= "i";
+    }
+    
+    if (!empty($filters['agency_id'])) {
+        $conditions[] = "u.user_id = ?";
+        $params[] = $filters['agency_id'];
+        $types .= "i";
+    }
+    
+    if (!empty($filters['search'])) {
+        $search = "%" . $filters['search'] . "%";
+        $conditions[] = "(p.program_name LIKE ? OR p.description LIKE ?)";
+        $params[] = $search;
+        $params[] = $search;
+        $types .= "ss";
+    }
+    
+    // Add WHERE clause if there are conditions
+    if (!empty($conditions)) {
+        $query .= " WHERE " . implode(" AND ", $conditions);
+    }
+    
+    // Order by most recently updated first
+    $query .= " ORDER BY p.updated_at DESC";
+    
+    // Prepare and execute the query
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param($types, ...$params);
     $stmt->execute();
-    $reported_result = $stmt->get_result();
-    $agencies_reported = $reported_result->fetch_assoc()['reported'] ?? 0;
+    $result = $stmt->get_result();
     
-    // Get program status statistics
-    $status_query = "SELECT status, COUNT(*) as count
-                   FROM program_submissions
-                   WHERE period_id = ?
-                   GROUP BY status";
-    $stmt = $conn->prepare($status_query);
-    $stmt->bind_param('i', $period_id);
-    $stmt->execute();
-    $status_result = $stmt->get_result();
-    
-    $on_track_programs = 0;
-    $delayed_programs = 0;
-    $completed_programs = 0;
-    $not_started_programs = 0;
-    $total_programs = 0;
-    
-    while ($row = $status_result->fetch_assoc()) {
-        switch ($row['status']) {
-            case 'target-achieved':
-            case 'on-track': 
-                $on_track_programs += $row['count']; 
-                break;
-            case 'on-track-yearly':
-            case 'delayed': 
-                $delayed_programs += $row['count']; 
-                break;
-            case 'completed': 
-                $completed_programs += $row['count']; 
-                break;
-            case 'severe-delay':
-            case 'not-started': 
-                $not_started_programs += $row['count']; 
-                break;
+    $programs = [];
+    while ($row = $result->fetch_assoc()) {
+        // Process JSON content if available
+        if (isset($row['content_json']) && !empty($row['content_json'])) {
+            $content = json_decode($row['content_json'], true);
+            if ($content) {
+                $row = array_merge($row, $content);
+            }
         }
-        $total_programs += $row['count'];
+        $programs[] = $row;
     }
     
-    // Calculate completion percentage
-    $completion_percentage = $total_agencies > 0 ? 
-        min(100, round(($agencies_reported / $total_agencies) * 100)) : 0;
-    
-    return [
-        'agencies_reported' => $agencies_reported,
-        'total_agencies' => $total_agencies,
-        'on_track_programs' => $on_track_programs,
-        'delayed_programs' => $delayed_programs, 
-        'completed_programs' => $completed_programs,
-        'not_started_programs' => $not_started_programs,
-        'total_programs' => $total_programs,
-        'completion_percentage' => $completion_percentage
-    ];
+    return $programs;
 }
 
 /**
- * Get data about each sector for a specific reporting period
+ * Admin Functions
  * 
- * @param int $period_id Reporting period ID
- * @return array Data about each sector's submissions
+ * Functions specifically for admin use throughout the application
+ */
+
+/**
+ * Get sector data for a specific reporting period
+ *
+ * @param int $period_id The reporting period ID
+ * @return array Sector data including name, agency count, program count, and submission percentage
  */
 function get_sector_data_for_period($period_id) {
     global $conn;
     
-    if (!$period_id) {
-        return [];
-    }
+    $sector_data = array();
     
-    // Get all sectors
-    $sectors_query = "SELECT sector_id, sector_name FROM sectors ORDER BY sector_name";
-    $sectors_result = $conn->query($sectors_query);
+    $sql = "SELECT 
+                s.sector_id,
+                s.name as sector_name,
+                COUNT(DISTINCT a.agency_id) as agency_count,
+                COUNT(DISTINCT p.program_id) as program_count,
+                IFNULL(ROUND((COUNT(DISTINCT sub.submission_id) / 
+                    NULLIF(COUNT(DISTINCT p.program_id), 0)) * 100, 0), 0) as submission_pct
+            FROM 
+                sectors s
+                LEFT JOIN agencies a ON s.sector_id = a.sector_id
+                LEFT JOIN programs p ON a.agency_id = p.agency_id
+                LEFT JOIN submissions sub ON p.program_id = sub.program_id AND sub.period_id = ?
+            GROUP BY 
+                s.sector_id, s.name
+            ORDER BY 
+                s.name ASC";
+                
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $period_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
     
-    $sector_data = [];
-    
-    while ($sector = $sectors_result->fetch_assoc()) {
-        $sector_id = $sector['sector_id'];
-        
-        // Get agency count for this sector
-        $agency_query = "SELECT COUNT(*) as count FROM users WHERE sector_id = ? AND role = 'agency'";
-        $stmt = $conn->prepare($agency_query);
-        $stmt->bind_param('i', $sector_id);
-        $stmt->execute();
-        $agency_result = $stmt->get_result();
-        $agency_count = $agency_result->fetch_assoc()['count'] ?? 0;
-        
-        // Get program count for this sector
-        $program_query = "SELECT COUNT(*) as count FROM programs WHERE sector_id = ?";
-        $stmt = $conn->prepare($program_query);
-        $stmt->bind_param('i', $sector_id);
-        $stmt->execute();
-        $program_result = $stmt->get_result();
-        $program_count = $program_result->fetch_assoc()['count'] ?? 0;
-        
-        // Get submission count for this sector
-        $submission_query = "SELECT COUNT(*) as count 
-                           FROM program_submissions ps
-                           JOIN programs p ON ps.program_id = p.program_id
-                           WHERE ps.period_id = ? AND p.sector_id = ?";
-        $stmt = $conn->prepare($submission_query);
-        $stmt->bind_param('ii', $period_id, $sector_id);
-        $stmt->execute();
-        $submission_result = $stmt->get_result();
-        $submission_count = $submission_result->fetch_assoc()['count'] ?? 0;
-        
-        // Calculate submission percentage
-        $submission_pct = $program_count > 0 ? 
-            min(100, round(($submission_count / $program_count) * 100)) : 0;
-        
-        // Add to sector data array
-        $sector_data[] = [
-            'sector_id' => $sector_id,
-            'sector_name' => $sector['sector_name'],
-            'agency_count' => $agency_count,
-            'program_count' => $program_count,
-            'submission_pct' => $submission_pct
-        ];
+    while ($row = $result->fetch_assoc()) {
+        $sector_data[] = $row;
     }
     
     return $sector_data;
 }
 
 /**
- * Get recent program submissions
+ * Get recent submissions for the specified period
  * 
- * @param int $period_id Reporting period ID
- * @param int $limit Number of submissions to return
- * @return array Recent program submissions
+ * @param int|null $period_id The reporting period ID
+ * @param int $limit Maximum number of submissions to return
+ * @return array List of recent submissions
  */
-function get_recent_submissions($period_id, $limit = 5) {
-    global $conn;
+function get_recent_submissions($period_id = null, $limit = 5) {
+    global $db;
     
-    if (!$period_id) {
+    $query = "SELECT s.*, a.name as agency_name, p.name as program_name 
+              FROM submissions s
+              JOIN agencies a ON s.agency_id = a.agency_id
+              JOIN programs p ON s.program_id = p.program_id
+              WHERE 1=1";
+    
+    if ($period_id) {
+        $query .= " AND s.period_id = ?";
+        $params = [$period_id];
+    } else {
+        $params = [];
+    }
+    
+    $query .= " ORDER BY s.submission_date DESC LIMIT ?";
+    $params[] = $limit;
+    
+    $stmt = $db->prepare($query);
+    if (!$stmt) {
         return [];
     }
     
-    $query = "SELECT ps.*, p.program_name, u.agency_name
-              FROM program_submissions ps
-              JOIN programs p ON ps.program_id = p.program_id
-              JOIN users u ON ps.submitted_by = u.user_id
-              WHERE ps.period_id = ?
-              ORDER BY ps.submission_date DESC
-              LIMIT ?";
+    if (!empty($params)) {
+        $types = str_repeat('i', count($params));
+        $stmt->bind_param($types, ...$params);
+    }
     
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param('ii', $period_id, $limit);
     $stmt->execute();
     $result = $stmt->get_result();
-    
     $submissions = [];
+    
     while ($row = $result->fetch_assoc()) {
         $submissions[] = $row;
     }
@@ -688,24 +755,17 @@ function get_recent_submissions($period_id, $limit = 5) {
 }
 
 /**
- * ==============
- * SECTOR MANAGEMENT
- * ==============
- */
-
-/**
  * Get all sectors
+ * 
  * @return array List of all sectors
  */
 function get_all_sectors() {
     global $conn;
     
-    // Get all sectors
-    $query = "SELECT * FROM sectors ORDER BY sector_name";
+    $query = "SELECT sector_id, sector_name FROM sectors ORDER BY sector_name";
     $result = $conn->query($query);
     
     $sectors = [];
-    
     if ($result) {
         while ($row = $result->fetch_assoc()) {
             $sectors[] = $row;
@@ -715,470 +775,4 @@ function get_all_sectors() {
     return $sectors;
 }
 
-/**
- * Add a new sector
- * @param string $sector_name Sector name
- * @param string $description Sector description (optional)
- * @return array Result of the operation
- */
-function add_sector($sector_name, $description = null) {
-    global $conn;
-    
-    // Verify admin permission
-    if (!is_admin()) {
-        return format_error('Permission denied', 403);
-    }
-    
-    // Validate sector name
-    if (empty($sector_name)) {
-        return format_error('Sector name is required');
-    }
-    
-    $sector_name = trim($conn->real_escape_string($sector_name));
-    $description = $description ? trim($conn->real_escape_string($description)) : null;
-    
-    // Check if sector already exists
-    $check_query = "SELECT * FROM sectors WHERE LOWER(sector_name) = LOWER(?)";
-    $stmt = $conn->prepare($check_query);
-    $stmt->bind_param("s", $sector_name);
-    $stmt->execute();
-    
-    if ($stmt->get_result()->num_rows > 0) {
-        return format_error('Sector with this name already exists');
-    }
-    
-    // Insert sector
-    $insert_query = "INSERT INTO sectors (sector_name, description) VALUES (?, ?)";
-    $stmt = $conn->prepare($insert_query);
-    $stmt->bind_param("ss", $sector_name, $description);
-    
-    if ($stmt->execute()) {
-        return format_success('Sector added successfully', ['sector_id' => $conn->insert_id]);
-    } else {
-        return format_error('Failed to add sector: ' . $stmt->error);
-    }
-}
-
-/**
- * Update a sector
- * @param int $sector_id Sector ID
- * @param string $sector_name Sector name
- * @param string $description Sector description (optional)
- * @return array Result of the operation
- */
-function update_sector($sector_id, $sector_name, $description = null) {
-    global $conn;
-    
-    // Verify admin permission
-    if (!is_admin()) {
-        return format_error('Permission denied', 403);
-    }
-    
-    // Validate inputs
-    $sector_id = intval($sector_id);
-    
-    if (empty($sector_name)) {
-        return format_error('Sector name is required');
-    }
-    
-    $sector_name = trim($conn->real_escape_string($sector_name));
-    $description = $description ? trim($conn->real_escape_string($description)) : null;
-    
-    // Check if sector exists
-    $check_query = "SELECT * FROM sectors WHERE sector_id = ?";
-    $stmt = $conn->prepare($check_query);
-    $stmt->bind_param("i", $sector_id);
-    $stmt->execute();
-    
-    if ($stmt->get_result()->num_rows === 0) {
-        return format_error('Sector not found');
-    }
-    
-    // Check if another sector has this name
-    $check_name_query = "SELECT * FROM sectors WHERE LOWER(sector_name) = LOWER(?) AND sector_id != ?";
-    $stmt = $conn->prepare($check_name_query);
-    $stmt->bind_param("si", $sector_name, $sector_id);
-    $stmt->execute();
-    
-    if ($stmt->get_result()->num_rows > 0) {
-        return format_error('Another sector with this name already exists');
-    }
-    
-    // Update sector
-    $update_query = "UPDATE sectors SET sector_name = ?, description = ? WHERE sector_id = ?";
-    $stmt = $conn->prepare($update_query);
-    $stmt->bind_param("ssi", $sector_name, $description, $sector_id);
-    
-    if ($stmt->execute()) {
-        return format_success('Sector updated successfully');
-    } else {
-        return format_error('Failed to update sector: ' . $stmt->error);
-    }
-}
-
-/**
- * Delete a sector
- * @param int $sector_id Sector ID to delete
- * @return array Result of the operation
- */
-function delete_sector($sector_id) {
-    global $conn;
-    
-    // Verify admin permission
-    if (!is_admin()) {
-        return format_error('Permission denied', 403);
-    }
-    
-    $sector_id = intval($sector_id);
-    
-    // Check if sector exists
-    $check_query = "SELECT * FROM sectors WHERE sector_id = ?";
-    $stmt = $conn->prepare($check_query);
-    $stmt->bind_param("i", $sector_id);
-    $stmt->execute();
-    
-    if ($stmt->get_result()->num_rows === 0) {
-        return format_error('Sector not found');
-    }
-    
-    // Check if any users are assigned to this sector
-    $check_users_query = "SELECT COUNT(*) as count FROM users WHERE sector_id = ?";
-    $stmt = $conn->prepare($check_users_query);
-    $stmt->bind_param("i", $sector_id);
-    $stmt->execute();
-    $user_count = $stmt->get_result()->fetch_assoc()['count'];
-    
-    if ($user_count > 0) {
-        return format_error('Cannot delete sector with associated users');
-    }
-    
-    // Check if any programs are assigned to this sector
-    $check_programs_query = "SELECT COUNT(*) as count FROM programs WHERE sector_id = ?";
-    $stmt = $conn->prepare($check_programs_query);
-    $stmt->bind_param("i", $sector_id);
-    $stmt->execute();
-    $program_count = $stmt->get_result()->fetch_assoc()['count'];
-    
-    if ($program_count > 0) {
-        return format_error('Cannot delete sector with associated programs');
-    }
-    
-    // Delete sector
-    $delete_query = "DELETE FROM sectors WHERE sector_id = ?";
-    $stmt = $conn->prepare($delete_query);
-    $stmt->bind_param("i", $sector_id);
-    
-    if ($stmt->execute()) {
-        return format_success('Sector deleted successfully');
-    } else {
-        return format_error('Failed to delete sector: ' . $stmt->error);
-    }
-}
-
-/**
- * =============
- * USER MANAGEMENT
- * =============
- */
-
-/**
- * Get all user accounts
- * @return array List of user accounts
- */
-function get_all_users() {
-    global $conn;
-    
-    // Verify admin permission
-    if (!is_admin()) {
-        return format_error('Permission denied', 403);
-    }
-    
-    $query = "SELECT u.*, s.sector_name 
-              FROM users u 
-              LEFT JOIN sectors s ON u.sector_id = s.sector_id 
-              ORDER BY u.username ASC";
-    
-    $result = $conn->query($query);
-    $users = array();
-    
-    if ($result) {
-        while ($row = $result->fetch_assoc()) {
-            $users[] = $row;
-        }
-    }
-    
-    return $users;
-}
-
-/**
- * Add a new user account
- * @param array $data User account data
- * @return array Result of the operation
- */
-function add_user($data) {
-    global $conn;
-    
-    // Verify admin permission
-    if (!is_admin()) {
-        return format_error('Permission denied', 403);
-    }
-    
-    // Validate required fields
-    $required_fields = ['username', 'password', 'role'];
-    foreach ($required_fields as $field) {
-        if (empty($data[$field])) {
-            return format_error("Missing required field: {$field}");
-        }
-    }
-    
-    // Validate inputs
-    $username = trim($conn->real_escape_string($data['username']));
-    $password = $data['password'];
-    $role = $conn->real_escape_string($data['role']);
-    $agency_name = ($role === 'agency') ? trim($conn->real_escape_string($data['agency_name'])) : null;
-    $sector_id = ($role === 'agency' && !empty($data['sector_id'])) ? intval($data['sector_id']) : null;
-    
-    // Check password strength
-    if (strlen($password) < 8) {
-        return format_error('Password must be at least 8 characters long');
-    }
-    
-    // Check if username already exists
-    $check_query = "SELECT * FROM users WHERE username = ?";
-    $stmt = $conn->prepare($check_query);
-    $stmt->bind_param("s", $username);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($result->num_rows > 0) {
-        return format_error('Username already exists');
-    }
-    
-    // For agency users, ensure sector_id is valid
-    if ($role === 'agency') {
-        if (empty($agency_name)) {
-            return format_error('Agency name is required for agency users');
-        }
-        
-        if (!$sector_id) {
-            return format_error('Sector is required for agency users');
-        }
-        
-        // Verify sector exists
-        $sector_check = "SELECT * FROM sectors WHERE sector_id = ?";
-        $stmt = $conn->prepare($sector_check);
-        $stmt->bind_param("i", $sector_id);
-        $stmt->execute();
-        $sector_result = $stmt->get_result();
-        
-        if ($sector_result->num_rows === 0) {
-            return format_error('Selected sector does not exist');
-        }
-    }
-    
-    // Hash password
-    $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-    
-    // Begin transaction
-    $conn->begin_transaction();
-    
-    try {
-        // Insert user
-        $insert_query = "INSERT INTO users (username, password, agency_name, role, sector_id, is_active) VALUES (?, ?, ?, ?, ?, 1)";
-        $stmt = $conn->prepare($insert_query);
-        $stmt->bind_param("ssssi", $username, $hashed_password, $agency_name, $role, $sector_id);
-        
-        if (!$stmt->execute()) {
-            throw new Exception($stmt->error);
-        }
-        
-        $user_id = $conn->insert_id;
-        
-        // Commit transaction
-        $conn->commit();
-        
-        return format_success('User added successfully', ['user_id' => $user_id]);
-        
-    } catch (Exception $e) {
-        // Rollback on error
-        $conn->rollback();
-        return format_error('Failed to add user: ' . $e->getMessage());
-    }
-}
-
-/**
- * Update an existing user account
- * @param array $data User account data
- * @return array Result of the operation
- */
-function update_user($data) {
-    global $conn;
-    
-    // Verify admin permission
-    if (!is_admin()) {
-        return format_error('Permission denied', 403);
-    }
-    
-    // Validate required fields
-    if (empty($data['user_id']) || empty($data['username']) || empty($data['role'])) {
-        return format_error('Missing required fields');
-    }
-    
-    // Validate inputs
-    $user_id = intval($data['user_id']);
-    $username = trim($conn->real_escape_string($data['username']));
-    $role = $conn->real_escape_string($data['role']);
-    $agency_name = ($role === 'agency') ? trim($conn->real_escape_string($data['agency_name'])) : null;
-    $sector_id = ($role === 'agency' && !empty($data['sector_id'])) ? intval($data['sector_id']) : null;
-    $is_active = isset($data['is_active']) ? 1 : 0;
-    
-    // Don't allow deactivating your own account
-    if ($user_id === $_SESSION['user_id'] && $is_active === 0) {
-        return format_error('You cannot deactivate your own account');
-    }
-    
-    // Check if username already exists for another user
-    $check_query = "SELECT * FROM users WHERE username = ? AND user_id != ?";
-    $stmt = $conn->prepare($check_query);
-    $stmt->bind_param("si", $username, $user_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($result->num_rows > 0) {
-        return format_error('Username already exists');
-    }
-    
-    // For agency users, ensure sector_id is valid
-    if ($role === 'agency') {
-        if (empty($agency_name)) {
-            return format_error('Agency name is required for agency users');
-        }
-        
-        if (!$sector_id) {
-            return format_error('Sector is required for agency users');
-        }
-        
-        // Verify sector exists
-        $sector_check = "SELECT * FROM sectors WHERE sector_id = ?";
-        $stmt = $conn->prepare($sector_check);
-        $stmt->bind_param("i", $sector_id);
-        $stmt->execute();
-        $sector_result = $stmt->get_result();
-        
-        if ($sector_result->num_rows === 0) {
-            return format_error('Selected sector does not exist');
-        }
-    }
-    
-    // Begin transaction
-    $conn->begin_transaction();
-    
-    try {
-        // Check if password is being updated
-        if (!empty($data['password'])) {
-            $password = $data['password'];
-            
-            // Check password strength
-            if (strlen($password) < 8) {
-                throw new Exception('Password must be at least 8 characters long');
-            }
-            
-            // Hash password
-            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-            
-            // Update user with password
-            $update_query = "UPDATE users SET username = ?, password = ?, agency_name = ?, role = ?, sector_id = ?, is_active = ? WHERE user_id = ?";
-            $stmt = $conn->prepare($update_query);
-            $stmt->bind_param("ssssiis", $username, $hashed_password, $agency_name, $role, $sector_id, $is_active, $user_id);
-        } else {
-            // Update user without changing password
-            $update_query = "UPDATE users SET username = ?, agency_name = ?, role = ?, sector_id = ?, is_active = ? WHERE user_id = ?";
-            $stmt = $conn->prepare($update_query);
-            $stmt->bind_param("ssssis", $username, $agency_name, $role, $sector_id, $is_active, $user_id);
-        }
-        
-        if (!$stmt->execute()) {
-            throw new Exception($stmt->error);
-        }
-        
-        // Commit transaction
-        $conn->commit();
-        
-        return format_success('User updated successfully');
-        
-    } catch (Exception $e) {
-        // Rollback on error
-        $conn->rollback();
-        return format_error('Failed to update user: ' . $e->getMessage());
-    }
-}
-
-/**
- * Delete a user account
- * @param int $user_id User ID to delete
- * @return array Result of the operation
- */
-function delete_user($user_id) {
-    global $conn;
-    
-    // Verify admin permission
-    if (!is_admin()) {
-        return format_error('Permission denied', 403);
-    }
-    
-    // Validate user ID
-    $user_id = intval($user_id);
-    
-    // Don't allow deleting your own account
-    if ($user_id === $_SESSION['user_id']) {
-        return format_error('You cannot delete your own account');
-    }
-    
-    // Check if user exists
-    $check_query = "SELECT * FROM users WHERE user_id = ?";
-    $stmt = $conn->prepare($check_query);
-    $stmt->bind_param("i", $user_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($result->num_rows === 0) {
-        return format_error('User not found');
-    }
-    
-    // Begin transaction
-    $conn->begin_transaction();
-    
-    try {
-        // Check if user has associated programs or submissions
-        $program_check = "SELECT COUNT(*) as count FROM programs WHERE owner_agency_id = ?";
-        $stmt = $conn->prepare($program_check);
-        $stmt->bind_param("i", $user_id);
-        $stmt->execute();
-        $program_result = $stmt->get_result();
-        $program_count = $program_result->fetch_assoc()['count'];
-        
-        if ($program_count > 0) {
-            throw new Exception('Cannot delete user with associated programs');
-        }
-        
-        // Delete user
-        $delete_query = "DELETE FROM users WHERE user_id = ?";
-        $stmt = $conn->prepare($delete_query);
-        $stmt->bind_param("i", $user_id);
-        
-        if (!$stmt->execute()) {
-            throw new Exception($stmt->error);
-        }
-        
-        // Commit transaction
-        $conn->commit();
-        
-        return format_success('User deleted successfully');
-        
-    } catch (Exception $e) {
-        // Rollback on error
-        $conn->rollback();
-        return format_error('Failed to delete user: ' . $e->getMessage());
-    }
-}
 ?>
