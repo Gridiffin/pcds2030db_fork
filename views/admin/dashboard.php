@@ -77,38 +77,38 @@ require_once '../../includes/dashboard_header.php';
             <div class="col-12">
                 <div class="card shadow-sm">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="card-title m-0 text-dark"><i class="fas fa-bolt me-2 text-warning"></i>Quick Actions</h5>
+                        <h5 class="card-title m-0 text-white"><i class="fas fa-bolt me-2 text-warning"></i>Quick Actions</h5>
                     </div>
                     <div class="card-body">
-                        <div class="row justify-content-center text-center g-3">
+                        <div class="row justify-content-center text-center g-4">
                             <div class="col-lg-3 col-md-4 col-6">
-                                <a href="manage_programs.php" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3">
-                                    <i class="fas fa-project-diagram fa-lg mb-2"></i>
-                                    <span>Manage Programs</span>
+                                <a href="manage_programs.php" class="btn btn-outline-primary w-100 d-flex flex-column align-items-center justify-content-center quick-action-btn">
+                                    <i class="fas fa-project-diagram fa-2x"></i>
+                                    <span class="mt-2">Manage Programs</span>
                                 </a>
                             </div>
                             <div class="col-lg-3 col-md-4 col-6">
-                                <a href="manage_users.php" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3">
-                                    <i class="fas fa-users fa-lg mb-2"></i>
-                                    <span>Manage Users</span>
+                                <a href="manage_users.php" class="btn btn-outline-primary w-100 d-flex flex-column align-items-center justify-content-center quick-action-btn">
+                                    <i class="fas fa-users fa-2x"></i>
+                                    <span class="mt-2">Manage Users</span>
                                 </a>
                             </div>
                             <div class="col-lg-3 col-md-4 col-6">
-                                <a href="manage_metrics.php" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3">
-                                    <i class="fas fa-chart-line fa-lg mb-2"></i>
-                                    <span>Manage Metrics</span>
+                                <a href="manage_metrics.php" class="btn btn-outline-primary w-100 d-flex flex-column align-items-center justify-content-center quick-action-btn">
+                                    <i class="fas fa-chart-line fa-2x"></i>
+                                    <span class="mt-2">Manage Metrics</span>
                                 </a>
                             </div>
                             <div class="col-lg-3 col-md-4 col-6">
-                                <a href="generate_reports.php" class="btn btn-outline-success w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3">
-                                    <i class="fas fa-file-powerpoint fa-lg mb-2"></i>
-                                    <span>Generate Reports</span>
+                                <a href="generate_reports.php" class="btn btn-outline-success w-100 d-flex flex-column align-items-center justify-content-center quick-action-btn border-success">
+                                    <i class="fas fa-file-powerpoint fa-2x"></i>
+                                    <span class="mt-2">Generate Reports</span>
                                 </a>
                             </div>
                             <div class="col-lg-3 col-md-4 col-6">
-                                <a href="reporting_periods.php" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3">
-                                    <i class="fas fa-calendar-alt fa-lg mb-2"></i>
-                                    <span>Manage Periods</span>
+                                <a href="reporting_periods.php" class="btn btn-outline-primary w-100 d-flex flex-column align-items-center justify-content-center quick-action-btn">
+                                    <i class="fas fa-calendar-alt fa-2x"></i>
+                                    <span class="mt-2">Manage Periods</span>
                                 </a>
                             </div>
                         </div>
@@ -122,12 +122,10 @@ require_once '../../includes/dashboard_header.php';
             <div class="row">
                 <!-- Agencies Reporting Card -->
                 <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card stat-card primary">
+                    <div class="stat-card primary">
                         <div class="card-body">
-                            <div class="stat-card-header">
-                                <div class="icon-container">
-                                    <i class="fas fa-users stat-icon"></i>
-                                </div>
+                            <div class="icon-container">
+                                <i class="fas fa-users stat-icon"></i>
                             </div>
                             <div class="stat-card-content">
                                 <div class="stat-title">Agencies Reporting</div>
@@ -143,14 +141,12 @@ require_once '../../includes/dashboard_header.php';
                     </div>
                 </div>
 
-                <!-- Programs On Track Card (repeat structure for other cards) -->
+                <!-- Programs On Track Card -->
                 <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card stat-card success">
+                    <div class="stat-card warning">
                         <div class="card-body">
-                            <div class="stat-card-header">
-                                <div class="icon-container">
-                                    <i class="fas fa-check-circle stat-icon"></i>
-                                </div>
+                            <div class="icon-container">
+                                <i class="fas fa-calendar-check stat-icon"></i>
                             </div>
                             <div class="stat-card-content">
                                 <div class="stat-title">Programs On Track</div>
@@ -170,12 +166,10 @@ require_once '../../includes/dashboard_header.php';
 
                 <!-- Programs Delayed Card -->
                 <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card stat-card warning">
+                    <div class="stat-card danger">
                         <div class="card-body">
-                            <div class="stat-card-header">
-                                <div class="icon-container">
-                                    <i class="fas fa-exclamation-triangle stat-icon"></i>
-                                </div>
+                            <div class="icon-container">
+                                <i class="fas fa-exclamation-triangle stat-icon"></i>
                             </div>
                             <div class="stat-card-content">
                                 <div class="stat-title">Programs Delayed</div>
@@ -195,12 +189,10 @@ require_once '../../includes/dashboard_header.php';
 
                 <!-- Overall Completion Card -->
                 <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card stat-card info">
+                    <div class="stat-card success">
                         <div class="card-body">
-                            <div class="stat-card-header">
-                                <div class="icon-container">
-                                    <i class="fas fa-clipboard-list stat-icon"></i>
-                                </div>
+                            <div class="icon-container">
+                                <i class="fas fa-clipboard-list stat-icon"></i>
                             </div>
                             <div class="stat-card-content">
                                 <div class="stat-title">Overall Completion</div>
@@ -223,7 +215,7 @@ require_once '../../includes/dashboard_header.php';
 
         <div class="row">
             <!-- Sector Overview -->
-            <div class="col-lg-8 mb-4">
+            <div class="col-lg-6 mb-4">
                 <div class="card shadow-sm">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="card-title m-0">Sector Overview</h5>
@@ -271,12 +263,15 @@ require_once '../../includes/dashboard_header.php';
                                 </tbody>
                             </table>
                         </div>
+                        <div class="chart-container" style="position: relative; height:150px; width:100%">
+                            <canvas id="programStatusChart"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- Recent Submissions -->
-            <div class="col-lg-4 mb-4">
+            <div class="col-lg-6 mb-4">
                 <div class="card shadow-sm">
                     <div class="card-header">
                         <h5 class="card-title m-0">Recent Submissions</h5>
@@ -304,12 +299,20 @@ require_once '../../includes/dashboard_header.php';
                                                 <td><?php echo $submission['program_name']; ?></td>
                                                 <td>
                                                     <?php 
-                                                        $status_class = 'secondary';
+                                                        $status_class = 'secondary'; // Default to gray (not started)
                                                         switch ($submission['status']) {
-                                                            case 'on-track': $status_class = 'success'; break;
-                                                            case 'delayed': $status_class = 'warning'; break;
-                                                            case 'completed': $status_class = 'primary'; break;
-                                                            case 'not-started': $status_class = 'secondary'; break;
+                                                            case 'on-track': 
+                                                            case 'on-track-yearly':
+                                                                $status_class = 'warning'; // Yellow - Still on track for the year
+                                                                break;
+                                                            case 'delayed': 
+                                                            case 'severe-delay':
+                                                                $status_class = 'danger'; // Red - Delayed
+                                                                break;
+                                                            case 'completed': 
+                                                            case 'target-achieved':
+                                                                $status_class = 'success'; // Green - Monthly target achieved
+                                                                break;
                                                         }
                                                     ?>
                                                     <span class="badge bg-<?php echo $status_class; ?>">

@@ -215,19 +215,23 @@ require_once '../../includes/dashboard_header.php';
         <div class="row">
             <!-- Programs Card -->
             <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card stat-card primary">
+                <div class="stat-card primary">
                     <div class="card-body">
-                        <i class="fas fa-clipboard-list stat-icon"></i>
-                        <div class="stat-title">Total Programs</div>
-                        <div class="stat-value">
-                            <?php 
-                            // Use period-specific program count
-                            echo $has_period_data ? $period_program_count : 0;
-                            ?>
+                        <div class="icon-container">
+                            <i class="fas fa-clipboard-list stat-icon"></i>
                         </div>
-                        <div class="stat-subtitle">
-                            <i class="fas fa-check me-1"></i>
-                            <?php echo $has_period_data ? $period_submitted_count : 0; ?> Programs Submitted
+                        <div class="stat-card-content">
+                            <div class="stat-title">Total Programs</div>
+                            <div class="stat-value">
+                                <?php 
+                                // Use period-specific program count
+                                echo $has_period_data ? $period_program_count : 0;
+                                ?>
+                            </div>
+                            <div class="stat-subtitle">
+                                <i class="fas fa-check me-1"></i>
+                                <?php echo $has_period_data ? $period_submitted_count : 0; ?> Programs Submitted
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -235,66 +239,78 @@ require_once '../../includes/dashboard_header.php';
 
             <!-- On Track Programs Card -->
             <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card stat-card success">
+                <div class="stat-card warning">
                     <div class="card-body">
-                        <i class="fas fa-check-circle stat-icon"></i>
-                        <div class="stat-title">On Track Programs</div>
-                        <div class="stat-value"><?php echo $program_status_data['on-track']; ?></div>
-                        <?php if ($has_period_data && $period_program_count > 0): ?>
-                        <div class="stat-subtitle">
-                            <i class="fas fa-chart-line me-1"></i>
-                            <?php echo round(($program_status_data['on-track'] / $period_program_count) * 100); ?>% of total
+                        <div class="icon-container">
+                            <i class="fas fa-calendar-check stat-icon"></i>
                         </div>
-                        <?php else: ?>
-                        <div class="stat-subtitle text-muted">
-                            <i class="fas fa-info-circle me-1"></i>
-                            No data for this period
+                        <div class="stat-card-content">
+                            <div class="stat-title">On Track Programs</div>
+                            <div class="stat-value"><?php echo $program_status_data['on-track']; ?></div>
+                            <?php if ($has_period_data && $period_program_count > 0): ?>
+                            <div class="stat-subtitle">
+                                <i class="fas fa-chart-line me-1"></i>
+                                <?php echo round(($program_status_data['on-track'] / $period_program_count) * 100); ?>% of total
+                            </div>
+                            <?php else: ?>
+                            <div class="stat-subtitle text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                No data for this period
+                            </div>
+                            <?php endif; ?>
                         </div>
-                        <?php endif; ?>
                     </div>
                 </div>
             </div>
 
             <!-- Delayed Programs Card -->
             <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card stat-card warning">
+                <div class="stat-card danger">
                     <div class="card-body">
-                        <i class="fas fa-exclamation-triangle stat-icon"></i>
-                        <div class="stat-title">Delayed Programs</div>
-                        <div class="stat-value"><?php echo $program_status_data['delayed']; ?></div>
-                        <?php if ($has_period_data && $period_program_count > 0): ?>
-                        <div class="stat-subtitle">
-                            <i class="fas fa-chart-line me-1"></i>
-                            <?php echo round(($program_status_data['delayed'] / $period_program_count) * 100); ?>% of total
+                        <div class="icon-container">
+                            <i class="fas fa-exclamation-triangle stat-icon"></i>
                         </div>
-                        <?php else: ?>
-                        <div class="stat-subtitle text-muted">
-                            <i class="fas fa-info-circle me-1"></i>
-                            No data for this period
+                        <div class="stat-card-content">
+                            <div class="stat-title">Delayed Programs</div>
+                            <div class="stat-value"><?php echo $program_status_data['delayed']; ?></div>
+                            <?php if ($has_period_data && $period_program_count > 0): ?>
+                            <div class="stat-subtitle">
+                                <i class="fas fa-chart-line me-1"></i>
+                                <?php echo round(($program_status_data['delayed'] / $period_program_count) * 100); ?>% of total
+                            </div>
+                            <?php else: ?>
+                            <div class="stat-subtitle text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                No data for this period
+                            </div>
+                            <?php endif; ?>
                         </div>
-                        <?php endif; ?>
                     </div>
                 </div>
             </div>
 
             <!-- Completed Programs Card -->
             <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card stat-card info">
+                <div class="stat-card success">
                     <div class="card-body">
-                        <i class="fas fa-trophy stat-icon"></i>
-                        <div class="stat-title">Monthly Target Achieved</div>
-                        <div class="stat-value"><?php echo $program_status_data['completed']; ?></div>
-                        <?php if ($has_period_data && $period_program_count > 0): ?>
-                        <div class="stat-subtitle">
-                            <i class="fas fa-chart-line me-1"></i>
-                            <?php echo round(($program_status_data['completed'] / $period_program_count) * 100); ?>% of total
+                        <div class="icon-container">
+                            <i class="fas fa-trophy stat-icon"></i>
                         </div>
-                        <?php else: ?>
-                        <div class="stat-subtitle text-muted">
-                            <i class="fas fa-info-circle me-1"></i>
-                            No data for this period
+                        <div class="stat-card-content">
+                            <div class="stat-title">Monthly Target Achieved</div>
+                            <div class="stat-value"><?php echo $program_status_data['completed']; ?></div>
+                            <?php if ($has_period_data && $period_program_count > 0): ?>
+                            <div class="stat-subtitle">
+                                <i class="fas fa-chart-line me-1"></i>
+                                <?php echo round(($program_status_data['completed'] / $period_program_count) * 100); ?>% of total
+                            </div>
+                            <?php else: ?>
+                            <div class="stat-subtitle text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                No data for this period
+                            </div>
+                            <?php endif; ?>
                         </div>
-                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -312,18 +328,18 @@ require_once '../../includes/dashboard_header.php';
                         <div class="chart-container" style="position: relative; height:250px; width:100%">
                             <canvas id="programStatusChart"></canvas>
                         </div>
-                        <div class="mt-4 text-center small" id="programStatusLegend">
-                            <span class="me-3 chart-legend-item">
+                        <div class="mt-4" id="programStatusLegend">
+                            <span class="chart-legend-item">
                                 <i class="fas fa-circle text-warning"></i> On Track
                             </span>
-                            <span class="me-3 chart-legend-item">
+                            <span class="chart-legend-item">
                                 <i class="fas fa-circle text-danger"></i> Delayed
                             </span>
-                            <span class="me-3 chart-legend-item">
+                            <span class="chart-legend-item">
                                 <i class="fas fa-circle text-success"></i> Monthly Target Achieved
                             </span>
                             <span class="chart-legend-item">
-                                <i class="fas fa-circle text-secondary"></i> Not Started
+                                <i class="fas fa-circle text-gray"></i> Not Started
                             </span>
                         </div>
                     </div>
@@ -431,9 +447,9 @@ require_once '../../includes/dashboard_header.php';
                                                             'on-track' => ['label' => 'On Track', 'class' => 'warning'],
                                                             'on-track-yearly' => ['label' => 'On Track for Year', 'class' => 'warning'],
                                                             'target-achieved' => ['label' => 'Monthly Target Achieved', 'class' => 'success'],
+                                                            'completed' => ['label' => 'Monthly Target Achieved', 'class' => 'success'],
                                                             'delayed' => ['label' => 'Delayed', 'class' => 'danger'],
                                                             'severe-delay' => ['label' => 'Severe Delays', 'class' => 'danger'],
-                                                            'completed' => ['label' => 'Completed', 'class' => 'primary'],
                                                             'not-started' => ['label' => 'Not Started', 'class' => 'secondary']
                                                         ];
                                                         

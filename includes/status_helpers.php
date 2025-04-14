@@ -47,16 +47,21 @@ function get_status_badge($status) {
     $status = convert_legacy_status($status);
     
     $badges = [
-        'on-track' => ['class' => 'warning', 'icon' => 'check-circle', 'label' => 'On Track'],
+        'on-track' => ['class' => 'warning', 'icon' => 'calendar-check', 'label' => 'On Track'],
         'on-track-yearly' => ['class' => 'warning', 'icon' => 'calendar-check', 'label' => 'On Track for Year'],
-        'target-achieved' => ['class' => 'success', 'icon' => 'trophy', 'label' => 'Target Achieved'],
+        'target-achieved' => ['class' => 'success', 'icon' => 'check-circle', 'label' => 'Monthly Target Achieved'],
+        'completed' => ['class' => 'success', 'icon' => 'check-circle', 'label' => 'Monthly Target Achieved'],
         'delayed' => ['class' => 'danger', 'icon' => 'exclamation-triangle', 'label' => 'Delayed'],
         'severe-delay' => ['class' => 'danger', 'icon' => 'exclamation-circle', 'label' => 'Severe Delay'],
-        'completed' => ['class' => 'primary', 'icon' => 'flag-checkered', 'label' => 'Completed'],
         'not-started' => ['class' => 'secondary', 'icon' => 'clock', 'label' => 'Not Started']
     ];
     
-    $badge = $badges[$status] ?? $badges['not-started'];
+    // Set default if status is not in our map
+    if (!isset($badges[$status])) {
+        $status = 'not-started';
+    }
+    
+    $badge = $badges[$status];
     
     return '<span class="badge bg-' . $badge['class'] . '"><i class="fas fa-' . $badge['icon'] . ' me-1"></i> ' . $badge['label'] . '</span>';
 }

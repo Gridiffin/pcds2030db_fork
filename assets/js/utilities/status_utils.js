@@ -34,11 +34,18 @@ function initStatusPills() {
  */
 function getStatusColorClass(status) {
     switch (status) {
-        case 'target-achieved': return 'success';
-        case 'on-track-yearly': return 'warning';
-        case 'severe-delay': return 'danger';
-        case 'not-started': 
-        default: return 'secondary';
+        case 'target-achieved':
+        case 'completed':
+            return 'success'; // Green for Monthly Target Achieved
+        case 'delayed':
+        case 'severe-delay':
+            return 'danger';  // Red for Delayed
+        case 'on-track':
+        case 'on-track-yearly':
+            return 'warning'; // Yellow for Still on Track for the Year
+        case 'not-started':
+        default:
+            return 'secondary'; // Gray for Not Started
     }
 }
 
@@ -49,11 +56,19 @@ function getStatusColorClass(status) {
  */
 function getStatusIconClass(status) {
     switch (status) {
-        case 'target-achieved': return 'fas fa-check-circle';
-        case 'on-track-yearly': return 'fas fa-calendar-check';
-        case 'severe-delay': return 'fas fa-exclamation-triangle';
+        case 'target-achieved':
+        case 'completed':
+            return 'fas fa-check-circle'; // Success icon
+        case 'on-track':
+        case 'on-track-yearly':
+            return 'fas fa-calendar-check'; // Calendar check icon
+        case 'delayed':
+            return 'fas fa-exclamation-triangle'; // Warning icon
+        case 'severe-delay':
+            return 'fas fa-exclamation-circle'; // Stronger warning icon
         case 'not-started': 
-        default: return 'fas fa-hourglass-start';
+        default:
+            return 'fas fa-hourglass-start'; // Not started icon
     }
 }
 

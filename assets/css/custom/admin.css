@@ -6,11 +6,15 @@
 @import url('common.css');
 
 /* Admin dashboard specific styles */
+
+/* Remove or comment out this general .stat-icon rule that's causing the issue */
+/* 
 .stat-icon {
     font-size: 2rem;
     opacity: 0.3;
     color: var(--dark-color);
 }
+*/
 
 .dashboard-card {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -368,59 +372,15 @@
     padding: 1rem;
 }
 
-/* Enhanced stat cards */
-.stat-card {
-    border-radius: 0.75rem;
-    border: none;
-    overflow: hidden;
-    position: relative;
-    z-index: 1;
-    margin-bottom: 1.5rem;
-    background-color: white;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-}
-
-.stat-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 6px;
-    height: 100%;
-    background-color: var(--primary-color);
-    z-index: 1;
-}
-
-.stat-card.secondary::before {
-    background-color: var(--secondary-color);
-}
-
-.stat-card.warning::before {
-    background-color: var(--warning-color);
-}
-
-.stat-card.info::before {
-    background-color: var(--info-color);
-}
-
-.stat-card:after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 100%;
-    background: linear-gradient(to bottom right, rgba(var(--primary-rgb), 0.03), transparent);
-    z-index: -1;
-}
-
-.stat-icon {
-    font-size: 2.5rem;
-    opacity: 0.15;
-    color: var(--primary-color);
-    position: absolute;
-    bottom: 1rem;
-    right: 1rem;
+/* Responsive adjustments */
+@media (max-width: 767.98px) {
+    .stat-card .card-body {
+        padding: 1rem;
+    }
+    
+    .stat-card .stat-value {
+        font-size: 1.5rem;
+    }
 }
 
 /* Quick actions */

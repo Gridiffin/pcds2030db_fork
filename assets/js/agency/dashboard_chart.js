@@ -246,11 +246,18 @@
                 
                 // Add hover effect to highlight corresponding chart section
                 item.addEventListener('mouseenter', () => {
+                    // Add active class to current legend item
+                    item.classList.add('active');
+                    
+                    // Set active elements in chart
                     this.chart.setActiveElements([{datasetIndex: 0, index: index}]);
                     this.chart.update();
                 });
                 
                 item.addEventListener('mouseleave', () => {
+                    // Remove active class
+                    item.classList.remove('active');
+                    
                     this.chart.setActiveElements([]);
                     this.chart.update();
                 });
@@ -268,6 +275,41 @@
             this.chart.data.datasets[0].data = newData.data;
             this.chart.update();
         }
+    }
+
+    /**
+     * Initialize the dashboard chart with program status data
+     */
+    function initializeDashboardChart(chartData) {
+        // Check if we have a chart container
+        const chartContainer = document.getElementById('programStatusChart');
+        if (!chartContainer) return;
+        
+        // Define colors based on status meaning
+        const chartColors = {
+            onTrack: '#ffc107',       // Yellow - Still on track for the year
+            delayed: '#dc3545',       // Red - Delayed
+            completed: '#28a745',     // Green - Monthly target achieved
+            notStarted: '#6c757d'     // Gray - Not started
+        };
+        
+        // Setup data for the chart
+        const data = {
+            labels: ['On Track', 'Delayed', 'Target Achieved', 'Not Started'],
+            datasets: [{
+                data: chartData.data,
+                backgroundColor: [
+                    chartColors.onTrack,
+                    chartColors.delayed,
+                    chartColors.completed,
+                    chartColors.notStarted
+                ],
+                borderWidth: 1,
+                borderColor: '#ffffff'
+            }]
+        };
+
+        // ...existing code...
     }
 
     // Only expose the initialization function to global scope
