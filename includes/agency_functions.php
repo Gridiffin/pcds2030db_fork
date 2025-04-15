@@ -8,7 +8,12 @@
 // Include utilities
 require_once 'utilities.php';
 
-
+/**
+ * Get agency sector metrics
+ */
+function get_agency_sector_metrics(){
+    
+}
 
 /**
  * Check if current user is an agency
