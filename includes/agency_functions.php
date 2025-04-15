@@ -8,6 +8,8 @@
 // Include utilities
 require_once 'utilities.php';
 
+
+
 /**
  * Check if current user is an agency
  * @return boolean
@@ -881,7 +883,19 @@ function submit_program_data_enhanced($data) {
     // Insert with minimal columns + rich JSON content
     $query = "INSERT INTO program_submissions (program_id, period_id, status, status_date, content_json) 
               VALUES (?, ?, ?, ?, ?)";
-    // ...existing code...
+    
+    $stmt = $conn->prepare($query);
+    if (!$stmt) {
+        return ['error' => 'Failed to prepare statement: ' . $conn->error];
+    }
+    
+    $stmt->bind_param("iisss", $program_id, $period_id, $status, $status_date, $content_json);
+    
+    if ($stmt->execute()) {
+        return ['success' => true, 'message' => 'Program data submitted successfully'];
+    } else {
+        return ['error' => 'Failed to submit program data: ' . $stmt->error];
+    }
 }
 
 /**

@@ -51,6 +51,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_metrics'])) {
 
 // Get metrics for the agency's sector
 $metrics = get_agency_sector_metrics($_SESSION['sector_id']);
+if (!is_array($metrics)) {
+    $metrics = [];
+}
 
 
 $additionalScripts = [
@@ -114,10 +117,11 @@ require_once '../layouts/agency_nav.php';
             <span class="badge bg-primary"><?php echo count($metrics); ?> Metrics</span>
         </div>
         <div class="card-body">
+            <a href="create_metric.php" class="btn"> + Create New </a>
             <?php if (empty($metrics)): ?>
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle me-2"></i>
-                    No metrics have been defined for your sector yet. Contact the administrator for assistance.
+                    No metrics for your sector yet. Contact the administrator for assistance.
                 </div>
             <?php else: ?>
                 <p class="mb-3">Please provide values for all required metrics for the current reporting period (Q<?php echo $current_period['quarter']; ?>-<?php echo $current_period['year']; ?>).</p>
