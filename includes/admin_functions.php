@@ -515,41 +515,48 @@ function get_period_submission_stats($period_id) {
     ];
     
     // Get total agencies
-    $query = "SELECT COUNT(id) as total FROM agencies WHERE active = 1";
-    $result = mysqli_query($conn, $query);
-    if ($result && $row = mysqli_fetch_assoc($result)) {
+    $query = "SELECT COUNT(*) as total FROM users WHERE role = 'agency' AND is_active = 1";
+    $result = $conn->query($query);
+    if ($result && $row = $result->fetch_assoc()) {
         $stats['total_agencies'] = $row['total'];
     }
     
     // Get agencies that have reported
-    $query = "SELECT COUNT(DISTINCT agency_id) as reported FROM submissions WHERE period_id = ?";
-    $stmt = mysqli_prepare($conn, $query);
-    mysqli_stmt_bind_param($stmt, "i", $period_id);
-    mysqli_stmt_execute($stmt);
-    $result = mysqli_stmt_get_result($stmt);
-    if ($result && $row = mysqli_fetch_assoc($result)) {
+    $query = "SELECT COUNT(DISTINCT submitted_by) as reported 
+              FROM program_submissions 
+              WHERE period_id = ?";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("i", $period_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($result && $row = $result->fetch_assoc()) {
         $stats['agencies_reported'] = $row['reported'];
     }
     
     // Get program status counts
-    $query = "SELECT status, COUNT(*) as count FROM submissions WHERE period_id = ? GROUP BY status";
-    $stmt = mysqli_prepare($conn, $query);
-    mysqli_stmt_bind_param($stmt, "i", $period_id);
-    mysqli_stmt_execute($stmt);
-    $result = mysqli_stmt_get_result($stmt);
+    $query = "SELECT status, COUNT(*) as count 
+              FROM program_submissions 
+              WHERE period_id = ? 
+              GROUP BY status";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("i", $period_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
     
-    while ($result && $row = mysqli_fetch_assoc($result)) {
-        if (in_array($row['status'], ['on-track', 'on-track-yearly', 'completed', 'target-achieved'])) {
+    while ($result && $row = $result->fetch_assoc()) {
+        $status = $row['status'];
+        
+        if (in_array($status, ['on-track', 'on-track-yearly', 'completed', 'target-achieved'])) {
             $stats['on_track_programs'] += $row['count'];
-        } elseif (in_array($row['status'], ['delayed', 'severe-delay'])) {
+        } elseif (in_array($status, ['delayed', 'severe-delay'])) {
             $stats['delayed_programs'] += $row['count'];
         }
     }
     
     // Get total programs
-    $query = "SELECT COUNT(*) as total FROM programs WHERE active = 1";
-    $result = mysqli_query($conn, $query);
-    if ($result && $row = mysqli_fetch_assoc($result)) {
+    $query = "SELECT COUNT(*) as total FROM programs";
+    $result = $conn->query($query);
+    if ($result && $row = $result->fetch_assoc()) {
         $stats['total_programs'] = $row['total'];
     }
     
@@ -680,20 +687,20 @@ function get_sector_data_for_period($period_id) {
     
     $sql = "SELECT 
                 s.sector_id,
-                s.name as sector_name,
-                COUNT(DISTINCT a.agency_id) as agency_count,
+                s.sector_name,
+                COUNT(DISTINCT u.user_id) as agency_count,
                 COUNT(DISTINCT p.program_id) as program_count,
-                IFNULL(ROUND((COUNT(DISTINCT sub.submission_id) / 
+                IFNULL(ROUND((COUNT(DISTINCT ps.submission_id) / 
                     NULLIF(COUNT(DISTINCT p.program_id), 0)) * 100, 0), 0) as submission_pct
             FROM 
                 sectors s
-                LEFT JOIN agencies a ON s.sector_id = a.sector_id
-                LEFT JOIN programs p ON a.agency_id = p.agency_id
-                LEFT JOIN submissions sub ON p.program_id = sub.program_id AND sub.period_id = ?
+                LEFT JOIN users u ON s.sector_id = u.sector_id AND u.role = 'agency'
+                LEFT JOIN programs p ON u.user_id = p.owner_agency_id
+                LEFT JOIN program_submissions ps ON p.program_id = ps.program_id AND ps.period_id = ?
             GROUP BY 
-                s.sector_id, s.name
+                s.sector_id, s.sector_name
             ORDER BY 
-                s.name ASC";
+                s.sector_name ASC";
                 
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("i", $period_id);
@@ -715,25 +722,27 @@ function get_sector_data_for_period($period_id) {
  * @return array List of recent submissions
  */
 function get_recent_submissions($period_id = null, $limit = 5) {
-    global $db;
+    global $conn;
     
-    $query = "SELECT s.*, a.name as agency_name, p.name as program_name 
-              FROM submissions s
-              JOIN agencies a ON s.agency_id = a.agency_id
-              JOIN programs p ON s.program_id = p.program_id
+    $query = "SELECT ps.*, 
+              u.agency_name, 
+              p.program_name 
+              FROM program_submissions ps
+              JOIN users u ON ps.submitted_by = u.user_id
+              JOIN programs p ON ps.program_id = p.program_id
               WHERE 1=1";
     
     if ($period_id) {
-        $query .= " AND s.period_id = ?";
+        $query .= " AND ps.period_id = ?";
         $params = [$period_id];
     } else {
         $params = [];
     }
     
-    $query .= " ORDER BY s.submission_date DESC LIMIT ?";
+    $query .= " ORDER BY ps.submission_date DESC LIMIT ?";
     $params[] = $limit;
     
-    $stmt = $db->prepare($query);
+    $stmt = $conn->prepare($query);
     if (!$stmt) {
         return [];
     }
