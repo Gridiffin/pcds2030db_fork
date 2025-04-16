@@ -33,6 +33,14 @@ $submission_stats = get_period_submission_stats($period_id);
 $sector_data = get_sector_data_for_period($period_id);
 $recent_submissions = get_recent_submissions($period_id, 5);
 
+// Get both assigned and agency-created programs for display
+$assigned_programs = get_admin_programs_list($period_id, ['is_assigned' => true]);
+$agency_programs = get_admin_programs_list($period_id, ['is_assigned' => false]);
+
+// Count assigned and agency-created programs
+$assigned_count = count($assigned_programs);
+$agency_count = count($agency_programs);
+
 // Additional scripts
 $additionalScripts = [
     APP_URL . '/assets/js/charts/chart.min.js',
@@ -82,9 +90,15 @@ require_once '../../includes/dashboard_header.php';
                     <div class="card-body">
                         <div class="row justify-content-center text-center g-4">
                             <div class="col-lg-3 col-md-4 col-6">
-                                <a href="manage_programs.php" class="btn btn-outline-primary w-100 d-flex flex-column align-items-center justify-content-center quick-action-btn">
+                                <a href="programs.php" class="btn btn-outline-primary w-100 d-flex flex-column align-items-center justify-content-center quick-action-btn">
                                     <i class="fas fa-project-diagram fa-2x"></i>
-                                    <span class="mt-2">Manage Programs</span>
+                                    <span class="mt-2">All Programs</span>
+                                </a>
+                            </div>
+                            <div class="col-lg-3 col-md-4 col-6">
+                                <a href="assign_programs.php" class="btn btn-outline-success w-100 d-flex flex-column align-items-center justify-content-center quick-action-btn border-success">
+                                    <i class="fas fa-tasks fa-2x"></i>
+                                    <span class="mt-2">Assign Programs</span>
                                 </a>
                             </div>
                             <div class="col-lg-3 col-md-4 col-6">
@@ -206,6 +220,177 @@ require_once '../../includes/dashboard_header.php';
                                          aria-valuemin="0" aria-valuemax="100">
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Programs Overview Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title m-0">Programs Overview</h5>
+                        <div>
+                            <a href="programs.php?program_type=assigned" class="btn btn-sm btn-success me-2">
+                                <i class="fas fa-tasks me-1"></i> View Assigned Programs
+                            </a>
+                            <a href="programs.php?program_type=agency" class="btn btn-sm btn-info">
+                                <i class="fas fa-list me-1"></i> View Agency Programs
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row gx-4">
+                            <!-- Assigned Programs -->
+                            <div class="col-md-6">
+                                <h6 class="border-bottom pb-2 mb-3">
+                                    <i class="fas fa-tasks text-success me-2"></i>Assigned Programs
+                                    <span class="badge bg-success ms-2"><?php echo $assigned_count; ?></span>
+                                </h6>
+                                
+                                <?php if (empty($assigned_programs)): ?>
+                                    <div class="alert alert-light">
+                                        <i class="fas fa-info-circle me-2"></i>No assigned programs found.
+                                        <a href="assign_programs.php" class="alert-link">Assign programs to agencies</a>
+                                    </div>
+                                <?php else: ?>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-hover">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Program</th>
+                                                    <th>Agency</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php $count = 0; ?>
+                                                <?php foreach ($assigned_programs as $program): ?>
+                                                    <?php if ($count < 5): ?>
+                                                        <tr>
+                                                            <td>
+                                                                <a href="view_program.php?id=<?php echo $program['program_id']; ?>" class="text-decoration-none">
+                                                                    <?php echo htmlspecialchars($program['program_name']); ?>
+                                                                </a>
+                                                            </td>
+                                                            <td><?php echo htmlspecialchars($program['agency_name']); ?></td>
+                                                            <td>
+                                                                <?php 
+                                                                $status = $program['status'] ?? 'not-started';
+                                                                $status_class = 'secondary';
+                                                                
+                                                                switch($status) {
+                                                                    case 'on-track':
+                                                                    case 'on-track-yearly':
+                                                                        $status_class = 'warning';
+                                                                        break;
+                                                                    case 'delayed':
+                                                                    case 'severe-delay':
+                                                                        $status_class = 'danger';
+                                                                        break;
+                                                                    case 'completed':
+                                                                    case 'target-achieved':
+                                                                        $status_class = 'success';
+                                                                        break;
+                                                                }
+                                                                ?>
+                                                                <span class="badge bg-<?php echo $status_class; ?>">
+                                                                    <?php echo ucfirst(str_replace('-', ' ', $status)); ?>
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                        <?php $count++; ?>
+                                                    <?php endif; ?>
+                                                <?php endforeach; ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    
+                                    <?php if ($assigned_count > 5): ?>
+                                        <div class="text-center mt-2">
+                                            <a href="programs.php?program_type=assigned" class="btn btn-sm btn-outline-success">
+                                                View All Assigned Programs <i class="fas fa-arrow-right ms-1"></i>
+                                            </a>
+                                        </div>
+                                    <?php endif; ?>
+                                <?php endif; ?>
+                            </div>
+                            
+                            <!-- Agency Created Programs -->
+                            <div class="col-md-6">
+                                <h6 class="border-bottom pb-2 mb-3">
+                                    <i class="fas fa-list text-info me-2"></i>Agency Created Programs
+                                    <span class="badge bg-info ms-2"><?php echo $agency_count; ?></span>
+                                </h6>
+                                
+                                <?php if (empty($agency_programs)): ?>
+                                    <div class="alert alert-light">
+                                        <i class="fas fa-info-circle me-2"></i>No agency-created programs found.
+                                    </div>
+                                <?php else: ?>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-hover">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Program</th>
+                                                    <th>Agency</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php $count = 0; ?>
+                                                <?php foreach ($agency_programs as $program): ?>
+                                                    <?php if ($count < 5): ?>
+                                                        <tr>
+                                                            <td>
+                                                                <a href="view_program.php?id=<?php echo $program['program_id']; ?>" class="text-decoration-none">
+                                                                    <?php echo htmlspecialchars($program['program_name']); ?>
+                                                                </a>
+                                                            </td>
+                                                            <td><?php echo htmlspecialchars($program['agency_name']); ?></td>
+                                                            <td>
+                                                                <?php 
+                                                                $status = $program['status'] ?? 'not-started';
+                                                                $status_class = 'secondary';
+                                                                
+                                                                switch($status) {
+                                                                    case 'on-track':
+                                                                    case 'on-track-yearly':
+                                                                        $status_class = 'warning';
+                                                                        break;
+                                                                    case 'delayed':
+                                                                    case 'severe-delay':
+                                                                        $status_class = 'danger';
+                                                                        break;
+                                                                    case 'completed':
+                                                                    case 'target-achieved':
+                                                                        $status_class = 'success';
+                                                                        break;
+                                                                }
+                                                                ?>
+                                                                <span class="badge bg-<?php echo $status_class; ?>">
+                                                                    <?php echo ucfirst(str_replace('-', ' ', $status)); ?>
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                        <?php $count++; ?>
+                                                    <?php endif; ?>
+                                                <?php endforeach; ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    
+                                    <?php if ($agency_count > 5): ?>
+                                        <div class="text-center mt-2">
+                                            <a href="programs.php?program_type=agency" class="btn btn-sm btn-outline-info">
+                                                View All Agency Programs <i class="fas fa-arrow-right ms-1"></i>
+                                            </a>
+                                        </div>
+                                    <?php endif; ?>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>

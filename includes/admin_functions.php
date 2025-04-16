@@ -578,90 +578,78 @@ function get_period_submission_stats($period_id) {
 function get_admin_programs_list($period_id = null, $filters = []) {
     global $conn;
     
-    // If no period specified, use current period
-    if (!$period_id) {
-        $current_period = get_current_reporting_period();
-        $period_id = $current_period ? $current_period['period_id'] : null;
-    }
-    
-    // Base query with joins to get all required data
-    $query = "SELECT p.program_id, p.program_name, p.description, p.start_date, p.end_date, 
-                     p.created_at, p.updated_at, p.is_assigned,
-                     u.user_id AS agency_id, u.agency_name,
-                     s.sector_id, s.sector_name,
-                     ps.status, ps.submission_date, ps.is_draft,
-                     ps.content_json
-              FROM programs p
-              JOIN users u ON p.owner_agency_id = u.user_id
-              JOIN sectors s ON p.sector_id = s.sector_id
-              LEFT JOIN (
-                  SELECT ps1.*
-                  FROM program_submissions ps1
-                  LEFT JOIN program_submissions ps2 ON ps1.program_id = ps2.program_id 
-                       AND ps1.period_id = ps2.period_id 
-                       AND ps1.submission_date < ps2.submission_date
-                  WHERE ps1.period_id = ? AND ps2.submission_id IS NULL
-              ) ps ON p.program_id = ps.program_id";
-    
-    // Add conditions based on filters
     $conditions = [];
-    $params = [$period_id]; // Starting with period_id
-    $types = "i"; // integer for period_id
+    $params = [];
+    $param_types = "";
     
-    // If filtering by specific period (not current), only show programs with submissions for that period
+    // Base query
+    $sql = "SELECT p.*, u.agency_name, s.sector_name, ps.status, ps.submission_date, ps.updated_at 
+            FROM programs p 
+            LEFT JOIN users u ON p.owner_agency_id = u.user_id 
+            LEFT JOIN sectors s ON p.sector_id = s.sector_id 
+            LEFT JOIN program_submissions ps ON p.program_id = ps.program_id";
+            
+    // Add filtering for period if provided
     if ($period_id) {
-        $conditions[] = "ps.submission_id IS NOT NULL";
+        $sql .= " AND ps.period_id = ?";
+        $params[] = $period_id;
+        $param_types .= "i";
     }
     
-    if (!empty($filters['status'])) {
+    // Filter by is_assigned status
+    if (isset($filters['is_assigned'])) {
+        $conditions[] = "p.is_assigned = ?";
+        $params[] = $filters['is_assigned'] ? 1 : 0;
+        $param_types .= "i";
+    }
+    
+    // Add other existing filters
+    if (isset($filters['status'])) {
         $conditions[] = "ps.status = ?";
         $params[] = $filters['status'];
-        $types .= "s";
+        $param_types .= "s";
     }
     
-    if (!empty($filters['sector_id'])) {
-        $conditions[] = "s.sector_id = ?";
+    if (isset($filters['sector_id'])) {
+        $conditions[] = "p.sector_id = ?";
         $params[] = $filters['sector_id'];
-        $types .= "i";
+        $param_types .= "i";
     }
     
-    if (!empty($filters['agency_id'])) {
-        $conditions[] = "u.user_id = ?";
+    if (isset($filters['agency_id'])) {
+        $conditions[] = "p.owner_agency_id = ?";
         $params[] = $filters['agency_id'];
-        $types .= "i";
+        $param_types .= "i";
     }
     
-    if (!empty($filters['search'])) {
-        $search = "%" . $filters['search'] . "%";
+    if (isset($filters['search'])) {
+        $search_term = '%' . $filters['search'] . '%';
         $conditions[] = "(p.program_name LIKE ? OR p.description LIKE ?)";
-        $params[] = $search;
-        $params[] = $search;
-        $types .= "ss";
+        $params[] = $search_term;
+        $params[] = $search_term;
+        $param_types .= "ss";
     }
     
-    // Add WHERE clause if there are conditions
+    // Combine conditions
     if (!empty($conditions)) {
-        $query .= " WHERE " . implode(" AND ", $conditions);
+        $sql .= " WHERE " . implode(" AND ", $conditions);
     }
     
-    // Order by most recently updated first
-    $query .= " ORDER BY p.updated_at DESC";
+    // Group and order
+    $sql .= " GROUP BY p.program_id ORDER BY p.created_at DESC";
     
-    // Prepare and execute the query
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param($types, ...$params);
+    // Prepare and execute statement
+    $stmt = $conn->prepare($sql);
+    
+    if (!empty($params)) {
+        $stmt->bind_param($param_types, ...$params);
+    }
+    
     $stmt->execute();
     $result = $stmt->get_result();
     
     $programs = [];
     while ($row = $result->fetch_assoc()) {
-        // Process JSON content if available
-        if (isset($row['content_json']) && !empty($row['content_json'])) {
-            $content = json_decode($row['content_json'], true);
-            if ($content) {
-                $row = array_merge($row, $content);
-            }
-        }
         $programs[] = $row;
     }
     

@@ -70,6 +70,39 @@
             max-width: 100%;
         }
     </style>
+    
+    <!-- Dropdown arrow and navigation styling -->
+    <style>
+        /* Hide Bootstrap's default dropdown arrow completely */
+        .navbar .nav-item.dropdown .dropdown-toggle::after,
+        .navbar .nav-item.dropdown .dropdown-toggle.active::after,
+        .navbar .nav-item.dropdown .dropdown-toggle[aria-expanded="true"]::after,
+        .navbar .nav-link.dropdown-toggle::after,
+        .navbar .nav-link.dropdown-toggle.active::after {
+            display: none !important; 
+            content: none !important;
+            border: none !important;
+        }
+
+        /* Style for our custom dropdown arrow */
+        .nav-dropdown-icon {
+            margin-left: 4px;
+            margin-right: 0;
+            opacity: 0.8;
+            transition: transform 0.2s;
+        }
+        
+        /* Only rotate arrow when dropdown is actually open, not just when the nav item is active */
+        .dropdown-toggle[aria-expanded="true"] .nav-dropdown-icon {
+            transform: rotate(180deg);
+        }
+
+        /* Ensure dropdown works correctly */
+        .dropdown-menu {
+            margin-top: 0.125rem;
+            z-index: 1000;
+        }
+    </style>
 </head>
 <body>
     <!-- Preloader -->

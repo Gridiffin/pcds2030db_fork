@@ -31,6 +31,13 @@ if (isset($_GET['status'])) $filters['status'] = $_GET['status'];
 if (isset($_GET['sector_id'])) $filters['sector_id'] = intval($_GET['sector_id']);
 if (isset($_GET['agency_id'])) $filters['agency_id'] = intval($_GET['agency_id']);
 if (isset($_GET['search'])) $filters['search'] = trim($_GET['search']);
+if (isset($_GET['program_type'])) {
+    if ($_GET['program_type'] === 'assigned') {
+        $filters['is_assigned'] = true;
+    } elseif ($_GET['program_type'] === 'agency') {
+        $filters['is_assigned'] = false;
+    }
+}
 
 // Add period_id handling for historical views
 $period_id = isset($_GET['period_id']) ? intval($_GET['period_id']) : ($current_period['period_id'] ?? null);
@@ -125,10 +132,10 @@ $subtitle = "Monitor and manage all programs across sectors";
 $headerStyle = 'light';
 $actions = [
     [
-        'url' => 'manage_programs.php',
-        'text' => 'Manage Programs',
-        'icon' => 'fas fa-cog',
-        'class' => 'btn-primary'
+        'url' => 'assign_programs.php',
+        'text' => 'Assign Programs',
+        'icon' => 'fas fa-tasks',
+        'class' => 'btn-success me-2'
     ]
 ];
 
@@ -164,7 +171,16 @@ require_once '../../includes/dashboard_header.php';
                     </div>
                 </div>
                 
-                <div class="col-md-3 filter-control-wrapper">
+                <div class="col-md-2 filter-control-wrapper">
+                    <label for="program_type" class="form-label">Program Type</label>
+                    <select class="form-select" id="program_type" name="program_type">
+                        <option value="">All Programs</option>
+                        <option value="assigned" <?php if(isset($_GET['program_type']) && $_GET['program_type'] === 'assigned') echo 'selected'; ?>>Assigned Programs</option>
+                        <option value="agency" <?php if(isset($_GET['program_type']) && $_GET['program_type'] === 'agency') echo 'selected'; ?>>Agency Created</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-2 filter-control-wrapper">
                     <label for="status" class="form-label">Status</label>
                     <select class="form-select" id="status" name="status">
                         <option value="">All Statuses</option>
@@ -201,7 +217,7 @@ require_once '../../includes/dashboard_header.php';
                     </select>
                 </div>
                 
-                <div class="col-md-2 d-flex align-items-end">
+                <div class="col-md-1 d-flex align-items-end">
                     <div class="btn-group w-100">
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-filter me-1"></i> Apply
@@ -243,6 +259,7 @@ require_once '../../includes/dashboard_header.php';
                         <th>Program Name</th>
                         <th>Agency</th>
                         <th>Sector</th>
+                        <th>Type</th>
                         <th>Status</th>
                         <th>Timeline</th>
                         <th>Last Updated</th>
@@ -252,7 +269,7 @@ require_once '../../includes/dashboard_header.php';
                 <tbody>
                     <?php if (empty($programs)): ?>
                         <tr>
-                            <td colspan="7" class="text-center py-4">
+                            <td colspan="8" class="text-center py-4">
                                 <div class="alert alert-info mb-0">
                                     <i class="fas fa-info-circle me-2"></i>
                                     <?php if ($period_id && $period_id != ($current_period['period_id'] ?? null)): ?>
@@ -279,6 +296,13 @@ require_once '../../includes/dashboard_header.php';
                                 </td>
                                 <td><?php echo htmlspecialchars($program['agency_name']); ?></td>
                                 <td><?php echo htmlspecialchars($program['sector_name']); ?></td>
+                                <td>
+                                    <?php if (isset($program['is_assigned']) && $program['is_assigned']): ?>
+                                        <span class="badge bg-success">Assigned</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-info">Agency Created</span>
+                                    <?php endif; ?>
+                                </td>
                                 <td>
                                     <?php if (isset($program['status'])): ?>
                                         <?php 
@@ -323,7 +347,13 @@ require_once '../../includes/dashboard_header.php';
                                         <span class="text-muted">Not specified</span>
                                     <?php endif; ?>
                                 </td>
-                                <td><?php echo date('M j, Y', strtotime($program['updated_at'])); ?></td>
+                                <td>
+                                    <?php if (!empty($program['updated_at'])): ?>
+                                        <?php echo date('M j, Y', strtotime($program['updated_at'])); ?>
+                                    <?php else: ?>
+                                        <span class="text-muted">Not available</span>
+                                    <?php endif; ?>
+                                </td>
                                 <td>
                                     <div class="btn-group btn-group-sm">
                                         <a href="view_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="View Details">
@@ -331,6 +361,9 @@ require_once '../../includes/dashboard_header.php';
                                         </a>
                                         <a href="edit_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-secondary" title="Edit Program">
                                             <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="delete_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-danger" title="Delete Program">
+                                            <i class="fas fa-trash-alt"></i>
                                         </a>
                                     </div>
                                 </td>
@@ -347,3 +380,4 @@ require_once '../../includes/dashboard_header.php';
 // Include footer
 require_once '../layouts/footer.php';
 ?>
+``` 

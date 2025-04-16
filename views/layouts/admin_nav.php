@@ -7,6 +7,9 @@
 
 // Get current page
 $current_page = basename($_SERVER['PHP_SELF']);
+
+// Check if current page is program-related
+$is_program_page = in_array($current_page, ['programs.php', 'view_program.php', 'assign_programs.php', 'delete_program.php']);
 ?>
 
 <!-- Main Navigation -->
@@ -26,10 +29,22 @@ $current_page = basename($_SERVER['PHP_SELF']);
                         <i class="fas fa-tachometer-alt me-1"></i> Dashboard
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link <?php if ($current_page == 'programs.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/views/admin/programs.php">
-                        <i class="fas fa-project-diagram me-1"></i> Programs
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle <?php if ($is_program_page) echo 'active'; ?>" href="#" id="programsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="<?php echo $is_program_page ? 'true' : 'false'; ?>">
+                        <i class="fas fa-project-diagram me-1"></i> Programs <i class="fas fa-caret-down nav-dropdown-icon"></i>
                     </a>
+                    <ul class="dropdown-menu" aria-labelledby="programsDropdown">
+                        <li>
+                            <a class="dropdown-item <?php if ($current_page == 'programs.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/views/admin/programs.php">
+                                <i class="fas fa-list me-1"></i> All Programs
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item <?php if ($current_page == 'assign_programs.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/views/admin/assign_programs.php">
+                                <i class="fas fa-tasks me-1"></i> Assign Programs
+                            </a>
+                        </li>
+                    </ul>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link <?php if ($current_page == 'manage_users.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/views/admin/manage_users.php">
