@@ -47,6 +47,9 @@ if (!function_exists('get_agency_programs')) {
                   (SELECT ps.is_draft FROM program_submissions ps 
                    WHERE ps.program_id = p.program_id 
                    ORDER BY ps.submission_date DESC LIMIT 1) as is_draft,
+                  (SELECT ps.period_id FROM program_submissions ps 
+                   WHERE ps.program_id = p.program_id 
+                   ORDER BY ps.submission_date DESC LIMIT 1) as period_id,
                   (SELECT ps.submission_date FROM program_submissions ps 
                    WHERE ps.program_id = p.program_id 
                    ORDER BY ps.submission_date DESC LIMIT 1) as updated_at
@@ -178,50 +181,65 @@ require_once '../../includes/dashboard_header.php';
                             <td colspan="4" class="text-center py-4">No programs found.</td>
                         </tr>
                     <?php else: ?>
-                        <?php foreach ($programs as $program): ?>
-                            <tr class="<?php echo isset($program['is_draft']) && $program['is_draft'] ? 'draft-program' : ''; ?>" data-program-type="<?php echo $program['is_assigned'] ? 'assigned' : 'created'; ?>">
+                        <?php 
+                        // Get current reporting period once for all programs
+                        $current_period = get_current_reporting_period();
+                        
+                        foreach ($programs as $program): 
+                            // Determine if this is a draft submission
+                            $is_draft = isset($program['is_draft']) && $program['is_draft'] ? true : false;
+                            
+                            // Determine program type (assigned or custom)
+                            $is_assigned = isset($program['is_assigned']) && $program['is_assigned'] ? true : false;
+                            
+                            // Convert status for display
+                            $current_status = isset($program['status']) ? convert_legacy_status($program['status']) : 'not-started';
+                            
+                            // Map database status values to display labels and classes
+                            $status_map = [
+                                'on-track' => ['label' => 'On Track', 'class' => 'warning'],
+                                'on-track-yearly' => ['label' => 'On Track for Year', 'class' => 'warning'],
+                                'target-achieved' => ['label' => 'Monthly Target Achieved', 'class' => 'success'],
+                                'delayed' => ['label' => 'Delayed', 'class' => 'danger'],
+                                'severe-delay' => ['label' => 'Severe Delays', 'class' => 'danger'],
+                                'completed' => ['label' => 'Completed', 'class' => 'primary'],
+                                'not-started' => ['label' => 'Not Started', 'class' => 'secondary']
+                            ];
+                            
+                            // Set default if status is not in our map
+                            if (!isset($status_map[$current_status])) {
+                                $current_status = 'not-started';
+                            }
+                            
+                            // Determine if program can be edited
+                            $canEdit = true;
+                            
+                            // Program cannot be edited if there's a finalized submission for the current period
+                            if ($current_period && 
+                                isset($program['period_id']) && 
+                                $current_period['period_id'] == $program['period_id'] && 
+                                isset($program['is_draft']) && 
+                                $program['is_draft'] == 0) {
+                                $canEdit = false;
+                            }
+                        ?>
+                            <tr class="<?php echo $is_draft ? 'draft-program' : ''; ?>" 
+                                data-program-type="<?php echo $is_assigned ? 'assigned' : 'created'; ?>">
                                 <td>
                                     <div class="fw-medium">
                                         <?php echo htmlspecialchars($program['program_name']); ?>
-                                        <?php if (isset($program['is_draft']) && $program['is_draft']): ?>
+                                        <?php if ($is_draft): ?>
                                             <span class="draft-indicator" title="Draft"></span>
                                         <?php endif; ?>
                                     </div>
                                     <div class="small text-muted program-type-indicator">
-                                        <i class="fas fa-<?php echo $program['is_assigned'] ? 'tasks' : 'folder-plus'; ?> me-1"></i>
-                                        <?php echo $program['is_assigned'] ? 'Assigned Program' : 'Custom Program'; ?>
+                                        <i class="fas fa-<?php echo $is_assigned ? 'tasks' : 'folder-plus'; ?> me-1"></i>
+                                        <?php echo $is_assigned ? 'Assigned Program' : 'Custom Program'; ?>
                                     </div>
                                 </td>
                                 <td>
-                                    <?php 
-                                    // Ensure we're using the new status values by converting any legacy status
-                                    $current_status = isset($program['status']) ? convert_legacy_status($program['status']) : 'not-started';
-                                    
-                                    // Debug the status to see what's coming from the database
-                                    // echo "<!-- Status: " . $current_status . " -->";
-                                    
-                                    // Map database status values to display labels and classes
-                                    $status_map = [
-                                        'on-track' => ['label' => 'On Track', 'class' => 'warning'],
-                                        'on-track-yearly' => ['label' => 'On Track for Year', 'class' => 'warning'],
-                                        'target-achieved' => ['label' => 'Monthly Target Achieved', 'class' => 'success'],
-                                        'delayed' => ['label' => 'Delayed', 'class' => 'danger'],
-                                        'severe-delay' => ['label' => 'Severe Delays', 'class' => 'danger'],
-                                        'completed' => ['label' => 'Completed', 'class' => 'primary'],
-                                        'not-started' => ['label' => 'Not Started', 'class' => 'secondary']
-                                    ];
-                                    
-                                    // Set default if status is not in our map
-                                    if (!isset($status_map[$current_status])) {
-                                        $current_status = 'not-started';
-                                    }
-                                    
-                                    // Get the label and class from our map
-                                    $status_label = $status_map[$current_status]['label'];
-                                    $status_class = $status_map[$current_status]['class'];
-                                    ?>
-                                    <span class="badge bg-<?php echo $status_class; ?>">
-                                        <?php echo $status_label; ?>
+                                    <span class="badge bg-<?php echo $status_map[$current_status]['class']; ?>">
+                                        <?php echo $status_map[$current_status]['label']; ?>
                                     </span>
                                 </td>
                                 <td>
@@ -237,17 +255,20 @@ require_once '../../includes/dashboard_header.php';
                                 </td>
                                 <td>
                                     <div class="btn-group btn-group-sm float-end">
+                                        <!-- View Details button always shows -->
                                         <a href="program_details.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="View Details">
                                             <i class="fas fa-eye"></i>
                                         </a>
                                         
-                                        <?php if (isset($program['is_draft']) && $program['is_draft']): ?>
-                                        <a href="update_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-secondary" title="Edit Program">
+                                        <!-- Edit button shows for all programs that CAN be edited (not finalized in current period) -->
+                                        <?php if ($canEdit): ?>
+                                        <a href="update_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-secondary" title="Update Program">
                                             <i class="fas fa-edit"></i>
                                         </a>
                                         <?php endif; ?>
                                         
-                                        <?php if (!$program['is_assigned']): ?>
+                                        <!-- Delete button only shows for custom programs (not assigned ones) -->
+                                        <?php if (!$is_assigned): ?>
                                         <button type="button" class="btn btn-outline-danger delete-program-btn" 
                                             data-id="<?php echo $program['program_id']; ?>"
                                             data-name="<?php echo htmlspecialchars($program['program_name']); ?>"

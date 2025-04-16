@@ -51,21 +51,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_program'])) {
             $sector_row = $sector_result->fetch_assoc();
             $sector_id = $sector_row['sector_id'];
             
+            // Process edit permissions
+            $edit_permissions = isset($_POST['edit_permissions']) ? $_POST['edit_permissions'] : [];
+            
+            // Collect default values for the fields
+            $default_values = [];
+            if (!in_array('target', $edit_permissions) && !empty($_POST['target_value'])) {
+                $default_values['target'] = $_POST['target_value'];
+            }
+            
+            if (!in_array('status', $edit_permissions) && !empty($_POST['status_value'])) {
+                $default_values['status'] = $_POST['status_value'];
+            }
+            
+            if (!in_array('status_text', $edit_permissions) && !empty($_POST['status_text_value'])) {
+                $default_values['status_text'] = $_POST['status_text_value'];
+            }
+            
+            // Combine permissions and default values in one JSON structure
+            $program_settings = [
+                'edit_permissions' => $edit_permissions,
+                'default_values' => $default_values
+            ];
+            
+            $program_settings_json = json_encode($program_settings);
+            
             // Insert program
             $stmt = $conn->prepare("INSERT INTO programs 
-                (program_name, description, sector_id, owner_agency_id, start_date, end_date, is_assigned, created_by, created_at, updated_at) 
-                VALUES (?, ?, ?, ?, ?, ?, 1, ?, NOW(), NOW())");
+                (program_name, description, sector_id, owner_agency_id, start_date, end_date, is_assigned, created_by, edit_permissions, created_at, updated_at) 
+                VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, NOW(), NOW())");
             
             $admin_id = $_SESSION['user_id'];
             
-            $stmt->bind_param("ssiissi", 
+            $stmt->bind_param("ssiissis", 
                 $program_name, 
                 $description, 
                 $sector_id, 
                 $agency_id, 
                 $start_date, 
                 $end_date,
-                $admin_id
+                $admin_id,
+                $program_settings_json
             );
             
             $stmt->execute();
@@ -198,7 +224,90 @@ require_once '../../includes/dashboard_header.php';
                                    value="<?php echo isset($_POST['end_date']) ? htmlspecialchars($_POST['end_date']) : ''; ?>">
                         </div>
                         
-                        <div class="col-md-12">
+                        <div class="col-md-12 mt-4">
+                            <h5 class="mb-3">Default Values & Permissions</h5>
+                            <p class="text-muted">Set default values for fields and control which ones the agency can edit.</p>
+                            
+                            <div class="row g-3">
+                                <div class="col-md-12 mb-3">
+                                    <label for="target_value" class="form-label">Target</label>
+                                    <div class="input-group mb-2">
+                                        <input type="text" class="form-control" id="target_value" name="target_value" 
+                                               placeholder="Define a measurable target for this program"
+                                               value="<?php echo isset($_POST['target_value']) ? htmlspecialchars($_POST['target_value']) : ''; ?>">
+                                        <div class="input-group-text">
+                                            <div class="form-check form-switch mb-0">
+                                                <input class="form-check-input" type="checkbox" id="edit_target" name="edit_permissions[]" value="target" checked>
+                                                <label class="form-check-label" for="edit_target">Agency can edit</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-12 mb-3">
+                                    <label for="status_value" class="form-label">Status</label>
+                                    
+                                    <!-- Status Legend -->
+                                    <div class="mb-2 d-flex flex-wrap gap-2">
+                                        <span class="badge bg-success me-1">Monthly Target Achieved</span>
+                                        <span class="badge bg-warning me-1">On Track for Year</span>
+                                        <span class="badge bg-danger me-1">Severe Delays</span>
+                                        <span class="badge bg-secondary me-1">Not Started</span>
+                                    </div>
+                                    
+                                    <div class="input-group mb-2">
+                                        <select class="form-select" id="status_value" name="status_value">
+                                            <option value="target-achieved" <?php echo (isset($_POST['status_value']) && $_POST['status_value'] == 'target-achieved') ? 'selected' : ''; ?>>
+                                                <span class="status-indicator success"></span>Monthly Target Achieved
+                                            </option>
+                                            <option value="on-track-yearly" <?php echo (isset($_POST['status_value']) && $_POST['status_value'] == 'on-track-yearly') ? 'selected' : ''; ?>>
+                                                <span class="status-indicator warning"></span>On Track for Year
+                                            </option>
+                                            <option value="severe-delay" <?php echo (isset($_POST['status_value']) && $_POST['status_value'] == 'severe-delay') ? 'selected' : ''; ?>>
+                                                <span class="status-indicator danger"></span>Severe Delays
+                                            </option>
+                                            <option value="not-started" <?php echo (isset($_POST['status_value']) && $_POST['status_value'] == 'not-started') ? 'selected' : ''; ?> selected>
+                                                <span class="status-indicator secondary"></span>Not Started
+                                            </option>
+                                        </select>
+                                        <div class="input-group-text">
+                                            <div class="form-check form-switch mb-0">
+                                                <input class="form-check-input" type="checkbox" id="edit_status" name="edit_permissions[]" value="status" checked>
+                                                <label class="form-check-label" for="edit_status">Agency can edit</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Status Description Field -->
+                                <div class="col-md-12 mb-3">
+                                    <label for="status_text_value" class="form-label">Status Description</label>
+                                    <div class="input-group mb-2">
+                                        <textarea class="form-control" id="status_text_value" name="status_text_value" rows="2" placeholder="Describe the current status in detail"><?php echo isset($_POST['status_text_value']) ? htmlspecialchars($_POST['status_text_value']) : ''; ?></textarea>
+                                        <div class="input-group-text">
+                                            <div class="form-check form-switch mb-0">
+                                                <input class="form-check-input" type="checkbox" id="edit_status_text" name="edit_permissions[]" value="status_text" checked>
+                                                <label class="form-check-label" for="edit_status_text">Agency can edit</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-12">
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" id="edit_description" name="edit_permissions[]" value="description" checked>
+                                        <label class="form-check-label" for="edit_description">Agency can edit Description</label>
+                                    </div>
+                                    
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="edit_timeline" name="edit_permissions[]" value="timeline">
+                                        <label class="form-check-label" for="edit_timeline">Agency can edit Timeline (Start/End Dates)</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-12 mt-4">
                             <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                                 <a href="programs.php" class="btn btn-outline-secondary">Cancel</a>
                                 <button type="submit" name="assign_program" class="btn btn-primary">

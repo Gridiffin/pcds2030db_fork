@@ -367,11 +367,12 @@ function renderProgramPage(page, filteredPrograms = null) {
                         <i class="fas fa-eye"></i>
                     </a>
                     
-                    ${program.is_draft ? 
-                        `<a href="update_program.php?id=${program.program_id}" class="btn btn-outline-secondary" title="Edit Program">
-                            <i class="fas fa-edit"></i>
-                        </a>` : ''
-                    }
+                    <!-- Show edit button for all programs that:
+                         1. Are drafts, OR
+                         2. Don't have a finalized submission for current period -->
+                    <a href="update_program.php?id=${program.program_id}" class="btn btn-outline-secondary" title="Update Program">
+                        <i class="fas fa-edit"></i>
+                    </a>
                     
                     ${!program.is_assigned ? 
                         `<button type="button" class="btn btn-outline-danger delete-program-btn" 

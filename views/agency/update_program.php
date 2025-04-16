@@ -39,6 +39,54 @@ if (!$program || isset($program['error'])) {
     exit;
 }
 
+// Check for edit permissions if this is an assigned program
+$edit_permissions = [];
+$default_values = [];
+
+if ($program['is_assigned'] && isset($program['edit_permissions'])) {
+    // Convert from JSON if stored as string
+    if (is_string($program['edit_permissions'])) {
+        $settings = json_decode($program['edit_permissions'], true);
+        
+        // Check if we have the new format with both permissions and default values
+        if (isset($settings['edit_permissions'])) {
+            $edit_permissions = $settings['edit_permissions'];
+            $default_values = $settings['default_values'] ?? [];
+        } else {
+            // Legacy format - just permissions array
+            $edit_permissions = $settings ?? [];
+        }
+    } else {
+        $edit_permissions = $program['edit_permissions'] ?? [];
+    }
+}
+
+// Function to check if a field is editable
+function is_editable($field) {
+    global $program, $edit_permissions;
+    
+    // If not assigned by admin, all fields are editable except program name
+    if (!$program['is_assigned']) {
+        return true;
+    }
+    
+    // For assigned programs, check permissions array
+    return in_array($field, $edit_permissions);
+}
+
+// Function to get default value if field is not editable
+function get_field_value($field, $current_value = '') {
+    global $default_values, $current_submission;
+    
+    // If this field has a default value and is not editable, use the default value
+    if (isset($default_values[$field]) && !is_editable($field)) {
+        return $default_values[$field];
+    }
+    
+    // Otherwise return current value if available
+    return $current_value;
+}
+
 // Get current reporting period
 $current_period = get_current_reporting_period();
 if (!$current_period || $current_period['status'] !== 'open') {
@@ -216,24 +264,28 @@ require_once '../layouts/agency_nav.php';
                     </div>
                     <div class="col-md-12">
                         <label for="description" class="form-label">Description</label>
-                        <textarea class="form-control" id="description" name="description" rows="3"><?php echo htmlspecialchars($program['description'] ?? ''); ?></textarea>
+                        <textarea class="form-control" id="description" name="description" rows="3"
+                                 <?php echo (!is_editable('description')) ? 'readonly' : ''; ?>><?php echo htmlspecialchars(get_field_value('description', $program['description'] ?? '')); ?></textarea>
+                        <?php if ($program['is_assigned'] && !is_editable('description')): ?>
+                            <div class="form-text">Description was set by an administrator and cannot be changed.</div>
+                        <?php endif; ?>
                     </div>
                     <div class="col-md-6">
                         <label for="start_date" class="form-label">Start Date</label>
                         <input type="date" class="form-control" id="start_date" name="start_date" 
-                               value="<?php echo $program['start_date'] ? date('Y-m-d', strtotime($program['start_date'])) : ''; ?>"
-                               <?php echo $program['is_assigned'] ? 'readonly' : ''; ?>>
-                        <?php if ($program['is_assigned']): ?>
-                            <div class="form-text">Start date was set by an administrator.</div>
+                               value="<?php echo get_field_value('timeline', $program['start_date'] ? date('Y-m-d', strtotime($program['start_date'])) : ''); ?>"
+                               <?php echo (!is_editable('timeline')) ? 'readonly' : ''; ?>>
+                        <?php if ($program['is_assigned'] && !is_editable('timeline')): ?>
+                            <div class="form-text">Start date was set by an administrator and cannot be changed.</div>
                         <?php endif; ?>
                     </div>
                     <div class="col-md-6">
                         <label for="end_date" class="form-label">End Date</label>
                         <input type="date" class="form-control" id="end_date" name="end_date" 
-                               value="<?php echo $program['end_date'] ? date('Y-m-d', strtotime($program['end_date'])) : ''; ?>"
-                               <?php echo $program['is_assigned'] ? 'readonly' : ''; ?>>
-                        <?php if ($program['is_assigned']): ?>
-                            <div class="form-text">End date was set by an administrator.</div>
+                               value="<?php echo get_field_value('timeline', $program['end_date'] ? date('Y-m-d', strtotime($program['end_date'])) : ''); ?>"
+                               <?php echo (!is_editable('timeline')) ? 'readonly' : ''; ?>>
+                        <?php if ($program['is_assigned'] && !is_editable('timeline')): ?>
+                            <div class="form-text">End date was set by an administrator and cannot be changed.</div>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -246,8 +298,13 @@ require_once '../layouts/agency_nav.php';
                     <div class="col-md-12">
                         <label for="target" class="form-label">Target *</label>
                         <input type="text" class="form-control" id="target" name="target" required
-                               value="<?php echo htmlspecialchars($current_submission['current_target'] ?? ''); ?>">
-                        <div class="form-text">Define a measurable target for this program. The program timeline is already set by the start/end dates.</div>
+                               value="<?php echo htmlspecialchars(get_field_value('target', $current_submission['current_target'] ?? '')); ?>"
+                               <?php echo (!is_editable('target')) ? 'readonly' : ''; ?>>
+                        <?php if ($program['is_assigned'] && !is_editable('target')): ?>
+                            <div class="form-text">Target was set by an administrator and cannot be changed.</div>
+                        <?php else: ?>
+                            <div class="form-text">Define a measurable target for this program. The program timeline is already set by the start/end dates.</div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -258,13 +315,23 @@ require_once '../layouts/agency_nav.php';
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label for="status" class="form-label">Current Status *</label>
-                        <select class="form-select" id="status" name="status" required>
-                            <option value="target-achieved" <?php echo ($current_submission['status'] ?? '') == 'target-achieved' ? 'selected' : ''; ?>>Monthly Target Achieved</option>
-                            <option value="on-track-yearly" <?php echo ($current_submission['status'] ?? '') == 'on-track-yearly' ? 'selected' : ''; ?>>On Track for Year</option>
-                            <option value="severe-delay" <?php echo ($current_submission['status'] ?? '') == 'severe-delay' ? 'selected' : ''; ?>>Severe Delays</option>
-                            <option value="not-started" <?php echo ($current_submission['status'] ?? '') == 'not-started' ? 'selected' : ''; ?>>Not Started</option>
+                        <select class="form-select" id="status" name="status" required
+                                <?php echo (!is_editable('status')) ? 'disabled' : ''; ?>>
+                            <option value="target-achieved" <?php echo get_field_value('status', $current_submission['status'] ?? '') == 'target-achieved' ? 'selected' : ''; ?>>Monthly Target Achieved</option>
+                            <option value="on-track-yearly" <?php echo get_field_value('status', $current_submission['status'] ?? '') == 'on-track-yearly' ? 'selected' : ''; ?>>On Track for Year</option>
+                            <option value="severe-delay" <?php echo get_field_value('status', $current_submission['status'] ?? '') == 'severe-delay' ? 'selected' : ''; ?>>Severe Delays</option>
+                            <option value="not-started" <?php echo get_field_value('status', $current_submission['status'] ?? '') == 'not-started' ? 'selected' : ''; ?>>Not Started</option>
                         </select>
-                        <div class="form-text">Current status category of the program</div>
+                        <?php if ($program['is_assigned'] && !is_editable('status')): ?>
+                            <div class="form-text">Status was set by an administrator and cannot be changed.</div>
+                        <?php else: ?>
+                            <div class="form-text">Current status category of the program</div>
+                        <?php endif; ?>
+                        
+                        <?php if (!is_editable('status')): ?>
+                            <!-- Hidden field to preserve value when disabled -->
+                            <input type="hidden" name="status" value="<?php echo htmlspecialchars(get_field_value('status', $current_submission['status'] ?? 'not-started')); ?>">
+                        <?php endif; ?>
                     </div>
                     <div class="col-md-6">
                         <label for="status_date" class="form-label">Status Date *</label>
