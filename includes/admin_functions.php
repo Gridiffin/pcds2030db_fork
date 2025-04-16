@@ -582,18 +582,43 @@ function get_admin_programs_list($period_id = null, $filters = []) {
     $params = [];
     $param_types = "";
     
+    // Get period details if period_id is provided
+    $period_info = null;
+    if ($period_id) {
+        $period_query = "SELECT period_id, start_date, end_date FROM reporting_periods WHERE period_id = ?";
+        $period_stmt = $conn->prepare($period_query);
+        $period_stmt->bind_param("i", $period_id);
+        $period_stmt->execute();
+        $period_result = $period_stmt->get_result();
+        
+        if ($period_result->num_rows > 0) {
+            $period_info = $period_result->fetch_assoc();
+        }
+    }
+    
     // Base query
-    $sql = "SELECT p.*, u.agency_name, s.sector_name, ps.status, ps.submission_date, ps.updated_at 
+    $sql = "SELECT p.*, u.agency_name, s.sector_name, ps.status, ps.is_draft, ps.submission_date, ps.updated_at 
             FROM programs p 
             LEFT JOIN users u ON p.owner_agency_id = u.user_id 
             LEFT JOIN sectors s ON p.sector_id = s.sector_id 
-            LEFT JOIN program_submissions ps ON p.program_id = ps.program_id";
+            LEFT JOIN (
+                SELECT * FROM program_submissions 
+                WHERE " . ($period_id ? "period_id = ?" : "period_id = (SELECT MAX(period_id) FROM reporting_periods WHERE status = 'open')") . "
+            ) ps ON p.program_id = ps.program_id";
             
-    // Add filtering for period if provided
+    // Add period_id parameter if provided
     if ($period_id) {
-        $sql .= " AND ps.period_id = ?";
         $params[] = $period_id;
         $param_types .= "i";
+        
+        // Get the period when each program was created by finding the first reporting period
+        // that contains the program's creation date
+        if ($period_info) {
+            $conditions[] = "p.created_at BETWEEN ? AND ?";
+            $params[] = $period_info['start_date'] . ' 00:00:00';
+            $params[] = $period_info['end_date'] . ' 23:59:59';
+            $param_types .= "ss";
+        }
     }
     
     // Filter by is_assigned status
