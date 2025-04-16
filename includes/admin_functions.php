@@ -688,6 +688,31 @@ function get_admin_programs_list($period_id = null, $filters = []) {
  */
 
 /**
+ * Get all users in the system
+ * 
+ * @return array List of all users with their details
+ */
+function get_all_users() {
+    global $conn;
+    
+    $query = "SELECT u.*, s.sector_name 
+              FROM users u 
+              LEFT JOIN sectors s ON u.sector_id = s.sector_id 
+              ORDER BY u.role = 'admin' DESC, u.username ASC";
+              
+    $result = $conn->query($query);
+    
+    $users = [];
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $users[] = $row;
+        }
+    }
+    
+    return $users;
+}
+
+/**
  * Get sector data for a specific reporting period
  *
  * @param int $period_id The reporting period ID
