@@ -80,7 +80,7 @@ require_once '../../includes/dashboard_header.php';
         <!-- Period Selector Component -->
         <?php require_once '../../includes/period_selector.php'; ?>
 
-        <!-- Quick Actions Section -->
+        <!-- Quick Actions Section - Optimized for high-value admin actions -->
         <div class="row mb-4">
             <div class="col-12">
                 <div class="card shadow-sm">
@@ -89,12 +89,11 @@ require_once '../../includes/dashboard_header.php';
                     </div>
                     <div class="card-body">
                         <div class="row justify-content-center text-center g-4">
-                            <div class="col-lg-3 col-md-4 col-6">
-                                <a href="programs.php" class="btn btn-outline-primary w-100 d-flex flex-column align-items-center justify-content-center quick-action-btn">
-                                    <i class="fas fa-project-diagram fa-2x"></i>
-                                    <span class="mt-2">All Programs</span>
-                                </a>
-                            </div>
+                            <?php
+                            // Get current period status for contextual actions
+                            $periodOpen = isset($current_period) && isset($current_period['status']) && $current_period['status'] === 'open';
+                            $periodId = $current_period['period_id'] ?? 0;
+                            ?>
                             <div class="col-lg-3 col-md-4 col-6">
                                 <a href="assign_programs.php" class="btn btn-outline-success w-100 d-flex flex-column align-items-center justify-content-center quick-action-btn border-success">
                                     <i class="fas fa-tasks fa-2x"></i>
@@ -102,27 +101,21 @@ require_once '../../includes/dashboard_header.php';
                                 </a>
                             </div>
                             <div class="col-lg-3 col-md-4 col-6">
-                                <a href="manage_users.php" class="btn btn-outline-primary w-100 d-flex flex-column align-items-center justify-content-center quick-action-btn">
-                                    <i class="fas fa-users fa-2x"></i>
-                                    <span class="mt-2">Manage Users</span>
+                                <a href="reporting_periods.php" class="btn <?php echo $periodOpen ? 'btn-outline-danger' : 'btn-outline-success'; ?> w-100 d-flex flex-column align-items-center justify-content-center quick-action-btn">
+                                    <i class="fas fa-calendar-alt fa-2x"></i>
+                                    <span class="mt-2"><?php echo $periodOpen ? 'Close Current Period' : 'Open New Period'; ?></span>
                                 </a>
                             </div>
                             <div class="col-lg-3 col-md-4 col-6">
-                                <a href="manage_metrics.php" class="btn btn-outline-primary w-100 d-flex flex-column align-items-center justify-content-center quick-action-btn">
-                                    <i class="fas fa-chart-line fa-2x"></i>
-                                    <span class="mt-2">Manage Metrics</span>
-                                </a>
-                            </div>
-                            <div class="col-lg-3 col-md-4 col-6">
-                                <a href="generate_reports.php" class="btn btn-outline-success w-100 d-flex flex-column align-items-center justify-content-center quick-action-btn border-success">
+                                <a href="generate_reports.php" class="btn btn-outline-primary w-100 d-flex flex-column align-items-center justify-content-center quick-action-btn">
                                     <i class="fas fa-file-powerpoint fa-2x"></i>
                                     <span class="mt-2">Generate Reports</span>
                                 </a>
                             </div>
                             <div class="col-lg-3 col-md-4 col-6">
-                                <a href="reporting_periods.php" class="btn btn-outline-primary w-100 d-flex flex-column align-items-center justify-content-center quick-action-btn">
-                                    <i class="fas fa-calendar-alt fa-2x"></i>
-                                    <span class="mt-2">Manage Periods</span>
+                                <a href="manage_users.php?action=new" class="btn btn-outline-info w-100 d-flex flex-column align-items-center justify-content-center quick-action-btn">
+                                    <i class="fas fa-user-plus fa-2x"></i>
+                                    <span class="mt-2">Add New User</span>
                                 </a>
                             </div>
                         </div>
