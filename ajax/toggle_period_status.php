@@ -36,23 +36,38 @@ if (!$period_id) {
     exit;
 }
 
-// First check if updated_at column exists, if not add it
-$check_column = "SHOW COLUMNS FROM reporting_periods LIKE 'updated_at'";
-$column_result = $conn->query($check_column);
+try {
+    // First check if updated_at column exists, if not add it
+    $check_column = "SHOW COLUMNS FROM reporting_periods LIKE 'updated_at'";
+    $column_result = $conn->query($check_column);
 
-if ($column_result->num_rows === 0) {
-    // Column doesn't exist, add it
-    $alter_query = "ALTER TABLE reporting_periods 
-                    ADD COLUMN updated_at TIMESTAMP NOT NULL 
-                    DEFAULT CURRENT_TIMESTAMP 
-                    ON UPDATE CURRENT_TIMESTAMP";
-    $conn->query($alter_query);
+    if ($column_result->num_rows === 0) {
+        // Column doesn't exist, add it
+        $alter_query = "ALTER TABLE reporting_periods 
+                        ADD COLUMN updated_at TIMESTAMP NOT NULL 
+                        DEFAULT CURRENT_TIMESTAMP 
+                        ON UPDATE CURRENT_TIMESTAMP";
+        $conn->query($alter_query);
+    }
+
+    // Call function to update period status
+    $result = update_reporting_period_status($period_id, $status);
+    
+    // Save message to session for page refresh notifications
+    if (isset($result['success']) && $result['success']) {
+        $_SESSION['period_message'] = $result['message'];
+        $_SESSION['period_message_type'] = 'success';
+    } elseif (isset($result['error'])) {
+        $_SESSION['period_message'] = $result['error'];
+        $_SESSION['period_message_type'] = 'danger';
+    }
+    
+    // Return result as JSON
+    header('Content-Type: application/json');
+    echo json_encode($result);
+} catch (Exception $e) {
+    // Handle any exceptions that might occur
+    http_response_code(500);
+    echo json_encode(['error' => 'Server error: ' . $e->getMessage()]);
 }
-
-// Call function to update period status
-$result = update_reporting_period_status($period_id, $status);
-
-// Return result as JSON
-header('Content-Type: application/json');
-echo json_encode($result);
 exit;

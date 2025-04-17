@@ -2,30 +2,148 @@
 if (!window.reportingPeriodsInitialized) {
     window.reportingPeriodsInitialized = true;
     
+    // Wait for DOM to be fully loaded before accessing elements
     document.addEventListener('DOMContentLoaded', function() {
+        // Create a safe selector function that returns null instead of throwing errors
+        const safeSelect = function(selector) {
+            try {
+                return document.querySelector(selector);
+            } catch (e) {
+                console.error('Error selecting element:', selector, e);
+                return null;
+            }
+        };
+
+        // Create a safe event attacher function
+        const safeAttachEvent = function(element, eventType, handler) {
+            if (element && typeof element.addEventListener === 'function') {
+                element.addEventListener(eventType, handler);
+                return true;
+            }
+            return false;
+        };
+        
+        // Initialize year toggle accordion functionality
+        function initializeYearToggle() {
+            document.querySelectorAll('.year-toggle').forEach(button => {
+                button.addEventListener('click', function() {
+                    const year = this.getAttribute('data-year');
+                    const content = document.getElementById(`collapse${year}`);
+                    const isExpanded = this.classList.contains('expanded');
+                    
+                    // Toggle current year's expansion state
+                    if (isExpanded) {
+                        this.classList.remove('expanded');
+                        this.classList.add('collapsed');
+                        this.setAttribute('aria-expanded', 'false');
+                        content.classList.remove('show');
+                        content.classList.add('hide');
+                    } else {
+                        this.classList.add('expanded');
+                        this.classList.remove('collapsed');
+                        this.setAttribute('aria-expanded', 'true');
+                        content.classList.add('show');
+                        content.classList.remove('hide');
+                    }
+                });
+            });
+        }
+        
+        // Initialize search functionality
+        function initializeSearchFunctionality() {
+            const searchInput = document.getElementById('periodSearch');
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    const searchTerm = this.value.toLowerCase();
+                    const yearGroups = document.querySelectorAll('.year-group');
+                    let hasResults = false;
+                    
+                    yearGroups.forEach(yearGroup => {
+                        const periodRows = yearGroup.querySelectorAll('.period-row');
+                        let yearHasMatches = false;
+                        
+                        periodRows.forEach(row => {
+                            const yearText = row.getAttribute('data-year');
+                            const quarterText = `Q${row.getAttribute('data-quarter')}`;
+                            const statusText = row.querySelector('.badge').textContent.trim().toLowerCase();
+                            
+                            const matches = yearText.includes(searchTerm) || 
+                                         quarterText.toLowerCase().includes(searchTerm) ||
+                                         statusText.includes(searchTerm);
+                                         
+                            if (matches) {
+                                row.style.display = '';
+                                yearHasMatches = true;
+                                hasResults = true;
+                            } else {
+                                row.style.display = 'none';
+                            }
+                        });
+                        
+                        if (yearHasMatches) {
+                            yearGroup.style.display = '';
+                            // Expand the year group that has matches
+                            const yearToggle = yearGroup.querySelector('.year-toggle');
+                            const yearContent = yearGroup.querySelector('.year-content');
+                            if (yearToggle && yearContent && searchTerm) {
+                                yearToggle.classList.add('expanded');
+                                yearToggle.classList.remove('collapsed');
+                                yearToggle.setAttribute('aria-expanded', 'true');
+                                yearContent.classList.add('show');
+                                yearContent.classList.remove('hide');
+                            }
+                        } else {
+                            yearGroup.style.display = 'none';
+                        }
+                    });
+                    
+                    // Show/hide no results message
+                    const noResultsMessage = document.getElementById('noPeriodsFound');
+                    if (noResultsMessage) {
+                        noResultsMessage.classList.toggle('d-none', hasResults || !searchTerm);
+                    }
+                });
+            }
+        }
+
         // Handler for both Add Period buttons
-        const addPeriodModal = new bootstrap.Modal(document.getElementById('periodModal'));
+        const periodModal = safeSelect('#periodModal');
+        const addPeriodModal = periodModal ? new bootstrap.Modal(periodModal) : null;
         
         // Handle both buttons with different IDs
         document.querySelectorAll('#addPeriodBtn, #addPeriodBtnAlt').forEach(button => {
-            button.addEventListener('click', function() {
+            safeAttachEvent(button, 'click', function() {
+                // Check if we have all required elements before proceeding
+                const periodForm = safeSelect('#periodForm');
+                const periodIdField = safeSelect('#period_id');
+                const periodModalLabel = safeSelect('#periodModalLabel');
+                
+                if (!periodForm || !periodIdField || !periodModalLabel || !addPeriodModal) {
+                    console.error('Missing required elements for Add Period modal');
+                    return;
+                }
+                
                 // Reset form for new period
-                document.getElementById('periodForm').reset();
-                document.getElementById('period_id').value = '';
-                document.getElementById('periodModalLabel').textContent = 'Add Period';
+                periodForm.reset();
+                periodIdField.value = '';
+                periodModalLabel.textContent = 'Add Period';
                 
                 // Set current year as default
                 const currentYear = new Date().getFullYear();
-                document.getElementById('year').value = currentYear;
+                const yearField = safeSelect('#year');
+                if (yearField) yearField.value = currentYear;
                 
                 // Set default quarter based on current date
                 const currentMonth = new Date().getMonth() + 1;
                 const currentQuarter = Math.ceil(currentMonth / 3);
-                document.getElementById('quarter').value = currentQuarter;
+                const quarterField = safeSelect('#quarter');
+                if (quarterField) quarterField.value = currentQuarter;
                 
                 // Standard dates mode is checked by default
-                document.getElementById('useStandardDates').checked = true;
-                document.getElementById('datesModeText').textContent = 'Standard dates';
+                const useStandardDates = safeSelect('#useStandardDates');
+                const datesModeText = safeSelect('#datesModeText');
+                if (useStandardDates) useStandardDates.checked = true;
+                if (datesModeText) datesModeText.textContent = 'Standard dates';
                 
                 // Set standard dates for selected quarter/year
                 setStandardDates(currentYear, currentQuarter);
@@ -53,6 +171,7 @@ if (!window.reportingPeriodsInitialized) {
                     endDate = `${year}-09-30`;
                     break;
                 case 4:
+                default:
                     startDate = `${year}-10-01`;
                     endDate = `${year}-12-31`;
                     break;
@@ -64,362 +183,82 @@ if (!window.reportingPeriodsInitialized) {
         // Function to set standard dates
         function setStandardDates(year, quarter) {
             const { startDate, endDate } = getStandardQuarterDates(year, quarter);
-            document.getElementById('start_date').value = startDate;
-            document.getElementById('end_date').value = endDate;
+            const startDateField = safeSelect('#start_date');
+            const endDateField = safeSelect('#end_date');
+            const nonStandardStartIndicator = safeSelect('#nonStandardStartIndicator');
+            const nonStandardEndIndicator = safeSelect('#nonStandardEndIndicator');
+            
+            if (startDateField) startDateField.value = startDate;
+            if (endDateField) endDateField.value = endDate;
             
             // Hide non-standard indicators
-            document.getElementById('nonStandardStartIndicator').classList.add('d-none');
-            document.getElementById('nonStandardEndIndicator').classList.add('d-none');
+            if (nonStandardStartIndicator) nonStandardStartIndicator.classList.add('d-none');
+            if (nonStandardEndIndicator) nonStandardEndIndicator.classList.add('d-none');
         }
         
         // Year and quarter change handlers - auto-update dates when in standard mode
-        document.getElementById('year').addEventListener('change', function() {
-            if (document.getElementById('useStandardDates').checked) {
-                const quarter = document.getElementById('quarter').value;
-                setStandardDates(this.value, quarter);
-            } else {
-                checkNonStandardDates();
-            }
-        });
+        const yearField = safeSelect('#year');
+        if (yearField) {
+            safeAttachEvent(yearField, 'change', function() {
+                const useStandardDates = safeSelect('#useStandardDates');
+                
+                if (useStandardDates && useStandardDates.checked) {
+                    const quarterField = safeSelect('#quarter');
+                    if (quarterField) {
+                        setStandardDates(this.value, quarterField.value);
+                    }
+                } else {
+                    checkNonStandardDates();
+                }
+            });
+        }
         
-        document.getElementById('quarter').addEventListener('change', function() {
-            if (document.getElementById('useStandardDates').checked) {
-                const year = document.getElementById('year').value;
-                setStandardDates(year, this.value);
-            } else {
-                checkNonStandardDates();
-            }
-        });
+        const quarterField = safeSelect('#quarter');
+        if (quarterField) {
+            safeAttachEvent(quarterField, 'change', function() {
+                const useStandardDates = safeSelect('#useStandardDates');
+                
+                if (useStandardDates && useStandardDates.checked) {
+                    const yearField = safeSelect('#year');
+                    if (yearField) {
+                        setStandardDates(yearField.value, this.value);
+                    }
+                } else {
+                    checkNonStandardDates();
+                }
+            });
+        }
         
         // Toggle between standard and custom dates
-        document.getElementById('useStandardDates').addEventListener('change', function() {
-            const year = document.getElementById('year').value;
-            const quarter = document.getElementById('quarter').value;
-            
-            // Update text based on state
-            document.getElementById('datesModeText').textContent = this.checked ? 'Standard dates' : 'Custom dates';
-            
-            if (this.checked) {
-                // Switch to standard dates when toggled on
-                setStandardDates(year, quarter);
-            } else {
-                // When switching to custom mode, no automatic changes but check for indicators
-                checkNonStandardDates();
-            }
-            
-            // Make date inputs readonly or editable based on toggle
-            document.getElementById('start_date').readOnly = this.checked;
-            document.getElementById('end_date').readOnly = this.checked;
-        });
-        
-        // Check for non-standard dates when dates are changed directly
-        document.getElementById('start_date').addEventListener('change', function() {
-            checkNonStandardDates();
-            // If date is non-standard, switch toggle to custom
-            const year = document.getElementById('year').value;
-            const quarter = document.getElementById('quarter').value;
-            const { startDate: standardStart } = getStandardQuarterDates(year, quarter);
-            if (this.value !== standardStart) {
-                document.getElementById('useStandardDates').checked = false;
-                document.getElementById('datesModeText').textContent = 'Custom dates';
-                document.getElementById('start_date').readOnly = false;
-                document.getElementById('end_date').readOnly = false;
-            }
-        });
-        
-        document.getElementById('end_date').addEventListener('change', function() {
-            checkNonStandardDates();
-            // If date is non-standard, switch toggle to custom
-            const year = document.getElementById('year').value;
-            const quarter = document.getElementById('quarter').value;
-            const { endDate: standardEnd } = getStandardQuarterDates(year, quarter);
-            if (this.value !== standardEnd) {
-                document.getElementById('useStandardDates').checked = false;
-                document.getElementById('datesModeText').textContent = 'Custom dates';
-                document.getElementById('start_date').readOnly = false;
-                document.getElementById('end_date').readOnly = false;
-            }
-        });
-        
-        // Function to check if dates are non-standard
-        function checkNonStandardDates() {
-            const year = document.getElementById('year').value;
-            const quarter = document.getElementById('quarter').value;
-            const startDate = document.getElementById('start_date').value;
-            const endDate = document.getElementById('end_date').value;
-            
-            if (year && quarter && startDate && endDate) {
-                const { startDate: standardStart, endDate: standardEnd } = getStandardQuarterDates(year, quarter);
+        const useStandardDates = safeSelect('#useStandardDates');
+        if (useStandardDates) {
+            safeAttachEvent(useStandardDates, 'change', function() {
+                const yearField = safeSelect('#year');
+                const quarterField = safeSelect('#quarter');
+                const datesModeText = safeSelect('#datesModeText');
+                const startDateField = safeSelect('#start_date');
+                const endDateField = safeSelect('#end_date');
                 
-                // Check if start date is non-standard
-                if (startDate !== standardStart) {
-                    document.getElementById('nonStandardStartIndicator').classList.remove('d-none');
+                // Update text based on state
+                if (datesModeText) {
+                    datesModeText.textContent = this.checked ? 'Standard dates' : 'Custom dates';
+                }
+                
+                if (this.checked && yearField && quarterField) {
+                    // Switch to standard dates when toggled on
+                    setStandardDates(yearField.value, quarterField.value);
                 } else {
-                    document.getElementById('nonStandardStartIndicator').classList.add('d-none');
+                    // When switching to custom mode, no automatic changes but check for indicators
+                    checkNonStandardDates();
                 }
                 
-                // Check if end date is non-standard
-                if (endDate !== standardEnd) {
-                    document.getElementById('nonStandardEndIndicator').classList.remove('d-none');
-                } else {
-                    document.getElementById('nonStandardEndIndicator').classList.add('d-none');
-                }
-            }
-        }
-
-        // Simple toggle functionality for year groups
-        function initializeYearToggle() {
-            document.querySelectorAll('.year-toggle').forEach(button => {
-                // Remove existing event listeners
-                const newButton = button.cloneNode(true);
-                button.parentNode.replaceChild(newButton, button);
-                
-                // Add click event handler
-                newButton.addEventListener('click', function() {
-                    const year = this.getAttribute('data-year');
-                    const content = document.getElementById('collapse' + year);
-                    
-                    // Toggle expanded state
-                    const isExpanded = this.classList.contains('expanded');
-                    
-                    if (isExpanded) {
-                        // Collapse
-                        this.classList.remove('expanded');
-                        this.classList.add('collapsed');
-                        this.setAttribute('aria-expanded', 'false');
-                        content.classList.remove('show');
-                        content.classList.add('hide');
-                    } else {
-                        // Expand
-                        this.classList.remove('collapsed');
-                        this.classList.add('expanded');
-                        this.setAttribute('aria-expanded', 'true');
-                        content.classList.remove('hide');
-                        content.classList.add('show');
-                    }
-                });
-            });
-        }
-
-        // Initialize the simple toggle functionality
-        initializeYearToggle();
-
-        // Update search functionality for the new structure
-        function initializeSearchFunctionality() {
-            const searchInput = document.getElementById('periodSearch');
-            if (searchInput) {
-                searchInput.addEventListener('input', function() {
-                    const searchTerm = this.value.toLowerCase().trim();
-                    const yearGroups = document.querySelectorAll('.year-group');
-                    let foundAnyMatch = false;
-                    
-                    yearGroups.forEach(yearGroup => {
-                        const rows = yearGroup.querySelectorAll('.period-row');
-                        let foundInGroup = false;
-                        
-                        // Search in each row of the year group
-                        rows.forEach(row => {
-                            const year = row.getAttribute('data-year');
-                            const quarter = row.getAttribute('data-quarter');
-                            const searchableText = `Q${quarter} ${year}`.toLowerCase();
-                            const match = searchableText.includes(searchTerm);
-                            
-                            if (match) {
-                                row.style.display = '';
-                                foundInGroup = true;
-                                foundAnyMatch = true;
-                            } else {
-                                row.style.display = 'none';
-                            }
-                        });
-                        
-                        // Show/hide the year group based on search results
-                        if (foundInGroup) {
-                            yearGroup.style.display = '';
-                            
-                            // Expand the group if it contains matching items
-                            const yearToggle = yearGroup.querySelector('.year-toggle');
-                            const yearContent = yearGroup.querySelector('.year-content');
-                            
-                            yearToggle.classList.remove('collapsed');
-                            yearToggle.classList.add('expanded');
-                            yearToggle.setAttribute('aria-expanded', 'true');
-                            
-                            yearContent.classList.remove('hide');
-                            yearContent.classList.add('show');
-                        } else {
-                            yearGroup.style.display = 'none';
-                        }
-                    });
-                    
-                    // Show or hide the "no results" message
-                    const noResultsElement = document.getElementById('noPeriodsFound');
-                    if (noResultsElement) {
-                        if (!foundAnyMatch && searchTerm.length > 0) {
-                            noResultsElement.classList.remove('d-none');
-                        } else {
-                            noResultsElement.classList.add('d-none');
-                        }
-                    }
-                });
-            }
-        }
-
-        // Initialize the updated search functionality
-        initializeSearchFunctionality();
-
-        // FIX #2: Improve toggle period status buttons
-        document.querySelectorAll('.toggle-period-status').forEach(button => {
-            // Mark this button as initialized to prevent duplicate handlers
-            if (!button.hasAttribute('data-initialized')) {
-                button.setAttribute('data-initialized', 'true');
-                button.addEventListener('click', handleToggleClick);
-            }
-        });
-        
-        // Handler function for the toggle buttons
-        function handleToggleClick(event) {
-            event.preventDefault();
-            
-            const periodId = this.getAttribute('data-period-id');
-            const currentStatus = this.getAttribute('data-current-status');
-            const newStatus = currentStatus === 'open' ? 'closed' : 'open';
-            const buttonText = this.querySelector('.button-text');
-            const buttonIcon = this.querySelector('i');
-            
-            // Ask for confirmation
-            if (!confirm(`Are you sure you want to ${newStatus === 'open' ? 'open' : 'close'} this reporting period?${newStatus === 'open' ? '\n\nThis will close any other currently open periods.' : ''}`)) {
-                return;
-            }
-            
-            // Disable button and show loading state
-            this.disabled = true;
-            if (buttonText) {
-                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-            } else {
-                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            }
-            
-            // Create form data for the request
-            const formData = new FormData();
-            formData.append('period_id', periodId);
-            formData.append('status', newStatus);
-            
-            // Send AJAX request
-            fetch(`${window.location.origin}/pcds2030_dashboard/ajax/toggle_period_status.php`, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                // Re-enable the button and update its appearance
-                this.disabled = false;
-                
-                if (data.error) {
-                    alert('Error: ' + data.error);
-                    
-                    // Restore original button state
-                    if (buttonText) {
-                        this.innerHTML = `<i class="fas fa-${currentStatus === 'open' ? 'lock' : 'lock-open'}"></i> ${currentStatus === 'open' ? 'Close' : 'Open'}`;
-                    } else {
-                        this.innerHTML = `<i class="fas fa-${currentStatus === 'open' ? 'lock' : 'lock-open'}"></i>`;
-                    }
-                    return;
-                }
-                
-                // Remove any existing success messages first
-                document.querySelectorAll('.alert-success').forEach(alert => {
-                    alert.remove();
-                });
-                
-                // Show success message
-                const alertElement = document.createElement('div');
-                alertElement.className = 'alert alert-success alert-dismissible fade show';
-                alertElement.innerHTML = `
-                    <div class="d-flex align-items-center">
-                        <i class="fas fa-check-circle me-2"></i>
-                        <div>${data.message}</div>
-                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                `;
-                
-                // Insert alert before the table
-                const tableContainer = document.querySelector('.table-responsive').parentNode;
-                tableContainer.insertBefore(alertElement, document.querySelector('.table-responsive'));
-                
-                // Update button appearance without page refresh
-                this.setAttribute('data-current-status', newStatus);
-                
-                if (buttonText) {
-                    this.innerHTML = `<i class="fas fa-${newStatus === 'open' ? 'lock' : 'lock-open'}"></i> ${newStatus === 'open' ? 'Close' : 'Open'}`;
-                } else {
-                    this.innerHTML = `<i class="fas fa-${newStatus === 'open' ? 'lock' : 'lock-open'}"></i>`;
-                }
-                
-                // Update other buttons/elements in the UI
-                if (newStatus === 'open') {
-                    // If a period was just opened, mark all other periods as closed
-                    document.querySelectorAll('.toggle-period-status').forEach(otherButton => {
-                        const otherId = otherButton.getAttribute('data-period-id');
-                        if (otherId !== periodId) {
-                            otherButton.setAttribute('data-current-status', 'closed');
-                            const otherText = otherButton.querySelector('.button-text');
-                            
-                            if (otherText) {
-                                otherButton.innerHTML = `<i class="fas fa-lock-open"></i> Open`;
-                            } else {
-                                otherButton.innerHTML = `<i class="fas fa-lock-open"></i>`;
-                            }
-                            
-                            // Update row status indicators
-                            const otherRow = otherButton.closest('.period-row');
-                            if (otherRow) {
-                                const statusBadge = otherRow.querySelector('.status-badge');
-                                if (statusBadge) {
-                                    statusBadge.className = 'badge bg-secondary status-badge';
-                                    statusBadge.textContent = 'Closed';
-                                }
-                            }
-                        }
-                    }); 
-                    
-                    // Update the current row status indicator
-                    const currentRow = this.closest('.period-row');
-                    if (currentRow) {
-                        const statusBadge = currentRow.querySelector('.status-badge');
-                        if (statusBadge) {
-                            statusBadge.className = 'badge bg-success status-badge';
-                            statusBadge.textContent = 'Open';
-                        }
-                    }
-                } else {
-                    // Just update the current row status indicator
-                    const currentRow = this.closest('.period-row');
-                    if (currentRow) {
-                        const statusBadge = currentRow.querySelector('.status-badge');
-                        if (statusBadge) {
-                            statusBadge.className = 'badge bg-secondary status-badge';
-                            statusBadge.textContent = 'Closed';
-                        }
-                    }
-                }
-                
-                // Don't reload the page - we've updated the UI elements directly
-            })
-            .catch(error => {
-                this.disabled = false;
-                alert('Error: ' + error.message);
-                
-                // Restore original button state
-                if (buttonText) {
-                    this.innerHTML = `<i class="fas fa-${currentStatus === 'open' ? 'lock' : 'lock-open'}"></i> ${currentStatus === 'open' ? 'Close' : 'Open'}`;
-                } else {
-                    this.innerHTML = `<i class="fas fa-${currentStatus === 'open' ? 'lock' : 'lock-open'}"></i>`;
-                }
+                // Make date inputs readonly or editable based on toggle
+                if (startDateField) startDateField.readOnly = this.checked;
+                if (endDateField) endDateField.readOnly = this.checked;
             });
         }
         
-        // Edit period button handlers
+        // Initialize edit period buttons
         document.querySelectorAll('.edit-period-btn').forEach(button => {
             button.addEventListener('click', function() {
                 const id = this.getAttribute('data-id');
@@ -429,50 +268,277 @@ if (!window.reportingPeriodsInitialized) {
                 const endDate = this.getAttribute('data-end-date');
                 const status = this.getAttribute('data-status');
                 
-                document.getElementById('periodModalLabel').textContent = `Edit Period Q${quarter}-${year}`;
-                document.getElementById('period_id').value = id;
-                document.getElementById('year').value = year;
-                document.getElementById('quarter').value = quarter;
-                document.getElementById('start_date').value = startDate;
-                document.getElementById('end_date').value = endDate;
-                document.getElementById('status').value = status;
+                const periodModal = document.getElementById('periodModal');
+                const modalTitle = document.getElementById('periodModalLabel');
+                const periodForm = document.getElementById('periodForm');
+                const periodIdField = document.getElementById('period_id');
+                const yearField = document.getElementById('year');
+                const quarterField = document.getElementById('quarter');
+                const startDateField = document.getElementById('start_date');
+                const endDateField = document.getElementById('end_date');
+                const statusField = document.getElementById('status');
+                const useStandardDatesField = document.getElementById('useStandardDates');
                 
-                // Check if dates are standard
-                const standardDates = getStandardQuarterDates(year, quarter);
-                const isStandard = startDate === standardDates.startDate && endDate === standardDates.endDate;
-                
-                document.getElementById('useStandardDates').checked = isStandard;
-                document.getElementById('datesModeText').textContent = isStandard ? 'Standard dates' : 'Custom dates';
-                document.getElementById('start_date').readOnly = isStandard;
-                document.getElementById('end_date').readOnly = isStandard;
-                
-                // Update non-standard indicators
-                checkNonStandardDates();
-                
-                addPeriodModal.show();
+                if (periodModal && periodForm && periodIdField && yearField && quarterField && 
+                    startDateField && endDateField && statusField && useStandardDatesField) {
+                    
+                    // Set form values
+                    periodIdField.value = id;
+                    yearField.value = year;
+                    quarterField.value = quarter;
+                    startDateField.value = startDate;
+                    endDateField.value = endDate;
+                    statusField.value = status;
+                    
+                    // Check if using standard dates
+                    const { startDate: standardStart, endDate: standardEnd } = getStandardQuarterDates(year, quarter);
+                    const isStandard = (startDate === standardStart && endDate === standardEnd);
+                    useStandardDatesField.checked = isStandard;
+                    
+                    // Update readonly status
+                    startDateField.readOnly = isStandard;
+                    endDateField.readOnly = isStandard;
+                    
+                    // Update text
+                    if (modalTitle) modalTitle.textContent = 'Edit Period';
+                    const datesModeText = document.getElementById('datesModeText');
+                    if (datesModeText) {
+                        datesModeText.textContent = isStandard ? 'Standard dates' : 'Custom dates';
+                    }
+                    
+                    // Show modal
+                    const bsModal = new bootstrap.Modal(periodModal);
+                    bsModal.show();
+                }
             });
         });
         
-        // Delete period button handlers
+        // Initialize delete period buttons
         document.querySelectorAll('.delete-period-btn').forEach(button => {
             button.addEventListener('click', function() {
                 const id = this.getAttribute('data-id');
                 const year = this.getAttribute('data-year');
                 const quarter = this.getAttribute('data-quarter');
                 
-                document.getElementById('period-display').textContent = `Q${quarter}-${year}`;
-                document.getElementById('delete-period-id').value = id;
+                const deleteModal = document.getElementById('deleteModal');
+                const periodDisplay = document.getElementById('period-display');
+                const periodIdField = document.getElementById('delete-period-id');
                 
-                const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
-                deleteModal.show();
+                if (deleteModal && periodDisplay && periodIdField) {
+                    periodDisplay.textContent = `Q${quarter}-${year}`;
+                    periodIdField.value = id;
+                    
+                    const bsModal = new bootstrap.Modal(deleteModal);
+                    bsModal.show();
+                }
             });
         });
         
-        // Refresh page button handler
-        document.getElementById('refreshPage').addEventListener('click', function() {
-            this.disabled = true;
-            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
-            window.location.reload();
+        // Initialize toggle period status buttons
+        document.querySelectorAll('.toggle-period-status').forEach(button => {
+            button.addEventListener('click', function() {
+                const periodId = this.getAttribute('data-period-id');
+                const currentStatus = this.getAttribute('data-current-status');
+                const newStatus = currentStatus === 'open' ? 'closed' : 'open';
+                
+                // Disable button while processing
+                this.disabled = true;
+                const buttonText = this.querySelector('.button-text');
+                const originalText = buttonText.textContent;
+                buttonText.textContent = 'Processing...';
+                
+                // Create form data
+                const formData = new FormData();
+                formData.append('period_id', periodId);
+                formData.append('status', newStatus);
+                
+                // Get the correct path to the AJAX handler
+                // Fix the path to ensure it's accessible from any directory context
+                const ajaxUrl = window.location.origin + '/pcds2030_dashboard/ajax/toggle_period_status.php';
+                
+                // Send AJAX request
+                fetch(ajaxUrl, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    // Check if the response is ok before trying to parse JSON
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.error) {
+                        // Create and show an error message on the page
+                        const errorAlert = document.createElement('div');
+                        errorAlert.className = 'alert alert-danger alert-dismissible fade show';
+                        errorAlert.innerHTML = `
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-exclamation-circle me-2"></i>
+                                <div>${data.error}</div>
+                                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        `;
+                        
+                        // Insert the error message at the top of the periods card
+                        const cardBody = document.querySelector('.card.shadow-sm .card-body');
+                        if (cardBody) {
+                            cardBody.insertBefore(errorAlert, cardBody.firstChild);
+                        }
+                        
+                        // Restore button
+                        this.disabled = false;
+                        buttonText.textContent = originalText;
+                        
+                        // Auto dismiss after 5 seconds
+                        setTimeout(() => {
+                            errorAlert.classList.remove('show');
+                            setTimeout(() => errorAlert.remove(), 150);
+                        }, 5000);
+                    } else {
+                        // Refresh the page to show updated status
+                        window.location.reload();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    
+                    // Create and show an error message on the page
+                    const errorAlert = document.createElement('div');
+                    errorAlert.className = 'alert alert-danger alert-dismissible fade show';
+                    errorAlert.innerHTML = `
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            <div>An error occurred while updating the period status. Please try again.</div>
+                            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    `;
+                    
+                    // Insert the error message at the top of the periods card
+                    const cardBody = document.querySelector('.card.shadow-sm .card-body');
+                    if (cardBody) {
+                        cardBody.insertBefore(errorAlert, cardBody.firstChild);
+                    }
+                    
+                    // Restore button
+                    this.disabled = false;
+                    buttonText.textContent = originalText;
+                    
+                    // Auto dismiss after 5 seconds
+                    setTimeout(() => {
+                        errorAlert.classList.remove('show');
+                        setTimeout(() => errorAlert.remove(), 150);
+                    }, 5000);
+                });
+            });
         });
+        
+        // Function to check if dates are non-standard
+        function checkNonStandardDates() {
+            const yearField = safeSelect('#year');
+            const quarterField = safeSelect('#quarter');
+            const startDateField = safeSelect('#start_date');
+            const endDateField = safeSelect('#end_date');
+            const nonStandardStartIndicator = safeSelect('#nonStandardStartIndicator');
+            const nonStandardEndIndicator = safeSelect('#nonStandardEndIndicator');
+            
+            if (!yearField || !quarterField || !startDateField || !endDateField) {
+                console.error('Missing required form fields for date validation');
+                return;
+            }
+            
+            const year = yearField.value;
+            const quarter = quarterField.value;
+            const startDate = startDateField.value;
+            const endDate = endDateField.value;
+            
+            if (year && quarter && startDate && endDate) {
+                const { startDate: standardStart, endDate: standardEnd } = getStandardQuarterDates(year, quarter);
+                
+                // Check if start date is non-standard
+                if (nonStandardStartIndicator) {
+                    if (startDate !== standardStart) {
+                        nonStandardStartIndicator.classList.remove('d-none');
+                    } else {
+                        nonStandardStartIndicator.classList.add('d-none');
+                    }
+                }
+                
+                // Check if end date is non-standard
+                if (nonStandardEndIndicator) {
+                    if (endDate !== standardEnd) {
+                        nonStandardEndIndicator.classList.remove('d-none');
+                    } else {
+                        nonStandardEndIndicator.classList.add('d-none');
+                    }
+                }
+            }
+        }
+
+        // Refresh page button handler
+        const refreshPageBtn = safeSelect('#refreshPage');
+        if (refreshPageBtn) {
+            safeAttachEvent(refreshPageBtn, 'click', function() {
+                // Show loading state
+                this.disabled = true;
+                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+                
+                // Use regular navigation to reload the page
+                window.location.href = 'reporting_periods.php';
+            });
+        }
+
+        // Function to reattach all event handlers
+        function reattachEventHandlers() {
+            // Reattach toggle button handlers
+            document.querySelectorAll('.toggle-period-status').forEach(button => {
+                if (!button.hasAttribute('data-initialized')) {
+                    button.setAttribute('data-initialized', 'true');
+                    button.addEventListener('click', handleToggleClick);
+                }
+            });
+            
+            // Re-attach edit button handlers
+            document.querySelectorAll('.edit-period-btn').forEach(button => {
+                if (!button.hasAttribute('data-initialized')) {
+                    button.setAttribute('data-initialized', 'true');
+                    button.addEventListener('click', handleEditClick);
+                }
+            });
+            
+            // Re-attach delete button handlers
+            document.querySelectorAll('.delete-period-btn').forEach(button => {
+                if (!button.hasAttribute('data-initialized')) {
+                    button.setAttribute('data-initialized', 'true');
+                    button.addEventListener('click', handleDeleteClick);
+                }
+            });
+        }
+        
+        // Initialize accordion and search functionality
+        initializeYearToggle();
+        initializeSearchFunctionality();
+        
+        // Handle missing elements gracefully
+        window.addEventListener('error', function(e) {
+            if (e.message && (
+                e.message.includes('Cannot read properties') ||
+                e.message.includes('is null') ||
+                e.message.includes('is not defined') ||
+                e.message.includes('reporting errors')
+            )) {
+                console.warn('Caught potential DOM error:', e.message);
+                
+                // Prevent the error from showing to the user
+                e.preventDefault();
+                
+                // Try to recover by reinitializing components
+                setTimeout(initializeYearToggle, 100);
+                setTimeout(initializeSearchFunctionality, 100);
+            }
+            
+            return false;  // Don't prevent other error handlers
+        }, true);
     });
 }

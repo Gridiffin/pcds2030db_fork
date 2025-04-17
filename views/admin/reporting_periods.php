@@ -18,10 +18,23 @@ if (!is_admin()) {
     exit;
 }
 
+// Fix database structure first to prevent errors
+$fix_url = APP_URL . '/ajax/fix_reporting_periods_table.php';
+$fix_result = @file_get_contents($fix_url);
+if ($fix_result) {
+    $fix_data = json_decode($fix_result, true);
+    if (isset($fix_data['success']) && $fix_data['success'] && $fix_data['fix_count'] > 0) {
+        // Store a message about the fixes
+        $_SESSION['period_message'] = 'Database structure was automatically updated.';
+        $_SESSION['period_message_type'] = 'info';
+    }
+}
+
 // Process form submission
 $message = '';
 $messageType = '';
 
+// Check if form was processed and redirect to prevent resubmission on refresh
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Handle add/edit reporting period
     if (isset($_POST['save_period'])) {
@@ -47,6 +60,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $message = $result['error'] ?? 'Failed to save reporting period.';
             $messageType = 'danger';
         }
+        
+        // Store message in session
+        $_SESSION['period_message'] = $message;
+        $_SESSION['period_message_type'] = $messageType;
+        
+        // Redirect to the same page to prevent form resubmission
+        header("Location: " . $_SERVER['PHP_SELF']);
+        exit;
     }
     
     // Handle delete reporting period
@@ -63,8 +84,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $message = $result['error'] ?? 'Failed to delete reporting period.';
                 $messageType = 'danger';
             }
+            
+            // Store message in session
+            $_SESSION['period_message'] = $message;
+            $_SESSION['period_message_type'] = $messageType;
         }
+        
+        // Redirect to the same page to prevent form resubmission
+        header("Location: " . $_SERVER['PHP_SELF']);
+        exit;
     }
+}
+
+// Check for flash messages from redirects
+if (isset($_SESSION['period_message'])) {
+    $message = $_SESSION['period_message'];
+    $messageType = $_SESSION['period_message_type'];
+    
+    // Clear the session variables
+    unset($_SESSION['period_message']);
+    unset($_SESSION['period_message_type']);
 }
 
 // Get all reporting periods
