@@ -31,9 +31,15 @@ if (isset($_SESSION['message']) && !empty($_SESSION['message'])) {
     $message = $_SESSION['message'];
     $message_type = $_SESSION['message_type'] ?? 'info';
     
+    // If show_toast_only is set, we'll only show the toast notification
+    $show_toast_only = isset($_SESSION['show_toast_only']) && $_SESSION['show_toast_only'];
+    
     // Clear the message from session after using it
     unset($_SESSION['message']);
     unset($_SESSION['message_type']);
+    if (isset($_SESSION['show_toast_only'])) {
+        unset($_SESSION['show_toast_only']);
+    }
 }
 
 // Handle user actions (add, edit, delete)
@@ -76,15 +82,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 break;
 
             case 'delete_user':
-                $result = delete_user($_POST['user_id']);
-                if (isset($result['success'])) {
-                    $message = 'User deleted successfully.';
-                    $message_type = 'success';
-                } else {
-                    $message = $result['error'] ?? 'Failed to delete user.';
-                    $message_type = 'danger';
-                }
-                break;
+                // Redirect to process_user.php which handles the actual deletion
+                $_SESSION['user_id_to_delete'] = $_POST['user_id'];
+                header('Location: ../../admin/process_user.php?action=delete_user&user_id=' . $_POST['user_id']);
+                exit;
         }
         
         // If this was an AJAX request, return JSON response instead of setting message variables
@@ -148,14 +149,44 @@ require_once '../../includes/dashboard_header.php';
     // Make sectors data available to the users.js script
     window.sectorsData = <?php echo $sectorsJson; ?>;
     
-    // Store any success/error messages for toast notifications
+    // Store any success/error messages for toast notifications - always use toast for AJAX responses
     window.pageMessages = {
         message: '<?php echo addslashes($message); ?>',
-        type: '<?php echo $message_type; ?>'
+        type: '<?php echo $message_type; ?>',
+        // Always use toast for ajax responses or when explicitly requested
+        useToast: <?php echo (!empty($message) && (isset($show_toast_only) && $show_toast_only)) ? 'true' : 'false'; ?>
     };
 </script>
 
-<?php if (!empty($message)): ?>
+<!-- Custom styles for inactive users -->
+<style>
+    tr.inactive-user {
+        background-color: #f8f9fa;
+        opacity: 0.7;
+    }
+    
+    tr.inactive-user td {
+        color: #6c757d;
+    }
+    
+    tr.inactive-user:hover {
+        opacity: 0.9;
+    }
+    
+    .status-indicator {
+        font-weight: bold;
+    }
+    
+    .status-indicator.active {
+        color: #28a745;
+    }
+    
+    .status-indicator.inactive {
+        color: #dc3545;
+    }
+</style>
+
+<?php if (!empty($message) && empty($show_toast_only)): ?>
     <div class="alert alert-<?php echo $message_type; ?> alert-dismissible fade show" role="alert">
         <div class="d-flex align-items-center">
             <i class="fas fa-<?php echo $message_type === 'success' ? 'check-circle' : 'exclamation-circle'; ?> me-2"></i>
@@ -186,7 +217,7 @@ require_once '../../includes/dashboard_header.php';
                 </thead>
                 <tbody>
                     <?php foreach($users as $user): ?>
-                        <tr>
+                        <tr class="<?php echo !$user['is_active'] ? 'inactive-user' : ''; ?>">
                             <td>
                                 <div class="fw-medium"><?php echo $user['username']; ?></div>
                                 <?php if ($user['user_id'] == $_SESSION['user_id']): ?>
@@ -218,6 +249,16 @@ require_once '../../includes/dashboard_header.php';
                                     <span class="badge bg-success">Active</span>
                                 <?php else: ?>
                                     <span class="badge bg-danger">Inactive</span>
+                                <?php endif; ?>
+                                
+                                <?php if ($user['user_id'] != $_SESSION['user_id']): ?>
+                                    <button class="btn btn-sm ms-2 toggle-active-btn" 
+                                        data-user-id="<?php echo $user['user_id']; ?>"
+                                        data-username="<?php echo htmlspecialchars($user['username']); ?>"
+                                        data-status="<?php echo $user['is_active']; ?>"
+                                        title="<?php echo $user['is_active'] ? 'Deactivate User' : 'Activate User'; ?>">
+                                        <i class="fas fa-toggle-<?php echo $user['is_active'] ? 'on text-success' : 'off text-secondary'; ?>"></i>
+                                    </button>
                                 <?php endif; ?>
                             </td>
                             <td class="text-center">

@@ -209,8 +209,14 @@ require_once '../../includes/dashboard_header.php';
                 <?php else: ?>
                     <!-- For other accounts, show the toggle switch -->
                     <div class="form-check form-switch">
+                        <!-- Add hidden field to ensure is_active is always submitted even when checkbox is unchecked -->
+                        <input type="hidden" name="is_active" value="0">
                         <input class="form-check-input" type="checkbox" id="is_active" name="is_active" value="1" <?php echo $user['is_active'] ? 'checked' : ''; ?>>
-                        <label class="form-check-label" for="is_active">Active Account</label>
+                        <label class="form-check-label" for="is_active">
+                            <span class="status-indicator <?php echo $user['is_active'] ? 'active' : 'inactive'; ?>">
+                                <?php echo $user['is_active'] ? 'Active' : 'Inactive'; ?>
+                            </span>
+                        </label>
                     </div>
                     <div class="form-text">Inactive users cannot log in to the system.</div>
                 <?php endif; ?>

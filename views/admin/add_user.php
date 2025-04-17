@@ -32,6 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($result['success'])) {
         $_SESSION['message'] = 'User added successfully.';
         $_SESSION['message_type'] = 'success';
+        $_SESSION['show_toast_only'] = true; // Add this flag to indicate we want only a toast notification
         header('Location: manage_users.php');
         exit;
     } else {

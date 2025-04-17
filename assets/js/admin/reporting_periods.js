@@ -347,16 +347,64 @@ if (!window.reportingPeriodsInitialized) {
                 const tableContainer = document.querySelector('.table-responsive').parentNode;
                 tableContainer.insertBefore(alertElement, document.querySelector('.table-responsive'));
                 
-                // Auto dismiss after 3 seconds
-                setTimeout(() => {
-                    alertElement.classList.remove('show');
-                    setTimeout(() => alertElement.remove(), 300);
-                }, 3000);
+                // Update button appearance without page refresh
+                this.setAttribute('data-current-status', newStatus);
                 
-                // Reload the page to reflect changes
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
+                if (buttonText) {
+                    this.innerHTML = `<i class="fas fa-${newStatus === 'open' ? 'lock' : 'lock-open'}"></i> ${newStatus === 'open' ? 'Close' : 'Open'}`;
+                } else {
+                    this.innerHTML = `<i class="fas fa-${newStatus === 'open' ? 'lock' : 'lock-open'}"></i>`;
+                }
+                
+                // Update other buttons/elements in the UI
+                if (newStatus === 'open') {
+                    // If a period was just opened, mark all other periods as closed
+                    document.querySelectorAll('.toggle-period-status').forEach(otherButton => {
+                        const otherId = otherButton.getAttribute('data-period-id');
+                        if (otherId !== periodId) {
+                            otherButton.setAttribute('data-current-status', 'closed');
+                            const otherText = otherButton.querySelector('.button-text');
+                            
+                            if (otherText) {
+                                otherButton.innerHTML = `<i class="fas fa-lock-open"></i> Open`;
+                            } else {
+                                otherButton.innerHTML = `<i class="fas fa-lock-open"></i>`;
+                            }
+                            
+                            // Update row status indicators
+                            const otherRow = otherButton.closest('.period-row');
+                            if (otherRow) {
+                                const statusBadge = otherRow.querySelector('.status-badge');
+                                if (statusBadge) {
+                                    statusBadge.className = 'badge bg-secondary status-badge';
+                                    statusBadge.textContent = 'Closed';
+                                }
+                            }
+                        }
+                    }); 
+                    
+                    // Update the current row status indicator
+                    const currentRow = this.closest('.period-row');
+                    if (currentRow) {
+                        const statusBadge = currentRow.querySelector('.status-badge');
+                        if (statusBadge) {
+                            statusBadge.className = 'badge bg-success status-badge';
+                            statusBadge.textContent = 'Open';
+                        }
+                    }
+                } else {
+                    // Just update the current row status indicator
+                    const currentRow = this.closest('.period-row');
+                    if (currentRow) {
+                        const statusBadge = currentRow.querySelector('.status-badge');
+                        if (statusBadge) {
+                            statusBadge.className = 'badge bg-secondary status-badge';
+                            statusBadge.textContent = 'Closed';
+                        }
+                    }
+                }
+                
+                // Don't reload the page - we've updated the UI elements directly
             })
             .catch(error => {
                 this.disabled = false;

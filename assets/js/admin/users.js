@@ -9,11 +9,14 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Check for page messages to show toast notifications
     if (window.pageMessages && window.pageMessages.message) {
-        showToast(
-            window.pageMessages.type === 'success' ? 'Success' : 'Error',
-            window.pageMessages.message,
-            window.pageMessages.type
-        );
+        // Only show toast if useToast flag is true
+        if (window.pageMessages.useToast) {
+            showToast(
+                window.pageMessages.type === 'success' ? 'Success' : 'Error',
+                window.pageMessages.message,
+                window.pageMessages.type
+            );
+        }
         
         // Clear the message after showing it to prevent repeat on refresh
         window.pageMessages.message = '';
@@ -33,7 +36,6 @@ document.addEventListener('DOMContentLoaded', function() {
     setupRoleToggle();
     
     // NOTE: Delete buttons are now handled by UserTableManager
-    // So we don't initialize them here anymore
 });
 
 /**

@@ -18,9 +18,14 @@ function UserTableManager(formManagerParam, toastManagerParam) {
             return;
         }
         
-        // First remove any existing listeners (if possible)
+        // Remove existing listeners from delete buttons by cloning and replacing them
         document.querySelectorAll('.delete-user-btn').forEach(button => {
-            // Create new cloned button to remove all event listeners
+            const newButton = button.cloneNode(true);
+            button.parentNode.replaceChild(newButton, button);
+        });
+        
+        // Remove existing listeners from toggle buttons by cloning and replacing them
+        document.querySelectorAll('.toggle-active-btn').forEach(button => {
             const newButton = button.cloneNode(true);
             button.parentNode.replaceChild(newButton, button);
         });
@@ -41,10 +46,57 @@ function UserTableManager(formManagerParam, toastManagerParam) {
             });
         });
         
-        // Edit user buttons can be handled here too
+        // Add event listeners for status toggle buttons
+        document.querySelectorAll('.toggle-active-btn').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const userId = this.getAttribute('data-user-id');
+                const username = this.getAttribute('data-username');
+                const currentStatus = parseInt(this.getAttribute('data-status'));
+                const newStatus = currentStatus === 1 ? 0 : 1;
+                
+                // Confirm before changing status
+                const statusText = newStatus === 1 ? 'activate' : 'deactivate';
+                if (confirm(`Are you sure you want to ${statusText} the user "${username}"?`)) {
+                    toggleUserActive(userId, newStatus, username);
+                }
+            });
+        });
         
         // Mark listeners as attached
         listenersAttached = true;
+    }
+    
+    // Toggle user active status
+    function toggleUserActive(userId, isActive, username) {
+        const formData = new FormData();
+        formData.append('action', 'toggle_active');
+        formData.append('user_id', userId);
+        formData.append('is_active', isActive);
+        
+        fetch(`${window.APP_URL}/admin/process_user.php`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const statusText = isActive === 1 ? 'activated' : 'deactivated';
+                toastManager.show('Success', `User "${username}" ${statusText} successfully.`, 'success');
+                
+                // Refresh the table to reflect the changes
+                refreshTable();
+            } else {
+                toastManager.show('Error', data.error || 'Failed to update user status', 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Toggle active error:', error);
+            toastManager.show('Error', 'An unexpected error occurred while updating status', 'danger');
+        });
     }
     
     // Refresh the users table without reloading the page
@@ -144,7 +196,8 @@ function UserTableManager(formManagerParam, toastManagerParam) {
     return {
         attachEventListeners,
         refreshTable,
-        animateRowDeletion
+        animateRowDeletion,
+        toggleUserActive // Expose the toggle function
     };
 }
 
@@ -161,5 +214,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Attach event listeners once
         tableManager.attachEventListeners();
+        
+        // Make the table manager available globally for other scripts
+        window.tableManager = tableManager;
     }
 });
