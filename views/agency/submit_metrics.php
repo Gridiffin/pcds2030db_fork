@@ -117,13 +117,14 @@ require_once '../layouts/agency_nav.php';
             <span class="badge bg-primary"><?php echo count($metrics); ?> Metrics</span>
         </div>
         <div class="card-body">
-            <a href="create_metric.php" class="btn"> + Create New </a>
+            <a href="create_metric.php?sector_id=<?php echo $_SESSION['sector_id']; ?>" class="btn"> + Create New </a>
             <?php if (empty($metrics)): ?>
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle me-2"></i>
                     No metrics for your sector yet. Contact the administrator for assistance.
                 </div>
             <?php else: ?>
+                
                 <p class="mb-3">Please provide values for all required metrics for the current reporting period (Q<?php echo $current_period['quarter']; ?>-<?php echo $current_period['year']; ?>).</p>
                 
                 <form method="post" id="metricsForm">
