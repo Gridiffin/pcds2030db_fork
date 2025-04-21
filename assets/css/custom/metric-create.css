@@ -1,0 +1,56 @@
+/* Styles for the Metric Creation Interface */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f8f9fa;
+}
+
+.container {
+    margin: 20px;
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    color: #343a40;
+}
+
+.metric-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.metric-cell {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.btn:hover {
+    background-color: #0056b3;
+}
+
+/* Styles for editable and clickable elements */
+.metric-name, .metric-value {
+    cursor: pointer; /* Indicate that these elements are clickable */
+    border: 1px solid #ced4da; /* Add a border for better visibility */
+    padding: 5px; /* Add some padding */
+    border-radius: 4px; /* Rounded corners */
+}
+
+.metric-name:focus, .metric-value:focus {
+    outline: none; /* Remove default outline */
+    border-color: #80bdff; /* Change border color on focus */
+    background-color: #e9ecef; /* Light background on focus */
+}
