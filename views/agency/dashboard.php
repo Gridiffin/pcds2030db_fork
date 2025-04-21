@@ -146,6 +146,22 @@ if (!$has_period_data) {
     ];
 }
 
+// Query to fetch notifications
+$notifications_query = "SELECT n.* FROM notifications n 
+                       WHERE n.user_id = ? AND n.read_status = 0 
+                       ORDER BY n.created_at DESC LIMIT 5";
+$stmt = $conn->prepare($notifications_query);
+$stmt->bind_param('i', $_SESSION['user_id']);
+$stmt->execute();
+$result = $stmt->get_result();
+$notifications = [];
+while ($row = $result->fetch_assoc()) {
+    $notifications[] = $row;
+}
+
+// Count unread notifications
+$unread_count = count($notifications);
+
 // Additional scripts
 $additionalScripts = [
     'https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js',
@@ -154,6 +170,11 @@ $additionalScripts = [
     APP_URL . '/assets/js/agency/dashboard_chart.js',
     APP_URL . '/assets/js/period_selector.js'
 ];
+
+// Include custom CSS for dashboard components
+if (!isset($additionalStyles)) {
+    $additionalStyles = '';
+}
 
 // Include header
 require_once '../layouts/header.php';
@@ -502,6 +523,271 @@ require_once '../../includes/dashboard_header.php';
                                 </a>
                             </div>
                         <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Programs Section with Tabs -->
+<section class="section mt-4">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header py-3">
+                        <ul class="nav nav-tabs card-header-tabs program-table-tabs" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link active" id="assigned-tab" data-bs-toggle="tab" href="#assigned" role="tab">
+                                    <i class="fas fa-tasks me-1"></i> Assigned Programs
+                                    <span class="badge bg-primary rounded-pill"><?php echo count($programs_by_type['assigned']); ?></span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="created-tab" data-bs-toggle="tab" href="#created" role="tab">
+                                    <i class="fas fa-folder-plus me-1"></i> Agency-Created Programs
+                                    <span class="badge bg-secondary rounded-pill"><?php echo count($programs_by_type['created']); ?></span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content">
+                            <!-- Assigned Programs Tab -->
+                            <div class="tab-pane fade show active" id="assigned" role="tabpanel">
+                                <?php if (empty($programs_by_type['assigned'])): ?>
+                                    <div class="text-center py-4">
+                                        <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                                        <p>No assigned programs found for this period.</p>
+                                    </div>
+                                <?php else: ?>
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Program Name</th>
+                                                    <th>Status</th>
+                                                    <th>Last Updated</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php foreach ($programs_by_type['assigned'] as $program): ?>
+                                                    <tr class="<?php echo isset($program['is_draft']) && $program['is_draft'] ? 'draft-program' : ''; ?>">
+                                                        <td>
+                                                            <div class="fw-medium">
+                                                                <?php echo htmlspecialchars($program['program_name']); ?>
+                                                                <?php if (isset($program['is_draft']) && $program['is_draft']): ?>
+                                                                    <span class="draft-indicator" title="Draft"></span>
+                                                                <?php endif; ?>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <?php
+                                                            // Use same status handling as in the Recent Programs section
+                                                            $current_status = isset($program['status']) ? (function_exists('convert_legacy_status') ? convert_legacy_status($program['status']) : $program['status']) : 'not-started';
+                                                            
+                                                            // Map database status values to display labels and classes
+                                                            $status_map = [
+                                                                'on-track' => ['label' => 'On Track', 'class' => 'warning'],
+                                                                'on-track-yearly' => ['label' => 'On Track for Year', 'class' => 'warning'],
+                                                                'target-achieved' => ['label' => 'Monthly Target Achieved', 'class' => 'success'],
+                                                                'completed' => ['label' => 'Monthly Target Achieved', 'class' => 'success'],
+                                                                'delayed' => ['label' => 'Delayed', 'class' => 'danger'],
+                                                                'severe-delay' => ['label' => 'Severe Delays', 'class' => 'danger'],
+                                                                'not-started' => ['label' => 'Not Started', 'class' => 'secondary']
+                                                            ];
+                                                            
+                                                            // Set default if status is not in our map
+                                                            if (!isset($status_map[$current_status])) {
+                                                                $current_status = 'not-started';
+                                                            }
+                                                            
+                                                            // Get the label and class from our map
+                                                            $status_label = $status_map[$current_status]['label'];
+                                                            $status_class = $status_map[$current_status]['class'];
+                                                            ?>
+                                                            <span class="badge bg-<?php echo $status_class; ?>">
+                                                                <?php echo $status_label; ?>
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <?php 
+                                                            if (isset($program['updated_at']) && $program['updated_at']) {
+                                                                echo date('M j, Y', strtotime($program['updated_at']));
+                                                            } elseif (isset($program['created_at']) && $program['created_at']) {
+                                                                echo date('M j, Y', strtotime($program['created_at']));
+                                                            } else {
+                                                                echo 'Not set';
+                                                            }
+                                                            ?>
+                                                        </td>
+                                                        <td>
+                                                            <div class="btn-group btn-group-sm">
+                                                                <a href="program_details.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="View Details">
+                                                                    <i class="fas fa-eye"></i>
+                                                                </a>
+                                                                <?php if (isset($program['is_draft']) && $program['is_draft']): ?>
+                                                                <a href="update_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-secondary" title="Edit Draft">
+                                                                    <i class="fas fa-edit"></i>
+                                                                </a>
+                                                                <?php endif; ?>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                <?php endforeach; ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                            
+                            <!-- Agency-Created Programs Tab -->
+                            <div class="tab-pane fade" id="created" role="tabpanel">
+                                <?php if (empty($programs_by_type['created'])): ?>
+                                    <div class="text-center py-4">
+                                        <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+                                        <p>You haven't created any custom programs yet.</p>
+                                        <a href="<?php echo APP_URL; ?>/views/agency/create_program.php" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-plus-circle me-1"></i> Create New Program
+                                        </a>
+                                    </div>
+                                <?php else: ?>
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Program Name</th>
+                                                    <th>Status</th>
+                                                    <th>Last Updated</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php foreach ($programs_by_type['created'] as $program): ?>
+                                                    <tr class="<?php echo isset($program['is_draft']) && $program['is_draft'] ? 'draft-program' : ''; ?>">
+                                                        <td>
+                                                            <div class="fw-medium">
+                                                                <?php echo htmlspecialchars($program['program_name']); ?>
+                                                                <?php if (isset($program['is_draft']) && $program['is_draft']): ?>
+                                                                    <span class="draft-indicator" title="Draft"></span>
+                                                                <?php endif; ?>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <?php
+                                                            // Use same status handling as in the Recent Programs section
+                                                            $current_status = isset($program['status']) ? (function_exists('convert_legacy_status') ? convert_legacy_status($program['status']) : $program['status']) : 'not-started';
+                                                            
+                                                            // Set default if status is not in our map
+                                                            if (!isset($status_map[$current_status])) {
+                                                                $current_status = 'not-started';
+                                                            }
+                                                            
+                                                            // Get the label and class from our map
+                                                            $status_label = $status_map[$current_status]['label'];
+                                                            $status_class = $status_map[$current_status]['class'];
+                                                            ?>
+                                                            <span class="badge bg-<?php echo $status_class; ?>">
+                                                                <?php echo $status_label; ?>
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <?php 
+                                                            if (isset($program['updated_at']) && $program['updated_at']) {
+                                                                echo date('M j, Y', strtotime($program['updated_at']));
+                                                            } elseif (isset($program['created_at']) && $program['created_at']) {
+                                                                echo date('M j, Y', strtotime($program['created_at']));
+                                                            } else {
+                                                                echo 'Not set';
+                                                            }
+                                                            ?>
+                                                        </td>
+                                                        <td>
+                                                            <div class="btn-group btn-group-sm">
+                                                                <a href="program_details.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="View Details">
+                                                                    <i class="fas fa-eye"></i>
+                                                                </a>
+                                                                <?php if (isset($program['is_draft']) && $program['is_draft']): ?>
+                                                                <a href="update_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-secondary" title="Edit Draft">
+                                                                    <i class="fas fa-edit"></i>
+                                                                </a>
+                                                                <?php endif; ?>
+                                                                <a href="delete_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-danger" title="Delete Program">
+                                                                    <i class="fas fa-trash"></i>
+                                                                </a>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                <?php endforeach; ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="text-center mt-3">
+                                        <a href="<?php echo APP_URL; ?>/views/agency/create_program.php" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-plus-circle me-1"></i> Create New Program
+                                        </a>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Sector-Specific Metrics Section (Placeholder) -->
+<section class="section mt-4">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-white"><?php echo htmlspecialchars($agency_sector); ?> Sector Metrics</h6>
+                        <a href="submit_metrics.php" class="btn btn-sm btn-outline-light">
+                            <i class="fas fa-edit me-1"></i> Update Metrics
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        <!-- Placeholder for future sector-specific metrics -->
+                        <div class="text-center py-4">
+                            <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                            <p>Sector-specific metrics will be available soon.</p>
+                            <p class="text-muted small mb-0">This section will display performance metrics specific to your agency's sector.</p>
+                        </div>
+                        
+                        <!-- Example of what the metrics will look like (commented out for now) -->
+                        <!--
+                        <div class="row">
+                            <div class="col-md-3 col-sm-6 mb-3">
+                                <div class="sector-metric-card">
+                                    <div class="metric-title">Beneficiaries Reached</div>
+                                    <div class="metric-value">
+                                        2,450 <small>people</small>
+                                    </div>
+                                    <div class="metric-trend">
+                                        <i class="fas fa-arrow-up text-success"></i>
+                                        15% from previous period
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6 mb-3">
+                                <div class="sector-metric-card">
+                                    <div class="metric-title">Average Completion Rate</div>
+                                    <div class="metric-value">
+                                        78<small>%</small>
+                                    </div>
+                                    <div class="metric-trend">
+                                        <i class="fas fa-arrow-up text-success"></i>
+                                        5% from previous period
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        -->
                     </div>
                 </div>
             </div>

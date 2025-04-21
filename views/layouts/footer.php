@@ -21,6 +21,7 @@
 
 <!-- Utility scripts -->
 <script src="<?php echo APP_URL; ?>/assets/js/utilities/status_utils.js"></script>
+<script src="<?php echo APP_URL; ?>/assets/js/utilities/dropdown_init.js"></script>
     
 <!-- Core App JavaScript -->
 <script>
@@ -45,33 +46,10 @@
 <!-- Toast container for notifications -->
 <div id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3"></div>
 
-<!-- Core JS files -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
-
-<!-- Dropdown initialization - Fixed for dropdowns not working -->
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Initialize all dropdowns
-        var dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'));
-        var dropdownList = dropdownElementList.map(function(dropdownToggleEl) {
-            return new bootstrap.Dropdown(dropdownToggleEl);
-        });
-        
-        // Additional event to ensure proper working
-        document.querySelectorAll('.dropdown-toggle').forEach(function(element) {
-            element.addEventListener('click', function(e) {
-                e.stopPropagation();
-                bootstrap.Dropdown.getOrCreateInstance(this).toggle();
-            });
-        });
-    });
-</script>
-
 <!-- Shared utilities -->
 <script src="<?php echo APP_URL; ?>/assets/js/utilities/initialization.js"></script>
 <script src="<?php echo APP_URL; ?>/assets/js/utilities/form_utils.js"></script>
 <script src="<?php echo APP_URL; ?>/assets/js/utilities/filter_utils.js"></script>
-<script src="<?php echo APP_URL; ?>/assets/js/utilities/status_utils.js"></script>
 <script src="<?php echo APP_URL; ?>/assets/js/main.js"></script>
 
 <!-- Additional scripts -->
