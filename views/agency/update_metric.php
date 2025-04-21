@@ -1,54 +1,73 @@
 <?php
 header('Content-Type: application/json');
 
+session_start();
+
 // Database connection
 require_once '../../config/config.php';
 require_once '../../includes/db_connect.php';
 
 // Get input data
 $data = json_decode(file_get_contents('php://input'), true);
-$metric_id = $conn->real_escape_string($data['metric_id'] ?? '');
-$metric_name = $conn->real_escape_string($data['metric_name'] ?? '');
-$month = intval($data['month'] ?? 0);
-$new_value = floatval($data['new_value'] ?? 0);
+$old_name = $conn->real_escape_string($data['column_title'] ?? '');
 $new_name = $conn->real_escape_string($data['new_name'] ?? '');
+$month = $conn->real_escape_string($data['month'] ?? '');
+$new_value = floatval($data['new_value'] ?? 0);
 
-// Handle metric name change
-if (!empty($new_name) && $new_name !== $metric_name) {
-    // Update all records with old name to new name
-    $result = $conn->query("UPDATE sector_metrics_draft 
-                         SET metric_name = '$new_name' 
-                         WHERE metric_name = '$metric_name'");
+// Get sector_id from session
+$sector_id = $_SESSION['sector_id'] ?? '';
 
-    if (!$result) die(json_encode(['error' => $conn->error]));
-    $metric_name = $new_name;
+if (!$sector_id) {
+    echo json_encode(['error' => 'Sector ID not found in session']);
+    exit;
 }
 
-// Handle metric value update/addition
-if ($month > 0) {
-    $exists = $conn->query("SELECT 1 FROM sector_metrics_draft 
-                         WHERE metric_name = '$metric_name' 
-                         AND metric_month = $month");
-
-    if ($exists && $exists->num_rows) {
-        // Update existing
-        $result = $conn->query("UPDATE sector_metrics_draft 
-                            SET metric_value = $new_value 
-                            WHERE metric_name = '$metric_name' 
-                            AND metric_month = $month");
-    } else {
-        // Insert new
-        $result = $conn->query("INSERT INTO sector_metrics_draft 
-                            (metric_id, metric_name, metric_value, metric_month) 
-                            VALUES ('$metric_id', '$metric_name', $new_value, $month)");
-    }
-
-    if ($result) {
+// Handle metric name change
+if (!empty($new_name) && $new_name !== $old_name) {
+    $update_name_query = "UPDATE sector_metrics_draft 
+                          SET column_title = '$new_name' 
+                          WHERE column_title = '$old_name' AND sector_id = '$sector_id'";
+    if ($conn->query($update_name_query)) {
         echo json_encode(['success' => true]);
     } else {
         echo json_encode(['error' => $conn->error]);
     }
-} else {
-    echo json_encode(['success' => true]); // For name-only changes
+    exit;
 }
+
+// Handle metric value update/addition
+if (!empty($month)) {
+    $check_exists_query = "SELECT 1 FROM sector_metrics_draft 
+                           WHERE column_title = '$old_name' 
+                           AND month = '$month' 
+                           AND sector_id = '$sector_id' LIMIT 1";
+    $exists_result = $conn->query($check_exists_query);
+
+    if ($exists_result && $exists_result->num_rows > 0) {
+        // Update existing record
+        $update_value_query = "UPDATE sector_metrics_draft 
+                               SET table_content = $new_value 
+                               WHERE column_title = '$old_name' 
+                               AND month = '$month' 
+                               AND sector_id = '$sector_id'";
+        if ($conn->query($update_value_query)) {
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['error' => $conn->error]);
+        }
+    } else {
+        // Insert new record
+        $insert_query = "INSERT INTO sector_metrics_draft 
+                         (column_title, table_content, month, sector_id) 
+                         VALUES ('$old_name', $new_value, '$month', '$sector_id')";
+        if ($conn->query($insert_query)) {
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['error' => $conn->error]);
+        }
+    }
+    exit;
+}
+
+echo json_encode(['error' => 'Invalid request']);
 ?>

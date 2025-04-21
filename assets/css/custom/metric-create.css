@@ -1,56 +1,33 @@
-/* Styles for the Metric Creation Interface */
-body {
-    font-family: Arial, sans-serif;
-    background-color: #f8f9fa;
-}
-
-.container {
-    margin: 20px;
-    padding: 20px;
-    background-color: #ffffff;
-    border-radius: 5px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-h1 {
-    color: #343a40;
-}
-
-.metric-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.metric-cell {
+.container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+.year-selector { margin: 20px 0; }
+.data-form { background: #f5f5f5; padding: 20px; border-radius: 5px; margin-bottom: 20px; }
+table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+th { background-color: #f2f2f2; }
+.metric-value { text-align: right; }
+.metric-header, .metric-cell {
     display: flex;
     align-items: center;
     gap: 5px;
 }
-
-.btn {
-    background-color: #007bff;
+.save-btn {
+    padding: 2px 5px;
+    font-size: 12px;
+    cursor: pointer;
+    margin-left: 5px;
+    display: none;
+}
+.metric-value[contenteditable="true"]:focus,
+.metric-name[contenteditable="true"]:focus {
+    background-color: #fffacd;
+}
+.add-column-btn {
+    padding: 10px 15px;
+    background: #007bff;
     color: white;
     border: none;
-    padding: 10px 15px;
-    border-radius: 5px;
     cursor: pointer;
-}
-
-.btn:hover {
-    background-color: #0056b3;
-}
-
-/* Styles for editable and clickable elements */
-.metric-name, .metric-value {
-    cursor: pointer; /* Indicate that these elements are clickable */
-    border: 1px solid #ced4da; /* Add a border for better visibility */
-    padding: 5px; /* Add some padding */
-    border-radius: 4px; /* Rounded corners */
-}
-
-.metric-name:focus, .metric-value:focus {
-    outline: none; /* Remove default outline */
-    border-color: #80bdff; /* Change border color on focus */
-    background-color: #e9ecef; /* Light background on focus */
+    border-radius: 4px;
+    font-size: 16px;
+    margin-bottom: 20px;
 }

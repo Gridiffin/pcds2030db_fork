@@ -18,6 +18,8 @@ if (!is_agency()) {
     exit;
 }
 
+$sector_id = $_GET['sector_id'] ?? $_SESSION['sector_id'];
+
 // Set page title
 $pageTitle = 'Create Sector Metrics';
 
@@ -26,14 +28,14 @@ $message = '';
 $message_type = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $id = $conn->real_escape_string($_POST['metric_id']);
-    $m_name = $conn->real_escape_string($_POST['metric_name']);
-    $name = $conn->real_escape_string($_POST['column_title']);
-    $value = floatval($_POST['table_content']);
-    $month = $conn->real_escape_string($_POST['month']);
+    // Use provided values or defaults
+    $name = $conn->real_escape_string($_POST['column_title'] ?? '');
+    $value = floatval($_POST['table_content'] ?? 0);
+    $month = $conn->real_escape_string($_POST['month'] ?? '');
 
-    $query = "INSERT INTO sector_metrics_draft (metric_id, metric_name, column_title, table_content, month) 
-            VALUES ('$id', '$m_name', '$name', '$value', '$month')";
+    // Insert new metric without metric_id and metric_name (assuming auto-increment or nullable)
+    $query = "INSERT INTO sector_metrics_draft (column_title, table_content, month, sector_id) 
+            VALUES ('$name', '$value', '$month', '$sector_id')";
 
     if ($conn->query($query) === TRUE) {
         $message = "Metric created successfully.";
@@ -45,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Retrieve all metrics for display
-$select_query = "SELECT * FROM sector_metrics_draft WHERE sector_id = '0'";
+$select_query = "SELECT * FROM sector_metrics_draft WHERE sector_id = '" . $sector_id . "' ORDER BY month DESC";
 $metrics = $conn->query($select_query);
 if (!$metrics) die("Error getting metrics: " . $conn->error);
 
@@ -61,6 +63,7 @@ while ($row = $metrics->fetch_assoc()) {
     $table_data[$month_index]['month_name'] = $month_names[$month_index];
     $table_data[$month_index]['metrics'][$row['column_title']] = $row['table_content'];
 }
+
 ?>
 <!DOCTYPE html>
 <html>
@@ -70,7 +73,7 @@ while ($row = $metrics->fetch_assoc()) {
 <body>
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h1 class="h2 mb-0">Create New Sector Metrics</h1>
+            <h1 class="h2 mb-0">Create New Sector Metrics</h1> 
             <p class="text-muted">Create your sector-specific metrics</p>
         </div>
     </div>
@@ -89,7 +92,7 @@ while ($row = $metrics->fetch_assoc()) {
                     <?php
                         // Get unique metric names for column headers
                         $metric_names = [];
-                        foreach ($table_data as $month_data) {
+                        foreach ($table_data as $month_data) {  
                             if (isset($month_data['metrics'])) {
                                 $metric_names = array_merge($metric_names, array_keys($month_data['metrics']));
                             }
@@ -232,13 +235,13 @@ while ($row = $metrics->fetch_assoc()) {
         // Prepare data for POST request
         const data = new URLSearchParams();
         data.append('column_title', newMetricName);
-        data.append('table_content', '0');
+        data.append('table_content', '');
         // Use current date as month
         const currentDate = new Date();
         const year = currentDate.getFullYear();
-        const month = currentDate.getMonth() + 1; // 0-based
+        const month = 'January' // placeholder for month name
         const day = 1;
-        const metricDate = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+        const metricDate = `${month.toString().padStart(2, '0')}`;
         data.append('month', metricDate);
 
         try {
@@ -255,6 +258,26 @@ while ($row = $metrics->fetch_assoc()) {
         } catch (error) {
             alert('Error adding new metric column: ' + error.message);
         }
+    });
+    // Make entire metric-cell div clickable to focus the editable span.metric-value inside
+    document.querySelectorAll('.metric-cell').forEach(cell => {
+        cell.addEventListener('click', function(event) {
+            // Avoid focusing if clicking on the save button or the span itself
+            if (event.target.classList.contains('save-btn') || event.target.classList.contains('metric-value')) {
+                return;
+            }
+            const editableSpan = this.querySelector('.metric-value');
+            if (editableSpan) {
+                editableSpan.focus();
+                // Optionally, place cursor at end
+                const range = document.createRange();
+                const sel = window.getSelection();
+                range.selectNodeContents(editableSpan);
+                range.collapse(false);
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }
+        });
     });
 </script>
 </html>
