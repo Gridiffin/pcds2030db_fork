@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 16, 2025 at 03:44 AM
+-- Generation Time: Apr 21, 2025 at 09:53 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -20,6 +20,24 @@ SET time_zone = "+00:00";
 --
 -- Database: `pcds2030_dashboard`
 --
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `notifications`
+--
+
+CREATE TABLE `notifications` (
+  `notification_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `message` text NOT NULL,
+  `type` varchar(50) NOT NULL,
+  `reference_id` int(11) DEFAULT NULL,
+  `reference_type` varchar(50) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `read_status` tinyint(1) NOT NULL DEFAULT 0,
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -50,8 +68,9 @@ INSERT INTO `programs` (`program_id`, `program_name`, `description`, `owner_agen
 (23, 'popo', 'popopipipop', 12, 2, '2025-04-01', '2025-04-08', '2025-04-08 08:26:23', '2025-04-08 08:26:23', 0, NULL, 12),
 (25, 'test', 'test', 12, 2, '2025-04-03', '2025-04-03', '2025-04-10 02:56:45', '2025-04-10 02:56:45', 0, NULL, 12),
 (26, 'qwer', 'qwer', 12, 2, '2025-01-01', '2025-02-10', '2025-04-10 03:17:59', '2025-04-10 03:17:59', 0, NULL, 12),
-(27, 'not started', 'desc', 12, 2, '2025-04-09', '2025-04-10', '2025-04-14 02:45:14', '2025-04-14 02:45:14', 0, NULL, 12),
-(28, 'heal', 'heal', 12, 2, '0000-00-00', '2025-04-25', '2025-04-15 03:31:11', '2025-04-15 03:31:11', 1, '[\"description\",\"target\",\"timeline\"]', 1);
+(38, 'cuba', 'cayb', 12, 2, '2025-04-15', '2025-04-17', '2025-04-16 07:22:38', '2025-04-16 07:22:38', 1, '{\"edit_permissions\":[\"target\",\"status\",\"status_text\",\"description\"],\"default_values\":[]}', 1),
+(40, 'draft1', '', 12, 2, '0000-00-00', '0000-00-00', '2025-04-21 03:01:54', '2025-04-21 03:01:54', 0, NULL, 12),
+(41, 'draft2', '', 12, 2, '0000-00-00', '0000-00-00', '2025-04-21 03:02:05', '2025-04-21 03:02:05', 0, NULL, 12);
 
 -- --------------------------------------------------------
 
@@ -79,7 +98,8 @@ INSERT INTO `program_submissions` (`submission_id`, `program_id`, `period_id`, `
 (23, 23, 2, 12, 'target-achieved', '{\"target\":\"target\",\"status_date\":\"2025-04-08\",\"status_text\":\"achievement\"}', '2025-04-08 08:26:23', '2025-04-08 08:26:23', 0),
 (25, 25, 2, 12, 'target-achieved', '{\"target\":\"test\",\"status_date\":\"2025-04-10\",\"status_text\":\"test\"}', '2025-04-10 02:56:45', '2025-04-10 02:56:45', 0),
 (26, 26, 2, 12, 'severe-delay', '{\"target\":\"qwer\",\"status_date\":\"2025-04-10\",\"status_text\":\"qwer\"}', '2025-04-10 03:17:59', '2025-04-10 03:17:59', 0),
-(27, 27, 2, 12, 'not-started', '{\"target\":\"target\",\"status_date\":\"2025-04-14\",\"status_text\":\"not started\"}', '2025-04-14 02:45:14', '2025-04-14 02:45:14', 0);
+(31, 40, 2, 12, 'not-started', '{\"target\":\"target\",\"status_date\":\"2025-04-21\",\"status_text\":\"\",\"achievement\":\"\",\"remarks\":\"\"}', '2025-04-21 03:01:54', '2025-04-21 03:01:54', 1),
+(32, 41, 2, 12, 'not-started', '{\"target\":\"target\",\"status_date\":\"2025-04-21\",\"status_text\":\"\",\"achievement\":\"\",\"remarks\":\"\"}', '2025-04-21 03:02:05', '2025-04-21 03:02:05', 1);
 
 -- --------------------------------------------------------
 
@@ -95,19 +115,20 @@ CREATE TABLE `reporting_periods` (
   `end_date` date NOT NULL,
   `status` enum('open','closed') DEFAULT 'open',
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `is_standard_dates` tinyint(1) DEFAULT 1
+  `is_standard_dates` tinyint(1) DEFAULT 1,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `reporting_periods`
 --
 
-INSERT INTO `reporting_periods` (`period_id`, `year`, `quarter`, `start_date`, `end_date`, `status`, `updated_at`, `is_standard_dates`) VALUES
-(1, 2025, 1, '2025-01-01', '2025-03-31', 'closed', '2025-04-15 01:45:45', 1),
-(2, 2025, 2, '2025-04-01', '2025-06-30', 'open', '2025-04-15 01:45:45', 1),
-(3, 2025, 3, '2025-07-01', '2025-09-30', 'closed', '2025-04-15 01:45:42', 1),
-(4, 2025, 4, '2025-10-01', '2025-12-31', 'closed', '2025-04-15 01:45:40', 1),
-(5, 2024, 1, '2024-01-01', '2024-03-31', 'closed', '2025-04-15 01:45:36', 1);
+INSERT INTO `reporting_periods` (`period_id`, `year`, `quarter`, `start_date`, `end_date`, `status`, `updated_at`, `is_standard_dates`, `created_at`) VALUES
+(1, 2025, 1, '2025-01-01', '2025-03-31', 'closed', '2025-04-15 01:45:45', 1, '2025-04-17 02:54:12'),
+(2, 2025, 2, '2025-04-01', '2025-06-30', 'open', '2025-04-17 02:58:41', 1, '2025-04-17 02:54:12'),
+(3, 2025, 3, '2025-07-01', '2025-09-30', 'closed', '2025-04-17 02:37:02', 1, '2025-04-17 02:54:12'),
+(4, 2025, 4, '2025-10-01', '2025-12-31', 'closed', '2025-04-17 02:34:40', 1, '2025-04-17 02:54:12'),
+(10, 2024, 2, '2024-04-01', '2024-06-30', 'closed', '2025-04-17 02:58:36', 1, '2025-04-17 02:54:12');
 
 -- --------------------------------------------------------
 
@@ -246,13 +267,22 @@ INSERT INTO `users` (`user_id`, `username`, `password`, `agency_name`, `role`, `
 (5, 'sfc', '$2y$10$lhVSzcJ/epOb2ce27OVUH.bmOPGsOPw38c/tnjFdcGl0XDjp4qtfG', 'Sarawak Forestry Corporation', 'agency', 1, '2025-03-25 01:31:15', '2025-03-25 01:31:15', 1),
 (6, 'lcda', '$2y$10$QxyxZHPAzKcmQVjo1uiN7uP9ApdTpfoMwavT0bmmrGAIxiS5vAwTi', 'Land Custody and Development Authority', 'agency', 2, '2025-03-25 01:31:15', '2025-03-25 01:31:15', 1),
 (12, 'user', '$2y$10$/Z6xCsE7OknP.4HBT5CdBuWDZK5VNMf7MqwmGusJ0SM8xxaGQKdq2', 'testagency', 'agency', 2, '2025-03-25 07:42:27', '2025-04-09 06:14:43', 1),
-(13, 'user2', '$2y$10$pRT3t6cqb8QgQkYervVGq.mlxaR7BmRqZgoqgBG0gaq76SF7Bjwra', 'test2', 'agency', 3, '2025-04-09 05:13:19', '2025-04-09 05:13:19', 1),
-(15, 'testadmin', '$2y$10$JQaXUGYMej1nriu6lgYQXOvCjrfiGKRhFgqMe0kaBf./g.38b/eom', NULL, 'admin', NULL, '2025-04-11 06:12:58', '2025-04-11 06:12:58', 1),
-(16, 'test3', '$2y$10$c6NUe40VWysBKupPkbkod.0q2BcpaU2/NeOzFQNFdCU2/lAplyXyG', NULL, 'admin', NULL, '2025-04-11 06:25:19', '2025-04-11 06:25:19', 1);
+(15, 'testadmin', '$2y$10$JQaXUGYMej1nriu6lgYQXOvCjrfiGKRhFgqMe0kaBf./g.38b/eom', '', 'admin', NULL, '2025-04-11 06:12:58', '2025-04-17 01:34:13', 1),
+(16, 'test3', '$2y$10$c6NUe40VWysBKupPkbkod.0q2BcpaU2/NeOzFQNFdCU2/lAplyXyG', '', 'admin', NULL, '2025-04-11 06:25:19', '2025-04-17 01:33:48', 0),
+(17, 'admin2', '$2y$10$tkzE2DHMABmf5IiQ4.2VU.Mkg4laogdzEvlNSmcoz8tSu35Cx/wwO', '', 'admin', NULL, '2025-04-16 07:40:43', '2025-04-17 03:03:44', 1),
+(18, 'testadmin2', '$2y$10$0Z56YV.wuWhmAHQGipoyZ.ZZag0jieeRpczfsvQvmZTPSuSvNk/5O', NULL, 'admin', NULL, '2025-04-17 00:41:59', '2025-04-17 00:41:59', 1),
+(19, 'speed', '$2y$10$HkY31pXS.sqweZK8YLM1MuhuLRKogaDHExbneEY8p.gP3jO2iIXBq', 'Agensiii', 'agency', 2, '2025-04-17 00:43:54', '2025-04-17 00:43:54', 1);
 
 --
 -- Indexes for dumped tables
 --
+
+--
+-- Indexes for table `notifications`
+--
+ALTER TABLE `notifications`
+  ADD PRIMARY KEY (`notification_id`),
+  ADD KEY `user_id` (`user_id`);
 
 --
 -- Indexes for table `programs`
@@ -280,6 +310,7 @@ ALTER TABLE `reporting_periods`
   ADD PRIMARY KEY (`period_id`),
   ADD UNIQUE KEY `year` (`year`,`quarter`),
   ADD UNIQUE KEY `year_quarter_unique` (`year`,`quarter`),
+  ADD UNIQUE KEY `year_quarter` (`year`,`quarter`),
   ADD KEY `quarter_year_idx` (`quarter`,`year`);
 
 --
@@ -342,22 +373,28 @@ ALTER TABLE `users`
 --
 
 --
+-- AUTO_INCREMENT for table `notifications`
+--
+ALTER TABLE `notifications`
+  MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+
+--
 -- AUTO_INCREMENT for table `programs`
 --
 ALTER TABLE `programs`
-  MODIFY `program_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
+  MODIFY `program_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=42;
 
 --
 -- AUTO_INCREMENT for table `program_submissions`
 --
 ALTER TABLE `program_submissions`
-  MODIFY `submission_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
+  MODIFY `submission_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
 
 --
 -- AUTO_INCREMENT for table `reporting_periods`
 --
 ALTER TABLE `reporting_periods`
-  MODIFY `period_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `period_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `reports`
@@ -399,11 +436,17 @@ ALTER TABLE `sector_metric_value_history`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
 
 --
 -- Constraints for dumped tables
 --
+
+--
+-- Constraints for table `notifications`
+--
+ALTER TABLE `notifications`
+  ADD CONSTRAINT `notifications_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `programs`
