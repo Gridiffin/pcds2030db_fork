@@ -117,7 +117,14 @@ require_once '../layouts/agency_nav.php';
             <span class="badge bg-primary"><?php echo count($metrics); ?> Metrics</span>
         </div>
         <div class="card-body">
-            <a href="create_metric.php?sector_id=<?php echo $_SESSION['sector_id']; ?>" class="btn"> + Create New </a>
+            <?php
+                $next_metric_id = 0;
+                $result = $conn->query("SELECT MAX(metric_id) AS max_id FROM sector_metrics_draft");
+                if ($result && $row = $result->fetch_assoc()) {
+                    $next_metric_id = $row['max_id'] + 1;
+                }
+            ?>
+            <a href="create_metric.php?sector_id=<?php echo $_SESSION['sector_id']; ?>&next_metric_id=<?php echo $next_metric_id; ?>" class="btn"> + Create New </a>
             <?php if (empty($metrics)): ?>
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle me-2"></i>
