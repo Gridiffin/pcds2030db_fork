@@ -82,6 +82,11 @@ require_once '../../includes/dashboard_header.php';
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h6 class="m-0 font-weight-bold text-white">Program Overview</h6>
                 <div class="d-flex align-items-center">
+                    <?php if ($is_draft): ?>
+                        <a href="update_program.php?id=<?php echo $program_id; ?>" class="btn btn-warning btn-sm me-2">
+                            <i class="fas fa-edit me-1"></i> Edit Draft
+                        </a>
+                    <?php endif; ?>
                     <?php 
                     // Get status for display
                     $status = $current_submission['status'] ?? 'not-started';
@@ -101,18 +106,9 @@ require_once '../../includes/dashboard_header.php';
                         $status = 'not-started';
                     }
                     ?>
-                    <span class="badge bg-<?php echo $status_map[$status]['class']; ?> px-3 py-2 me-2">
+                    <span class="badge bg-<?php echo $status_map[$status]['class']; ?> px-3 py-2">
                         <?php echo $status_map[$status]['label']; ?>
-                        <?php if ($is_draft): ?>
-                            <span class="draft-indicator ms-2" title="Draft"></span>
-                        <?php endif; ?>
                     </span>
-                    
-                    <?php if ($is_draft): ?>
-                        <a href="update_program.php?id=<?php echo $program_id; ?>" class="btn btn-warning btn-sm">
-                            <i class="fas fa-edit me-1"></i> Edit Draft
-                        </a>
-                    <?php endif; ?>
                 </div>
             </div>
             <div class="card-body">
@@ -170,7 +166,15 @@ require_once '../../includes/dashboard_header.php';
                             <div class="info-group mb-3">
                                 <label class="text-muted">Current Target</label>
                                 <div class="fw-medium">
-                                    <?php echo htmlspecialchars($current_submission['current_target'] ?? $current_submission['target'] ?? 'Not set'); ?>
+                                    <?php 
+                                    // Properly extract target from either content_json or direct field
+                                    if (isset($current_submission['content_json']) && is_string($current_submission['content_json'])) {
+                                        $content = json_decode($current_submission['content_json'], true);
+                                        echo htmlspecialchars($content['target'] ?? 'Not set');
+                                    } else {
+                                        echo htmlspecialchars($current_submission['target'] ?? 'Not set');
+                                    }
+                                    ?>
                                 </div>
                             </div>
                             
@@ -178,7 +182,14 @@ require_once '../../includes/dashboard_header.php';
                                 <label class="text-muted">Status Date</label>
                                 <div class="fw-medium">
                                     <?php 
-                                    if (isset($current_submission['status_date']) && $current_submission['status_date']) {
+                                    if (isset($current_submission['content_json']) && is_string($current_submission['content_json'])) {
+                                        $content = json_decode($current_submission['content_json'], true);
+                                        if (isset($content['status_date']) && $content['status_date']) {
+                                            echo date('M j, Y', strtotime($content['status_date']));
+                                        } else {
+                                            echo 'Not set';
+                                        }
+                                    } else if (isset($current_submission['status_date']) && $current_submission['status_date']) {
                                         echo date('M j, Y', strtotime($current_submission['status_date']));
                                     } else {
                                         echo 'Not set';
@@ -215,11 +226,11 @@ require_once '../../includes/dashboard_header.php';
                         <?php endif; ?>
                     </div>
                     
-                    <!-- Status Description / Achievement (full width) -->
+                    <!-- Achievement (full width) -->
                     <?php if (isset($current_submission['status_text']) && $current_submission['status_text']): ?>
                     <div class="col-12 mt-3">
                         <div class="info-group">
-                            <label class="text-muted">Status Description / Achievement</label>
+                            <label class="text-muted">Achievement</label>
                             <div class="description-box p-3 rounded bg-light">
                                 <?php echo nl2br(htmlspecialchars($current_submission['status_text'])); ?>
                             </div>
@@ -264,7 +275,7 @@ require_once '../../includes/dashboard_header.php';
                         <tr>
                             <th>Period</th>
                             <th>Target</th>
-                            <th>Status Description / Achievement</th>
+                            <th>Achievement</th>
                             <th>Status</th>
                             <th>Submitted</th>
                         </tr>
@@ -285,13 +296,32 @@ require_once '../../includes/dashboard_header.php';
                             ?>
                             <tr class="<?php echo isset($submission['is_draft']) && $submission['is_draft'] ? 'draft-program' : ''; ?>">
                                 <td>
-                                    Q<?php echo $submission['quarter']; ?>-<?php echo $submission['year']; ?>
+                                    <?php 
+                                    // Get period information from period_id
+                                    $period_info = get_reporting_period($submission['period_id'] ?? 0);
+                                    if ($period_info) {
+                                        echo 'Q' . $period_info['quarter'] . '-' . $period_info['year'];
+                                    } else {
+                                        echo 'Unknown Period';
+                                    }
+                                    ?>
+                                    <?php if (isset($submission['is_draft']) && $submission['is_draft']): ?>
+                                        <span class="draft-indicator">Draft</span>
+                                    <?php endif; ?>
                                 </td>
                                 <td>
                                     <?php echo htmlspecialchars($submission['current_target'] ?? $submission['target'] ?? 'Not set'); ?>
                                 </td>
                                 <td>
-                                    <?php echo htmlspecialchars($submission['status_text'] ?? 'Not set'); ?>
+                                    <?php 
+                                    // Extract achievement/status_text from either content_json or direct field
+                                    if (isset($submission['content_json']) && is_string($submission['content_json'])) {
+                                        $content = json_decode($submission['content_json'], true);
+                                        echo htmlspecialchars($content['status_text'] ?? $content['achievement'] ?? 'Not set');
+                                    } else {
+                                        echo htmlspecialchars($submission['status_text'] ?? $submission['achievement'] ?? 'Not set');
+                                    }
+                                    ?>
                                 </td>
                                 <td>
                                     <?php 
@@ -303,12 +333,17 @@ require_once '../../includes/dashboard_header.php';
                                     <span class="badge bg-<?php echo $status_map[$sub_status]['class']; ?>">
                                         <?php echo $status_map[$sub_status]['label']; ?>
                                     </span>
-                                    <?php if (isset($submission['is_draft']) && $submission['is_draft']): ?>
-                                        <span class="draft-indicator ms-2" title="Draft"></span>
-                                    <?php endif; ?>
                                 </td>
                                 <td>
-                                    <?php echo date('M j, Y', strtotime($submission['submission_date'])); ?>
+                                    <?php 
+                                    if (isset($submission['created_at']) && $submission['created_at']) {
+                                        echo date('M j, Y', strtotime($submission['created_at']));
+                                    } else if (isset($submission['submission_date']) && $submission['submission_date']) {
+                                        echo date('M j, Y', strtotime($submission['submission_date']));
+                                    } else {
+                                        echo 'Not recorded';
+                                    }
+                                    ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>

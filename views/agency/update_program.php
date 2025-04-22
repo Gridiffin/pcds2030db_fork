@@ -66,8 +66,8 @@ function is_editable($field) {
     global $program, $edit_permissions;
     
     // If not assigned by admin, all fields are editable except program name
-    if (!$program['is_assigned']) {
-        return true;
+    if (!isset($program['is_assigned']) || !$program['is_assigned']) {
+        return $field !== 'program_name';
     }
     
     // For assigned programs, check permissions array
@@ -76,7 +76,7 @@ function is_editable($field) {
 
 // Function to get default value if field is not editable
 function get_field_value($field, $current_value = '') {
-    global $default_values, $current_submission;
+    global $default_values;
     
     // If this field has a default value and is not editable, use the default value
     if (isset($default_values[$field]) && !is_editable($field)) {
@@ -120,6 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $program_id = intval($_POST['program_id'] ?? 0);
     $program_data = [
         'program_id' => $program_id,
+        'period_id' => $current_period['period_id'], // Add the current period ID which is required
         'program_name' => $_POST['program_name'] ?? '',
         'description' => $_POST['description'] ?? '',
         'start_date' => $_POST['start_date'] ?? '',
@@ -257,10 +258,8 @@ require_once '../layouts/agency_nav.php';
                         <label for="program_name" class="form-label">Program Name *</label>
                         <input type="text" class="form-control" id="program_name" name="program_name" 
                                value="<?php echo htmlspecialchars($program['program_name']); ?>" 
-                               <?php echo $program['is_assigned'] ? 'readonly' : 'required'; ?>>
-                        <?php if ($program['is_assigned']): ?>
-                            <div class="form-text">This program was assigned by an administrator and its name cannot be changed.</div>
-                        <?php endif; ?>
+                               readonly>
+                        <div class="form-text">Program name cannot be changed once created.</div>
                     </div>
                     <div class="col-md-12">
                         <label for="description" class="form-label">Description</label>
@@ -298,7 +297,15 @@ require_once '../layouts/agency_nav.php';
                     <div class="col-md-12">
                         <label for="target" class="form-label">Target *</label>
                         <input type="text" class="form-control" id="target" name="target" required
-                               value="<?php echo htmlspecialchars(get_field_value('target', $current_submission['current_target'] ?? '')); ?>"
+                               value="<?php 
+                               // Get target from content_json if available
+                               if (isset($current_submission['content_json']) && is_string($current_submission['content_json'])) {
+                                   $content = json_decode($current_submission['content_json'], true);
+                                   echo htmlspecialchars(get_field_value('target', $content['target'] ?? ''));
+                               } else {
+                                   echo htmlspecialchars(get_field_value('target', $current_submission['target'] ?? ''));
+                               }
+                               ?>"
                                <?php echo (!is_editable('target')) ? 'readonly' : ''; ?>>
                         <?php if ($program['is_assigned'] && !is_editable('target')): ?>
                             <div class="form-text">Target was set by an administrator and cannot be changed.</div>
@@ -336,13 +343,42 @@ require_once '../layouts/agency_nav.php';
                     <div class="col-md-6">
                         <label for="status_date" class="form-label">Status Date *</label>
                         <input type="date" class="form-control" id="status_date" name="status_date" required
-                               value="<?php echo isset($current_submission['status_date']) ? date('Y-m-d', strtotime($current_submission['status_date'])) : date('Y-m-d'); ?>">
+                               value="<?php 
+                               // Get status_date from content_json if available
+                               if (isset($current_submission['content_json']) && is_string($current_submission['content_json'])) {
+                                   $content = json_decode($current_submission['content_json'], true);
+                                   echo isset($content['status_date']) && $content['status_date'] ? date('Y-m-d', strtotime($content['status_date'])) : date('Y-m-d');
+                               } else {
+                                   echo isset($current_submission['status_date']) ? date('Y-m-d', strtotime($current_submission['status_date'])) : date('Y-m-d');
+                               }
+                               ?>">
                         <div class="form-text">When was this status determined?</div>
                     </div>
                     <div class="col-md-12">
-                        <label for="status_text" class="form-label">Status Description</label>
-                        <textarea class="form-control" id="status_text" name="status_text" rows="2"><?php echo htmlspecialchars($current_submission['status_text'] ?? ''); ?></textarea>
+                        <label for="status_text" class="form-label">Status Description / Achievements </label>
+                        <textarea class="form-control" id="status_text" name="status_text" rows="2"><?php 
+                        // Get status_text from content_json if available
+                        if (isset($current_submission['content_json']) && is_string($current_submission['content_json'])) {
+                            $content = json_decode($current_submission['content_json'], true);
+                            echo htmlspecialchars($content['status_text'] ?? '');
+                        } else {
+                            echo htmlspecialchars($current_submission['status_text'] ?? '');
+                        }
+                        ?></textarea>
                         <div class="form-text">Describe the current status of this program in detail</div>
+                    </div>
+                    <div class="col-md-12">
+                        <label for="remarks" class="form-label">Remarks</label>
+                        <textarea class="form-control" id="remarks" name="remarks" rows="3" placeholder="Enter any additional information or remarks"><?php 
+                        // Get remarks from content_json if available
+                        if (isset($current_submission['content_json']) && is_string($current_submission['content_json'])) {
+                            $content = json_decode($current_submission['content_json'], true);
+                            echo htmlspecialchars($content['remarks'] ?? '');
+                        } else {
+                            echo htmlspecialchars($current_submission['remarks'] ?? '');
+                        }
+                        ?></textarea>
+                        <div class="form-text">Additional notes or comments about this program's implementation.</div>
                     </div>
                 </div>
             </div>

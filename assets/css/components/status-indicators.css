@@ -140,38 +140,17 @@
 /* Draft indicator */
 .draft-indicator {
   display: inline-block;
-  width: 8px;
-  height: 8px;
-  background-color: #ffc107;
-  border-radius: 50%;
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+  border-radius: 3px;
+  padding: 0.1rem 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   margin-left: 5px;
   position: relative;
-  top: -2px;
-  animation: pulse-warning 2s infinite;
-}
-
-/* Tooltip for draft indicator */
-.draft-indicator::after {
-  content: "Draft";
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: rgba(0, 0, 0, 0.8);
-  color: white;
-  font-size: 0.75rem;
-  padding: 3px 8px;
-  border-radius: 4px;
-  white-space: nowrap;
-  visibility: hidden;
-  opacity: 0;
-  transition: opacity 0.2s, visibility 0.2s;
-  z-index: 100;
-}
-
-.draft-indicator:hover::after {
-  visibility: visible;
-  opacity: 1;
 }
 
 /* Draft banner */
@@ -186,11 +165,6 @@
   align-items: center;
   gap: 0.75rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.draft-banner i {
-  font-size: 1.25rem;
-  color: #ffc107;
 }
 
 /* Program mark highlighting */
