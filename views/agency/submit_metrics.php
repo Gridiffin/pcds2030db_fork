@@ -55,6 +55,10 @@ if (!is_array($metrics)) {
     $metrics = [];
 }
 
+$draft_metrics = get_draft_metric();
+if (!is_array($draft_metrics)) {
+    $draft_metrics = [];
+}
 
 $additionalScripts = [
     APP_URL . '/assets/js/agency/metric_submission.js'
@@ -227,7 +231,48 @@ require_once '../layouts/agency_nav.php';
             <?php endif; ?>
         </div>
     </div>
-    
+
+    <!-- Metric Drafts -->
+<?php if (!empty($draft_metrics)): ?>
+    <div class="card shadow-sm mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title m-0">Metric Drafts</h5>
+            <span class="badge bg-primary"><?php echo count($draft_metrics); ?> Drafts</span>
+        </div>
+        <div class="card-body">
+            <p><strong>Table Name:</strong> sector_metrics_draft</p>
+            <p><strong>Sector ID:</strong> <?php echo htmlspecialchars($_SESSION['sector_id']); ?></p>
+            <div class="table-responsive">
+                <table class="table table-hover table-custom">
+                    <thead>
+                        <tr>
+                            <th width="40%">Metric</th>
+                            <th width="20%">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($draft_metrics as $metric): ?>
+                            <tr>
+                                <td>
+                                    <strong><?php echo htmlspecialchars($metric['table_name']); ?></strong>
+                                </td>
+                                <td>
+                                    <a href="edit_metric.php?metric_id=<?php echo $metric['metric_id']; ?>" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-edit me-1"></i> Edit
+                                    </a>
+                                    <a href="delete_metric.php?metric_id=<?php echo $metric['metric_id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this metric draft?');">
+                                        <i class="fas fa-trash-alt me-1"></i> Delete
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <!-- Metric Definitions and Guidelines Card -->
     <div class="card shadow-sm mt-4">
         <div class="card-header">

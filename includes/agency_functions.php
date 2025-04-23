@@ -16,6 +16,26 @@ function get_agency_sector_metrics(){
 }
 
 /**
+ * Get Draft Metric
+*/
+
+function get_draft_metric(){
+    global $conn;
+
+    $query = "SELECT * FROM sector_metrics_draft";
+    $result = $conn->query($query);
+
+    $metrics = [];
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $metrics[] = $row;
+        }
+    }
+
+    return $metrics;
+}
+
+/**
  * Check if current user is an agency
  * @return boolean
  */
