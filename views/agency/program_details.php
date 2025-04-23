@@ -134,7 +134,7 @@ require_once '../../includes/dashboard_header.php';
                                     <?php if (isset($program['is_assigned']) && $program['is_assigned']): ?>
                                         <span class="badge bg-info">Assigned Program</span>
                                     <?php else: ?>
-                                        <span class="badge bg-success">Custom Program</span>
+                                        <span class="badge bg-success">Agency-Created</span>
                                     <?php endif; ?>
                                 </div>
                             </div>

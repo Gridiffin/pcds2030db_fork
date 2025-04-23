@@ -354,7 +354,7 @@ function renderProgramPage(page, filteredPrograms = null) {
                 </div>
                 <div class="small text-muted program-type-indicator">
                     <i class="fas fa-${program.is_assigned ? 'tasks' : 'folder-plus'} me-1"></i>
-                    ${program.is_assigned ? 'Assigned Program' : 'Custom Program'}
+                    ${program.is_assigned ? 'Assigned' : 'Agency-Created'}
                 </div>
             </td>
             <td>

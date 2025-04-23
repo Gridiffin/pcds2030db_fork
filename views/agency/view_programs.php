@@ -143,8 +143,8 @@ require_once '../../includes/dashboard_header.php';
                 <label for="programTypeFilter" class="form-label">Program Type</label>
                 <select class="form-select" id="programTypeFilter">
                     <option value="">All Types</option>
-                    <option value="assigned">Assigned Programs</option>
-                    <option value="created">Custom Programs</option>
+                    <option value="assigned">Assigned</option>
+                    <option value="created">Agency-Created Programs</option>
                 </select>
             </div>
             <div class="col-md-1 col-sm-12 d-flex align-items-end">
@@ -234,7 +234,7 @@ require_once '../../includes/dashboard_header.php';
                                     </div>
                                     <div class="small text-muted program-type-indicator">
                                         <i class="fas fa-<?php echo $is_assigned ? 'tasks' : 'folder-plus'; ?> me-1"></i>
-                                        <?php echo $is_assigned ? 'Assigned Program' : 'Custom Program'; ?>
+                                        <?php echo $is_assigned ? 'Assigned' : 'Agency-Created'; ?>
                                     </div>
                                 </td>
                                 <td>
