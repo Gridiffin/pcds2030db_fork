@@ -73,27 +73,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // This is a placeholder for the AJAX call
         // Implement this when you have the backend endpoint ready
         console.log(`Marking notification ${notificationId} as read`);
-        
-        // Example AJAX implementation:
-        /*
-        fetch('ajax/mark_notification_read.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                notification_id: notificationId
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log('Success:', data);
-            updateNotificationCounter();
-        })
-        .catch((error) => {
-            console.error('Error:', error);
-        });
-        */
     }
     
     // Function to update notification counter
@@ -117,14 +96,185 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize the program table sorting
     initProgramTableSorting();
     
-    // Initialize the chart toggle
-    const chartToggle = document.getElementById('includeAssignedToggle');
-    if (chartToggle && typeof window.updateChartByProgramType === 'function') {
-        chartToggle.addEventListener('change', function() {
-            window.updateChartByProgramType(this.checked);
-        });
-    }
+    // Initialize the dashboard-wide toggle for assigned programs
+    initDashboardAssignedToggle();
 });
+
+/**
+ * Initialize the dashboard-wide toggle for assigned programs
+ * This function handles the toggle behavior that affects all dashboard components
+ */
+function initDashboardAssignedToggle() {
+    const toggle = document.getElementById('includeAssignedToggle');
+    if (!toggle) return;
+    
+    // Set initial state (unchecked by default)
+    toggle.checked = false;
+    
+    toggle.addEventListener('change', function() {
+        // Store the toggle state
+        const includeAssigned = this.checked;
+        
+        // Update all dashboard components except Program Updates section
+        updateDashboardComponents(includeAssigned);
+        
+        // Update chart if the chart-specific function exists
+        if (typeof window.updateChartByProgramType === 'function') {
+            window.updateChartByProgramType(includeAssigned);
+        }
+        
+        // Save preference to localStorage for persistence
+        localStorage.setItem('includeAssignedPrograms', includeAssigned ? 'true' : 'false');
+    });
+    
+    // Load saved preference on page load
+    const savedPreference = localStorage.getItem('includeAssignedPrograms');
+    if (savedPreference === 'true') {
+        toggle.checked = true;
+        
+        // Trigger the change event to update the dashboard
+        toggle.dispatchEvent(new Event('change'));
+    }
+}
+
+/**
+ * Update all dashboard components based on the toggle state
+ * 
+ * @param {boolean} includeAssigned - Whether to include assigned programs
+ */
+function updateDashboardComponents(includeAssigned) {
+    console.log(`Updating dashboard components - Include assigned: ${includeAssigned}`);
+    
+    // Update stat cards
+    updateStatCards(includeAssigned);
+    
+    // Note: We no longer update the Programs Updates table here
+    // as it should always show all programs regardless of toggle state
+}
+
+/**
+ * Update stat cards based on toggle state
+ * 
+ * @param {boolean} includeAssigned - Whether to include assigned programs
+ */
+function updateStatCards(includeAssigned) {
+    // Get all program rows, including hidden ones
+    const allProgramRows = document.querySelectorAll('#dashboardProgramsTable tr[data-program-type]');
+    
+    // Skip if no program rows found
+    if (!allProgramRows.length) return;
+    
+    // Reset counters
+    const counts = {
+        total: 0,
+        submitted: 0,
+        'on-track': 0,
+        'delayed': 0,
+        'completed': 0,
+        'not-started': 0,
+        'assigned-drafts': 0  // Track assigned drafts separately
+    };
+    
+    // Count programs by status
+    allProgramRows.forEach(row => {
+        const programType = row.getAttribute('data-program-type');
+        const isDraft = row.classList.contains('draft-program');
+        
+        // Skip assigned programs if toggle is off
+        if (!includeAssigned && programType === 'assigned') return;
+        
+        // Track assigned drafts separately but don't count them in stats
+        if (programType === 'assigned' && isDraft) {
+            counts['assigned-drafts']++;
+            // Skip counting assigned drafts in other stats
+            return;
+        }
+        
+        // Skip regular draft programs from stats
+        if (isDraft) return;
+        
+        // Increment total counter (only counts submitted programs)
+        counts.total++;
+        counts.submitted++; // All counted programs are submitted since we skip drafts
+        
+        // Get status badge text
+        const statusBadge = row.querySelector('td:nth-child(2) .badge');
+        if (!statusBadge) return;
+        
+        const statusText = statusBadge.textContent.trim().toLowerCase();
+        
+        // Map status text to status key
+        if (statusText.includes('on track')) {
+            counts['on-track']++;
+        } else if (statusText.includes('delayed') || statusText.includes('delay')) {
+            counts['delayed']++;
+        } else if (statusText.includes('target achieved') || 
+                  statusText.includes('achieved') || 
+                  statusText.includes('completed')) {
+            counts['completed']++;
+        } else if (statusText.includes('not started') || statusText === '') {
+            counts['not-started']++;
+        }
+    });
+    
+    // Log counts for debugging
+    console.log('Program counts:', counts);
+    
+    // Update the stat cards with new counts
+    const totalCard = document.querySelector('.stat-card.primary .stat-value');
+    const onTrackCard = document.querySelector('.stat-card.warning .stat-value');
+    const delayedCard = document.querySelector('.stat-card.danger .stat-value');
+    const completedCard = document.querySelector('.stat-card.success .stat-value');
+    
+    if (totalCard) totalCard.textContent = counts.total;
+    if (onTrackCard) onTrackCard.textContent = counts['on-track'];
+    if (delayedCard) delayedCard.textContent = counts['delayed'];
+    if (completedCard) completedCard.textContent = counts['completed'];
+    
+    // Update the stat card subtitles with percentages
+    updateCardSubtitle('.stat-card.primary .stat-subtitle', counts.submitted, 'Programs Submitted');
+    updateCardSubtitle('.stat-card.warning .stat-subtitle', counts['on-track'], counts.total);
+    updateCardSubtitle('.stat-card.danger .stat-subtitle', counts['delayed'], counts.total);
+    updateCardSubtitle('.stat-card.success .stat-subtitle', counts['completed'], counts.total);
+    
+    // Update draft counter if it exists
+    const draftCounter = document.getElementById('draftProgramCounter');
+    if (draftCounter) {
+        // Count both regular drafts and assigned drafts if toggle is on
+        let draftCount = document.querySelectorAll('#dashboardProgramsTable tr.draft-program:not([data-program-type="assigned"]), ' + 
+                                                 (includeAssigned ? '#dashboardProgramsTable tr.draft-program[data-program-type="assigned"]' : '')).length;
+        
+        draftCounter.textContent = draftCount;
+        draftCounter.closest('.badge').classList.toggle('d-none', draftCount === 0);
+    }
+}
+
+/**
+ * Update a stat card subtitle with percentage
+ * 
+ * @param {string} selector - CSS selector for the subtitle element
+ * @param {number} value - Value to display
+ * @param {number|string} total - Total for percentage calculation or custom text
+ */
+function updateCardSubtitle(selector, value, total) {
+    const element = document.querySelector(selector);
+    if (!element) return;
+    
+    if (typeof total === 'number') {
+        // For percentage calculations
+        if (total > 0) {
+            const percentage = Math.round((value / total) * 100);
+            element.innerHTML = `<i class="fas fa-chart-line me-1"></i> ${percentage}% of total`;
+            element.classList.remove('text-muted');
+        } else {
+            element.innerHTML = `<i class="fas fa-info-circle me-1"></i> No data for this period`;
+            element.classList.add('text-muted');
+        }
+    } else if (typeof total === 'string') {
+        // For custom text (like "Programs Submitted")
+        element.innerHTML = `<i class="fas fa-check me-1"></i> ${value} ${total}`;
+    }
+}
 
 /**
  * Initialize the program type filter functionality
@@ -144,6 +294,8 @@ function initProgramTypeFilter() {
         rows.forEach(row => {
             const programType = row.getAttribute('data-program-type');
             
+            // Program Updates section always shows all programs
+            // regardless of the dashboard-wide toggle state
             if (filterValue === 'all' || programType === filterValue) {
                 row.style.display = '';
                 visibleCount++;

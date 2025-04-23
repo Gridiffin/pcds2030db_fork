@@ -231,6 +231,27 @@ require_once '../../includes/dashboard_header.php';
     <div class="container-fluid">
         <!-- Period Selector Component -->
         <?php require_once '../../includes/period_selector.php'; ?>
+        
+        <!-- Dashboard Controls Bar -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body py-2">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h6 class="m-0 font-weight-bold">Dashboard View Options</h6>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <div class="form-check form-switch d-inline-flex align-items-center ms-md-auto">
+                            <input class="form-check-input me-2" type="checkbox" id="includeAssignedToggle">
+                            <label class="form-check-label" for="includeAssignedToggle">
+                                Include Assigned Programs
+                                <i class="fas fa-info-circle ms-1" data-bs-toggle="tooltip" 
+                                   title="Toggle to include or exclude assigned programs in your dashboard"></i>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Dashboard Content -->
         <div class="row">
@@ -342,16 +363,8 @@ require_once '../../includes/dashboard_header.php';
             <!-- Program Status Chart -->
             <div class="col-lg-4 mb-4">
                 <div class="card shadow-sm h-100">
-                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <div class="card-header py-3">
                         <h6 class="m-0 font-weight-bold text-white">Program Status Distribution</h6>
-                        <div class="chart-toggle-wrapper bg-white px-2 py-1 rounded-pill">
-                            <div class="form-check form-switch d-flex align-items-center">
-                                <input class="form-check-input custom-toggle" type="checkbox" id="includeAssignedToggle">
-                                <label class="form-check-label text-primary ms-2 small" for="includeAssignedToggle">
-                                    Include Assigned
-                                </label>
-                            </div>
-                        </div>
                     </div>
                     <div class="card-body">
                         <div class="chart-container" style="position: relative; height:250px; width:100%">

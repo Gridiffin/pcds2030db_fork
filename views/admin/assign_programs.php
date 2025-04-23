@@ -97,8 +97,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_program'])) {
             $stmt->execute();
             $program_id = $conn->insert_id;
             
+            // Get the current active reporting period
+            $period_query = "SELECT period_id FROM reporting_periods WHERE status = 'active' ORDER BY end_date DESC LIMIT 1";
+            $period_result = $conn->query($period_query);
+            
+            if ($period_result->num_rows > 0) {
+                $period_row = $period_result->fetch_assoc();
+                $period_id = $period_row['period_id'];
+                
+                // Prepare status value from the form
+                $status = isset($_POST['status_value']) ? $_POST['status_value'] : 'not-started';
+                
+                // Prepare content JSON - include any default values set by the admin
+                $content_data = [
+                    'status_text' => isset($_POST['status_text_value']) ? $_POST['status_text_value'] : '',
+                    'description' => $description,
+                ];
+                
+                $content_json = json_encode($content_data);
+                
+                // Create an initial draft submission record
+                $submission_stmt = $conn->prepare("INSERT INTO program_submissions 
+                    (program_id, period_id, submitted_by, status, content_json, submission_date, updated_at, is_draft, target, achievement) 
+                    VALUES (?, ?, ?, ?, ?, NOW(), NOW(), 1, ?, 0)");
+                
+                $target_value = isset($_POST['target_value']) ? $_POST['target_value'] : '';
+                
+                $submission_stmt->bind_param("iiisss", 
+                    $program_id,
+                    $period_id,
+                    $admin_id,
+                    $status,
+                    $content_json,
+                    $target_value
+                );
+                
+                $submission_stmt->execute();
+            }
+            
             // Create notification for the agency
-            $notification_message = "New program '{$program_name}' has been assigned to your agency.";
+            $notification_message = "New program '{$program_name}' has been assigned to your agency. Please review and submit it.";
             $notification_stmt = $conn->prepare("INSERT INTO notifications 
                 (user_id, message, type, reference_id, reference_type, created_at, read_status) 
                 VALUES (?, ?, 'program_assignment', ?, 'program', NOW(), 0)");
@@ -115,7 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_program'])) {
             $conn->commit();
             
             // Success message
-            $_SESSION['message'] = "Program successfully assigned to agency.";
+            $_SESSION['message'] = "Program successfully assigned to agency as a draft. The agency will need to review and submit it.";
             $_SESSION['message_type'] = "success";
             
             // Redirect to programs page

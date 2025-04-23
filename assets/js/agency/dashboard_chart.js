@@ -329,7 +329,7 @@
         
         // Approach: Use all program rows in the dashboard, including any hidden ones
         // This ensures we count all programs properly, not just visible ones
-        const allProgramRows = document.querySelectorAll('#dashboardProgramsTable tr');
+        const allProgramRows = document.querySelectorAll('#dashboardProgramsTable tr[data-program-type]');
         
         if (!allProgramRows.length) {
             console.warn("No program rows found in the table");
