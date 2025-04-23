@@ -110,4 +110,63 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     }
+
+    // Initialize the program type filter
+    initProgramTypeFilter();
 });
+
+/**
+ * Initialize the program type filter functionality
+ */
+function initProgramTypeFilter() {
+    const filterSelect = document.getElementById('dashboardProgramTypeFilter');
+    const programTable = document.getElementById('dashboardProgramsTable');
+    const programCountBadge = document.getElementById('programCount');
+    
+    if (!filterSelect || !programTable) return;
+    
+    filterSelect.addEventListener('change', function() {
+        const filterValue = this.value;
+        const rows = programTable.querySelectorAll('tr[data-program-type]');
+        let visibleCount = 0;
+        
+        rows.forEach(row => {
+            const programType = row.getAttribute('data-program-type');
+            
+            if (filterValue === 'all' || programType === filterValue) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        // Update the program count badge
+        if (programCountBadge) {
+            programCountBadge.textContent = visibleCount;
+        }
+        
+        // Show a message if no programs match the filter
+        let noResultsRow = programTable.querySelector('.no-filter-results');
+        
+        if (visibleCount === 0) {
+            if (!noResultsRow) {
+                noResultsRow = document.createElement('tr');
+                noResultsRow.className = 'no-filter-results';
+                noResultsRow.innerHTML = `
+                    <td colspan="3" class="text-center py-4">
+                        <div class="alert alert-info mb-0">
+                            <i class="fas fa-filter me-2"></i>
+                            No programs match your filter criteria.
+                        </div>
+                    </td>
+                `;
+                programTable.appendChild(noResultsRow);
+            } else {
+                noResultsRow.style.display = '';
+            }
+        } else if (noResultsRow) {
+            noResultsRow.style.display = 'none';
+        }
+    });
+}
