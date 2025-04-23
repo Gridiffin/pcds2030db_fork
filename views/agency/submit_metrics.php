@@ -251,21 +251,29 @@ require_once '../layouts/agency_nav.php';
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($draft_metrics as $metric): ?>
-                            <tr>
-                                <td>
-                                    <strong><?php echo htmlspecialchars($metric['table_name']); ?></strong>
-                                </td>
-                                <td>
-                                    <a href="edit_metric.php?metric_id=<?php echo $metric['metric_id']; ?>" class="btn btn-sm btn-outline-primary">
-                                        <i class="fas fa-edit me-1"></i> Edit
-                                    </a>
-                                    <a href="delete_metric.php?metric_id=<?php echo $metric['metric_id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this metric draft?');">
-                                        <i class="fas fa-trash-alt me-1"></i> Delete
-                                    </a>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
+<?php
+$unique_metrics = [];
+foreach ($draft_metrics as $metric) {
+    if (!in_array($metric['metric_id'], $unique_metrics)) {
+        $unique_metrics[] = $metric['metric_id'];
+        ?>
+        <tr>
+            <td>
+                <strong><?php echo htmlspecialchars($metric['table_name']); ?></strong>
+            </td>
+            <td>
+                <a href="edit_metric.php?metric_id=<?php echo $metric['metric_id']; ?>" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-edit me-1"></i> Edit
+                </a>
+                <a href="delete_metric.php?metric_id=<?php echo $metric['metric_id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this metric draft?');">
+                    <i class="fas fa-trash-alt me-1"></i> Delete
+                </a>
+            </td>
+        </tr>
+        <?php
+    }
+}
+?>
                     </tbody>
                 </table>
             </div>
