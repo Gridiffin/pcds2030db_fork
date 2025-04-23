@@ -342,8 +342,16 @@ require_once '../../includes/dashboard_header.php';
             <!-- Program Status Chart -->
             <div class="col-lg-4 mb-4">
                 <div class="card shadow-sm h-100">
-                    <div class="card-header py-3">
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
                         <h6 class="m-0 font-weight-bold text-white">Program Status Distribution</h6>
+                        <div class="chart-toggle-wrapper bg-white px-2 py-1 rounded-pill">
+                            <div class="form-check form-switch d-flex align-items-center">
+                                <input class="form-check-input custom-toggle" type="checkbox" id="includeAssignedToggle" checked>
+                                <label class="form-check-label text-primary ms-2 small" for="includeAssignedToggle">
+                                    Include Assigned
+                                </label>
+                            </div>
+                        </div>
                     </div>
                     <div class="card-body">
                         <div class="chart-container" style="position: relative; height:250px; width:100%">
@@ -372,14 +380,12 @@ require_once '../../includes/dashboard_header.php';
                 <div class="card shadow-sm h-100">
                     <div class="card-header py-3 d-flex justify-content-between align-items-center">
                         <h6 class="m-0 font-weight-bold text-white">Program Updates</h6>
-                        <div class="d-flex align-items-center">
-                            <div>
-                                <select class="form-select form-select-sm" id="dashboardProgramTypeFilter">
-                                    <option value="all">All Programs</option>
-                                    <option value="assigned">Assigned</option>
-                                    <option value="created">Agency-Created</option>
-                                </select>
-                            </div>
+                        <div>
+                            <select class="form-select form-select-sm" id="dashboardProgramTypeFilter">
+                                <option value="all">All Programs</option>
+                                <option value="assigned">Assigned</option>
+                                <option value="created">Agency-Created</option>
+                            </select>
                         </div>
                     </div>
                     <div class="card-body">
@@ -396,9 +402,15 @@ require_once '../../includes/dashboard_header.php';
                                 <table class="table table-hover">
                                     <thead>
                                         <tr>
-                                            <th>Program Name</th>
-                                            <th>Status</th>
-                                            <th>Last Updated</th>
+                                            <th class="sortable" data-sort="name">
+                                                Program Name <i class="fas fa-sort ms-1"></i>
+                                            </th>
+                                            <th class="sortable" data-sort="status">
+                                                Status <i class="fas fa-sort ms-1"></i>
+                                            </th>
+                                            <th class="sortable" data-sort="date">
+                                                Last Updated <i class="fas fa-sort ms-1"></i>
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody id="dashboardProgramsTable">

@@ -169,9 +169,9 @@ require_once '../../includes/dashboard_header.php';
             <table class="table table-hover table-custom mb-0" id="programsTable">
                 <thead class="table-light">
                     <tr>
-                        <th>Program Name</th>
-                        <th>Status</th>
-                        <th>Last Updated</th>
+                        <th class="sortable" data-sort="name">Program Name <i class="fas fa-sort ms-1"></i></th>
+                        <th class="sortable" data-sort="status">Status <i class="fas fa-sort ms-1"></i></th>
+                        <th class="sortable" data-sort="date">Last Updated <i class="fas fa-sort ms-1"></i></th>
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>

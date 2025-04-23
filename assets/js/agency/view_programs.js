@@ -29,6 +29,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (typeof allPrograms !== 'undefined' && allPrograms.length > 0) {
         initializePagination();
     }
+
+    // Initialize table sorting
+    initProgramTableSorting();
 });
 
 /**
@@ -399,4 +402,101 @@ function renderProgramPage(page, filteredPrograms = null) {
     
     // Reinitialize delete buttons for the new rows
     initDeleteButtons();
+}
+
+/**
+ * Initialize the program table sorting functionality
+ */
+function initProgramTableSorting() {
+    const programTable = document.getElementById('programsTable').querySelector('tbody');
+    const sortableHeaders = document.querySelectorAll('th.sortable');
+    
+    if (!programTable || !sortableHeaders.length) return;
+    
+    // Current sort state
+    let currentSort = {
+        column: null,
+        direction: 'asc'
+    };
+    
+    // Add click handlers to sortable headers
+    sortableHeaders.forEach(header => {
+        header.addEventListener('click', function() {
+            const sortBy = this.getAttribute('data-sort');
+            
+            // Update sort direction
+            if (currentSort.column === sortBy) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.column = sortBy;
+                currentSort.direction = 'asc';
+            }
+            
+            // Update header icons
+            sortableHeaders.forEach(h => {
+                const icon = h.querySelector('i');
+                if (h === this) {
+                    icon.className = currentSort.direction === 'asc' 
+                        ? 'fas fa-sort-up ms-1' 
+                        : 'fas fa-sort-down ms-1';
+                } else {
+                    icon.className = 'fas fa-sort ms-1';
+                }
+            });
+            
+            // Sort the table
+            sortProgramTable(programTable, sortBy, currentSort.direction);
+        });
+    });
+}
+
+/**
+ * Sort the program table rows based on column and direction
+ */
+function sortProgramTable(table, column, direction) {
+    const rows = Array.from(table.querySelectorAll('tr'));
+    if (!rows.length) return;
+    
+    // Sort the rows
+    const sortedRows = rows.sort((a, b) => {
+        let aValue, bValue;
+        
+        switch(column) {
+            case 'name':
+                // Get program name text
+                aValue = a.querySelector('td:first-child .fw-medium').textContent.trim().toLowerCase();
+                bValue = b.querySelector('td:first-child .fw-medium').textContent.trim().toLowerCase();
+                break;
+                
+            case 'status':
+                // Get status text
+                aValue = a.querySelector('td:nth-child(2) .badge').textContent.trim().toLowerCase();
+                bValue = b.querySelector('td:nth-child(2) .badge').textContent.trim().toLowerCase();
+                break;
+                
+            case 'date':
+                // Get date as timestamp for comparison
+                const aDate = a.querySelector('td:nth-child(3)').textContent.trim();
+                const bDate = b.querySelector('td:nth-child(3)').textContent.trim();
+                
+                if (aDate === 'Not set' && bDate === 'Not set') return 0;
+                if (aDate === 'Not set') return 1;
+                if (bDate === 'Not set') return -1;
+                
+                aValue = new Date(aDate).getTime();
+                bValue = new Date(bDate).getTime();
+                break;
+                
+            default:
+                return 0;
+        }
+        
+        // Compare values
+        if (aValue < bValue) return direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return direction === 'asc' ? 1 : -1;
+        return 0;
+    });
+    
+    // Re-append rows in sorted order
+    sortedRows.forEach(row => table.appendChild(row));
 }

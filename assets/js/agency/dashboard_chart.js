@@ -312,7 +312,7 @@
         // ...existing code...
     }
 
-    // Only expose the initialization function to global scope
+    // Expose these functions to global scope
     window.initializeDashboardChart = function(chartData) {
         console.log("initializeDashboardChart called with data:", chartData);
         const chartInstance = new ChartManager('programStatusChart', 'programStatusLegend');
@@ -322,4 +322,133 @@
         window.dashboardChart = chartInstance;
         return chartInstance;
     };
+    
+    // Make the updateChartByProgramType function globally accessible
+    window.updateChartByProgramType = function(includeAssigned) {
+        console.log("updateChartByProgramType called with includeAssigned:", includeAssigned);
+        
+        // Approach: Use all program rows in the dashboard, including any hidden ones
+        // This ensures we count all programs properly, not just visible ones
+        const allProgramRows = document.querySelectorAll('#dashboardProgramsTable tr');
+        
+        if (!allProgramRows.length) {
+            console.warn("No program rows found in the table");
+            return;
+        }
+        
+        console.log("Found total program rows:", allProgramRows.length);
+        
+        // Reset status counts
+        const statusCounts = {
+            'on-track': 0,
+            'delayed': 0,
+            'completed': 0,
+            'not-started': 0
+        };
+        
+        // Processed programs counter for validation
+        let processedCount = 0;
+        let skippedAssigned = 0;
+        let skippedDrafts = 0;
+        let invalidRows = 0;
+        
+        // Process each program row
+        allProgramRows.forEach((row, index) => {
+            // Skip rows without data-program-type (like empty state messages)
+            if (!row.hasAttribute('data-program-type')) {
+                console.log(`Row ${index} skipped - no program type attribute`);
+                invalidRows++;
+                return;
+            }
+            
+            // Get program type
+            const programType = row.getAttribute('data-program-type');
+            
+            // Check if we should include this program based on toggle
+            if (!includeAssigned && programType === 'assigned') {
+                console.log(`Row ${index} skipped - assigned program with toggle off`);
+                skippedAssigned++;
+                return;
+            }
+            
+            // Skip draft programs from chart
+            if (row.classList.contains('draft-program')) {
+                console.log(`Row ${index} skipped - draft program`);
+                skippedDrafts++;
+                return;
+            }
+            
+            // Get status from badge text
+            const statusBadge = row.querySelector('td:nth-child(2) .badge');
+            if (!statusBadge) {
+                console.log(`Row ${index} skipped - no status badge found`);
+                invalidRows++;
+                return;
+            }
+            
+            const statusText = statusBadge.textContent.trim().toLowerCase();
+            
+            // Map status text to key using more precise pattern matching
+            let statusKey = 'not-started';
+            
+            if (statusText.includes('on track')) {
+                statusKey = 'on-track';
+            } else if (statusText.includes('delayed') || statusText.includes('delay')) {
+                statusKey = 'delayed';
+            } else if (statusText.includes('target achieved') || 
+                      statusText.includes('achieved') || 
+                      statusText.includes('completed')) {
+                statusKey = 'completed';
+            } else if (statusText.includes('not started') || statusText === '') {
+                statusKey = 'not-started';
+            }
+            
+            // Increment counter
+            statusCounts[statusKey]++;
+            processedCount++;
+            
+            console.log(`Row ${index} processed - Type: ${programType}, Status: ${statusKey}, Text: "${statusText}"`);
+        });
+        
+        console.log("--------------- Chart Update Summary ---------------");
+        console.log("Total rows in table:", allProgramRows.length);
+        console.log("Total programs processed:", processedCount);
+        console.log("Assigned programs skipped:", skippedAssigned);
+        console.log("Draft programs skipped:", skippedDrafts);
+        console.log("Invalid rows skipped:", invalidRows);
+        console.log("Final status counts:", statusCounts);
+        console.log("--------------------------------------------------");
+        
+        // Update chart with new data if chart exists
+        if (window.dashboardChart) {
+            const chartData = {
+                data: [
+                    statusCounts['on-track'],
+                    statusCounts['delayed'],
+                    statusCounts['completed'],
+                    statusCounts['not-started']
+                ]
+            };
+            
+            console.log("Updating chart with data:", chartData);
+            window.dashboardChart.update(chartData);
+        } else {
+            console.error("Dashboard chart not initialized");
+        }
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize dashboard chart
+        if (typeof programStatusChartData !== 'undefined') {
+            window.dashboardChartManager = initializeDashboardChart(programStatusChartData);
+        }
+        
+        // Handle toggle for including/excluding assigned programs in chart
+        const chartToggle = document.getElementById('includeAssignedToggle');
+        if (chartToggle) {
+            chartToggle.addEventListener('change', function() {
+                updateChartByProgramType(this.checked);
+            });
+        }
+    });
 })();
