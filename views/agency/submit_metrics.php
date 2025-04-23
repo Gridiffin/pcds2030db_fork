@@ -240,14 +240,12 @@ require_once '../layouts/agency_nav.php';
             <span class="badge bg-primary"><?php echo count($draft_metrics); ?> Drafts</span>
         </div>
         <div class="card-body">
-            <p><strong>Table Name:</strong> sector_metrics_draft</p>
-            <p><strong>Sector ID:</strong> <?php echo htmlspecialchars($_SESSION['sector_id']); ?></p>
             <div class="table-responsive">
                 <table class="table table-hover table-custom">
                     <thead>
                         <tr>
-                            <th width="40%">Metric</th>
-                            <th width="20%">Actions</th>
+                            <th width="90%">Metric</th>
+                            <th width="10%">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -265,6 +263,8 @@ foreach ($draft_metrics as $metric) {
                 <a href="edit_metric.php?metric_id=<?php echo $metric['metric_id']; ?>" class="btn btn-sm btn-outline-primary">
                     <i class="fas fa-edit me-1"></i> Edit
                 </a>
+                <!-- Placeholder? -->
+                <button>Submit</button> 
                 <a href="delete_metric.php?metric_id=<?php echo $metric['metric_id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this metric draft?');">
                     <i class="fas fa-trash-alt me-1"></i> Delete
                 </a>
