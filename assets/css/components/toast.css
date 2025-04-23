@@ -14,7 +14,7 @@
 /* Toast styling */
 .toast {
   background-color: white;
-  border-radius: var(--radius-md);
+  border-radius: 0.85rem;
   box-shadow: var(--shadow-md);
   margin-bottom: 0.75rem;
   overflow: hidden;

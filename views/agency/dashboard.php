@@ -346,7 +346,7 @@ require_once '../../includes/dashboard_header.php';
                         <h6 class="m-0 font-weight-bold text-white">Program Status Distribution</h6>
                         <div class="chart-toggle-wrapper bg-white px-2 py-1 rounded-pill">
                             <div class="form-check form-switch d-flex align-items-center">
-                                <input class="form-check-input custom-toggle" type="checkbox" id="includeAssignedToggle" checked>
+                                <input class="form-check-input custom-toggle" type="checkbox" id="includeAssignedToggle">
                                 <label class="form-check-label text-primary ms-2 small" for="includeAssignedToggle">
                                     Include Assigned
                                 </label>
