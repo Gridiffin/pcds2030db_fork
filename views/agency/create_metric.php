@@ -31,12 +31,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 session_start();
 
 $metric_id = isset($_GET['next_metric_id']) ? intval($_GET['next_metric_id']) : 0;
-if ($metric_id === 0) {
-    $result = $conn->query("SELECT MAX(metric_id) AS max_id FROM sector_metrics_draft");
-    if ($result && $row = $result->fetch_assoc()) {
-        $metric_id = $row['max_id'] + 1;
-    }
-}
 $_SESSION['metric_id'] = $metric_id;
     if (isset($_POST['table_name']) && trim($_POST['table_name']) !== '') {
         $new_table_name = $conn->real_escape_string($_POST['table_name']);

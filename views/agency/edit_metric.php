@@ -1,8 +1,8 @@
 <?php
 /**
- * Edit Sector Metric
+ * Create Sector Metrics
  * 
- * Display all data in the selected metric and make them editable
+ * Interface for agency users to create sector-specific metrics
  */
 
 // Include necessary files
@@ -18,18 +18,90 @@ if (!is_agency()) {
     exit;
 }
 
-$metric_id = isset($_GET['metric_id']) ? intval($_GET['metric_id']) : 0;
-if ($metric_id === 0) {
-    die('Invalid metric ID.');
-}
-
-$sector_id = $_SESSION['sector_id'];
+$sector_id = $_GET['sector_id'] ?? $_SESSION['sector_id'];
 
 // Set page title
-$pageTitle = 'Edit Sector Metric';
+$pageTitle = 'Create Sector Metrics';
 
-// Retrieve all metrics for the selected metric_id
-$select_query = "SELECT * FROM sector_metrics_draft WHERE metric_id = $metric_id AND sector_id = '$sector_id'";
+// Handle form submission for new metrics
+$message = '';
+$message_type = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+$metric_id = isset($_GET['metric_id']) ? intval($_GET['metric_id']) : 0;
+$_SESSION['metric_id'] = $metric_id;
+    if (isset($_POST['table_name']) && trim($_POST['table_name']) !== '') {
+        $new_table_name = $conn->real_escape_string($_POST['table_name']);
+        // Check if a row exists for this metric_id and sector_id
+        $check_query = "SELECT 1 FROM sector_metrics_draft WHERE metric_id = $metric_id AND sector_id = '$sector_id' LIMIT 1";
+        $check_result = $conn->query($check_query);
+        if ($check_result && $check_result->num_rows > 0) {
+            // Update existing row
+            $update_query = "UPDATE sector_metrics_draft SET table_name = '$new_table_name' WHERE sector_id = '$sector_id' AND metric_id = $metric_id";
+            if ($conn->query($update_query) === TRUE) {
+                $message = "Table name updated successfully.";
+                $message_type = "success";
+            } else {
+                $message = "Error updating table name: " . $conn->error;
+                $message_type = "danger";
+            }
+        } else {
+            // Insert new row with table_name
+            // Removed insertion of placeholder row with column_title = '-'
+            $insert_table_name_query = "INSERT INTO sector_metrics_draft (metric_id, table_name, column_title, table_content, month, sector_id) 
+                VALUES ($metric_id, '$new_table_name', '', 0, 'January', '$sector_id')";
+            if ($conn->query($insert_table_name_query) === TRUE) {
+                $message = "Table name saved successfully.";
+                $message_type = "success";
+            } else {
+                $message = "Error saving table name: " . $conn->error;
+                $message_type = "danger";
+            }
+        }
+    } else {
+        // Use provided values or defaults for metric insert
+        $name = $conn->real_escape_string($_POST['column_title'] ?? '');
+        $value = floatval($_POST['table_content'] ?? 0);
+        $month = $conn->real_escape_string($_POST['month'] ?? '');
+        $table_name_post = $conn->real_escape_string($_POST['table_name'] ?? '');
+
+        // If table_name is empty, generate a new table_name
+        if (empty($table_name_post)) {
+            $table_name_post = "Table_" . $metric_id;
+            // Insert a new row with the generated table_name and current metric_id, sector_id
+            // Removed insertion of placeholder row with column_title = '-'
+            // $insert_table_name_query = "INSERT INTO sector_metrics_draft (metric_id, table_name, column_title, table_content, month, sector_id) 
+            //     VALUES ($metric_id, '$table_name_post', '', 0, 'January', '$sector_id')"; // Placeholder values
+            // $conn->query($insert_table_name_query);
+        }
+
+        // Insert new metric with table_name and metric_id
+        $query = "INSERT INTO sector_metrics_draft (metric_id, table_name, column_title, table_content, month, sector_id) 
+                VALUES ($metric_id, '$table_name_post', '$name', '$value', '$month', '$sector_id')";
+
+        if ($conn->query($query) === TRUE) {
+            $message = "Metric created successfully.";
+            $message_type = "success";
+        } else {
+            $message = "Error: " . $conn->error;
+            $message_type = "danger";
+        }
+    }
+}
+
+// Retrieve all metrics for display
+$metric_id = isset($_GET['metric_id']) ? intval($_GET['metric_id']) : 0;
+if ($metric_id === 0) {
+    $result = $conn->query("SELECT MAX(metric_id) AS max_id FROM sector_metrics_draft");
+    if ($result && $row = $result->fetch_assoc()) {
+        $metric_id = $row['max_id'] + 1;
+    }
+}
+$select_query = "SELECT * FROM sector_metrics_draft WHERE metric_id = $metric_id";
 $metrics = $conn->query($select_query);
 if (!$metrics) die("Error getting metrics: " . $conn->error);
 
@@ -46,36 +118,38 @@ while ($row = $metrics->fetch_assoc()) {
     $table_data[$month_index]['metrics'][$row['column_title']] = $row['table_content'];
 }
 
-// Get the table_name from the first metric row for the sector
-$table_name = '';
-if (!empty($table_data)) {
-    foreach ($table_data as $month_data) {
-        if (!empty($month_data['metrics'])) {
-            $result = $conn->query("SELECT table_name FROM sector_metrics_draft WHERE metric_id = $metric_id AND sector_id = '$sector_id' LIMIT 1");
-            if ($result && $row = $result->fetch_assoc()) {
-                $table_name = $row['table_name'];
-            }
-            break;
-        }
-    }
-}
 ?>
 <!DOCTYPE html>
 <html>
 <head>
-    <title><?= htmlspecialchars($pageTitle) ?></title>
     <link rel="stylesheet" type="text/css" href="../../assets/css/custom/metric-create.css">
 </head>
 <body>
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h1 class="h2 mb-0"><?= htmlspecialchars($pageTitle) ?></h1> 
-            <p class="text-muted">Edit your sector-specific metric data</p>
-            <p><strong>Metric ID:</strong> <?= htmlspecialchars($metric_id) ?></p>
+            <h1 class="h2 mb-0">Create New Sector Metrics</h1> 
+            <p class="text-muted">Create your sector-specific metrics</p>
+            <?php echo $metric_id?>                                                 <!-- debugging purposes, remove later -->
         </div>
     </div>
 
     <div class="container">
+        <?php
+            // Get the table_name from the first metric row for the sector
+            $table_name = '';
+            if (!empty($table_data)) {
+                foreach ($table_data as $month_data) {
+                    if (!empty($month_data['metrics'])) {
+                        // Get the table_name from sector_metrics_draft for this sector
+                        $result = $conn->query("SELECT table_name FROM sector_metrics_draft WHERE metric_id = $metric_id AND sector_id = $sector_id LIMIT 1");
+                        if ($result && $row = $result->fetch_assoc()) {
+                            $table_name = $row['table_name'];
+                        }
+                        break;
+                    }
+                }
+            }
+        ?>
         <div class="d-flex align-items-center mb-3">
             <label for="tableNameInput" class="me-2 h4 mb-0">Table Name:</label>
             <input type="text" id="tableNameInput" value="<?= htmlspecialchars($table_name) ?>" />
@@ -101,17 +175,17 @@ if (!empty($table_data)) {
                         $metric_names = array_unique($metric_names);
                         sort($metric_names);
 
-                        foreach ($metric_names as $name): ?>
-                        <th>
-                            <div class="metric-header">
-                                <span class="metric-name" contenteditable="true" data-metric="<?= htmlspecialchars($name) ?>">
-                                    <?= $name === '' ? 'click here to edit name' : htmlspecialchars($name) ?>
-                                </span>
-                                <button class="save-btn" 
-                                        data-metric="<?= htmlspecialchars($name) ?>"> ✓ </button>
-                            </div>
-                        </th>
-                    <?php endforeach; ?>
+foreach ($metric_names as $name): ?>
+    <th>
+        <div class="metric-header">
+            <span class="metric-name" contenteditable="true" data-metric="<?= htmlspecialchars($name) ?>">
+                <?= $name === '' ? 'click here to edit name' : htmlspecialchars($name) ?>
+            </span>
+            <button class="save-btn" 
+                    data-metric="<?= htmlspecialchars($name) ?>"> ✓ </button>
+        </div>
+    </th>
+<?php endforeach; ?>
                 </tr>
             </thead>
             <tbody>
@@ -137,7 +211,7 @@ if (!empty($table_data)) {
                         </td>
                     <?php endforeach; ?>
                 </tr>
-                <?php endforeach; ?>
+                        <?php endforeach; ?>
             </tbody>
         </table>
     </div>
@@ -243,8 +317,11 @@ if (!empty($table_data)) {
         data.append('table_content', '');
         // Use current date as month
         const currentDate = new Date();
-        const month = 'January'; // placeholder for month name
-        data.append('month', month);
+        const year = currentDate.getFullYear();
+        const month = 'January' // placeholder for month name
+        const day = 1;
+        const metricDate = `${month.toString().padStart(2, '0')}`;
+        data.append('month', metricDate);
 
         try {
             const response = await fetch('', {
@@ -261,16 +338,17 @@ if (!empty($table_data)) {
             alert('Error adding new metric column: ' + error.message);
         }
     });
-
     // Make entire metric-cell div clickable to focus the editable span.metric-value inside
     document.querySelectorAll('.metric-cell').forEach(cell => {
         cell.addEventListener('click', function(event) {
+            // Avoid focusing if clicking on the save button or the span itself
             if (event.target.classList.contains('save-btn') || event.target.classList.contains('metric-value')) {
                 return;
             }
             const editableSpan = this.querySelector('.metric-value');
             if (editableSpan) {
                 editableSpan.focus();
+                // Optionally, place cursor at end
                 const range = document.createRange();
                 const sel = window.getSelection();
                 range.selectNodeContents(editableSpan);
@@ -280,7 +358,9 @@ if (!empty($table_data)) {
             }
         });
     });
+</script>
 
+<script>
     // Save table name button handler
     document.getElementById('saveTableNameBtn').addEventListener('click', async () => {
         const tableNameInput = document.getElementById('tableNameInput');
@@ -295,7 +375,7 @@ if (!empty($table_data)) {
         formData.append('table_name', newTableName);
 
         try {
-            const response = await fetch('update_metric.php', {
+            const response = await fetch('', {
                 method: 'POST',
                 body: formData
             });
