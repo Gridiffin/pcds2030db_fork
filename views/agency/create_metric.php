@@ -78,9 +78,9 @@ $_SESSION['metric_id'] = $metric_id;
             $table_name_post = "Table_" . $metric_id;
             // Insert a new row with the generated table_name and current metric_id, sector_id
             // Removed insertion of placeholder row with column_title = '-'
-            $insert_table_name_query = "INSERT INTO sector_metrics_draft (metric_id, table_name, column_title, table_content, month, sector_id) 
-                VALUES ($metric_id, '$table_name_post', '', 0, 'January', '$sector_id')"; // Placeholder values
-            $conn->query($insert_table_name_query);
+            // $insert_table_name_query = "INSERT INTO sector_metrics_draft (metric_id, table_name, column_title, table_content, month, sector_id) 
+            //     VALUES ($metric_id, '$table_name_post', '', 0, 'January', '$sector_id')"; // Placeholder values
+            // $conn->query($insert_table_name_query);
         }
 
         // Insert new metric with table_name and metric_id

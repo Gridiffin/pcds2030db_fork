@@ -42,7 +42,8 @@ if (!$metric_id) {
 // Handle metric name change
 if (!empty($new_name) && $new_name !== $old_name) {
     $update_name_query = "UPDATE sector_metrics_draft 
-                          SET column_title = '$new_name' 
+                          SET column_title = '$new_name'
+                          AND table_name = '$table_name'  
                           WHERE column_title = '$old_name' AND sector_id = '$sector_id' AND metric_id = $metric_id";
     if ($conn->query($update_name_query)) {
         echo json_encode(['success' => true]);
@@ -65,6 +66,7 @@ if (!empty($month)) {
         // Update existing record
         $update_value_query = "UPDATE sector_metrics_draft 
                                SET table_content = $new_value 
+                               AND table_name = '$table_name'
                                WHERE column_title = '$old_name' 
                                AND month = '$month' 
                                AND sector_id = '$sector_id'
@@ -77,8 +79,8 @@ if (!empty($month)) {
     } else {
         // Insert new record
         $insert_query = "INSERT INTO sector_metrics_draft 
-                         (column_title, table_content, month, sector_id, metric_id) 
-                         VALUES ('$old_name', $new_value, '$month', '$sector_id', $metric_id)";
+                         (table_name, column_title, table_content, month, sector_id, metric_id) 
+                         VALUES ('$table_name', '$old_name', $new_value, '$month', '$sector_id', $metric_id)";
         if ($conn->query($insert_query)) {
             echo json_encode(['success' => true]);
         } else {
