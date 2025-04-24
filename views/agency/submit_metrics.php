@@ -97,7 +97,7 @@ require_once '../layouts/agency_nav.php';
     <div class="card shadow-sm mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="card-title m-0">Sector: <?= get_sector_name($_SESSION['sector_id']) ?></h5>
-            <span class="badge bg-primary"><?= count($metrics) ?> Metrics</span>
+<span class="badge bg-primary"><?= count(array_unique(array_column($metrics, 'metric_id'))) ?> Metrics</span>
         </div>
         <div class="card-body">
             <?php
@@ -152,7 +152,7 @@ require_once '../layouts/agency_nav.php';
         <div class="card shadow-sm mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title m-0">Metric Drafts</h5>
-                <span class="badge bg-primary"><?= count($draft_metrics) ?> Drafts</span>
+<span class="badge bg-primary"><?= count(array_unique(array_column($draft_metrics, 'metric_id'))) ?> Drafts</span>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
