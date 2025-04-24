@@ -145,76 +145,29 @@ require_once '../layouts/agency_nav.php';
                         <table class="table table-hover table-custom">
                             <thead>
                                 <tr>
-                                    <th width="40%">Metric</th>
-                                    <th width="15%">Type</th>
-                                    <th width="25%">Value</th>
-                                    <th width="20%">Status</th>
+                                    <th width="90%">Metric</th>
+                                    <th width="10%">Status</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($metrics as $metric): ?>
+                                <?php
+                                $unique_metrics = [];
+                                foreach ($metrics as $metric):
+                                    if (!in_array($metric['metric_id'], $unique_metrics)):
+                                        $unique_metrics[] = $metric['metric_id'];
+                                ?>
                                     <tr>
                                         <td>
-                                            <strong><?php echo $metric['metric_name']; ?></strong>
-                                            <?php if ($metric['description']): ?>
-                                                <div class="small text-muted"><?php echo $metric['description']; ?></div>
-                                            <?php endif; ?>
+                                            <strong><?php echo $metric['table_name']; ?></strong>
                                         </td>
                                         <td>
-                                            <?php
-                                                $type_badge = 'secondary';
-                                                switch ($metric['metric_type']) {
-                                                    case 'numeric': $type_badge = 'primary'; break;
-                                                    case 'percentage': $type_badge = 'info'; break;
-                                                    case 'text': $type_badge = 'success'; break;
-                                                }
-                                            ?>
-                                            <span class="badge bg-<?php echo $type_badge; ?>">
-                                                <?php echo ucfirst($metric['metric_type']); ?>
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <?php if ($metric['metric_type'] === 'numeric'): ?>
-                                                <input type="text" class="form-control numeric-input" 
-                                                       name="metrics[<?php echo $metric['metric_id']; ?>]" 
-                                                       placeholder="Enter a number" 
-                                                       pattern="[0-9]*(\.[0-9]+)?" 
-                                                       required
-                                                       <?php echo $metric['is_submitted'] ? 'value="' . $metric['current_value'] . '"' : ''; ?>>
-                                            <?php elseif ($metric['metric_type'] === 'percentage'): ?>
-                                                <div class="input-group">
-                                                    <input type="text" class="form-control percentage-input" 
-                                                           name="metrics[<?php echo $metric['metric_id']; ?>]" 
-                                                           placeholder="Enter percentage" 
-                                                           pattern="[0-9]*(\.[0-9]+)?" 
-                                                           required
-                                                           <?php echo $metric['is_submitted'] ? 'value="' . $metric['current_value'] . '"' : ''; ?>>
-                                                    <span class="input-group-text">%</span>
-                                                </div>
-                                            <?php else: ?>
-                                                <input type="text" class="form-control" 
-                                                       name="metrics[<?php echo $metric['metric_id']; ?>]" 
-                                                       placeholder="Enter value" 
-                                                       required
-                                                       <?php echo $metric['is_submitted'] ? 'value="' . $metric['current_value'] . '"' : ''; ?>>
-                                            <?php endif; ?>
-                                            
-                                            <div class="mt-2">
-                                                <input type="text" class="form-control form-control-sm" 
-                                                       name="notes[<?php echo $metric['metric_id']; ?>]" 
-                                                       placeholder="Optional notes"
-                                                       <?php echo $metric['is_submitted'] ? 'value="' . $metric['notes'] . '"' : ''; ?>>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <?php if ($metric['is_submitted']): ?>
-                                                <span class="badge bg-success">Submitted</span>
-                                            <?php else: ?>
-                                                <span class="badge bg-warning">Pending</span>
-                                            <?php endif; ?>
+                                            <?php echo isset($metric['status']) ? htmlspecialchars($metric['status']) : 'Submitted'; ?>
                                         </td>
                                     </tr>
-                                <?php endforeach; ?>
+                                <?php
+                                    endif;
+                                endforeach;
+                                ?>
                             </tbody>
                         </table>
                     </div>
@@ -264,7 +217,9 @@ foreach ($draft_metrics as $metric) {
                     <i class="fas fa-edit me-1"></i> Edit
                 </a>
                 <!-- Placeholder? -->
-                <button>Submit</button> 
+                <a href="submit_draft_metric.php?metric_id=<?php echo $metric['metric_id']; ?>" class="btn btn-sm btn-outline-success" onclick="return confirm('Are you sure you want to submit this metric draft?');">
+                    <i class="fas fa-check me-1"></i> Submit
+                </a>
                 <a href="delete_metric.php?metric_id=<?php echo $metric['metric_id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this metric draft?');">
                     <i class="fas fa-trash-alt me-1"></i> Delete
                 </a>

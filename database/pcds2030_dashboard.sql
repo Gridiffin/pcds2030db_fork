@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 24, 2025 at 03:00 AM
+-- Generation Time: Apr 24, 2025 at 03:42 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -234,7 +234,7 @@ CREATE TABLE `sector_metrics_submitted` (
   `sector_id` int(11) NOT NULL,
   `metric_id` int(11) NOT NULL,
   `month` varchar(20) NOT NULL COMMENT 'Month of the metric',
-  `colum_title` varchar(255) NOT NULL COMMENT 'Title of the column',
+  `column_title` varchar(255) NOT NULL COMMENT 'Title of the column',
   `table_content` text NOT NULL COMMENT 'Content of the table',
   `time_added` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'Time when the record was added'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;

@@ -12,7 +12,19 @@ require_once 'utilities.php';
  * Get agency sector metrics
  */
 function get_agency_sector_metrics(){
-    
+    global $conn;
+
+    $query = "SELECT * FROM sector_metrics_submitted";
+    $result = $conn->query($query);
+
+    $metrics = [];
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $metrics[] = $row;
+        }
+    }
+
+    return $metrics;
 }
 
 /**
