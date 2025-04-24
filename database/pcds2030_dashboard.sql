@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 21, 2025 at 10:05 AM
+-- Generation Time: Apr 24, 2025 at 03:00 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -213,7 +213,31 @@ CREATE TABLE `sector_metrics_draft` (
 --
 
 INSERT INTO `sector_metrics_draft` (`id`, `table_name`, `sector_id`, `metric_id`, `month`, `year`, `column_title`, `table_content`, `time_added`) VALUES
-(21, '', 2, 0, 'January', 0, 'new col', '1234', '2025-04-21 06:45:20');
+(64, 'qwe', 2, 5, 'January', 0, '', '123.33', '2025-04-22 06:24:52'),
+(65, 'qwe', 2, 5, 'January', 0, '', '123.33', '2025-04-22 06:24:57'),
+(66, 'qwe', 2, 5, 'January', 0, 'RRRRR', '0', '2025-04-22 06:24:57'),
+(67, 'qwe', 2, 5, 'February', 0, 'RRRRR', '12', '2025-04-22 06:25:01'),
+(76, 'test', 2, 6, 'January', 0, 'click here tero edit name', '2', '2025-04-23 03:19:10'),
+(77, 'Table_6', 2, 6, 'January', 0, 'click here tero edit name', '2', '2025-04-23 03:19:38'),
+(78, 'Table_6', 2, 6, 'January', 0, 'sefd', '0.3', '2025-04-23 03:19:38'),
+(79, 'te33', 2, 7, 'January', 0, 'click hetatre to edit name', '0.1', '2025-04-23 03:21:50');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `sector_metrics_submitted`
+--
+
+CREATE TABLE `sector_metrics_submitted` (
+  `id` int(11) NOT NULL,
+  `table_name` varchar(255) NOT NULL,
+  `sector_id` int(11) NOT NULL,
+  `metric_id` int(11) NOT NULL,
+  `month` varchar(20) NOT NULL COMMENT 'Month of the metric',
+  `colum_title` varchar(255) NOT NULL COMMENT 'Title of the column',
+  `table_content` text NOT NULL COMMENT 'Content of the table',
+  `time_added` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'Time when the record was added'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -369,6 +393,12 @@ ALTER TABLE `sector_metrics_draft`
   ADD KEY `metric_id` (`metric_id`);
 
 --
+-- Indexes for table `sector_metrics_submitted`
+--
+ALTER TABLE `sector_metrics_submitted`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indexes for table `sector_metric_permissions`
 --
 ALTER TABLE `sector_metric_permissions`
@@ -451,7 +481,13 @@ ALTER TABLE `sector_metrics_definition`
 -- AUTO_INCREMENT for table `sector_metrics_draft`
 --
 ALTER TABLE `sector_metrics_draft`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=80;
+
+--
+-- AUTO_INCREMENT for table `sector_metrics_submitted`
+--
+ALTER TABLE `sector_metrics_submitted`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `sector_metric_permissions`
