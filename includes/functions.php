@@ -295,4 +295,21 @@ function validate_login($username, $password) {
         return ['error' => 'Invalid username or password'];
     }
 }
+
+/**
+ * Get current period ID
+ * @param object $conn Database connection
+ * @return int|null Current period ID or null if none
+ */
+function getCurrentPeriodId($conn) {
+    $query = "SELECT period_id FROM reporting_periods WHERE status = 'open' ORDER BY end_date DESC LIMIT 1";
+    $result = $conn->query($query);
+    
+    if ($result && $result->num_rows > 0) {
+        $row = $result->fetch_assoc();
+        return $row['period_id'];
+    }
+    
+    return null;
+}
 ?>

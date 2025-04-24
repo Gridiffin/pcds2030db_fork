@@ -19,6 +19,9 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
 
+<!-- Chart.js - Ensure it's always loaded before dashboard scripts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+
 <!-- Utility scripts -->
 <script src="<?php echo APP_URL; ?>/assets/js/utilities/status_utils.js"></script>
 <script src="<?php echo APP_URL; ?>/assets/js/utilities/dropdown_init.js"></script>
@@ -37,6 +40,7 @@
     });
 </script>
     
+<!-- Additional page-specific scripts -->
 <?php if (isset($additionalScripts) && is_array($additionalScripts)): ?>
     <?php foreach($additionalScripts as $script): ?>
         <script src="<?php echo $script; ?>"></script>
@@ -51,13 +55,6 @@
 <script src="<?php echo APP_URL; ?>/assets/js/utilities/form_utils.js"></script>
 <script src="<?php echo APP_URL; ?>/assets/js/utilities/filter_utils.js"></script>
 <script src="<?php echo APP_URL; ?>/assets/js/main.js"></script>
-
-<!-- Additional scripts -->
-<?php if (isset($additionalScripts) && is_array($additionalScripts)): ?>
-    <?php foreach($additionalScripts as $script): ?>
-        <script src="<?php echo $script; ?>"></script>
-    <?php endforeach; ?>
-<?php endif; ?>
 
 <!-- Inline page-specific scripts -->
 <?php if (isset($inlineScripts)): ?>

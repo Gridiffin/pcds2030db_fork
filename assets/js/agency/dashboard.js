@@ -26,78 +26,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Initialize the program tabs
-    const tabElements = document.querySelectorAll('.program-table-tabs .nav-link');
-    if (tabElements.length > 0) {
-        tabElements.forEach(tab => {
-            tab.addEventListener('click', function(e) {
-                e.preventDefault();
-                
-                // Remove active class from all tabs and hide all content
-                tabElements.forEach(t => t.classList.remove('active'));
-                const tabContents = document.querySelectorAll('.tab-pane');
-                tabContents.forEach(content => content.classList.remove('show', 'active'));
-                
-                // Add active class to clicked tab and show its content
-                this.classList.add('active');
-                const targetId = this.getAttribute('href').substring(1);
-                const targetContent = document.getElementById(targetId);
-                if (targetContent) {
-                    targetContent.classList.add('show', 'active');
-                }
-            });
-        });
-    }
-    
-    // Handle notification actions
-    const notificationItems = document.querySelectorAll('.notification-item');
-    if (notificationItems.length > 0) {
-        notificationItems.forEach(item => {
-            // Mark notification as read when clicked
-            item.addEventListener('click', function() {
-                if (this.classList.contains('unread')) {
-                    this.classList.remove('unread');
-                    
-                    // Optional: Send AJAX request to mark as read in the database
-                    const notificationId = this.getAttribute('data-id');
-                    if (notificationId) {
-                        markNotificationAsRead(notificationId);
-                    }
-                }
-            });
-        });
-    }
-    
-    // Function to mark notification as read via AJAX
-    function markNotificationAsRead(notificationId) {
-        // This is a placeholder for the AJAX call
-        // Implement this when you have the backend endpoint ready
-        console.log(`Marking notification ${notificationId} as read`);
-    }
-    
-    // Function to update notification counter
-    function updateNotificationCounter() {
-        const unreadCount = document.querySelectorAll('.notification-item.unread').length;
-        const badge = document.querySelector('.notification-badge');
-        
-        if (badge) {
-            if (unreadCount > 0) {
-                badge.textContent = unreadCount;
-                badge.style.display = 'inline-block';
-            } else {
-                badge.style.display = 'none';
-            }
-        }
-    }
-
-    // Initialize the program type filter
-    initProgramTypeFilter();
-
-    // Initialize the program table sorting
-    initProgramTableSorting();
-    
     // Initialize the dashboard-wide toggle for assigned programs
     initDashboardAssignedToggle();
+    
+    // Initialize the program table sorting
+    initProgramTableSorting();
 });
 
 /**
@@ -108,230 +41,190 @@ function initDashboardAssignedToggle() {
     const toggle = document.getElementById('includeAssignedToggle');
     if (!toggle) return;
     
-    // Set initial state (unchecked by default)
-    toggle.checked = false;
-    
-    toggle.addEventListener('change', function() {
-        // Store the toggle state
-        const includeAssigned = this.checked;
-        
-        // Update all dashboard components except Program Updates section
-        updateDashboardComponents(includeAssigned);
-        
-        // Update chart if the chart-specific function exists
-        if (typeof window.updateChartByProgramType === 'function') {
-            window.updateChartByProgramType(includeAssigned);
-        }
-        
-        // Save preference to localStorage for persistence
-        localStorage.setItem('includeAssignedPrograms', includeAssigned ? 'true' : 'false');
-    });
-    
     // Load saved preference on page load
     const savedPreference = localStorage.getItem('includeAssignedPrograms');
-    if (savedPreference === 'true') {
+    if (savedPreference !== null) {
+        toggle.checked = savedPreference === 'true';
+    } else {
+        // Default to true if not previously set
         toggle.checked = true;
-        
-        // Trigger the change event to update the dashboard
-        toggle.dispatchEvent(new Event('change'));
     }
-}
-
-/**
- * Update all dashboard components based on the toggle state
- * 
- * @param {boolean} includeAssigned - Whether to include assigned programs
- */
-function updateDashboardComponents(includeAssigned) {
-    console.log(`Updating dashboard components - Include assigned: ${includeAssigned}`);
     
-    // Update stat cards
-    updateStatCards(includeAssigned);
-    
-    // Note: We no longer update the Programs Updates table here
-    // as it should always show all programs regardless of toggle state
-}
-
-/**
- * Update stat cards based on toggle state
- * 
- * @param {boolean} includeAssigned - Whether to include assigned programs
- */
-function updateStatCards(includeAssigned) {
-    // Get all program rows, including hidden ones
-    const allProgramRows = document.querySelectorAll('#dashboardProgramsTable tr[data-program-type]');
-    
-    // Skip if no program rows found
-    if (!allProgramRows.length) return;
-    
-    // Reset counters
-    const counts = {
-        total: 0,
-        submitted: 0,
-        'on-track': 0,
-        'delayed': 0,
-        'completed': 0,
-        'not-started': 0,
-        'assigned-drafts': 0  // Track assigned drafts separately
-    };
-    
-    // Count programs by status
-    allProgramRows.forEach(row => {
-        const programType = row.getAttribute('data-program-type');
-        const isDraft = row.classList.contains('draft-program');
+    toggle.addEventListener('change', function() {
+        const includeAssigned = this.checked;
         
-        // Skip assigned programs if toggle is off
-        if (!includeAssigned && programType === 'assigned') return;
+        // Add loading indicators
+        document.querySelectorAll('.stat-card').forEach(card => {
+            card.classList.add('loading');
+        });
         
-        // Track assigned drafts separately but don't count them in stats
-        if (programType === 'assigned' && isDraft) {
-            counts['assigned-drafts']++;
-            // Skip counting assigned drafts in other stats
-            return;
+        if (document.getElementById('programStatusChart')) {
+            const chartContainer = document.getElementById('programStatusChart').closest('.card-body');
+            if (chartContainer) chartContainer.classList.add('loading');
         }
         
-        // Skip regular draft programs from stats
-        if (isDraft) return;
+        // Save preference to localStorage
+        localStorage.setItem('includeAssignedPrograms', includeAssigned.toString());
         
-        // Increment total counter (only counts submitted programs)
-        counts.total++;
-        counts.submitted++; // All counted programs are submitted since we skip drafts
-        
-        // Get status badge text
-        const statusBadge = row.querySelector('td:nth-child(2) .badge');
-        if (!statusBadge) return;
-        
-        const statusText = statusBadge.textContent.trim().toLowerCase();
-        
-        // Map status text to status key
-        if (statusText.includes('on track')) {
-            counts['on-track']++;
-        } else if (statusText.includes('delayed') || statusText.includes('delay')) {
-            counts['delayed']++;
-        } else if (statusText.includes('target achieved') || 
-                  statusText.includes('achieved') || 
-                  statusText.includes('completed')) {
-            counts['completed']++;
-        } else if (statusText.includes('not started') || statusText === '') {
-            counts['not-started']++;
-        }
+        // Request new data from server
+        fetchDashboardData(includeAssigned);
     });
     
-    // Log counts for debugging
-    console.log('Program counts:', counts);
+    // Initial fetch based on toggle state
+    fetchDashboardData(toggle.checked);
+}
+
+/**
+ * Fetch filtered dashboard data from server
+ */
+function fetchDashboardData(includeAssigned) {
+    const periodId = document.getElementById('periodSelector')?.value || '';
     
-    // Update the stat cards with new counts
-    const totalCard = document.querySelector('.stat-card.primary .stat-value');
-    const onTrackCard = document.querySelector('.stat-card.warning .stat-value');
-    const delayedCard = document.querySelector('.stat-card.danger .stat-value');
-    const completedCard = document.querySelector('.stat-card.success .stat-value');
-    
-    if (totalCard) totalCard.textContent = counts.total;
-    if (onTrackCard) onTrackCard.textContent = counts['on-track'];
-    if (delayedCard) delayedCard.textContent = counts['delayed'];
-    if (completedCard) completedCard.textContent = counts['completed'];
-    
-    // Update the stat card subtitles with percentages
-    updateCardSubtitle('.stat-card.primary .stat-subtitle', counts.submitted, 'Programs Submitted');
-    updateCardSubtitle('.stat-card.warning .stat-subtitle', counts['on-track'], counts.total);
-    updateCardSubtitle('.stat-card.danger .stat-subtitle', counts['delayed'], counts.total);
-    updateCardSubtitle('.stat-card.success .stat-subtitle', counts['completed'], counts.total);
-    
-    // Update draft counter if it exists
-    const draftCounter = document.getElementById('draftProgramCounter');
-    if (draftCounter) {
-        // Count both regular drafts and assigned drafts if toggle is on
-        let draftCount = document.querySelectorAll('#dashboardProgramsTable tr.draft-program:not([data-program-type="assigned"]), ' + 
-                                                 (includeAssigned ? '#dashboardProgramsTable tr.draft-program[data-program-type="assigned"]' : '')).length;
+    fetch('/pcds2030_dashboard/ajax/dashboard_data.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `period_id=${periodId}&include_assigned=${includeAssigned}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Update UI components with new data
+        renderStatCards(data.stats);
+        renderStatusChart(data.chart_data);
         
-        draftCounter.textContent = draftCount;
-        draftCounter.closest('.badge').classList.toggle('d-none', draftCount === 0);
+        // Remove loading indicators
+        document.querySelectorAll('.stat-card, .card-body.loading').forEach(el => {
+            el.classList.remove('loading');
+        });
+    })
+    .catch(error => {
+        console.error('Error fetching dashboard data:', error);
+        // Remove loading indicators
+        document.querySelectorAll('.stat-card, .card-body.loading').forEach(el => {
+            el.classList.remove('loading');
+        });
+        
+        // Show error message
+        alert('There was an error fetching dashboard data. Please try again.');
+    });
+}
+
+/**
+ * Render stat cards with provided data
+ */
+function renderStatCards(stats) {
+    // Update total programs card
+    const totalCard = document.querySelector('.stat-card.primary .stat-value');
+    if (totalCard) totalCard.textContent = stats.total;
+    
+    // Update on-track programs card
+    const onTrackCard = document.querySelector('.stat-card.warning .stat-value');
+    if (onTrackCard) onTrackCard.textContent = stats['on-track'];
+    
+    // Update delayed programs card
+    const delayedCard = document.querySelector('.stat-card.danger .stat-value');
+    if (delayedCard) delayedCard.textContent = stats['delayed'];
+    
+    // Update completed programs card
+    const completedCard = document.querySelector('.stat-card.success .stat-value');
+    if (completedCard) completedCard.textContent = stats['completed'];
+    
+    // Update percentage subtitles
+    updateCardSubtitle('.stat-card.warning .stat-subtitle', stats['on-track'], stats.total);
+    updateCardSubtitle('.stat-card.danger .stat-subtitle', stats['delayed'], stats.total);
+    updateCardSubtitle('.stat-card.success .stat-subtitle', stats['completed'], stats.total);
+    
+    // Update total submission status
+    const programsSubmitted = document.querySelector('.stat-card.primary .stat-subtitle');
+    if (programsSubmitted) {
+        programsSubmitted.innerHTML = `<i class="fas fa-check me-1"></i>${stats.total} Programs`;
     }
 }
 
 /**
  * Update a stat card subtitle with percentage
- * 
- * @param {string} selector - CSS selector for the subtitle element
- * @param {number} value - Value to display
- * @param {number|string} total - Total for percentage calculation or custom text
  */
 function updateCardSubtitle(selector, value, total) {
-    const element = document.querySelector(selector);
-    if (!element) return;
+    const subtitle = document.querySelector(selector);
+    if (!subtitle) return;
     
-    if (typeof total === 'number') {
-        // For percentage calculations
-        if (total > 0) {
-            const percentage = Math.round((value / total) * 100);
-            element.innerHTML = `<i class="fas fa-chart-line me-1"></i> ${percentage}% of total`;
-            element.classList.remove('text-muted');
-        } else {
-            element.innerHTML = `<i class="fas fa-info-circle me-1"></i> No data for this period`;
-            element.classList.add('text-muted');
-        }
-    } else if (typeof total === 'string') {
-        // For custom text (like "Programs Submitted")
-        element.innerHTML = `<i class="fas fa-check me-1"></i> ${value} ${total}`;
+    let percentage = 0;
+    if (total > 0) {
+        percentage = Math.round((value / total) * 100);
     }
+    
+    subtitle.innerHTML = `<i class="fas fa-chart-line me-1"></i>${percentage}% of total`;
 }
 
 /**
- * Initialize the program type filter functionality
+ * Render status chart with provided data
  */
-function initProgramTypeFilter() {
-    const filterSelect = document.getElementById('dashboardProgramTypeFilter');
-    const programTable = document.getElementById('dashboardProgramsTable');
-    const programCountBadge = document.getElementById('programCount');
+function renderStatusChart(chartData) {
+    const chartCanvas = document.getElementById('programStatusChart');
+    if (!chartCanvas) return;
     
-    if (!filterSelect || !programTable) return;
+    // Check if Chart.js is available
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js is not loaded. Unable to render chart.');
+        return;
+    }
     
-    filterSelect.addEventListener('change', function() {
-        const filterValue = this.value;
-        const rows = programTable.querySelectorAll('tr[data-program-type]');
-        let visibleCount = 0;
-        
-        rows.forEach(row => {
-            const programType = row.getAttribute('data-program-type');
-            
-            // Program Updates section always shows all programs
-            // regardless of the dashboard-wide toggle state
-            if (filterValue === 'all' || programType === filterValue) {
-                row.style.display = '';
-                visibleCount++;
-            } else {
-                row.style.display = 'none';
+    // Clear any existing chart - with proper check to ensure it has destroy method
+    if (window.programStatusChart && typeof window.programStatusChart.destroy === 'function') {
+        window.programStatusChart.destroy();
+    }
+    
+    // Define colors for the chart
+    const chartColors = {
+        onTrack: '#ffc107',    // Yellow - On track 
+        delayed: '#dc3545',    // Red - Delayed
+        completed: '#28a745',  // Green - Target achieved
+        notStarted: '#6c757d'  // Gray - Not started
+    };
+    
+    try {
+        // Create new chart
+        window.programStatusChart = new Chart(chartCanvas, {
+            type: 'doughnut',
+            data: {
+                labels: chartData.labels,
+                datasets: [{
+                    data: chartData.data,
+                    backgroundColor: [
+                        chartColors.onTrack,
+                        chartColors.delayed,
+                        chartColors.completed, 
+                        chartColors.notStarted
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((acc, val) => acc + val, 0);
+                                const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                },
+                cutout: '70%'
             }
         });
-        
-        // Update the program count badge
-        if (programCountBadge) {
-            programCountBadge.textContent = visibleCount;
-        }
-        
-        // Show a message if no programs match the filter
-        let noResultsRow = programTable.querySelector('.no-filter-results');
-        
-        if (visibleCount === 0) {
-            if (!noResultsRow) {
-                noResultsRow = document.createElement('tr');
-                noResultsRow.className = 'no-filter-results';
-                noResultsRow.innerHTML = `
-                    <td colspan="3" class="text-center py-4">
-                        <div class="alert alert-info mb-0">
-                            <i class="fas fa-filter me-2"></i>
-                            No programs match your filter criteria.
-                        </div>
-                    </td>
-                `;
-                programTable.appendChild(noResultsRow);
-            } else {
-                noResultsRow.style.display = '';
-            }
-        } else if (noResultsRow) {
-            noResultsRow.style.display = 'none';
-        }
-    });
+    } catch (error) {
+        console.error('Error creating chart:', error);
+    }
 }
 
 /**
@@ -381,52 +274,33 @@ function initProgramTableSorting() {
 }
 
 /**
- * Sort the program table rows based on column and direction
+ * Sort the programs table
  */
-function sortProgramTable(table, column, direction) {
-    const rows = Array.from(table.querySelectorAll('tr:not(.no-filter-results)'));
-    if (!rows.length) return;
+function sortProgramTable(table, sortBy, direction) {
+    const tbody = table.querySelector('tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr:not(.no-filter-results)'));
     
-    // Sort the rows
+    // Skip if no rows or only one row
+    if (rows.length <= 1) return;
+    
+    // Sort rows
     const sortedRows = rows.sort((a, b) => {
-        let aValue, bValue;
-        
-        switch(column) {
-            case 'name':
-                // Get program name text
-                aValue = a.querySelector('td:first-child .fw-medium').textContent.trim().toLowerCase();
-                bValue = b.querySelector('td:first-child .fw-medium').textContent.trim().toLowerCase();
-                break;
-                
-            case 'status':
-                // Get status text
-                aValue = a.querySelector('td:nth-child(2) .badge').textContent.trim().toLowerCase();
-                bValue = b.querySelector('td:nth-child(2) .badge').textContent.trim().toLowerCase();
-                break;
-                
-            case 'date':
-                // Get date as timestamp for comparison
-                const aDate = a.querySelector('td:nth-child(3)').textContent.trim();
-                const bDate = b.querySelector('td:nth-child(3)').textContent.trim();
-                
-                if (aDate === 'Not set' && bDate === 'Not set') return 0;
-                if (aDate === 'Not set') return 1;
-                if (bDate === 'Not set') return -1;
-                
-                aValue = new Date(aDate).getTime();
-                bValue = new Date(bDate).getTime();
-                break;
-                
-            default:
-                return 0;
+        if (sortBy === 'name') {
+            const aText = a.querySelector('td:nth-child(1) .fw-medium')?.textContent.trim().toLowerCase() || '';
+            const bText = b.querySelector('td:nth-child(1) .fw-medium')?.textContent.trim().toLowerCase() || '';
+            return direction === 'asc' ? aText.localeCompare(bText) : bText.localeCompare(aText);
+        } else if (sortBy === 'status') {
+            const aStatus = a.querySelector('td:nth-child(2) .badge')?.textContent.trim().toLowerCase() || '';
+            const bStatus = b.querySelector('td:nth-child(2) .badge')?.textContent.trim().toLowerCase() || '';
+            return direction === 'asc' ? aStatus.localeCompare(bStatus) : bStatus.localeCompare(aStatus);
+        } else if (sortBy === 'date') {
+            const aDate = new Date(a.querySelector('td:nth-child(3)')?.textContent.trim() || 0);
+            const bDate = new Date(b.querySelector('td:nth-child(3)')?.textContent.trim() || 0);
+            return direction === 'asc' ? aDate - bDate : bDate - aDate;
         }
-        
-        // Compare values
-        if (aValue < bValue) return direction === 'asc' ? -1 : 1;
-        if (aValue > bValue) return direction === 'asc' ? 1 : -1;
         return 0;
     });
     
-    // Re-append rows in sorted order
-    sortedRows.forEach(row => table.appendChild(row));
+    // Reorder rows in the DOM
+    sortedRows.forEach(row => tbody.appendChild(row));
 }

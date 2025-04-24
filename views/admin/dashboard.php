@@ -43,9 +43,8 @@ $agency_count = count($agency_programs);
 
 // Additional scripts
 $additionalScripts = [
-    APP_URL . '/assets/js/charts/chart.min.js',
     APP_URL . '/assets/js/admin/dashboard_charts.js',
-    APP_URL . '/assets/js/admin/dashboard.js', // Add our new script
+    APP_URL . '/assets/js/admin/dashboard.js',
     APP_URL . '/assets/js/period_selector.js'
 ];
 
