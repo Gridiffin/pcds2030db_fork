@@ -101,6 +101,16 @@ require_once '../../includes/dashboard_header.php';
                         </div>
                     </div>
                 </div>
+                
+                <!-- Add note about draft programs and charts -->
+                <div class="row mt-2">
+                    <div class="col-12">
+                        <div class="alert alert-info p-2 small mb-0">
+                            <i class="fas fa-info-circle me-1"></i>
+                            <strong>Note:</strong> Draft programs and newly assigned programs appear in "Recent Updates" but are excluded from statistics and charts until finalized.
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -248,11 +258,17 @@ require_once '../../includes/dashboard_header.php';
                                         <?php foreach ($recentUpdates as $program): 
                                             $program_type = isset($program['is_assigned']) && $program['is_assigned'] ? 'assigned' : 'created';
                                             $program_type_label = $program_type === 'assigned' ? 'Assigned' : 'Agency-Created';
+                                            $is_draft = isset($program['is_draft']) && $program['is_draft'] == 1;
+                                            $is_new_assigned = $program_type === 'assigned' && !isset($program['status']);
                                         ?>
-                                            <tr data-program-type="<?php echo $program_type; ?>">
+                                            <tr data-program-type="<?php echo $program_type; ?>" 
+                                               class="<?php echo ($is_draft || $is_new_assigned) ? 'draft-program' : ''; ?>">
                                                 <td>
                                                     <div class="fw-medium">
                                                         <?php echo htmlspecialchars($program['program_name']); ?>
+                                                        <?php if ($is_draft || $is_new_assigned): ?>
+                                                            <span class="badge bg-secondary ms-1">Draft</span>
+                                                        <?php endif; ?>
                                                     </div>
                                                     <div class="small text-muted program-type-indicator">
                                                         <i class="fas fa-<?php echo $program_type === 'assigned' ? 'tasks' : 'folder-plus'; ?> me-1"></i>

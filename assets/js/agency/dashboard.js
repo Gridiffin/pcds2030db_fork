@@ -215,6 +215,9 @@ function renderStatusChart(chartData) {
                                 const total = context.dataset.data.reduce((acc, val) => acc + val, 0);
                                 const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
                                 return `${label}: ${value} (${percentage}%)`;
+                            },
+                            footer: function() {
+                                return "* Draft programs are not included in statistics";
                             }
                         }
                     }
