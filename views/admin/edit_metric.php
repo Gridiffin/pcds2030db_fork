@@ -115,102 +115,217 @@ while ($row = $metrics->fetch_assoc()) {
 }
 
 ?>
-<!DOCTYPE html>
-<html>
-<head>
-    <link rel="stylesheet" type="text/css" href="../../assets/css/custom/metric-create.css">
-</head>
-<body>
+<?php
+/**
+ * Edit Sector Metrics
+ * 
+ * Admin interface to edit sector-specific metrics
+ */
+
+// Include necessary files
+require_once '../../config/config.php';
+require_once '../../includes/db_connect.php';
+require_once '../../includes/session.php';
+require_once '../../includes/functions.php';
+require_once '../../includes/admin_functions.php';
+
+// Verify user is an admin
+if (!is_admin()) {
+    header('Location: ../../login.php');
+    exit;
+}
+
+// Admin may not have sector_id, so we omit sector_id filtering or set to null
+$sector_id = null;
+
+// Set page title
+$pageTitle = 'Edit Sector Metrics';
+
+// Handle form submission for metrics update
+$message = '';
+$message_type = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+
+    $metric_id = isset($_GET['metric_id']) ? intval($_GET['metric_id']) : 0;
+    $_SESSION['metric_id'] = $metric_id;
+
+    if (isset($_POST['table_name']) && trim($_POST['table_name']) !== '') {
+        $new_table_name = $conn->real_escape_string($_POST['table_name']);
+        // Check if a row exists for this metric_id
+        $check_query = "SELECT 1 FROM sector_metrics_submitted WHERE metric_id = $metric_id LIMIT 1";
+        $check_result = $conn->query($check_query);
+        if ($check_result && $check_result->num_rows > 0) {
+            // Update existing row
+            $update_query = "UPDATE sector_metrics_submitted SET table_name = '$new_table_name' WHERE metric_id = $metric_id";
+            if ($conn->query($update_query) === TRUE) {
+                $message = "Table name updated successfully.";
+                $message_type = "success";
+            } else {
+                $message = "Error updating table name: " . $conn->error;
+                $message_type = "danger";
+            }
+        } else {
+            // Insert new row with table_name
+            $insert_table_name_query = "INSERT INTO sector_metrics_submitted (metric_id, table_name, column_title, table_content, month) 
+                VALUES ($metric_id, '$new_table_name', '', 0, 'January')";
+            if ($conn->query($insert_table_name_query) === TRUE) {
+                $message = "Table name saved successfully.";
+                $message_type = "success";
+            } else {
+                $message = "Error saving table name: " . $conn->error;
+                $message_type = "danger";
+            }
+        }
+    } else {
+        // Use provided values or defaults for metric insert
+        $name = $conn->real_escape_string($_POST['column_title'] ?? '');
+        $value = floatval($_POST['table_content'] ?? 0);
+        $month = $conn->real_escape_string($_POST['month'] ?? '');
+        $table_name_post = $conn->real_escape_string($_POST['table_name'] ?? '');
+
+        // If table_name is empty, generate a new table_name
+        if (empty($table_name_post)) {
+            $table_name_post = "Table_" . $metric_id;
+        }
+
+        // Insert new metric with table_name and metric_id
+        $query = "INSERT INTO sector_metrics_submitted (metric_id, table_name, column_title, table_content, month) 
+                VALUES ($metric_id, '$table_name_post', '$name', '$value', '$month')";
+
+        if ($conn->query($query) === TRUE) {
+            $message = "Metric created successfully.";
+            $message_type = "success";
+        } else {
+            $message = "Error: " . $conn->error;
+            $message_type = "danger";
+        }
+    }
+}
+
+// Retrieve all metrics for display
+$metric_id = isset($_GET['metric_id']) ? intval($_GET['metric_id']) : 0;
+if ($metric_id === 0) {
+    $result = $conn->query("SELECT MAX(metric_id) AS max_id FROM sector_metrics_submitted");
+    if ($result && $row = $result->fetch_assoc()) {
+        $metric_id = $row['max_id'] + 1;
+    }
+}
+$select_query = "SELECT * FROM sector_metrics_submitted WHERE metric_id = $metric_id";
+$metrics = $conn->query($select_query);
+if (!$metrics) die("Error getting metrics: " . $conn->error);
+
+// Organize data for display
+$month_names = ['January', 'February', 'March', 'April', 'May', 'June', 
+                'July', 'August', 'September', 'October', 'November', 'December'];
+$table_data = [];
+while ($row = $metrics->fetch_assoc()) {
+    $month_index = date('n', strtotime($row['month'])) - 1; // Get month index from month
+    if ($month_index < 0 || $month_index > 11) {
+        continue; // Skip invalid month index
+    }
+    $table_data[$month_index]['month_name'] = $month_names[$month_index];
+    $table_data[$month_index]['metrics'][$row['column_title']] = $row['table_content'];
+}
+
+// Include header and admin navigation for consistent styling
+require_once '../layouts/header.php';
+require_once '../layouts/admin_nav.php';
+?>
+
+<div class="container-fluid px-4 py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h1 class="h2 mb-0">Edit Sector Metrics</h1> 
             <p class="text-muted">Edit your sector-specific metrics</p>
-            <?php echo $metric_id?>                                                 <!-- debugging purposes, remove later -->
+            <!-- Removed debugging echo of metric_id -->
         </div>
     </div>
 
-    <div class="container">
-        <?php
-            // Get the table_name from the first metric row
-            $table_name = '';
-            if (!empty($table_data)) {
-                foreach ($table_data as $month_data) {
-                    if (!empty($month_data['metrics'])) {
-                        $result = $conn->query("SELECT table_name FROM sector_metrics_submitted WHERE metric_id = $metric_id LIMIT 1");
-                        if ($result && $row = $result->fetch_assoc()) {
-                            $table_name = $row['table_name'];
-                        }
-                        break;
+    <?php
+        // Get the table_name from the first metric row
+        $table_name = '';
+        if (!empty($table_data)) {
+            foreach ($table_data as $month_data) {
+                if (!empty($month_data['metrics'])) {
+                    $result = $conn->query("SELECT table_name FROM sector_metrics_submitted WHERE metric_id = $metric_id LIMIT 1");
+                    if ($result && $row = $result->fetch_assoc()) {
+                        $table_name = $row['table_name'];
                     }
+                    break;
                 }
             }
-        ?>
-        <div class="d-flex align-items-center mb-3">
-            <label for="tableNameInput" class="me-2 h4 mb-0">Table Name:</label>
-            <input type="text" id="tableNameInput" value="<?= htmlspecialchars($table_name) ?>" />
-            <button class="btn btn-primary ms-2" id="saveTableNameBtn">Save</button>
-        </div>
-
-        <!-- Add Column Button -->
-        <button class="btn" id="addColumnBtn">Add Column</button>
-
-        <!-- Sector Metrics Table -->
-        <table>
-            <thead>
-                <tr>
-                    <th>Month</th>
-                    <?php
-                        // Get unique metric names for column headers
-                        $metric_names = [];
-                        foreach ($table_data as $month_data) {  
-                            if (isset($month_data['metrics'])) {
-                                $metric_names = array_merge($metric_names, array_keys($month_data['metrics']));
-                            }
-                        }
-                        $metric_names = array_unique($metric_names);
-                        sort($metric_names);
-
-                        foreach ($metric_names as $name): ?>
-                            <th>
-                                <div class="metric-header">
-                                    <span class="metric-name" contenteditable="true" data-metric="<?= htmlspecialchars($name) ?>">
-                                        <?= $name === '' ? 'click here to edit name' : htmlspecialchars($name) ?>
-                                    </span>
-                                    <button class="save-btn" 
-                                            data-metric="<?= htmlspecialchars($name) ?>"> ✓ </button>
-                                </div>
-                            </th>
-                        <?php endforeach; ?>
-                </tr>
-            </thead>
-            <tbody>
-                <?php
-                    // Ensure all months are shown, when there is data or no data
-                    foreach ($month_names as $month_name):
-                        $month_index = array_search($month_name, $month_names);
-                        $month_data = $table_data[$month_index] ?? ['month_name' => $month_name, 'metrics' => []];
-                ?>
-                <tr>
-                    <td><?= $month_name ?></td>
-                    <?php foreach ($metric_names as $name): ?>
-                        <td>
-                            <div class="metric-cell">
-                                <span class="metric-value" 
-                                    contenteditable="true" 
-                                    data-metric="<?= htmlspecialchars($name) ?>" 
-                                    data-month="<?= $month_name ?>">
-                                    <?= isset($month_data['metrics'][$name]) ? number_format($month_data['metrics'][$name], 2) : ' ' ?>
-                                </span>
-                                <button class="save-btn" data-metric="<?= htmlspecialchars($name) ?>" data-month="<?= $month_name ?>"> ✓ </button>
-                            </div>
-                        </td>
-                    <?php endforeach; ?>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
+        }
+    ?>
+    <div class="d-flex align-items-center mb-3">
+        <label for="tableNameInput" class="me-2 h4 mb-0">Table Name:</label>
+        <input type="text" id="tableNameInput" value="<?= htmlspecialchars($table_name) ?>" />
+        <button class="btn btn-primary ms-2" id="saveTableNameBtn">Save</button>
     </div>
-</body>
+
+    <!-- Add Column Button -->
+    <button class="btn btn-secondary mb-3" id="addColumnBtn">Add Column</button>
+
+    <!-- Sector Metrics Table -->
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Month</th>
+                <?php
+                    // Get unique metric names for column headers
+                    $metric_names = [];
+                    foreach ($table_data as $month_data) {  
+                        if (isset($month_data['metrics'])) {
+                            $metric_names = array_merge($metric_names, array_keys($month_data['metrics']));
+                        }
+                    }
+                    $metric_names = array_unique($metric_names);
+                    sort($metric_names);
+
+                    foreach ($metric_names as $name): ?>
+                        <th>
+                            <div class="metric-header d-flex align-items-center justify-content-between">
+                                <span class="metric-name" contenteditable="true" data-metric="<?= htmlspecialchars($name) ?>">
+                                    <?= $name === '' ? 'click here to edit name' : htmlspecialchars($name) ?>
+                                </span>
+                                <button class="btn btn-sm btn-success save-btn" 
+                                        data-metric="<?= htmlspecialchars($name) ?>" style="display:none;"> ✓ </button>
+                            </div>
+                        </th>
+                    <?php endforeach; ?>
+            </tr>
+        </thead>
+        <tbody>
+            <?php
+                // Ensure all months are shown, when there is data or no data
+                foreach ($month_names as $month_name):
+                    $month_index = array_search($month_name, $month_names);
+                    $month_data = $table_data[$month_index] ?? ['month_name' => $month_name, 'metrics' => []];
+            ?>
+            <tr>
+                <td><?= $month_name ?></td>
+                <?php foreach ($metric_names as $name): ?>
+                    <td>
+                        <div class="metric-cell d-flex align-items-center justify-content-between">
+                            <span class="metric-value" 
+                                contenteditable="true" 
+                                data-metric="<?= htmlspecialchars($name) ?>" 
+                                data-month="<?= $month_name ?>">
+                                <?= isset($month_data['metrics'][$name]) ? number_format($month_data['metrics'][$name], 2) : ' ' ?>
+                            </span>
+                            <button class="btn btn-sm btn-success save-btn" data-metric="<?= htmlspecialchars($name) ?>" data-month="<?= $month_name ?>" style="display:none;"> ✓ </button>
+                        </div>
+                    </td>
+                <?php endforeach; ?>
+            </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+</div>
+
 <script>
     // Show save button when metric value is edited
     document.querySelectorAll('.metric-value').forEach(cell => {
