@@ -38,7 +38,7 @@ $dashboardController = new DashboardController($conn);
 $dashboardData = $dashboardController->getDashboardData(
     $_SESSION['user_id'], 
     $period_id,
-    true  // Default to including assigned programs for initial load
+    false  // Default to excluding assigned programs for initial load
 );
 
 // Extract initial data for page rendering
@@ -92,7 +92,7 @@ require_once '../../includes/dashboard_header.php';
                     </div>
                     <div class="col-md-6 text-md-end">
                         <div class="form-check form-switch d-inline-flex align-items-center ms-md-auto">
-                            <input class="form-check-input me-2" type="checkbox" id="includeAssignedToggle" checked>
+                            <input class="form-check-input me-2" type="checkbox" id="includeAssignedToggle">
                             <label class="form-check-label" for="includeAssignedToggle">
                                 Include Assigned Programs
                                 <i class="fas fa-info-circle ms-1" data-bs-toggle="tooltip" 
