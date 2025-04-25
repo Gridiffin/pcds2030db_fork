@@ -1,587 +1,3017 @@
--- phpMyAdmin SQL Dump
--- version 5.2.1
--- https://www.phpmyadmin.net/
---
--- Host: 127.0.0.1
--- Generation Time: Apr 24, 2025 at 03:42 AM
--- Server version: 10.4.32-MariaDB
--- PHP Version: 8.0.30
-
-SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
-START TRANSACTION;
-SET time_zone = "+00:00";
-
-
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8mb4 */;
-
---
--- Database: `pcds2030_dashboard`
---
-
--- --------------------------------------------------------
-
---
--- Table structure for table `notifications`
---
-
-CREATE TABLE `notifications` (
-  `notification_id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
-  `message` text NOT NULL,
-  `type` varchar(50) NOT NULL,
-  `reference_id` int(11) DEFAULT NULL,
-  `reference_type` varchar(50) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `read_status` tinyint(1) NOT NULL DEFAULT 0,
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `programs`
---
-
-CREATE TABLE `programs` (
-  `program_id` int(11) NOT NULL,
-  `program_name` varchar(255) NOT NULL,
-  `description` text DEFAULT NULL,
-  `owner_agency_id` int(11) NOT NULL,
-  `sector_id` int(11) NOT NULL,
-  `start_date` date DEFAULT NULL,
-  `end_date` date DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `is_assigned` tinyint(1) NOT NULL DEFAULT 1,
-  `edit_permissions` text DEFAULT NULL,
-  `created_by` int(11) NOT NULL DEFAULT 1
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `programs`
---
-
-INSERT INTO `programs` (`program_id`, `program_name`, `description`, `owner_agency_id`, `sector_id`, `start_date`, `end_date`, `created_at`, `updated_at`, `is_assigned`, `edit_permissions`, `created_by`) VALUES
-(23, 'popo', 'popopipipop', 12, 2, '2025-04-01', '2025-04-08', '2025-04-08 08:26:23', '2025-04-08 08:26:23', 0, NULL, 12),
-(25, 'test', 'test', 12, 2, '2025-04-03', '2025-04-03', '2025-04-10 02:56:45', '2025-04-10 02:56:45', 0, NULL, 12),
-(26, 'qwer', 'qwer', 12, 2, '2025-01-01', '2025-02-10', '2025-04-10 03:17:59', '2025-04-10 03:17:59', 0, NULL, 12),
-(38, 'cuba', 'cayb', 12, 2, '2025-04-15', '2025-04-17', '2025-04-16 07:22:38', '2025-04-16 07:22:38', 1, '{\"edit_permissions\":[\"target\",\"status\",\"status_text\",\"description\"],\"default_values\":[]}', 1),
-(40, 'draft1', '', 12, 2, '0000-00-00', '0000-00-00', '2025-04-21 03:01:54', '2025-04-21 03:01:54', 0, NULL, 12),
-(41, 'draft2', '', 12, 2, '0000-00-00', '0000-00-00', '2025-04-21 03:02:05', '2025-04-21 03:02:05', 0, NULL, 12);
-
--- --------------------------------------------------------
-
---
--- Table structure for table `program_submissions`
---
-
-CREATE TABLE `program_submissions` (
-  `submission_id` int(11) NOT NULL,
-  `program_id` int(11) NOT NULL,
-  `period_id` int(11) NOT NULL,
-  `submitted_by` int(11) NOT NULL,
-  `status` enum('target-achieved','on-track-yearly','severe-delay','not-started') NOT NULL,
-  `content_json` text DEFAULT NULL,
-  `submission_date` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `is_draft` tinyint(1) NOT NULL DEFAULT 0
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `program_submissions`
---
-
-INSERT INTO `program_submissions` (`submission_id`, `program_id`, `period_id`, `submitted_by`, `status`, `content_json`, `submission_date`, `updated_at`, `is_draft`) VALUES
-(23, 23, 2, 12, 'target-achieved', '{\"target\":\"target\",\"status_date\":\"2025-04-08\",\"status_text\":\"achievement\"}', '2025-04-08 08:26:23', '2025-04-08 08:26:23', 0),
-(25, 25, 2, 12, 'target-achieved', '{\"target\":\"test\",\"status_date\":\"2025-04-10\",\"status_text\":\"test\"}', '2025-04-10 02:56:45', '2025-04-10 02:56:45', 0),
-(26, 26, 2, 12, 'severe-delay', '{\"target\":\"qwer\",\"status_date\":\"2025-04-10\",\"status_text\":\"qwer\"}', '2025-04-10 03:17:59', '2025-04-10 03:17:59', 0),
-(31, 40, 2, 12, 'not-started', '{\"target\":\"target\",\"status_date\":\"2025-04-21\",\"status_text\":\"\",\"achievement\":\"\",\"remarks\":\"\"}', '2025-04-21 03:01:54', '2025-04-21 03:01:54', 1),
-(32, 41, 2, 12, 'not-started', '{\"target\":\"target\",\"status_date\":\"2025-04-21\",\"status_text\":\"\",\"achievement\":\"\",\"remarks\":\"\"}', '2025-04-21 03:02:05', '2025-04-21 03:02:05', 1);
-
--- --------------------------------------------------------
-
---
--- Table structure for table `reporting_periods`
---
-
-CREATE TABLE `reporting_periods` (
-  `period_id` int(11) NOT NULL,
-  `year` int(11) NOT NULL,
-  `quarter` int(11) NOT NULL,
-  `start_date` date NOT NULL,
-  `end_date` date NOT NULL,
-  `status` enum('open','closed') DEFAULT 'open',
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `is_standard_dates` tinyint(1) DEFAULT 1,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `reporting_periods`
---
-
-INSERT INTO `reporting_periods` (`period_id`, `year`, `quarter`, `start_date`, `end_date`, `status`, `updated_at`, `is_standard_dates`, `created_at`) VALUES
-(1, 2025, 1, '2025-01-01', '2025-03-31', 'closed', '2025-04-15 01:45:45', 1, '2025-04-17 02:54:12'),
-(2, 2025, 2, '2025-04-01', '2025-06-30', 'open', '2025-04-17 02:58:41', 1, '2025-04-17 02:54:12'),
-(3, 2025, 3, '2025-07-01', '2025-09-30', 'closed', '2025-04-17 02:37:02', 1, '2025-04-17 02:54:12'),
-(4, 2025, 4, '2025-10-01', '2025-12-31', 'closed', '2025-04-17 02:34:40', 1, '2025-04-17 02:54:12'),
-(10, 2024, 2, '2024-04-01', '2024-06-30', 'closed', '2025-04-17 02:58:36', 1, '2025-04-17 02:54:12');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `reports`
---
-
-CREATE TABLE `reports` (
-  `report_id` int(11) NOT NULL,
-  `period_id` int(11) NOT NULL,
-  `generated_by` int(11) NOT NULL,
-  `pptx_path` varchar(255) DEFAULT NULL,
-  `pdf_path` varchar(255) DEFAULT NULL,
-  `generated_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `sectors`
---
-
-CREATE TABLE `sectors` (
-  `sector_id` int(11) NOT NULL,
-  `sector_name` varchar(100) NOT NULL,
-  `description` text DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `sectors`
---
-
-INSERT INTO `sectors` (`sector_id`, `sector_name`, `description`) VALUES
-(1, 'Forestry', 'Forestry sector including timber and forest resources'),
-(2, 'Land', 'Land development and management'),
-(3, 'Environment', 'Environmental protection and management'),
-(4, 'Natural Resources', 'Management of natural resources'),
-(5, 'Urban Development', 'Urban planning and development');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `sector_metrics_definition`
---
-
-CREATE TABLE `sector_metrics_definition` (
-  `metric_id` int(11) NOT NULL,
-  `sector_id` int(11) NOT NULL,
-  `metric_name` varchar(100) NOT NULL,
-  `metric_unit` varchar(50) DEFAULT NULL,
-  `metric_type` enum('numeric','percentage','text') NOT NULL,
-  `display_order` int(11) NOT NULL DEFAULT 0,
-  `is_required` tinyint(1) DEFAULT 1,
-  `description` text DEFAULT NULL,
-  `added_by` int(11) NOT NULL,
-  `is_approved` tinyint(1) DEFAULT 0,
-  `permission_type` enum('creator_only','selected_agencies','all_sector') NOT NULL DEFAULT 'creator_only',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `sector_metrics_draft`
---
-
-CREATE TABLE `sector_metrics_draft` (
-  `id` int(11) NOT NULL,
-  `table_name` varchar(255) NOT NULL,
-  `sector_id` int(11) NOT NULL,
-  `metric_id` int(11) NOT NULL,
-  `month` varchar(20) NOT NULL COMMENT 'Month of the metric',
-  `year` int(4) NOT NULL COMMENT 'Year of the metric',
-  `column_title` varchar(255) NOT NULL COMMENT 'Title of the column',
-  `table_content` text NOT NULL COMMENT 'Content of the table',
-  `time_added` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'Time when the record was added'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `sector_metrics_draft`
---
-
-INSERT INTO `sector_metrics_draft` (`id`, `table_name`, `sector_id`, `metric_id`, `month`, `year`, `column_title`, `table_content`, `time_added`) VALUES
-(64, 'qwe', 2, 5, 'January', 0, '', '123.33', '2025-04-22 06:24:52'),
-(65, 'qwe', 2, 5, 'January', 0, '', '123.33', '2025-04-22 06:24:57'),
-(66, 'qwe', 2, 5, 'January', 0, 'RRRRR', '0', '2025-04-22 06:24:57'),
-(67, 'qwe', 2, 5, 'February', 0, 'RRRRR', '12', '2025-04-22 06:25:01'),
-(76, 'test', 2, 6, 'January', 0, 'click here tero edit name', '2', '2025-04-23 03:19:10'),
-(77, 'Table_6', 2, 6, 'January', 0, 'click here tero edit name', '2', '2025-04-23 03:19:38'),
-(78, 'Table_6', 2, 6, 'January', 0, 'sefd', '0.3', '2025-04-23 03:19:38'),
-(79, 'te33', 2, 7, 'January', 0, 'click hetatre to edit name', '0.1', '2025-04-23 03:21:50');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `sector_metrics_submitted`
---
-
-CREATE TABLE `sector_metrics_submitted` (
-  `id` int(11) NOT NULL,
-  `table_name` varchar(255) NOT NULL,
-  `sector_id` int(11) NOT NULL,
-  `metric_id` int(11) NOT NULL,
-  `month` varchar(20) NOT NULL COMMENT 'Month of the metric',
-  `column_title` varchar(255) NOT NULL COMMENT 'Title of the column',
-  `table_content` text NOT NULL COMMENT 'Content of the table',
-  `time_added` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'Time when the record was added'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `sector_metric_permissions`
---
-
-CREATE TABLE `sector_metric_permissions` (
-  `permission_id` int(11) NOT NULL,
-  `metric_id` int(11) NOT NULL,
-  `agency_id` int(11) NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `sector_metric_values`
---
-
-CREATE TABLE `sector_metric_values` (
-  `value_id` int(11) NOT NULL,
-  `metric_id` int(11) NOT NULL,
-  `agency_id` int(11) NOT NULL,
-  `last_edited_by` int(11) NOT NULL,
-  `period_id` int(11) NOT NULL,
-  `numeric_value` decimal(15,2) DEFAULT NULL,
-  `text_value` text DEFAULT NULL,
-  `notes` text DEFAULT NULL,
-  `submission_date` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `sector_metric_value_history`
---
-
-CREATE TABLE `sector_metric_value_history` (
-  `history_id` int(11) NOT NULL,
-  `value_id` int(11) NOT NULL,
-  `agency_id` int(11) NOT NULL,
-  `numeric_value` decimal(15,2) DEFAULT NULL,
-  `text_value` text DEFAULT NULL,
-  `notes` text DEFAULT NULL,
-  `changed_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `users`
---
-
-CREATE TABLE `users` (
-  `user_id` int(11) NOT NULL,
-  `username` varchar(100) NOT NULL,
-  `password` varchar(255) NOT NULL,
-  `agency_name` varchar(100) DEFAULT NULL,
-  `role` enum('admin','agency') NOT NULL,
-  `sector_id` int(11) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `is_active` tinyint(1) DEFAULT 1
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `users`
---
-
-INSERT INTO `users` (`user_id`, `username`, `password`, `agency_name`, `role`, `sector_id`, `created_at`, `updated_at`, `is_active`) VALUES
-(1, 'admin', '$2y$10$bPQQFeR4PbcueCgmV7/2Au.HWCjWH8v8ox.R.MxMfk4qXXHi3uPw6', 'Ministry of Natural Resources and Urban Development', 'admin', NULL, '2025-03-25 01:31:15', '2025-03-25 01:31:15', 1),
-(3, 'land_survey', '$2y$10$p1aSIN6bsbUlMqXyd17TMO8ZY8wJeQkVZjiKjjkhaN3mYYR5bJhBS', 'Land and Survey Department', 'agency', 2, '2025-03-25 01:31:15', '2025-03-25 01:31:15', 1),
-(4, 'nreb', '$2y$10$9i/6yu1uT3qT2v23Wx/H/.3B5XHHGqcsc6bqN09jOS9RNj/5xXvoa', 'Natural Resources and Environment Board', 'agency', 3, '2025-03-25 01:31:15', '2025-03-25 01:31:15', 1),
-(5, 'sfc', '$2y$10$lhVSzcJ/epOb2ce27OVUH.bmOPGsOPw38c/tnjFdcGl0XDjp4qtfG', 'Sarawak Forestry Corporation', 'agency', 1, '2025-03-25 01:31:15', '2025-03-25 01:31:15', 1),
-(6, 'lcda', '$2y$10$QxyxZHPAzKcmQVjo1uiN7uP9ApdTpfoMwavT0bmmrGAIxiS5vAwTi', 'Land Custody and Development Authority', 'agency', 2, '2025-03-25 01:31:15', '2025-03-25 01:31:15', 1),
-(12, 'user', '$2y$10$/Z6xCsE7OknP.4HBT5CdBuWDZK5VNMf7MqwmGusJ0SM8xxaGQKdq2', 'testagency', 'agency', 2, '2025-03-25 07:42:27', '2025-04-09 06:14:43', 1),
-(15, 'testadmin', '$2y$10$JQaXUGYMej1nriu6lgYQXOvCjrfiGKRhFgqMe0kaBf./g.38b/eom', '', 'admin', NULL, '2025-04-11 06:12:58', '2025-04-17 01:34:13', 1),
-(16, 'test3', '$2y$10$c6NUe40VWysBKupPkbkod.0q2BcpaU2/NeOzFQNFdCU2/lAplyXyG', '', 'admin', NULL, '2025-04-11 06:25:19', '2025-04-17 01:33:48', 0),
-(17, 'admin2', '$2y$10$tkzE2DHMABmf5IiQ4.2VU.Mkg4laogdzEvlNSmcoz8tSu35Cx/wwO', '', 'admin', NULL, '2025-04-16 07:40:43', '2025-04-17 03:03:44', 1),
-(18, 'testadmin2', '$2y$10$0Z56YV.wuWhmAHQGipoyZ.ZZag0jieeRpczfsvQvmZTPSuSvNk/5O', NULL, 'admin', NULL, '2025-04-17 00:41:59', '2025-04-17 00:41:59', 1),
-(19, 'speed', '$2y$10$HkY31pXS.sqweZK8YLM1MuhuLRKogaDHExbneEY8p.gP3jO2iIXBq', 'Agensiii', 'agency', 2, '2025-04-17 00:43:54', '2025-04-17 00:43:54', 1);
-
---
--- Indexes for dumped tables
---
-
---
--- Indexes for table `notifications`
---
-ALTER TABLE `notifications`
-  ADD PRIMARY KEY (`notification_id`),
-  ADD KEY `user_id` (`user_id`);
-
---
--- Indexes for table `programs`
---
-ALTER TABLE `programs`
-  ADD PRIMARY KEY (`program_id`),
-  ADD KEY `owner_agency_id` (`owner_agency_id`),
-  ADD KEY `sector_id` (`sector_id`);
-
---
--- Indexes for table `program_submissions`
---
-ALTER TABLE `program_submissions`
-  ADD PRIMARY KEY (`submission_id`),
-  ADD KEY `program_id` (`program_id`),
-  ADD KEY `period_id` (`period_id`),
-  ADD KEY `submitted_by` (`submitted_by`),
-  ADD KEY `idx_status` (`status`),
-  ADD KEY `idx_program_period_draft` (`program_id`,`period_id`,`is_draft`);
-
---
--- Indexes for table `reporting_periods`
---
-ALTER TABLE `reporting_periods`
-  ADD PRIMARY KEY (`period_id`),
-  ADD UNIQUE KEY `year` (`year`,`quarter`),
-  ADD UNIQUE KEY `year_quarter_unique` (`year`,`quarter`),
-  ADD UNIQUE KEY `year_quarter` (`year`,`quarter`),
-  ADD KEY `quarter_year_idx` (`quarter`,`year`);
-
---
--- Indexes for table `reports`
---
-ALTER TABLE `reports`
-  ADD PRIMARY KEY (`report_id`),
-  ADD KEY `period_id` (`period_id`),
-  ADD KEY `generated_by` (`generated_by`);
-
---
--- Indexes for table `sectors`
---
-ALTER TABLE `sectors`
-  ADD PRIMARY KEY (`sector_id`);
-
---
--- Indexes for table `sector_metrics_definition`
---
-ALTER TABLE `sector_metrics_definition`
-  ADD PRIMARY KEY (`metric_id`),
-  ADD UNIQUE KEY `sector_id` (`sector_id`,`metric_name`),
-  ADD KEY `added_by` (`added_by`);
-
---
--- Indexes for table `sector_metrics_draft`
---
-ALTER TABLE `sector_metrics_draft`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `sector_id` (`sector_id`),
-  ADD KEY `metric_id` (`metric_id`);
-
---
--- Indexes for table `sector_metrics_submitted`
---
-ALTER TABLE `sector_metrics_submitted`
-  ADD PRIMARY KEY (`id`);
-
---
--- Indexes for table `sector_metric_permissions`
---
-ALTER TABLE `sector_metric_permissions`
-  ADD PRIMARY KEY (`permission_id`),
-  ADD UNIQUE KEY `metric_agency` (`metric_id`,`agency_id`),
-  ADD KEY `agency_id` (`agency_id`);
-
---
--- Indexes for table `sector_metric_values`
---
-ALTER TABLE `sector_metric_values`
-  ADD PRIMARY KEY (`value_id`),
-  ADD UNIQUE KEY `metric_period` (`metric_id`,`period_id`),
-  ADD KEY `agency_id` (`agency_id`),
-  ADD KEY `period_id` (`period_id`),
-  ADD KEY `last_edited_by` (`last_edited_by`);
-
---
--- Indexes for table `sector_metric_value_history`
---
-ALTER TABLE `sector_metric_value_history`
-  ADD PRIMARY KEY (`history_id`),
-  ADD KEY `value_id` (`value_id`),
-  ADD KEY `agency_id` (`agency_id`);
-
---
--- Indexes for table `users`
---
-ALTER TABLE `users`
-  ADD PRIMARY KEY (`user_id`),
-  ADD KEY `sector_id` (`sector_id`);
-
---
--- AUTO_INCREMENT for dumped tables
---
-
---
--- AUTO_INCREMENT for table `notifications`
---
-ALTER TABLE `notifications`
-  MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
-
---
--- AUTO_INCREMENT for table `programs`
---
-ALTER TABLE `programs`
-  MODIFY `program_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=42;
-
---
--- AUTO_INCREMENT for table `program_submissions`
---
-ALTER TABLE `program_submissions`
-  MODIFY `submission_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
-
---
--- AUTO_INCREMENT for table `reporting_periods`
---
-ALTER TABLE `reporting_periods`
-  MODIFY `period_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
-
---
--- AUTO_INCREMENT for table `reports`
---
-ALTER TABLE `reports`
-  MODIFY `report_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `sectors`
---
-ALTER TABLE `sectors`
-  MODIFY `sector_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
-
---
--- AUTO_INCREMENT for table `sector_metrics_definition`
---
-ALTER TABLE `sector_metrics_definition`
-  MODIFY `metric_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `sector_metrics_draft`
---
-ALTER TABLE `sector_metrics_draft`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=80;
-
---
--- AUTO_INCREMENT for table `sector_metrics_submitted`
---
-ALTER TABLE `sector_metrics_submitted`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `sector_metric_permissions`
---
-ALTER TABLE `sector_metric_permissions`
-  MODIFY `permission_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `sector_metric_values`
---
-ALTER TABLE `sector_metric_values`
-  MODIFY `value_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `sector_metric_value_history`
---
-ALTER TABLE `sector_metric_value_history`
-  MODIFY `history_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `users`
---
-ALTER TABLE `users`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
-
---
--- Constraints for dumped tables
---
-
---
--- Constraints for table `notifications`
---
-ALTER TABLE `notifications`
-  ADD CONSTRAINT `notifications_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
-
---
--- Constraints for table `programs`
---
-ALTER TABLE `programs`
-  ADD CONSTRAINT `programs_ibfk_1` FOREIGN KEY (`owner_agency_id`) REFERENCES `users` (`user_id`),
-  ADD CONSTRAINT `programs_ibfk_2` FOREIGN KEY (`sector_id`) REFERENCES `sectors` (`sector_id`);
-
---
--- Constraints for table `program_submissions`
---
-ALTER TABLE `program_submissions`
-  ADD CONSTRAINT `program_submissions_ibfk_1` FOREIGN KEY (`program_id`) REFERENCES `programs` (`program_id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `program_submissions_ibfk_2` FOREIGN KEY (`period_id`) REFERENCES `reporting_periods` (`period_id`),
-  ADD CONSTRAINT `program_submissions_ibfk_3` FOREIGN KEY (`submitted_by`) REFERENCES `users` (`user_id`);
-
---
--- Constraints for table `reports`
---
-ALTER TABLE `reports`
-  ADD CONSTRAINT `reports_ibfk_1` FOREIGN KEY (`period_id`) REFERENCES `reporting_periods` (`period_id`),
-  ADD CONSTRAINT `reports_ibfk_2` FOREIGN KEY (`generated_by`) REFERENCES `users` (`user_id`);
-
---
--- Constraints for table `sector_metrics_definition`
---
-ALTER TABLE `sector_metrics_definition`
-  ADD CONSTRAINT `sector_metrics_definition_ibfk_1` FOREIGN KEY (`sector_id`) REFERENCES `sectors` (`sector_id`),
-  ADD CONSTRAINT `sector_metrics_definition_ibfk_2` FOREIGN KEY (`added_by`) REFERENCES `users` (`user_id`);
-
---
--- Constraints for table `sector_metric_permissions`
---
-ALTER TABLE `sector_metric_permissions`
-  ADD CONSTRAINT `sector_metric_permissions_ibfk_1` FOREIGN KEY (`metric_id`) REFERENCES `sector_metrics_definition` (`metric_id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `sector_metric_permissions_ibfk_2` FOREIGN KEY (`agency_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
-
---
--- Constraints for table `sector_metric_values`
---
-ALTER TABLE `sector_metric_values`
-  ADD CONSTRAINT `sector_metric_values_ibfk_1` FOREIGN KEY (`metric_id`) REFERENCES `sector_metrics_definition` (`metric_id`),
-  ADD CONSTRAINT `sector_metric_values_ibfk_2` FOREIGN KEY (`agency_id`) REFERENCES `users` (`user_id`),
-  ADD CONSTRAINT `sector_metric_values_ibfk_3` FOREIGN KEY (`period_id`) REFERENCES `reporting_periods` (`period_id`),
-  ADD CONSTRAINT `sector_metric_values_ibfk_4` FOREIGN KEY (`last_edited_by`) REFERENCES `users` (`user_id`);
-
---
--- Constraints for table `sector_metric_value_history`
---
-ALTER TABLE `sector_metric_value_history`
-  ADD CONSTRAINT `sector_metric_value_history_ibfk_1` FOREIGN KEY (`value_id`) REFERENCES `sector_metric_values` (`value_id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `sector_metric_value_history_ibfk_2` FOREIGN KEY (`agency_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
-
---
--- Constraints for table `users`
---
-ALTER TABLE `users`
-  ADD CONSTRAINT `users_ibfk_1` FOREIGN KEY (`sector_id`) REFERENCES `sectors` (`sector_id`);
-COMMIT;
-
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex,nofollow,notranslate">
+  <meta name="google" content="notranslate">
+  <style id="cfs-style">html{display: none;}</style>
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" type="text/css" href="./themes/pmahomme/jquery/jquery-ui.css">
+  <link rel="stylesheet" type="text/css" href="js/vendor/codemirror/lib/codemirror.css?v=5.2.1">
+  <link rel="stylesheet" type="text/css" href="js/vendor/codemirror/addon/hint/show-hint.css?v=5.2.1">
+  <link rel="stylesheet" type="text/css" href="js/vendor/codemirror/addon/lint/lint.css?v=5.2.1">
+  <link rel="stylesheet" type="text/css" href="./themes/pmahomme/css/theme.css?v=5.2.1">
+  <title>localhost / 127.0.0.1 | phpMyAdmin 5.2.1</title>
+    <script data-cfasync="false" type="text/javascript" src="js/vendor/jquery/jquery.min.js?v=5.2.1"></script>
+  <script data-cfasync="false" type="text/javascript" src="js/vendor/jquery/jquery-migrate.min.js?v=5.2.1"></script>
+  <script data-cfasync="false" type="text/javascript" src="js/vendor/sprintf.js?v=5.2.1"></script>
+  <script data-cfasync="false" type="text/javascript" src="js/dist/ajax.js?v=5.2.1"></script>
+  <script data-cfasync="false" type="text/javascript" src="js/dist/keyhandler.js?v=5.2.1"></script>
+  <script data-cfasync="false" type="text/javascript" src="js/vendor/jquery/jquery-ui.min.js?v=5.2.1"></script>
+  <script data-cfasync="false" type="text/javascript" src="js/dist/name-conflict-fixes.js?v=5.2.1"></script>
+  <script data-cfasync="false" type="text/javascript" src="js/vendor/bootstrap/bootstrap.bundle.min.js?v=5.2.1"></script>
+  <script data-cfasync="false" type="text/javascript" src="js/vendor/js.cookie.js?v=5.2.1"></script>
+  <script data-cfasync="false" type="text/javascript" src="js/vendor/jquery/jquery.validate.min.js?v=5.2.1"></script>
+  <script data-cfasync="false" type="text/javascript" src="js/vendor/jquery/jquery-ui-timepicker-addon.js?v=5.2.1"></script>
+  <script data-cfasync="false" type="text/javascript" src="js/vendor/jquery/jquery.debounce-1.0.6.js?v=5.2.1"></script>
+  <script data-cfasync="false" type="text/javascript" src="js/dist/menu_resizer.js?v=5.2.1"></script>
+  <script data-cfasync="false" type="text/javascript" src="js/dist/cross_framing_protection.js?v=5.2.1"></script>
+  <script data-cfasync="false" type="text/javascript" src="js/messages.php?l=en&v=5.2.1"></script>
+  <script data-cfasync="false" type="text/javascript" src="js/dist/config.js?v=5.2.1"></script>
+  <script data-cfasync="false" type="text/javascript" src="js/dist/doclinks.js?v=5.2.1"></script>
+  <script data-cfasync="false" type="text/javascript" src="js/dist/functions.js?v=5.2.1"></script>
+  <script data-cfasync="false" type="text/javascript" src="js/dist/navigation.js?v=5.2.1"></script>
+  <script data-cfasync="false" type="text/javascript" src="js/dist/indexes.js?v=5.2.1"></script>
+  <script data-cfasync="false" type="text/javascript" src="js/dist/common.js?v=5.2.1"></script>
+  <script data-cfasync="false" type="text/javascript" src="js/dist/page_settings.js?v=5.2.1"></script>
+  <script data-cfasync="false" type="text/javascript" src="js/dist/export_output.js?v=5.2.1"></script>
+  <script data-cfasync="false" type="text/javascript" src="js/vendor/codemirror/lib/codemirror.js?v=5.2.1"></script>
+  <script data-cfasync="false" type="text/javascript" src="js/vendor/codemirror/mode/sql/sql.js?v=5.2.1"></script>
+  <script data-cfasync="false" type="text/javascript" src="js/vendor/codemirror/addon/runmode/runmode.js?v=5.2.1"></script>
+  <script data-cfasync="false" type="text/javascript" src="js/vendor/codemirror/addon/hint/show-hint.js?v=5.2.1"></script>
+  <script data-cfasync="false" type="text/javascript" src="js/vendor/codemirror/addon/hint/sql-hint.js?v=5.2.1"></script>
+  <script data-cfasync="false" type="text/javascript" src="js/vendor/codemirror/addon/lint/lint.js?v=5.2.1"></script>
+  <script data-cfasync="false" type="text/javascript" src="js/dist/codemirror/addon/lint/sql-lint.js?v=5.2.1"></script>
+  <script data-cfasync="false" type="text/javascript" src="js/vendor/tracekit.js?v=5.2.1"></script>
+  <script data-cfasync="false" type="text/javascript" src="js/dist/error_report.js?v=5.2.1"></script>
+  <script data-cfasync="false" type="text/javascript" src="js/dist/drag_drop_import.js?v=5.2.1"></script>
+  <script data-cfasync="false" type="text/javascript" src="js/dist/shortcuts_handler.js?v=5.2.1"></script>
+  <script data-cfasync="false" type="text/javascript" src="js/dist/console.js?v=5.2.1"></script>
+
+<script data-cfasync="false" type="text/javascript">
+// <![CDATA[
+CommonParams.setAll({common_query:"",opendb_url:"index.php?route=/database/structure",lang:"en",server:"1",table:"",db:"",token:"7a78523d6739434e636672522a61363d",text_dir:"ltr",LimitChars:"50",pftext:"P",confirm:true,LoginCookieValidity:"1440",session_gc_maxlifetime:"1440",logged_in:true,is_https:false,rootPath:"/phpmyadmin/",arg_separator:"&",version:"5.2.1",auth_type:"config",user:"root"});
+var firstDayOfCalendar = '0';
+var themeImagePath = '.\/themes\/pmahomme\/img\/';
+var mysqlDocTemplate = '.\/url.php\u003Furl\u003Dhttps\u00253A\u00252F\u00252Fdev.mysql.com\u00252Fdoc\u00252Frefman\u00252F8.0\u00252Fen\u00252F\u002525s.html';
+var maxInputVars = 1000;
+
+if ($.datepicker) {
+  $.datepicker.regional[''].closeText = 'Done';
+  $.datepicker.regional[''].prevText = 'Prev';
+  $.datepicker.regional[''].nextText = 'Next';
+  $.datepicker.regional[''].currentText = 'Today';
+  $.datepicker.regional[''].monthNames = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
+  $.datepicker.regional[''].monthNamesShort = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+  $.datepicker.regional[''].dayNames = [
+    'Sunday',
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+  ];
+  $.datepicker.regional[''].dayNamesShort = [
+    'Sun',
+    'Mon',
+    'Tue',
+    'Wed',
+    'Thu',
+    'Fri',
+    'Sat',
+  ];
+  $.datepicker.regional[''].dayNamesMin = [
+    'Su',
+    'Mo',
+    'Tu',
+    'We',
+    'Th',
+    'Fr',
+    'Sa',
+  ];
+  $.datepicker.regional[''].weekHeader = 'Wk';
+  $.datepicker.regional[''].showMonthAfterYear = false;
+  $.datepicker.regional[''].yearSuffix = '';
+  $.extend($.datepicker._defaults, $.datepicker.regional['']);
+}
+
+if ($.timepicker) {
+  $.timepicker.regional[''].timeText = 'Time';
+  $.timepicker.regional[''].hourText = 'Hour';
+  $.timepicker.regional[''].minuteText = 'Minute';
+  $.timepicker.regional[''].secondText = 'Second';
+  $.extend($.timepicker._defaults, $.timepicker.regional['']);
+}
+
+function extendingValidatorMessages () {
+  $.extend($.validator.messages, {
+    required: 'This\u0020field\u0020is\u0020required',
+    remote: 'Please\u0020fix\u0020this\u0020field',
+    email: 'Please\u0020enter\u0020a\u0020valid\u0020email\u0020address',
+    url: 'Please\u0020enter\u0020a\u0020valid\u0020URL',
+    date: 'Please\u0020enter\u0020a\u0020valid\u0020date',
+    dateISO: 'Please\u0020enter\u0020a\u0020valid\u0020date\u0020\u0028\u0020ISO\u0020\u0029',
+    number: 'Please\u0020enter\u0020a\u0020valid\u0020number',
+    creditcard: 'Please\u0020enter\u0020a\u0020valid\u0020credit\u0020card\u0020number',
+    digits: 'Please\u0020enter\u0020only\u0020digits',
+    equalTo: 'Please\u0020enter\u0020the\u0020same\u0020value\u0020again',
+    maxlength: $.validator.format('Please\u0020enter\u0020no\u0020more\u0020than\u0020\u007B0\u007D\u0020characters'),
+    minlength: $.validator.format('Please\u0020enter\u0020at\u0020least\u0020\u007B0\u007D\u0020characters'),
+    rangelength: $.validator.format('Please\u0020enter\u0020a\u0020value\u0020between\u0020\u007B0\u007D\u0020and\u0020\u007B1\u007D\u0020characters\u0020long'),
+    range: $.validator.format('Please\u0020enter\u0020a\u0020value\u0020between\u0020\u007B0\u007D\u0020and\u0020\u007B1\u007D'),
+    max: $.validator.format('Please\u0020enter\u0020a\u0020value\u0020less\u0020than\u0020or\u0020equal\u0020to\u0020\u007B0\u007D'),
+    min: $.validator.format('Please\u0020enter\u0020a\u0020value\u0020greater\u0020than\u0020or\u0020equal\u0020to\u0020\u007B0\u007D'),
+    validationFunctionForDateTime: $.validator.format('Please\u0020enter\u0020a\u0020valid\u0020date\u0020or\u0020time'),
+    validationFunctionForHex: $.validator.format('Please\u0020enter\u0020a\u0020valid\u0020HEX\u0020input'),
+    validationFunctionForMd5: $.validator.format('This\u0020column\u0020can\u0020not\u0020contain\u0020a\u002032\u0020chars\u0020value'),
+    validationFunctionForAesDesEncrypt: $.validator.format('These\u0020functions\u0020are\u0020meant\u0020to\u0020return\u0020a\u0020binary\u0020result\u003B\u0020to\u0020avoid\u0020inconsistent\u0020results\u0020you\u0020should\u0020store\u0020it\u0020in\u0020a\u0020BINARY,\u0020VARBINARY,\u0020or\u0020BLOB\u0020column.')
+  });
+}
+
+ConsoleEnterExecutes=false
+
+AJAX.scriptHandler
+  .add('vendor/jquery/jquery.min.js', 0)
+  .add('vendor/jquery/jquery-migrate.min.js', 0)
+  .add('vendor/sprintf.js', 1)
+  .add('ajax.js', 0)
+  .add('keyhandler.js', 1)
+  .add('vendor/jquery/jquery-ui.min.js', 0)
+  .add('name-conflict-fixes.js', 1)
+  .add('vendor/bootstrap/bootstrap.bundle.min.js', 1)
+  .add('vendor/js.cookie.js', 1)
+  .add('vendor/jquery/jquery.validate.min.js', 0)
+  .add('vendor/jquery/jquery-ui-timepicker-addon.js', 0)
+  .add('vendor/jquery/jquery.debounce-1.0.6.js', 0)
+  .add('menu_resizer.js', 1)
+  .add('cross_framing_protection.js', 0)
+  .add('messages.php', 0)
+  .add('config.js', 1)
+  .add('doclinks.js', 1)
+  .add('functions.js', 1)
+  .add('navigation.js', 1)
+  .add('indexes.js', 1)
+  .add('common.js', 1)
+  .add('page_settings.js', 1)
+  .add('export_output.js', 1)
+  .add('vendor/codemirror/lib/codemirror.js', 0)
+  .add('vendor/codemirror/mode/sql/sql.js', 0)
+  .add('vendor/codemirror/addon/runmode/runmode.js', 0)
+  .add('vendor/codemirror/addon/hint/show-hint.js', 0)
+  .add('vendor/codemirror/addon/hint/sql-hint.js', 0)
+  .add('vendor/codemirror/addon/lint/lint.js', 0)
+  .add('codemirror/addon/lint/sql-lint.js', 0)
+  .add('vendor/tracekit.js', 1)
+  .add('error_report.js', 1)
+  .add('drag_drop_import.js', 1)
+  .add('shortcuts_handler.js', 1)
+  .add('console.js', 1)
+;
+$(function() {
+        AJAX.fireOnload('vendor/sprintf.js');
+        AJAX.fireOnload('keyhandler.js');
+        AJAX.fireOnload('name-conflict-fixes.js');
+      AJAX.fireOnload('vendor/bootstrap/bootstrap.bundle.min.js');
+      AJAX.fireOnload('vendor/js.cookie.js');
+            AJAX.fireOnload('menu_resizer.js');
+          AJAX.fireOnload('config.js');
+      AJAX.fireOnload('doclinks.js');
+      AJAX.fireOnload('functions.js');
+      AJAX.fireOnload('navigation.js');
+      AJAX.fireOnload('indexes.js');
+      AJAX.fireOnload('common.js');
+      AJAX.fireOnload('page_settings.js');
+      AJAX.fireOnload('export_output.js');
+                    AJAX.fireOnload('vendor/tracekit.js');
+      AJAX.fireOnload('error_report.js');
+      AJAX.fireOnload('drag_drop_import.js');
+      AJAX.fireOnload('shortcuts_handler.js');
+      AJAX.fireOnload('console.js');
+  });
+// ]]>
+</script>
+
+  <noscript><style>html{display:block}</style></noscript>
+</head>
+<body>
+    <div id="pma_navigation" class="d-print-none" data-config-navigation-width="240">
+    <div id="pma_navigation_resizer"></div>
+    <div id="pma_navigation_collapser"></div>
+    <div id="pma_navigation_content">
+      <div id="pma_navigation_header">
+
+                  <div id="pmalogo">
+                          <a href="index.php">
+                                      <img id="imgpmalogo" src="./themes/pmahomme/img/logo_left.png" alt="phpMyAdmin">
+                                      </a>
+                      </div>
+        
+        <div id="navipanellinks">
+          <a href="index.php?route=/" title="Home"><img src="themes/dot.gif" title="Home" alt="Home" class="icon ic_b_home"></a>
+
+                      <a class="logout disableAjax" href="index.php?route=/logout" title="Empty session data"><img src="themes/dot.gif" title="Empty session data" alt="Empty session data" class="icon ic_s_loggoff"></a>
+          
+          <a href="./doc/html/index.html" title="phpMyAdmin documentation" target="_blank" rel="noopener noreferrer"><img src="themes/dot.gif" title="phpMyAdmin documentation" alt="phpMyAdmin documentation" class="icon ic_b_docs"></a>
+
+          <a href="./url.php?url=https%3A%2F%2Fmariadb.com%2Fkb%2Fen%2Fdocumentation%2F" title="MariaDB Documentation" target="_blank" rel="noopener noreferrer"><img src="themes/dot.gif" title="MariaDB Documentation" alt="MariaDB Documentation" class="icon ic_b_sqlhelp"></a>
+
+          <a id="pma_navigation_settings_icon" href="#" title="Navigation panel settings"><img src="themes/dot.gif" title="Navigation panel settings" alt="Navigation panel settings" class="icon ic_s_cog"></a>
+
+          <a id="pma_navigation_reload" href="#" title="Reload navigation panel"><img src="themes/dot.gif" title="Reload navigation panel" alt="Reload navigation panel" class="icon ic_s_reload"></a>
+        </div>
+
+        
+        <img src="themes/dot.gif" title="Loading…" alt="Loading…" style="visibility: hidden; display:none" class="icon ic_ajax_clock_small throbber">
+      </div>
+      <div id="pma_navigation_tree" class="list_container synced highlight autoexpand">
+
+  <div class="pma_quick_warp">
+    <div class="drop_list"><button title="Recent tables" class="drop_button btn">Recent</button><ul id="pma_recent_list"><li class="warp_link">
+  <a href="index.php?route=/table/recent-favorite&db=pcds2030_dashboard&table=sector_metrics_submitted">
+    `pcds2030_dashboard`.`sector_metrics_submitted`
+  </a>
+</li>
+<li class="warp_link">
+  <a href="index.php?route=/table/recent-favorite&db=pcds2030_dashboard&table=sector_metrics_draft">
+    `pcds2030_dashboard`.`sector_metrics_draft`
+  </a>
+</li>
+<li class="warp_link">
+  <a href="index.php?route=/table/recent-favorite&db=pcds2030_dashboard&table=programs">
+    `pcds2030_dashboard`.`programs`
+  </a>
+</li>
+<li class="warp_link">
+  <a href="index.php?route=/table/recent-favorite&db=pcds2030_dashboard&table=sector_metrics_definition">
+    `pcds2030_dashboard`.`sector_metrics_definition`
+  </a>
+</li>
+<li class="warp_link">
+  <a href="index.php?route=/table/recent-favorite&db=pcds2030_dashboard&table=column_title">
+    `pcds2030_dashboard`.`column_title`
+  </a>
+</li>
+<li class="warp_link">
+  <a href="index.php?route=/table/recent-favorite&db=pcds2030_dashboard&table=sectors">
+    `pcds2030_dashboard`.`sectors`
+  </a>
+</li>
+<li class="warp_link">
+  <a href="index.php?route=/table/recent-favorite&db=pcds2030_dashboard&table=reports">
+    `pcds2030_dashboard`.`reports`
+  </a>
+</li>
+<li class="warp_link">
+  <a href="index.php?route=/table/recent-favorite&db=pcds2030_dashboard&table=reporting_periods">
+    `pcds2030_dashboard`.`reporting_periods`
+  </a>
+</li>
+<li class="warp_link">
+  <a href="index.php?route=/table/recent-favorite&db=pcds2030_dashboard&table=sector_metric_permissions">
+    `pcds2030_dashboard`.`sector_metric_permissions`
+  </a>
+</li>
+<li class="warp_link">
+  <a href="index.php?route=/table/recent-favorite&db=pcds2030_dashboard&table=sector_metric_value_history">
+    `pcds2030_dashboard`.`sector_metric_value_history`
+  </a>
+</li>
+</ul></div>    <div class="drop_list"><button title="Favorite tables" class="drop_button btn">Favorites</button><ul id="pma_favorite_list"><li class="warp_link">
+            There are no favorite tables.    </li>
+</ul></div>    <div class="clearfloat"></div>
+</div>
+
+
+<div class="clearfloat"></div>
+
+<ul>
+  
+  <!-- CONTROLS START -->
+<li id="navigation_controls_outer">
+    <div id="navigation_controls">
+        <a href="#" id="pma_navigation_collapse" title="Collapse all"><img src="themes/dot.gif" title="Collapse all" alt="Collapse all" class="icon ic_s_collapseall"></a>
+        <a href="#" id="pma_navigation_sync" title="Unlink from main panel"><img src="themes/dot.gif" title="Unlink from main panel" alt="Unlink from main panel" class="icon ic_s_link"></a>
+    </div>
+</li>
+<!-- CONTROLS ENDS -->
+
+</ul>
+
+
+
+<div id='pma_navigation_tree_content'>
+  <ul>
+      <li class="first new_database italics">
+    <div class="block">
+      <i class="first"></i>
+          </div>
+    
+          <div class="block second">
+                  <a href="index.php?route=/server/databases"><img src="themes/dot.gif" title="New" alt="New" class="icon ic_b_newdb"></a>
+              </div>
+
+              <a class="hover_show_full" href="index.php?route=/server/databases" title="New">New</a>
+          
+    
+
+    
+    <div class="clearfloat"></div>
+
+
+
+  </li>
+  <li class="database">
+    <div class="block">
+      <i></i>
+              <b></b>
+        <a class="expander" href="#">
+          <span class="hide paths_nav" data-apath="cm9vdA==.ZHJhZ29uZmx5" data-vpath="cm9vdA==.ZHJhZ29uZmx5" data-pos="0"></span>
+                    <img src="themes/dot.gif" title="Expand/Collapse" alt="Expand/Collapse" class="icon ic_b_plus">
+        </a>
+          </div>
+    
+          <div class="block second">
+                  <a href="index.php?route=/database/operations&db=dragonfly"><img src="themes/dot.gif" title="Database operations" alt="Database operations" class="icon ic_s_db"></a>
+              </div>
+
+              <a class="hover_show_full" href="index.php?route=/database/structure&db=dragonfly" title="Structure">dragonfly</a>
+          
+    
+
+    
+    <div class="clearfloat"></div>
+
+
+
+  </li>
+  <li class="database">
+    <div class="block">
+      <i></i>
+              <b></b>
+        <a class="expander" href="#">
+          <span class="hide paths_nav" data-apath="cm9vdA==.ZXN0dWRlbnQ=" data-vpath="cm9vdA==.ZXN0dWRlbnQ=" data-pos="0"></span>
+                    <img src="themes/dot.gif" title="Expand/Collapse" alt="Expand/Collapse" class="icon ic_b_plus">
+        </a>
+          </div>
+    
+          <div class="block second">
+                  <a href="index.php?route=/database/operations&db=estudent"><img src="themes/dot.gif" title="Database operations" alt="Database operations" class="icon ic_s_db"></a>
+              </div>
+
+              <a class="hover_show_full" href="index.php?route=/database/structure&db=estudent" title="Structure">estudent</a>
+          
+    
+
+    
+    <div class="clearfloat"></div>
+
+
+
+  </li>
+  <li class="database">
+    <div class="block">
+      <i></i>
+              <b></b>
+        <a class="expander" href="#">
+          <span class="hide paths_nav" data-apath="cm9vdA==.ZV9jdWlzaW5lZGVzc2VydA==" data-vpath="cm9vdA==.ZV9jdWlzaW5lZGVzc2VydA==" data-pos="0"></span>
+                    <img src="themes/dot.gif" title="Expand/Collapse" alt="Expand/Collapse" class="icon ic_b_plus">
+        </a>
+          </div>
+    
+          <div class="block second">
+                  <a href="index.php?route=/database/operations&db=e_cuisinedessert"><img src="themes/dot.gif" title="Database operations" alt="Database operations" class="icon ic_s_db"></a>
+              </div>
+
+              <a class="hover_show_full" href="index.php?route=/database/structure&db=e_cuisinedessert" title="Structure">e_cuisinedessert</a>
+          
+    
+
+    
+    <div class="clearfloat"></div>
+
+
+
+  </li>
+  <li class="database">
+    <div class="block">
+      <i></i>
+              <b></b>
+        <a class="expander" href="#">
+          <span class="hide paths_nav" data-apath="cm9vdA==.aG9tZWdsYWRjbw==" data-vpath="cm9vdA==.aG9tZWdsYWRjbw==" data-pos="0"></span>
+                    <img src="themes/dot.gif" title="Expand/Collapse" alt="Expand/Collapse" class="icon ic_b_plus">
+        </a>
+          </div>
+    
+          <div class="block second">
+                  <a href="index.php?route=/database/operations&db=homegladco"><img src="themes/dot.gif" title="Database operations" alt="Database operations" class="icon ic_s_db"></a>
+              </div>
+
+              <a class="hover_show_full" href="index.php?route=/database/structure&db=homegladco" title="Structure">homegladco</a>
+          
+    
+
+    
+    <div class="clearfloat"></div>
+
+
+
+  </li>
+  <li class="database">
+    <div class="block">
+      <i></i>
+              <b></b>
+        <a class="expander" href="#">
+          <span class="hide paths_nav" data-apath="cm9vdA==.aW5mb3JtYXRpb25fc2NoZW1h" data-vpath="cm9vdA==.aW5mb3JtYXRpb25fc2NoZW1h" data-pos="0"></span>
+                    <img src="themes/dot.gif" title="Expand/Collapse" alt="Expand/Collapse" class="icon ic_b_plus">
+        </a>
+          </div>
+    
+          <div class="block second">
+                  <a href="index.php?route=/database/operations&db=information_schema"><img src="themes/dot.gif" title="Database operations" alt="Database operations" class="icon ic_s_db"></a>
+              </div>
+
+              <a class="hover_show_full" href="index.php?route=/database/structure&db=information_schema" title="Structure">information_schema</a>
+          
+    
+
+    
+    <div class="clearfloat"></div>
+
+
+
+  </li>
+  <li class="database">
+    <div class="block">
+      <i></i>
+              <b></b>
+        <a class="expander" href="#">
+          <span class="hide paths_nav" data-apath="cm9vdA==.bWV0cmljc19kYg==" data-vpath="cm9vdA==.bWV0cmljc19kYg==" data-pos="0"></span>
+                    <img src="themes/dot.gif" title="Expand/Collapse" alt="Expand/Collapse" class="icon ic_b_plus">
+        </a>
+          </div>
+    
+          <div class="block second">
+                  <a href="index.php?route=/database/operations&db=metrics_db"><img src="themes/dot.gif" title="Database operations" alt="Database operations" class="icon ic_s_db"></a>
+              </div>
+
+              <a class="hover_show_full" href="index.php?route=/database/structure&db=metrics_db" title="Structure">metrics_db</a>
+          
+    
+
+    
+    <div class="clearfloat"></div>
+
+
+
+  </li>
+  <li class="database">
+    <div class="block">
+      <i></i>
+              <b></b>
+        <a class="expander" href="#">
+          <span class="hide paths_nav" data-apath="cm9vdA==.bXlsb2dib29r" data-vpath="cm9vdA==.bXlsb2dib29r" data-pos="0"></span>
+                    <img src="themes/dot.gif" title="Expand/Collapse" alt="Expand/Collapse" class="icon ic_b_plus">
+        </a>
+          </div>
+    
+          <div class="block second">
+                  <a href="index.php?route=/database/operations&db=mylogbook"><img src="themes/dot.gif" title="Database operations" alt="Database operations" class="icon ic_s_db"></a>
+              </div>
+
+              <a class="hover_show_full" href="index.php?route=/database/structure&db=mylogbook" title="Structure">mylogbook</a>
+          
+    
+
+    
+    <div class="clearfloat"></div>
+
+
+
+  </li>
+  <li class="database">
+    <div class="block">
+      <i></i>
+              <b></b>
+        <a class="expander" href="#">
+          <span class="hide paths_nav" data-apath="cm9vdA==.bXlzcWw=" data-vpath="cm9vdA==.bXlzcWw=" data-pos="0"></span>
+                    <img src="themes/dot.gif" title="Expand/Collapse" alt="Expand/Collapse" class="icon ic_b_plus">
+        </a>
+          </div>
+    
+          <div class="block second">
+                  <a href="index.php?route=/database/operations&db=mysql"><img src="themes/dot.gif" title="Database operations" alt="Database operations" class="icon ic_s_db"></a>
+              </div>
+
+              <a class="hover_show_full" href="index.php?route=/database/structure&db=mysql" title="Structure">mysql</a>
+          
+    
+
+    
+    <div class="clearfloat"></div>
+
+
+
+  </li>
+  <li class="database">
+    <div class="block">
+      <i></i>
+              <b></b>
+        <a class="expander" href="#">
+          <span class="hide paths_nav" data-apath="cm9vdA==.b2ZibXNfZGI=" data-vpath="cm9vdA==.b2ZibXNfZGI=" data-pos="0"></span>
+                    <img src="themes/dot.gif" title="Expand/Collapse" alt="Expand/Collapse" class="icon ic_b_plus">
+        </a>
+          </div>
+    
+          <div class="block second">
+                  <a href="index.php?route=/database/operations&db=ofbms_db"><img src="themes/dot.gif" title="Database operations" alt="Database operations" class="icon ic_s_db"></a>
+              </div>
+
+              <a class="hover_show_full" href="index.php?route=/database/structure&db=ofbms_db" title="Structure">ofbms_db</a>
+          
+    
+
+    
+    <div class="clearfloat"></div>
+
+
+
+  </li>
+  <li class="database">
+    <div class="block">
+      <i></i>
+              <b></b>
+        <a class="expander" href="#">
+          <span class="hide paths_nav" data-apath="cm9vdA==.b3JpZ2luYQ==" data-vpath="cm9vdA==.b3JpZ2luYQ==" data-pos="0"></span>
+                    <img src="themes/dot.gif" title="Expand/Collapse" alt="Expand/Collapse" class="icon ic_b_plus">
+        </a>
+          </div>
+    
+          <div class="block second">
+                  <a href="index.php?route=/database/operations&db=origina"><img src="themes/dot.gif" title="Database operations" alt="Database operations" class="icon ic_s_db"></a>
+              </div>
+
+              <a class="hover_show_full" href="index.php?route=/database/structure&db=origina" title="Structure">origina</a>
+          
+    
+
+    
+    <div class="clearfloat"></div>
+
+
+
+  </li>
+  <li class="database">
+    <div class="block">
+      <i></i>
+              <b></b>
+        <a class="expander" href="#">
+          <span class="hide paths_nav" data-apath="cm9vdA==.cGNkczIwMzBfZGFzaGJvYXJk" data-vpath="cm9vdA==.cGNkczIwMzBfZGFzaGJvYXJk" data-pos="0"></span>
+                    <img src="themes/dot.gif" title="Expand/Collapse" alt="Expand/Collapse" class="icon ic_b_plus">
+        </a>
+          </div>
+    
+          <div class="block second">
+                  <a href="index.php?route=/database/operations&db=pcds2030_dashboard"><img src="themes/dot.gif" title="Database operations" alt="Database operations" class="icon ic_s_db"></a>
+              </div>
+
+              <a class="hover_show_full" href="index.php?route=/database/structure&db=pcds2030_dashboard" title="Structure">pcds2030_dashboard</a>
+          
+    
+
+    
+    <div class="clearfloat"></div>
+
+
+
+  </li>
+  <li class="database">
+    <div class="block">
+      <i></i>
+              <b></b>
+        <a class="expander" href="#">
+          <span class="hide paths_nav" data-apath="cm9vdA==.cGVyZm9ybWFuY2Vfc2NoZW1h" data-vpath="cm9vdA==.cGVyZm9ybWFuY2Vfc2NoZW1h" data-pos="0"></span>
+                    <img src="themes/dot.gif" title="Expand/Collapse" alt="Expand/Collapse" class="icon ic_b_plus">
+        </a>
+          </div>
+    
+          <div class="block second">
+                  <a href="index.php?route=/database/operations&db=performance_schema"><img src="themes/dot.gif" title="Database operations" alt="Database operations" class="icon ic_s_db"></a>
+              </div>
+
+              <a class="hover_show_full" href="index.php?route=/database/structure&db=performance_schema" title="Structure">performance_schema</a>
+          
+    
+
+    
+    <div class="clearfloat"></div>
+
+
+
+  </li>
+  <li class="database">
+    <div class="block">
+      <i></i>
+              <b></b>
+        <a class="expander" href="#">
+          <span class="hide paths_nav" data-apath="cm9vdA==.cGhwbXlhZG1pbg==" data-vpath="cm9vdA==.cGhwbXlhZG1pbg==" data-pos="0"></span>
+                    <img src="themes/dot.gif" title="Expand/Collapse" alt="Expand/Collapse" class="icon ic_b_plus">
+        </a>
+          </div>
+    
+          <div class="block second">
+                  <a href="index.php?route=/database/operations&db=phpmyadmin"><img src="themes/dot.gif" title="Database operations" alt="Database operations" class="icon ic_s_db"></a>
+              </div>
+
+              <a class="hover_show_full" href="index.php?route=/database/structure&db=phpmyadmin" title="Structure">phpmyadmin</a>
+          
+    
+
+    
+    <div class="clearfloat"></div>
+
+
+
+  </li>
+  <li class="database">
+    <div class="block">
+      <i></i>
+              <b></b>
+        <a class="expander" href="#">
+          <span class="hide paths_nav" data-apath="cm9vdA==.c2FuZGJveA==" data-vpath="cm9vdA==.c2FuZGJveA==" data-pos="0"></span>
+                    <img src="themes/dot.gif" title="Expand/Collapse" alt="Expand/Collapse" class="icon ic_b_plus">
+        </a>
+          </div>
+    
+          <div class="block second">
+                  <a href="index.php?route=/database/operations&db=sandbox"><img src="themes/dot.gif" title="Database operations" alt="Database operations" class="icon ic_s_db"></a>
+              </div>
+
+              <a class="hover_show_full" href="index.php?route=/database/structure&db=sandbox" title="Structure">sandbox</a>
+          
+    
+
+    
+    <div class="clearfloat"></div>
+
+
+
+  </li>
+  <li class="database">
+    <div class="block">
+      <i></i>
+              <b></b>
+        <a class="expander" href="#">
+          <span class="hide paths_nav" data-apath="cm9vdA==.dGVzdA==" data-vpath="cm9vdA==.dGVzdA==" data-pos="0"></span>
+                    <img src="themes/dot.gif" title="Expand/Collapse" alt="Expand/Collapse" class="icon ic_b_plus">
+        </a>
+          </div>
+    
+          <div class="block second">
+                  <a href="index.php?route=/database/operations&db=test"><img src="themes/dot.gif" title="Database operations" alt="Database operations" class="icon ic_s_db"></a>
+              </div>
+
+              <a class="hover_show_full" href="index.php?route=/database/structure&db=test" title="Structure">test</a>
+          
+    
+
+    
+    <div class="clearfloat"></div>
+
+
+
+  </li>
+  <li class="last database">
+    <div class="block">
+      <i></i>
+              
+        <a class="expander" href="#">
+          <span class="hide paths_nav" data-apath="cm9vdA==.dGhpbmc=" data-vpath="cm9vdA==.dGhpbmc=" data-pos="0"></span>
+                    <img src="themes/dot.gif" title="Expand/Collapse" alt="Expand/Collapse" class="icon ic_b_plus">
+        </a>
+          </div>
+    
+          <div class="block second">
+                  <a href="index.php?route=/database/operations&db=thing"><img src="themes/dot.gif" title="Database operations" alt="Database operations" class="icon ic_s_db"></a>
+              </div>
+
+              <a class="hover_show_full" href="index.php?route=/database/structure&db=thing" title="Structure">thing</a>
+          
+    
+
+    
+    <div class="clearfloat"></div>
+
+
+
+  </li>
+
+  </ul>
+</div>
+
+
+      </div>
+
+      <div id="pma_navi_settings_container">
+                  <div id="pma_navigation_settings"><div class="page_settings"><form method="post" action="index.php&#x3F;route&#x3D;&#x25;2Fexport&amp;server&#x3D;1" class="config-form disableAjax">
+  <input type="hidden" name="tab_hash" value="">
+      <input type="hidden" name="check_page_refresh" id="check_page_refresh" value="">
+    <input type="hidden" name="token" value="7a78523d6739434e636672522a61363d">
+  <input type="hidden" name="submit_save" value="Navi">
+
+  <ul class="nav nav-tabs" id="configFormDisplayTab" role="tablist">
+          <li class="nav-item" role="presentation">
+        <a class="nav-link active" id="Navi_panel-tab" href="#Navi_panel" data-bs-toggle="tab" role="tab" aria-controls="Navi_panel" aria-selected="true">Navigation panel</a>
+      </li>
+          <li class="nav-item" role="presentation">
+        <a class="nav-link" id="Navi_tree-tab" href="#Navi_tree" data-bs-toggle="tab" role="tab" aria-controls="Navi_tree" aria-selected="false">Navigation tree</a>
+      </li>
+          <li class="nav-item" role="presentation">
+        <a class="nav-link" id="Navi_servers-tab" href="#Navi_servers" data-bs-toggle="tab" role="tab" aria-controls="Navi_servers" aria-selected="false">Servers</a>
+      </li>
+          <li class="nav-item" role="presentation">
+        <a class="nav-link" id="Navi_databases-tab" href="#Navi_databases" data-bs-toggle="tab" role="tab" aria-controls="Navi_databases" aria-selected="false">Databases</a>
+      </li>
+          <li class="nav-item" role="presentation">
+        <a class="nav-link" id="Navi_tables-tab" href="#Navi_tables" data-bs-toggle="tab" role="tab" aria-controls="Navi_tables" aria-selected="false">Tables</a>
+      </li>
+      </ul>
+  <div class="tab-content">
+          <div class="tab-pane fade show active" id="Navi_panel" role="tabpanel" aria-labelledby="Navi_panel-tab">
+        <div class="card border-top-0">
+          <div class="card-body">
+            <h5 class="card-title visually-hidden">Navigation panel</h5>
+                          <h6 class="card-subtitle mb-2 text-muted">Customize appearance of the navigation panel.</h6>
+            
+            <fieldset class="optbox">
+              <legend>Navigation panel</legend>
+
+                            
+              <table class="table table-borderless">
+                <tr>
+  <th>
+    <label for="ShowDatabasesNavigationAsTree">Show databases navigation as tree</label>
+
+          <span class="doc">
+        <a href="./doc/html/config.html#cfg_ShowDatabasesNavigationAsTree" target="documentation"><img src="themes/dot.gif" title="Documentation" alt="Documentation" class="icon ic_b_help"></a>
+      </span>
+    
+    
+          <small>In the navigation panel, replaces the database tree with a selector</small>
+      </th>
+
+  <td>
+          <span class="checkbox">
+        <input type="checkbox" name="ShowDatabasesNavigationAsTree" id="ShowDatabasesNavigationAsTree" checked>
+      </span>
+    
+    
+    
+          <a class="restore-default hide" href="#ShowDatabasesNavigationAsTree" title="Restore default value"><img src="themes/dot.gif" title="Restore default value" alt="Restore default value" class="icon ic_s_reload"></a>
+    
+          </td>
+
+  </tr>
+<tr>
+  <th>
+    <label for="NavigationLinkWithMainPanel">Link with main panel</label>
+
+          <span class="doc">
+        <a href="./doc/html/config.html#cfg_NavigationLinkWithMainPanel" target="documentation"><img src="themes/dot.gif" title="Documentation" alt="Documentation" class="icon ic_b_help"></a>
+      </span>
+    
+    
+          <small>Link with main panel by highlighting the current database or table.</small>
+      </th>
+
+  <td>
+          <span class="checkbox">
+        <input type="checkbox" name="NavigationLinkWithMainPanel" id="NavigationLinkWithMainPanel" checked>
+      </span>
+    
+    
+    
+          <a class="restore-default hide" href="#NavigationLinkWithMainPanel" title="Restore default value"><img src="themes/dot.gif" title="Restore default value" alt="Restore default value" class="icon ic_s_reload"></a>
+    
+          </td>
+
+  </tr>
+<tr>
+  <th>
+    <label for="NavigationDisplayLogo">Display logo</label>
+
+          <span class="doc">
+        <a href="./doc/html/config.html#cfg_NavigationDisplayLogo" target="documentation"><img src="themes/dot.gif" title="Documentation" alt="Documentation" class="icon ic_b_help"></a>
+      </span>
+    
+    
+          <small>Show logo in navigation panel.</small>
+      </th>
+
+  <td>
+          <span class="checkbox">
+        <input type="checkbox" name="NavigationDisplayLogo" id="NavigationDisplayLogo" checked>
+      </span>
+    
+    
+    
+          <a class="restore-default hide" href="#NavigationDisplayLogo" title="Restore default value"><img src="themes/dot.gif" title="Restore default value" alt="Restore default value" class="icon ic_s_reload"></a>
+    
+          </td>
+
+  </tr>
+<tr>
+  <th>
+    <label for="NavigationLogoLink">Logo link URL</label>
+
+          <span class="doc">
+        <a href="./doc/html/config.html#cfg_NavigationLogoLink" target="documentation"><img src="themes/dot.gif" title="Documentation" alt="Documentation" class="icon ic_b_help"></a>
+      </span>
+    
+    
+          <small>URL where logo in the navigation panel will point to.</small>
+      </th>
+
+  <td>
+          <input type="text" name="NavigationLogoLink" id="NavigationLogoLink" value="index.php" class="w-75">
+    
+    
+    
+          <a class="restore-default hide" href="#NavigationLogoLink" title="Restore default value"><img src="themes/dot.gif" title="Restore default value" alt="Restore default value" class="icon ic_s_reload"></a>
+    
+          </td>
+
+  </tr>
+<tr>
+  <th>
+    <label for="NavigationLogoLinkWindow">Logo link target</label>
+
+          <span class="doc">
+        <a href="./doc/html/config.html#cfg_NavigationLogoLinkWindow" target="documentation"><img src="themes/dot.gif" title="Documentation" alt="Documentation" class="icon ic_b_help"></a>
+      </span>
+    
+    
+          <small>Open the linked page in the main window (<code>main</code>) or in a new one (<code>new</code>).</small>
+      </th>
+
+  <td>
+          <select name="NavigationLogoLinkWindow" id="NavigationLogoLinkWindow" class="w-75">
+                            <option value="main" selected>main</option>
+                            <option value="new">new</option>
+              </select>
+    
+    
+    
+          <a class="restore-default hide" href="#NavigationLogoLinkWindow" title="Restore default value"><img src="themes/dot.gif" title="Restore default value" alt="Restore default value" class="icon ic_s_reload"></a>
+    
+          </td>
+
+  </tr>
+<tr>
+  <th>
+    <label for="NavigationTreePointerEnable">Enable highlighting</label>
+
+          <span class="doc">
+        <a href="./doc/html/config.html#cfg_NavigationTreePointerEnable" target="documentation"><img src="themes/dot.gif" title="Documentation" alt="Documentation" class="icon ic_b_help"></a>
+      </span>
+    
+    
+          <small>Highlight server under the mouse cursor.</small>
+      </th>
+
+  <td>
+          <span class="checkbox">
+        <input type="checkbox" name="NavigationTreePointerEnable" id="NavigationTreePointerEnable" checked>
+      </span>
+    
+    
+    
+          <a class="restore-default hide" href="#NavigationTreePointerEnable" title="Restore default value"><img src="themes/dot.gif" title="Restore default value" alt="Restore default value" class="icon ic_s_reload"></a>
+    
+          </td>
+
+  </tr>
+<tr>
+  <th>
+    <label for="FirstLevelNavigationItems">Maximum items on first level</label>
+
+          <span class="doc">
+        <a href="./doc/html/config.html#cfg_FirstLevelNavigationItems" target="documentation"><img src="themes/dot.gif" title="Documentation" alt="Documentation" class="icon ic_b_help"></a>
+      </span>
+    
+    
+          <small>The number of items that can be displayed on each page on the first level of the navigation tree.</small>
+      </th>
+
+  <td>
+          <input type="number" name="FirstLevelNavigationItems" id="FirstLevelNavigationItems" value="100" class="">
+    
+    
+    
+          <a class="restore-default hide" href="#FirstLevelNavigationItems" title="Restore default value"><img src="themes/dot.gif" title="Restore default value" alt="Restore default value" class="icon ic_s_reload"></a>
+    
+          </td>
+
+  </tr>
+<tr>
+  <th>
+    <label for="NavigationTreeDisplayItemFilterMinimum">Minimum number of items to display the filter box</label>
+
+          <span class="doc">
+        <a href="./doc/html/config.html#cfg_NavigationTreeDisplayItemFilterMinimum" target="documentation"><img src="themes/dot.gif" title="Documentation" alt="Documentation" class="icon ic_b_help"></a>
+      </span>
+    
+    
+          <small>Defines the minimum number of items (tables, views, routines and events) to display a filter box.</small>
+      </th>
+
+  <td>
+          <input type="number" name="NavigationTreeDisplayItemFilterMinimum" id="NavigationTreeDisplayItemFilterMinimum" value="30" class="">
+    
+    
+    
+          <a class="restore-default hide" href="#NavigationTreeDisplayItemFilterMinimum" title="Restore default value"><img src="themes/dot.gif" title="Restore default value" alt="Restore default value" class="icon ic_s_reload"></a>
+    
+          </td>
+
+  </tr>
+<tr>
+  <th>
+    <label for="NumRecentTables">Recently used tables</label>
+
+          <span class="doc">
+        <a href="./doc/html/config.html#cfg_NumRecentTables" target="documentation"><img src="themes/dot.gif" title="Documentation" alt="Documentation" class="icon ic_b_help"></a>
+      </span>
+    
+    
+          <small>Maximum number of recently used tables; set 0 to disable.</small>
+      </th>
+
+  <td>
+          <input type="number" name="NumRecentTables" id="NumRecentTables" value="10" class="">
+    
+    
+    
+          <a class="restore-default hide" href="#NumRecentTables" title="Restore default value"><img src="themes/dot.gif" title="Restore default value" alt="Restore default value" class="icon ic_s_reload"></a>
+    
+          </td>
+
+  </tr>
+<tr>
+  <th>
+    <label for="NumFavoriteTables">Favorite tables</label>
+
+          <span class="doc">
+        <a href="./doc/html/config.html#cfg_NumFavoriteTables" target="documentation"><img src="themes/dot.gif" title="Documentation" alt="Documentation" class="icon ic_b_help"></a>
+      </span>
+    
+    
+          <small>Maximum number of favorite tables; set 0 to disable.</small>
+      </th>
+
+  <td>
+          <input type="number" name="NumFavoriteTables" id="NumFavoriteTables" value="10" class="">
+    
+    
+    
+          <a class="restore-default hide" href="#NumFavoriteTables" title="Restore default value"><img src="themes/dot.gif" title="Restore default value" alt="Restore default value" class="icon ic_s_reload"></a>
+    
+          </td>
+
+  </tr>
+<tr>
+  <th>
+    <label for="NavigationWidth">Navigation panel width</label>
+
+          <span class="doc">
+        <a href="./doc/html/config.html#cfg_NavigationWidth" target="documentation"><img src="themes/dot.gif" title="Documentation" alt="Documentation" class="icon ic_b_help"></a>
+      </span>
+    
+    
+          <small>Set to 0 to collapse navigation panel.</small>
+      </th>
+
+  <td>
+          <input type="number" name="NavigationWidth" id="NavigationWidth" value="240" class="">
+    
+    
+    
+          <a class="restore-default hide" href="#NavigationWidth" title="Restore default value"><img src="themes/dot.gif" title="Restore default value" alt="Restore default value" class="icon ic_s_reload"></a>
+    
+          </td>
+
+  </tr>
+
+              </table>
+            </fieldset>
+          </div>
+
+                  </div>
+      </div>
+          <div class="tab-pane fade" id="Navi_tree" role="tabpanel" aria-labelledby="Navi_tree-tab">
+        <div class="card border-top-0">
+          <div class="card-body">
+            <h5 class="card-title visually-hidden">Navigation tree</h5>
+                          <h6 class="card-subtitle mb-2 text-muted">Customize the navigation tree.</h6>
+            
+            <fieldset class="optbox">
+              <legend>Navigation tree</legend>
+
+                            
+              <table class="table table-borderless">
+                <tr>
+  <th>
+    <label for="MaxNavigationItems">Maximum items in branch</label>
+
+          <span class="doc">
+        <a href="./doc/html/config.html#cfg_MaxNavigationItems" target="documentation"><img src="themes/dot.gif" title="Documentation" alt="Documentation" class="icon ic_b_help"></a>
+      </span>
+    
+    
+          <small>The number of items that can be displayed on each page of the navigation tree.</small>
+      </th>
+
+  <td>
+          <input type="number" name="MaxNavigationItems" id="MaxNavigationItems" value="50" class="">
+    
+    
+    
+          <a class="restore-default hide" href="#MaxNavigationItems" title="Restore default value"><img src="themes/dot.gif" title="Restore default value" alt="Restore default value" class="icon ic_s_reload"></a>
+    
+          </td>
+
+  </tr>
+<tr>
+  <th>
+    <label for="NavigationTreeEnableGrouping">Group items in the tree</label>
+
+          <span class="doc">
+        <a href="./doc/html/config.html#cfg_NavigationTreeEnableGrouping" target="documentation"><img src="themes/dot.gif" title="Documentation" alt="Documentation" class="icon ic_b_help"></a>
+      </span>
+    
+    
+          <small>Group items in the navigation tree (determined by the separator defined in the Databases and Tables tabs above).</small>
+      </th>
+
+  <td>
+          <span class="checkbox">
+        <input type="checkbox" name="NavigationTreeEnableGrouping" id="NavigationTreeEnableGrouping" checked>
+      </span>
+    
+    
+    
+          <a class="restore-default hide" href="#NavigationTreeEnableGrouping" title="Restore default value"><img src="themes/dot.gif" title="Restore default value" alt="Restore default value" class="icon ic_s_reload"></a>
+    
+          </td>
+
+  </tr>
+<tr>
+  <th>
+    <label for="NavigationTreeEnableExpansion">Enable navigation tree expansion</label>
+
+          <span class="doc">
+        <a href="./doc/html/config.html#cfg_NavigationTreeEnableExpansion" target="documentation"><img src="themes/dot.gif" title="Documentation" alt="Documentation" class="icon ic_b_help"></a>
+      </span>
+    
+    
+          <small>Whether to offer the possibility of tree expansion in the navigation panel.</small>
+      </th>
+
+  <td>
+          <span class="checkbox">
+        <input type="checkbox" name="NavigationTreeEnableExpansion" id="NavigationTreeEnableExpansion" checked>
+      </span>
+    
+    
+    
+          <a class="restore-default hide" href="#NavigationTreeEnableExpansion" title="Restore default value"><img src="themes/dot.gif" title="Restore default value" alt="Restore default value" class="icon ic_s_reload"></a>
+    
+          </td>
+
+  </tr>
+<tr>
+  <th>
+    <label for="NavigationTreeShowTables">Show tables in tree</label>
+
+          <span class="doc">
+        <a href="./doc/html/config.html#cfg_NavigationTreeShowTables" target="documentation"><img src="themes/dot.gif" title="Documentation" alt="Documentation" class="icon ic_b_help"></a>
+      </span>
+    
+    
+          <small>Whether to show tables under database in the navigation tree</small>
+      </th>
+
+  <td>
+          <span class="checkbox">
+        <input type="checkbox" name="NavigationTreeShowTables" id="NavigationTreeShowTables" checked>
+      </span>
+    
+    
+    
+          <a class="restore-default hide" href="#NavigationTreeShowTables" title="Restore default value"><img src="themes/dot.gif" title="Restore default value" alt="Restore default value" class="icon ic_s_reload"></a>
+    
+          </td>
+
+  </tr>
+<tr>
+  <th>
+    <label for="NavigationTreeShowViews">Show views in tree</label>
+
+          <span class="doc">
+        <a href="./doc/html/config.html#cfg_NavigationTreeShowViews" target="documentation"><img src="themes/dot.gif" title="Documentation" alt="Documentation" class="icon ic_b_help"></a>
+      </span>
+    
+    
+          <small>Whether to show views under database in the navigation tree</small>
+      </th>
+
+  <td>
+          <span class="checkbox">
+        <input type="checkbox" name="NavigationTreeShowViews" id="NavigationTreeShowViews" checked>
+      </span>
+    
+    
+    
+          <a class="restore-default hide" href="#NavigationTreeShowViews" title="Restore default value"><img src="themes/dot.gif" title="Restore default value" alt="Restore default value" class="icon ic_s_reload"></a>
+    
+          </td>
+
+  </tr>
+<tr>
+  <th>
+    <label for="NavigationTreeShowFunctions">Show functions in tree</label>
+
+          <span class="doc">
+        <a href="./doc/html/config.html#cfg_NavigationTreeShowFunctions" target="documentation"><img src="themes/dot.gif" title="Documentation" alt="Documentation" class="icon ic_b_help"></a>
+      </span>
+    
+    
+          <small>Whether to show functions under database in the navigation tree</small>
+      </th>
+
+  <td>
+          <span class="checkbox">
+        <input type="checkbox" name="NavigationTreeShowFunctions" id="NavigationTreeShowFunctions" checked>
+      </span>
+    
+    
+    
+          <a class="restore-default hide" href="#NavigationTreeShowFunctions" title="Restore default value"><img src="themes/dot.gif" title="Restore default value" alt="Restore default value" class="icon ic_s_reload"></a>
+    
+          </td>
+
+  </tr>
+<tr>
+  <th>
+    <label for="NavigationTreeShowProcedures">Show procedures in tree</label>
+
+          <span class="doc">
+        <a href="./doc/html/config.html#cfg_NavigationTreeShowProcedures" target="documentation"><img src="themes/dot.gif" title="Documentation" alt="Documentation" class="icon ic_b_help"></a>
+      </span>
+    
+    
+          <small>Whether to show procedures under database in the navigation tree</small>
+      </th>
+
+  <td>
+          <span class="checkbox">
+        <input type="checkbox" name="NavigationTreeShowProcedures" id="NavigationTreeShowProcedures" checked>
+      </span>
+    
+    
+    
+          <a class="restore-default hide" href="#NavigationTreeShowProcedures" title="Restore default value"><img src="themes/dot.gif" title="Restore default value" alt="Restore default value" class="icon ic_s_reload"></a>
+    
+          </td>
+
+  </tr>
+<tr>
+  <th>
+    <label for="NavigationTreeShowEvents">Show events in tree</label>
+
+          <span class="doc">
+        <a href="./doc/html/config.html#cfg_NavigationTreeShowEvents" target="documentation"><img src="themes/dot.gif" title="Documentation" alt="Documentation" class="icon ic_b_help"></a>
+      </span>
+    
+    
+          <small>Whether to show events under database in the navigation tree</small>
+      </th>
+
+  <td>
+          <span class="checkbox">
+        <input type="checkbox" name="NavigationTreeShowEvents" id="NavigationTreeShowEvents" checked>
+      </span>
+    
+    
+    
+          <a class="restore-default hide" href="#NavigationTreeShowEvents" title="Restore default value"><img src="themes/dot.gif" title="Restore default value" alt="Restore default value" class="icon ic_s_reload"></a>
+    
+          </td>
+
+  </tr>
+<tr>
+  <th>
+    <label for="NavigationTreeAutoexpandSingleDb">Expand single database</label>
+
+          <span class="doc">
+        <a href="./doc/html/config.html#cfg_NavigationTreeAutoexpandSingleDb" target="documentation"><img src="themes/dot.gif" title="Documentation" alt="Documentation" class="icon ic_b_help"></a>
+      </span>
+    
+    
+          <small>Whether to expand single database in the navigation tree automatically.</small>
+      </th>
+
+  <td>
+          <span class="checkbox">
+        <input type="checkbox" name="NavigationTreeAutoexpandSingleDb" id="NavigationTreeAutoexpandSingleDb" checked>
+      </span>
+    
+    
+    
+          <a class="restore-default hide" href="#NavigationTreeAutoexpandSingleDb" title="Restore default value"><img src="themes/dot.gif" title="Restore default value" alt="Restore default value" class="icon ic_s_reload"></a>
+    
+          </td>
+
+  </tr>
+
+              </table>
+            </fieldset>
+          </div>
+
+                  </div>
+      </div>
+          <div class="tab-pane fade" id="Navi_servers" role="tabpanel" aria-labelledby="Navi_servers-tab">
+        <div class="card border-top-0">
+          <div class="card-body">
+            <h5 class="card-title visually-hidden">Servers</h5>
+                          <h6 class="card-subtitle mb-2 text-muted">Servers display options.</h6>
+            
+            <fieldset class="optbox">
+              <legend>Servers</legend>
+
+                            
+              <table class="table table-borderless">
+                <tr>
+  <th>
+    <label for="NavigationDisplayServers">Display servers selection</label>
+
+          <span class="doc">
+        <a href="./doc/html/config.html#cfg_NavigationDisplayServers" target="documentation"><img src="themes/dot.gif" title="Documentation" alt="Documentation" class="icon ic_b_help"></a>
+      </span>
+    
+    
+          <small>Display server choice at the top of the navigation panel.</small>
+      </th>
+
+  <td>
+          <span class="checkbox">
+        <input type="checkbox" name="NavigationDisplayServers" id="NavigationDisplayServers" checked>
+      </span>
+    
+    
+    
+          <a class="restore-default hide" href="#NavigationDisplayServers" title="Restore default value"><img src="themes/dot.gif" title="Restore default value" alt="Restore default value" class="icon ic_s_reload"></a>
+    
+          </td>
+
+  </tr>
+<tr>
+  <th>
+    <label for="DisplayServersList">Display servers as a list</label>
+
+          <span class="doc">
+        <a href="./doc/html/config.html#cfg_DisplayServersList" target="documentation"><img src="themes/dot.gif" title="Documentation" alt="Documentation" class="icon ic_b_help"></a>
+      </span>
+    
+    
+          <small>Show server listing as a list instead of a drop down.</small>
+      </th>
+
+  <td>
+          <span class="checkbox">
+        <input type="checkbox" name="DisplayServersList" id="DisplayServersList">
+      </span>
+    
+    
+    
+          <a class="restore-default hide" href="#DisplayServersList" title="Restore default value"><img src="themes/dot.gif" title="Restore default value" alt="Restore default value" class="icon ic_s_reload"></a>
+    
+          </td>
+
+  </tr>
+
+              </table>
+            </fieldset>
+          </div>
+
+                  </div>
+      </div>
+          <div class="tab-pane fade" id="Navi_databases" role="tabpanel" aria-labelledby="Navi_databases-tab">
+        <div class="card border-top-0">
+          <div class="card-body">
+            <h5 class="card-title visually-hidden">Databases</h5>
+                          <h6 class="card-subtitle mb-2 text-muted">Databases display options.</h6>
+            
+            <fieldset class="optbox">
+              <legend>Databases</legend>
+
+                            
+              <table class="table table-borderless">
+                <tr>
+  <th>
+    <label for="NavigationTreeDisplayDbFilterMinimum">Minimum number of databases to display the database filter box</label>
+
+          <span class="doc">
+        <a href="./doc/html/config.html#cfg_NavigationTreeDisplayDbFilterMinimum" target="documentation"><img src="themes/dot.gif" title="Documentation" alt="Documentation" class="icon ic_b_help"></a>
+      </span>
+    
+    
+      </th>
+
+  <td>
+          <input type="number" name="NavigationTreeDisplayDbFilterMinimum" id="NavigationTreeDisplayDbFilterMinimum" value="30" class="">
+    
+    
+    
+          <a class="restore-default hide" href="#NavigationTreeDisplayDbFilterMinimum" title="Restore default value"><img src="themes/dot.gif" title="Restore default value" alt="Restore default value" class="icon ic_s_reload"></a>
+    
+          </td>
+
+  </tr>
+<tr>
+  <th>
+    <label for="NavigationTreeDbSeparator">Database tree separator</label>
+
+          <span class="doc">
+        <a href="./doc/html/config.html#cfg_NavigationTreeDbSeparator" target="documentation"><img src="themes/dot.gif" title="Documentation" alt="Documentation" class="icon ic_b_help"></a>
+      </span>
+    
+    
+          <small>String that separates databases into different tree levels.</small>
+      </th>
+
+  <td>
+                <input type="text" size="25" name="NavigationTreeDbSeparator" id="NavigationTreeDbSeparator" value="_" class="">
+    
+    
+    
+          <a class="restore-default hide" href="#NavigationTreeDbSeparator" title="Restore default value"><img src="themes/dot.gif" title="Restore default value" alt="Restore default value" class="icon ic_s_reload"></a>
+    
+          </td>
+
+  </tr>
+
+              </table>
+            </fieldset>
+          </div>
+
+                  </div>
+      </div>
+          <div class="tab-pane fade" id="Navi_tables" role="tabpanel" aria-labelledby="Navi_tables-tab">
+        <div class="card border-top-0">
+          <div class="card-body">
+            <h5 class="card-title visually-hidden">Tables</h5>
+                          <h6 class="card-subtitle mb-2 text-muted">Tables display options.</h6>
+            
+            <fieldset class="optbox">
+              <legend>Tables</legend>
+
+                            
+              <table class="table table-borderless">
+                <tr>
+  <th>
+    <label for="NavigationTreeDefaultTabTable">Target for quick access icon</label>
+
+          <span class="doc">
+        <a href="./doc/html/config.html#cfg_NavigationTreeDefaultTabTable" target="documentation"><img src="themes/dot.gif" title="Documentation" alt="Documentation" class="icon ic_b_help"></a>
+      </span>
+    
+    
+      </th>
+
+  <td>
+          <select name="NavigationTreeDefaultTabTable" id="NavigationTreeDefaultTabTable" class="w-75">
+                            <option value="structure" selected>Structure</option>
+                            <option value="sql">SQL</option>
+                            <option value="search">Search</option>
+                            <option value="insert">Insert</option>
+                            <option value="browse">Browse</option>
+              </select>
+    
+    
+    
+          <a class="restore-default hide" href="#NavigationTreeDefaultTabTable" title="Restore default value"><img src="themes/dot.gif" title="Restore default value" alt="Restore default value" class="icon ic_s_reload"></a>
+    
+          </td>
+
+  </tr>
+<tr>
+  <th>
+    <label for="NavigationTreeDefaultTabTable2">Target for second quick access icon</label>
+
+          <span class="doc">
+        <a href="./doc/html/config.html#cfg_NavigationTreeDefaultTabTable2" target="documentation"><img src="themes/dot.gif" title="Documentation" alt="Documentation" class="icon ic_b_help"></a>
+      </span>
+    
+    
+      </th>
+
+  <td>
+          <select name="NavigationTreeDefaultTabTable2" id="NavigationTreeDefaultTabTable2" class="w-75">
+                            <option value="" selected></option>
+                            <option value="structure">Structure</option>
+                            <option value="sql">SQL</option>
+                            <option value="search">Search</option>
+                            <option value="insert">Insert</option>
+                            <option value="browse">Browse</option>
+              </select>
+    
+    
+    
+          <a class="restore-default hide" href="#NavigationTreeDefaultTabTable2" title="Restore default value"><img src="themes/dot.gif" title="Restore default value" alt="Restore default value" class="icon ic_s_reload"></a>
+    
+          </td>
+
+  </tr>
+<tr>
+  <th>
+    <label for="NavigationTreeTableSeparator">Table tree separator</label>
+
+          <span class="doc">
+        <a href="./doc/html/config.html#cfg_NavigationTreeTableSeparator" target="documentation"><img src="themes/dot.gif" title="Documentation" alt="Documentation" class="icon ic_b_help"></a>
+      </span>
+    
+    
+          <small>String that separates tables into different tree levels.</small>
+      </th>
+
+  <td>
+                <input type="text" size="25" name="NavigationTreeTableSeparator" id="NavigationTreeTableSeparator" value="__" class="">
+    
+    
+    
+          <a class="restore-default hide" href="#NavigationTreeTableSeparator" title="Restore default value"><img src="themes/dot.gif" title="Restore default value" alt="Restore default value" class="icon ic_s_reload"></a>
+    
+          </td>
+
+  </tr>
+<tr>
+  <th>
+    <label for="NavigationTreeTableLevel">Maximum table tree depth</label>
+
+          <span class="doc">
+        <a href="./doc/html/config.html#cfg_NavigationTreeTableLevel" target="documentation"><img src="themes/dot.gif" title="Documentation" alt="Documentation" class="icon ic_b_help"></a>
+      </span>
+    
+    
+      </th>
+
+  <td>
+          <input type="number" name="NavigationTreeTableLevel" id="NavigationTreeTableLevel" value="1" class="">
+    
+    
+    
+          <a class="restore-default hide" href="#NavigationTreeTableLevel" title="Restore default value"><img src="themes/dot.gif" title="Restore default value" alt="Restore default value" class="icon ic_s_reload"></a>
+    
+          </td>
+
+  </tr>
+
+              </table>
+            </fieldset>
+          </div>
+
+                  </div>
+      </div>
+      </div>
+</form>
+
+<script type="text/javascript">
+  if (typeof configInlineParams === 'undefined' || !Array.isArray(configInlineParams)) {
+    configInlineParams = [];
+  }
+  configInlineParams.push(function () {
+    registerFieldValidator('FirstLevelNavigationItems', 'validatePositiveNumber', true);
+registerFieldValidator('NavigationTreeDisplayItemFilterMinimum', 'validatePositiveNumber', true);
+registerFieldValidator('NumRecentTables', 'validateNonNegativeNumber', true);
+registerFieldValidator('NumFavoriteTables', 'validateNonNegativeNumber', true);
+registerFieldValidator('NavigationWidth', 'validateNonNegativeNumber', true);
+registerFieldValidator('MaxNavigationItems', 'validatePositiveNumber', true);
+registerFieldValidator('NavigationTreeTableLevel', 'validatePositiveNumber', true);
+
+    $.extend(Messages, {
+      'error_nan_p': 'Not\u0020a\u0020positive\u0020number\u0021',
+      'error_nan_nneg': 'Not\u0020a\u0020non\u002Dnegative\u0020number\u0021',
+      'error_incorrect_port': 'Not\u0020a\u0020valid\u0020port\u0020number\u0021',
+      'error_invalid_value': 'Incorrect\u0020value\u0021',
+      'error_value_lte': 'Value\u0020must\u0020be\u0020less\u0020than\u0020or\u0020equal\u0020to\u0020\u0025s\u0021',
+    });
+
+    $.extend(defaultValues, {
+      'ShowDatabasesNavigationAsTree': true,
+      'NavigationLinkWithMainPanel': true,
+      'NavigationDisplayLogo': true,
+      'NavigationLogoLink': 'index.php',
+      'NavigationLogoLinkWindow': ['main'],
+      'NavigationTreePointerEnable': true,
+      'FirstLevelNavigationItems': '100',
+      'NavigationTreeDisplayItemFilterMinimum': '30',
+      'NumRecentTables': '10',
+      'NumFavoriteTables': '10',
+      'NavigationWidth': '240',
+      'MaxNavigationItems': '50',
+      'NavigationTreeEnableGrouping': true,
+      'NavigationTreeEnableExpansion': true,
+      'NavigationTreeShowTables': true,
+      'NavigationTreeShowViews': true,
+      'NavigationTreeShowFunctions': true,
+      'NavigationTreeShowProcedures': true,
+      'NavigationTreeShowEvents': true,
+      'NavigationTreeAutoexpandSingleDb': true,
+      'NavigationDisplayServers': true,
+      'DisplayServersList': false,
+      'NavigationTreeDisplayDbFilterMinimum': '30',
+      'NavigationTreeDbSeparator': '_',
+      'NavigationTreeDefaultTabTable': ['structure'],
+      'NavigationTreeDefaultTabTable2': [''],
+      'NavigationTreeTableSeparator': '__',
+      'NavigationTreeTableLevel': '1'
+    });
+  });
+  if (typeof configScriptLoaded !== 'undefined' && configInlineParams) {
+    loadInlineConfig();
+  }
+</script>
+</div></div>
+              </div>
+    </div>
+
+          <div class="pma_drop_handler">
+        Drop files here      </div>
+      <div class="pma_sql_import_status">
+        <h2>
+          SQL upload          ( <span class="pma_import_count">0</span> )
+          <span class="close">x</span>
+          <span class="minimize">-</span>
+        </h2>
+        <div></div>
+      </div>
+      </div>
+  <div class="modal fade" id="unhideNavItemModal" tabindex="-1" aria-labelledby="unhideNavItemModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="unhideNavItemModalLabel">Show hidden navigation tree items.</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <div class="modal fade" id="createViewModal" tabindex="-1" aria-labelledby="createViewModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" id="createViewModalDialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="createViewModalLabel">Create view</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="createViewModalGoButton">Go</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+  
+  
+
+  
+      <noscript>
+      <div class="alert alert-danger" role="alert">
+  <img src="themes/dot.gif" title="" alt="" class="icon ic_s_error"> Javascript must be enabled past this point!
+</div>
+
+    </noscript>
+  
+      <div id="floating_menubar" class="d-print-none"></div>
+<nav id="server-breadcrumb" aria-label="breadcrumb">
+  <ol class="breadcrumb breadcrumb-navbar">
+    <li class="breadcrumb-item">
+      <img src="themes/dot.gif" title="" alt="" class="icon ic_s_host">
+      <a href="index.php?route=/" data-raw-text="127.0.0.1" draggable="false">
+        Server:        127.0.0.1
+      </a>
+    </li>
+
+      </ol>
+</nav>
+<div id="topmenucontainer" class="menucontainer">
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-label="Toggle navigation" aria-controls="navbarNav" aria-expanded="false">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul id="topmenu" class="navbar-nav">
+                  <li class="nav-item">
+            <a class="nav-link text-nowrap" href="index.php?route=/server/databases">
+              <img src="themes/dot.gif" title="Databases" alt="Databases" class="icon ic_s_db">&nbsp;Databases
+                          </a>
+          </li>
+                  <li class="nav-item">
+            <a class="nav-link text-nowrap" href="index.php?route=/server/sql">
+              <img src="themes/dot.gif" title="SQL" alt="SQL" class="icon ic_b_sql">&nbsp;SQL
+                          </a>
+          </li>
+                  <li class="nav-item">
+            <a class="nav-link text-nowrap" href="index.php?route=/server/status">
+              <img src="themes/dot.gif" title="Status" alt="Status" class="icon ic_s_status">&nbsp;Status
+                          </a>
+          </li>
+                  <li class="nav-item">
+            <a class="nav-link text-nowrap" href="index.php?route=/server/privileges&viewing_mode=server">
+              <img src="themes/dot.gif" title="User accounts" alt="User accounts" class="icon ic_s_rights">&nbsp;User accounts
+                          </a>
+          </li>
+                  <li class="nav-item">
+            <a class="nav-link text-nowrap" href="index.php?route=/server/export">
+              <img src="themes/dot.gif" title="Export" alt="Export" class="icon ic_b_export">&nbsp;Export
+                          </a>
+          </li>
+                  <li class="nav-item">
+            <a class="nav-link text-nowrap" href="index.php?route=/server/import">
+              <img src="themes/dot.gif" title="Import" alt="Import" class="icon ic_b_import">&nbsp;Import
+                          </a>
+          </li>
+                  <li class="nav-item">
+            <a class="nav-link text-nowrap" href="index.php?route=/preferences/manage">
+              <img src="themes/dot.gif" title="Settings" alt="Settings" class="icon ic_b_tblops">&nbsp;Settings
+                          </a>
+          </li>
+                  <li class="nav-item">
+            <a class="nav-link text-nowrap" href="index.php?route=/server/replication">
+              <img src="themes/dot.gif" title="Replication" alt="Replication" class="icon ic_s_replication">&nbsp;Replication
+                          </a>
+          </li>
+                  <li class="nav-item">
+            <a class="nav-link text-nowrap" href="index.php?route=/server/variables">
+              <img src="themes/dot.gif" title="Variables" alt="Variables" class="icon ic_s_vars">&nbsp;Variables
+                          </a>
+          </li>
+                  <li class="nav-item">
+            <a class="nav-link text-nowrap" href="index.php?route=/server/collations">
+              <img src="themes/dot.gif" title="Charsets" alt="Charsets" class="icon ic_s_asci">&nbsp;Charsets
+                          </a>
+          </li>
+                  <li class="nav-item">
+            <a class="nav-link text-nowrap" href="index.php?route=/server/engines">
+              <img src="themes/dot.gif" title="Engines" alt="Engines" class="icon ic_b_engine">&nbsp;Engines
+                          </a>
+          </li>
+                  <li class="nav-item">
+            <a class="nav-link text-nowrap" href="index.php?route=/server/plugins">
+              <img src="themes/dot.gif" title="Plugins" alt="Plugins" class="icon ic_b_plugin">&nbsp;Plugins
+                          </a>
+          </li>
+              </ul>
+    </div>
+  </nav>
+</div>
+
+    <span id="page_nav_icons" class="d-print-none">
+      <span id="lock_page_icon"></span>
+      <span id="page_settings_icon">
+        <img src="themes/dot.gif" title="Page-related settings" alt="Page-related settings" class="icon ic_s_cog">
+      </span>
+      <a id="goto_pagetop" href="#"><img src="themes/dot.gif" title="Click on the bar to scroll to top of page" alt="Click on the bar to scroll to top of page" class="icon ic_s_top"></a>
+    </span>
+  
+  <div id="pma_console_container" class="d-print-none">
+    <div id="pma_console">
+                <div class="toolbar collapsed">
+                    <div class="switch_button console_switch">
+            <img src="themes/dot.gif" title="SQL Query Console" alt="SQL Query Console" class="icon ic_console">
+            <span>Console</span>
+        </div>
+                            <div class="button clear">
+            
+            <span>Clear</span>
+        </div>
+                            <div class="button history">
+            
+            <span>History</span>
+        </div>
+                            <div class="button options">
+            
+            <span>Options</span>
+        </div>
+                            <div class="button bookmarks">
+            
+            <span>Bookmarks</span>
+        </div>
+                            <div class="button debug hide">
+            
+            <span>Debug SQL</span>
+        </div>
+            </div>
+                <div class="content">
+            <div class="console_message_container">
+                <div class="message welcome">
+                    <span id="instructions-0">
+                        Press Ctrl+Enter to execute query                    </span>
+                    <span class="hide" id="instructions-1">
+                        Press Enter to execute query                    </span>
+                </div>
+                                                            <div class="message history collapsed hide select"
+                            targetdb="pcds2030_dashboard" targettable="sector_metrics_submitted">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Collapse
+                    </span>
+                            <span class="action expand">
+            Expand
+                    </span>
+                            <span class="action requery">
+            Requery
+                    </span>
+                            <span class="action edit">
+            Edit
+                    </span>
+                            <span class="action explain">
+            Explain
+                    </span>
+                            <span class="action profiling">
+            Profiling
+                    </span>
+                            <span class="action bookmark">
+            Bookmark
+                    </span>
+                            <span class="text failed">
+            Query failed
+                    </span>
+                            <span class="text targetdb">
+            Database
+                            : <span>pcds2030_dashboard</span>
+                    </span>
+                            <span class="text query_time">
+            Queried time
+                            : <span>During current session</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `sector_metrics_submitted`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="pcds2030_dashboard" targettable="sector_metrics_submitted">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Collapse
+                    </span>
+                            <span class="action expand">
+            Expand
+                    </span>
+                            <span class="action requery">
+            Requery
+                    </span>
+                            <span class="action edit">
+            Edit
+                    </span>
+                            <span class="action explain">
+            Explain
+                    </span>
+                            <span class="action profiling">
+            Profiling
+                    </span>
+                            <span class="action bookmark">
+            Bookmark
+                    </span>
+                            <span class="text failed">
+            Query failed
+                    </span>
+                            <span class="text targetdb">
+            Database
+                            : <span>pcds2030_dashboard</span>
+                    </span>
+                            <span class="text query_time">
+            Queried time
+                            : <span>During current session</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `sector_metrics_submitted`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="pcds2030_dashboard" targettable="sector_metrics_submitted">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Collapse
+                    </span>
+                            <span class="action expand">
+            Expand
+                    </span>
+                            <span class="action requery">
+            Requery
+                    </span>
+                            <span class="action edit">
+            Edit
+                    </span>
+                            <span class="action explain">
+            Explain
+                    </span>
+                            <span class="action profiling">
+            Profiling
+                    </span>
+                            <span class="action bookmark">
+            Bookmark
+                    </span>
+                            <span class="text failed">
+            Query failed
+                    </span>
+                            <span class="text targetdb">
+            Database
+                            : <span>pcds2030_dashboard</span>
+                    </span>
+                            <span class="text query_time">
+            Queried time
+                            : <span>During current session</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `sector_metrics_submitted`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="pcds2030_dashboard" targettable="sector_metrics_submitted">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Collapse
+                    </span>
+                            <span class="action expand">
+            Expand
+                    </span>
+                            <span class="action requery">
+            Requery
+                    </span>
+                            <span class="action edit">
+            Edit
+                    </span>
+                            <span class="action explain">
+            Explain
+                    </span>
+                            <span class="action profiling">
+            Profiling
+                    </span>
+                            <span class="action bookmark">
+            Bookmark
+                    </span>
+                            <span class="text failed">
+            Query failed
+                    </span>
+                            <span class="text targetdb">
+            Database
+                            : <span>pcds2030_dashboard</span>
+                    </span>
+                            <span class="text query_time">
+            Queried time
+                            : <span>During current session</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `sector_metrics_submitted`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="pcds2030_dashboard" targettable="sector_metrics_submitted">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Collapse
+                    </span>
+                            <span class="action expand">
+            Expand
+                    </span>
+                            <span class="action requery">
+            Requery
+                    </span>
+                            <span class="action edit">
+            Edit
+                    </span>
+                            <span class="action explain">
+            Explain
+                    </span>
+                            <span class="action profiling">
+            Profiling
+                    </span>
+                            <span class="action bookmark">
+            Bookmark
+                    </span>
+                            <span class="text failed">
+            Query failed
+                    </span>
+                            <span class="text targetdb">
+            Database
+                            : <span>pcds2030_dashboard</span>
+                    </span>
+                            <span class="text query_time">
+            Queried time
+                            : <span>During current session</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `sector_metrics_submitted`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="pcds2030_dashboard" targettable="sector_metrics_submitted">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Collapse
+                    </span>
+                            <span class="action expand">
+            Expand
+                    </span>
+                            <span class="action requery">
+            Requery
+                    </span>
+                            <span class="action edit">
+            Edit
+                    </span>
+                            <span class="action explain">
+            Explain
+                    </span>
+                            <span class="action profiling">
+            Profiling
+                    </span>
+                            <span class="action bookmark">
+            Bookmark
+                    </span>
+                            <span class="text failed">
+            Query failed
+                    </span>
+                            <span class="text targetdb">
+            Database
+                            : <span>pcds2030_dashboard</span>
+                    </span>
+                            <span class="text query_time">
+            Queried time
+                            : <span>During current session</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `sector_metrics_submitted`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="pcds2030_dashboard" targettable="sector_metrics_submitted">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Collapse
+                    </span>
+                            <span class="action expand">
+            Expand
+                    </span>
+                            <span class="action requery">
+            Requery
+                    </span>
+                            <span class="action edit">
+            Edit
+                    </span>
+                            <span class="action explain">
+            Explain
+                    </span>
+                            <span class="action profiling">
+            Profiling
+                    </span>
+                            <span class="action bookmark">
+            Bookmark
+                    </span>
+                            <span class="text failed">
+            Query failed
+                    </span>
+                            <span class="text targetdb">
+            Database
+                            : <span>pcds2030_dashboard</span>
+                    </span>
+                            <span class="text query_time">
+            Queried time
+                            : <span>During current session</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `sector_metrics_submitted`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="pcds2030_dashboard" targettable="sector_metrics_submitted">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Collapse
+                    </span>
+                            <span class="action expand">
+            Expand
+                    </span>
+                            <span class="action requery">
+            Requery
+                    </span>
+                            <span class="action edit">
+            Edit
+                    </span>
+                            <span class="action explain">
+            Explain
+                    </span>
+                            <span class="action profiling">
+            Profiling
+                    </span>
+                            <span class="action bookmark">
+            Bookmark
+                    </span>
+                            <span class="text failed">
+            Query failed
+                    </span>
+                            <span class="text targetdb">
+            Database
+                            : <span>pcds2030_dashboard</span>
+                    </span>
+                            <span class="text query_time">
+            Queried time
+                            : <span>During current session</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `sector_metrics_submitted`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="pcds2030_dashboard" targettable="sector_metrics_draft">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Collapse
+                    </span>
+                            <span class="action expand">
+            Expand
+                    </span>
+                            <span class="action requery">
+            Requery
+                    </span>
+                            <span class="action edit">
+            Edit
+                    </span>
+                            <span class="action explain">
+            Explain
+                    </span>
+                            <span class="action profiling">
+            Profiling
+                    </span>
+                            <span class="action bookmark">
+            Bookmark
+                    </span>
+                            <span class="text failed">
+            Query failed
+                    </span>
+                            <span class="text targetdb">
+            Database
+                            : <span>pcds2030_dashboard</span>
+                    </span>
+                            <span class="text query_time">
+            Queried time
+                            : <span>During current session</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `sector_metrics_draft`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="pcds2030_dashboard" targettable="sector_metrics_draft">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Collapse
+                    </span>
+                            <span class="action expand">
+            Expand
+                    </span>
+                            <span class="action requery">
+            Requery
+                    </span>
+                            <span class="action edit">
+            Edit
+                    </span>
+                            <span class="action explain">
+            Explain
+                    </span>
+                            <span class="action profiling">
+            Profiling
+                    </span>
+                            <span class="action bookmark">
+            Bookmark
+                    </span>
+                            <span class="text failed">
+            Query failed
+                    </span>
+                            <span class="text targetdb">
+            Database
+                            : <span>pcds2030_dashboard</span>
+                    </span>
+                            <span class="text query_time">
+            Queried time
+                            : <span>During current session</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `sector_metrics_draft`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="pcds2030_dashboard" targettable="sector_metrics_submitted">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Collapse
+                    </span>
+                            <span class="action expand">
+            Expand
+                    </span>
+                            <span class="action requery">
+            Requery
+                    </span>
+                            <span class="action edit">
+            Edit
+                    </span>
+                            <span class="action explain">
+            Explain
+                    </span>
+                            <span class="action profiling">
+            Profiling
+                    </span>
+                            <span class="action bookmark">
+            Bookmark
+                    </span>
+                            <span class="text failed">
+            Query failed
+                    </span>
+                            <span class="text targetdb">
+            Database
+                            : <span>pcds2030_dashboard</span>
+                    </span>
+                            <span class="text query_time">
+            Queried time
+                            : <span>During current session</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `sector_metrics_submitted`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="pcds2030_dashboard" targettable="sector_metrics_submitted">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Collapse
+                    </span>
+                            <span class="action expand">
+            Expand
+                    </span>
+                            <span class="action requery">
+            Requery
+                    </span>
+                            <span class="action edit">
+            Edit
+                    </span>
+                            <span class="action explain">
+            Explain
+                    </span>
+                            <span class="action profiling">
+            Profiling
+                    </span>
+                            <span class="action bookmark">
+            Bookmark
+                    </span>
+                            <span class="text failed">
+            Query failed
+                    </span>
+                            <span class="text targetdb">
+            Database
+                            : <span>pcds2030_dashboard</span>
+                    </span>
+                            <span class="text query_time">
+            Queried time
+                            : <span>During current session</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `sector_metrics_submitted`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="pcds2030_dashboard" targettable="sector_metrics_draft">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Collapse
+                    </span>
+                            <span class="action expand">
+            Expand
+                    </span>
+                            <span class="action requery">
+            Requery
+                    </span>
+                            <span class="action edit">
+            Edit
+                    </span>
+                            <span class="action explain">
+            Explain
+                    </span>
+                            <span class="action profiling">
+            Profiling
+                    </span>
+                            <span class="action bookmark">
+            Bookmark
+                    </span>
+                            <span class="text failed">
+            Query failed
+                    </span>
+                            <span class="text targetdb">
+            Database
+                            : <span>pcds2030_dashboard</span>
+                    </span>
+                            <span class="text query_time">
+            Queried time
+                            : <span>During current session</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `sector_metrics_draft`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="pcds2030_dashboard" targettable="sector_metrics_draft">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Collapse
+                    </span>
+                            <span class="action expand">
+            Expand
+                    </span>
+                            <span class="action requery">
+            Requery
+                    </span>
+                            <span class="action edit">
+            Edit
+                    </span>
+                            <span class="action explain">
+            Explain
+                    </span>
+                            <span class="action profiling">
+            Profiling
+                    </span>
+                            <span class="action bookmark">
+            Bookmark
+                    </span>
+                            <span class="text failed">
+            Query failed
+                    </span>
+                            <span class="text targetdb">
+            Database
+                            : <span>pcds2030_dashboard</span>
+                    </span>
+                            <span class="text query_time">
+            Queried time
+                            : <span>During current session</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `sector_metrics_draft`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="pcds2030_dashboard" targettable="sector_metrics_draft">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Collapse
+                    </span>
+                            <span class="action expand">
+            Expand
+                    </span>
+                            <span class="action requery">
+            Requery
+                    </span>
+                            <span class="action edit">
+            Edit
+                    </span>
+                            <span class="action explain">
+            Explain
+                    </span>
+                            <span class="action profiling">
+            Profiling
+                    </span>
+                            <span class="action bookmark">
+            Bookmark
+                    </span>
+                            <span class="text failed">
+            Query failed
+                    </span>
+                            <span class="text targetdb">
+            Database
+                            : <span>pcds2030_dashboard</span>
+                    </span>
+                            <span class="text query_time">
+            Queried time
+                            : <span>During current session</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `sector_metrics_draft`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="pcds2030_dashboard" targettable="sector_metrics_draft">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Collapse
+                    </span>
+                            <span class="action expand">
+            Expand
+                    </span>
+                            <span class="action requery">
+            Requery
+                    </span>
+                            <span class="action edit">
+            Edit
+                    </span>
+                            <span class="action explain">
+            Explain
+                    </span>
+                            <span class="action profiling">
+            Profiling
+                    </span>
+                            <span class="action bookmark">
+            Bookmark
+                    </span>
+                            <span class="text failed">
+            Query failed
+                    </span>
+                            <span class="text targetdb">
+            Database
+                            : <span>pcds2030_dashboard</span>
+                    </span>
+                            <span class="text query_time">
+            Queried time
+                            : <span>During current session</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `sector_metrics_draft`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="pcds2030_dashboard" targettable="sector_metrics_draft">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Collapse
+                    </span>
+                            <span class="action expand">
+            Expand
+                    </span>
+                            <span class="action requery">
+            Requery
+                    </span>
+                            <span class="action edit">
+            Edit
+                    </span>
+                            <span class="action explain">
+            Explain
+                    </span>
+                            <span class="action profiling">
+            Profiling
+                    </span>
+                            <span class="action bookmark">
+            Bookmark
+                    </span>
+                            <span class="text failed">
+            Query failed
+                    </span>
+                            <span class="text targetdb">
+            Database
+                            : <span>pcds2030_dashboard</span>
+                    </span>
+                            <span class="text query_time">
+            Queried time
+                            : <span>During current session</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `sector_metrics_draft`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="pcds2030_dashboard" targettable="sector_metrics_draft">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Collapse
+                    </span>
+                            <span class="action expand">
+            Expand
+                    </span>
+                            <span class="action requery">
+            Requery
+                    </span>
+                            <span class="action edit">
+            Edit
+                    </span>
+                            <span class="action explain">
+            Explain
+                    </span>
+                            <span class="action profiling">
+            Profiling
+                    </span>
+                            <span class="action bookmark">
+            Bookmark
+                    </span>
+                            <span class="text failed">
+            Query failed
+                    </span>
+                            <span class="text targetdb">
+            Database
+                            : <span>pcds2030_dashboard</span>
+                    </span>
+                            <span class="text query_time">
+            Queried time
+                            : <span>During current session</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `sector_metrics_draft`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="pcds2030_dashboard" targettable="sector_metrics_draft">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Collapse
+                    </span>
+                            <span class="action expand">
+            Expand
+                    </span>
+                            <span class="action requery">
+            Requery
+                    </span>
+                            <span class="action edit">
+            Edit
+                    </span>
+                            <span class="action explain">
+            Explain
+                    </span>
+                            <span class="action profiling">
+            Profiling
+                    </span>
+                            <span class="action bookmark">
+            Bookmark
+                    </span>
+                            <span class="text failed">
+            Query failed
+                    </span>
+                            <span class="text targetdb">
+            Database
+                            : <span>pcds2030_dashboard</span>
+                    </span>
+                            <span class="text query_time">
+            Queried time
+                            : <span>During current session</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `sector_metrics_draft`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="pcds2030_dashboard" targettable="sector_metrics_draft">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Collapse
+                    </span>
+                            <span class="action expand">
+            Expand
+                    </span>
+                            <span class="action requery">
+            Requery
+                    </span>
+                            <span class="action edit">
+            Edit
+                    </span>
+                            <span class="action explain">
+            Explain
+                    </span>
+                            <span class="action profiling">
+            Profiling
+                    </span>
+                            <span class="action bookmark">
+            Bookmark
+                    </span>
+                            <span class="text failed">
+            Query failed
+                    </span>
+                            <span class="text targetdb">
+            Database
+                            : <span>pcds2030_dashboard</span>
+                    </span>
+                            <span class="text query_time">
+            Queried time
+                            : <span>During current session</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `sector_metrics_draft`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="pcds2030_dashboard" targettable="sector_metrics_submitted">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Collapse
+                    </span>
+                            <span class="action expand">
+            Expand
+                    </span>
+                            <span class="action requery">
+            Requery
+                    </span>
+                            <span class="action edit">
+            Edit
+                    </span>
+                            <span class="action explain">
+            Explain
+                    </span>
+                            <span class="action profiling">
+            Profiling
+                    </span>
+                            <span class="action bookmark">
+            Bookmark
+                    </span>
+                            <span class="text failed">
+            Query failed
+                    </span>
+                            <span class="text targetdb">
+            Database
+                            : <span>pcds2030_dashboard</span>
+                    </span>
+                            <span class="text query_time">
+            Queried time
+                            : <span>During current session</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `sector_metrics_submitted`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="pcds2030_dashboard" targettable="sector_metrics_submitted">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Collapse
+                    </span>
+                            <span class="action expand">
+            Expand
+                    </span>
+                            <span class="action requery">
+            Requery
+                    </span>
+                            <span class="action edit">
+            Edit
+                    </span>
+                            <span class="action explain">
+            Explain
+                    </span>
+                            <span class="action profiling">
+            Profiling
+                    </span>
+                            <span class="action bookmark">
+            Bookmark
+                    </span>
+                            <span class="text failed">
+            Query failed
+                    </span>
+                            <span class="text targetdb">
+            Database
+                            : <span>pcds2030_dashboard</span>
+                    </span>
+                            <span class="text query_time">
+            Queried time
+                            : <span>During current session</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `sector_metrics_submitted`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="pcds2030_dashboard" targettable="sector_metrics_submitted">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Collapse
+                    </span>
+                            <span class="action expand">
+            Expand
+                    </span>
+                            <span class="action requery">
+            Requery
+                    </span>
+                            <span class="action edit">
+            Edit
+                    </span>
+                            <span class="action explain">
+            Explain
+                    </span>
+                            <span class="action profiling">
+            Profiling
+                    </span>
+                            <span class="action bookmark">
+            Bookmark
+                    </span>
+                            <span class="text failed">
+            Query failed
+                    </span>
+                            <span class="text targetdb">
+            Database
+                            : <span>pcds2030_dashboard</span>
+                    </span>
+                            <span class="text query_time">
+            Queried time
+                            : <span>During current session</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `sector_metrics_submitted`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="pcds2030_dashboard" targettable="sector_metrics_submitted">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Collapse
+                    </span>
+                            <span class="action expand">
+            Expand
+                    </span>
+                            <span class="action requery">
+            Requery
+                    </span>
+                            <span class="action edit">
+            Edit
+                    </span>
+                            <span class="action explain">
+            Explain
+                    </span>
+                            <span class="action profiling">
+            Profiling
+                    </span>
+                            <span class="action bookmark">
+            Bookmark
+                    </span>
+                            <span class="text failed">
+            Query failed
+                    </span>
+                            <span class="text targetdb">
+            Database
+                            : <span>pcds2030_dashboard</span>
+                    </span>
+                            <span class="text query_time">
+            Queried time
+                            : <span>During current session</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `sector_metrics_submitted`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="pcds2030_dashboard" targettable="sector_metrics_submitted">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Collapse
+                    </span>
+                            <span class="action expand">
+            Expand
+                    </span>
+                            <span class="action requery">
+            Requery
+                    </span>
+                            <span class="action edit">
+            Edit
+                    </span>
+                            <span class="action explain">
+            Explain
+                    </span>
+                            <span class="action profiling">
+            Profiling
+                    </span>
+                            <span class="action bookmark">
+            Bookmark
+                    </span>
+                            <span class="text failed">
+            Query failed
+                    </span>
+                            <span class="text targetdb">
+            Database
+                            : <span>pcds2030_dashboard</span>
+                    </span>
+                            <span class="text query_time">
+            Queried time
+                            : <span>During current session</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `sector_metrics_submitted`</span>
+                        </div>
+                                                </div><!-- console_message_container -->
+            <div class="query_input">
+                <span class="console_query_input"></span>
+            </div>
+        </div><!-- message end -->
+                <div class="mid_layer"></div>
+                <div class="card" id="debug_console">
+            <div class="toolbar ">
+                    <div class="button order order_asc">
+            
+            <span>ascending</span>
+        </div>
+                            <div class="button order order_desc">
+            
+            <span>descending</span>
+        </div>
+                            <div class="text">
+            
+            <span>Order:</span>
+        </div>
+                            <div class="switch_button">
+            
+            <span>Debug SQL</span>
+        </div>
+                            <div class="button order_by sort_count">
+            
+            <span>Count</span>
+        </div>
+                            <div class="button order_by sort_exec">
+            
+            <span>Execution order</span>
+        </div>
+                            <div class="button order_by sort_time">
+            
+            <span>Time taken</span>
+        </div>
+                            <div class="text">
+            
+            <span>Order by:</span>
+        </div>
+                            <div class="button group_queries">
+            
+            <span>Group queries</span>
+        </div>
+                            <div class="button ungroup_queries">
+            
+            <span>Ungroup queries</span>
+        </div>
+            </div>
+            <div class="content debug">
+                <div class="message welcome"></div>
+                <div class="debugLog"></div>
+            </div> <!-- Content -->
+            <div class="templates">
+                <div class="debug_query action_content">
+                    <span class="action collapse">
+            Collapse
+                    </span>
+                            <span class="action expand">
+            Expand
+                    </span>
+                            <span class="action dbg_show_trace">
+            Show trace
+                    </span>
+                            <span class="action dbg_hide_trace">
+            Hide trace
+                    </span>
+                            <span class="text count hide">
+            Count
+                            : <span></span>
+                    </span>
+                            <span class="text time">
+            Time taken
+                            : <span></span>
+                    </span>
+            </div>
+            </div> <!-- Template -->
+        </div> <!-- Debug SQL card -->
+                    <div class="card" id="pma_bookmarks">
+                <div class="toolbar ">
+                    <div class="switch_button">
+            
+            <span>Bookmarks</span>
+        </div>
+                            <div class="button refresh">
+            
+            <span>Refresh</span>
+        </div>
+                            <div class="button add">
+            
+            <span>Add</span>
+        </div>
+            </div>
+                <div class="content bookmark">
+                    <div class="message welcome">
+    <span>No bookmarks</span>
+</div>
+
+                </div>
+                <div class="mid_layer"></div>
+                <div class="card add">
+                    <div class="toolbar ">
+                    <div class="switch_button">
+            
+            <span>Add bookmark</span>
+        </div>
+            </div>
+                    <div class="content add_bookmark">
+                        <div class="options">
+                            <label>
+                                Label: <input type="text" name="label">
+                            </label>
+                            <label>
+                                Target database: <input type="text" name="targetdb">
+                            </label>
+                            <label>
+                                <input type="checkbox" name="shared">Share this bookmark                            </label>
+                            <button class="btn btn-primary" type="submit" name="submit">OK</button>
+                        </div> <!-- options -->
+                        <div class="query_input">
+                            <span class="bookmark_add_input"></span>
+                        </div>
+                    </div>
+                </div> <!-- Add bookmark card -->
+            </div> <!-- Bookmarks card -->
+                        <div class="card" id="pma_console_options">
+            <div class="toolbar ">
+                    <div class="switch_button">
+            
+            <span>Options</span>
+        </div>
+                            <div class="button default">
+            
+            <span>Set default</span>
+        </div>
+            </div>
+            <div class="content">
+                <label>
+                    <input type="checkbox" name="always_expand">Always expand query messages                </label>
+                <br>
+                <label>
+                    <input type="checkbox" name="start_history">Show query history at start                </label>
+                <br>
+                <label>
+                    <input type="checkbox" name="current_query">Show current browsing query                </label>
+                <br>
+                <label>
+                    <input type="checkbox" name="enter_executes">
+                        Execute queries on Enter and insert new line with Shift+Enter. To make this permanent, view settings.                </label>
+                <br>
+                <label>
+                    <input type="checkbox" name="dark_theme">Switch to dark theme                </label>
+                <br>
+            </div>
+        </div> <!-- Options card -->
+        <div class="templates">
+                        <div class="query_actions">
+                    <span class="action collapse">
+            Collapse
+                    </span>
+                            <span class="action expand">
+            Expand
+                    </span>
+                            <span class="action requery">
+            Requery
+                    </span>
+                            <span class="action edit">
+            Edit
+                    </span>
+                            <span class="action explain">
+            Explain
+                    </span>
+                            <span class="action profiling">
+            Profiling
+                    </span>
+                            <span class="action bookmark">
+            Bookmark
+                    </span>
+                            <span class="text failed">
+            Query failed
+                    </span>
+                            <span class="text targetdb">
+            Database
+                            : <span></span>
+                    </span>
+                            <span class="text query_time">
+            Queried time
+                            : <span></span>
+                    </span>
+            </div>
+        </div>
+    </div> <!-- #console end -->
+</div> <!-- #console_container end -->
+
+
+  <div id="page_content">
+    
+
+    <div class="modal fade" id="previewSqlModal" tabindex="-1" aria-labelledby="previewSqlModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="previewSqlModalLabel">Loading</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+    <div class="modal fade" id="enumEditorModal" tabindex="-1" aria-labelledby="enumEditorModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="enumEditorModalLabel">ENUM/SET editor</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="enumEditorGoButton" data-bs-dismiss="modal">Go</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+    <div class="modal fade" id="createViewModal" tabindex="-1" aria-labelledby="createViewModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" id="createViewModalDialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="createViewModalLabel">Create view</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="createViewModalGoButton">Go</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!DOCTYPE HTML>
+<html lang="en" dir="ltr">
+<head>
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+    <title>phpMyAdmin</title>
+    <meta charset="utf-8">
+    <style type="text/css">
+        html {
+            padding: 0;
+            margin: 0;
+        }
+        body  {
+            font-family: sans-serif;
+            font-size: small;
+            color: #000000;
+            background-color: #F5F5F5;
+            margin: 1em;
+        }
+        h1 {
+            margin: 0;
+            padding: 0.3em;
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #ffffff;
+            background-color: #ff0000;
+        }
+        p {
+            margin: 0;
+            padding: 0.5em;
+            border: 0.1em solid red;
+            background-color: #ffeeee;
+        }
+    </style>
+</head>
+<body>
+<h1>phpMyAdmin - Error</h1>
+<p>index.php: Missing parameter: what<a href="./doc/html/faq.html#faqmissingparameters" target="documentation"><img src="themes/dot.gif" title="Documentation" alt="Documentation" class="icon ic_b_help"></a><br>index.php: Missing parameter: export_type<a href="./doc/html/faq.html#faqmissingparameters" target="documentation"><img src="themes/dot.gif" title="Documentation" alt="Documentation" class="icon ic_b_help"></a><br></p>
+</body>
+</html>
+  </div>
+      <div id="selflink" class="d-print-none">
+      <a href="index.php?route=%2Fexport&amp;server=1" title="Open new phpMyAdmin window" target="_blank" rel="noopener noreferrer">
+                  <img src="themes/dot.gif" title="Open new phpMyAdmin window" alt="Open new phpMyAdmin window" class="icon ic_window-new">
+              </a>
+    </div>
+  
+  <div class="clearfloat d-print-none" id="pma_errors">
+    
+  </div>
+
+  
+<script data-cfasync="false" type="text/javascript">
+// <![CDATA[
+var debugSQLInfo = 'null';
+
+// ]]>
+</script>
+
+
+  
+  
+  </body>
+</html>

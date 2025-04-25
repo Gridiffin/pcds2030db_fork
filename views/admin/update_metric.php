@@ -27,13 +27,9 @@ $new_name = $conn->real_escape_string($data['new_name'] ?? '');
 $month = $conn->real_escape_string($data['month'] ?? '');
 $new_value = floatval($data['new_value'] ?? 0);
 
-// Get sector_id from session
-$sector_id = $_SESSION['sector_id'] ?? '';
+// Admin does not use sector_id filtering
+// $sector_id = $_SESSION['sector_id'] ?? '';
 
-if (!$sector_id) {
-    echo json_encode(['error' => 'Sector ID not found in session']);
-    exit;
-}
 if (!$metric_id) {
     echo json_encode(['error' => 'Metric ID not found in request']);
     exit;
@@ -41,10 +37,9 @@ if (!$metric_id) {
 
 // Handle metric name change
 if (!empty($new_name) && $new_name !== $old_name) {
-    $update_name_query = "UPDATE sector_metrics_draft 
-                          SET column_title = '$new_name',
-                          table_name = '$table_name'  
-                          WHERE column_title = '$old_name' AND sector_id = '$sector_id' AND metric_id = $metric_id";
+    $update_name_query = "UPDATE sector_metrics_submitted 
+                          SET column_title = '$new_name', table_name = '$table_name'  
+                          WHERE column_title = '$old_name' AND metric_id = $metric_id";
     if ($conn->query($update_name_query)) {
         echo json_encode(['success' => true]);
     } else {
@@ -55,21 +50,18 @@ if (!empty($new_name) && $new_name !== $old_name) {
 
 // Handle metric value update/addition
 if (!empty($month)) {
-    $check_exists_query = "SELECT 1 FROM sector_metrics_draft 
+    $check_exists_query = "SELECT 1 FROM sector_metrics_submitted 
                            WHERE column_title = '$old_name' 
                            AND month = '$month' 
-                           AND sector_id = '$sector_id'
                            AND metric_id = $metric_id LIMIT 1";
     $exists_result = $conn->query($check_exists_query);
 
     if ($exists_result && $exists_result->num_rows > 0) {
         // Update existing record
-        $update_value_query = "UPDATE sector_metrics_draft 
-                               SET table_content = $new_value, 
-                               table_name = '$table_name'
+        $update_value_query = "UPDATE sector_metrics_submitted 
+                               SET table_content = $new_value, table_name = '$table_name'
                                WHERE column_title = '$old_name' 
                                AND month = '$month' 
-                               AND sector_id = '$sector_id'
                                AND metric_id = $metric_id";
         if ($conn->query($update_value_query)) {
             echo json_encode(['success' => true]);
@@ -78,9 +70,9 @@ if (!empty($month)) {
         }
     } else {
         // Insert new record
-        $insert_query = "INSERT INTO sector_metrics_draft 
-                         (table_name, column_title, table_content, month, sector_id, metric_id) 
-                         VALUES ('$table_name   ', '$old_name', $new_value, '$month', '$sector_id', $metric_id)";
+        $insert_query = "INSERT INTO sector_metrics_submitted 
+                         (table_name, column_title, table_content, month, metric_id) 
+                         VALUES ('$table_name', '$old_name', $new_value, '$month', $metric_id)";
         if ($conn->query($insert_query)) {
             echo json_encode(['success' => true]);
         } else {
