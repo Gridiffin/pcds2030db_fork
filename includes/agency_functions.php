@@ -11,11 +11,15 @@ require_once 'utilities.php';
 /**
  * Get agency sector metrics
  */
-function get_agency_sector_metrics(){
+function get_agency_sector_metrics($sector_id){
     global $conn;
 
-    $query = "SELECT * FROM sector_metrics_submitted";
-    $result = $conn->query($query);
+    $sector_id = intval($sector_id);
+    $query = "SELECT * FROM sector_metrics_submitted WHERE sector_id = ?";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("i", $sector_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
 
     $metrics = [];
     if ($result) {
@@ -31,11 +35,15 @@ function get_agency_sector_metrics(){
  * Get Draft Metric
 */
 
-function get_draft_metric(){
+function get_draft_metric($sector_id){
     global $conn;
 
-    $query = "SELECT * FROM sector_metrics_draft";
-    $result = $conn->query($query);
+    $sector_id = intval($sector_id);
+    $query = "SELECT * FROM sector_metrics_draft WHERE sector_id = ?";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("i", $sector_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
 
     $metrics = [];
     if ($result) {

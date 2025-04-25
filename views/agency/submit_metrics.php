@@ -38,7 +38,7 @@ if (!is_array($metrics)) {
     $metrics = [];
 }
 
-$draft_metrics = get_draft_metric();
+$draft_metrics = get_draft_metric($_SESSION['sector_id']);
 if (!is_array($draft_metrics)) {
     $draft_metrics = [];
 }

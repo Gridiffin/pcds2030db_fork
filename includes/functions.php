@@ -6,6 +6,24 @@
 // Include status helpers
 require_once 'status_helpers.php';
 
+
+/**
+ * Get all metrics
+ */
+function get_all_metrics(){
+    global $conn;
+    
+    $query = "SELECT * FROM sector_metrics_submitted ORDER BY metric_id DESC";
+    $result = $conn->query($query);
+    
+    $metrics = [];
+    while ($row = $result->fetch_assoc()) {
+        $metrics[] = $row;
+    }
+    
+    return $metrics;
+
+}
 /**
  * Sanitize user input
  * @param string $data Input to sanitize
