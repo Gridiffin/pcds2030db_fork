@@ -56,6 +56,7 @@ require_once '../layouts/admin_nav.php';
                 <thead>
                     <tr>
                         <th>Metric ID</th>
+                        <th>Sector</th>
                         <th>Table Name</th>
                         <th>Actions</th>
                     </tr>
@@ -69,6 +70,7 @@ require_once '../layouts/admin_nav.php';
                     ?>
                         <tr data-metric-id="<?php echo $metric['metric_id']; ?>">
                             <td><?php echo $metric['metric_id']; ?></td>
+                            <td><?php echo htmlspecialchars($metric['sector_name']); ?></td>
                             <td><?php echo htmlspecialchars($metric['table_name']); ?></td>
                             <td>
                                 <a href="edit_metric.php?metric_id=<?php echo $metric['metric_id']; ?>" class="btn btn-sm btn-primary edit-metric" role="button">Edit</a>

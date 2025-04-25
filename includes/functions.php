@@ -13,7 +13,7 @@ require_once 'status_helpers.php';
 function get_all_metrics(){
     global $conn;
     
-    $query = "SELECT * FROM sector_metrics_submitted ORDER BY metric_id DESC";
+    $query = "SELECT sms.*, s.sector_name FROM sector_metrics_submitted sms LEFT JOIN sectors s ON sms.sector_id = s.sector_id ORDER BY sms.metric_id DESC";
     $result = $conn->query($query);
     
     $metrics = [];

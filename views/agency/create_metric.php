@@ -212,6 +212,9 @@ foreach ($metric_names as $name): ?>
                         <?php endforeach; ?>
             </tbody>
         </table>
+        <div class="mt-3">
+            <button class="btn btn-success" id="doneBtn">Done</button>
+        </div>
     </div>
 </body>
 <script>
@@ -383,6 +386,12 @@ foreach ($metric_names as $name): ?>
         } catch (error) {
             alert('Error updating table name: ' + error.message);
         }
+    });
+</script>
+<script>
+    // Done button handler: redirect to agency dashboard or metrics list
+    document.getElementById('doneBtn').addEventListener('click', () => {
+        window.location.href = 'submit_metrics.php'; // Adjust the URL as needed
     });
 </script>
 </html>
