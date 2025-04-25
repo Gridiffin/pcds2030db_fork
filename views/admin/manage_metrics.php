@@ -24,6 +24,11 @@ $pageTitle = 'Manage Metrics';
 // Get all metrics
 $metrics = get_all_metrics();
 
+// Sort metrics descending by metric_id
+usort($metrics, function($a, $b) {
+    return $b['metric_id'] <=> $a['metric_id'];
+});
+
 // Include header
 require_once '../layouts/header.php';
 
@@ -51,7 +56,6 @@ require_once '../layouts/admin_nav.php';
                 <thead>
                     <tr>
                         <th>Metric ID</th>
-                        <th>Metric Name</th>
                         <th>Table Name</th>
                         <th>Actions</th>
                     </tr>
@@ -62,19 +66,21 @@ require_once '../layouts/admin_nav.php';
                     foreach ($metrics as $metric){
                         if (!in_array($metric['metric_id'], $unique_metrics)) {
                             $unique_metrics[] = $metric['metric_id'];
-                        } 
                     ?>
                         <tr data-metric-id="<?php echo $metric['metric_id']; ?>">
                             <td><?php echo $metric['metric_id']; ?></td>
-                            <td><?php echo htmlspecialchars($metric['column_title']); ?></td>
                             <td><?php echo htmlspecialchars($metric['table_name']); ?></td>
                             <td>
-                                <button class="btn btn-sm btn-primary edit-metric" data-metric-id="<?php echo $metric['metric_id']; ?>">Edit</button>
-                                <button class="btn btn-sm btn-danger delete-metric" data-metric-id="<?php echo $metric['metric_id']; ?>">Delete</button>
+                                <a href="edit_metric.php?metric_id=<?php echo $metric['metric_id']; ?>" class="btn btn-sm btn-primary edit-metric" role="button">Edit</a>
+                                <a href="delete_metric.php?metric_id=<?php echo $metric['metric_id']; ?>" class="btn btn-sm btn-danger delete-metric" role="button" onclick="return confirm('Are you sure you want to delete this metric?');">Delete</a>
                             </td>
                         </tr>
-                    <?php } ?>
+                    <?php 
+                        } 
+                    } 
+                    ?>
                 </tbody>
             </table>
         </div>
     </div>
+</div>
