@@ -332,108 +332,6 @@ function create_agency_program($data) {
 }
 
 /**
- * Create a new program draft for an agency
- * @param array $data Program data
- * @return array Result of creation
- */
-function create_agency_program_draft($data) {
-    global $conn;
-    
-    if (!is_agency()) {
-        return format_error('Permission denied', 403);
-    }
-    
-    // Basic validation for drafts (less strict than final submission)
-    $program_name = $conn->real_escape_string($data['program_name'] ?? '');
-    $description = $conn->real_escape_string($data['description'] ?? '');
-    $start_date = $data['start_date'] ?? null;
-    $end_date = $data['end_date'] ?? null;
-    $target = $conn->real_escape_string($data['target'] ?? '');
-    $status = $conn->real_escape_string($data['status'] ?? 'not-started');
-    $status_date = $data['status_date'] ?? date('Y-m-d');
-    $status_text = $conn->real_escape_string($data['status_text'] ?? '');
-    
-    // Minimal validation
-    if (empty($program_name)) {
-        return format_error('Program name is required, even for drafts');
-    }
-    
-    $user_id = $_SESSION['user_id'];
-    $sector_id = $_SESSION['sector_id'];
-    $has_content_json = has_content_json_schema();
-    $has_is_assigned = has_is_assigned_column();
-    
-    // Begin transaction
-    $conn->begin_transaction();
-    
-    try {
-        // Insert program
-        if ($has_is_assigned) {
-            $query = "INSERT INTO programs (program_name, description, start_date, end_date, 
-                                        owner_agency_id, sector_id, created_by, is_assigned) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, 0)";
-            
-            $stmt = $conn->prepare($query);
-            $stmt->bind_param("ssssiii", $program_name, $description, $start_date, $end_date, 
-                            $user_id, $sector_id, $user_id);
-        } else {
-            $query = "INSERT INTO programs (program_name, description, start_date, end_date, 
-                                        owner_agency_id, sector_id) 
-                    VALUES (?, ?, ?, ?, ?, ?)";
-            
-            $stmt = $conn->prepare($query);
-            $stmt->bind_param("ssssii", $program_name, $description, $start_date, $end_date, 
-                            $user_id, $sector_id);
-        }
-        
-        $stmt->execute();
-        $program_id = $conn->insert_id;
-        
-        // Get current period
-        $current_period = get_current_reporting_period();
-        if (!$current_period) {
-            throw new Exception('No active reporting period found');
-        }
-        
-        // Set draft flag
-        $is_draft = 1;
-        
-        // Insert submission based on schema
-        if ($has_content_json) {
-            $content = json_encode([
-                'target' => $target,
-                'status_date' => $status_date,
-                'status_text' => $status_text
-            ]);
-            
-            $sub_query = "INSERT INTO program_submissions (program_id, period_id, submitted_by, 
-                        content_json, status, is_draft) 
-                        VALUES (?, ?, ?, ?, ?, ?)";
-            
-            $stmt = $conn->prepare($sub_query);
-            $stmt->bind_param("iiissi", $program_id, $current_period['period_id'], $user_id, 
-                            $content, $status, $is_draft);
-        } else {
-            $sub_query = "INSERT INTO program_submissions (program_id, period_id, submitted_by, 
-                        target, status, status_date, is_draft) 
-                        VALUES (?, ?, ?, ?, ?, ?, ?)";
-            
-            $stmt = $conn->prepare($sub_query);
-            $stmt->bind_param("iiisssi", $program_id, $current_period['period_id'], $user_id, 
-                            $target, $status, $status_date, $is_draft);
-        }
-        
-        $stmt->execute();
-        $conn->commit();
-        
-        return format_success('Program draft saved successfully', ['program_id' => $program_id]);
-    } catch (Exception $e) {
-        $conn->rollback();
-        return format_error('Failed to create program draft: ' . $e->getMessage());
-    }
-}
-
-/**
  * Submit data for a program
  * @param array $data Program data
  * @param bool $is_draft Whether this is a draft submission
@@ -497,25 +395,27 @@ function submit_program_data($data, $is_draft = false) {
     $conn->begin_transaction();
     
     try {
+        // Check if this is an assigned program
+        $check_query = "SELECT is_assigned FROM programs WHERE program_id = ? AND owner_agency_id = ?";
+        $stmt = $conn->prepare($check_query);
+        $stmt->bind_param("ii", $program_id, $user_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $is_assigned = 0;
+        
+        if ($result->num_rows > 0) {
+            $program = $result->fetch_assoc();
+            $is_assigned = $program['is_assigned'];
+        }
+        
         // First update the program's timeline if provided
         if ($start_date && $end_date) {
-            // Check if this is a user-created program (not assigned)
-            $check_query = "SELECT is_assigned FROM programs WHERE program_id = ? AND owner_agency_id = ?";
-            $stmt = $conn->prepare($check_query);
-            $stmt->bind_param("ii", $program_id, $user_id);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            
-            if ($result->num_rows > 0) {
-                $program = $result->fetch_assoc();
-                
-                // Only update timeline for non-assigned programs or if user has edit permissions
-                if ($program['is_assigned'] == 0) {
-                    $update_program = "UPDATE programs SET start_date = ?, end_date = ?, updated_at = NOW() WHERE program_id = ?";
-                    $stmt = $conn->prepare($update_program);
-                    $stmt->bind_param("ssi", $start_date, $end_date, $program_id);
-                    $stmt->execute();
-                }
+            // Only update timeline for non-assigned programs or if user has edit permissions
+            if ($is_assigned == 0) {
+                $update_program = "UPDATE programs SET start_date = ?, end_date = ?, updated_at = NOW() WHERE program_id = ?";
+                $stmt = $conn->prepare($update_program);
+                $stmt->bind_param("ssi", $start_date, $end_date, $program_id);
+                $stmt->execute();
             }
         }
         

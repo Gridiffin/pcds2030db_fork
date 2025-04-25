@@ -69,7 +69,7 @@ class DashboardController {
                         GROUP BY program_id
                     ) ps2 ON ps1.program_id = ps2.program_id AND ps1.submission_id = ps2.max_id
                   ) ps ON p.program_id = ps.program_id
-                  WHERE (p.owner_agency_id = ?";
+                  WHERE ((p.owner_agency_id = ? AND p.is_assigned = 0)";
         
         $params = [$period_id, $agency_id];
         $types = "ii";
@@ -82,7 +82,7 @@ class DashboardController {
         }
         
         // Important: Only count finalized programs, NOT drafts
-        $query .= ") AND (ps.is_draft = 0 OR (ps.submission_id IS NULL AND p.is_assigned = 0))";
+        $query .= ") AND (ps.is_draft = 0 OR ps.submission_id IS NULL)";
         
         $stmt = $this->db->prepare($query);
         $stmt->bind_param($types, ...$params);

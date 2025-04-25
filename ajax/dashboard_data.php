@@ -30,7 +30,7 @@ $include_assigned = isset($_POST['include_assigned']) ?
                     filter_var($_POST['include_assigned'], FILTER_VALIDATE_BOOLEAN) : 
                     (isset($_GET['include_assigned']) ? 
                      filter_var($_GET['include_assigned'], FILTER_VALIDATE_BOOLEAN) : 
-                     true);
+                     false);  // Default to exclude assigned programs when parameter not provided
 
 // Initialize controller
 $dashboardController = new DashboardController($conn);

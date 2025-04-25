@@ -46,8 +46,8 @@ function initDashboardAssignedToggle() {
     if (savedPreference !== null) {
         toggle.checked = savedPreference === 'true';
     } else {
-        // Default to true if not previously set
-        toggle.checked = true;
+        // Default to false (OFF) if not previously set
+        toggle.checked = false;
     }
     
     toggle.addEventListener('change', function() {
