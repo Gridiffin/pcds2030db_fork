@@ -47,36 +47,52 @@ $additionalScripts = [
     APP_URL . '/assets/js/agency/metric_submission.js'
 ];
 
+// Include header
 require_once '../layouts/header.php';
+
+// Include agency navigation
 require_once '../layouts/agency_nav.php';
+
+// Set up the page header variables for dashboard_header.php
+$title = "Submit Sector Metrics";
+$subtitle = "Update your sector-specific metrics for this reporting period";
+$headerStyle = 'light'; // Use light (white) style for inner pages
+
+// Get next metric ID for the Create New Metric button
+$next_metric_id = 0;
+$result = $conn->query("SELECT MAX(metric_id) AS max_id FROM (SELECT metric_id FROM sector_metrics_submitted UNION ALL SELECT metric_id FROM sector_metrics_draft) AS combined");
+if ($result && $row = $result->fetch_assoc()) {
+    $next_metric_id = $row['max_id'] + 1;
+}
+
+// Set up period badge for actions array if period exists
+$actions = [];
+
+// Add period badges first
+if ($current_period) {
+    $actions[] = [
+        'html' => '<span class="badge bg-success"><i class="fas fa-calendar-alt me-1"></i> Q' . $current_period['quarter'] . '-' . $current_period['year'] . '</span>'
+    ];
+    $actions[] = [
+        'html' => '<span class="badge bg-success ms-2"><i class="fas fa-clock me-1"></i> Ends: ' . date('M j, Y', strtotime($current_period['end_date'])) . '</span>'
+    ];
+} else {
+    $actions[] = [
+        'html' => '<span class="badge bg-warning"><i class="fas fa-exclamation-triangle me-1"></i> No Active Reporting Period</span>'
+    ];
+}
+
+// Add Create New Metric button after the period badges
+$actions[] = [
+    'url' => "create_metric.php?sector_id={$_SESSION['sector_id']}&next_metric_id={$next_metric_id}",
+    'text' => 'Create New Metric',
+    'icon' => 'fa-plus-circle',
+    'class' => 'btn-primary ms-3' // Added margin-start for spacing from badges
+];
+
+// Include the dashboard header component
+require_once '../../includes/dashboard_header.php';
 ?>
-
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h1 class="h2 mb-0">Submit Sector Metrics</h1>
-        <p class="text-muted">Update your sector-specific metrics for this reporting period</p>
-    </div>
-
-    <?php if ($current_period): ?>
-        <div class="period-badge">
-            <span class="badge bg-success">
-                <i class="fas fa-calendar-alt me-1"></i>
-                Q<?= $current_period['quarter'] ?>-<?= $current_period['year'] ?>
-            </span>
-            <span class="badge bg-success">
-                <i class="fas fa-clock me-1"></i>
-                Ends: <?= date('M j, Y', strtotime($current_period['end_date'])) ?>
-            </span>
-        </div>
-    <?php else: ?>
-        <div class="period-badge">
-            <span class="badge bg-warning">
-                <i class="fas fa-exclamation-triangle me-1"></i>
-                No Active Reporting Period
-            </span>
-        </div>
-    <?php endif; ?>
-</div>
 
 <?php if (!empty($message)): ?>
     <div class="alert alert-<?= $message_type ?> alert-dismissible fade show" role="alert">
@@ -100,21 +116,13 @@ require_once '../layouts/agency_nav.php';
 <span class="badge bg-primary"><?= count(array_unique(array_column($metrics, 'metric_id'))) ?> Metrics</span>
         </div>
         <div class="card-body">
-            <?php
-                $next_metric_id = 0;
-                $result = $conn->query("SELECT MAX(metric_id) AS max_id FROM (SELECT metric_id FROM sector_metrics_submitted UNION ALL SELECT metric_id FROM sector_metrics_draft) AS combined");
-                if ($result && $row = $result->fetch_assoc()) {
-                    $next_metric_id = $row['max_id'] + 1;
-                }
-            ?>
-            <a href="create_metric.php?sector_id=<?= $_SESSION['sector_id'] ?>&next_metric_id=<?= $next_metric_id ?>" class="btn"> + Create New </a>
             <?php if (empty($metrics)): ?>
-                <div class="alert alert-info">
+                <div class="alert alert-info mt-3">
                     <i class="fas fa-info-circle me-2"></i>
                     No metrics for your sector yet. Contact the administrator for assistance.
                 </div>
             <?php else: ?>
-                <p class="mb-3">Please provide values for all required metrics for the current reporting period (Q<?= $current_period['quarter'] ?>-<?= $current_period['year'] ?>).</p>
+                <p class="mb-3 mt-3">Please provide values for all required metrics for the current reporting period (Q<?= $current_period['quarter'] ?>-<?= $current_period['year'] ?>).</p>
                 <form method="post" id="metricsForm">
                     <input type="hidden" name="period_id" value="<?= $current_period['period_id'] ?>">
                     <div class="table-responsive">
@@ -159,8 +167,8 @@ require_once '../layouts/agency_nav.php';
                     <table class="table table-hover table-custom">
                         <thead>
                             <tr>
-                                <th width="90%">Metric</th>
-                                <th width="10%">Actions</th>
+                                <th width="60%">Metric</th>
+                                <th width="40%">Actions</th>
                             </tr>
                         </thead>
                         <tbody>

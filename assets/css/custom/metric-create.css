@@ -227,3 +227,99 @@ label[for="tableNameInput"] {
         align-items: flex-start;
     }
 }
+
+/**
+ * Metric Editor CSS
+ * Styles for the sector metrics editor
+ */
+
+/* Metric cell styling */
+.metric-cell {
+    position: relative;
+}
+
+.metric-value, .metric-name {
+    min-width: 80px;
+    padding: 0.25rem 0.5rem;
+    display: inline-block;
+    border: 1px dashed transparent;
+    transition: all 0.2s ease;
+}
+
+.metric-value:hover, .metric-name:hover, 
+.metric-value:focus, .metric-name:focus {
+    border-color: var(--bs-primary);
+    background-color: rgba(var(--bs-primary-rgb), 0.05);
+    outline: none;
+}
+
+/* Metric header styling */
+.metric-header {
+    display: flex;
+    align-items: center;
+}
+
+/* Save button styling */
+.save-btn {
+    display: none;
+    border: none;
+    background-color: var(--bs-primary);
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 10px;
+    cursor: pointer;
+    margin-left: 4px;
+    transition: all 0.2s ease;
+}
+
+.save-btn:hover {
+    background-color: #0b5ed7;
+    transform: scale(1.1);
+}
+
+/* Table responsive styling */
+.metrics-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.metrics-table th, .metrics-table td {
+    padding: 0.75rem;
+    border: 1px solid #dee2e6;
+}
+
+.metrics-table thead th {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    vertical-align: bottom;
+}
+
+.metrics-table tbody tr:nth-of-type(odd) {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.metrics-table tbody tr:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.05);
+}
+
+/* Empty value styling */
+.empty-value {
+    color: #6c757d;
+    font-style: italic;
+}
+
+/* Month badge styling */
+.month-badge {
+    background-color: #e9ecef;
+    color: #495057;
+    border-radius: 4px;
+    padding: 0.35em 0.65em;
+    font-weight: 600;
+}
+
+/* Toast container positioning */
+.toast-container {
+    z-index: 1050;
+}

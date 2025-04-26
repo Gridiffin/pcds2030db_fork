@@ -25,14 +25,18 @@ $headerClass = $headerClass ?? ''; // Added support for additional header classe
             <?php if (!empty($actions)): ?>
                 <div class="col-auto">
                     <?php foreach ($actions as $action): ?>
-                        <a href="<?php echo $action['url'] ?? '#'; ?>" 
-                            <?php if(isset($action['id'])): ?>id="<?php echo $action['id']; ?>"<?php endif; ?> 
-                            class="btn <?php echo $action['class'] ?? 'btn-light border border-primary text-primary'; ?>">
-                            <?php if (isset($action['icon'])): ?>
-                                <i class="<?php echo $action['icon']; ?> me-1"></i>
-                            <?php endif; ?>
-                            <span><?php echo htmlspecialchars($action['text']); ?></span>
-                        </a>
+                        <?php if (isset($action['html'])): ?>
+                            <?php echo $action['html']; ?>
+                        <?php else: ?>
+                            <a href="<?php echo $action['url'] ?? '#'; ?>" 
+                                <?php if(isset($action['id'])): ?>id="<?php echo $action['id']; ?>"<?php endif; ?> 
+                                class="btn <?php echo $action['class'] ?? 'btn-light border border-primary text-primary'; ?>">
+                                <?php if (isset($action['icon'])): ?>
+                                    <i class="fas <?php echo $action['icon']; ?> me-1"></i>
+                                <?php endif; ?>
+                                <span><?php echo htmlspecialchars($action['text'] ?? ''); ?></span>
+                            </a>
+                        <?php endif; ?>
                     <?php endforeach; ?>
                 </div>
             <?php endif; ?>
