@@ -35,13 +35,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'end_date' => $_POST['end_date'] ?? '',
         'target' => $_POST['target'] ?? '',
         'status' => $_POST['status'] ?? 'not-started',
-        'status_date' => date('Y-m-d'),
-        'status_text' => $_POST['status_text'] ?? '' // Added this line to include status_text
+        'status_date' => $_POST['status_date'] ?? date('Y-m-d'),
+        'status_text' => $_POST['status_text'] ?? ''
     ];
     
-    // Submit as draft or final based on button clicked
+    // Submit program data based on draft status
     if ($is_draft) {
-        // Less validation for drafts
+        // For new programs as drafts, use the draft-specific function
         $result = create_agency_program_draft($program_data);
     } else {
         // Full validation for final submission

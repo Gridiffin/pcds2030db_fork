@@ -332,6 +332,117 @@ function create_agency_program($data) {
 }
 
 /**
+ * Create a new program for an agency as a draft
+ * @param array $data Program data
+ * @return array Result of creation
+ */
+function create_agency_program_draft($data) {
+    global $conn;
+    
+    if (!is_agency()) {
+        return format_error('Permission denied', 403);
+    }
+    
+    // Basic validation - only program_name is required for drafts
+    $validated = validate_form_input($data, ['program_name']);
+    if (isset($validated['error'])) {
+        return $validated;
+    }
+    
+    $program_name = $validated['program_name'];
+    $description = $validated['description'] ?? '';
+    $start_date = $validated['start_date'] ?? null;
+    $end_date = $validated['end_date'] ?? null;
+    $target = $validated['target'] ?? '';
+    $status = $validated['status'] ?? 'not-started';
+    $status_date = $validated['status_date'] ?? date('Y-m-d');
+    $status_text = $validated['status_text'] ?? '';
+    
+    // Validate dates if provided
+    if ($start_date && $end_date && strtotime($start_date) > strtotime($end_date)) {
+        return format_error('End date cannot be before start date');
+    }
+    
+    $user_id = $_SESSION['user_id'];
+    $sector_id = $_SESSION['sector_id'];
+    $has_content_json = has_content_json_schema();
+    $has_is_assigned = has_is_assigned_column();
+    
+    // Begin transaction
+    $conn->begin_transaction();
+    
+    try {
+        // Insert program
+        if ($has_is_assigned) {
+            $query = "INSERT INTO programs (program_name, description, start_date, end_date, 
+                                        owner_agency_id, sector_id, created_by, is_assigned) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 0)";
+            
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param("ssssiii", $program_name, $description, $start_date, $end_date, 
+                            $user_id, $sector_id, $user_id);
+        } else {
+            $query = "INSERT INTO programs (program_name, description, start_date, end_date, 
+                                        owner_agency_id, sector_id) 
+                    VALUES (?, ?, ?, ?, ?, ?)";
+            
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param("ssssii", $program_name, $description, $start_date, $end_date, 
+                            $user_id, $sector_id);
+        }
+        
+        $stmt->execute();
+        $program_id = $conn->insert_id;
+        
+        // Get current period
+        $current_period = get_current_reporting_period();
+        if (!$current_period) {
+            throw new Exception('No active reporting period found');
+        }
+        
+        // Insert submission as draft based on schema
+        if ($has_content_json) {
+            $content = json_encode([
+                'target' => $target,
+                'status_date' => $status_date,
+                'status_text' => $status_text,
+                'achievement' => '',
+                'remarks' => '',
+                'status' => $status // Include status in JSON content for consistency
+            ]);
+            
+            $is_draft = 1; // Set as draft
+            
+            $sub_query = "INSERT INTO program_submissions (program_id, period_id, submitted_by, 
+                        content_json, status, is_draft) 
+                        VALUES (?, ?, ?, ?, ?, ?)";
+            
+            $stmt = $conn->prepare($sub_query);
+            $stmt->bind_param("iiissi", $program_id, $current_period['period_id'], $user_id, 
+                            $content, $status, $is_draft);
+        } else {
+            $is_draft = 1; // Set as draft
+            
+            $sub_query = "INSERT INTO program_submissions (program_id, period_id, submitted_by, 
+                        target, status, status_date, is_draft) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?)";
+            
+            $stmt = $conn->prepare($sub_query);
+            $stmt->bind_param("iiisssi", $program_id, $current_period['period_id'], $user_id, 
+                            $target, $status, $status_date, $is_draft);
+        }
+        
+        $stmt->execute();
+        $conn->commit();
+        
+        return format_success('Program saved as draft successfully', ['program_id' => $program_id]);
+    } catch (Exception $e) {
+        $conn->rollback();
+        return format_error('Failed to create program draft: ' . $e->getMessage());
+    }
+}
+
+/**
  * Submit data for a program
  * @param array $data Program data
  * @param bool $is_draft Whether this is a draft submission
@@ -379,13 +490,14 @@ function submit_program_data($data, $is_draft = false) {
     $start_date = $validated['start_date'] ?? null;
     $end_date = $validated['end_date'] ?? null;
     
-    // Create JSON content
+    // Create JSON content - Include status in the JSON content
     $content = [
         'target' => $target,
         'status_date' => $status_date,
         'status_text' => $status_text,
         'achievement' => $achievement,
-        'remarks' => $remarks
+        'remarks' => $remarks,
+        'status' => $status // Store status in JSON for consistency
     ];
     
     $content_json = json_encode($content);
@@ -669,9 +781,10 @@ function get_agency_submission_status($agency_id, $period_id = null) {
  * This function retrieves programs from all sectors, for the agency view
  * 
  * @param int $period_id Optional period ID to filter by specific reporting period
+ * @param array $filters Optional filters to apply
  * @return array List of programs from all sectors
  */
-function get_all_sectors_programs($period_id = null) {
+function get_all_sectors_programs($period_id = null, $filters = []) {
     global $conn;
     
     if (!is_agency()) {
@@ -684,6 +797,9 @@ function get_all_sectors_programs($period_id = null) {
     
     // Initialize query parts
     $has_content_json = has_content_json_schema();
+    $filterConditions = [];
+    $filterParams = [];
+    $filterTypes = "";
     
     // Base query
     $query = "SELECT 
@@ -710,7 +826,9 @@ function get_all_sectors_programs($period_id = null) {
               FROM programs p
               JOIN sectors s ON p.sector_id = s.sector_id
               JOIN users u ON p.owner_agency_id = u.user_id
-              LEFT JOIN (";
+              INNER JOIN (";
+    
+    // Changed to INNER JOIN to exclude programs with no submissions
     
     // Subquery to get latest submission for each program 
     $subquery = "SELECT 
@@ -735,14 +853,65 @@ function get_all_sectors_programs($period_id = null) {
     $subquery .= " ORDER BY CASE WHEN period_id = " . ($period_id ?? 0) . " THEN 0 ELSE 1 END, 
                    submission_id DESC";
     
-    $query .= $subquery . ") ps ON p.program_id = ps.program_id
-              GROUP BY p.program_id 
-              ORDER BY (p.sector_id = ?) DESC, p.created_at DESC";
+    $query .= $subquery . ") ps ON p.program_id = ps.program_id";
+    
+    // Start with base condition: only show finalized submissions
+    $filterConditions[] = "ps.is_draft = 0";
+    
+    // Apply additional filters
+    if (!empty($filters)) {
+        // Filter by sector_id
+        if (isset($filters['sector_id']) && $filters['sector_id']) {
+            $filterConditions[] = "p.sector_id = ?";
+            $filterParams[] = $filters['sector_id'];
+            $filterTypes .= "i";
+        }
+        
+        // Filter by agency_id
+        if (isset($filters['agency_id']) && $filters['agency_id']) {
+            $filterConditions[] = "p.owner_agency_id = ?";
+            $filterParams[] = $filters['agency_id'];
+            $filterTypes .= "i";
+        }
+        
+        // Filter by status
+        if (isset($filters['status']) && $filters['status']) {
+            $filterConditions[] = "ps.status = ?";
+            $filterParams[] = $filters['status'];
+            $filterTypes .= "s";
+        }
+        
+        // Filter by search term
+        if (isset($filters['search']) && $filters['search']) {
+            $searchTerm = '%' . $filters['search'] . '%';
+            $filterConditions[] = "(p.program_name LIKE ? OR p.description LIKE ?)";
+            $filterParams[] = $searchTerm;
+            $filterParams[] = $searchTerm;
+            $filterTypes .= "ss";
+        }
+    }
+    
+    // Add filter conditions to query
+    if (!empty($filterConditions)) {
+        $query .= " WHERE " . implode(" AND ", $filterConditions);
+    }
+    
+    // Finalize query
+    $query .= " GROUP BY p.program_id 
+                ORDER BY (p.sector_id = ?) DESC, p.created_at DESC";
+    $filterParams[] = $current_sector_id;
+    $filterTypes .= "i";
     
     // Execute query
     try {
         $stmt = $conn->prepare($query);
-        $stmt->bind_param("i", $current_sector_id);
+        
+        // Bind parameters if there are any
+        if (!empty($filterParams)) {
+            // Combine parameters and types
+            $stmt->bind_param($filterTypes, ...$filterParams);
+        }
+        
         $stmt->execute();
         $result = $stmt->get_result();
         
@@ -811,4 +980,6 @@ function get_all_sectors() {
     
     return $sectors;
 }
+
+
 ?>
