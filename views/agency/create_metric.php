@@ -123,15 +123,12 @@ while ($row = $metrics->fetch_assoc()) {
     <link rel="stylesheet" type="text/css" href="../../assets/css/custom/metric-create.css">
 </head>
 <body>
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="container">
         <div>
             <h1 class="h2 mb-0">Create New Sector Metrics</h1> 
             <p class="text-muted">Create your sector-specific metrics</p>
-            <?php echo $metric_id?>                                                 <!-- debugging purposes, remove later -->
         </div>
-    </div>
 
-    <div class="container">
         <?php
             // Get the table_name from the first metric row for the sector
             $table_name = '';
@@ -155,7 +152,7 @@ while ($row = $metrics->fetch_assoc()) {
         </div>
 
         <!-- Add Column Button -->
-        <button class="btn" id="addColumnBtn">Add Column</button>
+        <button class="btn btn-info" id="addColumnBtn">Add Column</button>
 
         <!-- Sector Metrics Table -->
         <table>

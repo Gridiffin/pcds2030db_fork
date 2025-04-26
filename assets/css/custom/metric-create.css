@@ -1,33 +1,229 @@
-.container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-.year-selector { margin: 20px 0; }
-.data-form { background: #f5f5f5; padding: 20px; border-radius: 5px; margin-bottom: 20px; }
-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-th, td { border: px solid #ddd; padding: 25px; text-align: left; }
-th { background-color: #f2f2f2; }
-.metric-value { text-align: right; }
+/* Container */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+}
+
+/* Headings */
+h1.h2 {
+    font-weight: 700;
+    font-size: 2rem;
+    margin-bottom: 0.25rem;
+}
+
+p.text-muted {
+    color: #6c757d;
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Table styles */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.2);
+    border-radius: 8px;
+    overflow: hidden;
+    border: 3px solid #004085;
+}
+
+th, td {
+    border: 2px solid #004085;
+    padding: 12px 15px;
+    text-align: left;
+    vertical-align: middle;
+}
+
+th {
+    background-color: #0056b3;
+    color: white;
+    font-weight: 700;
+    user-select: none;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+tbody tr:nth-child(even) {
+    background-color: #e9f5ff;
+}
+
+tbody tr:hover {
+    background-color: #cce5ff;
+}
+
+/* Editable metric name and value */
+.metric-name, .metric-value {
+    display: inline-block;
+    min-width: 100px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    outline: none;
+    cursor: text;
+    transition: background-color 0.3s ease;
+}
+
+.metric-value {
+    text-align: right;
+}
+
+.metric-name[contenteditable="true"]:focus,
+.metric-value[contenteditable="true"]:focus {
+    background-color: #fffacd;
+    box-shadow: 0 0 5px #ffc107;
+}
+
+/* Metric header and cell layout */
 .metric-header, .metric-cell {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 8px;
 }
+
+/* Save button */
 .save-btn {
-    padding: 2px 5px;
-    font-size: 12px;
+    padding: 6px 12px;
+    font-size: 14px;
     cursor: pointer;
-    margin-left: 5px;
-    display: none;
-}
-.metric-value[contenteditable="true"]:focus,
-.metric-name[contenteditable="true"]:focus {
-    background-color: #fffacd;
-}
-.add-column-btn {
-    padding: 10px 15px;
-    background: #007bff;
+    border: none;
+    background-color: #007bff;
     color: white;
+    border-radius: 5px;
+    display: none;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0,123,255,0.4);
+}
+
+.save-btn:hover {
+    background-color: #0056b3;
+    transform: scale(1.05);
+}
+
+/* Show save button when visible */
+.save-btn.show {
+    display: inline-block !important;
+}
+
+/* Table name input and label */
+#tableNameInput {
+    padding: 8px 12px;
+    font-size: 1rem;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    width: 300px;
+    transition: border-color 0.3s ease;
+}
+
+#tableNameInput:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 5px #007bff;
+}
+
+label[for="tableNameInput"] {
+    font-weight: 600;
+    font-size: 1.25rem;
+}
+
+/* Buttons */
+.btn {
+    padding: 6px 14px;
+    font-size: 0.9rem;
+    border-radius: 5px;
     border: none;
     cursor: pointer;
-    border-radius: 4px;
-    font-size: 16px;
-    margin-bottom: 20px;
+    transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+    user-select: none;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.btn-primary {
+    background-color: #007bff;
+    color: white;
+    box-shadow: 0 4px 8px rgba(0,123,255,0.6);
+}
+
+.btn-primary:hover {
+    background-color: #004085;
+    transform: scale(1.1);
+    box-shadow: 0 6px 14px rgba(0,64,133,0.8);
+}
+
+.btn-success {
+    background-color: #28a745;
+    color: white;
+    box-shadow: 0 3px 6px rgba(40,167,69,0.5);
+}
+
+.btn-success:hover {
+    background-color: #1e7e34;
+    transform: scale(1.05);
+    box-shadow: 0 5px 10px rgba(30,126,52,0.6);
+}
+
+.btn-info {
+    background-color: #17a2b8;
+    color: white;
+    box-shadow: 0 3px 6px rgba(23,162,184,0.5);
+}
+
+.btn-info:hover {
+    background-color: #117a8b;
+    transform: scale(1.05);
+    box-shadow: 0 5px 10px rgba(17,122,139,0.6);
+}
+
+.btn:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    #tableNameInput {
+        width: 100%;
+    }
+
+    table, thead, tbody, th, td, tr {
+        display: block;
+    }
+
+    thead tr {
+        display: none;
+    }
+
+    tbody tr {
+        margin-bottom: 15px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 10px;
+    }
+
+    tbody td {
+        padding: 10px;
+        text-align: right;
+        position: relative;
+        padding-left: 50%;
+        border: none;
+        border-bottom: 1px solid #eee;
+    }
+
+    tbody td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 15px;
+        width: 45%;
+        padding-left: 10px;
+        font-weight: 600;
+        text-align: left;
+    }
+
+    .metric-header, .metric-cell {
+        flex-direction: column;
+        align-items: flex-start;
+    }
 }
