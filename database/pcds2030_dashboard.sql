@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 25, 2025 at 04:39 AM
+-- Generation Time: Apr 27, 2025 at 02:15 PM
 -- Server version: 10.4.32-MariaDB
--- PHP Version: 8.0.30
+-- PHP Version: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -65,12 +65,14 @@ CREATE TABLE `programs` (
 --
 
 INSERT INTO `programs` (`program_id`, `program_name`, `description`, `owner_agency_id`, `sector_id`, `start_date`, `end_date`, `created_at`, `updated_at`, `is_assigned`, `edit_permissions`, `created_by`) VALUES
-(23, 'popo', 'popopipipop', 12, 2, '2025-04-01', '2025-04-08', '2025-04-08 08:26:23', '2025-04-08 08:26:23', 0, NULL, 12),
-(25, 'test', 'test', 12, 2, '2025-04-03', '2025-04-03', '2025-04-10 02:56:45', '2025-04-10 02:56:45', 0, NULL, 12),
-(26, 'qwer', 'qwer', 12, 2, '2025-01-01', '2025-02-10', '2025-04-10 03:17:59', '2025-04-10 03:17:59', 0, NULL, 12),
-(38, 'cuba', 'cayb', 12, 2, '2025-04-15', '2025-04-17', '2025-04-16 07:22:38', '2025-04-16 07:22:38', 1, '{\"edit_permissions\":[\"target\",\"status\",\"status_text\",\"description\"],\"default_values\":[]}', 1),
-(40, 'draft1', '', 12, 2, '0000-00-00', '0000-00-00', '2025-04-21 03:01:54', '2025-04-21 03:01:54', 0, NULL, 12),
-(41, 'draft2', '', 12, 2, '0000-00-00', '0000-00-00', '2025-04-21 03:02:05', '2025-04-21 03:02:05', 0, NULL, 12);
+(42, 'program 1', 'hello', 12, 2, NULL, NULL, '2025-04-25 03:46:44', '2025-04-25 03:46:44', 1, '{\"edit_permissions\":[\"target\",\"status\",\"status_text\",\"description\",\"timeline\"],\"default_values\":[]}', 1),
+(47, 'program A', '', 12, 2, '0000-00-00', '0000-00-00', '2025-04-25 06:50:06', '2025-04-25 06:50:06', 0, NULL, 12),
+(48, 'try lagi', 'ggeege', 12, 2, NULL, NULL, '2025-04-25 07:19:25', '2025-04-25 07:19:25', 1, '{\"edit_permissions\":[\"target\",\"status\",\"status_text\",\"description\",\"timeline\"],\"default_values\":[]}', 1),
+(49, 'try draft', '', 12, 2, NULL, NULL, '2025-04-25 07:21:55', '2025-04-25 07:21:55', 1, '{\"edit_permissions\":[\"target\",\"status\",\"status_text\",\"description\"],\"default_values\":[]}', 1),
+(50, 'zani', '', 12, 2, '2025-04-18', '2025-04-25', '2025-04-26 06:21:40', '2025-04-26 06:21:40', 1, '{\"edit_permissions\":[\"target\",\"status\",\"status_text\",\"description\",\"timeline\"],\"default_values\":[]}', 1),
+(51, 'eheheh', '', 12, 2, '0000-00-00', '0000-00-00', '2025-04-26 06:27:30', '2025-04-26 06:27:30', 0, NULL, 12),
+(52, 'paofpao', '', 12, 2, '0000-00-00', '0000-00-00', '2025-04-26 06:44:57', '2025-04-26 06:44:57', 0, NULL, 12),
+(53, 'gagaga', 'hshsd', 12, 2, '2025-04-18', '2025-04-25', '2025-04-26 07:12:54', '2025-04-26 07:13:03', 0, NULL, 12);
 
 -- --------------------------------------------------------
 
@@ -95,11 +97,14 @@ CREATE TABLE `program_submissions` (
 --
 
 INSERT INTO `program_submissions` (`submission_id`, `program_id`, `period_id`, `submitted_by`, `status`, `content_json`, `submission_date`, `updated_at`, `is_draft`) VALUES
-(23, 23, 2, 12, 'target-achieved', '{\"target\":\"target\",\"status_date\":\"2025-04-08\",\"status_text\":\"achievement\"}', '2025-04-08 08:26:23', '2025-04-08 08:26:23', 0),
-(25, 25, 2, 12, 'target-achieved', '{\"target\":\"test\",\"status_date\":\"2025-04-10\",\"status_text\":\"test\"}', '2025-04-10 02:56:45', '2025-04-10 02:56:45', 0),
-(26, 26, 2, 12, 'severe-delay', '{\"target\":\"qwer\",\"status_date\":\"2025-04-10\",\"status_text\":\"qwer\"}', '2025-04-10 03:17:59', '2025-04-10 03:17:59', 0),
-(31, 40, 2, 12, 'not-started', '{\"target\":\"target\",\"status_date\":\"2025-04-21\",\"status_text\":\"\",\"achievement\":\"\",\"remarks\":\"\"}', '2025-04-21 03:01:54', '2025-04-21 03:01:54', 1),
-(32, 41, 2, 12, 'not-started', '{\"target\":\"target\",\"status_date\":\"2025-04-21\",\"status_text\":\"\",\"achievement\":\"\",\"remarks\":\"\"}', '2025-04-21 03:02:05', '2025-04-21 03:02:05', 1);
+(37, 42, 2, 12, 'target-achieved', '{\"target\":\"target\",\"status_date\":\"2025-04-25\",\"status_text\":\"\",\"achievement\":\"\",\"remarks\":\"\"}', '2025-04-25 04:25:21', '2025-04-25 04:25:21', 0),
+(38, 47, 2, 12, 'on-track-yearly', '{\"target\":\"target A\",\"status_date\":\"2025-04-25\",\"status_text\":\"\"}', '2025-04-25 06:50:06', '2025-04-25 06:50:21', 0),
+(39, 48, 2, 12, 'target-achieved', '{\"target\":\"tageeaehjk\",\"status_date\":\"2025-04-25\",\"status_text\":\"\",\"achievement\":\"\",\"remarks\":\"\"}', '2025-04-25 07:19:51', '2025-04-25 07:19:51', 0),
+(40, 49, 2, 12, 'target-achieved', '{\"target\":\"targetee\",\"status_date\":\"2025-04-25\",\"status_text\":\"\",\"achievement\":\"\",\"remarks\":\"\"}', '2025-04-25 07:22:16', '2025-04-25 07:23:25', 0),
+(41, 50, 2, 12, 'target-achieved', '{\"target\":\"helo\",\"status_date\":\"2025-04-26\",\"status_text\":\"\",\"achievement\":\"\",\"remarks\":\"\"}', '2025-04-26 06:23:32', '2025-04-26 06:43:02', 0),
+(42, 51, 2, 12, 'not-started', '{\"target\":\"eheh\",\"status_date\":\"2025-04-26\",\"status_text\":\"\",\"achievement\":\"\",\"remarks\":\"\"}', '2025-04-26 06:27:30', '2025-04-26 06:44:33', 0),
+(43, 52, 2, 12, 'severe-delay', '{\"target\":\"agogsjuig\",\"status_date\":\"2025-04-26\",\"status_text\":\"\",\"achievement\":\"\",\"remarks\":\"\"}', '2025-04-26 06:44:57', '2025-04-26 06:45:10', 0),
+(44, 53, 2, 12, 'target-achieved', '{\"target\":\"agaga\",\"status_date\":\"2025-04-26\",\"status_text\":\"hjafafafa\",\"achievement\":\"\",\"remarks\":\"\",\"status\":\"target-achieved\"}', '2025-04-26 07:12:54', '2025-04-26 07:13:20', 0);
 
 -- --------------------------------------------------------
 
@@ -172,23 +177,29 @@ INSERT INTO `sectors` (`sector_id`, `sector_name`, `description`) VALUES
 -- --------------------------------------------------------
 
 --
--- Table structure for table `sector_metrics_definition`
+-- Table structure for table `sector_metrics_data`
 --
 
-CREATE TABLE `sector_metrics_definition` (
+CREATE TABLE `sector_metrics_data` (
+  `id` int(11) NOT NULL,
   `metric_id` int(11) NOT NULL,
   `sector_id` int(11) NOT NULL,
-  `metric_name` varchar(100) NOT NULL,
-  `metric_unit` varchar(50) DEFAULT NULL,
-  `metric_type` enum('numeric','percentage','text') NOT NULL,
-  `display_order` int(11) NOT NULL DEFAULT 0,
-  `is_required` tinyint(1) DEFAULT 1,
-  `description` text DEFAULT NULL,
-  `added_by` int(11) NOT NULL,
-  `is_approved` tinyint(1) DEFAULT 0,
-  `permission_type` enum('creator_only','selected_agencies','all_sector') NOT NULL DEFAULT 'creator_only',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `table_name` varchar(255) NOT NULL,
+  `data_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`data_json`)),
+  `is_draft` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `sector_metrics_data`
+--
+
+INSERT INTO `sector_metrics_data` (`id`, `metric_id`, `sector_id`, `table_name`, `data_json`, `is_draft`, `created_at`, `updated_at`) VALUES
+(3, 5, 2, 'table B', '{\"columns\":[\"hello0\",\"hello \"],\"data\":{\"January\":{\"hello0\":15,\"hello \":1},\"February\":{\"hello \":300,\"hello0\":456},\"March\":{\"hello \":500},\"April\":{\"hello \":0.07},\"May\":{\"hello \":123},\"June\":{\"hello \":0.56},\"July\":[],\"August\":[],\"September\":[],\"October\":[],\"November\":[],\"December\":[]},\"units\":{\"hello \":\"RM\",\"hello0\":\"Ha\"}}', 1, '2025-04-27 10:20:55', '2025-04-27 11:23:45'),
+(13, 4, 2, 'table A', '{\"columns\":[\"column A\"],\"data\":{\"January\":{\"column A\":12000},\"February\":[],\"March\":[],\"April\":[],\"May\":[],\"June\":[],\"July\":[],\"August\":[],\"September\":[],\"October\":[],\"November\":[],\"December\":[]}}', 0, '2025-04-27 10:24:19', '2025-04-27 10:24:19'),
+(14, 6, 2, 'table C', '{\"columns\":[\"column c2\",\"column c1\"],\"data\":{\"January\":{\"column c1\":1500},\"February\":{\"column c2\":100000},\"March\":[],\"April\":[],\"May\":[],\"June\":[],\"July\":[],\"August\":[],\"September\":[],\"October\":[],\"November\":[],\"December\":[]}}', 1, '2025-04-27 10:33:02', '2025-04-27 10:33:03'),
+(20, 7, 2, 'TIMBER EXPORT VALUE (RM)', '{\"columns\": [\"2022\", \"2023\", \"2024\", \"2025\"], \"units\": {\"2022\": \"RM\", \"2023\": \"RM\", \"2024\": \"RM\", \"2025\": \"RM\"}, \"data\": {\"January\": {\"2022\": 408531176.77, \"2023\": 263569916.63, \"2024\": 276004972.69, \"2025\": null}, \"February\": {\"2022\": 239761718.38, \"2023\": 226356164.30, \"2024\": 191530929.47, \"2025\": null}, \"March\": {\"2022\": 394935606.46, \"2023\": 261778295.29, \"2024\": 214907671.70, \"2025\": null}, \"April\": {\"2022\": 400891037.27, \"2023\": 215771835.07, \"2024\": 232014272.14, \"2025\": null}, \"May\": {\"2022\": 345725679.36, \"2023\": 324280067.64, \"2024\": 324627750.87, \"2025\": null}, \"June\": {\"2022\": 268966198.26, \"2023\": 235560482.89, \"2024\": 212303812.34, \"2025\": null}, \"July\": {\"2022\": 359792973.34, \"2023\": 244689028.37, \"2024\": 274788036.68, \"2025\": null}, \"August\": {\"2022\": 310830376.16, \"2023\": 344761866.36, \"2024\": 210420404.31, \"2025\": null}, \"September\": {\"2022\": 318990291.52, \"2023\": 210214202.20, \"2024\": 191837139.00, \"2025\": null}, \"October\": {\"2022\": 304693148.30, \"2023\": 266639022.25, \"2024\": null, \"2025\": null}, \"November\": {\"2022\": 303936172.09, \"2023\": 296062485.55, \"2024\": null, \"2025\": null}, \"December\": {\"2022\": 289911760.38, \"2023\": 251155864.77, \"2024\": null, \"2025\": null}}}', 0, '2025-04-27 11:45:15', '2025-04-27 12:06:51');
 
 -- --------------------------------------------------------
 
@@ -207,6 +218,19 @@ CREATE TABLE `sector_metrics_draft` (
   `table_content` text NOT NULL COMMENT 'Content of the table',
   `time_added` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'Time when the record was added'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `sector_metrics_draft`
+--
+
+INSERT INTO `sector_metrics_draft` (`id`, `table_name`, `sector_id`, `metric_id`, `month`, `year`, `column_title`, `table_content`, `time_added`) VALUES
+(0, 'Table 1', 2, 2, 'January', 0, '2025', '5', '2025-04-27 09:28:58'),
+(0, 'Table 1   ', 2, 2, 'February', 0, '2025', '10', '2025-04-27 09:30:22'),
+(0, 'Table 2', 2, 3, 'January', 0, 'hreloo', '15000', '2025-04-27 09:36:11'),
+(0, 'table A', 2, 4, 'January', 0, '', '0', '2025-04-27 10:04:07'),
+(0, 'table B', 2, 5, 'January', 0, '', '0', '2025-04-27 10:15:30'),
+(0, 'table C', 2, 6, 'January', 0, '', '0', '2025-04-27 10:32:28'),
+(0, 'table D', 2, 7, 'January', 0, '', '0', '2025-04-27 10:38:57');
 
 -- --------------------------------------------------------
 
@@ -230,57 +254,9 @@ CREATE TABLE `sector_metrics_submitted` (
 --
 
 INSERT INTO `sector_metrics_submitted` (`id`, `table_name`, `sector_id`, `metric_id`, `month`, `column_title`, `table_content`, `time_added`) VALUES
-(44, 'something', 2, 1, 'January', '022', '0.001', '2025-04-25 02:06:51'),
-(45, 'something', 2, 1, 'January', 'this', '123', '2025-04-25 02:06:51'),
-(46, 'something', 0, 1, 'January', 'click here to auvaname', '0', '2025-04-25 02:11:37');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `sector_metric_permissions`
---
-
-CREATE TABLE `sector_metric_permissions` (
-  `permission_id` int(11) NOT NULL,
-  `metric_id` int(11) NOT NULL,
-  `agency_id` int(11) NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `sector_metric_values`
---
-
-CREATE TABLE `sector_metric_values` (
-  `value_id` int(11) NOT NULL,
-  `metric_id` int(11) NOT NULL,
-  `agency_id` int(11) NOT NULL,
-  `last_edited_by` int(11) NOT NULL,
-  `period_id` int(11) NOT NULL,
-  `numeric_value` decimal(15,2) DEFAULT NULL,
-  `text_value` text DEFAULT NULL,
-  `notes` text DEFAULT NULL,
-  `submission_date` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `sector_metric_value_history`
---
-
-CREATE TABLE `sector_metric_value_history` (
-  `history_id` int(11) NOT NULL,
-  `value_id` int(11) NOT NULL,
-  `agency_id` int(11) NOT NULL,
-  `numeric_value` decimal(15,2) DEFAULT NULL,
-  `text_value` text DEFAULT NULL,
-  `notes` text DEFAULT NULL,
-  `changed_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+(44, 'something', 2, 1, 'January', '022', '0.001', '2025-04-24 18:06:51'),
+(45, 'something', 2, 1, 'January', 'this', '123', '2025-04-24 18:06:51'),
+(46, 'something', 0, 1, 'January', 'click here to auvaname', '0', '2025-04-24 18:11:37');
 
 -- --------------------------------------------------------
 
@@ -373,52 +349,11 @@ ALTER TABLE `sectors`
   ADD PRIMARY KEY (`sector_id`);
 
 --
--- Indexes for table `sector_metrics_definition`
+-- Indexes for table `sector_metrics_data`
 --
-ALTER TABLE `sector_metrics_definition`
-  ADD PRIMARY KEY (`metric_id`),
-  ADD UNIQUE KEY `sector_id` (`sector_id`,`metric_name`),
-  ADD KEY `added_by` (`added_by`);
-
---
--- Indexes for table `sector_metrics_draft`
---
-ALTER TABLE `sector_metrics_draft`
+ALTER TABLE `sector_metrics_data`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `sector_id` (`sector_id`),
-  ADD KEY `metric_id` (`metric_id`);
-
---
--- Indexes for table `sector_metrics_submitted`
---
-ALTER TABLE `sector_metrics_submitted`
-  ADD PRIMARY KEY (`id`);
-
---
--- Indexes for table `sector_metric_permissions`
---
-ALTER TABLE `sector_metric_permissions`
-  ADD PRIMARY KEY (`permission_id`),
-  ADD UNIQUE KEY `metric_agency` (`metric_id`,`agency_id`),
-  ADD KEY `agency_id` (`agency_id`);
-
---
--- Indexes for table `sector_metric_values`
---
-ALTER TABLE `sector_metric_values`
-  ADD PRIMARY KEY (`value_id`),
-  ADD UNIQUE KEY `metric_period` (`metric_id`,`period_id`),
-  ADD KEY `agency_id` (`agency_id`),
-  ADD KEY `period_id` (`period_id`),
-  ADD KEY `last_edited_by` (`last_edited_by`);
-
---
--- Indexes for table `sector_metric_value_history`
---
-ALTER TABLE `sector_metric_value_history`
-  ADD PRIMARY KEY (`history_id`),
-  ADD KEY `value_id` (`value_id`),
-  ADD KEY `agency_id` (`agency_id`);
+  ADD UNIQUE KEY `metric_sector_draft` (`metric_id`,`sector_id`,`is_draft`);
 
 --
 -- Indexes for table `users`
@@ -435,19 +370,19 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT for table `programs`
 --
 ALTER TABLE `programs`
-  MODIFY `program_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=42;
+  MODIFY `program_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=54;
 
 --
 -- AUTO_INCREMENT for table `program_submissions`
 --
 ALTER TABLE `program_submissions`
-  MODIFY `submission_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
+  MODIFY `submission_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=45;
 
 --
 -- AUTO_INCREMENT for table `reporting_periods`
@@ -468,40 +403,10 @@ ALTER TABLE `sectors`
   MODIFY `sector_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
--- AUTO_INCREMENT for table `sector_metrics_definition`
+-- AUTO_INCREMENT for table `sector_metrics_data`
 --
-ALTER TABLE `sector_metrics_definition`
-  MODIFY `metric_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `sector_metrics_draft`
---
-ALTER TABLE `sector_metrics_draft`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=140;
-
---
--- AUTO_INCREMENT for table `sector_metrics_submitted`
---
-ALTER TABLE `sector_metrics_submitted`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=47;
-
---
--- AUTO_INCREMENT for table `sector_metric_permissions`
---
-ALTER TABLE `sector_metric_permissions`
-  MODIFY `permission_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `sector_metric_values`
---
-ALTER TABLE `sector_metric_values`
-  MODIFY `value_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `sector_metric_value_history`
---
-ALTER TABLE `sector_metric_value_history`
-  MODIFY `history_id` int(11) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `sector_metrics_data`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
 -- AUTO_INCREMENT for table `users`
@@ -540,36 +445,6 @@ ALTER TABLE `program_submissions`
 ALTER TABLE `reports`
   ADD CONSTRAINT `reports_ibfk_1` FOREIGN KEY (`period_id`) REFERENCES `reporting_periods` (`period_id`),
   ADD CONSTRAINT `reports_ibfk_2` FOREIGN KEY (`generated_by`) REFERENCES `users` (`user_id`);
-
---
--- Constraints for table `sector_metrics_definition`
---
-ALTER TABLE `sector_metrics_definition`
-  ADD CONSTRAINT `sector_metrics_definition_ibfk_1` FOREIGN KEY (`sector_id`) REFERENCES `sectors` (`sector_id`),
-  ADD CONSTRAINT `sector_metrics_definition_ibfk_2` FOREIGN KEY (`added_by`) REFERENCES `users` (`user_id`);
-
---
--- Constraints for table `sector_metric_permissions`
---
-ALTER TABLE `sector_metric_permissions`
-  ADD CONSTRAINT `sector_metric_permissions_ibfk_1` FOREIGN KEY (`metric_id`) REFERENCES `sector_metrics_definition` (`metric_id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `sector_metric_permissions_ibfk_2` FOREIGN KEY (`agency_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
-
---
--- Constraints for table `sector_metric_values`
---
-ALTER TABLE `sector_metric_values`
-  ADD CONSTRAINT `sector_metric_values_ibfk_1` FOREIGN KEY (`metric_id`) REFERENCES `sector_metrics_definition` (`metric_id`),
-  ADD CONSTRAINT `sector_metric_values_ibfk_2` FOREIGN KEY (`agency_id`) REFERENCES `users` (`user_id`),
-  ADD CONSTRAINT `sector_metric_values_ibfk_3` FOREIGN KEY (`period_id`) REFERENCES `reporting_periods` (`period_id`),
-  ADD CONSTRAINT `sector_metric_values_ibfk_4` FOREIGN KEY (`last_edited_by`) REFERENCES `users` (`user_id`);
-
---
--- Constraints for table `sector_metric_value_history`
---
-ALTER TABLE `sector_metric_value_history`
-  ADD CONSTRAINT `sector_metric_value_history_ibfk_1` FOREIGN KEY (`value_id`) REFERENCES `sector_metric_values` (`value_id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `sector_metric_value_history_ibfk_2` FOREIGN KEY (`agency_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `users`

@@ -359,6 +359,28 @@ require_once '../../includes/dashboard_header.php';
                                 <?php endif; ?>
                             </tr>
                         <?php endforeach; ?>
+                        
+                        <!-- Total Row -->
+                        <?php if (!empty($metric_names)): ?>
+                        <tr class="table-light font-weight-bold">
+                            <td class="fw-bold">
+                                <span class="total-badge">TOTAL</span>
+                            </td>
+                            <?php foreach ($metric_names as $name): ?>
+                                <td class="fw-bold text-end">
+                                    <?php
+                                        $total = 0;
+                                        foreach ($table_data as $month_data) {
+                                            if (isset($month_data['metrics'][$name])) {
+                                                $total += floatval($month_data['metrics'][$name]);
+                                            }
+                                        }
+                                        echo number_format($total, 2);
+                                    ?>
+                                </td>
+                            <?php endforeach; ?>
+                        </tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
