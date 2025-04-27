@@ -108,78 +108,151 @@ require_once '../../includes/dashboard_header.php';
                 </span>
             </div>
         </div>
-        <div class="card-body">
-            <div class="row mb-4">
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <strong>Metric ID:</strong> <?= $metric_id ?>
+        
+        <!-- Tab Navigation -->
+        <ul class="nav nav-tabs" id="metricTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="table-tab" data-bs-toggle="tab" data-bs-target="#table-view" 
+                    type="button" role="tab" aria-controls="table-view" aria-selected="true">
+                    <i class="fas fa-table me-1"></i> Table View
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="chart-tab" data-bs-toggle="tab" data-bs-target="#chart-view" 
+                    type="button" role="tab" aria-controls="chart-view" aria-selected="false">
+                    <i class="fas fa-chart-line me-1"></i> Chart View
+                </button>
+            </li>
+        </ul>
+        
+        <!-- Tab Content -->
+        <div class="tab-content" id="metricTabsContent">
+            <!-- Table View Tab -->
+            <div class="tab-pane fade show active" id="table-view" role="tabpanel" aria-labelledby="table-tab">
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <strong>Metric ID:</strong> <?= $metric_id ?>
+                            </div>
+                            <div class="mb-3">
+                                <strong>Submitted:</strong> <?= $created_at->format('F j, Y g:i A') ?>
+                            </div>
+                            <?php if ($created_at->format('Y-m-d H:i:s') !== $updated_at->format('Y-m-d H:i:s')): ?>
+                            <div class="mb-3">
+                                <strong>Last Updated:</strong> <?= $updated_at->format('F j, Y g:i A') ?>
+                            </div>
+                            <?php endif; ?>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <strong>Submitted:</strong> <?= $created_at->format('F j, Y g:i A') ?>
+
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 150px;">Month</th>
+                                    <?php foreach ($metric_names as $name): ?>
+                                        <th><?= htmlspecialchars($name) ?></th>
+                                    <?php endforeach; ?>
+                                    <?php if (empty($metric_names)): ?>
+                                        <th class="text-center text-muted">No metrics defined</th>
+                                    <?php endif; ?>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($table_data as $month_data): ?>
+                                    <tr>
+                                        <td>
+                                            <span class="month-badge"><?= $month_data['month_name'] ?></span>
+                                        </td>
+                                        <?php foreach ($metric_names as $name): ?>
+                                            <td class="text-end">
+                                                <?= isset($month_data['metrics'][$name]) ? number_format($month_data['metrics'][$name], 2) : '—' ?>
+                                            </td>
+                                        <?php endforeach; ?>
+                                        <?php if (empty($metric_names)): ?>
+                                            <td></td>
+                                        <?php endif; ?>
+                                    </tr>
+                                <?php endforeach; ?>
+                                
+                                <!-- Total Row -->
+                                <?php if (!empty($metric_names)): ?>
+                                <tr class="table-light">
+                                    <td class="fw-bold">
+                                        <span class="total-badge">TOTAL</span>
+                                    </td>
+                                    <?php foreach ($metric_names as $name): ?>
+                                        <td class="fw-bold text-end">
+                                            <?php
+                                                $total = 0;
+                                                foreach ($table_data as $month_data) {
+                                                    if (isset($month_data['metrics'][$name])) {
+                                                        $total += floatval($month_data['metrics'][$name]);
+                                                    }
+                                                }
+                                                echo number_format($total, 2);
+                                            ?>
+                                        </td>
+                                    <?php endforeach; ?>
+                                </tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
                     </div>
-                    <?php if ($created_at->format('Y-m-d H:i:s') !== $updated_at->format('Y-m-d H:i:s')): ?>
-                    <div class="mb-3">
-                        <strong>Last Updated:</strong> <?= $updated_at->format('F j, Y g:i A') ?>
-                    </div>
-                    <?php endif; ?>
                 </div>
             </div>
-
-            <div class="table-responsive">
-                <table class="table table-bordered table-hover">
-                    <thead class="table-light">
-                        <tr>
-                            <th style="width: 150px;">Month</th>
-                            <?php foreach ($metric_names as $name): ?>
-                                <th><?= htmlspecialchars($name) ?></th>
-                            <?php endforeach; ?>
-                            <?php if (empty($metric_names)): ?>
-                                <th class="text-center text-muted">No metrics defined</th>
-                            <?php endif; ?>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($table_data as $month_data): ?>
-                            <tr>
-                                <td>
-                                    <span class="month-badge"><?= $month_data['month_name'] ?></span>
-                                </td>
-                                <?php foreach ($metric_names as $name): ?>
-                                    <td class="text-end">
-                                        <?= isset($month_data['metrics'][$name]) ? number_format($month_data['metrics'][$name], 2) : '—' ?>
-                                    </td>
-                                <?php endforeach; ?>
-                                <?php if (empty($metric_names)): ?>
-                                    <td></td>
-                                <?php endif; ?>
-                            </tr>
-                        <?php endforeach; ?>
-                        
-                        <!-- Total Row -->
-                        <?php if (!empty($metric_names)): ?>
-                        <tr class="table-light">
-                            <td class="fw-bold">
-                                <span class="total-badge">TOTAL</span>
-                            </td>
-                            <?php foreach ($metric_names as $name): ?>
-                                <td class="fw-bold text-end">
-                                    <?php
-                                        $total = 0;
-                                        foreach ($table_data as $month_data) {
-                                            if (isset($month_data['metrics'][$name])) {
-                                                $total += floatval($month_data['metrics'][$name]);
-                                            }
-                                        }
-                                        echo number_format($total, 2);
-                                    ?>
-                                </td>
-                            <?php endforeach; ?>
-                        </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
+            
+            <!-- Chart View Tab -->
+            <div class="tab-pane fade" id="chart-view" role="tabpanel" aria-labelledby="chart-tab">
+                <div class="card-body">
+                    <!-- Chart options -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="chartType" class="form-label">Chart Type</label>
+                                <select class="form-select" id="chartType">
+                                    <option value="line">Line Chart</option>
+                                    <option value="bar">Bar Chart</option>
+                                    <option value="radar">Radar Chart</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="metricToChart" class="form-label">Metrics to Display</label>
+                                <select class="form-select" id="metricToChart" multiple>
+                                    <?php foreach ($metric_names as $name): ?>
+                                        <option value="<?= htmlspecialchars($name) ?>" selected>
+                                            <?= htmlspecialchars($name) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <small class="text-muted">Hold Ctrl/Cmd to select multiple metrics</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Chart Canvas -->
+                    <div class="chart-container" style="position: relative; height:400px;">
+                        <canvas id="metricChart"></canvas>
+                    </div>
+                    
+                    <!-- Download Options -->
+                    <div class="mt-4">
+                        <div class="d-flex justify-content-end">
+                            <button id="downloadChartImage" class="btn btn-outline-primary me-2">
+                                <i class="fas fa-image me-1"></i> Download Chart
+                            </button>
+                            <button id="downloadDataCSV" class="btn btn-outline-success">
+                                <i class="fas fa-file-csv me-1"></i> Download Data as CSV
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
+        
         <div class="card-footer text-muted">
             <div class="d-flex justify-content-between align-items-center">
                 <small>
@@ -192,6 +265,22 @@ require_once '../../includes/dashboard_header.php';
         </div>
     </div>
 </div>
+
+<!-- Load required scripts -->
+<script src="<?= APP_URL ?>/assets/js/charts/metrics-chart.js"></script>
+
+<!-- Initialize the metrics chart with PHP data -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize chart with data from PHP
+        initMetricsChart(
+            <?= json_encode($metrics_data) ?>, 
+            <?= json_encode($table_data) ?>, 
+            <?= json_encode($month_names) ?>,
+            "<?= addslashes($table_name) ?>"
+        );
+    });
+</script>
 
 <?php
 // Include footer
