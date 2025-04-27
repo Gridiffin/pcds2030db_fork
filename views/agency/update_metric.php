@@ -36,10 +36,16 @@ $result = $stmt->get_result();
 if ($result->num_rows > 0) {
     $row = $result->fetch_assoc();
     $metrics_data = json_decode($row['data_json'], true);
+    
+    // Ensure units array exists
+    if (!isset($metrics_data['units'])) {
+        $metrics_data['units'] = [];
+    }
 } else {
     // Initialize new data structure
     $metrics_data = [
         'columns' => [],
+        'units' => [], // Add units array to store measurement units
         'data' => []
     ];
     
@@ -56,6 +62,7 @@ $old_name = $data['column_title'] ?? '';
 $new_name = $data['new_name'] ?? '';
 $month = $data['month'] ?? '';
 $new_value = isset($data['new_value']) ? floatval($data['new_value']) : 0;
+$unit = $data['unit'] ?? '';  // Add unit parameter
 
 // Handle delete column action
 if ($action === 'delete_column' && !empty($old_name)) {
@@ -63,6 +70,11 @@ if ($action === 'delete_column' && !empty($old_name)) {
     if (in_array($old_name, $metrics_data['columns'])) {
         $index = array_search($old_name, $metrics_data['columns']);
         array_splice($metrics_data['columns'], $index, 1);
+        
+        // Remove unit for this column
+        if (isset($metrics_data['units'][$old_name])) {
+            unset($metrics_data['units'][$old_name]);
+        }
         
         // Remove column data from all months
         foreach ($metrics_data['data'] as $m => $values) {
@@ -78,8 +90,24 @@ else if (!empty($new_name) && $new_name !== $old_name) {
     if (in_array($old_name, $metrics_data['columns'])) {
         $index = array_search($old_name, $metrics_data['columns']);
         $metrics_data['columns'][$index] = $new_name;
+        
+        // Update unit if the name changes
+        if (isset($metrics_data['units'][$old_name])) {
+            $metrics_data['units'][$new_name] = $metrics_data['units'][$old_name];
+            unset($metrics_data['units'][$old_name]);
+        }
+        
+        // Set unit if provided
+        if (!empty($unit)) {
+            $metrics_data['units'][$new_name] = $unit;
+        }
     } else {
         $metrics_data['columns'][] = $new_name;
+        
+        // Set unit if provided
+        if (!empty($unit)) {
+            $metrics_data['units'][$new_name] = $unit;
+        }
     }
     
     // Update all values with this column name
@@ -90,11 +118,21 @@ else if (!empty($new_name) && $new_name !== $old_name) {
         }
     }
 } 
+// Handle unit update only
+else if (!empty($unit) && !empty($old_name)) {
+    // Update unit for existing column
+    $metrics_data['units'][$old_name] = $unit;
+}
 // Handle metric value update
 else if (!empty($month)) {
     // Ensure column exists
     if (!in_array($old_name, $metrics_data['columns'])) {
         $metrics_data['columns'][] = $old_name;
+        
+        // Set unit if provided with new column
+        if (!empty($unit)) {
+            $metrics_data['units'][$old_name] = $unit;
+        }
     }
     
     // Update value

@@ -282,9 +282,14 @@ require_once '../../includes/dashboard_header.php';
                     </div>
                 </div>
                 <div class="col-md-6 text-end">
-                    <button class="btn btn-primary" id="addColumnBtn">
-                        <i class="fas fa-plus me-1"></i> Add Column
-                    </button>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" id="addColumnBtn">
+                            <i class="fas fa-plus me-1"></i> Add Column
+                        </button>
+                        <button class="btn btn-outline-secondary" id="setAllUnitsBtn">
+                            <i class="fas fa-ruler me-1"></i> Set All Units
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -296,10 +301,21 @@ require_once '../../includes/dashboard_header.php';
                             <?php foreach ($metric_names as $name): ?>
                                 <th>
                                     <div class="metric-header">
-                                        <span class="metric-name" contenteditable="true" data-metric="<?= htmlspecialchars($name) ?>">
-                                            <?= htmlspecialchars($name) ?>
-                                        </span>
+                                        <div class="metric-title">
+                                            <span class="metric-name" contenteditable="true" data-metric="<?= htmlspecialchars($name) ?>">
+                                                <?= htmlspecialchars($name) ?>
+                                            </span>
+                                            <?php if (isset($metrics_data['units'][$name])): ?>
+                                            <span class="metric-unit-display">
+                                                (<?= htmlspecialchars($metrics_data['units'][$name]) ?>)
+                                            </span>
+                                            <?php endif; ?>
+                                        </div>
                                         <div class="metric-actions">
+                                            <button class="unit-btn" data-metric="<?= htmlspecialchars($name) ?>" 
+                                                    data-current-unit="<?= htmlspecialchars($metrics_data['units'][$name] ?? '') ?>">
+                                                <i class="fas fa-ruler"></i>
+                                            </button>
                                             <button class="save-btn" data-metric="<?= htmlspecialchars($name) ?>">
                                                 <i class="fas fa-check"></i>
                                             </button>
@@ -456,6 +472,17 @@ require_once '../../includes/dashboard_header.php';
 
     // Override the add column button handler
     document.getElementById('addColumnBtn').addEventListener('click', handleAddColumn);
+
+    // Set up event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set up setAllUnits button handler
+        const setAllUnitsBtn = document.getElementById('setAllUnitsBtn');
+        if (setAllUnitsBtn) {
+            setAllUnitsBtn.addEventListener('click', handleSetAllUnits);
+        }
+        
+        // Other event listeners...
+    });
 </script>
 
 <?php

@@ -189,12 +189,17 @@ require_once '../../includes/dashboard_header.php';
                         <div class="form-text">Provide a clear, descriptive name for your metric table</div>
                     </div>
                     <div class="col-md-6 text-md-end mt-3 mt-md-0">
-                        <button type="button" class="btn btn-info" id="addColumnBtn">
-                            <i class="fas fa-plus-circle me-1"></i> Add Column
-                        </button>
-                        <button type="button" class="btn btn-success ms-2" id="doneBtn">
-                            <i class="fas fa-check me-1"></i> Save & Finish
-                        </button>
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-info" id="addColumnBtn">
+                                <i class="fas fa-plus-circle me-1"></i> Add Column
+                            </button>
+                            <button type="button" class="btn btn-outline-info" id="setAllUnitsBtn">
+                                <i class="fas fa-ruler me-1"></i> Set All Units
+                            </button>
+                            <button type="button" class="btn btn-success ms-2" id="doneBtn">
+                                <i class="fas fa-check me-1"></i> Save & Finish
+                            </button>
+                        </div>
                     </div>
                 </div>
             </form>
@@ -207,10 +212,21 @@ require_once '../../includes/dashboard_header.php';
                             <?php foreach ($metric_names as $name): ?>
                                 <th>
                                     <div class="metric-header">
-                                        <span class="metric-name" contenteditable="true" data-metric="<?= htmlspecialchars($name) ?>">
-                                            <?= $name === '' ? '<span class="empty-value">Click to edit</span>' : htmlspecialchars($name) ?>
-                                        </span>
+                                        <div class="metric-title">
+                                            <span class="metric-name" contenteditable="true" data-metric="<?= htmlspecialchars($name) ?>">
+                                                <?= $name === '' ? '<span class="empty-value">Click to edit</span>' : htmlspecialchars($name) ?>
+                                            </span>
+                                            <?php if (isset($metrics_data['units'][$name])): ?>
+                                            <span class="metric-unit-display">
+                                                (<?= htmlspecialchars($metrics_data['units'][$name]) ?>)
+                                            </span>
+                                            <?php endif; ?>
+                                        </div>
                                         <div class="metric-actions">
+                                            <button class="unit-btn" data-metric="<?= htmlspecialchars($name) ?>" 
+                                                    data-current-unit="<?= htmlspecialchars($metrics_data['units'][$name] ?? '') ?>">
+                                                <i class="fas fa-ruler"></i>
+                                            </button>
                                             <button class="save-btn" data-metric="<?= htmlspecialchars($name) ?>">
                                                 <i class="fas fa-check"></i>
                                             </button>
@@ -547,6 +563,9 @@ $additionalScripts = [
     document.querySelectorAll('.delete-column-btn').forEach(button => {
         button.addEventListener('click', handleDeleteColumn);
     });
+    
+    // Set up handler for the "Set All Units" button
+    document.getElementById('setAllUnitsBtn').addEventListener('click', handleSetAllUnits);
 </script>
 
 <?php

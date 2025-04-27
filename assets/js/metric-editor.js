@@ -84,6 +84,11 @@ function setupButtonHandlers() {
         btn.addEventListener('click', handleMetricNameSave);
     });
     
+    // Unit buttons
+    document.querySelectorAll('.unit-btn').forEach(btn => {
+        btn.addEventListener('click', handleUnitEdit);
+    });
+    
     // Save table name button
     const saveTableNameBtn = document.getElementById('saveTableNameBtn');
     if (saveTableNameBtn) {
@@ -344,6 +349,147 @@ async function handleSaveTableName() {
         }
     } catch (error) {
         showToast('Error updating table name: ' + error.message, 'danger');
+    }
+}
+
+/**
+ * Handle editing units for metrics
+ */
+async function handleUnitEdit() {
+    const metric = this.dataset.metric;
+    const currentUnit = this.dataset.currentUnit || '';
+    
+    if (!metric) return;
+    
+    // Prompt for new unit
+    const newUnit = prompt(`Enter unit of measurement for "${metric}":`, currentUnit);
+    
+    // User canceled or entered the same unit
+    if (newUnit === null || newUnit === currentUnit) return;
+    
+    try {
+        // Send unit update request
+        const response = await fetch('update_metric.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                column_title: metric,
+                unit: newUnit,
+                metric_id: metricId,
+                table_name: tableName
+            })
+        });
+        
+        if (!response.ok) throw new Error('Failed to update unit');
+        
+        // Update unit display in UI
+        this.dataset.currentUnit = newUnit;
+        
+        // Find and update the unit display span
+        const headerCell = this.closest('.metric-header');
+        let unitDisplay = headerCell.querySelector('.metric-unit-display');
+        
+        if (newUnit) {
+            if (unitDisplay) {
+                unitDisplay.textContent = `(${newUnit})`;
+            } else {
+                // Create unit display if it doesn't exist
+                unitDisplay = document.createElement('span');
+                unitDisplay.className = 'metric-unit-display';
+                unitDisplay.textContent = `(${newUnit})`;
+                headerCell.querySelector('.metric-title').appendChild(unitDisplay);
+            }
+        } else if (unitDisplay) {
+            // Remove unit display if unit is empty
+            unitDisplay.remove();
+        }
+        
+        showToast(`Unit for "${metric}" updated successfully`, 'success');
+    } catch (error) {
+        showToast('Error updating unit: ' + error.message, 'danger');
+    }
+}
+
+/**
+ * Handle setting the same unit for all columns
+ */
+async function handleSetAllUnits() {
+    // Prompt for unit value
+    const newUnit = prompt('Enter unit of measurement for all columns:');
+    
+    // User canceled
+    if (newUnit === null) return;
+    
+    try {
+        // Get all column names
+        const metricNames = [];
+        document.querySelectorAll('.metric-name').forEach(el => {
+            const metric = el.dataset.metric;
+            if (metric && !metricNames.includes(metric)) {
+                metricNames.push(metric);
+            }
+        });
+        
+        if (metricNames.length === 0) {
+            showToast('No metrics found to update', 'warning');
+            return;
+        }
+        
+        // Update units for all columns
+        let successCount = 0;
+        
+        for (const metric of metricNames) {
+            // Send unit update request for each column
+            const response = await fetch('update_metric.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    column_title: metric,
+                    unit: newUnit,
+                    metric_id: metricId,
+                    table_name: tableName
+                })
+            });
+            
+            if (response.ok) {
+                successCount++;
+                
+                // Update unit display in UI
+                const unitBtn = document.querySelector(`.unit-btn[data-metric="${metric}"]`);
+                if (unitBtn) unitBtn.dataset.currentUnit = newUnit;
+                
+                // Find and update unit display span
+                const headerCell = document.querySelector(`.metric-name[data-metric="${metric}"]`).closest('.metric-header');
+                let unitDisplay = headerCell.querySelector('.metric-unit-display');
+                
+                if (newUnit) {
+                    if (unitDisplay) {
+                        unitDisplay.textContent = `(${newUnit})`;
+                    } else {
+                        // Create unit display if it doesn't exist
+                        unitDisplay = document.createElement('span');
+                        unitDisplay.className = 'metric-unit-display';
+                        unitDisplay.textContent = `(${newUnit})`;
+                        headerCell.querySelector('.metric-title').appendChild(unitDisplay);
+                    }
+                } else if (unitDisplay) {
+                    // Remove unit display if unit is empty
+                    unitDisplay.remove();
+                }
+            }
+        }
+        
+        if (successCount === metricNames.length) {
+            showToast(`Unit updated for all ${successCount} columns`, 'success');
+        } else {
+            showToast(`Updated ${successCount} of ${metricNames.length} columns`, 'warning');
+        }
+    } catch (error) {
+        showToast('Error updating units: ' + error.message, 'danger');
     }
 }
 

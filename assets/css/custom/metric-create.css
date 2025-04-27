@@ -314,6 +314,41 @@ label[for="tableNameInput"] {
     transform: scale(1.1);
 }
 
+/* Metric title section (name and unit) */
+.metric-title {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-right: 10px;
+}
+
+/* Unit display styling */
+.metric-unit-display {
+    color: #6c757d;
+    font-size: 0.85em;
+    white-space: nowrap;
+}
+
+/* Unit button styling */
+.unit-btn {
+    display: none;
+    border: none;
+    background-color: var(--bs-info);
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.metric-header:hover .unit-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
 /* Table responsive styling */
 .metrics-table {
     width: 100%;
