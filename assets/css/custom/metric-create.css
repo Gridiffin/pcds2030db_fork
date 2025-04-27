@@ -257,6 +257,22 @@ label[for="tableNameInput"] {
 .metric-header {
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    position: relative;
+}
+
+/* Metric actions container */
+.metric-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+/* Show actions on hover */
+.metric-header:hover .metric-actions {
+    opacity: 1;
 }
 
 /* Save button styling */
@@ -274,8 +290,27 @@ label[for="tableNameInput"] {
     transition: all 0.2s ease;
 }
 
-.save-btn:hover {
-    background-color: #0b5ed7;
+/* Delete column button styling */
+.delete-column-btn {
+    display: none;
+    border: none;
+    background-color: var(--bs-danger);
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.metric-header:hover .delete-column-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.save-btn:hover, .delete-column-btn:hover {
     transform: scale(1.1);
 }
 

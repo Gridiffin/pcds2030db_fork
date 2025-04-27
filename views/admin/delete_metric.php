@@ -23,8 +23,8 @@ if (!isset($_GET['metric_id']) || !is_numeric($_GET['metric_id'])) {
 
 $metric_id = (int) $_GET['metric_id'];
 
-// Prepare and execute delete query
-$delete_query = "DELETE FROM sector_metrics_submitted WHERE metric_id = ?";
+// Prepare and execute delete query - now using the new JSON-based table
+$delete_query = "DELETE FROM sector_metrics_data WHERE metric_id = ?";
 $stmt = $conn->prepare($delete_query);
 
 if (!$stmt) {

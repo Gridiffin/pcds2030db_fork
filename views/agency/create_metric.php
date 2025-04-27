@@ -210,9 +210,14 @@ require_once '../../includes/dashboard_header.php';
                                         <span class="metric-name" contenteditable="true" data-metric="<?= htmlspecialchars($name) ?>">
                                             <?= $name === '' ? '<span class="empty-value">Click to edit</span>' : htmlspecialchars($name) ?>
                                         </span>
-                                        <button class="save-btn" data-metric="<?= htmlspecialchars($name) ?>">
-                                            <i class="fas fa-check"></i>
-                                        </button>
+                                        <div class="metric-actions">
+                                            <button class="save-btn" data-metric="<?= htmlspecialchars($name) ?>">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button class="delete-column-btn" data-metric="<?= htmlspecialchars($name) ?>">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
                                     </div>
                                 </th>
                             <?php endforeach; ?>
@@ -275,13 +280,272 @@ $additionalScripts = [
 <script>
     // Define variables needed by the metric-editor.js script
     const metricId = <?= json_encode($metric_id) ?>;
-    const tableName = <?= json_encode($table_name) ?>;
+    let tableName = <?= json_encode($table_name) ?>;
+    let showPhpMessages = false; // Flag to prevent duplicate messages
+    
+    // Function to handle adding a new column
+    function handleAddColumn() {
+        const newMetricName = prompt('Enter new metric name:');
+        if (!newMetricName || newMetricName.trim() === '') return;
+
+        // Create a new column in the UI immediately
+        const tableHead = document.querySelector('.metrics-table thead tr');
+        const tableRows = document.querySelectorAll('.metrics-table tbody tr');
+        
+        // Add the column header
+        const newTh = document.createElement('th');
+        newTh.innerHTML = `
+            <div class="metric-header">
+                <span class="metric-name" contenteditable="true" data-metric="${newMetricName}">
+                    ${newMetricName}
+                </span>
+                <div class="metric-actions">
+                    <button class="save-btn" data-metric="${newMetricName}">
+                        <i class="fas fa-check"></i>
+                    </button>
+                    <button class="delete-column-btn" data-metric="${newMetricName}">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+            </div>`;
+        
+        // If there was a "No metrics" placeholder column, remove it
+        const noMetricsColumn = tableHead.querySelector('th.text-muted');
+        if (noMetricsColumn) {
+            noMetricsColumn.remove();
+        }
+        
+        tableHead.appendChild(newTh);
+        
+        // Add the column cells for each row
+        tableRows.forEach(row => {
+            const monthName = row.querySelector('.month-badge').textContent;
+            const newTd = document.createElement('td');
+            
+            // If there was a placeholder empty column, remove it
+            if (row.cells.length === 2 && !row.cells[1].querySelector('.metric-cell')) {
+                row.cells[1].remove();
+            }
+            
+            newTd.innerHTML = `
+                <div class="metric-cell">
+                    <span class="metric-value" 
+                        contenteditable="true" 
+                        data-metric="${newMetricName}" 
+                        data-month="${monthName}">
+                        0.00
+                    </span>
+                    <button class="save-btn" data-metric="${newMetricName}" data-month="${monthName}">
+                        <i class="fas fa-check"></i>
+                    </button>
+                </div>`;
+            
+            row.appendChild(newTd);
+        });
+
+        // Reinitialize event listeners
+        if (typeof setupMetricValueListeners === 'function') {
+            setupMetricValueListeners();
+            setupMetricNameListeners();
+            setupButtonHandlers();
+            makeMetricCellsClickable();
+        }
+
+        // Save the new column to the database using standard form submission
+        const formData = new FormData();
+        formData.append('column_title', newMetricName);
+        formData.append('table_content', '0');
+        formData.append('month', 'January');
+        formData.append('table_name', tableName);
+        
+        fetch('', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Failed to save new column');
+            showToast('New column added successfully', 'success');
+        })
+        .catch(error => {
+            showToast('Error saving new column: ' + error.message, 'danger');
+        });
+    }
+    
+    // Function to handle saving the table name
+    function handleSaveTableName() {
+        const tableNameInput = document.getElementById('tableNameInput');
+        const newTableName = tableNameInput.value.trim();
+        
+        if (!newTableName) {
+            showToast('Table name cannot be empty', 'warning');
+            return;
+        }
+
+        // Prepare form data
+        const formData = new FormData();
+        formData.append('table_name', newTableName);
+
+        fetch('', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Failed to update table name');
+            showToast('Table name updated successfully', 'success');
+            // Update the global tableName variable
+            tableName = newTableName;
+        })
+        .catch(error => {
+            showToast('Error updating table name: ' + error.message, 'danger');
+        });
+    }
+    
+    // Function to handle column deletion
+    function handleDeleteColumn() {
+        const metric = this.dataset.metric;
+        
+        if (!metric) return;
+        
+        // Confirm deletion
+        if (!confirm(`Are you sure you want to delete the "${metric}" column? This action cannot be undone.`)) {
+            return;
+        }
+        
+        console.log('Deleting column:', metric); // Debug info
+        
+        // Delete from the database using JSON format to match update_metric.php expectations
+        fetch('update_metric.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'delete_column',
+                column_title: metric,
+                metric_id: metricId,
+                table_name: tableName
+            })
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Failed to delete column');
+            return response.json();
+        })
+        .then(data => {
+            console.log('Delete response:', data); // Debug info
+            
+            // Remove the column from the UI
+            const columnIndex = findColumnIndex(metric);
+            if (columnIndex !== -1) {
+                removeColumnFromTable(columnIndex);
+                showToast(`Column "${metric}" deleted successfully`, 'success');
+            }
+        })
+        .catch(error => {
+            console.error('Delete error:', error); // Debug info
+            showToast('Error deleting column: ' + error.message, 'danger');
+        });
+    }
+    
+    // Find column index by metric name
+    function findColumnIndex(metricName) {
+        const headers = document.querySelectorAll('.metrics-table thead th');
+        
+        for (let i = 0; i < headers.length; i++) {
+            const nameEl = headers[i].querySelector('.metric-name[data-metric="' + metricName + '"]');
+            if (nameEl) {
+                return i;
+            }
+        }
+        
+        return -1;
+    }
+    
+    // Remove column from table by index
+    function removeColumnFromTable(columnIndex) {
+        // Account for month column
+        const actualIndex = columnIndex;
+        
+        // Remove header
+        const headerRow = document.querySelector('.metrics-table thead tr');
+        if (headerRow && headerRow.children[actualIndex]) {
+            headerRow.children[actualIndex].remove();
+        }
+        
+        // Remove cells from all rows
+        const rows = document.querySelectorAll('.metrics-table tbody tr');
+        rows.forEach(row => {
+            if (row.children[actualIndex]) {
+                row.children[actualIndex].remove();
+            }
+        });
+        
+        // Add "No metrics" placeholder if we removed the last column
+        const remainingColumns = headerRow.querySelectorAll('th');
+        if (remainingColumns.length === 1) { // Only month column remains
+            const placeholderTh = document.createElement('th');
+            placeholderTh.className = 'text-center text-muted';
+            placeholderTh.innerHTML = '<em>No metrics defined. Click "Add Column" to start.</em>';
+            headerRow.appendChild(placeholderTh);
+            
+            // Add empty cells to data rows
+            rows.forEach(row => {
+                const placeholderTd = document.createElement('td');
+                row.appendChild(placeholderTd);
+            });
+        }
+    }
+    
+    // Function to show toast notifications
+    function showToast(message, type = 'info') {
+        // Create toast container if it doesn't exist
+        let toastContainer = document.querySelector('.toast-container');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+            document.body.appendChild(toastContainer);
+        }
+        
+        // Create toast element
+        const toastEl = document.createElement('div');
+        toastEl.className = `toast align-items-center text-white bg-${type} border-0`;
+        toastEl.setAttribute('role', 'alert');
+        toastEl.setAttribute('aria-live', 'assertive');
+        toastEl.setAttribute('aria-atomic', 'true');
+        
+        // Set toast content
+        toastEl.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        `;
+        
+        // Add toast to container
+        toastContainer.appendChild(toastEl);
+        
+        // Initialize and show toast using Bootstrap
+        const bsToast = new bootstrap.Toast(toastEl, { autohide: true, delay: 3000 });
+        bsToast.show();
+        
+        // Remove toast after it's hidden
+        toastEl.addEventListener('hidden.bs.toast', () => {
+            toastEl.remove();
+        });
+    }
     
     // Any remaining inline scripts that haven't been moved to metric-editor.js
     document.getElementById('addColumnBtn').addEventListener('click', handleAddColumn);
     document.getElementById('saveTableNameBtn').addEventListener('click', handleSaveTableName);
     document.getElementById('doneBtn').addEventListener('click', () => {
         window.location.href = 'submit_metrics.php';
+    });
+    
+    // Set up event handlers for delete column buttons
+    document.querySelectorAll('.delete-column-btn').forEach(button => {
+        button.addEventListener('click', handleDeleteColumn);
     });
 </script>
 

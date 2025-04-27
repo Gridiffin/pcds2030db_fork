@@ -142,7 +142,11 @@ require_once '../../includes/dashboard_header.php';
                                 ?>
                                     <tr>
                                         <td><strong><?= htmlspecialchars($metric['table_name']) ?></strong></td>
-                                        <td><?= isset($metric['status']) ? htmlspecialchars($metric['status']) : 'Submitted' ?></td>
+                                        <td>
+                                            <a href="view_metric.php?metric_id=<?= $metric['metric_id'] ?>" class="btn btn-sm btn-outline-info">
+                                                <i class="fas fa-eye me-1"></i> View
+                                            </a>
+                                        </td>
                                     </tr>
                                 <?php
                                     endif;

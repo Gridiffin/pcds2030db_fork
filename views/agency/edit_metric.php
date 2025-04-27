@@ -1,8 +1,8 @@
 <?php
 /**
- * Create Sector Metrics
+ * Edit Sector Metrics
  * 
- * Interface for agency users to create sector-specific metrics
+ * Interface for agency users to edit sector-specific metrics
  */
 
 // Include necessary files
@@ -28,21 +28,37 @@ $message = '';
 $message_type = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
 
-$metric_id = isset($_GET['metric_id']) ? intval($_GET['metric_id']) : 0;
-$_SESSION['metric_id'] = $metric_id;
+    $metric_id = isset($_GET['metric_id']) ? intval($_GET['metric_id']) : 0;
+    $_SESSION['metric_id'] = $metric_id;
+    
     if (isset($_POST['table_name']) && trim($_POST['table_name']) !== '') {
         $new_table_name = $conn->real_escape_string($_POST['table_name']);
-        // Check if a row exists for this metric_id and sector_id
-        $check_query = "SELECT 1 FROM sector_metrics_draft WHERE metric_id = $metric_id AND sector_id = '$sector_id' LIMIT 1";
-        $check_result = $conn->query($check_query);
-        if ($check_result && $check_result->num_rows > 0) {
-            // Update existing row
-            $update_query = "UPDATE sector_metrics_draft SET table_name = '$new_table_name' WHERE sector_id = '$sector_id' AND metric_id = $metric_id";
-            if ($conn->query($update_query) === TRUE) {
+        
+        // For the new JSON-based storage
+        $query = "SELECT data_json FROM sector_metrics_data 
+                WHERE metric_id = ? AND sector_id = ? AND is_draft = 1 LIMIT 1";
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("ii", $metric_id, $sector_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($result->num_rows > 0) {
+            // Update existing metric data with new table name
+            $row = $result->fetch_assoc();
+            $metrics_data = json_decode($row['data_json'], true);
+            
+            // Update table name in database
+            $update_query = "UPDATE sector_metrics_data 
+                            SET table_name = ? 
+                            WHERE metric_id = ? AND sector_id = ? AND is_draft = 1";
+            $update_stmt = $conn->prepare($update_query);
+            $update_stmt->bind_param("sii", $new_table_name, $metric_id, $sector_id);
+            
+            if ($update_stmt->execute()) {
                 $message = "Table name updated successfully.";
                 $message_type = "success";
             } else {
@@ -50,11 +66,30 @@ $_SESSION['metric_id'] = $metric_id;
                 $message_type = "danger";
             }
         } else {
-            // Insert new row with table_name
-            // Removed insertion of placeholder row with column_title = '-'
-            $insert_table_name_query = "INSERT INTO sector_metrics_draft (metric_id, table_name, column_title, table_content, month, sector_id) 
-                VALUES ($metric_id, '$new_table_name', '', 0, 'January', '$sector_id')";
-            if ($conn->query($insert_table_name_query) === TRUE) {
+            // Initialize new data structure
+            $metrics_data = [
+                'columns' => [],
+                'data' => []
+            ];
+            
+            // Initialize months
+            $months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                    'July', 'August', 'September', 'October', 'November', 'December'];
+            
+            foreach ($months as $m) {
+                $metrics_data['data'][$m] = [];
+            }
+            
+            // Save the new entry
+            $json_data = json_encode($metrics_data);
+            
+            $insert_query = "INSERT INTO sector_metrics_data 
+                            (metric_id, sector_id, table_name, data_json, is_draft) 
+                            VALUES (?, ?, ?, ?, 1)";
+            $insert_stmt = $conn->prepare($insert_query);
+            $insert_stmt->bind_param("iiss", $metric_id, $sector_id, $new_table_name, $json_data);
+            
+            if ($insert_stmt->execute()) {
                 $message = "Table name saved successfully.";
                 $message_type = "success";
             } else {
@@ -62,28 +97,78 @@ $_SESSION['metric_id'] = $metric_id;
                 $message_type = "danger";
             }
         }
-    } else {
-        // Use provided values or defaults for metric insert
+    } else if (isset($_POST['column_title'])) {
+        // Handle AJAX request for adding a new column
         $name = $conn->real_escape_string($_POST['column_title'] ?? '');
         $value = floatval($_POST['table_content'] ?? 0);
-        $month = $conn->real_escape_string($_POST['month'] ?? '');
-        $table_name_post = $conn->real_escape_string($_POST['table_name'] ?? '');
+        $month = $conn->real_escape_string($_POST['month'] ?? 'January');
+        $table_name = $conn->real_escape_string($_POST['table_name'] ?? '');
 
-        // If table_name is empty, generate a new table_name
-        if (empty($table_name_post)) {
-            $table_name_post = "Table_" . $metric_id;
-        }
-
-        // Insert new metric with table_name and metric_id
-        $query = "INSERT INTO sector_metrics_draft (metric_id, table_name, column_title, table_content, month, sector_id) 
-                VALUES ($metric_id, '$table_name_post', '$name', '$value', '$month', '$sector_id')";
-
-        if ($conn->query($query) === TRUE) {
-            $message = "Metric created successfully.";
-            $message_type = "success";
+        // Get existing data
+        $query = "SELECT data_json FROM sector_metrics_data 
+                WHERE metric_id = ? AND sector_id = ? AND is_draft = 1 LIMIT 1";
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("ii", $metric_id, $sector_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($result->num_rows > 0) {
+            $row = $result->fetch_assoc();
+            $metrics_data = json_decode($row['data_json'], true);
+            
+            // Add new column to columns list if it doesn't exist
+            if (!in_array($name, $metrics_data['columns'])) {
+                $metrics_data['columns'][] = $name;
+            }
+            
+            // Add value for January (or selected month)
+            $metrics_data['data'][$month][$name] = $value;
+            
+            // Save updated data
+            $json_data = json_encode($metrics_data);
+            
+            $update_query = "UPDATE sector_metrics_data 
+                            SET data_json = ? 
+                            WHERE metric_id = ? AND sector_id = ? AND is_draft = 1";
+            $update_stmt = $conn->prepare($update_query);
+            $update_stmt->bind_param("sii", $json_data, $metric_id, $sector_id);
+            
+            if ($update_stmt->execute()) {
+                $message = "New column added successfully.";
+                $message_type = "success";
+                
+                // For AJAX response
+                if (isset($_POST['ajax']) && $_POST['ajax'] == 1) {
+                    header('Content-Type: application/json');
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Column added successfully',
+                        'column_name' => $name,
+                        'metrics_data' => $metrics_data
+                    ]);
+                    exit;
+                }
+            } else {
+                $message = "Error adding column: " . $conn->error;
+                $message_type = "danger";
+                
+                // For AJAX response
+                if (isset($_POST['ajax']) && $_POST['ajax'] == 1) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['error' => $conn->error]);
+                    exit;
+                }
+            }
         } else {
-            $message = "Error: " . $conn->error;
+            $message = "Error: Metric data not found.";
             $message_type = "danger";
+            
+            // For AJAX response
+            if (isset($_POST['ajax']) && $_POST['ajax'] == 1) {
+                header('Content-Type: application/json');
+                echo json_encode(['error' => 'Metric data not found']);
+                exit;
+            }
         }
     }
 }
@@ -91,301 +176,289 @@ $_SESSION['metric_id'] = $metric_id;
 // Retrieve all metrics for display
 $metric_id = isset($_GET['metric_id']) ? intval($_GET['metric_id']) : 0;
 if ($metric_id === 0) {
-    $result = $conn->query("SELECT MAX(metric_id) AS max_id FROM sector_metrics_draft");
-    if ($result && $row = $result->fetch_assoc()) {
-        $metric_id = $row['max_id'] + 1;
-    }
+    // Handle invalid metric ID
+    $_SESSION['error_message'] = 'Invalid metric ID.';
+    header('Location: submit_metrics.php');
+    exit;
 }
-$select_query = "SELECT * FROM sector_metrics_draft WHERE metric_id = $metric_id";
-$metrics = $conn->query($select_query);
-if (!$metrics) die("Error getting metrics: " . $conn->error);
 
-// Organize data for display
+// Get metric data using JSON-based storage
+$query = "SELECT data_json, table_name FROM sector_metrics_data 
+          WHERE metric_id = ? AND sector_id = ? AND is_draft = 1 LIMIT 1";
+$stmt = $conn->prepare($query);
+$stmt->bind_param("ii", $metric_id, $sector_id);
+$stmt->execute();
+$result = $stmt->get_result();
+
+$table_name = '';
+$metric_names = [];
 $month_names = ['January', 'February', 'March', 'April', 'May', 'June', 
                 'July', 'August', 'September', 'October', 'November', 'December'];
 $table_data = [];
-while ($row = $metrics->fetch_assoc()) {
-    $month_index = date('n', strtotime($row['month'])) - 1; // Get month index from month
-    if ($month_index < 0 || $month_index > 11) {
-        continue; // Skip invalid month index
+
+if ($result->num_rows > 0) {
+    $row = $result->fetch_assoc();
+    $table_name = $row['table_name'];
+    $metrics_data = json_decode($row['data_json'], true);
+    
+    // Get column names
+    $metric_names = $metrics_data['columns'] ?? [];
+    
+    // Organize data for display
+    foreach ($month_names as $month_name) {
+        $month_data = ['month_name' => $month_name, 'metrics' => []];
+        
+        // Add data for each metric in this month
+        if (isset($metrics_data['data'][$month_name])) {
+            $month_data['metrics'] = $metrics_data['data'][$month_name];
+        }
+        
+        $table_data[] = $month_data;
     }
-    $table_data[$month_index]['month_name'] = $month_names[$month_index];
-    $table_data[$month_index]['metrics'][$row['column_title']] = $row['table_content'];
+} else {
+    // No data found - create empty structure
+    foreach ($month_names as $month_name) {
+        $table_data[] = ['month_name' => $month_name, 'metrics' => []];
+    }
 }
 
+// Add CSS references
+$additionalStyles = [
+    APP_URL . '/assets/css/custom/metric-create.css'
+];
+
+// Add JS references
+$additionalScripts = [
+    APP_URL . '/assets/js/metric-editor.js'
+];
+
+// Include header
+require_once '../layouts/header.php';
+
+// Include agency navigation
+require_once '../layouts/agency_nav.php';
+
+// Set up the page header variables for dashboard_header.php
+$title = "Edit Sector Metrics";
+$subtitle = "Update your sector-specific metrics data";
+$headerStyle = 'light'; // Use light (white) style for inner pages
+$actions = [
+    [
+        'url' => 'submit_metrics.php',
+        'text' => 'Back to Metrics',
+        'icon' => 'fa-arrow-left',
+        'class' => 'btn-outline-primary'
+    ]
+];
+
+// Include the dashboard header component
+require_once '../../includes/dashboard_header.php';
 ?>
-<!DOCTYPE html>
-<html>
-<head>
-    <link rel="stylesheet" type="text/css" href="../../assets/css/custom/metric-create.css">
-</head>
-<body>
-    <div class="container">
-        <div>
-            <h1 class="h2 mb-0">Create New Sector Metrics</h1> 
-            <p class="text-muted">Create your sector-specific metrics</p>
+
+<div class="container-fluid px-4 py-4">
+    <?php if (!empty($message)): ?>
+        <div class="alert alert-<?= $message_type ?> alert-dismissible fade show" role="alert">
+            <?= $message ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
+    <?php endif; ?>
 
-        <?php
-            // Get the table_name from the first metric row for the sector
-            $table_name = '';
-            if (!empty($table_data)) {
-                foreach ($table_data as $month_data) {
-                    if (!empty($month_data['metrics'])) {
-                        // Get the table_name from sector_metrics_draft for this sector
-                        $result = $conn->query("SELECT table_name FROM sector_metrics_draft WHERE metric_id = $metric_id AND sector_id = $sector_id LIMIT 1");
-                        if ($result && $row = $result->fetch_assoc()) {
-                            $table_name = $row['table_name'];
-                        }
-                        break;
-                    }
-                }
-            }
-        ?>
-        <div class="d-flex align-items-center mb-3">
-            <label for="tableNameInput" class="me-2 h4 mb-0">Table Name:</label>
-            <input type="text" id="tableNameInput" value="<?= htmlspecialchars($table_name) ?>" />
-            <button class="btn btn-primary ms-2" id="saveTableNameBtn">Save</button>
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title m-0">Edit Metrics Table</h5>
+            <div>
+                <button class="btn btn-sm btn-success" id="doneBtn">
+                    <i class="fas fa-check me-1"></i> Done
+                </button>
+            </div>
         </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <span class="input-group-text">Table Name</span>
+                        <input type="text" class="form-control" id="tableNameInput" value="<?= htmlspecialchars($table_name) ?>" />
+                        <button class="btn btn-primary" id="saveTableNameBtn">Save</button>
+                    </div>
+                </div>
+                <div class="col-md-6 text-end">
+                    <button class="btn btn-primary" id="addColumnBtn">
+                        <i class="fas fa-plus me-1"></i> Add Column
+                    </button>
+                </div>
+            </div>
 
-        <!-- Add Column Button -->
-        <button class="btn btn-info mb-3" id="addColumnBtn">Add Column</button>
-
-        <!-- Sector Metrics Table -->
-        <table>
-            <thead>
-                <tr>
-                    <th>Month</th>
-                    <?php
-                        // Get unique metric names for column headers
-                        $metric_names = [];
-                        foreach ($table_data as $month_data) {  
-                            if (isset($month_data['metrics'])) {
-                                $metric_names = array_merge($metric_names, array_keys($month_data['metrics']));
-                            }
-                        }
-                        $metric_names = array_unique($metric_names);
-                        sort($metric_names);
-
-foreach ($metric_names as $name): ?>
-    <th>
-        <div class="metric-header">
-            <span class="metric-name" contenteditable="true" data-metric="<?= htmlspecialchars($name) ?>">
-                <?= $name === '' ? 'click here to edit name' : htmlspecialchars($name) ?>
-            </span>
-            <button class="save-btn" 
-                    data-metric="<?= htmlspecialchars($name) ?>"> ✓ </button>
-        </div>
-    </th>
-<?php endforeach; ?>
-                </tr>
-            </thead>
-            <tbody>
-                <?php
-                    // Ensure all months are shown, when there is data or no data
-                    foreach ($month_names as $month_name):
-                        $month_index = array_search($month_name, $month_names);
-                        $month_data = $table_data[$month_index] ?? ['month_name' => $month_name, 'metrics' => []];
-                ?>
-                <tr>
-                    <td><?= $month_name ?></td>
-                    <?php foreach ($metric_names as $name): ?>
-                        <td>
-                            <div class="metric-cell">
-                                <span class="metric-value" 
-                                    contenteditable="true" 
-                                    data-metric="<?= htmlspecialchars($name) ?>" 
-                                    data-month="<?= $month_name ?>">
-                                    <?= isset($month_data['metrics'][$name]) ? number_format($month_data['metrics'][$name], 2) : ' ' ?>
-                                </span>
-                                <button class="save-btn" data-metric="<?= htmlspecialchars($name) ?>" data-month="<?= $month_name ?>"> ✓ </button>
-                            </div>
-                        </td>
-                    <?php endforeach; ?>
-                </tr>
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover metrics-table">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 150px;">Month</th>
+                            <?php foreach ($metric_names as $name): ?>
+                                <th>
+                                    <div class="metric-header">
+                                        <span class="metric-name" contenteditable="true" data-metric="<?= htmlspecialchars($name) ?>">
+                                            <?= htmlspecialchars($name) ?>
+                                        </span>
+                                        <div class="metric-actions">
+                                            <button class="save-btn" data-metric="<?= htmlspecialchars($name) ?>">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button class="delete-column-btn" data-metric="<?= htmlspecialchars($name) ?>">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </th>
+                            <?php endforeach; ?>
+                            <?php if (empty($metric_names)): ?>
+                                <th class="text-center text-muted">
+                                    <em>No metrics defined. Click "Add Column" to start.</em>
+                                </th>
+                            <?php endif; ?>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($table_data as $month_data): ?>
+                            <tr>
+                                <td>
+                                    <span class="month-badge"><?= $month_data['month_name'] ?></span>
+                                </td>
+                                <?php foreach ($metric_names as $name): ?>
+                                    <td>
+                                        <div class="metric-cell">
+                                            <span class="metric-value" 
+                                                contenteditable="true" 
+                                                data-metric="<?= htmlspecialchars($name) ?>" 
+                                                data-month="<?= $month_data['month_name'] ?>">
+                                                <?= isset($month_data['metrics'][$name]) ? number_format($month_data['metrics'][$name], 2) : ' ' ?>
+                                            </span>
+                                            <button class="save-btn" data-metric="<?= htmlspecialchars($name) ?>" data-month="<?= $month_data['month_name'] ?>">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                <?php endforeach; ?>
+                                <?php if (empty($metric_names)): ?>
+                                    <td></td>
+                                <?php endif; ?>
+                            </tr>
                         <?php endforeach; ?>
-            </tbody>
-        </table>
-        <div class="mt-3">
-            <button class="btn btn-success" id="doneBtn">Done</button>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer">
+            <small class="text-muted">
+                <i class="fas fa-info-circle me-1"></i> Click on any cell to edit its value. Click the check button to save changes.
+            </small>
         </div>
     </div>
-</body>
+</div>
+
 <script>
-    // Show save button when metric value is edited
-    document.querySelectorAll('.metric-value').forEach(cell => {
-        cell.addEventListener('input', function() {
-            const btn = this.parentElement.querySelector('.save-btn');
-            if (btn) btn.style.display = 'inline-block';
-        });
-    });
-
-    // Show save button when metric name is edited
-    document.querySelectorAll('.metric-name').forEach(cell => {
-        cell.addEventListener('input', function() {
-            const btn = this.parentElement.querySelector('.save-btn');
-            if (btn) btn.style.display = 'inline-block';
-        });
-    });
-
-    // Handle metric value saves
-    document.querySelectorAll('.save-btn[data-month]').forEach(btn => {
-        btn.addEventListener('click', async function() {
-            const cell = this.parentElement.querySelector('.metric-value');
-            const metric = cell.dataset.metric;
-            const month = cell.dataset.month;
-            const newValue = parseFloat(cell.textContent) || 0;
-            
-            try {
-                const response = await fetch('update_metric.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        column_title: metric,
-                        month: month,
-                        new_value: newValue,
-                        metric_id: <?= json_encode($metric_id) ?>,
-                        table_name: <?= json_encode($table_name) ?>
-                    })
-                });
-                
-                if (!response.ok) throw new Error('Update failed');
-                cell.textContent = newValue.toFixed(2);
-                this.textContent = '✓';
-                this.style.display = 'none';
-            } catch (error) {
-                alert('Error updating value: ' + error.message);
-                const response = await fetch(`get_metric_value.php?metric=${metric}&month=${month}`);
-                const data = await response.json();
-                cell.textContent = data.value.toFixed(2);
-            }
-        });
-    });
-
-    // Handle metric name saves
-    document.querySelectorAll('.save-btn:not([data-month])').forEach(btn => {
-        btn.addEventListener('click', async function() {
-            const cell = this.parentElement.querySelector('.metric-name');
-            const oldName = cell.dataset.metric;
-            const newName = cell.textContent.trim();
-            
-            if (newName === oldName) return;
-            
-            try {
-                const response = await fetch('update_metric.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        column_title: oldName,
-                        new_name: newName,
-                        metric_id: <?= json_encode($metric_id) ?>,
-                        table_name: <?= json_encode($table_name) ?>
-                    })
-                });
-                
-                if (!response.ok) throw new Error('Update failed');
-                cell.dataset.metric = newName;
-                this.textContent = '✓';
-                this.style.display = 'none';
-                // Update all corresponding value cells
-                document.querySelectorAll(`.metric-value[data-metric="${oldName}"]`)
-                    .forEach(cell => cell.dataset.metric = newName);
-            } catch (error) {
-                alert('Error updating metric name: ' + error.message);
-                cell.textContent = oldName;
-            }
-        });
-    });
-
-    // Add Column button handler
-    document.getElementById('addColumnBtn').addEventListener('click', async () => {
+    // Define variables needed by the metric-editor.js script
+    const metricId = <?= json_encode($metric_id) ?>;
+    let tableName = <?= json_encode($table_name) ?>;
+    let showPhpMessages = false; // Flag to prevent duplicate messages
+    
+    // Override the addColumn function to handle dynamic updates
+    function handleAddColumn() {
         const newMetricName = prompt('Enter new metric name:');
-        if (!newMetricName) return;
+        if (!newMetricName || newMetricName.trim() === '') return;
 
-        // Prepare data for POST request
-        const data = new URLSearchParams();
-        data.append('column_title', newMetricName);
-        data.append('table_content', '');
-        // Use current date as month
-        const currentDate = new Date();
-        const year = currentDate.getFullYear();
-        const month = 'January' // placeholder for month name
-        const day = 1;
-        const metricDate = `${month.toString().padStart(2, '0')}`;
-        data.append('month', metricDate);
-
-        try {
-            const response = await fetch('', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: data.toString()
-            });
-            if (!response.ok) throw new Error('Failed to add new metric column');
-            alert('New metric column added successfully.');
-            location.reload();
-        } catch (error) {
-            alert('Error adding new metric column: ' + error.message);
+        // Create a new column in the UI immediately
+        const tableHead = document.querySelector('.metrics-table thead tr');
+        const tableRows = document.querySelectorAll('.metrics-table tbody tr');
+        
+        // Add the column header
+        const newTh = document.createElement('th');
+        newTh.innerHTML = `
+            <div class="metric-header">
+                <span class="metric-name" contenteditable="true" data-metric="${newMetricName}">
+                    ${newMetricName}
+                </span>
+                <div class="metric-actions">
+                    <button class="save-btn" data-metric="${newMetricName}">
+                        <i class="fas fa-check"></i>
+                    </button>
+                    <button class="delete-column-btn" data-metric="${newMetricName}">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+            </div>`;
+        
+        // If there was a "No metrics" placeholder column, remove it
+        const noMetricsColumn = tableHead.querySelector('th.text-muted');
+        if (noMetricsColumn) {
+            noMetricsColumn.remove();
         }
-    });
-    // Make entire metric-cell div clickable to focus the editable span.metric-value inside
-    document.querySelectorAll('.metric-cell').forEach(cell => {
-        cell.addEventListener('click', function(event) {
-            // Avoid focusing if clicking on the save button or the span itself
-            if (event.target.classList.contains('save-btn') || event.target.classList.contains('metric-value')) {
-                return;
+        
+        tableHead.appendChild(newTh);
+        
+        // Add the column cells for each row
+        tableRows.forEach(row => {
+            const monthName = row.querySelector('.month-badge').textContent;
+            const newTd = document.createElement('td');
+            
+            // If there was a placeholder empty column, remove it
+            if (row.cells.length === 2 && !row.cells[1].querySelector('.metric-cell')) {
+                row.cells[1].remove();
             }
-            const editableSpan = this.querySelector('.metric-value');
-            if (editableSpan) {
-                editableSpan.focus();
-                // Optionally, place cursor at end
-                const range = document.createRange();
-                const sel = window.getSelection();
-                range.selectNodeContents(editableSpan);
-                range.collapse(false);
-                sel.removeAllRanges();
-                sel.addRange(range);
-            }
+            
+            newTd.innerHTML = `
+                <div class="metric-cell">
+                    <span class="metric-value" 
+                        contenteditable="true" 
+                        data-metric="${newMetricName}" 
+                        data-month="${monthName}">
+                        0.00
+                    </span>
+                    <button class="save-btn" data-metric="${newMetricName}" data-month="${monthName}">
+                        <i class="fas fa-check"></i>
+                    </button>
+                </div>`;
+            
+            row.appendChild(newTd);
         });
-    });
-</script>
 
-<script>
-    // Save table name button handler
-    document.getElementById('saveTableNameBtn').addEventListener('click', async () => {
-        const tableNameInput = document.getElementById('tableNameInput');
-        const newTableName = tableNameInput.value.trim();
-        if (!newTableName) {
-            alert('Table name cannot be empty.');
-            return;
-        }
+        // Reinitialize event listeners
+        setupMetricValueListeners();
+        setupMetricNameListeners();
+        setupButtonHandlers();
+        makeMetricCellsClickable();
 
-        // Prepare form data
-        const formData = new FormData();
-        formData.append('table_name', newTableName);
+        // Save the new column to the database in the background
+        fetch('update_metric.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                column_title: newMetricName,
+                new_name: newMetricName,
+                metric_id: metricId,
+                table_name: tableName
+            })
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Failed to save new column');
+            showToast('New column added successfully', 'success');
+        })
+        .catch(error => {
+            showToast('Error saving new column: ' + error.message, 'danger');
+        });
+    }
 
-        try {
-            const response = await fetch('', {
-                method: 'POST',
-                body: formData
-            });
-            if (!response.ok) throw new Error('Failed to update table name');
-            alert('Table name updated successfully.');
-            location.reload();
-        } catch (error) {
-            alert('Error updating table name: ' + error.message);
-        }
-    });
-</script>
-<script>
-    // Done button handler: redirect to agency dashboard or metrics list
-    document.getElementById('doneBtn').addEventListener('click', () => {
+    // Override the done button handler
+    document.getElementById('doneBtn').addEventListener('click', function() {
         window.location.href = 'submit_metrics.php';
     });
+
+    // Override the add column button handler
+    document.getElementById('addColumnBtn').addEventListener('click', handleAddColumn);
 </script>
-</html>
+
+<?php
+// Include footer
+require_once '../layouts/footer.php';
+?>

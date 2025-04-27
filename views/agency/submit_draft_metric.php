@@ -1,6 +1,6 @@
 <?php
 // submit_draft_metric.php
-// Move data tied to selected metric_id from sector_metrics_draft to sector_metrics_submitted
+// Move data from draft to submitted status in the sector_metrics_data table
 
 require_once '../../config/config.php';
 require_once '../../includes/db_connect.php';
@@ -16,9 +16,10 @@ if (!is_agency()) {
 
 // Get metric_id from GET parameters
 $metric_id = isset($_GET['metric_id']) ? intval($_GET['metric_id']) : 0;
+$sector_id = $_SESSION['sector_id'] ?? 0;
 
-if ($metric_id <= 0) {
-    $_SESSION['flash_error'] = 'Invalid metric ID.';
+if ($metric_id <= 0 || $sector_id <= 0) {
+    $_SESSION['flash_error'] = 'Invalid metric ID or sector ID.';
     header('Location: submit_metrics.php');
     exit;
 }
@@ -29,10 +30,11 @@ global $conn;
 $conn->begin_transaction();
 
 try {
-    // Select all rows from sector_metrics_draft for this metric_id
-    $select_query = "SELECT * FROM sector_metrics_draft WHERE metric_id = ?";
-    $stmt = $conn->prepare($select_query);
-    $stmt->bind_param("i", $metric_id);
+    // Check if draft data exists
+    $draft_query = "SELECT data_json, table_name FROM sector_metrics_data 
+                   WHERE metric_id = ? AND sector_id = ? AND is_draft = 1 LIMIT 1";
+    $stmt = $conn->prepare($draft_query);
+    $stmt->bind_param("ii", $metric_id, $sector_id);
     $stmt->execute();
     $result = $stmt->get_result();
 
@@ -40,28 +42,27 @@ try {
         throw new Exception('No draft data found for the selected metric.');
     }
 
-    // Prepare insert statement for sector_metrics_submitted
-    $insert_query = "INSERT INTO sector_metrics_submitted (metric_id, sector_id, table_name, column_title, table_content, month) VALUES (?, ?, ?, ?, ?, ?)";
+    $draft_data = $result->fetch_assoc();
+    $data_json = $draft_data['data_json'];
+    $table_name = $draft_data['table_name'];
+
+    // First copy the draft data into a submitted record (is_draft = 0)
+    $insert_query = "INSERT INTO sector_metrics_data 
+                    (metric_id, sector_id, table_name, data_json, is_draft) 
+                    VALUES (?, ?, ?, ?, 0)
+                    ON DUPLICATE KEY UPDATE
+                    table_name = VALUES(table_name),
+                    data_json = VALUES(data_json),
+                    updated_at = CURRENT_TIMESTAMP";
+    
     $insert_stmt = $conn->prepare($insert_query);
+    $insert_stmt->bind_param("iiss", $metric_id, $sector_id, $table_name, $data_json);
+    $insert_stmt->execute();
 
-    // Insert each row into sector_metrics_submitted
-    while ($row = $result->fetch_assoc()) {
-        $insert_stmt->bind_param(
-            "iissss",
-            $row['metric_id'],
-            $row['sector_id'],
-            $row['table_name'],
-            $row['column_title'],
-            $row['table_content'],
-            $row['month']
-        );
-        $insert_stmt->execute();
-    }
-
-    // Delete rows from sector_metrics_draft for this metric_id
-    $delete_query = "DELETE FROM sector_metrics_draft WHERE metric_id = ?";
+    // Then delete the draft record
+    $delete_query = "DELETE FROM sector_metrics_data WHERE metric_id = ? AND sector_id = ? AND is_draft = 1";
     $delete_stmt = $conn->prepare($delete_query);
-    $delete_stmt->bind_param("i", $metric_id);
+    $delete_stmt->bind_param("ii", $metric_id, $sector_id);
     $delete_stmt->execute();
 
     // Commit transaction

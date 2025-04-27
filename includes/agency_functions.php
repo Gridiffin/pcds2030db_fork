@@ -9,13 +9,15 @@
 require_once 'utilities.php';
 
 /**
- * Get agency sector metrics
+ * Get agency sector metrics - using JSON-based storage
  */
 function get_agency_sector_metrics($sector_id){
     global $conn;
 
     $sector_id = intval($sector_id);
-    $query = "SELECT * FROM sector_metrics_submitted WHERE sector_id = ?";
+    $query = "SELECT metric_id, sector_id, table_name, data_json 
+              FROM sector_metrics_data 
+              WHERE sector_id = ? AND is_draft = 0";
     $stmt = $conn->prepare($query);
     $stmt->bind_param("i", $sector_id);
     $stmt->execute();
@@ -24,7 +26,16 @@ function get_agency_sector_metrics($sector_id){
     $metrics = [];
     if ($result) {
         while ($row = $result->fetch_assoc()) {
-            $metrics[] = $row;
+            // Convert JSON data to array that matches the expected format for backward compatibility
+            $metric_base = [
+                'metric_id' => $row['metric_id'],
+                'sector_id' => $row['sector_id'],
+                'table_name' => $row['table_name'],
+                'is_submitted' => true
+            ];
+            
+            // Add to metrics array
+            $metrics[] = $metric_base;
         }
     }
 
@@ -32,14 +43,15 @@ function get_agency_sector_metrics($sector_id){
 }
 
 /**
- * Get Draft Metric
+ * Get Draft Metric - using JSON-based storage
 */
-
 function get_draft_metric($sector_id){
     global $conn;
 
     $sector_id = intval($sector_id);
-    $query = "SELECT * FROM sector_metrics_draft WHERE sector_id = ?";
+    $query = "SELECT metric_id, sector_id, table_name, data_json 
+              FROM sector_metrics_data 
+              WHERE sector_id = ? AND is_draft = 1";
     $stmt = $conn->prepare($query);
     $stmt->bind_param("i", $sector_id);
     $stmt->execute();
@@ -48,7 +60,16 @@ function get_draft_metric($sector_id){
     $metrics = [];
     if ($result) {
         while ($row = $result->fetch_assoc()) {
-            $metrics[] = $row;
+            // Convert JSON data to array that matches the expected format for backward compatibility
+            $metric_base = [
+                'metric_id' => $row['metric_id'],
+                'sector_id' => $row['sector_id'],
+                'table_name' => $row['table_name'],
+                'is_draft' => true
+            ];
+            
+            // Add to metrics array
+            $metrics[] = $metric_base;
         }
     }
 

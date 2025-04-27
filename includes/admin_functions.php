@@ -823,6 +823,32 @@ function get_all_sectors() {
 }
 
 /**
+ * Get all metrics with JSON-based storage
+ *
+ * @return array List of metrics
+ */
+function get_all_metrics() {
+    global $conn;
+    
+    $query = "SELECT smd.metric_id, smd.sector_id, smd.table_name, s.sector_name 
+              FROM sector_metrics_data smd
+              LEFT JOIN sectors s ON smd.sector_id = s.sector_id
+              WHERE smd.is_draft = 0
+              ORDER BY smd.metric_id DESC";
+    
+    $result = $conn->query($query);
+    
+    $metrics = [];
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $metrics[] = $row;
+        }
+    }
+    
+    return $metrics;
+}
+
+/**
  * Add a new user to the system
  * 
  * @param array $data Post data from add user form
