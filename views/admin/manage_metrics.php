@@ -10,7 +10,7 @@ require_once '../../config/config.php';
 require_once '../../includes/db_connect.php';
 require_once '../../includes/session.php';
 require_once '../../includes/functions.php';
-require_once '../../includes/admin_functions.php';
+require_once '../../includes/admins/index.php';
 
 // Verify user is an admin
 if (!is_admin()) {
@@ -21,7 +21,7 @@ if (!is_admin()) {
 // Set page title
 $pageTitle = 'Manage Metrics';
 
-require_once '../../includes/admin_functions.php';
+require_once '../../includes/admins/index.php';
 
 // Get all metrics using the JSON-based storage function
 $period_id = isset($_GET['period_id']) ? intval($_GET['period_id']) : 0;

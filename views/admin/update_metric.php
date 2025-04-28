@@ -7,7 +7,7 @@ session_start();
 require_once '../../config/config.php';
 require_once '../../includes/db_connect.php';
 require_once '../../includes/functions.php';
-require_once '../../includes/admin_functions.php';
+require_once '../../includes/admins/index.php';
 
 // Verify user is an admin
 if (!is_admin()) {

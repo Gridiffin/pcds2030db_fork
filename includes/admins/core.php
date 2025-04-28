@@ -1,0 +1,58 @@
+<?php
+/**
+ * Core Admin Functions
+ * 
+ * Contains basic admin authentication and permission functions
+ */
+
+require_once dirname(__DIR__) . '/utilities.php';
+
+/**
+ * Check if current user is admin
+ * @return boolean
+ */
+function is_admin() {
+    if (!isset($_SESSION['user_id']) || !isset($_SESSION['role'])) {
+        return false;
+    }
+    return $_SESSION['role'] === 'admin';
+}
+
+/**
+ * Check admin permission
+ * @return array|null Error message if not an admin
+ */
+function check_admin_permission() {
+    if (!is_admin()) {
+        return format_error('Permission denied', 403);
+    }
+    return null;
+}
+
+/**
+ * Generate report for a specific period
+ * @param int $period_id The reporting period ID
+ * @return array Report info including paths to generated files
+ */
+function generate_report($period_id) {
+    // Only allow admins to generate reports
+    if (!is_admin()) {
+        return ['error' => 'Permission denied'];
+    }
+    
+    // Implementation for report generation...
+    // This would use PHPPresentation and DomPDF to generate reports
+    
+    // Finally, store report info in database
+    $pptx_path = 'reports/pptx/report_' . $period_id . '.pptx';
+    $pdf_path = 'reports/pdf/report_' . $period_id . '.pdf';
+    
+    // Insert into reports table...
+    
+    return [
+        'success' => true,
+        'pptx_path' => $pptx_path,
+        'pdf_path' => $pdf_path
+    ];
+}
+?>

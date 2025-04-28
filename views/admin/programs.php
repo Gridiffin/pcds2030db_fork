@@ -10,7 +10,7 @@ require_once '../../config/config.php';
 require_once '../../includes/db_connect.php';
 require_once '../../includes/session.php';
 require_once '../../includes/functions.php';
-require_once '../../includes/admin_functions.php';
+require_once '../../includes/admins/index.php';
 require_once '../../includes/status_helpers.php'; // For status badge display
 
 // Verify user is admin
