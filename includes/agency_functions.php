@@ -543,13 +543,11 @@ function submit_program_data($data, $is_draft = false) {
         
         // First update the program's timeline if provided
         if ($start_date && $end_date) {
-            // Only update timeline for non-assigned programs or if user has edit permissions
-            if ($is_assigned == 0) {
-                $update_program = "UPDATE programs SET start_date = ?, end_date = ?, updated_at = NOW() WHERE program_id = ?";
-                $stmt = $conn->prepare($update_program);
-                $stmt->bind_param("ssi", $start_date, $end_date, $program_id);
-                $stmt->execute();
-            }
+            // Update timeline regardless of assigned status (allow update)
+            $update_program = "UPDATE programs SET start_date = ?, end_date = ?, updated_at = NOW() WHERE program_id = ?";
+            $stmt = $conn->prepare($update_program);
+            $stmt->bind_param("ssi", $start_date, $end_date, $program_id);
+            $stmt->execute();
         }
         
         // Check if a submission already exists for this program and period

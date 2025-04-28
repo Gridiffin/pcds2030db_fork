@@ -272,7 +272,7 @@ require_once '../layouts/agency_nav.php';
                     <div class="col-md-6">
                         <label for="start_date" class="form-label">Start Date</label>
                         <input type="date" class="form-control" id="start_date" name="start_date" 
-                               value="<?php echo get_field_value('timeline', $program['start_date'] ? date('Y-m-d', strtotime($program['start_date'])) : ''); ?>"
+                               value="<?php echo get_field_value('start_date', $program['start_date'] ? date('Y-m-d', strtotime($program['start_date'])) : ''); ?>"
                                <?php echo (!is_editable('timeline')) ? 'readonly' : ''; ?>>
                         <?php if ($program['is_assigned'] && !is_editable('timeline')): ?>
                             <div class="form-text">Start date was set by an administrator and cannot be changed.</div>
@@ -281,7 +281,7 @@ require_once '../layouts/agency_nav.php';
                     <div class="col-md-6">
                         <label for="end_date" class="form-label">End Date</label>
                         <input type="date" class="form-control" id="end_date" name="end_date" 
-                               value="<?php echo get_field_value('timeline', $program['end_date'] ? date('Y-m-d', strtotime($program['end_date'])) : ''); ?>"
+                               value="<?php echo get_field_value('end_date', $program['end_date'] ? date('Y-m-d', strtotime($program['end_date'])) : ''); ?>"
                                <?php echo (!is_editable('timeline')) ? 'readonly' : ''; ?>>
                         <?php if ($program['is_assigned'] && !is_editable('timeline')): ?>
                             <div class="form-text">End date was set by an administrator and cannot be changed.</div>
