@@ -825,17 +825,25 @@ function get_all_sectors() {
 /**
  * Get all metrics with JSON-based storage
  *
+ * @param int|null $period_id Optional period ID to filter metrics by
  * @return array List of metrics
  */
-function get_all_metrics_data() {
+function get_all_metrics_data($period_id = null) {
     global $conn;
     
-    $query = "SELECT smd.metric_id, smd.sector_id, smd.table_name, s.sector_name, 
-              smd.created_at, smd.updated_at 
+    $query = "SELECT smd.metric_id, smd.sector_id, smd.period_id, smd.table_name, s.sector_name, 
+              rp.year, rp.quarter, smd.created_at, smd.updated_at 
               FROM sector_metrics_data smd
               LEFT JOIN sectors s ON smd.sector_id = s.sector_id
-              WHERE smd.is_draft = 0
-              ORDER BY smd.metric_id DESC";
+              LEFT JOIN reporting_periods rp ON smd.period_id = rp.period_id
+              WHERE smd.is_draft = 0";
+    
+    // Add period filter if provided
+    if ($period_id) {
+        $query .= " AND smd.period_id = " . intval($period_id);
+    }
+    
+    $query .= " ORDER BY smd.metric_id DESC";
     
     $result = $conn->query($query);
     
@@ -858,9 +866,10 @@ function get_all_metrics_data() {
 function get_metric_data($metric_id) {
     global $conn;
     
-    $query = "SELECT smd.*, s.sector_name 
+    $query = "SELECT smd.*, s.sector_name, rp.year, rp.quarter 
               FROM sector_metrics_data smd
               LEFT JOIN sectors s ON smd.sector_id = s.sector_id
+              LEFT JOIN reporting_periods rp ON smd.period_id = rp.period_id
               WHERE smd.metric_id = ? AND smd.is_draft = 0";
     
     $stmt = $conn->prepare($query);
