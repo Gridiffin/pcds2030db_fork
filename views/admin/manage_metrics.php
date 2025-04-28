@@ -23,8 +23,8 @@ $pageTitle = 'Manage Metrics';
 
 require_once '../../includes/admin_functions.php';
 
-// Get all metrics
-$metrics = get_all_metrics();
+// Get all metrics using the JSON-based storage function
+$metrics = get_all_metrics_data();
 
 // Get all sectors for filtering
 $sectors = get_all_sectors();
@@ -108,24 +108,37 @@ require_once '../layouts/admin_nav.php';
                 </thead>
                 <tbody>
                     <?php 
-                    $unique_metrics=[];
-                    foreach ($metrics as $metric){
-                        if (!in_array($metric['metric_id'], $unique_metrics)) {
-                            $unique_metrics[] = $metric['metric_id'];
+                    // Apply array_values to reindex after filtering
+                    $display_metrics = array_values($metrics);
+                    if (empty($display_metrics)): 
                     ?>
-                        <tr data-metric-id="<?php echo $metric['metric_id']; ?>">
-                            <td><?php echo $metric['metric_id']; ?></td>
-                            <td><?php echo htmlspecialchars($metric['sector_name']); ?></td>
-                            <td><?php echo htmlspecialchars($metric['table_name']); ?></td>
-                            <td>
-                                <a href="edit_metric.php?metric_id=<?php echo $metric['metric_id']; ?>" class="btn btn-sm btn-primary edit-metric" role="button">Edit</a>
-                                <a href="delete_metric.php?metric_id=<?php echo $metric['metric_id']; ?>" class="btn btn-sm btn-danger delete-metric" role="button" onclick="return confirm('Are you sure you want to delete this metric?');">Delete</a>
+                        <tr>
+                            <td colspan="6" class="text-center py-4">
+                                <div class="alert alert-info mb-0">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <?= $selected_sector > 0 ? 'No metrics found for the selected sector.' : 'No metrics found in the system.' ?>
+                                </div>
                             </td>
                         </tr>
-                    <?php 
-                        } 
-                    } 
-                    ?>
+                    <?php else: ?>
+                        <?php foreach ($display_metrics as $metric): ?>
+                            <tr data-metric-id="<?php echo $metric['metric_id']; ?>">
+                                <td><?php echo $metric['metric_id']; ?></td>
+                                <td><?php echo htmlspecialchars($metric['sector_name'] ?? 'No Sector'); ?></td>
+                                <td><?php echo htmlspecialchars($metric['table_name']); ?></td>
+                                <td><?php echo date('M j, Y', strtotime($metric['created_at'])); ?></td>
+                                <td><?php echo date('M j, Y', strtotime($metric['updated_at'])); ?></td>
+                                <td>
+                                    <a href="edit_metric.php?metric_id=<?php echo $metric['metric_id']; ?>" class="btn btn-sm btn-primary edit-metric" role="button">
+                                        <i class="fas fa-edit me-1"></i> Edit
+                                    </a>
+                                    <a href="delete_metric.php?metric_id=<?php echo $metric['metric_id']; ?>" class="btn btn-sm btn-danger delete-metric" role="button" onclick="return confirm('Are you sure you want to delete this metric?');">
+                                        <i class="fas fa-trash-alt me-1"></i> Delete
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </tbody>
             </table>
         </div>
