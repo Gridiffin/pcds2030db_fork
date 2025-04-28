@@ -827,7 +827,7 @@ function get_all_sectors() {
  *
  * @return array List of metrics
  */
-function get_all_metrics() {
+function get_all_metrics_data() {
     global $conn;
     
     $query = "SELECT smd.metric_id, smd.sector_id, smd.table_name, s.sector_name 
