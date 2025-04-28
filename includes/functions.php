@@ -13,8 +13,14 @@ require_once 'status_helpers.php';
 function get_all_metrics(){
     global $conn;
     
-    $query = "SELECT sms.*, s.sector_name FROM sector_metrics_submitted sms LEFT JOIN sectors s ON sms.sector_id = s.sector_id ORDER BY sms.metric_id DESC";
+    $query = "SELECT * FROM sector_metrics_data";
     $result = $conn->query($query);
+    
+    if (!$result) {
+        // Log error or handle it as needed
+        error_log("Database query failed in get_all_metrics: " . $conn->error);
+        return [];
+    }
     
     $metrics = [];
     while ($row = $result->fetch_assoc()) {
