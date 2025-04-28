@@ -11,8 +11,12 @@ require_once '../../includes/session.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/admins/index.php';
 
+// Make sure no output has happened before this point
+if (ob_get_length()) ob_clean();
+
 // Verify user is admin
 if (!is_admin()) {
+    header('Content-Type: application/json');
     echo json_encode(['error' => 'Permission denied']);
     exit;
 }
@@ -29,10 +33,12 @@ switch ($action) {
         $result = generate_report($period_id);
         
         // Return result as JSON
+        header('Content-Type: application/json');
         echo json_encode($result);
         break;
         
     default:
+        header('Content-Type: application/json');
         echo json_encode(['error' => 'Invalid action']);
 }
 ?>

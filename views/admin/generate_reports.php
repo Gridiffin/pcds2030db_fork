@@ -184,12 +184,25 @@ require_once '../../includes/dashboard_header.php';
                                 <td><?php echo $username; ?></td>
                                 <td>
                                     <div class="btn-group btn-group-sm">
-                                        <a href="<?php echo APP_URL; ?>/reports/pdf/<?php echo $report['pdf_path']; ?>" class="btn btn-outline-primary" target="_blank" title="View PDF Report">
+                                        <?php if (!empty($report['pdf_path'])): ?>
+                                        <a href="<?php echo APP_URL; ?>/download.php?file=<?php echo basename($report['pdf_path']); ?>&type=pdf" class="btn btn-outline-primary" target="_blank" title="View PDF Report">
                                             <i class="fas fa-file-pdf"></i>
                                         </a>
-                                        <a href="<?php echo APP_URL; ?>/reports/pptx/<?php echo $report['pptx_path']; ?>" class="btn btn-outline-danger" download title="Download PowerPoint">
+                                        <?php else: ?>
+                                        <button class="btn btn-outline-primary disabled" title="PDF not available">
+                                            <i class="fas fa-file-pdf"></i>
+                                        </button>
+                                        <?php endif; ?>
+                                        
+                                        <?php if (!empty($report['pptx_path'])): ?>
+                                        <a href="<?php echo APP_URL; ?>/download.php?file=<?php echo basename($report['pptx_path']); ?>&type=pptx" class="btn btn-outline-danger" download title="Download PowerPoint">
                                             <i class="fas fa-file-powerpoint"></i>
                                         </a>
+                                        <?php else: ?>
+                                        <button class="btn btn-outline-danger disabled" title="PowerPoint not available">
+                                            <i class="fas fa-file-powerpoint"></i>
+                                        </button>
+                                        <?php endif; ?>
                                     </div>
                                 </td>
                             </tr>
@@ -273,7 +286,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: 'action=generate_report&period_id=' + periodId
             })
-            .then(response => response.json())
+            .then(response => {
+                // Check if the response is OK
+                if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.status);
+                }
+                
+                // Try to parse as JSON, but handle text responses too
+                return response.text().then(text => {
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        console.error('Error parsing JSON:', e);
+                        console.log('Raw response:', text);
+                        throw new Error('Invalid JSON response: ' + e.message);
+                    }
+                });
+            })
             .then(data => {
                 clearInterval(progressInterval);
                 progressBar.style.width = '100%';

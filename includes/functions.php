@@ -265,6 +265,12 @@ function get_all_reporting_periods() {
 function get_reporting_period($period_id) {
     global $conn;
     
+    // Check if connection is valid, if not reconnect
+    if (!$conn || $conn->connect_error) {
+        // Include database connection if not already included
+        require_once dirname(__DIR__) . '/db_connect.php';
+    }
+    
     $query = "SELECT * FROM reporting_periods WHERE period_id = ?";
     $stmt = $conn->prepare($query);
     $stmt->bind_param("i", $period_id);
