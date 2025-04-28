@@ -830,7 +830,8 @@ function get_all_sectors() {
 function get_all_metrics_data() {
     global $conn;
     
-    $query = "SELECT smd.metric_id, smd.sector_id, smd.table_name, s.sector_name 
+    $query = "SELECT smd.metric_id, smd.sector_id, smd.table_name, s.sector_name, 
+              smd.created_at, smd.updated_at 
               FROM sector_metrics_data smd
               LEFT JOIN sectors s ON smd.sector_id = s.sector_id
               WHERE smd.is_draft = 0
@@ -846,6 +847,32 @@ function get_all_metrics_data() {
     }
     
     return $metrics;
+}
+
+/**
+ * Get metrics data for a specific metric ID
+ *
+ * @param int $metric_id The metric ID to retrieve
+ * @return array|null The metric data or null if not found
+ */
+function get_metric_data($metric_id) {
+    global $conn;
+    
+    $query = "SELECT smd.*, s.sector_name 
+              FROM sector_metrics_data smd
+              LEFT JOIN sectors s ON smd.sector_id = s.sector_id
+              WHERE smd.metric_id = ? AND smd.is_draft = 0";
+    
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("i", $metric_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result && $result->num_rows > 0) {
+        return $result->fetch_assoc();
+    }
+    
+    return null;
 }
 
 /**

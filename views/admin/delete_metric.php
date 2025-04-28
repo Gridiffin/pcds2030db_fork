@@ -1,5 +1,9 @@
 <?php
-// views/admin/delete_metric.php
+/**
+ * Delete Sector Metric
+ * 
+ * Allows admin users to delete a sector metric by metric_id.
+ */
 
 require_once '../../config/config.php';
 require_once '../../includes/db_connect.php';
@@ -15,35 +19,52 @@ if (!is_admin()) {
 
 // Check if metric_id is provided
 if (!isset($_GET['metric_id']) || !is_numeric($_GET['metric_id'])) {
-    // Invalid metric_id, redirect back with error
-    $_SESSION['error_message'] = 'Invalid metric ID.';
-    header('Location: manage_metrics.php');
+    header('Location: manage_metrics.php?error=Invalid metric ID');
     exit;
 }
 
 $metric_id = (int) $_GET['metric_id'];
 
-// Prepare and execute delete query - now using the new JSON-based table
-$delete_query = "DELETE FROM sector_metrics_data WHERE metric_id = ?";
-$stmt = $conn->prepare($delete_query);
+// Verify that the metric exists and get its sector information
+$query = "SELECT sector_id, table_name FROM sector_metrics_data WHERE metric_id = ? AND is_draft = 0";
+$stmt = $conn->prepare($query);
+$stmt->bind_param("i", $metric_id);
+$stmt->execute();
+$result = $stmt->get_result();
 
-if (!$stmt) {
-    $_SESSION['error_message'] = 'Failed to prepare delete statement.';
-    header('Location: manage_metrics.php');
+if ($result->num_rows === 0) {
+    header('Location: manage_metrics.php?error=Metric not found');
     exit;
 }
 
+$metric_data = $result->fetch_assoc();
+$table_name = $metric_data['table_name'];
+$sector_id = $metric_data['sector_id'];
+
+// Add a confirmation step
+if (!isset($_GET['confirm']) || $_GET['confirm'] !== 'yes') {
+    // Redirect back to manage metrics page with confirmation dialog
+    echo "<script>
+        if (confirm('Are you sure you want to delete the metric \"" . htmlspecialchars($table_name) . "\"? This action cannot be undone.')) {
+            window.location.href = 'delete_metric.php?metric_id=$metric_id&confirm=yes';
+        } else {
+            window.location.href = 'manage_metrics.php';
+        }
+    </script>";
+    exit;
+}
+
+// Proceed with deletion
+$delete_query = "DELETE FROM sector_metrics_data WHERE metric_id = ? AND is_draft = 0";
+$stmt = $conn->prepare($delete_query);
 $stmt->bind_param("i", $metric_id);
 
 if ($stmt->execute()) {
-    $_SESSION['success_message'] = "Metric ID $metric_id deleted successfully.";
+    // Success message
+    header('Location: manage_metrics.php?success=Metric "' . urlencode($table_name) . '" deleted successfully');
 } else {
-    $_SESSION['error_message'] = "Failed to delete metric ID $metric_id: " . $stmt->error;
+    // Error message
+    header('Location: manage_metrics.php?error=Failed to delete metric: ' . $conn->error);
 }
-
-$stmt->close();
-
-// Redirect back to manage_metrics.php
-header('Location: manage_metrics.php');
 exit;
 ?>
