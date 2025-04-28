@@ -18,6 +18,16 @@ if (!is_agency()) {
     exit;
 }
 
+// Get current period ID
+$current_period = get_current_reporting_period();
+$period_id = $current_period['period_id'] ?? null;
+
+if (!$period_id) {
+    $_SESSION['error_message'] = 'No active reporting period found. Please contact an administrator.';
+    header('Location: submit_metrics.php');
+    exit;
+}
+
 $sector_id = $_GET['sector_id'] ?? $_SESSION['sector_id'];
 
 // Set page title

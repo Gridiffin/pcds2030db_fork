@@ -24,6 +24,16 @@ if ($metric_id <= 0 || $sector_id <= 0) {
     exit;
 }
 
+// First, make sure we have a valid period ID
+$current_period = get_current_reporting_period();
+$period_id = $current_period['period_id'] ?? null;
+
+if (!$period_id) {
+    $_SESSION['error_message'] = 'No active reporting period found. Please contact an administrator.';
+    header('Location: submit_metrics.php');
+    exit;
+}
+
 global $conn;
 
 // Start transaction
@@ -48,15 +58,15 @@ try {
 
     // First copy the draft data into a submitted record (is_draft = 0)
     $insert_query = "INSERT INTO sector_metrics_data 
-                    (metric_id, sector_id, table_name, data_json, is_draft) 
-                    VALUES (?, ?, ?, ?, 0)
+                    (metric_id, sector_id, period_id, table_name, data_json, is_draft) 
+                    VALUES (?, ?, ?, ?, ?, 0)
                     ON DUPLICATE KEY UPDATE
                     table_name = VALUES(table_name),
                     data_json = VALUES(data_json),
                     updated_at = CURRENT_TIMESTAMP";
     
     $insert_stmt = $conn->prepare($insert_query);
-    $insert_stmt->bind_param("iiss", $metric_id, $sector_id, $table_name, $data_json);
+    $insert_stmt->bind_param("iiiss", $metric_id, $sector_id, $period_id, $table_name, $data_json);
     $insert_stmt->execute();
 
     // Then delete the draft record

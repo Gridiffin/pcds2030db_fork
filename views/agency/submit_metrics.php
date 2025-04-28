@@ -110,6 +110,19 @@ require_once '../../includes/dashboard_header.php';
         <?= $error_message ?? 'No active reporting period is currently open.' ?> Please try again when a reporting period is active.
     </div>
 <?php else: ?>
+    <!-- Period Information -->
+    <div class="alert alert-info">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-calendar-alt me-2"></i>
+            <div>
+                <strong>Current Reporting Period:</strong> 
+                Q<?= $current_period['quarter'] ?>-<?= $current_period['year'] ?> 
+                (<?= date('d M Y', strtotime($current_period['start_date'])) ?> - 
+                <?= date('d M Y', strtotime($current_period['end_date'])) ?>)
+            </div>
+        </div>
+    </div>
+
     <div class="card shadow-sm mb-4">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h5 class="card-title m-0">
