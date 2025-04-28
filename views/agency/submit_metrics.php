@@ -3,7 +3,7 @@ require_once '../../config/config.php';
 require_once '../../includes/db_connect.php';
 require_once '../../includes/session.php';
 require_once '../../includes/functions.php';
-require_once '../../includes/agency_functions.php';
+require_once '../../includes/agencies/index.php';
 
 if (!is_agency()) {
     header('Location: ../../login.php');
@@ -18,20 +18,6 @@ $show_form = $current_period && $current_period['status'] === 'open';
 $message = '';
 $message_type = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_metrics'])) {
-    $result = submit_metric_values($_POST);
-
-    if (isset($result['success'])) {
-        $message = $result['message'] ?? 'Metrics submitted successfully.';
-        $message_type = 'success';
-    } elseif (isset($result['partial'])) {
-        $message = $result['message'] ?? 'Some metrics were submitted, but others failed.';
-        $message_type = 'warning';
-    } else {
-        $message = $result['error'] ?? 'Failed to submit metrics.';
-        $message_type = 'danger';
-    }
-}
 
 $metrics = get_agency_sector_metrics($_SESSION['sector_id']);
 if (!is_array($metrics)) {

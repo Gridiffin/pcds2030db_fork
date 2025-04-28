@@ -10,7 +10,7 @@ require_once '../../config/config.php';
 require_once '../../includes/db_connect.php';
 require_once '../../includes/session.php';
 require_once '../../includes/functions.php';
-require_once '../../includes/agency_functions.php';
+require_once '../../includes/agencies/index.php';
 
 // Verify user is an agency
 if (!is_agency()) {
@@ -27,11 +27,6 @@ $reporting_periods = get_all_reporting_periods();
 // Get selected period (if any)
 $selected_period = isset($_GET['period_id']) ? intval($_GET['period_id']) : null;
 
-// Get reports based on selected period
-$reports = [];
-if ($selected_period) {
-    $reports = get_agency_reports($_SESSION['user_id'], $selected_period);
-}
 
 $additionalScripts = [
     APP_URL . '/assets/js/agency/reports.js'
