@@ -165,16 +165,16 @@ require_once '../../includes/dashboard_header.php';
                         </select>
                     </div>
                     
-                    <div class="col-md-1 d-flex align-items-end">
-                        <div class="btn-group w-100">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-filter me-1"></i> Apply
-                            </button>
-                            <a href="view_all_sectors.php<?php echo $period_id ? '?period_id=' . $period_id : ''; ?>" class="btn btn-outline-secondary">
-                                <i class="fas fa-undo me-1"></i> Reset
-                            </a>
-                        </div>
-                    </div>
+<div class="col-auto d-flex align-items-end">
+    <div class="btn-group w-100">
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-filter me-1"></i> Apply
+        </button>
+        <a href="view_all_sectors.php<?php echo $period_id ? '?period_id=' . $period_id : ''; ?>" class="btn btn-outline-secondary">
+            <i class="fas fa-undo me-1"></i> Reset
+        </a>
+    </div>
+</div>
                 </div>
             </form>
         </div>
