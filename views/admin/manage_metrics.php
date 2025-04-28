@@ -129,10 +129,13 @@ require_once '../layouts/admin_nav.php';
                                 <td><?php echo date('M j, Y', strtotime($metric['created_at'])); ?></td>
                                 <td><?php echo date('M j, Y', strtotime($metric['updated_at'])); ?></td>
                                 <td>
-                                    <a href="edit_metric.php?metric_id=<?php echo $metric['metric_id']; ?>" class="btn btn-sm btn-primary edit-metric" role="button">
+                                    <a href="view_metric.php?metric_id=<?php echo $metric['metric_id']; ?>" class="btn btn-sm btn-info me-1" role="button">
+                                        <i class="fas fa-eye me-1"></i> View
+                                    </a>
+                                    <a href="edit_metric.php?metric_id=<?php echo $metric['metric_id']; ?>" class="btn btn-sm btn-primary me-1" role="button">
                                         <i class="fas fa-edit me-1"></i> Edit
                                     </a>
-                                    <a href="delete_metric.php?metric_id=<?php echo $metric['metric_id']; ?>" class="btn btn-sm btn-danger delete-metric" role="button" onclick="return confirm('Are you sure you want to delete this metric?');">
+                                    <a href="delete_metric.php?metric_id=<?php echo $metric['metric_id']; ?>" class="btn btn-sm btn-danger" role="button" onclick="return confirm('Are you sure you want to delete this metric?');">
                                         <i class="fas fa-trash-alt me-1"></i> Delete
                                     </a>
                                 </td>
