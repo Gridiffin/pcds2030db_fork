@@ -35,11 +35,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['table_name']) && trim($_POST['table_name']) !== '') {
         $new_table_name = $conn->real_escape_string($_POST['table_name']);
         // Check if a row exists for this metric_id and sector_id
-        $check_query = "SELECT 1 FROM sector_metrics_draft WHERE metric_id = $metric_id AND sector_id = '$sector_id' LIMIT 1";
+        $check_query = "SELECT 1 FROM sector_metrics_data WHERE metric_id = $metric_id AND sector_id = '$sector_id' LIMIT 1";
         $check_result = $conn->query($check_query);
         if ($check_result && $check_result->num_rows > 0) {
             // Update existing row
-            $update_query = "UPDATE sector_metrics_draft SET table_name = '$new_table_name' WHERE sector_id = '$sector_id' AND metric_id = $metric_id";
+            $update_query = "UPDATE sector_metrics_data SET table_name = '$new_table_name' WHERE sector_id = '$sector_id' AND metric_id = $metric_id";
             if ($conn->query($update_query) === TRUE) {
                 $message = "Table name updated successfully.";
                 $message_type = "success";
@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         } else {
             // Insert new row with table_name
-            $insert_table_name_query = "INSERT INTO sector_metrics_draft (metric_id, table_name, column_title, table_content, month, sector_id) 
+            $insert_table_name_query = "INSERT INTO sector_metrics_data (metric_id, table_name, column_title, table_content, month, sector_id) 
                 VALUES ($metric_id, '$new_table_name', '', 0, 'January', '$sector_id')";
             if ($conn->query($insert_table_name_query) === TRUE) {
                 $message = "Table name saved successfully.";
@@ -72,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // Insert new metric with table_name and metric_id
-        $query = "INSERT INTO sector_metrics_draft (metric_id, table_name, column_title, table_content, month, sector_id) 
+        $query = "INSERT INTO sector_metrics_data (metric_id, table_name, column_title, table_content, month, sector_id) 
                 VALUES ($metric_id, '$table_name_post', '$name', '$value', '$month', '$sector_id')";
 
         if ($conn->query($query) === TRUE) {
@@ -88,12 +88,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Retrieve all metrics for display
 $metric_id = isset($_GET['next_metric_id']) ? intval($_GET['next_metric_id']) : 0;
 if ($metric_id === 0) {
-    $result = $conn->query("SELECT MAX(metric_id) AS max_id FROM sector_metrics_draft");
+    $result = $conn->query("SELECT MAX(metric_id) AS max_id FROM sector_metrics_data");
     if ($result && $row = $result->fetch_assoc()) {
         $metric_id = $row['max_id'] + 1;
     }
 }
-$select_query = "SELECT * FROM sector_metrics_draft WHERE metric_id = $metric_id";
+$select_query = "SELECT * FROM sector_metrics_data WHERE metric_id = $metric_id";
 $metrics = $conn->query($select_query);
 if (!$metrics) die("Error getting metrics: " . $conn->error);
 
@@ -112,7 +112,7 @@ while ($row = $metrics->fetch_assoc()) {
 
 // Get the table_name from the first metric row for the sector
 $table_name = '';
-$result = $conn->query("SELECT table_name FROM sector_metrics_draft WHERE metric_id = $metric_id AND sector_id = $sector_id LIMIT 1");
+$result = $conn->query("SELECT table_name FROM sector_metrics_data WHERE metric_id = $metric_id AND sector_id = $sector_id LIMIT 1");
 if ($result && $row = $result->fetch_assoc()) {
     $table_name = $row['table_name'];
 }
