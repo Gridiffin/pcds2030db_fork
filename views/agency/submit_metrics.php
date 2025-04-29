@@ -46,7 +46,7 @@ $headerStyle = 'light'; // Use light (white) style for inner pages
 
 // Get next metric ID for the Create New Metric button
 $next_metric_id = 0;
-$result = $conn->query("SELECT MAX(metric_id) AS max_id FROM (SELECT metric_id FROM sector_metrics_submitted UNION ALL SELECT metric_id FROM sector_metrics_draft) AS combined");
+$result = $conn->query("SELECT MAX(metric_id) AS max_id FROM sector_metrics_data");
 if ($result && $row = $result->fetch_assoc()) {
     $next_metric_id = $row['max_id'] + 1;
 }
