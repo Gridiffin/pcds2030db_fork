@@ -64,11 +64,203 @@ function generate_report($period_id) {
     $full_pptx_path = dirname(dirname(__DIR__)) . "/reports/" . $pptx_path;
     
     try {
-        // Generate PowerPoint Report
-        $pptx_result = generate_pptx_report($period_id, $full_pptx_path);
+        // Include Node.js connector
+        require_once dirname(__DIR__) . '/reports/node_connector.php';
         
-        if (!$pptx_result) {
-            return ['error' => 'Failed to generate PowerPoint report'];
+        // Get period data for the Node.js service
+        $period_data = [
+            'quarter' => $period['quarter'],
+            'year' => $period['year'],
+            'start_date' => $period['start_date'],
+            'end_date' => $period['end_date']
+        ];
+        
+        // Get sectors data
+        $sectors_data = [];
+        $sectors_query = "SELECT sector_id, sector_name FROM sectors ORDER BY sector_name";
+        $sectors_result = $conn->query($sectors_query);
+        
+        if (!$sectors_result) {
+            error_log("Error retrieving sectors: " . $conn->error);
+            return ['error' => 'Failed to retrieve sectors data'];
+        }
+        
+        // Process each sector
+        while ($sector = $sectors_result->fetch_assoc()) {
+            $sector_id = $sector['sector_id'];
+            
+            // Get sector leadership
+            $leadership_query = "SELECT user_id, full_name, position FROM users 
+                                WHERE sector_id = ? AND role = 'agency' 
+                                ORDER BY position DESC LIMIT 3";
+            $stmt = $conn->prepare($leadership_query);
+            $stmt->bind_param("i", $sector_id);
+            $stmt->execute();
+            $leadership_result = $stmt->get_result();
+            
+            $leadership_text = "";
+            while ($leader = $leadership_result->fetch_assoc()) {
+                $leadership_text .= ($leadership_text ? ", " : "") . $leader['full_name'] . " " . $leader['position'];
+            }
+            
+            // Get program data
+            $programs_query = "SELECT p.program_id, p.program_name, 
+                                ps.status, ps.content_json,
+                                u.agency_name
+                              FROM programs p
+                              JOIN program_submissions ps ON p.program_id = ps.program_id
+                              JOIN users u ON p.owner_agency_id = u.user_id
+                              WHERE p.sector_id = ? AND ps.period_id = ? AND ps.is_draft = 0
+                              ORDER BY p.program_name";
+            $stmt = $conn->prepare($programs_query);
+            $stmt->bind_param("ii", $sector_id, $period_id);
+            $stmt->execute();
+            $programs_result = $stmt->get_result();
+            
+            $programs = [];
+            while ($program = $programs_result->fetch_assoc()) {
+                // Parse content_json to extract targets and other fields
+                $content = [];
+                
+                // Fix JSON parsing - properly handle the content_json field
+                if (!empty($program['content_json'])) {
+                    try {
+                        // Trim any whitespace or BOM characters that might be present
+                        $json_string = trim($program['content_json']);
+                        
+                        // Check if JSON format appears valid before parsing
+                        if (substr($json_string, 0, 1) === '{' && substr($json_string, -1) === '}') {
+                            $content = json_decode($json_string, true);
+                            
+                            // If json_decode failed, log the error
+                            if (json_last_error() !== JSON_ERROR_NONE) {
+                                error_log("JSON decode error for program ID {$program['program_id']}: " . json_last_error_msg());
+                                error_log("JSON content: " . substr($json_string, 0, 100) . "...");
+                                $content = [];
+                            }
+                        } else {
+                            error_log("Invalid JSON format for program ID {$program['program_id']}: does not begin with { and end with }");
+                            error_log("JSON content: " . substr($json_string, 0, 100) . "...");
+                        }
+                    } catch (Exception $e) {
+                        error_log("Exception parsing JSON for program ID {$program['program_id']}: " . $e->getMessage());
+                        $content = [];
+                    }
+                }
+                
+                // Extract targets as bullet points
+                $targets = [];
+                if (isset($content['target'])) {
+                    // Split target by newline if it contains multiple lines
+                    $target_lines = explode("\n", $content['target']);
+                    foreach ($target_lines as $line) {
+                        if (trim($line)) {
+                            $targets[] = trim($line);
+                        }
+                    }
+                }
+                
+                // If no targets found in target field, check for other fields
+                if (empty($targets) && isset($content['targets'])) {
+                    // Some systems might store targets as an array
+                    if (is_array($content['targets'])) {
+                        foreach ($content['targets'] as $target) {
+                            $targets[] = $target;
+                        }
+                    } else {
+                        $targets[] = $content['targets'];
+                    }
+                }
+                
+                // Extract status details
+                $status_items = [];
+                
+                // Add achievement if available
+                if (!empty($content['achievement'])) {
+                    $status_items[] = $content['achievement'];
+                }
+                
+                // Add status text if available
+                if (!empty($content['status_text'])) {
+                    $status_lines = explode("\n", $content['status_text']);
+                    foreach ($status_lines as $line) {
+                        if (trim($line)) {
+                            $status_items[] = trim($line);
+                        }
+                    }
+                }
+                
+                // Add remarks if available
+                if (!empty($content['remarks'])) {
+                    $status_items[] = $content['remarks'];
+                }
+                
+                // Map database status values to color coding
+                $rating = 'green'; // Default to green (on track)
+                switch ($program['status']) {
+                    case 'on-track-yearly':
+                    case 'on-track':
+                        $rating = 'green';
+                        break;
+                    case 'severe-delay':
+                    case 'delayed':
+                        $rating = 'red';
+                        break;
+                    case 'not-started':
+                    case 'minor-delay':
+                        $rating = 'yellow';
+                        break;
+                    case 'target-achieved':
+                    case 'completed':
+                        $rating = 'green';
+                        break;
+                }
+                
+                $programs[] = [
+                    'name' => $program['program_name'],
+                    'targets' => $targets,
+                    'status' => $status_items,
+                    'rating' => $rating,
+                    'agency' => $program['agency_name']
+                ];
+            }
+            
+            // Add sector data to the array
+            $sectors_data[] = [
+                'sector_id' => $sector_id,
+                'sector_name' => $sector['sector_name'],
+                'leadership' => $leadership_text,
+                'programs' => $programs
+            ];
+        }
+        
+        // Send request to Node.js service
+        error_log("Sending report generation request to Node.js service for period ID: $period_id");
+        $result = send_report_request($period_id, $period_data, $sectors_data);
+        
+        if (!$result['success']) {
+            error_log("Node.js service error: " . ($result['error'] ?? 'Unknown error'));
+            return ['error' => 'Failed to generate PowerPoint report: ' . ($result['error'] ?? 'Unknown error')];
+        }
+        
+        // Get the generated file from the Node.js service
+        if (!isset($result['pptxPath'])) {
+            error_log("Missing pptxPath in Node.js service response");
+            return ['error' => 'Missing file path in service response'];
+        }
+        
+        // Download the file from Node.js service
+        $success = retrieve_generated_report($result['pptxPath'], $full_pptx_path);
+        
+        if (!$success) {
+            error_log("Failed to retrieve generated report from Node.js service");
+            return ['error' => 'Failed to download generated report'];
+        }
+        
+        // Verify the file exists
+        if (!file_exists($full_pptx_path)) {
+            error_log("Generated file not found at: $full_pptx_path");
+            return ['error' => 'Generated file not found'];
         }
         
         // Store report info in database
