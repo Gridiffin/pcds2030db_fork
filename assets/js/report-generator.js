@@ -19,6 +19,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const errorText = document.getElementById('errorText');
     const downloadLink = document.getElementById('downloadLink');
     
+    // Delete report modal elements
+    const deleteReportModal = document.getElementById('deleteReportModal');
+    const reportNameToDelete = document.getElementById('reportNameToDelete');
+    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+    let reportIdToDelete = null;
+    
     // Set default report name based on sector and period selection
     const sectorSelect = document.getElementById('sectorSelect');
     const periodSelect = document.getElementById('periodSelect');
@@ -35,6 +41,124 @@ document.addEventListener('DOMContentLoaded', function() {
     
     sectorSelect.addEventListener('change', updateReportName);
     periodSelect.addEventListener('change', updateReportName);
+    
+    // Setup delete report modal
+    if (deleteReportModal) {
+        deleteReportModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            reportIdToDelete = button.getAttribute('data-report-id');
+            const reportName = button.getAttribute('data-report-name');
+            
+            reportNameToDelete.textContent = reportName;
+        });
+        
+        // Handle delete confirmation
+        if (confirmDeleteBtn) {
+            confirmDeleteBtn.addEventListener('click', function() {
+                if (!reportIdToDelete) return;
+                
+                // Disable delete button and show loading state
+                confirmDeleteBtn.disabled = true;
+                confirmDeleteBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Deleting...';
+                
+                // Send delete request
+                const formData = new FormData();
+                formData.append('report_id', reportIdToDelete);
+                
+                fetch('../../api/delete_report.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Hide modal
+                    const modalInstance = bootstrap.Modal.getInstance(deleteReportModal);
+                    modalInstance.hide();
+                    
+                    if (data.success) {
+                        // Show success toast or message
+                        showToast('Success', 'Report deleted successfully', 'success');
+                        
+                        // Remove the row from the table
+                        const reportRow = document.querySelector(`button[data-report-id="${reportIdToDelete}"]`).closest('tr');
+                        if (reportRow) {
+                            reportRow.remove();
+                            
+                            // If no more reports, show empty state
+                            const tbody = document.querySelector('.reports-table tbody');
+                            if (tbody && tbody.children.length === 0) {
+                                const tableContainer = document.querySelector('.table-responsive');
+                                tableContainer.innerHTML = '<div class="reports-empty-state"><p class="text-muted">No reports generated yet.</p></div>';
+                            }
+                        }
+                    } else {
+                        // Show error message
+                        showToast('Error', data.error || 'Failed to delete report', 'danger');
+                    }
+                    
+                    // Reset button state
+                    confirmDeleteBtn.disabled = false;
+                    confirmDeleteBtn.innerHTML = '<i class="bi bi-trash me-1"></i>Delete Report';
+                    reportIdToDelete = null;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('Error', 'An unexpected error occurred', 'danger');
+                    
+                    // Reset button state
+                    confirmDeleteBtn.disabled = false;
+                    confirmDeleteBtn.innerHTML = '<i class="bi bi-trash me-1"></i>Delete Report';
+                    reportIdToDelete = null;
+                    
+                    // Hide modal
+                    const modalInstance = bootstrap.Modal.getInstance(deleteReportModal);
+                    modalInstance.hide();
+                });
+            });
+        }
+    }
+    
+    // Helper function to show toast notifications
+    function showToast(title, message, type = 'info') {
+        // Check if toast container exists, if not create it
+        let toastContainer = document.querySelector('.toast-container');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+            document.body.appendChild(toastContainer);
+        }
+        
+        // Create toast element
+        const toastId = 'toast-' + Date.now();
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type} border-0`;
+        toast.id = toastId;
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+        
+        // Add toast content
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <strong>${title}</strong>: ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        `;
+        
+        // Add toast to container
+        toastContainer.appendChild(toast);
+        
+        // Initialize and show toast
+        const bsToast = new bootstrap.Toast(toast, { autohide: true, delay: 5000 });
+        bsToast.show();
+        
+        // Remove toast from DOM after it's hidden
+        toast.addEventListener('hidden.bs.toast', function() {
+            toast.remove();
+        });
+    }
     
     // Add event listener to the generate button
     generateBtn.addEventListener('click', generateReport);
@@ -132,13 +256,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 let pptx = new PptxGenJS();
                 
                 // Define report master slide
-                defineReportMaster(pptx);
+                const themeColors = defineReportMaster(pptx);
                 
                 // Create slide using the master
                 let slide = pptx.addSlide({ masterName: 'REPORT_MASTER_SLIDE' });
                 
                 // Populate slide with data
-                populateSlide(slide, data, pptx);
+                populateSlide(slide, data, pptx, themeColors);
                 
                 // Get PPTX as blob
                 pptx.write('blob')
@@ -159,34 +283,233 @@ document.addEventListener('DOMContentLoaded', function() {
      * @param {Object} pptx - The PptxGenJS instance
      */
     function defineReportMaster(pptx) {
+        // Define a common font for consistency
+        const defaultFont = 'Calibri';
+        
+        // Define theme colors for consistent styling
+        const themeColors = {
+            primary: '4472C4',     // Blue for primary elements
+            secondary: '70AD47',   // Green for secondary elements  
+            accent1: 'ED7D31',     // Orange for accent
+            accent2: '5B9BD5',     // Light blue for accent
+            text: '000000',        // Black for main text
+            lightText: '666666',   // Grey for secondary text
+            headerBg: 'F2F2F2',    // Light grey for section headers
+            greenStatus: '00B050', // Green for on-track status
+            yellowStatus: 'FFFF00', // Yellow for minor issues
+            redStatus: 'FF0000',   // Red for major issues
+            greyStatus: 'D9D9D9'   // Grey for no data
+        };
+        
+        // Create slide master with enhanced styling
         pptx.defineSlideMaster({
             title: 'REPORT_MASTER_SLIDE',
             background: { color: 'FFFFFF' }, // White background
+            slideNumber: { x: 0.3, y: 7.0, color: themeColors.lightText, fontFace: defaultFont, fontSize: 8 },
             objects: [
-                // Title placeholders
-                { 'title': { options: { x: 0.5, y: 0.1, w: 7.0, h: 0.5, fontSize: 24, bold: true } } }, // Main title (sector name)
-                { 'subtitle': { options: { x: 0.5, y: 0.4, w: 7.0, h: 0.2, fontSize: 10 } } }, // Subtitle (sector leads)
-                { 'quarterTitle': { options: { x: 8.0, y: 0.1, w: 4.5, h: 0.5, fontSize: 28, bold: true, align: 'right' } } }, // Quarter title
+                // Title placeholders with professional formatting
+                { 'title': { 
+                    options: { 
+                        x: 0.5, y: 0.1, w: 7.0, h: 0.6, 
+                        fontSize: 28, bold: true, 
+                        fontFace: defaultFont,
+                        color: themeColors.primary,
+                        shadow: { type: 'outer', angle: 45, blur: 3, color: 'CFCFCF', offset: 1 }
+                    } 
+                }},
+                { 'subtitle': { 
+                    options: { 
+                        x: 0.5, y: 0.5, w: 7.0, h: 0.25, 
+                        fontSize: 11, 
+                        fontFace: defaultFont,
+                        color: themeColors.lightText,
+                        italic: true
+                    } 
+                }},
+                { 'quarterTitle': { 
+                    options: { 
+                        x: 8.0, y: 0.1, w: 4.5, h: 0.6, 
+                        fontSize: 32, bold: true, 
+                        fontFace: defaultFont,
+                        color: themeColors.accent1,
+                        align: 'right'
+                    } 
+                }},
                 
-                // Project area
-                { 'projectsTitle': { options: { x: 0.5, y: 0.8, w: 12.0, h: 0.3, fontSize: 10, bold: true } } }, // Projects section title
-                { 'projectsArea': { type: 'body', options: { x: 0.5, y: 1.0, w: 12.0, h: 2.5 } } }, // Area for project list
+                // Project area with section background
+                { 'projectsHeader': { 
+                    type: 'rect', 
+                    options: { 
+                        x: 0.5, y: 0.8, w: 6.5, h: 0.3, 
+                        fill: { color: themeColors.headerBg },
+                        line: { color: themeColors.primary, width: 1 }
+                    } 
+                }},
+                { 'projectsTitle': { 
+                    options: { 
+                        x: 0.6, y: 0.825, w: 6.0, h: 0.25, 
+                        fontSize: 12, bold: true,
+                        fontFace: defaultFont,
+                        color: themeColors.primary
+                    } 
+                }},
+                { 'projectsArea': { 
+                    type: 'body', 
+                    options: { 
+                        x: 0.5, y: 1.2, w: 6.5, h: 5.0,
+                        fontFace: defaultFont
+                    } 
+                }},
                 
-                // Chart areas
-                { 'timberChartArea': { type: 'chart', options: { x: 7.5, y: 1.0, w: 5.0, h: 2.5 } } }, // Area for timber export chart
-                { 'areaRestoredChartArea': { type: 'chart', options: { x: 7.5, y: 5.0, w: 5.0, h: 2.0 } } }, // Area for area restored chart
+                // Chart areas with subtle borders
+                { 'timberChartBg': { 
+                    type: 'rect', 
+                    options: { 
+                        x: 7.3, y: 0.8, w: 5.2, h: 2.7,
+                        fill: { color: 'FFFFFF' },
+                        line: { color: themeColors.primary, width: 1, dashType: 'dash' }
+                    } 
+                }},
+                { 'timberChartArea': { 
+                    type: 'chart', 
+                    options: { 
+                        x: 7.5, y: 1.0, w: 4.8, h: 2.3
+                    } 
+                }},
                 
-                // KPI sections
-                { 'kpiTitleArea': { options: { x: 7.5, y: 3.7, w: 5.0, h: 0.3, fontSize: 10, bold: true } } }, // KPI section title
-                { 'kpiTPAArea': { type: 'body', options: { x: 7.5, y: 4.0, w: 2.0, h: 0.8 } } }, // Area for TPA KPI
-                { 'kpiCertArea': { type: 'body', options: { x: 9.5, y: 4.0, w: 3.0, h: 0.8 } } }, // Area for Certification KPI
-                { 'kpiRecogArea': { type: 'body', options: { x: 7.5, y: 7.0, w: 5.0, h: 0.5 } } }, // Area for Recognition KPI
+                { 'areaRestoredChartBg': { 
+                    type: 'rect', 
+                    options: { 
+                        x: 7.3, y: 5.0, w: 5.2, h: 2.0,
+                        fill: { color: 'FFFFFF' },
+                        line: { color: themeColors.secondary, width: 1, dashType: 'dash' }
+                    } 
+                }},
+                { 'areaRestoredChartArea': { 
+                    type: 'chart', 
+                    options: { 
+                        x: 7.5, y: 5.1, w: 4.8, h: 1.8
+                    } 
+                }},
                 
-                // Legend and Draft date
-                { 'legendArea': { type: 'body', options: { x: 0.5, y: 6.5, w: 6.0, h: 0.5 } } }, // Area for legend
-                { 'draftDateArea': { type: 'body', options: { x: 0.5, y: 7.2, w: 3.0, h: 0.3, fontSize: 10 } } }, // Area for draft date
+                // KPI sections with background styling
+                { 'kpiHeader': { 
+                    type: 'rect', 
+                    options: { 
+                        x: 7.3, y: 3.7, w: 5.2, h: 0.3,
+                        fill: { color: themeColors.headerBg },
+                        line: { color: themeColors.primary, width: 1 }
+                    } 
+                }},
+                { 'kpiTitleArea': { 
+                    options: { 
+                        x: 7.4, y: 3.725, w: 5.0, h: 0.25, 
+                        fontSize: 12, bold: true,
+                        fontFace: defaultFont,
+                        color: themeColors.primary
+                    } 
+                }},
+                { 'kpiTPABg': { 
+                    type: 'rect', 
+                    options: { 
+                        x: 7.3, y: 4.1, w: 2.1, h: 0.8,
+                        fill: { color: 'FFFFFF' },
+                        line: { color: themeColors.primary, width: 0.75 }
+                    } 
+                }},
+                { 'kpiTPAArea': { 
+                    type: 'body', 
+                    options: { 
+                        x: 7.5, y: 4.2, w: 1.9, h: 0.6,
+                        fontFace: defaultFont
+                    } 
+                }},
+                { 'kpiCertBg': { 
+                    type: 'rect', 
+                    options: { 
+                        x: 9.5, y: 4.1, w: 3.0, h: 0.8,
+                        fill: { color: 'FFFFFF' },
+                        line: { color: themeColors.primary, width: 0.75 }
+                    } 
+                }},
+                { 'kpiCertArea': { 
+                    type: 'body', 
+                    options: { 
+                        x: 9.7, y: 4.2, w: 2.6, h: 0.6,
+                        fontFace: defaultFont
+                    } 
+                }},
+                { 'kpiRecogBg': { 
+                    type: 'rect', 
+                    options: { 
+                        x: 7.3, y: 7.1, w: 5.2, h: 0.6,
+                        fill: { color: 'FFFFFF' },
+                        line: { color: themeColors.primary, width: 0.75 }
+                    } 
+                }},
+                { 'kpiRecogArea': { 
+                    type: 'body', 
+                    options: { 
+                        x: 7.5, y: 7.2, w: 5.0, h: 0.4,
+                        fontFace: defaultFont
+                    } 
+                }},
+                
+                // Legend section with styling
+                { 'legendHeader': { 
+                    type: 'rect', 
+                    options: { 
+                        x: 0.5, y: 6.3, w: 6.5, h: 0.3,
+                        fill: { color: themeColors.headerBg },
+                        line: { color: themeColors.primary, width: 1 }
+                    } 
+                }},
+                { 'legendTitle': { 
+                    options: { 
+                        x: 0.6, y: 6.325, w: 6.0, h: 0.25, 
+                        fontSize: 12, bold: true,
+                        fontFace: defaultFont,
+                        color: themeColors.primary,
+                        text: 'Status Legend'
+                    } 
+                }},
+                { 'legendArea': { 
+                    type: 'body', 
+                    options: { 
+                        x: 0.5, y: 6.7, w: 6.5, h: 0.7,
+                        fontFace: defaultFont
+                    } 
+                }},
+                
+                // Footer with draft date
+                { 'footerLine': { 
+                    type: 'line', 
+                    options: { 
+                        x: 0.5, y: 7.4, w: 12.0, h: 0, 
+                        line: { color: themeColors.lightText, width: 0.75, dashType: 'dash' }
+                    } 
+                }},
+                { 'draftDateArea': { 
+                    type: 'body', 
+                    options: { 
+                        x: 0.5, y: 7.5, w: 3.0, h: 0.3, 
+                        fontSize: 10, italic: true,
+                        fontFace: defaultFont,
+                        color: themeColors.lightText
+                    } 
+                }},
+                { 'footerLogo': { 
+                    type: 'placeholder', 
+                    options: { 
+                        x: 11.0, y: 7.4, w: 1.5, h: 0.4
+                        // Will be populated with agency logo if available
+                    } 
+                }}
             ],
         });
+        
+        // Return theme colors for use in populateSlide
+        return themeColors;
     }
     
     /**
@@ -194,48 +517,98 @@ document.addEventListener('DOMContentLoaded', function() {
      * @param {Object} slide - The slide to populate
      * @param {Object} data - The data from the API
      * @param {Object} pptx - The PptxGenJS instance
+     * @param {Object} themeColors - The theme colors for styling
      */
-    function populateSlide(slide, data, pptx) {
+    function populateSlide(slide, data, pptx, themeColors) {
+        // Define common font for consistency
+        const defaultFont = 'Calibri';
+        
         // Add titles
-        slide.addText(data.reportTitle, { placeholder: 'title' });
-        slide.addText(data.sectorLeads, { placeholder: 'subtitle' });
-        slide.addText(data.quarter, { placeholder: 'quarterTitle' });
+        slide.addText(data.reportTitle, { 
+            placeholder: 'title',
+            fontFace: defaultFont,
+            color: themeColors.primary
+        });
+        
+        slide.addText(data.sectorLeads, { 
+            placeholder: 'subtitle',
+            fontFace: defaultFont,
+            color: themeColors.lightText
+        });
+        
+        slide.addText(data.quarter, { 
+            placeholder: 'quarterTitle',
+            fontFace: defaultFont,
+            color: themeColors.accent1
+        });
         
         // Add projects title
-        slide.addText('Projects / Programmes', { placeholder: 'projectsTitle' });
+        slide.addText('Projects / Programmes', { 
+            placeholder: 'projectsTitle',
+            fontFace: defaultFont,
+            color: themeColors.primary
+        });
         
-        // Add projects
-        let yPos = 1.0; // Starting Y position (should match projectsArea y-coord in master)
+        // Add projects with alternating row background for readability
+        let yPos = 1.2; // Starting Y position (updated to match new projectsArea y-coord)
+        
         data.projects.forEach((proj, index) => {
+            // Add alternating row background for better readability
+            const rowBgColor = index % 2 === 0 ? 'FFFFFF' : 'F5F5F5';
+            
+            slide.addShape(pptx.shapes.RECTANGLE, {
+                x: 0.5, y: yPos, w: 6.5, h: 0.4,
+                fill: { color: rowBgColor },
+                line: { color: 'EEEEEE', width: 0.5 }
+            });
+            
             // Status color indicator
             let statusColor = '';
             switch (proj.rating) {
-                case 'green': statusColor = '00B050'; break; // Green
-                case 'yellow': statusColor = 'FFFF00'; break; // Yellow
-                case 'red': statusColor = 'FF0000'; break; // Red
-                default: statusColor = 'D9D9D9'; // Grey
+                case 'green': statusColor = themeColors.greenStatus; break; // Green
+                case 'yellow': statusColor = themeColors.yellowStatus; break; // Yellow
+                case 'red': statusColor = themeColors.redStatus; break; // Red
+                default: statusColor = themeColors.greyStatus; // Grey
             }
             
-            // Add a colored rectangle for status
+            // Add a colored rectangle for status with shadow for emphasis
             slide.addShape(pptx.shapes.RECTANGLE, { 
-                x: 4.0, y: yPos, w: 0.3, h: 0.3, 
+                x: 4.0, y: yPos + 0.05, w: 0.3, h: 0.3, 
                 fill: { color: statusColor },
-                line: { color: '000000', width: 1 }
+                line: { color: themeColors.text, width: 1 },
+                shadow: { type: 'outer', angle: 45, blur: 3, color: 'CFCFCF', offset: 1 }
             });
             
-            // Add text for project name, target, and status
-            slide.addText(proj.name, { x: 0.5, y: yPos, w: 3.2, h: 0.3, fontSize: 9 });
-            slide.addText(proj.target, { x: 4.5, y: yPos, w: 3.0, h: 0.5, fontSize: 9 });
-            slide.addText(proj.status, { x: 8.0, y: yPos, w: 4.5, h: 0.5, fontSize: 9 });
+            // Add text for project name with improved styling
+            slide.addText(proj.name, { 
+                x: 0.6, y: yPos + 0.05, w: 3.2, h: 0.3, 
+                fontSize: 10, bold: true, 
+                fontFace: defaultFont,
+                color: themeColors.text,
+                valign: 'middle'
+            });
+            
+            // Add target text with improved styling - lighter color
+            slide.addText(proj.target, { 
+                x: 4.5, y: yPos + 0.05, w: 2.4, h: 0.3, 
+                fontSize: 9, 
+                fontFace: defaultFont,
+                color: themeColors.lightText,
+                valign: 'middle'
+            });
             
             // Move Y position down for next project
-            yPos += 0.5;
+            yPos += 0.45; // Slightly more space between rows
         });
         
         // Add KPI section title
-        slide.addText('Key Performance Indicators', { placeholder: 'kpiTitleArea' });
+        slide.addText('Key Performance Indicators', { 
+            placeholder: 'kpiTitleArea',
+            fontFace: defaultFont,
+            color: themeColors.primary
+        });
         
-        // Add Timber Export chart
+        // Add Timber Export chart with enhanced styling
         slide.addChart(
             pptx.charts.LINE, 
             [
@@ -245,65 +618,135 @@ document.addEventListener('DOMContentLoaded', function() {
             { 
                 placeholder: 'timberChartArea',
                 title: 'Timber Export Value (RM)',
-                titleFontSize: 10,
-                titleColor: '000000',
+                titleFontSize: 11,
+                titleColor: themeColors.primary,
+                titleBold: true,
+                titleFontFace: defaultFont,
                 showTitle: true,
                 showLegend: true,
                 legendPos: 'b',
+                legendFontFace: defaultFont,
+                legendFontSize: 8,
+                
+                // Enhanced styling for chart elements
                 dataLabelFontSize: 8,
-                chartColors: ['4472C4', 'ED7D31'],
-                lineWidth: 2,
+                dataLabelFontFace: defaultFont,
+                chartColors: [themeColors.primary, themeColors.accent1],
+                
+                // Line styling
+                lineWidth: 2.5,
                 lineDataSymbol: 'circle',
-                lineDataSymbolSize: 6,
+                lineDataSymbolSize: 8,
+                lineDataSymbolLineColor: 'FFFFFF',
+                
+                // Axis styling
                 valAxisMaxVal: Math.max(...data.timberExportChart.data2023, ...data.timberExportChart.data2024) * 1.1,
                 valAxisLabelFontSize: 8,
-                catAxisLabelFontSize: 8
+                valAxisLabelFontFace: defaultFont,
+                catAxisLabelFontSize: 8,
+                catAxisLabelFontFace: defaultFont,
+                
+                // Border and background
+                border: { pt: 1, color: themeColors.lightText },
+                chartArea: { fill: { color: 'FFFFFF' } },
+                plotArea: { fill: { color: 'FFFFFF' } }
             }
         );
         
-        // Add timber chart totals
+        // Add timber chart totals with improved styling
         slide.addText(`TOTAL 2023 = ${data.timberExportChart.total2023}`, { 
-            x: 7.6, y: 3.6, w: 2.4, h: 0.2, fontSize: 9, color: '4472C4' 
+            x: 7.6, y: 3.5, w: 2.4, h: 0.25, 
+            fontSize: 10, bold: true, 
+            fontFace: defaultFont,
+            color: themeColors.primary,
+            valign: 'middle' 
         });
+        
         slide.addText(`TOTAL 2024 (Jan-Sept) = ${data.timberExportChart.total2024}`, { 
-            x: 10.0, y: 3.6, w: 2.5, h: 0.2, fontSize: 9, color: 'ED7D31' 
+            x: 10.0, y: 3.5, w: 2.5, h: 0.25, 
+            fontSize: 10, bold: true,
+            fontFace: defaultFont,
+            color: themeColors.accent1,
+            valign: 'middle' 
         });
         
-        // Add TPA/Biodiversity KPI
+        // Add TPA/Biodiversity KPI with improved styling
         slide.addText(data.kpiTPA.value.toString(), { 
-            x: 7.6, y: 4.1, w: 0.5, h: 0.5, fontSize: 24, bold: true, color: '4472C4'
-        });
-        slide.addText('TPA Protection & Biodiversity Conserved', { 
-            x: 7.6, y: 4.5, w: 2.0, h: 0.3, fontSize: 9, bold: true 
-        });
-        slide.addText(data.kpiTPA.description, { 
-            x: 8.2, y: 4.1, w: 1.3, h: 0.4, fontSize: 8 
+            x: 7.6, y: 4.2, w: 0.6, h: 0.5, 
+            fontSize: 28, bold: true, 
+            fontFace: defaultFont,
+            color: themeColors.primary,
+            align: 'center',
+            valign: 'middle'
         });
         
-        // Add Certification KPIs
+        slide.addText('TPA Protection & Biodiversity Conserved', { 
+            x: 7.6, y: 4.6, w: 2.0, h: 0.2, 
+            fontSize: 9, bold: true,
+            fontFace: defaultFont,
+            color: themeColors.text
+        });
+        
+        slide.addText(data.kpiTPA.description, { 
+            x: 8.3, y: 4.25, w: 1.0, h: 0.4, 
+            fontSize: 8, 
+            fontFace: defaultFont,
+            color: themeColors.lightText,
+            valign: 'middle'
+        });
+        
+        // Add Certification KPIs with improved styling
         // FMU Certification
         slide.addText(data.kpiCertification.fmu_percent + '%', { 
-            x: 9.6, y: 4.1, w: 0.8, h: 0.4, fontSize: 18, bold: true, color: '4472C4'
+            x: 9.7, y: 4.2, w: 0.8, h: 0.4, 
+            fontSize: 20, bold: true, 
+            fontFace: defaultFont,
+            color: themeColors.primary,
+            align: 'center',
+            valign: 'middle'
         });
+        
         slide.addText('Forest Management Unit (FMU)', { 
-            x: 9.6, y: 4.5, w: 2.0, h: 0.2, fontSize: 9, bold: true 
+            x: 9.7, y: 4.6, w: 2.0, h: 0.2, 
+            fontSize: 9, bold: true,
+            fontFace: defaultFont,
+            color: themeColors.text
         });
+        
         slide.addText(data.kpiCertification.fmu_value, { 
-            x: 10.4, y: 4.1, w: 1.0, h: 0.4, fontSize: 9, color: '000000'
+            x: 10.5, y: 4.2, w: 1.0, h: 0.4, 
+            fontSize: 9, 
+            fontFace: defaultFont,
+            color: themeColors.lightText,
+            valign: 'middle'
         });
         
-        // FPMU Certification  
+        // FPMU Certification
         slide.addText(data.kpiCertification.fpmu_percent + '%', { 
-            x: 11.6, y: 4.1, w: 0.8, h: 0.4, fontSize: 18, bold: true, color: '4472C4'
-        });
-        slide.addText('Forest Plantation Management Unit', { 
-            x: 11.6, y: 4.5, w: 2.0, h: 0.2, fontSize: 9, bold: true 
-        });
-        slide.addText(data.kpiCertification.fpmu_value, { 
-            x: 12.4, y: 4.1, w: 1.0, h: 0.4, fontSize: 9, color: '000000'
+            x: 11.7, y: 4.2, w: 0.8, h: 0.4, 
+            fontSize: 20, bold: true, 
+            fontFace: defaultFont,
+            color: themeColors.primary,
+            align: 'center',
+            valign: 'middle'
         });
         
-        // Add Degraded Area Restored chart
+        slide.addText('Forest Plantation Management Unit', { 
+            x: 11.7, y: 4.6, w: 2.0, h: 0.2, 
+            fontSize: 9, bold: true,
+            fontFace: defaultFont,
+            color: themeColors.text
+        });
+        
+        slide.addText(data.kpiCertification.fpmu_value, { 
+            x: 12.5, y: 4.2, w: 1.0, h: 0.4, 
+            fontSize: 9, 
+            fontFace: defaultFont,
+            color: themeColors.lightText,
+            valign: 'middle'
+        });
+        
+        // Add Degraded Area Restored chart with enhanced styling
         slide.addChart(
             pptx.charts.LINE,
             [
@@ -314,93 +757,171 @@ document.addEventListener('DOMContentLoaded', function() {
             {
                 placeholder: 'areaRestoredChartArea',
                 title: 'Total Degraded Area Restored (Ha)',
-                titleFontSize: 10,
-                titleColor: '000000',
+                titleFontSize: 11,
+                titleColor: themeColors.secondary,
+                titleBold: true,
+                titleFontFace: defaultFont,
                 showTitle: true,
                 showLegend: true,
                 legendPos: 'b',
+                legendFontFace: defaultFont,
+                legendFontSize: 8,
+                
+                // Enhanced styling for chart elements
                 dataLabelFontSize: 8,
-                chartColors: ['4472C4', '5B9BD5', '70AD47'],
-                lineWidth: 2,
+                dataLabelFontFace: defaultFont,
+                chartColors: [themeColors.primary, themeColors.accent2, themeColors.secondary],
+                
+                // Line styling
+                lineWidth: 2.5,
                 lineDataSymbol: 'circle',
-                lineDataSymbolSize: 6,
+                lineDataSymbolSize: 8,
+                lineDataSymbolLineColor: 'FFFFFF',
+                
+                // Axis styling
                 valAxisMaxVal: Math.max(
                     ...data.areaRestoredChart.data2022, 
                     ...data.areaRestoredChart.data2023, 
                     ...data.areaRestoredChart.data2024
                 ) * 1.1,
                 valAxisLabelFontSize: 8,
-                catAxisLabelFontSize: 8
+                valAxisLabelFontFace: defaultFont,
+                catAxisLabelFontSize: 8,
+                catAxisLabelFontFace: defaultFont,
+                
+                // Border and background
+                border: { pt: 1, color: themeColors.lightText },
+                chartArea: { fill: { color: 'FFFFFF' } },
+                plotArea: { fill: { color: 'FFFFFF' } }
             }
         );
         
-        // Add area restored total
+        // Add area restored total with improved styling
         slide.addText(`TOTAL 2024 = ${data.areaRestoredChart.total2024}`, { 
-            x: 10.0, y: 7.0, w: 2.5, h: 0.2, fontSize: 9, bold: true, color: '70AD47' 
+            x: 10.0, y: 7.0, w: 2.5, h: 0.25, 
+            fontSize: 10, bold: true, 
+            fontFace: defaultFont,
+            color: themeColors.secondary,
+            valign: 'middle'
         });
         
-        // Add World Recognition KPIs
+        // Add World Recognition KPIs with improved styling
         // SDGP Recognition
         slide.addText(data.kpiRecognition.sdgp_percent + '%', { 
-            x: 7.6, y: 7.1, w: 0.8, h: 0.4, fontSize: 18, bold: true, color: '4472C4'
+            x: 7.7, y: 7.2, w: 0.8, h: 0.4, 
+            fontSize: 20, bold: true, 
+            fontFace: defaultFont,
+            color: themeColors.primary,
+            align: 'center',
+            valign: 'middle'
         });
+        
         slide.addText('SDGP Endorsed Initiative', { 
-            x: 7.6, y: 7.4, w: 2.0, h: 0.2, fontSize: 9, bold: true 
+            x: 8.5, y: 7.25, w: 2.0, h: 0.3, 
+            fontSize: 9, bold: true,
+            fontFace: defaultFont,
+            color: themeColors.text,
+            valign: 'middle'
         });
         
         // Niah National Park
         slide.addText(data.kpiRecognition.niah_percent + '%', { 
-            x: 9.6, y: 7.1, w: 0.8, h: 0.4, fontSize: 18, bold: true, color: '4472C4'
-        });
-        slide.addText('Niah NP World Heritage', { 
-            x: 9.6, y: 7.4, w: 2.0, h: 0.2, fontSize: 9, bold: true 
+            x: 10.7, y: 7.2, w: 0.8, h: 0.4, 
+            fontSize: 20, bold: true, 
+            fontFace: defaultFont,
+            color: themeColors.primary,
+            align: 'center',
+            valign: 'middle'
         });
         
-        // Add Legend
-        let legendY = 6.5;
+        slide.addText('Niah NP World Heritage', { 
+            x: 11.5, y: 7.25, w: 2.0, h: 0.3, 
+            fontSize: 9, bold: true,
+            fontFace: defaultFont,
+            color: themeColors.text,
+            valign: 'middle'
+        });
+        
+        // Add Status Legend with improved styling
+        // Legend title is added in the master slide
+        
+        // Status indicators with improved styling
+        let legendY = 6.7; // Updated position to match new master slide
         
         // Green status
         slide.addShape(pptx.shapes.RECTANGLE, { 
-            x: 0.5, y: legendY, w: 0.3, h: 0.3, 
-            fill: { color: '00B050' },
-            line: { color: '000000', width: 1 }
+            x: 0.7, y: legendY, w: 0.3, h: 0.3, 
+            fill: { color: themeColors.greenStatus },
+            line: { color: themeColors.text, width: 1 },
+            shadow: { type: 'outer', angle: 45, blur: 3, color: 'CFCFCF', offset: 1 }
         });
+        
         slide.addText('Target Achieved / On Track', { 
-            x: 0.9, y: legendY, w: 2.5, h: 0.3, fontSize: 9 
+            x: 1.1, y: legendY, w: 2.5, h: 0.3, 
+            fontSize: 9,
+            fontFace: defaultFont, 
+            color: themeColors.text,
+            valign: 'middle'
         });
         
         // Yellow status
         slide.addShape(pptx.shapes.RECTANGLE, { 
-            x: 3.5, y: legendY, w: 0.3, h: 0.3, 
-            fill: { color: 'FFFF00' },
-            line: { color: '000000', width: 1 }
+            x: 3.7, y: legendY, w: 0.3, h: 0.3, 
+            fill: { color: themeColors.yellowStatus },
+            line: { color: themeColors.text, width: 1 },
+            shadow: { type: 'outer', angle: 45, blur: 3, color: 'CFCFCF', offset: 1 }
         });
+        
         slide.addText('Minor Issues / Delayed', { 
-            x: 3.9, y: legendY, w: 2.5, h: 0.3, fontSize: 9 
+            x: 4.1, y: legendY, w: 2.5, h: 0.3, 
+            fontSize: 9,
+            fontFace: defaultFont,
+            color: themeColors.text,
+            valign: 'middle'
         });
         
         // Red status
         slide.addShape(pptx.shapes.RECTANGLE, { 
-            x: 0.5, y: legendY + 0.4, w: 0.3, h: 0.3, 
-            fill: { color: 'FF0000' },
-            line: { color: '000000', width: 1 }
+            x: 0.7, y: legendY + 0.4, w: 0.3, h: 0.3, 
+            fill: { color: themeColors.redStatus },
+            line: { color: themeColors.text, width: 1 },
+            shadow: { type: 'outer', angle: 45, blur: 3, color: 'CFCFCF', offset: 1 }
         });
+        
         slide.addText('Major Issues / At Risk', { 
-            x: 0.9, y: legendY + 0.4, w: 2.5, h: 0.3, fontSize: 9 
+            x: 1.1, y: legendY + 0.4, w: 2.5, h: 0.3, 
+            fontSize: 9,
+            fontFace: defaultFont,
+            color: themeColors.text,
+            valign: 'middle'
         });
         
         // Grey status
         slide.addShape(pptx.shapes.RECTANGLE, { 
-            x: 3.5, y: legendY + 0.4, w: 0.3, h: 0.3, 
-            fill: { color: 'D9D9D9' },
-            line: { color: '000000', width: 1 }
+            x: 3.7, y: legendY + 0.4, w: 0.3, h: 0.3, 
+            fill: { color: themeColors.greyStatus },
+            line: { color: themeColors.text, width: 1 },
+            shadow: { type: 'outer', angle: 45, blur: 3, color: 'CFCFCF', offset: 1 }
         });
+        
         slide.addText('Not Started / No Data', { 
-            x: 3.9, y: legendY + 0.4, w: 2.5, h: 0.3, fontSize: 9 
+            x: 4.1, y: legendY + 0.4, w: 2.5, h: 0.3, 
+            fontSize: 9,
+            fontFace: defaultFont,
+            color: themeColors.text,
+            valign: 'middle'
         });
         
         // Add Draft Date
-        slide.addText(data.draftDate, { placeholder: 'draftDateArea' });
+        slide.addText(data.draftDate, { 
+            placeholder: 'draftDateArea',
+            fontFace: defaultFont,
+            color: themeColors.lightText,
+            italic: true
+        });
+        
+        // Optionally add a logo to the footer
+        // slide.addImage({ path: '../../assets/images/logo.png', placeholder: 'footerLogo' });
     }
     
     /**

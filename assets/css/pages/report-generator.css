@@ -1,0 +1,255 @@
+/**
+ * Report Generator Page Styles
+ * Styles for the report generation page in the admin section
+ */
+
+/* Blue Header Section Styling - more specific selectors for higher specificity */
+.simple-header.report-page-header {
+    background-color: var(--bs-primary); /* Blue background */
+    color: var(--bs-white); /* White text */
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+    margin-bottom: 2rem; /* Space below the blue header */
+    border-radius: 0 0 0.5rem 0.5rem; /* Rounded bottom corners */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Add shadow */
+    border-bottom: none; /* Remove default border */
+}
+
+.simple-header.report-page-header h1,
+.simple-header.report-page-header .header-title { /* Target both possible title elements */
+    color: var(--bs-white);
+    font-weight: 600;
+}
+
+.simple-header.report-page-header p,
+.simple-header.report-page-header .header-subtitle { /* Target both possible subtitle elements */
+    color: rgba(255, 255, 255, 0.85); /* Slightly less transparent white */
+    margin-bottom: 0;
+}
+
+/* Adjust btn-light style specifically within this blue header */
+.simple-header.report-page-header .btn-light {
+    background-color: rgba(255, 255, 255, 0.15); /* Semi-transparent white */
+    border-color: rgba(255, 255, 255, 0.5);
+    color: var(--bs-white);
+    transition: background-color 0.2s ease;
+}
+
+.simple-header.report-page-header .btn-light:hover {
+    background-color: rgba(255, 255, 255, 0.25); /* Lighter on hover */
+    border-color: rgba(255, 255, 255, 0.8);
+    color: var(--bs-white);
+}
+
+/* Card styling - consistent with dashboard cards */
+.report-generator-card {
+    border: none; /* Remove default border */
+    border-radius: 0.5rem; /* Standard border radius */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Standard shadow */
+    transition: box-shadow 0.3s ease;
+    margin-bottom: 1.5rem; /* Consistent margin */
+    height: 100%; /* Make cards in the same row equal height */
+    display: flex;
+    flex-direction: column;
+}
+
+.report-generator-card:hover {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.report-generator-card .card-header {
+    background-color: var(--bs-light); /* Lighter header */
+    border-bottom: 1px solid var(--bs-border-color-translucent);
+    padding: 0.75rem 1.25rem;
+    display: flex;
+    align-items: center;
+}
+
+.report-generator-card .card-header h5 {
+    color: var(--bs-dark); /* Darker text for light header */
+    font-weight: 600;
+    margin-bottom: 0;
+    font-size: 1.1rem; /* Slightly larger header text */
+}
+
+.report-generator-card .card-header i {
+    color: var(--bs-primary); /* Icon color */
+}
+
+.report-generator-card .card-body {
+    padding: 1.5rem; /* More padding in body */
+    flex-grow: 1; /* Allow body to grow */
+}
+
+/* Form element spacing and styling */
+.report-form-group {
+    margin-bottom: 1.25rem;
+}
+
+.report-form-group label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: var(--bs-gray-700);
+    font-size: 0.875rem; /* Slightly smaller labels */
+}
+
+.report-form-group select,
+.report-form-group input,
+.report-form-group textarea {
+    border-radius: 0.375rem;
+}
+
+/* Generate button styling */
+.generate-btn {
+    padding: 0.75rem 1.5rem; /* Larger padding */
+    font-weight: 600; /* Bolder */
+    transition: all 0.2s ease;
+    font-size: 1rem; /* Standard button size */
+}
+
+.generate-btn i {
+    margin-right: 0.5rem;
+}
+
+/* Status card styling */
+.generation-status-card {
+    background-color: var(--bs-primary-bg-subtle); /* Use theme color */
+    border-left: 4px solid var(--bs-primary);
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Success and error message styling (using alert styles) */
+.report-success-msg {
+    border-left: 4px solid var(--bs-success);
+    background-color: var(--bs-success-bg-subtle);
+    color: var(--bs-success-text);
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+.report-success-msg h5 {
+    color: var(--bs-success);
+}
+
+.report-error-msg {
+    border-left: 4px solid var(--bs-danger);
+    background-color: var(--bs-danger-bg-subtle);
+    color: var(--bs-danger-text);
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+.report-error-msg h5 {
+    color: var(--bs-danger);
+}
+
+/* Recent reports table styling */
+.reports-table th {
+    font-weight: 600;
+    color: var(--bs-gray-700);
+    font-size: 0.875rem;
+    white-space: nowrap; /* Prevent header wrapping */
+}
+
+.reports-table td {
+    vertical-align: middle;
+    font-size: 0.9rem;
+}
+
+/* Action buttons styling - for FontAwesome icons */
+.reports-table .action-btn {
+    padding: 0.3rem 0.6rem; /* Slightly adjusted padding */
+    margin: 0 0.125rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.2rem; /* Slightly wider */
+    border-radius: 0.375rem; /* Match form inputs */
+    border-width: 1px; /* Ensure border is visible */
+}
+
+.reports-table .action-btn i {
+    font-size: 0.875rem; /* FontAwesome icon size */
+    line-height: 1; /* Ensure icon is centered */
+}
+
+/* Download button */
+.reports-table .action-btn-download {
+    color: var(--bs-success);
+    border-color: var(--bs-success);
+    background-color: transparent; /* Ensure outline style */
+}
+
+.reports-table .action-btn-download:hover {
+    background-color: var(--bs-success);
+    color: white;
+}
+
+/* Delete button */
+.reports-table .action-btn-delete {
+    color: var(--bs-danger);
+    border-color: var(--bs-danger);
+    background-color: transparent; /* Ensure outline style */
+}
+
+.reports-table .action-btn-delete:hover {
+    background-color: var(--bs-danger);
+    color: white;
+}
+
+/* Confirmation modal styling */
+.delete-confirm-modal .modal-header {
+    border-bottom-color: var(--bs-danger-border-subtle);
+    background-color: var(--bs-danger-bg-subtle);
+}
+
+.delete-confirm-modal .modal-header .modal-title {
+    color: var(--bs-danger);
+    font-weight: 600;
+}
+.delete-confirm-modal .modal-header .modal-title i {
+    margin-right: 0.5rem;
+}
+
+.delete-confirm-modal .modal-body strong {
+    font-weight: 600;
+}
+
+.delete-confirm-modal .modal-footer .btn-danger i {
+    margin-right: 0.25rem;
+}
+
+/* Empty state styling */
+.reports-empty-state {
+    padding: 2rem 1rem;
+    text-align: center;
+    color: var(--bs-gray-600);
+    border: 2px dashed var(--bs-border-color-translucent);
+    border-radius: 0.5rem;
+    margin-top: 1rem;
+}
+
+.reports-empty-state p {
+    margin-bottom: 0;
+}
+
+/* Progress spinner animation */
+@keyframes pulse-opacity {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+}
+
+.animated-spinner {
+    animation: pulse-opacity 1.5s infinite;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .reports-table .action-btn {
+        padding: 0.25rem 0.5rem;
+        min-width: 2rem;
+    }
+    .reports-table .action-btn i {
+        font-size: 0.8rem;
+    }
+}
