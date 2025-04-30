@@ -472,13 +472,32 @@ require_once '../../includes/dashboard_header.php';
             });
             
             // Add Column button handler
-            document.getElementById('addColumnBtn')?.addEventListener('click', () => {
+            document.getElementById('addColumnBtn')?.addEventListener('click', async () => {
                 const newName = prompt('Enter name for new metric column:');
                 if (!newName) return;
-                
-                // For simplicity in the fallback, just reload the page
-                // The full implementation would add the column dynamically
-                location.href = `update_metric.php?metric_id=${metric_id}&action=add_column&new_name=${encodeURIComponent(newName)}`;
+
+                try {
+                    const response = await fetch('update_metric.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            metric_id: metricId,
+                            action: 'add_column',
+                            new_name: newName
+                        })
+                    });
+
+                    if (response.ok) {
+                        alert('New column added successfully.');
+                        location.reload();
+                    } else {
+                        alert('Error adding new column.');
+                    }
+                } catch (error) {
+                    alert('Error: ' + error.message);
+                }
             });
         }
     });
