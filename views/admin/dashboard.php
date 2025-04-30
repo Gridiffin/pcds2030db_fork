@@ -54,18 +54,18 @@ require_once '../layouts/header.php';
 // Include admin navigation
 require_once '../layouts/admin_nav.php';
 
-// Set up the dashboard header variables - use the same style as agency dashboard
+// Set up the dashboard header variables
 $title = "Admin Dashboard";
 $subtitle = "System overview and management";
-$headerStyle = 'primary'; // Use primary (blue) style like agency dashboard
-$headerClass = 'homepage-header'; // Same class as agency dashboard
+$headerStyle = 'standard-blue'; // Updated to use standardized blue variant
+$headerClass = ''; // Removed homepage-header class as it's no longer needed
 $actions = [
     [
         'url' => '#',
         'id' => 'refreshPage',
         'text' => 'Refresh Data',
         'icon' => 'fas fa-sync-alt',
-        'class' => 'btn-light border border-white text-white' // White outline button on blue background
+        'class' => 'btn-light' // White outline button on blue background
     ]
 ];
 

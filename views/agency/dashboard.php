@@ -60,19 +60,19 @@ require_once '../layouts/agency_nav.php';
 
 // Set up the dashboard header variables
 $title = "Agency Dashboard";
-$subtitle = $_SESSION['agency_name'] . ' - ' . $agency_sector . ' Sector';
-$headerStyle = 'primary'; // Use primary (blue) style for the dashboard home
+$subtitle = "Program tracking and reporting";
+$headerStyle = 'standard-blue'; // Updated to use standardized blue variant
+$headerClass = ''; // Removed homepage-header class as it's no longer needed
 $actions = [
     [
         'url' => '#',
+        'id' => 'refreshDashboard',
         'text' => 'Refresh Data',
         'icon' => 'fas fa-sync-alt',
-        'id' => 'refreshPage',
-        'class' => 'btn-light border border-white text-white' // Updated to match admin dashboard
+        'class' => 'btn-light' // White outline button on blue background
     ]
 ];
 
-$headerClass = 'homepage-header';
 // Include the dashboard header component with the primary style
 require_once '../../includes/dashboard_header.php';
 ?>

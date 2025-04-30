@@ -1,7 +1,9 @@
 /**
  * Simple header component styling
+ * Includes standardized variants for all dashboard pages
  */
 
+/* Base header styling */
 .simple-header {
     padding: 1.5rem 0;
     margin-bottom: 1.5rem;
@@ -20,23 +22,87 @@
     font-size: 0.9rem;
 }
 
-/* Header with light background (default) */
+/* 
+ * STANDARD VARIANTS 
+ * Use these consistently across the application
+ */
+
+/* White variant (default) - for inner pages like report generation */
+.simple-header.standard-white {
+    background-color: #fff;
+    color: var(--bs-dark);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.simple-header.standard-white .header-title {
+    color: var(--bs-dark);
+}
+
+.simple-header.standard-white .header-subtitle {
+    color: var(--bs-gray-600);
+}
+
+/* Blue variant - for admin/agency homepages */
+.simple-header.standard-blue {
+    background-color: var(--bs-primary) !important;
+    color: #ffffff !important;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+    border-bottom: none;
+    background-image: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.simple-header.standard-blue .header-title {
+    color: #ffffff !important;
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.simple-header.standard-blue .header-subtitle {
+    color: rgba(255, 255, 255, 0.9) !important;
+    font-weight: 400;
+    font-size: 1rem;
+}
+
+/* Button styling for standard blue header */
+.simple-header.standard-blue .btn-light {
+    background-color: rgba(255, 255, 255, 0.15);
+    border-color: white !important;
+    color: white !important;
+}
+
+.simple-header.standard-blue .btn-light:hover {
+    background-color: rgba(255, 255, 255, 0.25);
+    border-color: white !important;
+    color: white !important;
+    transform: translateY(-2px);
+}
+
+/* 
+ * LEGACY VARIANTS - KEPT FOR BACKWARD COMPATIBILITY
+ * Use the standard variants for new pages
+ */
+
+/* Legacy: Header with light background (default) */
 .simple-header.light {
     background-color: #fff;
 }
 
-/* Header with primary color background */
+/* Legacy: Header with primary color background */
 .simple-header.primary {
-    background-color: var(--primary-color);
-    color: #fff;
+    background-color: var(--bs-light) !important;
+    color: var(--bs-dark) !important;
+    border-bottom: 1px solid var(--bs-border-color-translucent);
 }
 
 .simple-header.primary .header-title,
 .simple-header.primary .header-subtitle {
-    color: #fff;
+    color: var(--bs-dark) !important;
 }
 
-/* Header with dark background */
+/* Legacy: Header with dark background */
 .simple-header.dark {
     background-color: #343a40;
     color: #fff;
@@ -47,36 +113,7 @@
     color: #fff;
 }
 
-/* Action buttons styling */
-.simple-header .btn-light {
-    background-color: white;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.simple-header .btn-outline-primary {
-    border: 1px solid var(--primary-color);
-    color: var(--primary-color);
-    background-color: white;
-}
-
-.simple-header .btn-outline-secondary {
-    border: 1px solid var(--secondary-color);
-    color: var(--secondary-color);
-    background-color: white;
-}
-
-/* Ensure consistent button styling in headers */
-.simple-header .btn-light.border.border-primary {
-    background-color: white;
-    border: 1px solid var(--primary-color) !important;
-    color: var(--primary-color);
-}
-
-.simple-header .btn-light.border.border-primary:hover {
-    background-color: rgba(var(--primary-rgb), 0.05);
-}
-
-/* Homepage header styling - consistent across admin and agency dashboards */
+/* Legacy: Homepage header styling (from earlier versions) */
 .simple-header.homepage-header {
     padding: 2rem 0;
     margin-bottom: 2rem;
@@ -98,7 +135,7 @@
     font-size: 1rem;
 }
 
-/* Button styling on homepage header */
+/* Legacy: Button styling on homepage header */
 .simple-header.homepage-header .btn-light {
     background-color: rgba(255, 255, 255, 0.15);
     border-color: white !important;
@@ -112,12 +149,32 @@
     transform: translateY(-2px);
 }
 
-/* Responsive adjustments for homepage header */
+/* General action buttons styling */
+.simple-header .btn-light {
+    background-color: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.simple-header .btn-outline-primary {
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+    background-color: white;
+}
+
+.simple-header .btn-outline-secondary {
+    border: 1px solid var(--secondary-color);
+    color: var(--secondary-color);
+    background-color: white;
+}
+
+/* Responsive adjustments */
 @media (max-width: 768px) {
+    .simple-header.standard-blue,
     .simple-header.homepage-header {
         padding: 1.5rem 0;
     }
     
+    .simple-header.standard-blue .header-title,
     .simple-header.homepage-header .header-title {
         font-size: 1.5rem;
     }

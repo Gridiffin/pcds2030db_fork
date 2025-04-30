@@ -73,6 +73,9 @@ try {
 // Set page title
 $pageTitle = "Generate Reports";
 
+// Add page-specific CSS
+$additionalStyles = [APP_URL . '/assets/css/pages/report-generator.css'];
+
 // Additional scripts for report generation
 $additionalScripts = [
     APP_URL . '/assets/js/report-generator.js'
@@ -87,13 +90,14 @@ require_once '../layouts/admin_nav.php';
 // Set up the page header variables
 $title = "Generate Reports";
 $subtitle = "Create and manage sector progress reports in PPTX format";
-$headerStyle = 'light'; // Use light style like other admin pages
+$headerStyle = 'standard-white'; // Updated to use standardized white variant
+$headerClass = ''; // Removed custom class as it's no longer needed
 $actions = [
     [
         'url' => 'view_all_reports.php',
         'text' => 'View All Reports',
         'icon' => 'fa-list-alt',
-        'class' => 'btn-outline-secondary'
+        'class' => 'btn-outline-primary' // Blue outline button for contrast on white
     ]
 ];
 
