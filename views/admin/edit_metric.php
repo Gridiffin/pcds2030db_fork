@@ -46,7 +46,52 @@ if ($metric_id === 0 && $sector_id === 0) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['select_sector'])) {
     $sector_id = intval($_POST['sector_id']);
     if ($sector_id > 0) {
-        header("Location: edit_metric.php?sector_id=$sector_id");
+        // Get max metric_id from sector_metrics_data table
+        $max_metric_id = 0;
+        $max_query = "SELECT MAX(metric_id) AS max_id FROM sector_metrics_data";
+        $max_stmt = $conn->prepare($max_query);
+        if ($max_stmt) {
+            $max_stmt->execute();
+            $max_result = $max_stmt->get_result();
+            if ($max_result && $max_result->num_rows > 0) {
+                $row = $max_result->fetch_assoc();
+                $max_metric_id = intval($row['max_id']);
+            }
+            $max_stmt->close();
+        }
+        $new_metric_id = $max_metric_id + 1;
+
+        // Create empty data_json placeholder
+        $metrics_data = [
+            'columns' => [],
+            'units' => [],
+            'data' => [
+                'January' => [],
+                'February' => [],
+                'March' => [],
+                'April' => [],
+                'May' => [],
+                'June' => [],
+                'July' => [],
+                'August' => [],
+                'September' => [],
+                'October' => [],
+                'November' => [],
+                'December' => []
+            ]
+        ];
+        $json_data = json_encode($metrics_data);
+
+        // Insert new metric row with new_metric_id, sector_id, empty table_name, data_json, is_draft=0
+        $insert_query = "INSERT INTO sector_metrics_data (metric_id, sector_id, table_name, data_json, is_draft) VALUES (?, ?, '', ?, 0)";
+        $insert_stmt = $conn->prepare($insert_query);
+        if ($insert_stmt) {
+            $insert_stmt->bind_param("iis", $new_metric_id, $sector_id, $json_data);
+            $insert_stmt->execute();
+            $insert_stmt->close();
+        }
+
+        header("Location: edit_metric.php?sector_id=$sector_id&metric_id=$new_metric_id");
         exit;
     } else {
         $message = "Please select a valid sector.";
@@ -211,7 +256,7 @@ $actions = [
 // Include the dashboard header component
 require_once '../../includes/dashboard_header.php';
 ?>
-
+<?php echo $metric_id?>
 <div class="container-fluid px-4 py-4">
     <?php if (!empty($message)): ?>
         <div class="alert alert-<?= $message_type ?> alert-dismissible fade show" role="alert">
