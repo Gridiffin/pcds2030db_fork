@@ -27,13 +27,31 @@ $file_path = basename($file_path); // Only get the filename, not the path
 $allowed_types = [
     'pptx' => 'reports/pptx/',
     'pdf' => 'reports/pdf/',
-    'excel' => 'reports/excel/'
+    'excel' => 'reports/excel/',
+    'report' => 'reports/'  // Add support for 'report' type
 ];
 
 // Validate file type
 if (!isset($allowed_types[$type])) {
     header('HTTP/1.1 400 Bad Request');
-    exit('Invalid file type');
+    exit('Invalid file type: ' . $type);
+}
+
+// If type is 'report', determine the actual subfolder based on file extension
+if ($type === 'report') {
+    $file_extension = strtolower(pathinfo($file_path, PATHINFO_EXTENSION));
+    
+    // Map file extension to subdirectory
+    $subfolder_map = [
+        'pptx' => 'pptx/',
+        'pdf' => 'pdf/',
+        'xlsx' => 'excel/',
+        'xls' => 'excel/'
+    ];
+    
+    // Set default to pptx if extension is not recognized
+    $subfolder = $subfolder_map[$file_extension] ?? 'pptx/';
+    $allowed_types['report'] = 'reports/' . $subfolder;
 }
 
 // Construct the full file path
