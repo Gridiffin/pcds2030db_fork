@@ -478,7 +478,7 @@ require_once '../../includes/dashboard_header.php';
                 
                 // For simplicity in the fallback, just reload the page
                 // The full implementation would add the column dynamically
-                location.href = `update_metric.php?metric_id=${metricId}&action=add_column&new_name=${encodeURIComponent(newName)}`;
+                location.href = `update_metric.php?metric_id=${metric_id}&action=add_column&new_name=${encodeURIComponent(newName)}`;
             });
         }
     });
