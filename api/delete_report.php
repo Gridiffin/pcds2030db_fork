@@ -11,6 +11,10 @@ require_once '../config/config.php';
 require_once '../includes/db_connect.php';
 require_once '../includes/session.php';
 require_once '../includes/functions.php';
+require_once '../includes/admins/core.php';  // Added this file which contains is_admin()
+
+// Make sure no output has been sent before we set headers
+if (ob_get_length()) ob_clean();
 
 // Set content type to JSON
 header('Content-Type: application/json');

@@ -153,63 +153,151 @@ while ($program = $programs_result->fetch_assoc()) {
     ];
 }
 
-// --- 3. Get Timber Export Value Chart Data from sector_metrics_data --- 
-// Determine the year from the current period
+// --- 3. Get Monthly Labels ---
+$monthly_labels = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 $current_year = $period['year'];
 $previous_year = $current_year - 1;
+$year_before_previous = $current_year - 2;
 
-// Get monthly labels
-$monthly_labels = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+// --- 4. Get Sector Metrics from Database ---
+// Fetch metrics for this sector and period
+$sector_metrics = [];
+$charts_data = [];
+$kpis_data = [];
 
-// --- Use mock data for simplicity and to avoid database issues in the demo ---
-$prev_year_data = [
-    230000000, 245000000, 260000000, 252000000, 278000000, 265000000, 
-    270000000, 285000000, 260000000, 245000000, 235000000, 270000000
-];
+$metrics_query = "SELECT * FROM sector_metrics_data 
+                  WHERE sector_id = ? AND period_id = ? AND is_draft = 0";
+$stmt = $conn->prepare($metrics_query);
+$stmt->bind_param("ii", $sector_id, $period_id);
+$stmt->execute();
+$metrics_result = $stmt->get_result();
 
-$current_year_data = [
-    245000000, 265000000, 285000000, 272000000, 295000000, 290000000, 
-    300000000, 310000000, 285000000, 0, 0, 0 // Zeros for future months
-];
+if ($metrics_result->num_rows > 0) {
+    // Process each metric
+    while ($metric = $metrics_result->fetch_assoc()) {
+        $data = json_decode($metric['data_json'], true);
+        
+        // Determine if it's a chart or a KPI based on the data structure
+        if (isset($data['type'])) {
+            if ($data['type'] === 'chart') {
+                $charts_data[$data['key']] = $data;
+            } elseif ($data['type'] === 'kpi') {
+                $kpis_data[$data['key']] = $data;
+            }
+        }
+    }
+} else {
+    // If no data found, create some default values based on sector
+    // This fallback ensures reports can still be generated even without metrics
+    
+    // Default main chart data (can be customized by sector)
+    $main_chart_title = "";
+    $main_chart_data = [
+        'labels' => $monthly_labels,
+        'data' . $year_before_previous => array_fill(0, 12, 0),
+        'data' . $previous_year => array_fill(0, 12, 0),
+        'data' . $current_year => array_fill(0, 12, 0),
+        'total' . $current_year => "0"
+    ];
+    
+    // Default secondary chart data
+    $secondary_chart_title = "";
+    $secondary_chart_data = [
+        'labels' => $monthly_labels,
+        'data' . $year_before_previous => array_fill(0, 12, 0),
+        'data' . $previous_year => array_fill(0, 12, 0),
+        'data' . $current_year => array_fill(0, 12, 0),
+        'total' . $current_year => "0"
+    ];
+    
+    // Default KPI values (can be customized by sector)
+    $kpi1_data = ['name' => '', 'value' => '0', 'description' => ''];
+    $kpi2_data = ['name' => '', 'value' => '0', 'description' => ''];
+    $kpi3_data = ['name' => '', 'value' => '0', 'description' => ''];
+    
+    switch ($sector_id) {
+        case 1: // Forestry
+            $main_chart_title = "Timber Export Value (RM)";
+            $secondary_chart_title = "Total Degraded Area Restored (Ha)";
+            $kpi1_data = ['name' => 'TPA Protection & Biodiversity Conserved', 'value' => '32', 'description' => 'On-going conservation programs'];
+            $kpi2_data = ['name' => 'Forest Management Unit (FMU)', 'value' => '78%', 'description' => '2,327,221 ha'];
+            $kpi3_data = ['name' => 'Forest Plantation Management Unit', 'value' => '69%', 'description' => '122,800 ha'];
+            break;
+            
+        case 2: // Land
+            $main_chart_title = "Land Development (Ha)";
+            $secondary_chart_title = "Land Title Applications Processed";
+            $kpi1_data = ['name' => 'New Native Land Titles', 'value' => '1.2K', 'description' => 'New titles issued this year'];
+            $kpi2_data = ['name' => 'Land Survey Completion', 'value' => '65%', 'description' => 'Of annual target'];
+            $kpi3_data = ['name' => 'Digital Registry Progress', 'value' => '80%', 'description' => 'Implementation completed'];
+            break;
+            
+        case 3: // Environment
+            $main_chart_title = "Air Quality Index";
+            $secondary_chart_title = "Waste Management (Tons)";
+            $kpi1_data = ['name' => 'Environmental Compliance', 'value' => '84%', 'description' => 'Industries in compliance'];
+            $kpi2_data = ['name' => 'Water Quality Index', 'value' => '72%', 'description' => 'Clean water bodies'];
+            $kpi3_data = ['name' => 'Recycling Rate', 'value' => '45%', 'description' => 'Of total waste'];
+            break;
+            
+        case 4: // Natural Resources
+            $main_chart_title = "Resource Extraction (Units)";
+            $secondary_chart_title = "Sustainable Resource Management (%)";
+            $kpi1_data = ['name' => 'Resource Inventory Completion', 'value' => '66%', 'description' => 'Statewide mapping'];
+            $kpi2_data = ['name' => 'Sustainable Yield', 'value' => '87%', 'description' => 'Within sustainable limits'];
+            $kpi3_data = ['name' => 'Conservation Areas', 'value' => '28%', 'description' => 'Of total resource lands'];
+            break;
+            
+        case 5: // Urban Development
+            $main_chart_title = "Urban Growth (km²)";
+            $secondary_chart_title = "Housing Development (Units)";
+            $kpi1_data = ['name' => 'Affordable Housing', 'value' => '3.4K', 'description' => 'New units completed'];
+            $kpi2_data = ['name' => 'Green Space Ratio', 'value' => '22%', 'description' => 'Of urban area'];
+            $kpi3_data = ['name' => 'Infrastructure Development', 'value' => '76%', 'description' => 'Of annual plan completed'];
+            break;
+    }
+    
+    // Store default charts and KPIs in the arrays
+    $charts_data['main_chart'] = [
+        'type' => 'chart',
+        'key' => 'main_chart',
+        'title' => $main_chart_title,
+        'data' => $main_chart_data
+    ];
+    
+    $charts_data['secondary_chart'] = [
+        'type' => 'chart',
+        'key' => 'secondary_chart',
+        'title' => $secondary_chart_title,
+        'data' => $secondary_chart_data
+    ];
+    
+    $kpis_data['kpi1'] = [
+        'type' => 'kpi',
+        'key' => 'kpi1',
+        'name' => $kpi1_data['name'],
+        'value' => $kpi1_data['value'],
+        'description' => $kpi1_data['description']
+    ];
+    
+    $kpis_data['kpi2'] = [
+        'type' => 'kpi',
+        'key' => 'kpi2',
+        'name' => $kpi2_data['name'],
+        'value' => $kpi2_data['value'],
+        'description' => $kpi2_data['description']
+    ];
+    
+    $kpis_data['kpi3'] = [
+        'type' => 'kpi',
+        'key' => 'kpi3',
+        'name' => $kpi3_data['name'],
+        'value' => $kpi3_data['value'],
+        'description' => $kpi3_data['description']
+    ];
+}
 
-// Calculate totals
-$total_prev_year = array_sum($prev_year_data);
-$total_current_year = array_sum($current_year_data);
-
-// Format totals with comma for thousands and RM prefix
-$formatted_prev_total = 'RM' . number_format($total_prev_year, 2);
-$formatted_current_total = 'RM' . number_format($total_current_year, 2);
-
-// --- 4. TPA/Biodiversity KPI --- 
-// Use mock data for demo
-$tpa_value = 32;
-$tpa_description = "On-going conservation programs across protected areas";
-
-// --- 5. Certification KPIs ---
-// Mock data for forest certification percentages
-$certification_data = [
-    'fmu_percent' => 78,
-    'fmu_value' => '2,327,221 ha',
-    'fpmu_percent' => 69,
-    'fpmu_value' => '122,800 ha'
-];
-
-// --- 6. Degraded Area Restored Chart ---
-// Use mock data for demo
-$area_restored_data = [
-    'data2022' => [1200, 1500, 2000, 1800, 2200, 1900, 2100, 2300, 2000, 1700, 1500, 1800],
-    'data2023' => [1500, 1800, 2200, 2000, 2500, 2300, 2400, 2600, 2300, 2000, 1900, 2100],
-    'data2024' => [1700, 2000, 2500, 2300, 2800, 2600, 2700, 2900, 2500, 0, 0, 0], // Zeros for future months
-    'total2024' => '21,028.90 ha' // Formatted total
-];
-
-// --- 7. World Recognition KPIs ---
-$recognition_data = [
-    'sdgp_percent' => 50,
-    'niah_percent' => 100
-];
-
-// --- 8. Generate Draft Date ---
+// --- 5. Generate Draft Date ---
 $draft_date = 'DRAFT ' . date('j M Y');
 
 // --- Assemble final data structure ---
@@ -218,27 +306,10 @@ $report_data = [
     'sectorLeads' => $sector_leads,
     'quarter' => $quarter,
     'projects' => $programs,
-    'timberExportChart' => [
-        'labels' => $monthly_labels,
-        'data2023' => $prev_year_data,
-        'data2024' => $current_year_data,
-        'total2023' => $formatted_prev_total,
-        'total2024' => $formatted_current_total
-    ],
-    'kpiTPA' => [
-        'value' => $tpa_value,
-        'description' => $tpa_description
-    ],
-    'kpiCertification' => $certification_data,
-    'areaRestoredChart' => [
-        'labels' => $monthly_labels,
-        'data2022' => $area_restored_data['data2022'],
-        'data2023' => $area_restored_data['data2023'], 
-        'data2024' => $area_restored_data['data2024'],
-        'total2024' => $area_restored_data['total2024']
-    ],
-    'kpiRecognition' => $recognition_data,
-    'draftDate' => $draft_date
+    'charts' => $charts_data,
+    'kpis' => $kpis_data,
+    'draftDate' => $draft_date,
+    'sector_id' => $sector_id  // Include sector_id for client-side use
 ];
 
 // Clear all previous output
