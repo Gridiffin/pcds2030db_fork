@@ -10,6 +10,9 @@ $current_page = basename($_SERVER['PHP_SELF']);
 
 // Check if current page is program-related
 $is_program_page = in_array($current_page, ['programs.php', 'view_program.php', 'assign_programs.php', 'delete_program.php']);
+
+// Check if current page is report-related
+$is_report_page = $current_page == 'generate_reports.php';
 ?>
 
 <!-- Main Navigation -->
@@ -59,6 +62,11 @@ $is_program_page = in_array($current_page, ['programs.php', 'view_program.php', 
                 <li class="nav-item">
                     <a class="nav-link <?php if ($current_page == 'reporting_periods.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/views/admin/reporting_periods.php">
                         <i class="fas fa-calendar-alt me-1"></i> Periods
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?php if ($is_report_page) echo 'active'; ?>" href="<?php echo APP_URL; ?>/views/admin/generate_reports.php">
+                        <i class="fas fa-file-alt me-1"></i> Reports
                     </a>
                 </li>
             </ul>
