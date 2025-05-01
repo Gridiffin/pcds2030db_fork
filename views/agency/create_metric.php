@@ -705,6 +705,15 @@ $additionalScripts = [
         // Reinitialize event listeners
         setupEventHandlers();
 
+        // Get all existing columns from the UI
+        const allMetricNames = [];
+        document.querySelectorAll('.metric-name').forEach(el => {
+            const metric = el.dataset.metric;
+            if (metric && !allMetricNames.includes(metric)) {
+                allMetricNames.push(metric);
+            }
+        });
+
         // Check if we need to create or update the data_json structure
         fetch(`../../api/check_metric.php?metric_id=${metricId}&sector_id=${sectorId}`, {
             method: 'GET'
@@ -712,34 +721,81 @@ $additionalScripts = [
         .then(response => response.json())
         .then(data => {
             if (data.exists) {
-                // Update existing JSON structure
-                return fetch('', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        action: 'update_column',
-                        column_title: newMetricName,
-                        metric_id: metricId,
-                        table_name: tableName
-                    })
+                // Get the existing data first, then update it
+                fetch(`../../api/get_metric_data.php?metric_id=${metricId}&sector_id=${sectorId}`, {
+                    method: 'GET'
+                })
+                .then(response => response.json())
+                .then(metricData => {
+                    if (metricData.success) {
+                        const existingData = metricData.data;
+                        
+                        // Add the new column to existingData.columns if it's not already there
+                        if (!existingData.columns.includes(newMetricName)) {
+                            existingData.columns.push(newMetricName);
+                        }
+                        
+                        // Ensure units object exists
+                        if (!existingData.units) {
+                            existingData.units = {};
+                        }
+                        
+                        // Add empty unit for new column
+                        existingData.units[newMetricName] = "";
+                        
+                        // Add the column to all months
+                        Object.keys(existingData.data).forEach(month => {
+                            if (!existingData.data[month][newMetricName]) {
+                                existingData.data[month][newMetricName] = 0;
+                            }
+                        });
+                        
+                        // Save the updated data
+                        return fetch('../../api/save_metric_json.php', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                metric_id: metricId,
+                                sector_id: sectorId,
+                                table_name: tableName || `Table_${metricId}`,
+                                data_json: existingData
+                            })
+                        });
+                    } else {
+                        throw new Error(metricData.error || 'Failed to get existing metric data');
+                    }
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        showToast('Column added successfully', 'success');
+                    } else {
+                        throw new Error(result.error || 'Failed to save column data');
+                    }
                 });
             } else {
                 // Create initial JSON structure with proper format
                 const initialData = {
-                    columns: [newMetricName],
+                    columns: allMetricNames, // Include ALL column names, not just the new one
                     data: {},
                     units: {}
                 };
                 
-                // Add empty data for all months
+                // Initialize units for all columns
+                allMetricNames.forEach(metric => {
+                    initialData.units[metric] = "";
+                });
+                
+                // Add empty data for all months and columns
                 ['January', 'February', 'March', 'April', 'May', 'June', 
                 'July', 'August', 'September', 'October', 'November', 'December']
                 .forEach(month => {
                     initialData.data[month] = {};
-                    initialData.data[month][newMetricName] = 0;
+                    allMetricNames.forEach(metric => {
+                        initialData.data[month][metric] = 0;
+                    });
                 });
                 
                 return fetch('../../api/save_metric_json.php', {
@@ -753,15 +809,15 @@ $additionalScripts = [
                         table_name: tableName || `Table_${metricId}`,
                         data_json: initialData
                     })
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        showToast('New column added successfully', 'success');
+                    } else {
+                        throw new Error(result.error || 'Failed to save column data');
+                    }
                 });
-            }
-        })
-        .then(response => response.json())
-        .then(result => {
-            if (result.success) {
-                showToast('New column added successfully', 'success');
-            } else {
-                throw new Error(result.error || 'Failed to save column data');
             }
         })
         .catch(error => {

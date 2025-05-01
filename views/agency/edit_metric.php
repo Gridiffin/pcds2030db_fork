@@ -406,16 +406,22 @@ require_once '../../includes/dashboard_header.php';
 
         // Create a new column in the UI immediately
         const tableHead = document.querySelector('.metrics-table thead tr');
-        const tableRows = document.querySelectorAll('.metrics-table tbody tr');
+        const tableRows = document.querySelectorAll('.metrics-table tbody tr:not(.table-light)'); // Skip total row
         
         // Add the column header
         const newTh = document.createElement('th');
         newTh.innerHTML = `
             <div class="metric-header">
-                <span class="metric-name" contenteditable="true" data-metric="${newMetricName}">
-                    ${newMetricName}
-                </span>
+                <div class="metric-title">
+                    <span class="metric-name" contenteditable="true" data-metric="${newMetricName}">
+                        ${newMetricName}
+                    </span>
+                    <span class="metric-unit-display"></span>
+                </div>
                 <div class="metric-actions">
+                    <button class="unit-btn" data-metric="${newMetricName}" data-current-unit="">
+                        <i class="fas fa-ruler"></i>
+                    </button>
                     <button class="save-btn" data-metric="${newMetricName}">
                         <i class="fas fa-check"></i>
                     </button>
@@ -435,7 +441,11 @@ require_once '../../includes/dashboard_header.php';
         
         // Add the column cells for each row
         tableRows.forEach(row => {
-            const monthName = row.querySelector('.month-badge').textContent;
+            // Fix: Check if month badge exists before accessing textContent
+            const monthBadge = row.querySelector('.month-badge');
+            if (!monthBadge) return;
+            
+            const monthName = monthBadge.textContent;
             const newTd = document.createElement('td');
             
             // If there was a placeholder empty column, remove it
@@ -458,6 +468,15 @@ require_once '../../includes/dashboard_header.php';
             
             row.appendChild(newTd);
         });
+        
+        // Add column to total row if it exists
+        const totalRow = document.querySelector('.metrics-table tbody tr.table-light');
+        if (totalRow) {
+            const totalTd = document.createElement('td');
+            totalTd.className = 'fw-bold text-end';
+            totalTd.textContent = '0.00';
+            totalRow.appendChild(totalTd);
+        }
 
         // Reinitialize event listeners
         setupMetricValueListeners();
@@ -472,15 +491,20 @@ require_once '../../includes/dashboard_header.php';
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
+                action: 'add_column', // Add this action parameter
                 column_title: newMetricName,
                 new_name: newMetricName,
                 metric_id: metricId,
                 table_name: tableName
             })
         })
-        .then(response => {
-            if (!response.ok) throw new Error('Failed to save new column');
-            showToast('New column added successfully', 'success');
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('New column added successfully', 'success');
+            } else {
+                throw new Error(data.error || 'Failed to save new column');
+            }
         })
         .catch(error => {
             showToast('Error saving new column: ' + error.message, 'danger');
