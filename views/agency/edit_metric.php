@@ -441,7 +441,7 @@ require_once '../../includes/dashboard_header.php';
         
         // Add the column cells for each row
         tableRows.forEach(row => {
-            // Fix: Check if month badge exists before accessing textContent
+            // Check if month badge exists before accessing textContent
             const monthBadge = row.querySelector('.month-badge');
             if (!monthBadge) return;
             
@@ -484,19 +484,53 @@ require_once '../../includes/dashboard_header.php';
         setupButtonHandlers();
         makeMetricCellsClickable();
 
-        // Save the new column to the database in the background
-        fetch('update_metric.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                action: 'add_column', // Add this action parameter
-                column_title: newMetricName,
-                new_name: newMetricName,
-                metric_id: metricId,
-                table_name: tableName
-            })
+        // Get existing data first, then update it with the new column
+        fetch(`../../api/get_metric_data.php?metric_id=${metricId}&sector_id=${<?= json_encode($sector_id) ?>}`, {
+            method: 'GET'
+        })
+        .then(response => response.json())
+        .then(metricData => {
+            if (metricData.success) {
+                const existingData = metricData.data;
+                
+                // Add the new column to existingData.columns if it's not already there
+                if (!existingData.columns.includes(newMetricName)) {
+                    existingData.columns.push(newMetricName);
+                }
+                
+                // Ensure units object exists
+                if (!existingData.units) {
+                    existingData.units = {};
+                }
+                
+                // Add empty unit for new column
+                existingData.units[newMetricName] = "";
+                
+                // Add the column to all months
+                Object.keys(existingData.data).forEach(month => {
+                    if (!existingData.data[month][newMetricName]) {
+                        existingData.data[month][newMetricName] = 0;
+                    }
+                });
+                
+                // Save the updated data
+                return fetch('update_metric.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        metric_id: metricId,
+                        sector_id: <?= json_encode($sector_id) ?>,
+                        table_name: tableName,
+                        column_title: newMetricName,
+                        new_name: newMetricName,
+                        data_json: existingData
+                    })
+                });
+            } else {
+                throw new Error(metricData.error || 'Failed to get existing metric data');
+            }
         })
         .then(response => response.json())
         .then(data => {
@@ -507,6 +541,7 @@ require_once '../../includes/dashboard_header.php';
             }
         })
         .catch(error => {
+            console.error('Error:', error);
             showToast('Error saving new column: ' + error.message, 'danger');
         });
     }

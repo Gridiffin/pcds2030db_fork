@@ -12,9 +12,14 @@ $data = json_decode(file_get_contents('php://input'), true);
 $table_name = $data['table_name'] ?? '';
 $metric_id = isset($data['metric_id']) ? intval($data['metric_id']) : null;
 $action = $data['action'] ?? '';
+$data_json = $data['data_json'] ?? null; // Add support for direct data_json updates
 
 // Get sector_id from session
 $sector_id = $_SESSION['sector_id'] ?? '';
+// Allow passing sector_id in the request for API consistency
+if (isset($data['sector_id'])) {
+    $sector_id = intval($data['sector_id']);
+}
 
 if (!$sector_id) {
     echo json_encode(['error' => 'Sector ID not found in session']);
@@ -22,6 +27,30 @@ if (!$sector_id) {
 }
 if (!$metric_id) {
     echo json_encode(['error' => 'Metric ID not found in request']);
+    exit;
+}
+
+// Special case: If complete data_json is provided, use it directly
+if ($data_json !== null) {
+    // Save data directly to the database
+    $json_data = json_encode($data_json);
+    
+    $upsert_query = "INSERT INTO sector_metrics_data 
+                    (metric_id, sector_id, table_name, data_json, is_draft) 
+                    VALUES (?, ?, ?, ?, 1) 
+                    ON DUPLICATE KEY UPDATE 
+                    table_name = VALUES(table_name), 
+                    data_json = VALUES(data_json),
+                    updated_at = CURRENT_TIMESTAMP";
+
+    $stmt = $conn->prepare($upsert_query);
+    $stmt->bind_param("iiss", $metric_id, $sector_id, $table_name, $json_data);
+    
+    if ($stmt->execute()) {
+        echo json_encode(['success' => true]);
+    } else {
+        echo json_encode(['error' => $conn->error]);
+    }
     exit;
 }
 
