@@ -77,13 +77,13 @@ if (!function_exists('format_time_ago')) {
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <?php if ($current_page == 'view_all_sectors.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/views/agency/view_all_sectors.php">
-                        <i class="fas fa-globe me-1"></i> All Sectors
+                    <a class="nav-link <?php if ($current_page == 'submit_metrics.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/views/agency/submit_metrics.php">
+                        <i class="fas fa-chart-line me-1"></i> Metrics
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <?php if ($current_page == 'submit_metrics.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/views/agency/submit_metrics.php">
-                        <i class="fas fa-chart-line me-1"></i> Metrics
+                    <a class="nav-link <?php if ($current_page == 'view_all_sectors.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/views/agency/view_all_sectors.php">
+                        <i class="fas fa-globe me-1"></i> All Sectors
                     </a>
                 </li>
             </ul>
