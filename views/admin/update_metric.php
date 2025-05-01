@@ -61,9 +61,9 @@ $old_name = $data['column_title'] ?? '';
 $new_name = $data['new_name'] ?? '';
 $month = $data['month'] ?? '';
 $new_value = isset($data['new_value']) ? floatval($data['new_value']) : 0;
-$unit = $data['unit'] ?? '';  // Add unit parameter
+$unit = $data['unit'] ?? '';  // For unit updates
 
-// Handle delete column action
+// Handle specific actions
 if ($action === 'delete_column' && !empty($old_name)) {
     // Remove column from columns array
     if (in_array($old_name, $metrics_data['columns'])) {
@@ -82,9 +82,26 @@ if ($action === 'delete_column' && !empty($old_name)) {
             }
         }
     }
+} 
+// Handle add column action
+else if ($action === 'add_column' && !empty($new_name)) {
+    // Add new column if it doesn't exist
+    if (!in_array($new_name, $metrics_data['columns'])) {
+        $metrics_data['columns'][] = $new_name;
+        
+        // Initialize data for the new column
+        foreach ($metrics_data['data'] as $m => &$values) {
+            $values[$new_name] = 0;  // Default value
+        }
+        
+        // Set unit if provided
+        if (!empty($unit)) {
+            $metrics_data['units'][$new_name] = $unit;
+        }
+    }
 }
 // Handle metric name change
-else if (!empty($new_name) && $new_name !== $old_name) {
+else if (!empty($new_name) && !empty($old_name) && $new_name !== $old_name) {
     // Update column name in the data structure
     if (in_array($old_name, $metrics_data['columns'])) {
         $index = array_search($old_name, $metrics_data['columns']);
@@ -96,24 +113,12 @@ else if (!empty($new_name) && $new_name !== $old_name) {
             unset($metrics_data['units'][$old_name]);
         }
         
-        // Set unit if provided
-        if (!empty($unit)) {
-            $metrics_data['units'][$new_name] = $unit;
-        }
-    } else {
-        $metrics_data['columns'][] = $new_name;
-        
-        // Set unit if provided
-        if (!empty($unit)) {
-            $metrics_data['units'][$new_name] = $unit;
-        }
-    }
-    
-    // Update all values with this column name
-    foreach ($metrics_data['data'] as $m => $values) {
-        if (isset($values[$old_name])) {
-            $metrics_data['data'][$m][$new_name] = $values[$old_name];
-            unset($metrics_data['data'][$m][$old_name]);
+        // Update all values with this column name
+        foreach ($metrics_data['data'] as $m => &$values) {
+            if (isset($values[$old_name])) {
+                $values[$new_name] = $values[$old_name];
+                unset($values[$old_name]);
+            }
         }
     }
 } 
@@ -123,21 +128,16 @@ else if (!empty($unit) && !empty($old_name)) {
     $metrics_data['units'][$old_name] = $unit;
 }
 // Handle metric value update
-else if (!empty($month)) {
+else if (!empty($month) && !empty($old_name)) {
     // Ensure column exists
     if (!in_array($old_name, $metrics_data['columns'])) {
         $metrics_data['columns'][] = $old_name;
-        
-        // Set unit if provided with new column
-        if (!empty($unit)) {
-            $metrics_data['units'][$old_name] = $unit;
-        }
     }
     
     // Update value
     $metrics_data['data'][$month][$old_name] = $new_value;
 } else {
-    echo json_encode(['error' => 'Invalid request']);
+    echo json_encode(['error' => 'Invalid request or missing parameters']);
     exit;
 }
 
@@ -146,15 +146,21 @@ $json_data = json_encode($metrics_data);
 
 $upsert_query = "UPDATE sector_metrics_data 
                 SET table_name = ?, 
-                    data_json = ?
+                    data_json = ?,
+                    updated_at = NOW()
                 WHERE metric_id = ? AND is_draft = 0";
 
 $stmt = $conn->prepare($upsert_query);
 $stmt->bind_param("ssi", $table_name, $json_data, $metric_id);
 
 if ($stmt->execute()) {
-    echo json_encode(['success' => true]);
+    echo json_encode([
+        'success' => true,
+        'message' => 'Metric updated successfully'
+    ]);
 } else {
-    echo json_encode(['error' => $conn->error]);
+    echo json_encode([
+        'error' => 'Database error: ' . $conn->error
+    ]);
 }
 ?>
