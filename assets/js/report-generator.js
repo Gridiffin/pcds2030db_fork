@@ -24,8 +24,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const reportNameToDelete = document.getElementById('reportNameToDelete');
     const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
     let reportIdToDelete = null;
-    let isDeleteInProgress = false; // Flag to prevent multiple delete operations
-    let deleteHandlerAttached = false; // Flag to prevent attaching the event handler multiple times
     
     // Set default report name based on sector and period selection
     const sectorSelect = document.getElementById('sectorSelect');
@@ -54,22 +52,10 @@ document.addEventListener('DOMContentLoaded', function() {
             reportNameToDelete.textContent = reportName;
         });
         
-        // Reset the delete flag when the modal is hidden
-        deleteReportModal.addEventListener('hidden.bs.modal', function() {
-            isDeleteInProgress = false;
-            reportIdToDelete = null;
-        });
-        
-        // Handle delete confirmation - only attach the event once
-        if (confirmDeleteBtn && !deleteHandlerAttached) {
-            deleteHandlerAttached = true; // Mark handler as attached
-            
+        // Handle delete confirmation
+        if (confirmDeleteBtn) {
             confirmDeleteBtn.addEventListener('click', function() {
-                // Check if deletion is already in progress or if there's no report ID
-                if (isDeleteInProgress || !reportIdToDelete) return;
-                
-                // Set the flag to prevent multiple clicks
-                isDeleteInProgress = true;
+                if (!reportIdToDelete) return;
                 
                 // Store reference to the button that triggered the modal
                 const triggerButton = document.querySelector(`.action-btn-delete[data-report-id="${reportIdToDelete}"]`);
@@ -142,7 +128,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Reset button state
                     confirmDeleteBtn.disabled = false;
                     confirmDeleteBtn.innerHTML = '<i class="fas fa-trash me-1"></i>Delete Report';
-                    isDeleteInProgress = false;
                     reportIdToDelete = null;
                 })
                 .catch(error => {
@@ -152,7 +137,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Reset button state
                     confirmDeleteBtn.disabled = false;
                     confirmDeleteBtn.innerHTML = '<i class="fas fa-trash me-1"></i>Delete Report';
-                    isDeleteInProgress = false;
                     reportIdToDelete = null;
                     
                     // Hide modal
@@ -566,130 +550,451 @@ document.addEventListener('DOMContentLoaded', function() {
         return themeColors;
     }
     
-    /**
-     * Populate the slide with data from the API
-     * @param {Object} slide - The slide to populate
-     * @param {Object} data - The data from the API
-     * @param {Object} pptx - The PptxGenJS instance
-     * @param {Object} themeColors - The theme colors for styling
-     */
-    function populateSlide(slide, data, pptx, themeColors) {
-        // Define common font for consistency
-        const defaultFont = 'Calibri';
+/**
+ * Populate the slide with data from the API
+ * @param {Object} slide - The slide to populate
+ * @param {Object} data - The data from the API
+ * @param {Object} pptx - The PptxGenJS instance
+ * @param {Object} themeColors - The theme colors for styling
+ */
+function populateSlide(slide, data, pptx, themeColors) {
+    // Define common font for consistency
+    const defaultFont = 'Calibri';
 
-        // Add report title - Using EXPLICIT coordinates from master definition
-        slide.addText(data.reportTitle || 'Default Title', { 
-            // placeholder: 'title', // Using explicit coordinates instead
-            x: 0.5, y: 0.1, w: 7.0, h: 0.6, 
+    // --- START: ISOLATED ELEMENT ---
+    // Add titles - Using EXPLICIT coordinates from master definition
+    slide.addText(data.reportTitle || 'Default Title', { 
+        // placeholder: 'title', // Using explicit coordinates instead
+        x: 0.5, y: 0.1, w: 7.0, h: 0.6, 
+        fontSize: 28, bold: true, 
+        fontFace: defaultFont,
+        color: themeColors.primary,
+        shadow: { type: 'outer', angle: 45, blur: 3, color: 'CFCFCF', offset: 1 }
+    });
+    // --- END: ISOLATED ELEMENT ---
+
+
+    /* // COMMENTED OUT FOR DEBUGGING
+    slide.addText(data.sectorLeads, { 
+        // placeholder: 'subtitle',
+        x: 0.5, y: 0.5, w: 7.0, h: 0.25, 
+        fontSize: 11, 
+        fontFace: defaultFont,
+        color: themeColors.lightText,
+        italic: true
+    });
+
+    slide.addText(data.quarter, { 
+        // placeholder: 'quarterTitle',
+        x: 8.0, y: 0.1, w: 4.5, h: 0.6, 
+        fontSize: 32, bold: true, 
+        fontFace: defaultFont,
+        color: themeColors.accent1,
+        align: 'right'
+    });
+
+    // Add projects title
+    slide.addText('Projects / Programmes', { 
+        // placeholder: 'projectsTitle',
+        x: 0.6, y: 0.825, w: 6.0, h: 0.25, 
+        fontSize: 12, bold: true,
+        fontFace: defaultFont,
+        color: themeColors.primary
+    });
+
+    // Add projects with alternating row background for readability
+    let yPos = 1.2; // Starting Y position (updated to match new projectsArea y-coord)
+    
+    data.projects.forEach((proj, index) => {
+        // Add alternating row background for better readability
+        const rowBgColor = index % 2 === 0 ? 'FFFFFF' : 'F5F5F5';
+        
+        slide.addShape(pptx.shapes.RECTANGLE, {
+            x: 0.5, y: yPos, w: 6.5, h: 0.4,
+            fill: { color: rowBgColor },
+            line: { color: 'EEEEEE', width: 0.5 }
+        });
+        
+        // Status color indicator
+        let statusColor = '';
+        switch (proj.rating) {
+            case 'green': statusColor = themeColors.greenStatus; break; // Green
+            case 'yellow': statusColor = themeColors.yellowStatus; break; // Yellow
+            case 'red': statusColor = themeColors.redStatus; break; // Red
+            default: statusColor = themeColors.greyStatus; // Grey
+        }
+        
+        // Add a colored rectangle for status with shadow for emphasis
+        slide.addShape(pptx.shapes.RECTANGLE, { 
+            x: 4.0, y: yPos + 0.05, w: 0.3, h: 0.3, 
+            fill: { color: statusColor },
+            line: { color: themeColors.text, width: 1 },
+            shadow: { type: 'outer', angle: 45, blur: 3, color: 'CFCFCF', offset: 1 }
+        });
+        
+        // Add text for project name with improved styling
+        slide.addText(proj.name, { 
+            x: 0.6, y: yPos + 0.05, w: 3.2, h: 0.3, 
+            fontSize: 10, bold: true, 
+            fontFace: defaultFont,
+            color: themeColors.text,
+            valign: 'middle'
+        });
+        
+        // Add target text with improved styling - lighter color
+        // *** NOTE: This is the text that was previously misaligned ***
+        slide.addText(proj.target, { 
+            x: 4.5, y: yPos + 0.05, w: 2.4, h: 0.3, // Explicit coordinates
+            fontSize: 9, 
+            fontFace: defaultFont,
+            color: themeColors.lightText,
+            valign: 'middle'
+        });
+        
+        // Move Y position down for next project
+        yPos += 0.45; // Slightly more space between rows
+    });
+
+    // Add KPI section title
+    slide.addText('Key Performance Indicators', { 
+        // placeholder: 'kpiTitleArea',
+        x: 7.4, y: 3.725, w: 5.0, h: 0.25, 
+        fontSize: 12, bold: true,
+        fontFace: defaultFont,
+        color: themeColors.primary
+    });
+
+    // === Dynamic Charts and KPIs based on the data ===
+    
+    // --- Main Chart ---
+    if (data.charts && data.charts.main_chart) {
+        const mainChart = data.charts.main_chart;
+        const chartData = [];
+        
+        // Generate chart data
+        if (mainChart.data) {
+            // Add data series for each year
+            Object.keys(mainChart.data).forEach(key => {
+                if (key.startsWith('data') && Array.isArray(mainChart.data[key])) {
+                    const yearMatch = key.match(/data(\d+)/);
+                    if (yearMatch) {
+                        const year = yearMatch[1];
+                        chartData.push({
+                            name: year,
+                            labels: mainChart.data.labels || [],
+                            values: mainChart.data[key]
+                        });
+                    }
+                }
+            });
+        }
+        
+        // Add the chart to the slide
+        slide.addChart(
+            pptx.charts.LINE, 
+            chartData,
+            { 
+                // placeholder: 'mainChartArea', // Using explicit coordinates
+                x: 7.5, y: 1.0, w: 4.8, h: 2.3,
+                title: mainChart.title || 'Data Chart',
+                titleFontSize: 11,
+                titleColor: themeColors.primary,
+                titleBold: true,
+                titleFontFace: defaultFont,
+                showTitle: true,
+                showLegend: true,
+                legendPos: 'b',
+                legendFontFace: defaultFont,
+                legendFontSize: 8,
+                
+                // Enhanced styling for chart elements
+                dataLabelFontSize: 8,
+                dataLabelFontFace: defaultFont,
+                chartColors: [themeColors.primary, themeColors.accent1, themeColors.secondary],
+                
+                // Line styling
+                lineWidth: 2.5,
+                lineDataSymbol: 'circle',
+                lineDataSymbolSize: 8,
+                lineDataSymbolLineColor: 'FFFFFF',
+                
+                // Axis styling
+                valAxisLabelFontSize: 8,
+                valAxisLabelFontFace: defaultFont,
+                catAxisLabelFontSize: 8,
+                catAxisLabelFontFace: defaultFont,
+                
+                // Border and background
+                border: { pt: 1, color: themeColors.lightText },
+                chartArea: { fill: { color: 'FFFFFF' } },
+                plotArea: { fill: { color: 'FFFFFF' } }
+            }
+        );
+        
+        // Add totals if available
+        if (mainChart.data && mainChart.data['total' + new Date().getFullYear()]) {
+            slide.addText(`TOTAL ${new Date().getFullYear()} = ${mainChart.data['total' + new Date().getFullYear()]}`, { 
+                x: 10.0, y: 3.5, w: 2.5, h: 0.25, 
+                fontSize: 10, bold: true,
+                fontFace: defaultFont,
+                color: themeColors.accent1,
+                valign: 'middle' 
+            });
+        }
+    }
+
+    // --- KPI 1 (Left position) ---
+    if (data.kpis && data.kpis.kpi1) {
+        const kpi1 = data.kpis.kpi1;
+        
+        // Add value with larger font
+        slide.addText(kpi1.value || '0', { 
+            x: 7.6, y: 4.2, w: 0.6, h: 0.5, 
             fontSize: 28, bold: true, 
             fontFace: defaultFont,
             color: themeColors.primary,
-            shadow: { type: 'outer', angle: 45, blur: 3, color: 'CFCFCF', offset: 1 }
+            align: 'center',
+            valign: 'middle'
         });
-
-        // Add sector leads - Using EXPLICIT coordinates
-        slide.addText(data.sectorLeads || 'Sector leads', { 
-            // placeholder: 'subtitle', // Using explicit coordinates instead
-            x: 0.5, y: 0.5, w: 7.0, h: 0.25, 
-            fontSize: 11, 
-            fontFace: defaultFont,
-            color: themeColors.lightText,
-            italic: true
-        });
-
-        // Add quarter text in top right corner - Using EXPLICIT coordinates
-        slide.addText(data.quarter || 'Q1 2025', { 
-            // placeholder: 'quarterTitle', // Using explicit coordinates instead
-            x: 8.0, y: 0.1, w: 4.5, h: 0.6, 
-            fontSize: 32, bold: true, 
-            fontFace: defaultFont,
-            color: themeColors.accent1,
-            align: 'right'
-        });
-
-        // Add projects title - Using EXPLICIT coordinates
-        slide.addText('Projects / Programmes', { 
-            // placeholder: 'projectsTitle', // Using explicit coordinates instead
-            x: 0.6, y: 0.825, w: 6.0, h: 0.25, 
-            fontSize: 12, bold: true,
-            fontFace: defaultFont,
-            color: themeColors.primary
-        });
-
-        // Add projects with alternating row background for readability
-        let yPos = 1.2; // Starting Y position
         
-        if (data.projects && data.projects.length) {
-            data.projects.forEach((proj, index) => {
-                // Add alternating row background for better readability
-                const rowBgColor = index % 2 === 0 ? 'FFFFFF' : 'F5F5F5';
-                
-                slide.addShape(pptx.shapes.RECTANGLE, {
-                    x: 0.5, y: yPos, w: 6.5, h: 0.4,
-                    fill: { color: rowBgColor },
-                    line: { color: 'EEEEEE', width: 0.5 }
-                });
-                
-                // Status color indicator
-                let statusColor = '';
-                switch (proj.rating) {
-                    case 'green': statusColor = themeColors.greenStatus; break; // Green
-                    case 'yellow': statusColor = themeColors.yellowStatus; break; // Yellow
-                    case 'red': statusColor = themeColors.redStatus; break; // Red
-                    default: statusColor = themeColors.greyStatus; // Grey
-                }
-                
-                // Add a colored rectangle for status with shadow for emphasis
-                slide.addShape(pptx.shapes.RECTANGLE, { 
-                    x: 4.0, y: yPos + 0.05, w: 0.3, h: 0.3, 
-                    fill: { color: statusColor },
-                    line: { color: themeColors.text, width: 1 },
-                    shadow: { type: 'outer', angle: 45, blur: 3, color: 'CFCFCF', offset: 1 }
-                });
-                
-                // Add text for project name with improved styling
-                slide.addText(proj.name, { 
-                    x: 0.6, y: yPos + 0.05, w: 3.2, h: 0.3, 
-                    fontSize: 10, bold: true, 
-                    fontFace: defaultFont,
-                    color: themeColors.text,
-                    valign: 'middle'
-                });
-                
-                // Add target text with improved styling - lighter color
-                slide.addText(proj.target, { 
-                    x: 4.5, y: yPos + 0.05, w: 2.4, h: 0.3, 
-                    fontSize: 9, 
-                    fontFace: defaultFont,
-                    color: themeColors.lightText,
-                    valign: 'middle'
-                });
-                
-                // Move Y position down for next project
-                yPos += 0.45; // Slightly more space between rows
+        // Add title
+        slide.addText(kpi1.name || '', { 
+            x: 7.6, y: 4.6, w: 2.0, h: 0.2, 
+            fontSize: 9, bold: true,
+            fontFace: defaultFont,
+            color: themeColors.text
+        });
+        
+        // Add description text
+        if (kpi1.description) {
+            slide.addText(kpi1.description, { 
+                x: 8.3, y: 4.25, w: 1.0, h: 0.4, 
+                fontSize: 8, 
+                fontFace: defaultFont,
+                color: themeColors.lightText,
+                valign: 'middle'
             });
         }
+    }
 
-        /* // Still commenting out the KPI and chart sections for now
-        // Add KPI section title
-        slide.addText('Key Performance Indicators', { 
-            // placeholder: 'kpiTitleArea',
-            x: 7.4, y: 3.725, w: 5.0, h: 0.25, 
-            fontSize: 12, bold: true,
+    // --- KPI 2 (Middle position) ---
+    if (data.kpis && data.kpis.kpi2) {
+        const kpi2 = data.kpis.kpi2;
+        
+        // Add value with larger font
+        slide.addText(kpi2.value || '0', { 
+            x: 9.7, y: 4.2, w: 0.8, h: 0.4, 
+            fontSize: 20, bold: true, 
             fontFace: defaultFont,
-            color: themeColors.primary
+            color: themeColors.primary,
+            align: 'center',
+            valign: 'middle'
         });
-        */
-
-        // Add Draft Date at the bottom - Using EXPLICIT coordinates
-        slide.addText(data.draftDate || 'DRAFT 1 May 2025', { 
-            // placeholder: 'draftDateArea', // Using explicit coordinates instead
-            x: 0.5, y: 7.5, w: 3.0, h: 0.3, 
-            fontSize: 10, italic: true,
+        
+        // Add title
+        slide.addText(kpi2.name || '', { 
+            x: 9.7, y: 4.6, w: 2.0, h: 0.2, 
+            fontSize: 9, bold: true,
             fontFace: defaultFont,
-            color: themeColors.lightText
+            color: themeColors.text
+        });
+        
+        // Add description text
+        if (kpi2.description) {
+            slide.addText(kpi2.description, { 
+                x: 10.5, y: 4.2, w: 1.0, h: 0.4, 
+                fontSize: 9, 
+                fontFace: defaultFont,
+                color: themeColors.lightText,
+                valign: 'middle'
+            });
+        }
+    }
+
+    // --- Secondary Chart ---
+    if (data.charts && data.charts.secondary_chart) {
+        const secondaryChart = data.charts.secondary_chart;
+        const chartData = [];
+        
+        // Generate chart data
+        if (secondaryChart.data) {
+            // Add data series for each year
+            Object.keys(secondaryChart.data).forEach(key => {
+                if (key.startsWith('data') && Array.isArray(secondaryChart.data[key])) {
+                    const yearMatch = key.match(/data(\d+)/);
+                    if (yearMatch) {
+                        const year = yearMatch[1];
+                        chartData.push({
+                            name: year,
+                            labels: secondaryChart.data.labels || [], 
+                            values: secondaryChart.data[key]
+                        });
+                    }
+                }
+            });
+        }
+        
+        // Add the chart to the slide
+        slide.addChart(
+            pptx.charts.LINE,
+            chartData,
+            {
+                // placeholder: 'secondaryChartArea', // Using explicit coordinates
+                x: 7.5, y: 5.1, w: 4.8, h: 1.8,
+                title: secondaryChart.title || 'Data Chart',
+                titleFontSize: 11,
+                titleColor: themeColors.secondary,
+                titleBold: true,
+                titleFontFace: defaultFont,
+                showTitle: true,
+                showLegend: true,
+                legendPos: 'b',
+                legendFontFace: defaultFont,
+                legendFontSize: 8,
+                
+                // Enhanced styling for chart elements
+                dataLabelFontSize: 8,
+                dataLabelFontFace: defaultFont,
+                chartColors: [themeColors.primary, themeColors.accent2, themeColors.secondary],
+                
+                // Line styling
+                lineWidth: 2.5,
+                lineDataSymbol: 'circle',
+                lineDataSymbolSize: 8,
+                lineDataSymbolLineColor: 'FFFFFF',
+                
+                // Axis styling
+                valAxisLabelFontSize: 8,
+                valAxisLabelFontFace: defaultFont,
+                catAxisLabelFontSize: 8,
+                catAxisLabelFontFace: defaultFont,
+                
+                // Border and background
+                border: { pt: 1, color: themeColors.lightText },
+                chartArea: { fill: { color: 'FFFFFF' } },
+                plotArea: { fill: { color: 'FFFFFF' } }
+            }
+        );
+        
+        // Add totals if available
+        if (secondaryChart.data && secondaryChart.data['total' + new Date().getFullYear()]) {
+            slide.addText(`TOTAL ${new Date().getFullYear()} = ${secondaryChart.data['total' + new Date().getFullYear()]}`, { 
+                x: 10.0, y: 7.0, w: 2.5, h: 0.25, 
+                fontSize: 10, bold: true, 
+                fontFace: defaultFont,
+                color: themeColors.secondary,
+                valign: 'middle'
+            });
+        }
+    }
+
+    // --- KPI 3 (Bottom position) ---
+    if (data.kpis && data.kpis.kpi3) {
+        const kpi3 = data.kpis.kpi3;
+        
+        // Add KPI 3 value
+        slide.addText(kpi3.value || '0', { 
+            x: 7.7, y: 7.2, w: 0.8, h: 0.4, 
+            fontSize: 20, bold: true, 
+            fontFace: defaultFont,
+            color: themeColors.primary,
+            align: 'center',
+            valign: 'middle'
+        });
+        
+        // Add KPI 3 title
+        slide.addText(kpi3.name || '', { 
+            x: 8.5, y: 7.25, w: 3.5, h: 0.3, 
+            fontSize: 9, bold: true,
+            fontFace: defaultFont,
+            color: themeColors.text,
+            valign: 'middle'
         });
     }
+
+    // Add Status Legend with improved styling
+    // Legend title is added in the master slide
+    
+    // Status indicators with improved styling
+    let legendY = 6.7; // Updated position to match new master slide
+    
+    // Green status
+    slide.addShape(pptx.shapes.RECTANGLE, { 
+        x: 0.7, y: legendY, w: 0.3, h: 0.3, 
+        fill: { color: themeColors.greenStatus },
+        line: { color: themeColors.text, width: 1 },
+        shadow: { type: 'outer', angle: 45, blur: 3, color: 'CFCFCF', offset: 1 }
+    });
+    
+    slide.addText('Target Achieved / On Track', { 
+        x: 1.1, y: legendY, w: 2.5, h: 0.3, 
+        fontSize: 9,
+        fontFace: defaultFont, 
+        color: themeColors.text,
+        valign: 'middle'
+    });
+    
+    // Yellow status
+    slide.addShape(pptx.shapes.RECTANGLE, { 
+        x: 3.7, y: legendY, w: 0.3, h: 0.3, 
+        fill: { color: themeColors.yellowStatus },
+        line: { color: themeColors.text, width: 1 },
+        shadow: { type: 'outer', angle: 45, blur: 3, color: 'CFCFCF', offset: 1 }
+    });
+    
+    slide.addText('Minor Issues / Delayed', { 
+        x: 4.1, y: legendY, w: 2.5, h: 0.3, 
+        fontSize: 9,
+        fontFace: defaultFont,
+        color: themeColors.text,
+        valign: 'middle'
+    });
+    
+    // Red status
+    slide.addShape(pptx.shapes.RECTANGLE, { 
+        x: 0.7, y: legendY + 0.4, w: 0.3, h: 0.3, 
+        fill: { color: themeColors.redStatus },
+        line: { color: themeColors.text, width: 1 },
+        shadow: { type: 'outer', angle: 45, blur: 3, color: 'CFCFCF', offset: 1 }
+    });
+    
+    slide.addText('Major Issues / At Risk', { 
+        x: 1.1, y: legendY + 0.4, w: 2.5, h: 0.3, 
+        fontSize: 9,
+        fontFace: defaultFont,
+        color: themeColors.text,
+        valign: 'middle'
+    });
+    
+    // Grey status
+    slide.addShape(pptx.shapes.RECTANGLE, { 
+        x: 3.7, y: legendY + 0.4, w: 0.3, h: 0.3, 
+        fill: { color: themeColors.greyStatus },
+        line: { color: themeColors.text, width: 1 },
+        shadow: { type: 'outer', angle: 45, blur: 3, color: 'CFCFCF', offset: 1 }
+    });
+    
+    slide.addText('Not Started / No Data', { 
+        x: 4.1, y: legendY + 0.4, w: 2.5, h: 0.3, 
+        fontSize: 9,
+        fontFace: defaultFont,
+        color: themeColors.text,
+        valign: 'middle'
+    });
+
+    // Add Draft Date
+    slide.addText(data.draftDate, { 
+        // placeholder: 'draftDateArea',
+        x: 0.5, y: 7.5, w: 3.0, h: 0.3, 
+        fontSize: 10, italic: true,
+        fontFace: defaultFont,
+        color: themeColors.lightText
+    });
+    
+    // Optionally add a logo to the footer
+    // slide.addImage({ path: '../../assets/images/logo.png', placeholder: 'footerLogo' });
+    */ // END COMMENTED OUT SECTION
+}
     
     /**
      * Upload the generated presentation to the server
