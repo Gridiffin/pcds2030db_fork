@@ -27,8 +27,141 @@ require_once '../layouts/admin_nav.php';
 
 <div class="container-fluid px-4 py-4">
     <h1 class="h2 mb-4">Audit Log</h1>
-    <p class="text-muted">This page will display audit log entries.</p>
-    <!-- TODO: Implement audit log table and functionality -->
+    <p class="text-muted">This page displays audit log entries from all tables with created_at and updated_at columns.</p>
+
+    <?php
+    // Connect to database
+    global $conn;
+
+    // Get all tables with created_at and updated_at columns
+    $sql = "
+        SELECT TABLE_NAME
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND COLUMN_NAME IN ('created_at', 'updated_at')
+        GROUP BY TABLE_NAME
+        HAVING COUNT(DISTINCT COLUMN_NAME) = 2
+    ";
+    $result = $conn->query($sql);
+    $tables = [];
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $tables[] = $row['TABLE_NAME'];
+        }
+    }
+
+    $audit_entries = [];
+
+    foreach ($tables as $table) {
+        // Try to get primary key column name
+        $pk_sql = "
+            SELECT COLUMN_NAME
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = ?
+              AND COLUMN_KEY = 'PRI'
+            LIMIT 1
+        ";
+        $stmt = $conn->prepare($pk_sql);
+        $stmt->bind_param("s", $table);
+        $stmt->execute();
+        $pk_result = $stmt->get_result();
+        $pk_column = null;
+        if ($pk_result && $pk_row = $pk_result->fetch_assoc()) {
+            $pk_column = $pk_row['COLUMN_NAME'];
+        }
+        $stmt->close();
+
+        if (!$pk_column) {
+            // If no primary key, skip this table
+            continue;
+        }
+
+        // Determine if we need to fetch a name column for display instead of record_id
+        $name_column = null;
+        if ($table === 'sector_metrics_data') {
+            $name_column = 'table_name';
+        } elseif ($table === 'users') {
+            $name_column = 'username';
+        } elseif ($table === 'programs') {
+            $name_column = 'program_name';
+        }
+
+        // Build select columns string
+        $select_columns = "$pk_column AS record_id, created_at, updated_at";
+        if ($name_column) {
+            $select_columns = "$pk_column AS record_id, $name_column, created_at, updated_at";
+        }
+
+        // Fetch records with id, name (if applicable), created_at, updated_at
+        $data_sql = "SELECT ? AS table_name, $select_columns FROM $table";
+        $stmt = $conn->prepare($data_sql);
+        $stmt->bind_param("s", $table);
+        $stmt->execute();
+        $data_result = $stmt->get_result();
+        $rows = [];
+        if ($data_result) {
+            while ($data_row = $data_result->fetch_assoc()) {
+                // $display_id = $data_row[$pk_column];
+                if ($name_column && isset($data_row[$name_column])) {
+                    $display_id = $data_row[$name_column];
+                }
+                // Add created_at entry
+                $rows[] = [
+                    'table_name' => $table,
+                    'record_id' => $display_id,
+                    'event_type' => 'Created',
+                    'event_date' => $data_row['created_at']
+                ];
+                // Add updated_at entry
+                $rows[] = [
+                    'table_name' => $table,
+                    'record_id' => $display_id,
+                    'event_type' => 'Updated',
+                    'event_date' => $data_row['updated_at']
+                ];
+            }
+        }
+        $stmt->close();
+
+        $audit_entries = array_merge($audit_entries, $rows);
+    }
+
+    // Sort audit entries by event_date descending
+    usort($audit_entries, function($a, $b) {
+        return strtotime($b['event_date']) <=> strtotime($a['event_date']);
+    });
+    ?>
+
+    <?php if (empty($audit_entries)): ?>
+        <div class="alert alert-info">No audit log entries found.</div>
+    <?php else: ?>
+        <?php
+        // Map table names to nicer display names
+        $nice_table_names = [
+            'sector_metrics_data' => 'Metrics Data',
+            'users' => 'Users',
+            'programs' => 'Programs'
+        ];
+        ?>
+        <div class="audit-log">
+            <?php foreach ($audit_entries as $entry): ?>
+                <?php
+                $nice_table_name = $nice_table_names[$entry['table_name']] ?? ucwords(str_replace('_', ' ', $entry['table_name']));
+                ?>
+                <div class="audit-log-entry" style="padding: 8px; border-bottom: 1px solid #ddd;">
+                    <span style="font-weight: bold;">
+                        <?php echo htmlspecialchars($entry['record_id'] ?? 'N/A'); ?>
+                        was <?php echo htmlspecialchars($entry['event_type']); ?>
+                        at <small style="color: #666;"><?php echo htmlspecialchars($entry['event_date']); ?></small>
+                    </span>
+                    <div style="font-size: 0.9em; color: #555; margin-top: 4px;">
+                        <?php echo htmlspecialchars($nice_table_name); ?>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
 </div>
 <?php
 require_once '../layouts/footer.php';
