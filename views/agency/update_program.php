@@ -200,319 +200,209 @@ $additionalScripts = [
     APP_URL . '/assets/js/utilities/status_utils.js'
 ];
 
-// Include header
+// Include header (which contains the DOCTYPE declaration)
 require_once '../layouts/header.php';
+
+// Set up header variables
+$title = "Update Program";
+$subtitle = htmlspecialchars($program['program_name']) . " - " . 
+            htmlspecialchars($current_period['name'] ?? '') . 
+            " (" . date('M j, Y', strtotime($current_period['start_date'])) . " - " . 
+            date('M j, Y', strtotime($current_period['end_date'])) . ")";
+$headerStyle = 'light'; // Use light (white) style for inner pages
+$actions = [
+    [
+        'url' => 'view_programs.php',
+        'text' => 'Back to Programs',
+        'icon' => 'fa-arrow-left',
+        'class' => 'btn-outline-secondary'
+    ]
+];
 
 // Include agency navigation
 require_once '../layouts/agency_nav.php';
-?>
 
-<style>
-    .target-entry {
-        position: relative;
-        padding: 1.5rem;
-        border: 1px solid #dee2e6;
-        border-radius: 0.375rem;
-        margin-bottom: 1rem;
-        background-color: #f8f9fa;
-    }
-    
-    .target-entry .remove-target {
-        position: absolute;
-        top: 0.5rem;
-        right: 0.5rem;
-        font-size: 1.25rem;
-        cursor: pointer;
-        color: #dc3545;
-    }
-    
-    .add-target-btn {
-        margin-bottom: 1.5rem;
-    }
-    
-    /* Draft banner */
-    .draft-banner {
-        display: flex;
-        align-items: center;
-        padding: 1rem;
-        background-color: #fff3cd;
-        border: 1px solid #ffeeba;
-        border-radius: 0.25rem;
-        color: #856404;
-    }
-    
-    .draft-banner i {
-        font-size: 1.25rem;
-        margin-right: 1rem;
-    }
-    
-    /* Rating pills */
-    .rating-pills {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-        margin-bottom: 1rem;
-    }
-    
-    .rating-pill {
-        display: flex;
-        align-items: center;
-        padding: 0.5rem 1rem;
-        border-radius: 50px;
-        cursor: pointer;
-        font-weight: 500;
-        border: 2px solid transparent;
-        transition: all 0.2s ease;
-    }
-    
-    .rating-pill.active {
-        border-color: rgba(0,0,0,0.5);
-        box-shadow: 0 3px 6px rgba(0,0,0,0.2);
-        transform: translateY(-2px);
-        font-weight: 600;
-    }
-    
-    .rating-pill.target-achieved {
-        background-color: #d1e7dd;
-        color: #0f5132;
-    }
-    
-    .rating-pill.target-achieved.active {
-        background-color: #c3e3d2;
-        box-shadow: 0 3px 6px rgba(15, 81, 50, 0.3);
-    }
-    
-    .rating-pill.on-track-yearly {
-        background-color: #fff3cd;
-        color: #664d03;
-    }
-    
-    .rating-pill.on-track-yearly.active {
-        background-color: #ffecb5;
-        box-shadow: 0 3px 6px rgba(102, 77, 3, 0.3);
-    }
-    
-    .rating-pill.severe-delay {
-        background-color: #f8d7da;
-        color: #842029;
-    }
-    
-    .rating-pill.severe-delay.active {
-        background-color: #f5c2c7;
-        box-shadow: 0 3px 6px rgba(132, 32, 41, 0.3);
-    }
-    
-    .rating-pill.not-started {
-        background-color: #e2e3e5;
-        color: #41464b;
-    }
-    
-    .rating-pill.not-started.active {
-        background-color: #d5d7da;
-        box-shadow: 0 3px 6px rgba(65, 70, 75, 0.3);
-    }
-    
-    .rating-pill.disabled {
-        opacity: 0.6;
-        pointer-events: none;
-    }
-</style>
+// Include the dashboard header component with the light style
+require_once '../../includes/dashboard_header.php';
 
-<div class="container-fluid px-4 py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="h2 mb-0">Update Program</h1>
-            <p class="text-muted">
-                <?php echo htmlspecialchars($program['program_name']); ?> -
-                <?php echo htmlspecialchars($current_period['name'] ?? ''); ?>
-                (<?php echo date('M j, Y', strtotime($current_period['start_date'])); ?> - 
-                <?php echo date('M j, Y', strtotime($current_period['end_date'])); ?>)
-            </p>
-        </div>
+// Include any draft notification banner if this is a draft
+if ($is_draft): ?>
+<div class="draft-banner mb-4">
+    <i class="fas fa-exclamation-triangle"></i>
+    <strong>Draft Mode:</strong> This program submission is currently saved as a draft. You can continue editing or submit the final version.
+</div>
+<?php endif; ?>
+
+<!-- Program Update Form -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title m-0">Program Details</h5>
+        <span class="badge bg-<?php echo $program['is_assigned'] ? 'primary' : 'success'; ?>">
+            <?php echo $program['is_assigned'] ? 'Assigned Program' : 'Agency Created'; ?>
+        </span>
     </div>
-
-    <!-- Include any draft notification banner if this is a draft -->
-    <?php if ($is_draft): ?>
-    <div class="draft-banner mb-4">
-        <i class="fas fa-exclamation-triangle"></i>
-        <strong>Draft Mode:</strong> This program submission is currently saved as a draft. You can continue editing or submit the final version.
-    </div>
-    <?php endif; ?>
-
-    <!-- Program Update Form -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="card-title m-0">Program Details</h5>
-            <span class="badge bg-<?php echo $program['is_assigned'] ? 'primary' : 'success'; ?>">
-                <?php echo $program['is_assigned'] ? 'Assigned Program' : 'Agency Created'; ?>
-            </span>
-        </div>
-        <form id="updateProgramForm" method="post">
-            <div class="card-body">
-                <input type="hidden" name="period_id" value="<?php echo $current_period['period_id']; ?>">
-                <?php if ($submission_id): ?>
-                <input type="hidden" name="submission_id" value="<?php echo $submission_id; ?>">
+    <form id="updateProgramForm" method="post">
+        <div class="card-body">
+            <input type="hidden" name="period_id" value="<?php echo $current_period['period_id']; ?>">
+            <?php if ($submission_id): ?>
+            <input type="hidden" name="submission_id" value="<?php echo $submission_id; ?>">
+            <?php endif; ?>
+            
+            <!-- Basic Information -->
+            <div class="mb-4">
+                <h6 class="fw-bold mb-3">Basic Information</h6>
+                <div class="mb-3">
+                    <label for="program_name" class="form-label">Program Name *</label>
+                    <input type="text" class="form-control" id="program_name" name="program_name" required
+                            value="<?php echo htmlspecialchars($program['program_name']); ?>"
+                            <?php echo (!is_editable('program_name')) ? 'readonly' : ''; ?>>
+                    <?php if ($program['is_assigned'] && !is_editable('program_name')): ?>
+                        <div class="form-text">Program name was set by an administrator and cannot be changed.</div>
+                    <?php endif; ?>
+                </div>
+                <div class="mb-3">
+                    <label for="description" class="form-label">Program Description</label>
+                    <textarea class="form-control" id="description" name="description" rows="3"
+                                <?php echo (!is_editable('description')) ? 'readonly' : ''; ?>><?php echo htmlspecialchars($program['description']); ?></textarea>
+                    <?php if ($program['is_assigned'] && !is_editable('description')): ?>
+                        <div class="form-text">Description was set by an administrator and cannot be changed.</div>
+                    <?php endif; ?>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="start_date" class="form-label">Start Date</label>
+                        <input type="date" class="form-control" id="start_date" name="start_date" 
+                                value="<?php echo get_field_value('start_date', $program['start_date'] ? date('Y-m-d', strtotime($program['start_date'])) : ''); ?>"
+                                <?php echo (!is_editable('timeline')) ? 'readonly' : ''; ?>>
+                        <?php if ($program['is_assigned'] && !is_editable('timeline')): ?>
+                            <div class="form-text">Start date was set by an administrator and cannot be changed.</div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="end_date" class="form-label">End Date</label>
+                        <input type="date" class="form-control" id="end_date" name="end_date" 
+                                value="<?php echo get_field_value('end_date', $program['end_date'] ? date('Y-m-d', strtotime($program['end_date'])) : ''); ?>"
+                                <?php echo (!is_editable('timeline')) ? 'readonly' : ''; ?>>
+                        <?php if ($program['is_assigned'] && !is_editable('timeline')): ?>
+                            <div class="form-text">End date was set by an administrator and cannot be changed.</div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Program Rating -->
+            <div class="mb-4">
+                <h6 class="fw-bold mb-3">Program Rating</h6>
+                <p class="text-muted mb-3">
+                    How would you rate the overall progress of this program?
+                </p>
+                
+                <input type="hidden" id="rating" name="rating" value="<?php echo $rating; ?>">
+                
+                <div class="rating-pills">
+                    <div class="rating-pill target-achieved <?php echo ($rating == 'target-achieved') ? 'active' : ''; ?> <?php echo (!is_editable('rating')) ? 'disabled' : ''; ?>" data-rating="target-achieved">
+                        <i class="fas fa-check-circle me-2"></i> Monthly Target Achieved
+                    </div>
+                    <div class="rating-pill on-track-yearly <?php echo ($rating == 'on-track-yearly') ? 'active' : ''; ?> <?php echo (!is_editable('rating')) ? 'disabled' : ''; ?>" data-rating="on-track-yearly">
+                        <i class="fas fa-calendar-check me-2"></i> On Track for Year
+                    </div>
+                    <div class="rating-pill severe-delay <?php echo ($rating == 'severe-delay') ? 'active' : ''; ?> <?php echo (!is_editable('rating')) ? 'disabled' : ''; ?>" data-rating="severe-delay">
+                        <i class="fas fa-exclamation-triangle me-2"></i> Severe Delays
+                    </div>
+                    <div class="rating-pill not-started <?php echo ($rating == 'not-started' || !$rating) ? 'active' : ''; ?> <?php echo (!is_editable('rating')) ? 'disabled' : ''; ?>" data-rating="not-started">
+                        <i class="fas fa-clock me-2"></i> Not Started
+                    </div>
+                </div>
+                
+                <?php if ($program['is_assigned'] && !is_editable('rating')): ?>
+                    <div class="form-text">Rating was set by an administrator and cannot be changed.</div>
                 <?php endif; ?>
+            </div>
+            
+            <!-- Targets Section -->
+            <div class="mb-4">
+                <h6 class="fw-bold mb-3">Program Targets</h6>
+                <p class="text-muted mb-3">
+                    Define one or more targets for this program, each with its own status description.
+                </p>
                 
-                <!-- Basic Information -->
-                <div class="mb-4">
-                    <h6 class="fw-bold mb-3">Basic Information</h6>
-                    <div class="mb-3">
-                        <label for="program_name" class="form-label">Program Name *</label>
-                        <input type="text" class="form-control" id="program_name" name="program_name" required
-                               value="<?php echo htmlspecialchars($program['program_name']); ?>"
-                               <?php echo (!is_editable('program_name')) ? 'readonly' : ''; ?>>
-                        <?php if ($program['is_assigned'] && !is_editable('program_name')): ?>
-                            <div class="form-text">Program name was set by an administrator and cannot be changed.</div>
+                <div id="targets-container">
+                    <?php 
+                    $canEditTargets = is_editable('targets');
+                    
+                    foreach ($targets as $index => $target): 
+                        $target_text = $target['target_text'] ?? '';
+                        $status_description = $target['status_description'] ?? '';
+                        $canDelete = $index > 0; // Only allow deleting additional targets
+                    ?>
+                    <div class="target-entry">
+                        <?php if ($canDelete && $canEditTargets): ?>
+                        <button type="button" class="btn-close remove-target" aria-label="Remove target"></button>
                         <?php endif; ?>
-                    </div>
-                    <div class="mb-3">
-                        <label for="description" class="form-label">Program Description</label>
-                        <textarea class="form-control" id="description" name="description" rows="3"
-                                 <?php echo (!is_editable('description')) ? 'readonly' : ''; ?>><?php echo htmlspecialchars($program['description']); ?></textarea>
-                        <?php if ($program['is_assigned'] && !is_editable('description')): ?>
-                            <div class="form-text">Description was set by an administrator and cannot be changed.</div>
-                        <?php endif; ?>
-                    </div>
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label for="start_date" class="form-label">Start Date</label>
-                            <input type="date" class="form-control" id="start_date" name="start_date" 
-                                   value="<?php echo get_field_value('start_date', $program['start_date'] ? date('Y-m-d', strtotime($program['start_date'])) : ''); ?>"
-                                   <?php echo (!is_editable('timeline')) ? 'readonly' : ''; ?>>
-                            <?php if ($program['is_assigned'] && !is_editable('timeline')): ?>
-                                <div class="form-text">Start date was set by an administrator and cannot be changed.</div>
+                        <div class="mb-3">
+                            <label class="form-label">Target <?php echo $index + 1; ?> *</label>
+                            <input type="text" class="form-control target-input" name="target_text[]" 
+                                    value="<?php echo htmlspecialchars($target_text); ?>" 
+                                    placeholder="Define a measurable target (e.g., 'Plant 100 trees')"
+                                    <?php echo ($canEditTargets) ? '' : 'readonly'; ?>>
+                            <?php if (!$canEditTargets && $index === 0): ?>
+                            <div class="form-text">Targets were set by an administrator and cannot be changed.</div>
                             <?php endif; ?>
                         </div>
-                        <div class="col-md-6">
-                            <label for="end_date" class="form-label">End Date</label>
-                            <input type="date" class="form-control" id="end_date" name="end_date" 
-                                   value="<?php echo get_field_value('end_date', $program['end_date'] ? date('Y-m-d', strtotime($program['end_date'])) : ''); ?>"
-                                   <?php echo (!is_editable('timeline')) ? 'readonly' : ''; ?>>
-                            <?php if ($program['is_assigned'] && !is_editable('timeline')): ?>
-                                <div class="form-text">End date was set by an administrator and cannot be changed.</div>
+                        <div class="mb-2">
+                            <label class="form-label">Status Description</label>
+                            <textarea class="form-control status-description" name="target_status_description[]" rows="2" 
+                                        placeholder="Describe the current status or progress toward this target"
+                                        <?php echo (is_editable('status_text')) ? '' : 'readonly'; ?>><?php echo htmlspecialchars($status_description); ?></textarea>
+                            <?php if (!is_editable('status_text') && $index === 0): ?>
+                            <div class="form-text">Status descriptions were set by an administrator and cannot be changed.</div>
                             <?php endif; ?>
                         </div>
                     </div>
+                    <?php endforeach; ?>
                 </div>
                 
-                <!-- Program Rating -->
-                <div class="mb-4">
-                    <h6 class="fw-bold mb-3">Program Rating</h6>
-                    <p class="text-muted mb-3">
-                        How would you rate the overall progress of this program?
-                    </p>
-                    
-                    <input type="hidden" id="rating" name="rating" value="<?php echo $rating; ?>">
-                    
-                    <div class="rating-pills">
-                        <div class="rating-pill target-achieved <?php echo ($rating == 'target-achieved') ? 'active' : ''; ?> <?php echo (!is_editable('rating')) ? 'disabled' : ''; ?>" data-rating="target-achieved">
-                            <i class="fas fa-check-circle me-2"></i> Monthly Target Achieved
-                        </div>
-                        <div class="rating-pill on-track-yearly <?php echo ($rating == 'on-track-yearly') ? 'active' : ''; ?> <?php echo (!is_editable('rating')) ? 'disabled' : ''; ?>" data-rating="on-track-yearly">
-                            <i class="fas fa-calendar-check me-2"></i> On Track for Year
-                        </div>
-                        <div class="rating-pill severe-delay <?php echo ($rating == 'severe-delay') ? 'active' : ''; ?> <?php echo (!is_editable('rating')) ? 'disabled' : ''; ?>" data-rating="severe-delay">
-                            <i class="fas fa-exclamation-triangle me-2"></i> Severe Delays
-                        </div>
-                        <div class="rating-pill not-started <?php echo ($rating == 'not-started' || !$rating) ? 'active' : ''; ?> <?php echo (!is_editable('rating')) ? 'disabled' : ''; ?>" data-rating="not-started">
-                            <i class="fas fa-clock me-2"></i> Not Started
-                        </div>
-                    </div>
-                    
-                    <?php if ($program['is_assigned'] && !is_editable('rating')): ?>
-                        <div class="form-text">Rating was set by an administrator and cannot be changed.</div>
+                <?php if ($canEditTargets): ?>
+                <button type="button" id="add-target-btn" class="btn btn-outline-secondary add-target-btn">
+                    <i class="fas fa-plus-circle me-1"></i> Add Another Target
+                </button>
+                <?php endif; ?>
+            </div>
+            
+            <!-- Remarks -->
+            <div class="mb-4">
+                <h6 class="fw-bold mb-3">Additional Remarks</h6>
+                <div class="mb-3">
+                    <label for="remarks" class="form-label">Remarks (Optional)</label>
+                    <textarea class="form-control" id="remarks" name="remarks" rows="3"
+                                placeholder="Enter any additional notes or context about this program"
+                                <?php echo (is_editable('remarks')) ? '' : 'readonly'; ?>><?php echo htmlspecialchars($remarks); ?></textarea>
+                    <?php if (!is_editable('remarks')): ?>
+                    <div class="form-text">Remarks were set by an administrator and cannot be changed.</div>
                     <?php endif; ?>
                 </div>
-                
-                <!-- Targets Section -->
-                <div class="mb-4">
-                    <h6 class="fw-bold mb-3">Program Targets</h6>
-                    <p class="text-muted mb-3">
-                        Define one or more targets for this program, each with its own status description.
-                    </p>
-                    
-                    <div id="targets-container">
-                        <?php 
-                        $canEditTargets = is_editable('targets');
-                        
-                        foreach ($targets as $index => $target): 
-                            $target_text = $target['target_text'] ?? '';
-                            $status_description = $target['status_description'] ?? '';
-                            $canDelete = $index > 0; // Only allow deleting additional targets
-                        ?>
-                        <div class="target-entry">
-                            <?php if ($canDelete && $canEditTargets): ?>
-                            <button type="button" class="btn-close remove-target" aria-label="Remove target"></button>
-                            <?php endif; ?>
-                            <div class="mb-3">
-                                <label class="form-label">Target <?php echo $index + 1; ?> *</label>
-                                <input type="text" class="form-control target-input" name="target_text[]" 
-                                       value="<?php echo htmlspecialchars($target_text); ?>" 
-                                       placeholder="Define a measurable target (e.g., 'Plant 100 trees')"
-                                       <?php echo ($canEditTargets) ? '' : 'readonly'; ?>>
-                                <?php if (!$canEditTargets && $index === 0): ?>
-                                <div class="form-text">Targets were set by an administrator and cannot be changed.</div>
-                                <?php endif; ?>
-                            </div>
-                            <div class="mb-2">
-                                <label class="form-label">Status Description</label>
-                                <textarea class="form-control status-description" name="target_status_description[]" rows="2" 
-                                          placeholder="Describe the current status or progress toward this target"
-                                          <?php echo (is_editable('status_text')) ? '' : 'readonly'; ?>><?php echo htmlspecialchars($status_description); ?></textarea>
-                                <?php if (!is_editable('status_text') && $index === 0): ?>
-                                <div class="form-text">Status descriptions were set by an administrator and cannot be changed.</div>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                        <?php endforeach; ?>
-                    </div>
-                    
-                    <?php if ($canEditTargets): ?>
-                    <button type="button" id="add-target-btn" class="btn btn-outline-secondary add-target-btn">
-                        <i class="fas fa-plus-circle me-1"></i> Add Another Target
+            </div>
+        </div>
+        <div class="card-footer d-flex justify-content-between">
+            <div>
+                <?php if ($is_draft): ?>
+                    <button type="submit" name="save_draft" class="btn btn-secondary me-2">
+                        <i class="fas fa-save me-1"></i> Save Draft
                     </button>
-                    <?php endif; ?>
-                </div>
-                
-                <!-- Remarks -->
-                <div class="mb-4">
-                    <h6 class="fw-bold mb-3">Additional Remarks</h6>
-                    <div class="mb-3">
-                        <label for="remarks" class="form-label">Remarks (Optional)</label>
-                        <textarea class="form-control" id="remarks" name="remarks" rows="3"
-                                  placeholder="Enter any additional notes or context about this program"
-                                  <?php echo (is_editable('remarks')) ? '' : 'readonly'; ?>><?php echo htmlspecialchars($remarks); ?></textarea>
-                        <?php if (!is_editable('remarks')): ?>
-                        <div class="form-text">Remarks were set by an administrator and cannot be changed.</div>
-                        <?php endif; ?>
-                    </div>
-                </div>
+                    <button type="submit" name="finalize_draft" class="btn btn-success">
+                        <i class="fas fa-check-circle me-1"></i> Finalize Submission
+                    </button>
+                <?php else: ?>
+                    <button type="submit" name="save_draft" class="btn btn-secondary me-2">
+                        <i class="fas fa-save me-1"></i> Save as Draft
+                    </button>
+                    <button type="submit" name="submit_program" class="btn btn-primary">
+                        <i class="fas fa-check-circle me-1"></i> Update Program
+                    </button>
+                <?php endif; ?>
             </div>
-            <div class="card-footer d-flex justify-content-between">
-                <a href="view_programs.php" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left me-1"></i> Back to Programs
-                </a>
-                <div>
-                    <?php if ($is_draft): ?>
-                        <button type="submit" name="save_draft" class="btn btn-secondary me-2">
-                            <i class="fas fa-save me-1"></i> Save Draft
-                        </button>
-                        <button type="submit" name="finalize_draft" class="btn btn-success">
-                            <i class="fas fa-check-circle me-1"></i> Finalize Submission
-                        </button>
-                    <?php else: ?>
-                        <button type="submit" name="save_draft" class="btn btn-secondary me-2">
-                            <i class="fas fa-save me-1"></i> Save as Draft
-                        </button>
-                        <button type="submit" name="submit_program" class="btn btn-primary">
-                            <i class="fas fa-check-circle me-1"></i> Update Program
-                        </button>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </form>
-    </div>
+        </div>
+    </form>
 </div>
 
 <script>

@@ -15,6 +15,12 @@
     <!-- Favicon -->
     <link rel="shortcut icon" href="<?php echo APP_URL; ?>/assets/img/favicon.ico" type="image/x-icon">
     
+    <!-- Preload critical fonts to avoid FOUT (Flash of Unstyled Text) -->
+    <link rel="preload" href="<?php echo APP_URL; ?>/assets/fonts/nunito/nunito-v26-latin-regular.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="<?php echo APP_URL; ?>/assets/fonts/nunito/nunito-v26-latin-600.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="<?php echo APP_URL; ?>/assets/fonts/nunito/nunito-v26-latin-700.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="<?php echo APP_URL; ?>/assets/fonts/fontawesome/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
+    
     <!-- CSS Libraries -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
@@ -101,6 +107,56 @@
         .dropdown-menu {
             margin-top: 0.125rem;
             z-index: 1000;
+        }
+    </style>
+    
+    <!-- Local fonts fallback CSS to avoid failed CDN downloads -->
+    <style>
+        /* Nunito font local fallback */
+        @font-face {
+            font-family: 'Nunito';
+            font-style: normal;
+            font-weight: 400;
+            src: local('Nunito Regular'), local('Nunito-Regular'),
+                 url('<?php echo APP_URL; ?>/assets/fonts/nunito/nunito-v26-latin-regular.woff2') format('woff2');
+            font-display: swap;
+        }
+        
+        @font-face {
+            font-family: 'Nunito';
+            font-style: normal;
+            font-weight: 500;
+            src: local('Nunito Medium'), local('Nunito-Medium'),
+                 url('<?php echo APP_URL; ?>/assets/fonts/nunito/nunito-v26-latin-500.woff2') format('woff2');
+            font-display: swap;
+        }
+        
+        @font-face {
+            font-family: 'Nunito';
+            font-style: normal;
+            font-weight: 600;
+            src: local('Nunito SemiBold'), local('Nunito-SemiBold'),
+                 url('<?php echo APP_URL; ?>/assets/fonts/nunito/nunito-v26-latin-600.woff2') format('woff2');
+            font-display: swap;
+        }
+        
+        @font-face {
+            font-family: 'Nunito';
+            font-style: normal;
+            font-weight: 700;
+            src: local('Nunito Bold'), local('Nunito-Bold'),
+                 url('<?php echo APP_URL; ?>/assets/fonts/nunito/nunito-v26-latin-700.woff2') format('woff2');
+            font-display: swap;
+        }
+        
+        /* Font Awesome local fallback */
+        @font-face {
+            font-family: 'Font Awesome 5 Free';
+            font-style: normal;
+            font-weight: 900;
+            src: local('Font Awesome 5 Free Solid'), local('FontAwesome5Free-Solid'),
+                 url('<?php echo APP_URL; ?>/assets/fonts/fontawesome/fa-solid-900.woff2') format('woff2');
+            font-display: swap;
         }
     </style>
 </head>

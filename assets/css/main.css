@@ -32,6 +32,7 @@
 @import 'pages/agency.css';
 @import 'pages/login.css';
 @import 'pages/home.css';
+@import 'pages/program.css'; /* Program pages styling */
 
 /* Shared components (if these exist) */
 /* If these files don't exist yet, comment out these lines */
