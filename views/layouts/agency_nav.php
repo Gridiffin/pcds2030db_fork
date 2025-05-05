@@ -13,16 +13,27 @@ $notifications_query = "SELECT n.* FROM notifications n
                        WHERE n.user_id = ? AND n.read_status = 0 
                        ORDER BY n.created_at DESC LIMIT 5";
 $stmt = $conn->prepare($notifications_query);
-$stmt->bind_param('i', $_SESSION['user_id']);
-$stmt->execute();
-$result = $stmt->get_result();
-$notifications = [];
-while ($row = $result->fetch_assoc()) {
-    $notifications[] = $row;
-}
 
-// Count unread notifications
-$unread_count = count($notifications);
+// Initialize empty notifications array
+$notifications = [];
+$unread_count = 0;
+
+// Check if prepare statement was successful
+if ($stmt) {
+    $stmt->bind_param('i', $_SESSION['user_id']);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    while ($row = $result->fetch_assoc()) {
+        $notifications[] = $row;
+    }
+    
+    // Count unread notifications
+    $unread_count = count($notifications);
+} else {
+    // Log the error
+    error_log("Failed to prepare notifications query: " . $conn->error);
+}
 
 // Format notifications for display
 if (!function_exists('get_notification_icon')) {
