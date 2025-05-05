@@ -27,16 +27,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Set is_draft flag based on which button was clicked
     $is_draft = isset($_POST['save_draft']);
     
+    // Process targets data from form
+    $targets = [];
+    if (isset($_POST['target_text']) && is_array($_POST['target_text'])) {
+        foreach ($_POST['target_text'] as $index => $text) {
+            if (!empty($text)) {
+                $targets[] = [
+                    'text' => $text,
+                    'status_description' => $_POST['target_status_description'][$index] ?? ''
+                ];
+            }
+        }
+    }
+    
     // Prepare data for submission
     $program_data = [
         'program_name' => $_POST['program_name'] ?? '',
         'description' => $_POST['description'] ?? '',
         'start_date' => $_POST['start_date'] ?? '',
         'end_date' => $_POST['end_date'] ?? '',
-        'target' => $_POST['target'] ?? '',
-        'status' => $_POST['status'] ?? 'not-started',
-        'status_date' => $_POST['status_date'] ?? date('Y-m-d'),
-        'status_text' => $_POST['status_text'] ?? ''
+        'rating' => $_POST['rating'] ?? 'not-started',
+        'remarks' => $_POST['remarks'] ?? '',
+        'targets' => $targets
     ];
     
     // Submit program data based on draft status
@@ -63,12 +75,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Set page title
-$pageTitle = 'Create New Program';
+$pageTitle = 'Create Program';
 
 // Additional scripts
 $additionalScripts = [
-    APP_URL . '/assets/js/utilities/status_utils.js',
-    APP_URL . '/assets/js/agency/program_form.js'
+    APP_URL . '/assets/js/agency/program_management.js',
+    APP_URL . '/assets/js/utilities/status_utils.js'
 ];
 
 // Include header
@@ -76,122 +88,373 @@ require_once '../layouts/header.php';
 
 // Include agency navigation
 require_once '../layouts/agency_nav.php';
+?>
 
-// Set up the page header variables
-$title = "Create New Program";
-$subtitle = "Create a new program for your agency";
-$headerStyle = 'light'; // Use light (white) style for inner pages
-$actions = [
-    [
-        'url' => 'view_programs.php',
-        'text' => 'Back to Programs',
-        'icon' => 'fas fa-arrow-left',
-        'class' => 'btn-outline-secondary'
-    ]
-];
+<style>
+    .target-entry {
+        position: relative;
+        padding: 1.5rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        margin-bottom: 1rem;
+        background-color: #f8f9fa;
+    }
+    
+    .target-entry .remove-target {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        font-size: 1.25rem;
+        cursor: pointer;
+        color: #dc3545;
+    }
+    
+    .add-target-btn {
+        margin-bottom: 1.5rem;
+    }
+    
+    /* Rating pills */
+    .rating-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .rating-pill {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        cursor: pointer;
+        font-weight: 500;
+        border: 2px solid transparent;
+        transition: all 0.2s ease;
+    }
+    
+    .rating-pill.active {
+        border-color: rgba(0,0,0,0.5);
+        box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+        transform: translateY(-2px);
+        font-weight: 600;
+    }
+    
+    .rating-pill.target-achieved {
+        background-color: #d1e7dd;
+        color: #0f5132;
+    }
+    
+    .rating-pill.target-achieved.active {
+        background-color: #c3e3d2;
+        box-shadow: 0 3px 6px rgba(15, 81, 50, 0.3);
+    }
+    
+    .rating-pill.on-track-yearly {
+        background-color: #fff3cd;
+        color: #664d03;
+    }
+    
+    .rating-pill.on-track-yearly.active {
+        background-color: #ffecb5;
+        box-shadow: 0 3px 6px rgba(102, 77, 3, 0.3);
+    }
+    
+    .rating-pill.severe-delay {
+        background-color: #f8d7da;
+        color: #842029;
+    }
+    
+    .rating-pill.severe-delay.active {
+        background-color: #f5c2c7;
+        box-shadow: 0 3px 6px rgba(132, 32, 41, 0.3);
+    }
+    
+    .rating-pill.not-started {
+        background-color: #e2e3e5;
+        color: #41464b;
+    }
+    
+    .rating-pill.not-started.active {
+        background-color: #d5d7da;
+        box-shadow: 0 3px 6px rgba(65, 70, 75, 0.3);
+    }
+</style>
 
-// Include the dashboard header component
-require_once '../../includes/dashboard_header.php';
-
-// Display any messages
-if (!empty($message)): ?>
-    <div class="alert alert-<?php echo $messageType; ?> alert-dismissible fade show" role="alert">
-        <div class="d-flex align-items-center">
-            <i class="fas fa-<?php echo $messageType === 'success' ? 'check-circle' : 'exclamation-circle'; ?> me-2"></i>
-            <div><?php echo $message; ?></div>
-            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+<div class="container-fluid px-4 py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-0">Create New Program</h1>
+            <p class="text-muted">Add a new program to track</p>
         </div>
     </div>
-<?php endif; ?>
 
-<!-- Program Creation Form -->
-<div class="card shadow-sm mb-4">
-    <div class="card-header">
-        <h5 class="card-title m-0">Program Information</h5>
-    </div>
-    <div class="card-body">
-        <form method="post" id="createProgramForm" class="program-form">
-            <!-- Basic Information -->
-            <div class="mb-4">
-                <h6 class="fw-bold mb-3">Basic Information</h6>
-                <div class="row g-3">
-                    <div class="col-md-12">
-                        <label for="program_name" class="form-label">Program Name *</label>
-                        <input type="text" class="form-control" id="program_name" name="program_name" required>
-                    </div>
-                    <div class="col-md-12">
-                        <label for="description" class="form-label">Description</label>
-                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
-                        <div class="form-text character-counter">0/500 characters</div>
-                    </div>
-                    <div class="col-md-6">
-                        <label for="start_date" class="form-label">Start Date</label>
-                        <input type="date" class="form-control" id="start_date" name="start_date">
-                    </div>
-                    <div class="col-md-6">
-                        <label for="end_date" class="form-label">End Date</label>
-                        <input type="date" class="form-control" id="end_date" name="end_date">
-                    </div>
-                </div>
+    <?php if ($message): ?>
+        <div class="alert alert-<?php echo $messageType; ?> alert-dismissible fade show" role="alert">
+            <?php echo $message; ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    <?php endif; ?>
+
+    <div class="card shadow-sm">
+        <form id="createProgramForm" method="post">
+            <div class="card-header">
+                <h5 class="card-title m-0">Program Information</h5>
             </div>
-            
-            <!-- Target Information -->
-            <div class="mb-4">
-                <h6 class="fw-bold mb-3">Target Information</h6>
-                <div class="row g-3">
-                    <div class="col-md-12">
-                        <label for="target" class="form-label">Target *</label>
-                        <input type="text" class="form-control" id="target" name="target" required>
-                        <div class="form-text">Define a measurable target for this program.</div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Status Information -->
-            <div class="mb-4">
-                <h6 class="fw-bold mb-3">Status Information</h6>
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <label for="status" class="form-label">Current Status *</label>
-                        <select class="form-select" id="status" name="status" required>
-                            <option value="target-achieved">Monthly Target Achieved</option>
-                            <option value="on-track-yearly">On Track for Year</option>
-                            <option value="severe-delay">Severe Delays</option>
-                            <option value="not-started" selected>Not Started</option>
-                        </select>
-                        <div class="form-text">Current status category of the program</div>
-                    </div>
-                    <div class="col-md-6">
-                        <label for="status_date" class="form-label">Status Date *</label>
-                        <input type="date" class="form-control" id="status_date" name="status_date" required value="<?php echo date('Y-m-d'); ?>">
-                        <div class="form-text">When was this status determined?</div>
-                    </div>
-                    <!-- Status Description Field - Updated title -->
+            <div class="card-body">
+                <!-- Basic Information -->
+                <div class="mb-4">
+                    <h6 class="fw-bold mb-3">Basic Information</h6>
                     <div class="mb-3">
-                        <label for="status_text" class="form-label">Status Description / Achievement</label>
-                        <textarea class="form-control" id="status_text" name="status_text" rows="3" placeholder="Describe current progress or achievements for this program..."><?php echo htmlspecialchars($status_text ?? ''); ?></textarea>
-                        <div class="form-text">Explain the current status in detail and describe what has been achieved so far.</div>
+                        <label for="program_name" class="form-label">Program Name *</label>
+                        <input type="text" class="form-control" id="program_name" name="program_name" required
+                               value="<?php echo htmlspecialchars($_POST['program_name'] ?? ''); ?>">
+                        <div class="form-text">The name of the program as it will appear in reports and dashboards.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Program Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"><?php echo htmlspecialchars($_POST['description'] ?? ''); ?></textarea>
+                        <div class="form-text">Optional description of the program's purpose and goals.</div>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="start_date" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date"
+                                   value="<?php echo htmlspecialchars($_POST['start_date'] ?? ''); ?>">
+                            <div class="form-text">When does/did the program start?</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="end_date" class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date"
+                                   value="<?php echo htmlspecialchars($_POST['end_date'] ?? ''); ?>">
+                            <div class="form-text">When is the program expected to end?</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Program Rating -->
+                <div class="mb-4">
+                    <h6 class="fw-bold mb-3">Program Rating</h6>
+                    <p class="text-muted mb-3">
+                        How would you rate the overall progress of this program?
+                    </p>
+                    
+                    <input type="hidden" id="rating" name="rating" value="<?php echo $_POST['rating'] ?? 'not-started'; ?>">
+                    
+                    <div class="rating-pills">
+                        <div class="rating-pill target-achieved <?php echo (isset($_POST['rating']) && $_POST['rating'] == 'target-achieved') ? 'active' : ''; ?>" data-rating="target-achieved">
+                            <i class="fas fa-check-circle me-2"></i> Monthly Target Achieved
+                        </div>
+                        <div class="rating-pill on-track-yearly <?php echo (isset($_POST['rating']) && $_POST['rating'] == 'on-track-yearly') ? 'active' : ''; ?>" data-rating="on-track-yearly">
+                            <i class="fas fa-calendar-check me-2"></i> On Track for Year
+                        </div>
+                        <div class="rating-pill severe-delay <?php echo (isset($_POST['rating']) && $_POST['rating'] == 'severe-delay') ? 'active' : ''; ?>" data-rating="severe-delay">
+                            <i class="fas fa-exclamation-triangle me-2"></i> Severe Delays
+                        </div>
+                        <div class="rating-pill not-started <?php echo (!isset($_POST['rating']) || $_POST['rating'] == 'not-started') ? 'active' : ''; ?>" data-rating="not-started">
+                            <i class="fas fa-clock me-2"></i> Not Started
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Targets Section -->
+                <div class="mb-4">
+                    <h6 class="fw-bold mb-3">Program Targets</h6>
+                    <p class="text-muted mb-3">
+                        Define one or more targets for this program, each with its own status description.
+                    </p>
+                    
+                    <div id="targets-container">
+                        <div class="target-entry">
+                            <div class="mb-3">
+                                <label class="form-label">Target 1 *</label>
+                                <input type="text" class="form-control target-input" name="target_text[]" 
+                                       placeholder="Define a measurable target (e.g., 'Plant 100 trees')"
+                                       value="<?php echo htmlspecialchars($_POST['target_text'][0] ?? ''); ?>">
+                                <div class="form-text">Define a specific, measurable target for this program.</div>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Status Description</label>
+                                <textarea class="form-control status-description" name="target_status_description[]" rows="2" 
+                                          placeholder="Describe the current status or progress toward this target"><?php echo htmlspecialchars($_POST['target_status_description'][0] ?? ''); ?></textarea>
+                                <div class="form-text">Describe the current status or achievement toward this target.</div>
+                            </div>
+                        </div>
+                        
+                        <?php
+                        // Restore additional targets from previous form submission if any
+                        if (isset($_POST['target_text']) && is_array($_POST['target_text']) && count($_POST['target_text']) > 1) {
+                            for ($i = 1; $i < count($_POST['target_text']); $i++) {
+                                if (!empty($_POST['target_text'][$i])) {
+                                    echo '<div class="target-entry">';
+                                    echo '<button type="button" class="btn-close remove-target" aria-label="Remove target"></button>';
+                                    echo '<div class="mb-3">';
+                                    echo '<label class="form-label">Target ' . ($i + 1) . ' *</label>';
+                                    echo '<input type="text" class="form-control target-input" name="target_text[]" ';
+                                    echo 'value="' . htmlspecialchars($_POST['target_text'][$i]) . '" ';
+                                    echo 'placeholder="Define a measurable target (e.g., \'Plant 100 trees\')">';
+                                    echo '<div class="form-text">Define a specific, measurable target for this program.</div>';
+                                    echo '</div>';
+                                    echo '<div class="mb-2">';
+                                    echo '<label class="form-label">Status Description</label>';
+                                    echo '<textarea class="form-control status-description" name="target_status_description[]" rows="2" ';
+                                    echo 'placeholder="Describe the current status or progress toward this target">' . htmlspecialchars($_POST['target_status_description'][$i] ?? '') . '</textarea>';
+                                    echo '<div class="form-text">Describe the current status or achievement toward this target.</div>';
+                                    echo '</div>';
+                                    echo '</div>';
+                                }
+                            }
+                        }
+                        ?>
+                    </div>
+                    
+                    <button type="button" id="add-target-btn" class="btn btn-outline-secondary add-target-btn">
+                        <i class="fas fa-plus-circle me-1"></i> Add Another Target
+                    </button>
+                </div>
+                
+                <!-- Remarks -->
+                <div class="mb-4">
+                    <h6 class="fw-bold mb-3">Additional Remarks</h6>
+                    <div class="mb-3">
+                        <label for="remarks" class="form-label">Remarks (Optional)</label>
+                        <textarea class="form-control" id="remarks" name="remarks" rows="3"
+                                  placeholder="Enter any additional notes or context about this program"><?php echo htmlspecialchars($_POST['remarks'] ?? ''); ?></textarea>
+                        <div class="form-text">Any additional information that doesn't fit elsewhere.</div>
                     </div>
                 </div>
             </div>
-            
-            <!-- Optional: Hidden fields for JSON structure -->
-            <input type="hidden" name="content_structure" value="json">
-            
-            <div class="d-flex justify-content-end mt-4">
-                <a href="view_programs.php" class="btn btn-outline-secondary me-2">
-                    <i class="fas fa-times me-1"></i> Cancel
+            <div class="card-footer d-flex justify-content-between">
+                <a href="view_programs.php" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i> Cancel
                 </a>
-                <button type="submit" name="save_draft" class="btn btn-secondary me-2">
-                    <i class="fas fa-save me-1"></i> Save as Draft
-                </button>
-                <button type="submit" name="submit_program" class="btn btn-primary">
-                    <i class="fas fa-paper-plane me-1"></i> Submit Final
-                </button>
+                <div>
+                    <button type="submit" name="save_draft" class="btn btn-secondary me-2" id="saveDraftBtn">
+                        <i class="fas fa-save me-1"></i> Save as Draft
+                    </button>
+                    <button type="submit" name="submit_program" class="btn btn-primary" id="createProgramBtn">
+                        <i class="fas fa-check-circle me-1"></i> Create Program
+                    </button>
+                </div>
             </div>
         </form>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Rating pills selection
+        const ratingPills = document.querySelectorAll('.rating-pill');
+        const ratingInput = document.getElementById('rating');
+        
+        ratingPills.forEach(pill => {
+            pill.addEventListener('click', function() {
+                // Remove active class from all pills
+                ratingPills.forEach(p => p.classList.remove('active'));
+                
+                // Add active class to clicked pill
+                this.classList.add('active');
+                
+                // Update hidden input
+                ratingInput.value = this.getAttribute('data-rating');
+            });
+        });
+        
+        // Add target functionality
+        const addTargetBtn = document.getElementById('add-target-btn');
+        const targetsContainer = document.getElementById('targets-container');
+        
+        // Keep track of the highest target number used
+        let highestTargetNumber = document.querySelectorAll('.target-entry').length;
+        
+        // Function to update target numbers sequentially
+        function updateTargetNumbers() {
+            const targetEntries = document.querySelectorAll('.target-entry');
+            targetEntries.forEach((entry, index) => {
+                const label = entry.querySelector('.form-label');
+                if (label) {
+                    label.textContent = `Target ${index + 1} *`;
+                }
+            });
+        }
+        
+        addTargetBtn.addEventListener('click', function() {
+            // Increment the highest target number
+            highestTargetNumber++;
+            
+            const targetEntry = document.createElement('div');
+            targetEntry.className = 'target-entry';
+            
+            const html = `
+                <button type="button" class="btn-close remove-target" aria-label="Remove target"></button>
+                <div class="mb-3">
+                    <label class="form-label">Target ${highestTargetNumber} *</label>
+                    <input type="text" class="form-control target-input" name="target_text[]" 
+                           placeholder="Define a measurable target (e.g., 'Plant 100 trees')">
+                    <div class="form-text">Define a specific, measurable target for this program.</div>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Status Description</label>
+                    <textarea class="form-control status-description" name="target_status_description[]" rows="2" 
+                              placeholder="Describe the current status or progress toward this target"></textarea>
+                    <div class="form-text">Describe the current status or achievement toward this target.</div>
+                </div>
+            `;
+            
+            targetEntry.innerHTML = html;
+            targetsContainer.appendChild(targetEntry);
+            
+            // Attach remove event listener to the new target
+            const removeBtn = targetEntry.querySelector('.remove-target');
+            if (removeBtn) {
+                removeBtn.addEventListener('click', function() {
+                    targetEntry.remove();
+                    // Update target numbers after removing
+                    updateTargetNumbers();
+                });
+            }
+        });
+        
+        // Initialize existing remove buttons
+        document.querySelectorAll('.remove-target').forEach(btn => {
+            btn.addEventListener('click', function() {
+                this.closest('.target-entry').remove();
+                // Update target numbers after removing
+                updateTargetNumbers();
+            });
+        });
+        
+        // Form validation
+        document.getElementById('createProgramForm').addEventListener('submit', function(e) {
+            const programName = document.getElementById('program_name').value;
+            const targetInputs = document.querySelectorAll('.target-input');
+            let hasFilledTarget = false;
+            
+            // Validate program name
+            if (!programName.trim()) {
+                alert('Please enter a program name.');
+                e.preventDefault();
+                return false;
+            }
+            
+            // For non-draft submissions, validate at least one target
+            if (!e.submitter || !e.submitter.name || e.submitter.name !== 'save_draft') {
+                targetInputs.forEach(input => {
+                    if (input.value.trim()) {
+                        hasFilledTarget = true;
+                    }
+                });
+                
+                if (!hasFilledTarget) {
+                    alert('Please add at least one target for this program.');
+                    e.preventDefault();
+                    return false;
+                }
+            }
+            
+            return true;
+        });
+    });
+</script>
 
 <?php
 // Include footer
