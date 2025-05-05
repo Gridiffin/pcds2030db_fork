@@ -139,7 +139,7 @@ function create_agency_program($data) {
     }
     
     // Validate and sanitize inputs
-    $validated = validate_form_input($data, ['program_name', 'target', 'status']);
+    $validated = validate_form_input($data, ['program_name', 'rating']);
     if (isset($validated['error'])) {
         return $validated;
     }
@@ -148,19 +148,34 @@ function create_agency_program($data) {
     $description = $validated['description'] ?? '';
     $start_date = $validated['start_date'] ?? null;
     $end_date = $validated['end_date'] ?? null;
-    $target = $validated['target'];
-    $status = $validated['status'];
-    $status_date = $validated['status_date'] ?? null;
-    $status_text = $validated['status_text'] ?? '';
+    $rating = $validated['rating'];
+    
+    // Get targets array
+    $targets = [];
+    if (isset($data['targets']) && is_array($data['targets'])) {
+        foreach ($data['targets'] as $target_data) {
+            if (!empty($target_data['text'])) {
+                $targets[] = [
+                    'target_text' => $conn->real_escape_string($target_data['text']),
+                    'status_description' => $conn->real_escape_string($target_data['status_description'] ?? '')
+                ];
+            }
+        }
+    }
+    
+    // Validate at least one target
+    if (empty($targets)) {
+        return format_error('At least one target is required');
+    }
     
     // Validate dates
     if ($start_date && $end_date && strtotime($start_date) > strtotime($end_date)) {
         return format_error('End date cannot be before start date');
     }
     
-    // Validate status value - use the new status values
-    if (!in_array($status, ['target-achieved', 'on-track-yearly', 'severe-delay', 'not-started'])) {
-        return ['error' => 'Invalid status value'];
+    // Validate rating value
+    if (!in_array($rating, ['target-achieved', 'on-track-yearly', 'severe-delay', 'not-started'])) {
+        return ['error' => 'Invalid rating value'];
     }
     
     $user_id = $_SESSION['user_id'];
@@ -200,30 +215,22 @@ function create_agency_program($data) {
             throw new Exception('No active reporting period found');
         }
         
-        // Insert submission based on schema
-        if ($has_content_json) {
-            $content = json_encode([
-                'target' => $target,
-                'status_date' => $status_date,
-                'status_text' => $status_text
-            ]);
-            
-            $sub_query = "INSERT INTO program_submissions (program_id, period_id, submitted_by, 
-                        content_json, status) 
-                        VALUES (?, ?, ?, ?, ?)";
-            
-            $stmt = $conn->prepare($sub_query);
-            $stmt->bind_param("iiiss", $program_id, $current_period['period_id'], $user_id, 
-                            $content, $status);
-        } else {
-            $sub_query = "INSERT INTO program_submissions (program_id, period_id, submitted_by, 
-                        target, status, status_date) 
-                        VALUES (?, ?, ?, ?, ?, ?)";
-            
-            $stmt->prepare($sub_query);
-            $stmt->bind_param("iiisss", $program_id, $current_period['period_id'], $user_id, 
-                            $target, $status, $status_date);
-        }
+        // Insert submission with the new structure
+        // The content_json now contains a rating and an array of targets
+        $content = [
+            'rating' => $rating,
+            'targets' => $targets
+        ];
+        
+        $content_json = json_encode($content);
+        
+        $sub_query = "INSERT INTO program_submissions (program_id, period_id, submitted_by, 
+                    content_json, status) 
+                    VALUES (?, ?, ?, ?, ?)";
+        
+        $stmt = $conn->prepare($sub_query);
+        $stmt->bind_param("iiiss", $program_id, $current_period['period_id'], $user_id, 
+                        $content_json, $rating);
         
         $stmt->execute();
         $conn->commit();
@@ -257,10 +264,29 @@ function create_agency_program_draft($data) {
     $description = $validated['description'] ?? '';
     $start_date = $validated['start_date'] ?? null;
     $end_date = $validated['end_date'] ?? null;
-    $target = $validated['target'] ?? '';
-    $status = $validated['status'] ?? 'not-started';
-    $status_date = $validated['status_date'] ?? date('Y-m-d');
-    $status_text = $validated['status_text'] ?? '';
+    $rating = $validated['rating'] ?? 'not-started';
+    
+    // Get targets array (even empty for drafts)
+    $targets = [];
+    if (isset($data['targets']) && is_array($data['targets'])) {
+        foreach ($data['targets'] as $target_data) {
+            if (!empty($target_data['text'])) {
+                $targets[] = [
+                    'target_text' => $conn->real_escape_string($target_data['text']),
+                    'status_description' => $conn->real_escape_string($target_data['status_description'] ?? '')
+                ];
+            }
+        }
+    }
+    
+    // For drafts, we don't require targets to be filled out
+    // Just add an empty target if none provided
+    if (empty($targets)) {
+        $targets[] = [
+            'target_text' => '',
+            'status_description' => ''
+        ];
+    }
     
     // Validate dates if provided
     if ($start_date && $end_date && strtotime($start_date) > strtotime($end_date)) {
@@ -304,37 +330,23 @@ function create_agency_program_draft($data) {
             throw new Exception('No active reporting period found');
         }
         
-        // Insert submission as draft based on schema
-        if ($has_content_json) {
-            $content = json_encode([
-                'target' => $target,
-                'status_date' => $status_date,
-                'status_text' => $status_text,
-                'achievement' => '',
-                'remarks' => '',
-                'status' => $status // Include status in JSON content for consistency
-            ]);
-            
-            $is_draft = 1; // Set as draft
-            
-            $sub_query = "INSERT INTO program_submissions (program_id, period_id, submitted_by, 
-                        content_json, status, is_draft) 
-                        VALUES (?, ?, ?, ?, ?, ?)";
-            
-            $stmt = $conn->prepare($sub_query);
-            $stmt->bind_param("iiissi", $program_id, $current_period['period_id'], $user_id, 
-                            $content, $status, $is_draft);
-        } else {
-            $is_draft = 1; // Set as draft
-            
-            $sub_query = "INSERT INTO program_submissions (program_id, period_id, submitted_by, 
-                        target, status, status_date, is_draft) 
-                        VALUES (?, ?, ?, ?, ?, ?, ?)";
-            
-            $stmt = $conn->prepare($sub_query);
-            $stmt->bind_param("iiisssi", $program_id, $current_period['period_id'], $user_id, 
-                            $target, $status, $status_date, $is_draft);
-        }
+        // Insert submission as draft with new structure
+        $content = [
+            'rating' => $rating,
+            'targets' => $targets,
+            'remarks' => $data['remarks'] ?? ''
+        ];
+        
+        $content_json = json_encode($content);
+        $is_draft = 1; // Set as draft
+        
+        $sub_query = "INSERT INTO program_submissions (program_id, period_id, submitted_by, 
+                    content_json, status, is_draft) 
+                    VALUES (?, ?, ?, ?, ?, ?)";
+        
+        $stmt = $conn->prepare($sub_query);
+        $stmt->bind_param("iiissi", $program_id, $current_period['period_id'], $user_id, 
+                        $content_json, $rating, $is_draft);
         
         $stmt->execute();
         $conn->commit();
@@ -369,39 +381,68 @@ function submit_program_data($data, $is_draft = false) {
     
     // Only perform full validation if not a draft
     if (!$is_draft) {
-        $validation_fields = ['target', 'status'];
+        $validation_fields = ['rating'];
         $validated = validate_form_input($data, $validation_fields);
         if (isset($validated['error'])) {
             return $validated;
+        }
+        
+        // Validate at least one target for non-drafts
+        if (empty($data['targets']) || !is_array($data['targets'])) {
+            return ['error' => 'At least one target is required'];
         }
     } else {
         // Basic validation even for drafts
         $validated = [];
         foreach ($data as $key => $value) {
-            $validated[$key] = $conn->real_escape_string($value);
+            if (!is_array($value)) {
+                $validated[$key] = $conn->real_escape_string($value);
+            }
         }
     }
     
-    // Extract data
-    $target = $validated['target'] ?? '';
-    $achievement = $validated['achievement'] ?? '';
-    $status = $validated['status'] ?? 'not-started';
-    $status_date = $validated['status_date'] ?? date('Y-m-d');
-    $status_text = $validated['status_text'] ?? '';
+    // Extract program-level data
+    $rating = $validated['rating'] ?? 'not-started';
     $remarks = $validated['remarks'] ?? '';
     
     // Extract timeline data for program table update
     $start_date = $validated['start_date'] ?? null;
     $end_date = $validated['end_date'] ?? null;
     
-    // Create JSON content - Include status in the JSON content
+    // Process targets
+    $targets = [];
+    if (isset($data['targets']) && is_array($data['targets'])) {
+        foreach ($data['targets'] as $target_data) {
+            // For non-drafts, require target text
+            if (!$is_draft && empty($target_data['text'])) {
+                continue;
+            }
+            
+            $targets[] = [
+                'target_text' => $conn->real_escape_string($target_data['text'] ?? ''),
+                'status_description' => $conn->real_escape_string($target_data['status_description'] ?? '')
+            ];
+        }
+    }
+    
+    // For non-drafts, require at least one filled target
+    if (!$is_draft && empty($targets)) {
+        return ['error' => 'At least one target with text is required'];
+    }
+    
+    // If it's a draft and no targets provided, add an empty one
+    if ($is_draft && empty($targets)) {
+        $targets[] = [
+            'target_text' => '',
+            'status_description' => ''
+        ];
+    }
+    
+    // Create new JSON content with the updated structure
     $content = [
-        'target' => $target,
-        'status_date' => $status_date,
-        'status_text' => $status_text,
-        'achievement' => $achievement,
-        'remarks' => $remarks,
-        'status' => $status // Store status in JSON for consistency
+        'rating' => $rating,
+        'targets' => $targets,
+        'remarks' => $remarks
     ];
     
     $content_json = json_encode($content);
@@ -447,13 +488,13 @@ function submit_program_data($data, $is_draft = false) {
             $query = "UPDATE program_submissions SET content_json = ?, status = ?, is_draft = ?, 
                      updated_at = NOW() WHERE submission_id = ?";
             $stmt = $conn->prepare($query);
-            $stmt->bind_param("ssii", $content_json, $status, $is_draft, $submission_id);
+            $stmt->bind_param("ssii", $content_json, $rating, $is_draft, $submission_id);
         } else {
             // Create new submission
             $query = "INSERT INTO program_submissions (program_id, period_id, submitted_by, 
                      content_json, status, is_draft) VALUES (?, ?, ?, ?, ?, ?)";
             $stmt = $conn->prepare($query);
-            $stmt->bind_param("iiissi", $program_id, $period_id, $user_id, $content_json, $status, $is_draft);
+            $stmt->bind_param("iiissi", $program_id, $period_id, $user_id, $content_json, $rating, $is_draft);
         }
         
         $stmt->execute();
