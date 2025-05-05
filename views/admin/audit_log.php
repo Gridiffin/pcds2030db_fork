@@ -24,6 +24,9 @@ $pageTitle = 'Audit Log';
 require_once '../layouts/header.php';
 ?>
 
+<!-- Import Google Material Icons -->
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
 <link rel="stylesheet" href="../../assets/css/custom/audit_log.css">
 
 <?php
@@ -35,6 +38,22 @@ require_once '../layouts/admin_nav.php';
     <p class="text-muted">This page displays audit logs</p>
 
     <?php
+    // Get filter values from GET parameters
+    $filter_event_type = $_GET['event_type'] ?? 'All';
+    $filter_table = $_GET['table_name'] ?? 'All';
+
+    // Filter audit entries based on filters
+    function filter_audit_entries($entries, $event_type, $table_name) {
+        return array_filter($entries, function($entry) use ($event_type, $table_name) {
+            $event_type_match = ($event_type === 'All') || ($entry['event_type'] === $event_type);
+            $table_match = ($table_name === 'All') || ($entry['table_name'] === $table_name);
+            return $event_type_match && $table_match;
+        });
+    }
+
+    // Filtered audit entries
+    $filtered_audit_entries = [];
+
     // Connect to database
     global $conn;
 
@@ -138,26 +157,63 @@ require_once '../layouts/admin_nav.php';
     usort($audit_entries, function($a, $b) {
         return strtotime($b['event_date']) <=> strtotime($a['event_date']);
     });
+
+    // Apply filters
+    $filtered_audit_entries = filter_audit_entries($audit_entries, $filter_event_type, $filter_table);
     ?>
 
-    <?php if (empty($audit_entries)): ?>
+    <!-- Filter form -->
+    <form method="get" class="mb-4 d-flex gap-3 align-items-center">
+        <div>
+            <label for="event_type" class="form-label">Filter by Action:</label>
+            <select name="event_type" id="event_type" class="form-select">
+                <?php
+                $event_types = ['All', 'Created', 'Updated'];
+                foreach ($event_types as $type) {
+                    $selected = ($filter_event_type === $type) ? 'selected' : '';
+                    echo "<option value=\"" . htmlspecialchars($type) . "\" $selected>" . htmlspecialchars($type) . "</option>";
+                }
+                ?>
+            </select>
+        </div>
+        <div>
+            <label for="table_name" class="form-label">Filter by Table:</label>
+            <select name="table_name" id="table_name" class="form-select">
+                <option value="All" <?php echo ($filter_table === 'All') ? 'selected' : ''; ?>>All</option>
+                <?php
+                foreach ($tables as $table) {
+                    $selected = ($filter_table === $table) ? 'selected' : '';
+                    $nice_name = $nice_table_names[$table] ?? ucwords(str_replace('_', ' ', $table));
+                    echo "<option value=\"" . htmlspecialchars($table) . "\" $selected>" . htmlspecialchars($nice_name) . "</option>";
+                }
+                ?>
+            </select>
+        </div>
+        <div>
+            <button type="submit" class="btn btn-primary mt-4">Apply Filters</button>
+        </div>
+    </form>
+
+    <?php if (empty($filtered_audit_entries)): ?>
         <div class="alert alert-info">No audit log entries found.</div>
     <?php else: ?>
-        <?php
-        // Map table names to nicer display names
-        $nice_table_names = [
-            'sector_metrics_data' => 'Metrics Data',
-            'users' => 'Users',
-            'programs' => 'Programs'
-        ];
-        ?>
-        <div class="audit-log">
-            <?php foreach ($audit_entries as $entry): ?>
+        <div class="audit-log" style="max-width: auto; margin-left: auto; margin-right: auto;">
+            <?php foreach ($filtered_audit_entries as $entry): ?>
                 <?php
                 $nice_table_name = $nice_table_names[$entry['table_name']] ?? ucwords(str_replace('_', ' ', $entry['table_name']));
                 ?>
                 <div class="audit-log-entry audit-log-bubble">
-                    <span style="font-weight: bold;">
+                    <span style="font-weight: bold; display: flex; align-items: center; gap: 6px;">
+                        <?php
+                        $icon = '';
+                        $color = '';
+                        if ($entry['event_type'] === 'Created') {
+                            $icon = '<span class="material-icons" style="color: green; font-size: 1.2em;">playlist_add</span>';
+                        } elseif ($entry['event_type'] === 'Updated') {
+                            $icon = '<span class="material-icons" style="color: goldenrod; font-size: 1.2em;">edit_square</span>';
+                        }
+                        ?>
+                        <?php echo $icon; ?>
                         <?php echo htmlspecialchars($entry['record_id'] ?? 'N/A'); ?>
                         was <?php echo htmlspecialchars($entry['event_type']); ?>
                         at <small style="color: #666;"><?php echo htmlspecialchars($entry['event_date']); ?></small>
