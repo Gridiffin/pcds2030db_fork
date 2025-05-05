@@ -113,13 +113,15 @@ require_once '../layouts/admin_nav.php';
                     'event_type' => 'Created',
                     'event_date' => $data_row['created_at']
                 ];
-                // Add updated_at entry
-                $rows[] = [
-                    'table_name' => $table,
-                    'record_id' => $display_id,
-                    'event_type' => 'Updated',
-                    'event_date' => $data_row['updated_at']
-                ];
+                // Add updated_at entry only if different from created_at
+                if ($data_row['updated_at'] !== $data_row['created_at']) {
+                    $rows[] = [
+                        'table_name' => $table,
+                        'record_id' => $display_id,
+                        'event_type' => 'Updated',
+                        'event_date' => $data_row['updated_at']
+                    ];
+                }
             }
         }
         $stmt->close();
