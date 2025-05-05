@@ -31,7 +31,7 @@ if (!$program_id) {
 }
 
 // Get program details with submissions history
-$program = get_program_details($program_id); // Using the function from admin_functions.php
+$program = get_admin_program_details($program_id); // Using the admin function from statistics.php
 
 if (!$program) {
     $_SESSION['message'] = 'Program not found.';
@@ -145,8 +145,16 @@ require_once '../../includes/dashboard_header.php';
     <?php if (isset($program['current_submission']) && !empty($program['current_submission'])): ?>
     <div class="col-lg-12 mb-4">
         <div class="card shadow-sm">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title m-0">Current Period Submission</h5>
+                <?php if (isset($program['current_submission']['is_draft']) && $program['current_submission']['is_draft'] == 0): ?>
+                <div>
+                    <a href="reopen_program.php?program_id=<?php echo $program_id; ?>&submission_id=<?php echo $program['current_submission']['submission_id']; ?>" 
+                       class="btn btn-sm btn-warning" title="Allow agency to edit this submission again">
+                        <i class="fas fa-lock-open me-1"></i> Reopen Submission
+                    </a>
+                </div>
+                <?php endif; ?>
             </div>
             <div class="card-body">
                 <div class="row">
@@ -172,6 +180,11 @@ require_once '../../includes/dashboard_header.php';
                             <dt class="col-sm-4">Reporting Period</dt>
                             <dd class="col-sm-8">
                                 Q<?php echo $program['current_submission']['quarter']; ?>-<?php echo $program['current_submission']['year']; ?>
+                                <?php if (isset($program['current_submission']['is_draft']) && $program['current_submission']['is_draft'] == 1): ?>
+                                    <span class="badge bg-secondary ms-1">Draft</span>
+                                <?php else: ?>
+                                    <span class="badge bg-success ms-1">Final</span>
+                                <?php endif; ?>
                             </dd>
                             
                             <dt class="col-sm-4">Submission Date</dt>
