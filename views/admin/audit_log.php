@@ -126,7 +126,9 @@ require_once '../layouts/admin_nav.php';
         $rows = [];
         if ($data_result) {
             while ($data_row = $data_result->fetch_assoc()) {
-                // $display_id = $data_row[$pk_column];
+                // Initialize display_id with the record_id
+                $display_id = $data_row['record_id'];
+                // Override with name column if available
                 if ($name_column && isset($data_row[$name_column])) {
                     $display_id = $data_row[$name_column];
                 }
