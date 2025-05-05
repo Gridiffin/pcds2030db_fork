@@ -167,6 +167,9 @@ require_once '../layouts/admin_nav.php';
                                 <td><?php echo date('M j, Y', strtotime($metric['created_at'])); ?></td>
                                 <td><?php echo date('M j, Y', strtotime($metric['updated_at'])); ?></td>
                                 <td>
+                                    <a href="unsubmit.php?metric_id=<?php echo $metric['metric_id']; ?>" class="btn btn-sm btn-secondary me-1" role="button">
+                                        <i class="fas fa-eye me-1"></i> Unsubmit
+                                    </a>                                    
                                     <a href="view_metric.php?metric_id=<?php echo $metric['metric_id']; ?>" class="btn btn-sm btn-info me-1" role="button">
                                         <i class="fas fa-eye me-1"></i> View
                                     </a>
