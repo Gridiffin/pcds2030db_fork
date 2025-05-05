@@ -39,6 +39,24 @@ if (!$program) {
     exit;
 }
 
+// Check if this program has a finalized (non-draft) submission for the current period
+// If it does, redirect to the program details page, as editing is not allowed
+if (isset($program['submissions']) && !empty($program['submissions'])) {
+    $current_period = get_current_reporting_period();
+    foreach ($program['submissions'] as $submission) {
+        if (isset($submission['period_id']) && 
+            $current_period && 
+            $submission['period_id'] == $current_period['period_id'] && 
+            (!isset($submission['is_draft']) || $submission['is_draft'] == 0)) {
+            // Found a finalized submission for current period - redirect to details page
+            $_SESSION['message'] = 'This program has already been finalized for the current reporting period and cannot be edited.';
+            $_SESSION['message_type'] = 'info';
+            header('Location: program_details.php?id=' . $program_id);
+            exit;
+        }
+    }
+}
+
 // Get current reporting period for submissions
 $current_period = get_current_reporting_period();
 

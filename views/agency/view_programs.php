@@ -74,6 +74,35 @@ if (!function_exists('get_agency_programs')) {
 // Get programs data
 $programs = get_agency_programs($agency_id);
 
+// Separate programs into drafts and finalized submissions
+$draft_programs = [];
+$finalized_programs = [];
+
+// Get current reporting period once for all programs
+$current_period = get_current_reporting_period();
+
+// Process programs and separate into appropriate arrays
+foreach ($programs as $program) {
+    // Determine if this is a draft submission
+    $is_draft = isset($program['is_draft']) && $program['is_draft'] ? true : false;
+    
+    // Determine if program is finalized for current period
+    $is_finalized = false;
+    if ($current_period && 
+        isset($program['period_id']) && 
+        $current_period['period_id'] == $program['period_id'] && 
+        isset($program['is_draft']) && 
+        $program['is_draft'] == 0) {
+        $is_finalized = true;
+    }
+    
+    if ($is_draft || !$is_finalized) {
+        $draft_programs[] = $program;
+    } else {
+        $finalized_programs[] = $program;
+    }
+}
+
 // Additional scripts - Make sure view_programs.js is loaded
 $additionalScripts = [
     APP_URL . '/assets/js/utilities/status_utils.js',
@@ -113,26 +142,26 @@ require_once '../../includes/dashboard_header.php';
     </div>
 <?php endif; ?>
 
-<!-- Filter Card -->
+<!-- Draft Programs Card -->
 <div class="card shadow-sm mb-4 w-100">
-    <div class="card-header bg-primary text-white">
-        <h5 class="card-title m-0">
-            <i class="fas fa-filter me-2 text-white"></i>Filter Programs
-        </h5>
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title m-0">Draft Programs</h5>
     </div>
-    <div class="card-body">
+    
+    <!-- Draft Programs Filters -->
+    <div class="card-body pb-0">
         <div class="row g-3">
             <div class="col-md-5 col-sm-12">
-                <label for="programSearch" class="form-label">Search</label>
+                <label for="draftProgramSearch" class="form-label">Search</label>
                 <div class="input-group">
                     <span class="input-group-text"><i class="fas fa-search"></i></span>
-                    <input type="text" class="form-control" id="programSearch" placeholder="Search by program name">
+                    <input type="text" class="form-control" id="draftProgramSearch" placeholder="Search by program name">
                 </div>
             </div>
             <div class="col-md-3 col-sm-6">
-                <label for="statusFilter" class="form-label">Status</label>
-                <select class="form-select" id="statusFilter">
-                    <option value="">All Statuses</option>
+                <label for="draftRatingFilter" class="form-label">Rating</label>
+                <select class="form-select" id="draftRatingFilter">
+                    <option value="">All Ratings</option>
                     <option value="target-achieved">Monthly Target Achieved</option>
                     <option value="on-track-yearly">On Track for Year</option>
                     <option value="severe-delay">Severe Delays</option>
@@ -140,55 +169,41 @@ require_once '../../includes/dashboard_header.php';
                 </select>
             </div>
             <div class="col-md-3 col-sm-6">
-                <label for="programTypeFilter" class="form-label">Program Type</label>
-                <select class="form-select" id="programTypeFilter">
+                <label for="draftTypeFilter" class="form-label">Program Type</label>
+                <select class="form-select" id="draftTypeFilter">
                     <option value="">All Types</option>
                     <option value="assigned">Assigned</option>
                     <option value="created">Agency-Created Programs</option>
                 </select>
             </div>
             <div class="col-md-1 col-sm-12 d-flex align-items-end">
-                <button id="resetFilters" class="btn btn-outline-secondary w-100">
+                <button id="resetDraftFilters" class="btn btn-outline-secondary w-100">
                     <i class="fas fa-undo me-1"></i> Reset
                 </button>
             </div>
         </div>
-    </div>
-</div>
-
-<!-- Filter indicator will be inserted here by JavaScript -->
-
-<!-- All Programs Card -->
-<div class="card shadow-sm mb-4 w-100">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="card-title m-0">All Programs</h5>
+        <div id="draftFilterBadges" class="filter-badges mt-2"></div>
     </div>
     
-    <div class="card-body p-0">
+    <div class="card-body pt-2 p-0">
         <div class="table-responsive">
-            <table class="table table-hover table-custom mb-0" id="programsTable">
+            <table class="table table-hover table-custom mb-0" id="draftProgramsTable">
                 <thead class="table-light">
                     <tr>
                         <th class="sortable" data-sort="name">Program Name <i class="fas fa-sort ms-1"></i></th>
-                        <th class="sortable" data-sort="status">Status <i class="fas fa-sort ms-1"></i></th>
+                        <th class="sortable" data-sort="rating">Rating <i class="fas fa-sort ms-1"></i></th>
                         <th class="sortable" data-sort="date">Last Updated <i class="fas fa-sort ms-1"></i></th>
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if (empty($programs)): ?>
+                    <?php if (empty($draft_programs)): ?>
                         <tr>
-                            <td colspan="4" class="text-center py-4">No programs found.</td>
+                            <td colspan="4" class="text-center py-4">No draft programs found.</td>
                         </tr>
                     <?php else: ?>
                         <?php 
-                        // Get current reporting period once for all programs
-                        $current_period = get_current_reporting_period();
-                        
-                        foreach ($programs as $program): 
-                            // Determine if this is a draft submission
-                            $is_draft = isset($program['is_draft']) && $program['is_draft'] ? true : false;
-                            
+                        foreach ($draft_programs as $program): 
                             // Determine program type (assigned or custom)
                             $is_assigned = isset($program['is_assigned']) && $program['is_assigned'] ? true : false;
                             
@@ -211,17 +226,8 @@ require_once '../../includes/dashboard_header.php';
                                 $current_status = 'not-started';
                             }
                             
-                            // Determine if program can be edited
-                            $canEdit = true;
-                            
-                            // Program cannot be edited if there's a finalized submission for the current period
-                            if ($current_period && 
-                                isset($program['period_id']) && 
-                                $current_period['period_id'] == $program['period_id'] && 
-                                isset($program['is_draft']) && 
-                                $program['is_draft'] == 0) {
-                                $canEdit = false;
-                            }
+                            // Check if this is a draft
+                            $is_draft = isset($program['is_draft']) && $program['is_draft'] ? true : false;
                         ?>
                             <tr class="<?php echo $is_draft ? 'draft-program' : ''; ?>" 
                                 data-program-type="<?php echo $is_assigned ? 'assigned' : 'created'; ?>">
@@ -255,17 +261,150 @@ require_once '../../includes/dashboard_header.php';
                                 </td>
                                 <td>
                                     <div class="btn-group btn-group-sm float-end">
-                                        <!-- View Details button always shows -->
-                                        <a href="program_details.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="View Details">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                        
-                                        <!-- Edit button shows for all programs that CAN be edited (not finalized in current period) -->
-                                        <?php if ($canEdit): ?>
-                                        <a href="update_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-secondary" title="Update Program">
+                                        <a href="update_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="Edit Program">
                                             <i class="fas fa-edit"></i>
                                         </a>
+                                        
+                                        <!-- Delete button only shows for custom programs (not assigned ones) -->
+                                        <?php if (!$is_assigned): ?>
+                                        <button type="button" class="btn btn-outline-danger delete-program-btn" 
+                                            data-id="<?php echo $program['program_id']; ?>"
+                                            data-name="<?php echo htmlspecialchars($program['program_name']); ?>"
+                                            title="Delete Program">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
                                         <?php endif; ?>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Finalized Programs Card -->
+<div class="card shadow-sm mb-4 w-100">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title m-0">
+            Finalized Programs 
+            <span class="badge bg-info ms-2" title="These programs have finalized submissions for the current period">
+                <i class="fas fa-lock me-1"></i> No longer editable
+            </span>
+        </h5>
+    </div>
+    
+    <!-- Finalized Programs Filters -->
+    <div class="card-body pb-0">
+        <div class="row g-3">
+            <div class="col-md-5 col-sm-12">
+                <label for="finalizedProgramSearch" class="form-label">Search</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="text" class="form-control" id="finalizedProgramSearch" placeholder="Search by program name">
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <label for="finalizedRatingFilter" class="form-label">Rating</label>
+                <select class="form-select" id="finalizedRatingFilter">
+                    <option value="">All Ratings</option>
+                    <option value="target-achieved">Monthly Target Achieved</option>
+                    <option value="on-track-yearly">On Track for Year</option>
+                    <option value="severe-delay">Severe Delays</option>
+                    <option value="not-started">Not Started</option>
+                </select>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <label for="finalizedTypeFilter" class="form-label">Program Type</label>
+                <select class="form-select" id="finalizedTypeFilter">
+                    <option value="">All Types</option>
+                    <option value="assigned">Assigned</option>
+                    <option value="created">Agency-Created Programs</option>
+                </select>
+            </div>
+            <div class="col-md-1 col-sm-12 d-flex align-items-end">
+                <button id="resetFinalizedFilters" class="btn btn-outline-secondary w-100">
+                    <i class="fas fa-undo me-1"></i> Reset
+                </button>
+            </div>
+        </div>
+        <div id="finalizedFilterBadges" class="filter-badges mt-2"></div>
+    </div>
+    
+    <div class="card-body pt-2 p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-custom mb-0" id="finalizedProgramsTable">
+                <thead class="table-light">
+                    <tr>
+                        <th class="sortable" data-sort="name">Program Name <i class="fas fa-sort ms-1"></i></th>
+                        <th class="sortable" data-sort="rating">Rating <i class="fas fa-sort ms-1"></i></th>
+                        <th class="sortable" data-sort="date">Last Updated <i class="fas fa-sort ms-1"></i></th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (empty($finalized_programs)): ?>
+                        <tr>
+                            <td colspan="4" class="text-center py-4">No finalized programs found.</td>
+                        </tr>
+                    <?php else: ?>
+                        <?php 
+                        foreach ($finalized_programs as $program): 
+                            // Determine program type (assigned or custom)
+                            $is_assigned = isset($program['is_assigned']) && $program['is_assigned'] ? true : false;
+                            
+                            // Convert status for display
+                            $current_status = isset($program['status']) ? convert_legacy_status($program['status']) : 'not-started';
+                            
+                            // Map database status values to display labels and classes
+                            $status_map = [
+                                'on-track' => ['label' => 'On Track', 'class' => 'warning'],
+                                'on-track-yearly' => ['label' => 'On Track for Year', 'class' => 'warning'],
+                                'target-achieved' => ['label' => 'Monthly Target Achieved', 'class' => 'success'],
+                                'delayed' => ['label' => 'Delayed', 'class' => 'danger'],
+                                'severe-delay' => ['label' => 'Severe Delays', 'class' => 'danger'],
+                                'completed' => ['label' => 'Completed', 'class' => 'primary'],
+                                'not-started' => ['label' => 'Not Started', 'class' => 'secondary']
+                            ];
+                            
+                            // Set default if status is not in our map
+                            if (!isset($status_map[$current_status])) {
+                                $current_status = 'not-started';
+                            }
+                        ?>
+                            <tr data-program-type="<?php echo $is_assigned ? 'assigned' : 'created'; ?>">
+                                <td>
+                                    <div class="fw-medium">
+                                        <?php echo htmlspecialchars($program['program_name']); ?>
+                                    </div>
+                                    <div class="small text-muted program-type-indicator">
+                                        <i class="fas fa-<?php echo $is_assigned ? 'tasks' : 'folder-plus'; ?> me-1"></i>
+                                        <?php echo $is_assigned ? 'Assigned' : 'Agency-Created'; ?>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-<?php echo $status_map[$current_status]['class']; ?>">
+                                        <?php echo $status_map[$current_status]['label']; ?>
+                                    </span>
+                                </td>
+                                <td>
+                                    <?php 
+                                    if (isset($program['updated_at']) && $program['updated_at']) {
+                                        echo date('M j, Y', strtotime($program['updated_at']));
+                                    } elseif (isset($program['created_at']) && $program['created_at']) {
+                                        echo date('M j, Y', strtotime($program['created_at']));
+                                    } else {
+                                        echo 'Not set';
+                                    }
+                                    ?>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm float-end">
+                                        <a href="program_details.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="View Program Details">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
                                         
                                         <!-- Delete button only shows for custom programs (not assigned ones) -->
                                         <?php if (!$is_assigned): ?>
@@ -300,6 +439,28 @@ require_once '../../includes/dashboard_header.php';
 </div>
 
 <!-- Add program data for JavaScript pagination -->
+<style>
+    /* Custom styles for program status indicators */
+    .badge.bg-info {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        font-weight: 500;
+    }
+    
+    span.text-info {
+        font-style: italic;
+    }
+    
+    .fa-lock {
+        color: #0dcaf0;
+    }
+    
+    /* Add a subtle background to finalized rows */
+    tr:has(.badge.bg-info[title="Finalized submission for current period"]) {
+        background-color: rgba(13, 202, 240, 0.05);
+    }
+</style>
+
 <script>
     // Make program data available to JavaScript for client-side pagination
     const allPrograms = <?php echo json_encode($programs); ?>;
