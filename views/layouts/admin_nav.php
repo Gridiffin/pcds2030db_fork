@@ -13,7 +13,12 @@ $is_program_page = in_array($current_page, ['programs.php', 'view_program.php', 
 
 // Check if current page is report-related
 $is_report_page = $current_page == 'generate_reports.php';
+
+// Check if audit log is active
+$audit_log = $current_page == 'audit_log.php';
 ?>
+
+
 
 <!-- Main Navigation -->
 <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
@@ -67,6 +72,11 @@ $is_report_page = $current_page == 'generate_reports.php';
                 <li class="nav-item">
                     <a class="nav-link <?php if ($is_report_page) echo 'active'; ?>" href="<?php echo APP_URL; ?>/views/admin/generate_reports.php">
                         <i class="fas fa-file-alt me-1"></i> Reports
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?php if ($audit_log) echo 'active'; ?>" href="<?php echo APP_URL; ?>/views/admin/audit_log.php">
+                        <i class="fas fa-clipboard-list me-1"></i> Audit Log
                     </a>
                 </li>
             </ul>
