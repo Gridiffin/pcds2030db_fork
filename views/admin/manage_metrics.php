@@ -229,5 +229,29 @@ require_once '../layouts/admin_nav.php';
         document.getElementById('period_id').addEventListener('change', function() {
             this.form.submit();
         });
+        
+        // Fix dropdown menu functionality
+        document.querySelectorAll('.dropdown-toggle').forEach(function(dropdownToggle) {
+            dropdownToggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Find the closest dropdown parent
+                const dropdown = this.closest('.dropdown');
+                
+                // Toggle 'show' class on dropdown and menu
+                dropdown.classList.toggle('show');
+                
+                // Find and toggle dropdown menu
+                const dropdownMenu = dropdown.querySelector('.dropdown-menu');
+                if (dropdownMenu) {
+                    dropdownMenu.classList.toggle('show');
+                }
+                
+                // Update aria-expanded attribute
+                this.setAttribute('aria-expanded', 
+                    this.getAttribute('aria-expanded') === 'true' ? 'false' : 'true');
+            });
+        });
     });
 </script>

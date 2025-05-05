@@ -33,7 +33,7 @@ $is_report_page = $current_page == 'generate_reports.php';
                     </a>
                 </li>
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle <?php if ($is_program_page) echo 'active'; ?>" href="#" id="programsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="<?php echo $is_program_page ? 'true' : 'false'; ?>">
+                    <a class="nav-link dropdown-toggle <?php if ($is_program_page) echo 'active'; ?>" href="javascript:void(0)" id="programsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="<?php echo $is_program_page ? 'true' : 'false'; ?>">
                         <i class="fas fa-project-diagram me-1"></i> Programs <i class="fas fa-caret-down nav-dropdown-icon"></i>
                     </a>
                     <ul class="dropdown-menu" aria-labelledby="programsDropdown">
