@@ -54,11 +54,9 @@ if (!function_exists('get_agency_programs')) {
                    WHERE ps.program_id = p.program_id 
                    ORDER BY ps.submission_date DESC LIMIT 1) as updated_at
                   FROM programs p 
-                  WHERE p.owner_agency_id = ?
                   ORDER BY p.program_name";
                   
         $stmt = $conn->prepare($query);
-        $stmt->bind_param('i', $agency_id);
         $stmt->execute();
         $result = $stmt->get_result();
         

@@ -167,32 +167,42 @@ require_once '../../includes/dashboard_header.php';
                                 <label class="text-muted">Current Target</label>
                                 <div class="fw-medium">
                                     <?php 
-                                    // Properly extract target from either content_json or direct field
+                                    // Properly extract targets from either content_json or direct field and display them
                                     if (isset($current_submission['content_json']) && is_string($current_submission['content_json'])) {
                                         $content = json_decode($current_submission['content_json'], true);
-                                        echo htmlspecialchars($content['target'] ?? 'Not set');
-                                    } else {
-                                        echo htmlspecialchars($current_submission['target'] ?? 'Not set');
-                                    }
-                                    ?>
-                                </div>
-                            </div>
-                            
-                            <div class="info-group mb-3">
-                                <label class="text-muted">Status Date</label>
-                                <div class="fw-medium">
-                                    <?php 
-                                    if (isset($current_submission['content_json']) && is_string($current_submission['content_json'])) {
-                                        $content = json_decode($current_submission['content_json'], true);
-                                        if (isset($content['status_date']) && $content['status_date']) {
-                                            echo date('M j, Y', strtotime($content['status_date']));
+                                        if (isset($content['targets']) && is_array($content['targets'])) {
+                                            echo '<div class="d-flex flex-wrap gap-2 justify-content-start">';
+                                            foreach ($content['targets'] as $target) {
+                                                $target_text = htmlspecialchars($target['target_text'] ?? 'No target text');
+                                                $status_desc = htmlspecialchars($target['status_description'] ?? '');
+                                                echo '<div class="badge bg-primary p-3 text-wrap text-start" style="max-width: 250px;">';
+                                                echo '<strong>' . $target_text . '</strong>';
+                                                if ($status_desc !== '') {
+                                                    echo '<br><small class="text-light description-hover">' . $status_desc . '</small>';
+                                                }
+                                                echo '</div>';
+                                            }
+                                            echo '</div>';
                                         } else {
                                             echo 'Not set';
                                         }
-                                    } else if (isset($current_submission['status_date']) && $current_submission['status_date']) {
-                                        echo date('M j, Y', strtotime($current_submission['status_date']));
                                     } else {
-                                        echo 'Not set';
+                                        if (isset($current_submission['targets']) && is_array($current_submission['targets'])) {
+                                            echo '<div class="d-flex flex-wrap gap-2 justify-content-start">';
+                                            foreach ($current_submission['targets'] as $target) {
+                                                $target_text = htmlspecialchars($target['target_text'] ?? 'No target text');
+                                                $status_desc = htmlspecialchars($target['status_description'] ?? '');
+                                                echo '<div class="badge bg-primary p-3 text-wrap text-start" style="max-width: 250px;">';
+                                                echo '<strong>' . $target_text . '</strong>';
+                                                if ($status_desc !== '') {
+                                                    echo '<br><small class="text-light description-hover">' . $status_desc . '</small>';
+                                                }
+                                                echo '</div>';
+                                            }
+                                            echo '</div>';
+                                        } else {
+                                            echo htmlspecialchars($current_submission['targets'] ?? 'Not set');
+                                        }
                                     }
                                     ?>
                                 </div>
@@ -398,6 +408,36 @@ require_once '../../includes/dashboard_header.php';
 
 .card-header .badge {
     font-size: 0.9rem;
+}
+.description-hover {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease-in-out, padding 0.5s ease-in-out;
+    display: block;
+    color: #000;
+    padding: 0 8px;
+    border-radius: 0 0 0.25rem 0.25rem;
+    /* background-color: rgba(0,0,0,0.75); Removed black background */
+    font-size: 0.8rem;
+    margin-top: 4px;
+    white-space: normal;
+}
+
+.badge {
+    max-height: 50px;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    position: relative;
+}
+
+.badge:hover {
+    max-height: 200px; /* enough to show description */
+}
+
+.badge:hover .description-hover {
+    max-height: 100px;
+    padding: 5px 8px;
+    transition: max-height 0.5s ease-in-out, padding 0.5s ease-in-out;
 }
 </style>
 
