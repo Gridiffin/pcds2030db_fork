@@ -434,4 +434,64 @@ function get_all_sectors() {
     
     return $sectors;
 }
+
+/**
+ * Get detailed information about a specific program for admin view
+ * 
+ * @param int $program_id The ID of the program to retrieve
+ * @return array|false Program details array or false if not found
+ */
+function get_admin_program_details($program_id) {
+    global $conn;
+    
+    $stmt = $conn->prepare("SELECT p.*, s.sector_name, u.agency_name, u.user_id as owner_agency_id
+                          FROM programs p
+                          LEFT JOIN sectors s ON p.sector_id = s.sector_id
+                          LEFT JOIN users u ON p.owner_agency_id = u.user_id
+                          WHERE p.program_id = ?");
+    $stmt->bind_param("i", $program_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 0) {
+        return false;
+    }
+    
+    $program = $result->fetch_assoc();
+    
+    // Get submissions for this program with reporting period details
+    $stmt = $conn->prepare("SELECT ps.*, rp.year, rp.quarter
+                          FROM program_submissions ps 
+                          JOIN reporting_periods rp ON ps.period_id = rp.period_id
+                          WHERE ps.program_id = ? 
+                          ORDER BY ps.submission_id DESC");
+    $stmt->bind_param("i", $program_id);
+    $stmt->execute();
+    $submissions_result = $stmt->get_result();
+    
+    $program['submissions'] = [];
+    
+    if ($submissions_result->num_rows > 0) {
+        while ($submission = $submissions_result->fetch_assoc()) {
+            // Process content_json if applicable
+            if (isset($submission['content_json']) && is_string($submission['content_json'])) {
+                $content = json_decode($submission['content_json'], true);
+                if ($content) {
+                    // Extract fields from content JSON
+                    $submission['target'] = $content['target'] ?? '';
+                    $submission['achievement'] = $content['achievement'] ?? '';
+                    $submission['remarks'] = $content['remarks'] ?? '';
+                    $submission['status_date'] = $content['status_date'] ?? '';
+                    $submission['status_text'] = $content['status_text'] ?? '';
+                }
+            }
+            $program['submissions'][] = $submission;
+        }
+        
+        // Set current submission (most recent)
+        $program['current_submission'] = $program['submissions'][0];
+    }
+    
+    return $program;
+}
 ?>
