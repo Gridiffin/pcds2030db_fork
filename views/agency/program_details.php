@@ -163,50 +163,50 @@ require_once '../../includes/dashboard_header.php';
                     <!-- Current Period Reporting Data -->
                     <div class="col-md-6 border-start">
                         <div class="program-info ps-md-4">
-                            <div class="info-group mb-3">
-                                <label class="text-muted">Current Target</label>
-                                <div class="fw-medium">
-                                    <?php 
-                                    // Properly extract targets from either content_json or direct field and display them
-                                    if (isset($current_submission['content_json']) && is_string($current_submission['content_json'])) {
-                                        $content = json_decode($current_submission['content_json'], true);
-                                        if (isset($content['targets']) && is_array($content['targets'])) {
-                                            echo '<div class="d-flex flex-wrap gap-2 justify-content-start">';
-                                            foreach ($content['targets'] as $target) {
-                                                $target_text = htmlspecialchars($target['target_text'] ?? 'No target text');
-                                                $status_desc = htmlspecialchars($target['status_description'] ?? '');
-                                                echo '<div class="badge bg-primary p-3 text-wrap text-start" style="max-width: 250px;">';
-                                                echo '<strong>' . $target_text . '</strong>';
-                                                if ($status_desc !== '') {
-                                                    echo '<br><small class="text-light description-hover">' . $status_desc . '</small>';
-                                                }
-                                                echo '</div>';
-                                            }
-                                            echo '</div>';
-                                        } else {
-                                            echo 'Not set';
-                                        }
-                                    } else {
-                                        if (isset($current_submission['targets']) && is_array($current_submission['targets'])) {
-                                            echo '<div class="d-flex flex-wrap gap-2 justify-content-start">';
-                                            foreach ($current_submission['targets'] as $target) {
-                                                $target_text = htmlspecialchars($target['target_text'] ?? 'No target text');
-                                                $status_desc = htmlspecialchars($target['status_description'] ?? '');
-                                                echo '<div class="badge bg-primary p-3 text-wrap text-start" style="max-width: 250px;">';
-                                                echo '<strong>' . $target_text . '</strong>';
-                                                if ($status_desc !== '') {
-                                                    echo '<br><small class="text-light description-hover">' . $status_desc . '</small>';
-                                                }
-                                                echo '</div>';
-                                            }
-                                            echo '</div>';
-                                        } else {
-                                            echo htmlspecialchars($current_submission['targets'] ?? 'Not set');
-                                        }
-                                    }
-                                    ?>
-                                </div>
-                            </div>
+<div class="info-group mb-3">
+    <label class="text-muted">Current Target</label>
+    <div class="fw-medium">
+        <?php 
+        // Properly extract targets from either content_json or direct field and display them as bullet points
+        if (isset($current_submission['content_json']) && is_string($current_submission['content_json'])) {
+            $content = json_decode($current_submission['content_json'], true);
+            if (isset($content['targets']) && is_array($content['targets'])) {
+                echo '<ul class="current-target-list" style="padding-left: 1.25rem; margin-bottom: 0;">';
+                foreach ($content['targets'] as $target) {
+                    $target_text = htmlspecialchars($target['target_text'] ?? 'No target text');
+                    $status_desc = htmlspecialchars($target['status_description'] ?? '');
+                    echo '<li>';
+                    echo '<strong>' . $target_text . '</strong>';
+                    if ($status_desc !== '') {
+                        echo '<br><small class="text-muted">' . $status_desc . '</small>';
+                    }
+                    echo '</li>';
+                }
+                echo '</ul>';
+            } else {
+                echo 'Not set';
+            }
+        } else {
+            if (isset($current_submission['targets']) && is_array($current_submission['targets'])) {
+                echo '<ul class="current-target-list" style="padding-left: 1.25rem; margin-bottom: 0;">';
+                foreach ($current_submission['targets'] as $target) {
+                    $target_text = htmlspecialchars($target['target_text'] ?? 'No target text');
+                    $status_desc = htmlspecialchars($target['status_description'] ?? '');
+                    echo '<li>';
+                    echo '<strong>' . $target_text . '</strong>';
+                    if ($status_desc !== '') {
+                        echo '<br><small class="text-muted">' . $status_desc . '</small>';
+                    }
+                    echo '</li>';
+                }
+                echo '</ul>';
+            } else {
+                echo htmlspecialchars($current_submission['targets'] ?? 'Not set');
+            }
+        }
+        ?>
+    </div>
+</div>
                             
                             <div class="info-group mb-3">
                                 <label class="text-muted">Last Updated</label>
@@ -438,6 +438,34 @@ require_once '../../includes/dashboard_header.php';
     max-height: 100px;
     padding: 5px 8px;
     transition: max-height 0.5s ease-in-out, padding 0.5s ease-in-out;
+}
+
+/* New styles for bullet point description slide on hover */
+ul.current-target-list {
+    padding-left: 1.25rem;
+    margin-bottom: 0;
+    list-style-type: disc;
+}
+
+ul.current-target-list li {
+    position: relative;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+}
+
+ul.current-target-list li small {
+    max-height: 0;
+    overflow: hidden;
+    display: block;
+    color: #6c757d;
+    transition: max-height 0.5s ease-in-out, padding 0.5s ease-in-out;
+    padding: 0 0;
+    margin-top: 0.25rem;
+}
+
+ul.current-target-list li:hover small {
+    max-height: 100px;
+    padding: 5px 8px;
 }
 </style>
 
