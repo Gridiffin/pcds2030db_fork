@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 28, 2025 at 05:35 AM
+-- Generation Time: May 05, 2025 at 02:42 AM
 -- Server version: 10.4.32-MariaDB
--- PHP Version: 8.2.12
+-- PHP Version: 8.0.30
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -203,63 +203,6 @@ INSERT INTO `sector_metrics_data` (`id`, `metric_id`, `sector_id`, `period_id`, 
 (14, 6, 2, 2, 'table C', '{\"columns\":[\"column c2\",\"column c1\"],\"data\":{\"January\":{\"column c1\":1500},\"February\":{\"column c2\":100000},\"March\":[],\"April\":[],\"May\":[],\"June\":[],\"July\":[],\"August\":[],\"September\":[],\"October\":[],\"November\":[],\"December\":[]}}', 1, '2025-04-27 10:33:02', '2025-04-28 02:13:24'),
 (20, 7, 2, 2, 'TIMBER EXPORT VALUE (RM)', '{\"columns\": [\"2022\", \"2023\", \"2024\", \"2025\"], \"units\": {\"2022\": \"RM\", \"2023\": \"RM\", \"2024\": \"RM\", \"2025\": \"RM\"}, \"data\": {\"January\": {\"2022\": 408531176.77, \"2023\": 263569916.63, \"2024\": 276004972.69, \"2025\": null}, \"February\": {\"2022\": 239761718.38, \"2023\": 226356164.30, \"2024\": 191530929.47, \"2025\": null}, \"March\": {\"2022\": 394935606.46, \"2023\": 261778295.29, \"2024\": 214907671.70, \"2025\": null}, \"April\": {\"2022\": 400891037.27, \"2023\": 215771835.07, \"2024\": 232014272.14, \"2025\": null}, \"May\": {\"2022\": 345725679.36, \"2023\": 324280067.64, \"2024\": 324627750.87, \"2025\": null}, \"June\": {\"2022\": 268966198.26, \"2023\": 235560482.89, \"2024\": 212303812.34, \"2025\": null}, \"July\": {\"2022\": 359792973.34, \"2023\": 244689028.37, \"2024\": 274788036.68, \"2025\": null}, \"August\": {\"2022\": 310830376.16, \"2023\": 344761866.36, \"2024\": 210420404.31, \"2025\": null}, \"September\": {\"2022\": 318990291.52, \"2023\": 210214202.20, \"2024\": 191837139.00, \"2025\": null}, \"October\": {\"2022\": 304693148.30, \"2023\": 266639022.25, \"2024\": null, \"2025\": null}, \"November\": {\"2022\": 303936172.09, \"2023\": 296062485.55, \"2024\": null, \"2025\": null}, \"December\": {\"2022\": 289911760.38, \"2023\": 251155864.77, \"2024\": null, \"2025\": null}}}', 0, '2025-04-27 11:45:15', '2025-04-28 02:13:24'),
 (21, 5, 2, 2, 'table B', '{\"columns\":[\"hello0\",\"hello \"],\"data\":{\"January\":{\"hello0\":15,\"hello \":1},\"February\":{\"hello \":300,\"hello0\":456},\"March\":{\"hello \":500},\"April\":{\"hello \":0.07},\"May\":{\"hello \":123},\"June\":{\"hello \":0.56},\"July\":[],\"August\":[],\"September\":[],\"October\":[],\"November\":[],\"December\":[]},\"units\":{\"hello \":\"RM\",\"hello0\":\"Ha\"}}', 0, '2025-04-28 02:43:34', '2025-04-28 02:43:34');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `sector_metrics_draft`
---
-
-CREATE TABLE `sector_metrics_draft` (
-  `id` int(11) NOT NULL,
-  `table_name` varchar(255) NOT NULL,
-  `sector_id` int(11) NOT NULL,
-  `metric_id` int(11) NOT NULL,
-  `month` varchar(20) NOT NULL COMMENT 'Month of the metric',
-  `year` int(4) NOT NULL COMMENT 'Year of the metric',
-  `column_title` varchar(255) NOT NULL COMMENT 'Title of the column',
-  `table_content` text NOT NULL COMMENT 'Content of the table',
-  `time_added` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'Time when the record was added'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `sector_metrics_draft`
---
-
-INSERT INTO `sector_metrics_draft` (`id`, `table_name`, `sector_id`, `metric_id`, `month`, `year`, `column_title`, `table_content`, `time_added`) VALUES
-(0, 'Table 1', 2, 2, 'January', 0, '2025', '5', '2025-04-27 09:28:58'),
-(0, 'Table 1   ', 2, 2, 'February', 0, '2025', '10', '2025-04-27 09:30:22'),
-(0, 'Table 2', 2, 3, 'January', 0, 'hreloo', '15000', '2025-04-27 09:36:11'),
-(0, 'table A', 2, 4, 'January', 0, '', '0', '2025-04-27 10:04:07'),
-(0, 'table B', 2, 5, 'January', 0, '', '0', '2025-04-27 10:15:30'),
-(0, 'table C', 2, 6, 'January', 0, '', '0', '2025-04-27 10:32:28'),
-(0, 'table D', 2, 7, 'January', 0, '', '0', '2025-04-27 10:38:57');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `sector_metrics_submitted`
---
-
-CREATE TABLE `sector_metrics_submitted` (
-  `id` int(11) NOT NULL,
-  `table_name` varchar(255) NOT NULL,
-  `sector_id` int(11) NOT NULL,
-  `metric_id` int(11) NOT NULL,
-  `month` varchar(20) NOT NULL COMMENT 'Month of the metric',
-  `column_title` varchar(255) NOT NULL COMMENT 'Title of the column',
-  `table_content` text NOT NULL COMMENT 'Content of the table',
-  `time_added` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'Time when the record was added'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `sector_metrics_submitted`
---
-
-INSERT INTO `sector_metrics_submitted` (`id`, `table_name`, `sector_id`, `metric_id`, `month`, `column_title`, `table_content`, `time_added`) VALUES
-(44, 'something', 2, 1, 'January', '022', '0.001', '2025-04-24 18:06:51'),
-(45, 'something', 2, 1, 'January', 'this', '123', '2025-04-24 18:06:51'),
-(46, 'something', 0, 1, 'January', 'click here to auvaname', '0', '2025-04-24 18:11:37');
 
 -- --------------------------------------------------------
 
