@@ -331,6 +331,44 @@ require_once '../../includes/dashboard_header.php';
                                     </div>
                                 </div>
                                 
+                                <!-- Target Configuration -->
+                                <div class="mb-3">
+                                    <label class="form-label">Program Targets</label>
+                                    <div id="targets-container">
+                                        <div class="target-entry mb-3 p-3 border rounded">
+                                            <div class="mb-3">
+                                                <label class="form-label">Target 1</label>
+                                                <div class="input-group">
+                                                    <input type="text" class="form-control target-input" name="target_text[]"
+                                                          placeholder="Specific, measurable target" value="<?php echo isset($_POST['target_text'][0]) ? htmlspecialchars($_POST['target_text'][0]) : ''; ?>">
+                                                    <div class="input-group-text">
+                                                        <div class="form-check form-switch mb-0">
+                                                            <input class="form-check-input" type="checkbox" id="edit_targets" name="edit_permissions[]" value="targets" checked>
+                                                            <label class="form-check-label" for="edit_targets">Agency can edit</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="mb-2">
+                                                <label class="form-label">Status Description</label>
+                                                <div class="input-group">
+                                                    <textarea class="form-control" name="status_description[]" rows="2" 
+                                                           placeholder="Current status or progress details"><?php echo isset($_POST['status_description'][0]) ? htmlspecialchars($_POST['status_description'][0]) : ''; ?></textarea>
+                                                    <div class="input-group-text">
+                                                        <div class="form-check form-switch mb-0">
+                                                            <input class="form-check-input" type="checkbox" id="edit_status_text" name="edit_permissions[]" value="status_text" checked>
+                                                            <label class="form-check-label" for="edit_status_text">Agency can edit</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="button" id="add-target-btn" class="btn btn-outline-secondary btn-sm">
+                                        <i class="fas fa-plus-circle me-1"></i> Add Another Target
+                                    </button>
+                                </div>
+                                
                                 <div class="col-md-12">
                                     <div class="form-check form-switch mb-3">
                                         <input class="form-check-input" type="checkbox" id="edit_description" name="edit_permissions[]" value="description" checked>
@@ -364,3 +402,78 @@ require_once '../../includes/dashboard_header.php';
 // Include footer
 require_once '../layouts/footer.php';
 ?>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add target functionality
+    const addTargetBtn = document.getElementById('add-target-btn');
+    if (addTargetBtn) {
+        const targetsContainer = document.getElementById('targets-container');
+        
+        // Keep track of the highest target number used
+        let targetCount = 1;
+        
+        // Function to update target numbers sequentially
+        function updateTargetNumbers() {
+            const targetEntries = document.querySelectorAll('.target-entry');
+            targetEntries.forEach((entry, index) => {
+                const label = entry.querySelector('.form-label');
+                if (label && label.textContent.includes('Target')) {
+                    label.textContent = `Target ${index + 1}`;
+                }
+            });
+        }
+        
+        addTargetBtn.addEventListener('click', function() {
+            // Increment the target count
+            targetCount++;
+            
+            const targetEntry = document.createElement('div');
+            targetEntry.className = 'target-entry mb-3 p-3 border rounded';
+            
+            const html = `
+                <button type="button" class="btn-close float-end remove-target" aria-label="Remove target"></button>
+                <div class="mb-3">
+                    <label class="form-label">Target ${targetCount}</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control target-input" name="target_text[]" 
+                               placeholder="Specific, measurable target">
+                        <div class="input-group-text">
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" name="edit_permissions[]" value="targets" checked>
+                                <label class="form-check-label">Agency can edit</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Status Description</label>
+                    <div class="input-group">
+                        <textarea class="form-control" name="status_description[]" rows="2" 
+                                placeholder="Current status or progress details"></textarea>
+                        <div class="input-group-text">
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" name="edit_permissions[]" value="status_text" checked>
+                                <label class="form-check-label">Agency can edit</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            targetEntry.innerHTML = html;
+            targetsContainer.appendChild(targetEntry);
+            
+            // Attach remove event listener to the new target
+            const removeBtn = targetEntry.querySelector('.remove-target');
+            if (removeBtn) {
+                removeBtn.addEventListener('click', function() {
+                    targetEntry.remove();
+                    // Update target numbers after removing
+                    updateTargetNumbers();
+                });
+            }
+        });
+    }
+});
+</script>

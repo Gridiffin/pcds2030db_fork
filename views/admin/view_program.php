@@ -159,6 +159,38 @@ require_once '../../includes/dashboard_header.php';
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">
+                        <?php
+                        // Process content_json if it exists
+                        $targets = [];
+                        $content = null;
+                        if (isset($program['current_submission']['content_json']) && is_string($program['current_submission']['content_json'])) {
+                            $content = json_decode($program['current_submission']['content_json'], true);
+                            if ($content && isset($content['targets'])) {
+                                $targets = $content['targets'];
+                            }
+                        }
+
+                        // If we have targets from content_json, show them with status descriptions
+                        if (!empty($targets)): 
+                        ?>
+                        <h6 class="fw-bold mb-3">Program Targets</h6>
+                        <div class="targets-list">
+                            <?php foreach($targets as $index => $target): ?>
+                            <div class="target-item mb-4">
+                                <div class="mb-2">
+                                    <strong>Target <?php echo $index + 1; ?>:</strong>
+                                    <p><?php echo htmlspecialchars($target['text'] ?? ''); ?></p>
+                                </div>
+                                <?php if (!empty($target['status_description'])): ?>
+                                <div class="mb-2">
+                                    <strong>Status Description:</strong>
+                                    <p class="text-muted"><?php echo htmlspecialchars($target['status_description']); ?></p>
+                                </div>
+                                <?php endif; ?>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php else: ?>
                         <dl class="row mb-0">
                             <dt class="col-sm-4">Target</dt>
                             <dd class="col-sm-8"><?php echo htmlspecialchars($program['current_submission']['target'] ?? 'Not specified'); ?></dd>
@@ -174,6 +206,7 @@ require_once '../../includes/dashboard_header.php';
                                 <?php endif; ?>
                             </dd>
                         </dl>
+                        <?php endif; ?>
                     </div>
                     <div class="col-md-6">
                         <dl class="row mb-0">
@@ -190,8 +223,16 @@ require_once '../../includes/dashboard_header.php';
                             <dt class="col-sm-4">Submission Date</dt>
                             <dd class="col-sm-8"><?php echo date('F j, Y', strtotime($program['current_submission']['submission_date'])); ?></dd>
                             
+                            <dt class="col-sm-4">Overall Status</dt>
+                            <dd class="col-sm-8">
+                                <?php 
+                                $rating = $content['rating'] ?? $program['current_submission']['status'] ?? 'not-started';
+                                echo get_status_badge($rating);
+                                ?>
+                            </dd>
+                            
                             <dt class="col-sm-4">Remarks</dt>
-                            <dd class="col-sm-8"><?php echo htmlspecialchars($program['current_submission']['remarks'] ?? 'No remarks provided'); ?></dd>
+                            <dd class="col-sm-8"><?php echo htmlspecialchars($content['remarks'] ?? $program['current_submission']['remarks'] ?? 'No remarks provided'); ?></dd>
                         </dl>
                     </div>
                 </div>

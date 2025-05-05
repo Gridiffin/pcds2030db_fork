@@ -52,7 +52,14 @@ if (!$current_period) {
 
 // Helper function to check if a field is editable for assigned programs
 function is_editable($field) {
-    global $program;
+    global $program, $is_draft, $current_submission;
+    
+    // If program has a finalized submission, nothing is editable unless reopened by admin
+    if (isset($current_submission) && 
+        !empty($current_submission) && 
+        (!isset($current_submission['is_draft']) || $current_submission['is_draft'] == 0)) {
+        return false;
+    }
     
     // If not an assigned program, all fields are editable
     if (!isset($program['is_assigned']) || !$program['is_assigned']) {
