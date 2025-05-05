@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 05, 2025 at 03:42 AM
+-- Generation Time: May 05, 2025 at 08:43 AM
 -- Server version: 10.4.32-MariaDB
--- PHP Version: 8.0.30
+-- PHP Version: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -20,24 +20,6 @@ SET time_zone = "+00:00";
 --
 -- Database: `pcds2030_dashboard`
 --
-
--- --------------------------------------------------------
-
---
--- Table structure for table `notifications`
---
-
-CREATE TABLE `notifications` (
-  `notification_id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
-  `message` text NOT NULL,
-  `type` varchar(50) NOT NULL,
-  `reference_id` int(11) DEFAULT NULL,
-  `reference_type` varchar(50) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `read_status` tinyint(1) NOT NULL DEFAULT 0,
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -60,20 +42,6 @@ CREATE TABLE `programs` (
   `created_by` int(11) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Dumping data for table `programs`
---
-
-INSERT INTO `programs` (`program_id`, `program_name`, `description`, `owner_agency_id`, `sector_id`, `start_date`, `end_date`, `created_at`, `updated_at`, `is_assigned`, `edit_permissions`, `created_by`) VALUES
-(42, 'program 1', 'hello', 12, 2, NULL, NULL, '2025-04-25 03:46:44', '2025-04-25 03:46:44', 1, '{\"edit_permissions\":[\"target\",\"status\",\"status_text\",\"description\",\"timeline\"],\"default_values\":[]}', 1),
-(47, 'program A', '', 12, 2, '0000-00-00', '0000-00-00', '2025-04-25 06:50:06', '2025-04-25 06:50:06', 0, NULL, 12),
-(48, 'try lagi', 'ggeege', 12, 2, NULL, NULL, '2025-04-25 07:19:25', '2025-04-25 07:19:25', 1, '{\"edit_permissions\":[\"target\",\"status\",\"status_text\",\"description\",\"timeline\"],\"default_values\":[]}', 1),
-(49, 'try draft', '', 12, 2, NULL, NULL, '2025-04-25 07:21:55', '2025-04-25 07:21:55', 1, '{\"edit_permissions\":[\"target\",\"status\",\"status_text\",\"description\"],\"default_values\":[]}', 1),
-(50, 'zani', '', 12, 2, '2025-04-18', '2025-04-25', '2025-04-26 06:21:40', '2025-04-26 06:21:40', 1, '{\"edit_permissions\":[\"target\",\"status\",\"status_text\",\"description\",\"timeline\"],\"default_values\":[]}', 1),
-(51, 'eheheh', '', 12, 2, '0000-00-00', '0000-00-00', '2025-04-26 06:27:30', '2025-04-26 06:27:30', 0, NULL, 12),
-(52, 'paofpao', '', 12, 2, '0000-00-00', '0000-00-00', '2025-04-26 06:44:57', '2025-04-26 06:44:57', 0, NULL, 12),
-(53, 'gagaga', 'hshsd', 12, 2, '2025-04-18', '2025-04-25', '2025-04-26 07:12:54', '2025-04-26 07:13:03', 0, NULL, 12);
-
 -- --------------------------------------------------------
 
 --
@@ -91,20 +59,6 @@ CREATE TABLE `program_submissions` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `is_draft` tinyint(1) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `program_submissions`
---
-
-INSERT INTO `program_submissions` (`submission_id`, `program_id`, `period_id`, `submitted_by`, `status`, `content_json`, `submission_date`, `updated_at`, `is_draft`) VALUES
-(37, 42, 2, 12, 'target-achieved', '{\"target\":\"target\",\"status_date\":\"2025-04-25\",\"status_text\":\"\",\"achievement\":\"\",\"remarks\":\"\"}', '2025-04-25 04:25:21', '2025-04-25 04:25:21', 0),
-(38, 47, 2, 12, 'on-track-yearly', '{\"target\":\"target A\",\"status_date\":\"2025-04-25\",\"status_text\":\"\"}', '2025-04-25 06:50:06', '2025-04-25 06:50:21', 0),
-(39, 48, 2, 12, 'target-achieved', '{\"target\":\"tageeaehjk\",\"status_date\":\"2025-04-25\",\"status_text\":\"\",\"achievement\":\"\",\"remarks\":\"\"}', '2025-04-25 07:19:51', '2025-04-25 07:19:51', 0),
-(40, 49, 2, 12, 'target-achieved', '{\"target\":\"targetee\",\"status_date\":\"2025-04-25\",\"status_text\":\"\",\"achievement\":\"\",\"remarks\":\"\"}', '2025-04-25 07:22:16', '2025-04-25 07:23:25', 0),
-(41, 50, 2, 12, 'target-achieved', '{\"target\":\"helo\",\"status_date\":\"2025-04-26\",\"status_text\":\"\",\"achievement\":\"\",\"remarks\":\"\"}', '2025-04-26 06:23:32', '2025-04-26 06:43:02', 0),
-(42, 51, 2, 12, 'not-started', '{\"target\":\"eheh\",\"status_date\":\"2025-04-26\",\"status_text\":\"\",\"achievement\":\"\",\"remarks\":\"\"}', '2025-04-26 06:27:30', '2025-04-26 06:44:33', 0),
-(43, 52, 2, 12, 'severe-delay', '{\"target\":\"agogsjuig\",\"status_date\":\"2025-04-26\",\"status_text\":\"\",\"achievement\":\"\",\"remarks\":\"\"}', '2025-04-26 06:44:57', '2025-04-26 06:45:10', 0),
-(44, 53, 2, 12, 'target-achieved', '{\"target\":\"agaga\",\"status_date\":\"2025-04-26\",\"status_text\":\"hjafafafa\",\"achievement\":\"\",\"remarks\":\"\",\"status\":\"target-achieved\"}', '2025-04-26 07:12:54', '2025-04-26 07:13:20', 0);
 
 -- --------------------------------------------------------
 
@@ -170,11 +124,7 @@ CREATE TABLE `sectors` (
 --
 
 INSERT INTO `sectors` (`sector_id`, `sector_name`, `description`) VALUES
-(1, 'Forestry', 'Forestry sector including timber and forest resources'),
-(2, 'Land', 'Land development and management'),
-(3, 'Environment', 'Environmental protection and management'),
-(4, 'Natural Resources', 'Management of natural resources'),
-(5, 'Urban Development', 'Urban planning and development');
+(1, 'Forestry', 'Forestry sector including timber and forest resources');
 
 -- --------------------------------------------------------
 
@@ -187,7 +137,6 @@ CREATE TABLE `sector_metrics_data` (
   `metric_id` int(11) NOT NULL,
   `sector_id` int(11) NOT NULL,
   `period_id` int(11) DEFAULT NULL,
-  `program_id` int(11) NOT NULL,
   `table_name` varchar(255) NOT NULL,
   `data_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`data_json`)),
   `is_draft` tinyint(1) NOT NULL DEFAULT 1,
@@ -199,12 +148,8 @@ CREATE TABLE `sector_metrics_data` (
 -- Dumping data for table `sector_metrics_data`
 --
 
-INSERT INTO `sector_metrics_data` (`id`, `metric_id`, `sector_id`, `period_id`, `program_id`, `table_name`, `data_json`, `is_draft`, `created_at`, `updated_at`) VALUES
-(29, 4, 2, 2, 0, 'table A', '{\"columns\":[\"column A\"],\"data\":{\"January\":{\"column A\":12000},\"February\":[],\"March\":[],\"April\":[],\"May\":[],\"June\":[],\"July\":[],\"August\":[],\"September\":[],\"October\":[],\"November\":[],\"December\":[]}}', 0, '2025-05-05 01:04:25', '2025-05-05 01:04:25'),
-(30, 6, 2, 2, 0, 'table C', '{\"columns\":[\"column c2\",\"column c1\",\"312\"],\"data\":{\"January\":{\"312\":1230,\"column c1\":1500},\"February\":{\"312\":0,\"column c2\":100000,\"column c1\":33},\"March\":{\"312\":0,\"column c1\":12313},\"April\":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,0],\"May\":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,0],\"June\":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,0],\"July\":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,0],\"August\":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,0],\"September\":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,0],\"October\":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,0],\"November\":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,0],\"December\":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,0]},\"units\":{\"312\":\"123\",\"column c2\":\"123\",\"column c1\":\"123\"}}', 0, '2025-05-05 01:05:12', '2025-05-05 01:05:12'),
-(31, 7, 2, 2, 0, 'TIMBER EXPORT VALUE (RM)', '{\"columns\": [\"2022\", \"2023\", \"2024\", \"2025\"], \"units\": {\"2022\": \"RM\", \"2023\": \"RM\", \"2024\": \"RM\", \"2025\": \"RM\"}, \"data\": {\"January\": {\"2022\": 408531176.77, \"2023\": 263569916.63, \"2024\": 276004972.69, \"2025\": null}, \"February\": {\"2022\": 239761718.38, \"2023\": 226356164.30, \"2024\": 191530929.47, \"2025\": null}, \"March\": {\"2022\": 394935606.46, \"2023\": 261778295.29, \"2024\": 214907671.70, \"2025\": null}, \"April\": {\"2022\": 400891037.27, \"2023\": 215771835.07, \"2024\": 232014272.14, \"2025\": null}, \"May\": {\"2022\": 345725679.36, \"2023\": 324280067.64, \"2024\": 324627750.87, \"2025\": null}, \"June\": {\"2022\": 268966198.26, \"2023\": 235560482.89, \"2024\": 212303812.34, \"2025\": null}, \"July\": {\"2022\": 359792973.34, \"2023\": 244689028.37, \"2024\": 274788036.68, \"2025\": null}, \"August\": {\"2022\": 310830376.16, \"2023\": 344761866.36, \"2024\": 210420404.31, \"2025\": null}, \"September\": {\"2022\": 318990291.52, \"2023\": 210214202.20, \"2024\": 191837139.00, \"2025\": null}, \"October\": {\"2022\": 304693148.30, \"2023\": 266639022.25, \"2024\": null, \"2025\": null}, \"November\": {\"2022\": 303936172.09, \"2023\": 296062485.55, \"2024\": null, \"2025\": null}, \"December\": {\"2022\": 289911760.38, \"2023\": 251155864.77, \"2024\": null, \"2025\": null}}}', 0, '2025-05-05 01:05:14', '2025-05-05 01:05:14'),
-(32, 5, 2, 2, 0, 'table B', '{\"columns\":[\"hello0\",\"hello \"],\"data\":{\"January\":{\"hello0\":15,\"hello \":1},\"February\":{\"hello \":300,\"hello0\":456},\"March\":{\"hello \":500},\"April\":{\"hello \":0.07},\"May\":{\"hello \":123},\"June\":{\"hello \":0.56},\"July\":[],\"August\":[],\"September\":[],\"October\":[],\"November\":[],\"December\":[]},\"units\":{\"hello \":\"RM\",\"hello0\":\"Ha\"}}', 0, '2025-05-05 01:05:16', '2025-05-05 01:05:16'),
-(33, 8, 2, NULL, 0, 'can other users see this draft?', '{\"columns\":[\"well one way to find out\"],\"data\":{\"January\":{\"well one way to find out\":123},\"February\":{\"well one way to find out\":0},\"March\":{\"well one way to find out\":0},\"April\":{\"well one way to find out\":0},\"May\":{\"well one way to find out\":0},\"June\":{\"well one way to find out\":0},\"July\":{\"well one way to find out\":0},\"August\":{\"well one way to find out\":0},\"September\":{\"well one way to find out\":0},\"October\":{\"well one way to find out\":0},\"November\":{\"well one way to find out\":0},\"December\":{\"well one way to find out\":0}},\"units\":{\"well one way to find out\":\"123\"}}', 1, '2025-05-05 01:08:23', '2025-05-05 01:08:58');
+INSERT INTO `sector_metrics_data` (`id`, `metric_id`, `sector_id`, `period_id`, `table_name`, `data_json`, `is_draft`, `created_at`, `updated_at`) VALUES
+(20, 7, 1, 2, 'TIMBER EXPORT VALUE (RM)', '{\"columns\":[\"2022\",\"2023\",\"2024\",\"2025\",\"2026\"],\"units\":{\"2022\":\"RM\",\"2023\":\"RM\",\"2024\":\"RM\",\"2025\":\"RM\"},\"data\":{\"January\":{\"2022\":408531176.77,\"2023\":263569916.63,\"2024\":276004972.69,\"2025\":null,\"2026\":0},\"February\":{\"2022\":239761718.38,\"2023\":226356164.3,\"2024\":191530929.47,\"2025\":null,\"2026\":0},\"March\":{\"2022\":394935606.46,\"2023\":261778295.29,\"2024\":214907671.7,\"2025\":null,\"2026\":0},\"April\":{\"2022\":400891037.27,\"2023\":215771835.07,\"2024\":232014272.14,\"2025\":null,\"2026\":0},\"May\":{\"2022\":345725679.36,\"2023\":324280067.64,\"2024\":324627750.87,\"2025\":null,\"2026\":0},\"June\":{\"2022\":268966198.26,\"2023\":235560482.89,\"2024\":212303812.34,\"2025\":null,\"2026\":0},\"July\":{\"2022\":359792973.34,\"2023\":244689028.37,\"2024\":274788036.68,\"2025\":null,\"2026\":0},\"August\":{\"2022\":310830376.16,\"2023\":344761866.36,\"2024\":210420404.31,\"2025\":null,\"2026\":0},\"September\":{\"2022\":318990291.52,\"2023\":210214202.2,\"2024\":191837139,\"2025\":null,\"2026\":0},\"October\":{\"2022\":304693148.3,\"2023\":266639022.25,\"2024\":null,\"2025\":null,\"2026\":0},\"November\":{\"2022\":303936172.09,\"2023\":296062485.55,\"2024\":null,\"2025\":null,\"2026\":0},\"December\":{\"2022\":289911760.38,\"2023\":251155864.77,\"2024\":null,\"2025\":null,\"2026\":0}}}', 0, '2025-04-27 11:45:15', '2025-05-05 06:42:42');
 
 -- --------------------------------------------------------
 
@@ -230,30 +175,14 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`user_id`, `username`, `password`, `agency_name`, `role`, `sector_id`, `created_at`, `updated_at`, `is_active`) VALUES
 (1, 'admin', '$2y$10$bPQQFeR4PbcueCgmV7/2Au.HWCjWH8v8ox.R.MxMfk4qXXHi3uPw6', 'Ministry of Natural Resources and Urban Development', 'admin', NULL, '2025-03-25 01:31:15', '2025-03-25 01:31:15', 1),
-(3, 'land_survey', '$2y$10$p1aSIN6bsbUlMqXyd17TMO8ZY8wJeQkVZjiKjjkhaN3mYYR5bJhBS', 'Land and Survey Department', 'agency', 2, '2025-03-25 01:31:15', '2025-03-25 01:31:15', 1),
-(4, 'nreb', '$2y$10$9i/6yu1uT3qT2v23Wx/H/.3B5XHHGqcsc6bqN09jOS9RNj/5xXvoa', 'Natural Resources and Environment Board', 'agency', 3, '2025-03-25 01:31:15', '2025-03-25 01:31:15', 1),
-(5, 'sfc', '$2y$10$lhVSzcJ/epOb2ce27OVUH.bmOPGsOPw38c/tnjFdcGl0XDjp4qtfG', 'Sarawak Forestry Corporation', 'agency', 1, '2025-03-25 01:31:15', '2025-03-25 01:31:15', 1),
-(6, 'lcda', '$2y$10$QxyxZHPAzKcmQVjo1uiN7uP9ApdTpfoMwavT0bmmrGAIxiS5vAwTi', 'Land Custody and Development Authority', 'agency', 2, '2025-03-25 01:31:15', '2025-03-25 01:31:15', 1),
-(12, 'user', '$2y$10$/Z6xCsE7OknP.4HBT5CdBuWDZK5VNMf7MqwmGusJ0SM8xxaGQKdq2', 'testagency', 'agency', 2, '2025-03-25 07:42:27', '2025-04-09 06:14:43', 1),
-(15, 'testadmin', '$2y$10$JQaXUGYMej1nriu6lgYQXOvCjrfiGKRhFgqMe0kaBf./g.38b/eom', '', 'admin', NULL, '2025-04-11 06:12:58', '2025-04-17 01:34:13', 1),
-(16, 'test3', '$2y$10$c6NUe40VWysBKupPkbkod.0q2BcpaU2/NeOzFQNFdCU2/lAplyXyG', '', 'admin', NULL, '2025-04-11 06:25:19', '2025-04-17 01:33:48', 0),
-(17, 'admin2', '$2y$10$tkzE2DHMABmf5IiQ4.2VU.Mkg4laogdzEvlNSmcoz8tSu35Cx/wwO', '', 'admin', NULL, '2025-04-16 07:40:43', '2025-04-17 03:03:44', 1),
-(18, 'testadmin2', '$2y$10$0Z56YV.wuWhmAHQGipoyZ.ZZag0jieeRpczfsvQvmZTPSuSvNk/5O', NULL, 'admin', NULL, '2025-04-17 00:41:59', '2025-04-17 00:41:59', 1),
-(19, 'speed', '$2y$10$HkY31pXS.sqweZK8YLM1MuhuLRKogaDHExbneEY8p.gP3jO2iIXBq', 'Agensiii', 'agency', 2, '2025-04-17 00:43:54', '2025-04-17 00:43:54', 1),
-(20, 'role1', '$2y$10$h71HKURH6FI0/K/KnTaI9eMfH9vnhEJoRTc1Sw1sLljSQvrdiQr4u', 'thisisanotheruserwithdifferentrole', 'agency', 3, '2025-04-25 00:48:59', '2025-04-25 00:48:59', 1),
-(21, 'agency', '$2y$10$3ckZyhQrbEP7GHar9AEReuhbZYNSDgDQLeD2tm5bqDgXpFTHe3AKG', 'agency 123', 'agency', 2, '2025-05-05 01:09:54', '2025-05-05 01:09:54', 1),
-(22, 'agency2', '$2y$10$.7QBW4sYWq2RlLnm1JYHSe.LPpkeGYEjaOo6F8TErDU3WQuFUW2aK', 'two?', 'agency', 1, '2025-05-05 01:11:05', '2025-05-05 01:11:05', 1);
+(12, 'user', '$2y$10$/Z6xCsE7OknP.4HBT5CdBuWDZK5VNMf7MqwmGusJ0SM8xxaGQKdq2', 'testagency', 'agency', 1, '2025-03-25 07:42:27', '2025-05-05 06:41:55', 1),
+(25, 'sfc', '$2y$10$wkBLipOw1EvgvpfrFTXaRO9/1OuFyCT3enAz3fr4nyOhKFBiG5M7C', 'Sarawak Forestry Corporation', 'agency', 1, '2025-05-05 06:40:10', '2025-05-05 06:40:10', 1),
+(26, 'stidc', '$2y$10$ttWqO8C7DUAxBURRnvhKmu/swpsuLv.iTqsFrPnqRAECtqxsRbsA2', 'Sarawak Timber Industry Development Corporation', 'agency', 1, '2025-05-05 06:40:36', '2025-05-05 06:40:36', 1),
+(27, 'forestdept', '$2y$10$304gq1GLTQvKOhmBqTp3b.oPyiwLCqlCP5lZkTfTJplVOH3QWXPt6', 'Forestry Department', 'agency', 1, '2025-05-05 06:41:16', '2025-05-05 06:41:16', 1);
 
 --
 -- Indexes for dumped tables
 --
-
---
--- Indexes for table `notifications`
---
-ALTER TABLE `notifications`
-  ADD PRIMARY KEY (`notification_id`),
-  ADD KEY `user_id` (`user_id`);
 
 --
 -- Indexes for table `programs`
@@ -304,8 +233,7 @@ ALTER TABLE `sectors`
 ALTER TABLE `sector_metrics_data`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `metric_sector_draft` (`metric_id`,`sector_id`,`is_draft`),
-  ADD KEY `fk_period_id` (`period_id`),
-  ADD KEY `program_id` (`program_id`);
+  ADD KEY `fk_period_id` (`period_id`);
 
 --
 -- Indexes for table `users`
@@ -319,22 +247,16 @@ ALTER TABLE `users`
 --
 
 --
--- AUTO_INCREMENT for table `notifications`
---
-ALTER TABLE `notifications`
-  MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
-
---
 -- AUTO_INCREMENT for table `programs`
 --
 ALTER TABLE `programs`
-  MODIFY `program_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=54;
+  MODIFY `program_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=56;
 
 --
 -- AUTO_INCREMENT for table `program_submissions`
 --
 ALTER TABLE `program_submissions`
-  MODIFY `submission_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=45;
+  MODIFY `submission_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=47;
 
 --
 -- AUTO_INCREMENT for table `reporting_periods`
@@ -346,7 +268,7 @@ ALTER TABLE `reporting_periods`
 -- AUTO_INCREMENT for table `reports`
 --
 ALTER TABLE `reports`
-  MODIFY `report_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `report_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
 
 --
 -- AUTO_INCREMENT for table `sectors`
@@ -358,23 +280,17 @@ ALTER TABLE `sectors`
 -- AUTO_INCREMENT for table `sector_metrics_data`
 --
 ALTER TABLE `sector_metrics_data`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=36;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
 
 --
 -- Constraints for dumped tables
 --
-
---
--- Constraints for table `notifications`
---
-ALTER TABLE `notifications`
-  ADD CONSTRAINT `notifications_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `programs`
