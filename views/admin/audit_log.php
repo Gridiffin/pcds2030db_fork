@@ -22,12 +22,17 @@ $pageTitle = 'Audit Log';
 
 // Include header and admin navigation
 require_once '../layouts/header.php';
+?>
+
+<link rel="stylesheet" href="../../assets/css/custom/audit_log.css">
+
+<?php
 require_once '../layouts/admin_nav.php';
 ?>
 
 <div class="container-fluid px-4 py-4">
     <h1 class="h2 mb-4">Audit Log</h1>
-    <p class="text-muted">This page displays audit log entries from all tables with created_at and updated_at columns.</p>
+    <p class="text-muted">This page displays audit logs</p>
 
     <?php
     // Connect to database
@@ -151,7 +156,7 @@ require_once '../layouts/admin_nav.php';
                 <?php
                 $nice_table_name = $nice_table_names[$entry['table_name']] ?? ucwords(str_replace('_', ' ', $entry['table_name']));
                 ?>
-                <div class="audit-log-entry" style="padding: 8px; border-bottom: 1px solid #ddd;">
+                <div class="audit-log-entry audit-log-bubble">
                     <span style="font-weight: bold;">
                         <?php echo htmlspecialchars($entry['record_id'] ?? 'N/A'); ?>
                         was <?php echo htmlspecialchars($entry['event_type']); ?>
