@@ -390,6 +390,8 @@ require_once '../../includes/dashboard_header.php';
             </div>
         </div>
 
+        <!-- Sector Overview section - conditionally displayed based on MULTI_SECTOR_ENABLED -->
+        <?php if (MULTI_SECTOR_ENABLED): ?>
         <div class="row">
             <!-- Sector Overview -->
             <div class="col-lg-6 mb-4">
@@ -432,7 +434,7 @@ require_once '../../includes/dashboard_header.php';
                                                 <?php elseif ($sector['submission_pct'] >= 25): ?>
                                                     <span class="badge bg-warning">In Progress</span>
                                                 <?php else: ?>
-                                                    <span class="badge bg-danger">Just Started</span>
+                                                    <span class="badge bg-secondary">Early Stage</span>
                                                 <?php endif; ?>
                                             </td>
                                         </tr>
@@ -440,12 +442,84 @@ require_once '../../includes/dashboard_header.php';
                                 </tbody>
                             </table>
                         </div>
-                        <div class="chart-container" style="position: relative; height:150px; width:100%">
-                            <canvas id="programStatusChart"></canvas>
-                        </div>
                     </div>
                 </div>
             </div>
+        <?php else: ?>
+        <div class="row">
+            <!-- Forestry Sector Overview -->
+            <div class="col-lg-6 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title m-0">Forestry Sector Overview</h5>
+                        <a href="sector_details.php?sector_id=<?php echo FORESTRY_SECTOR_ID; ?>" class="btn btn-sm btn-outline-primary">View Details</a>
+                    </div>
+                    <div class="card-body" data-period-content="sectors_section">
+                        <?php 
+                        // Filter sector data to just show Forestry
+                        $forestry_data = null;
+                        foreach ($sector_data as $sector) {
+                            if ($sector['sector_id'] == FORESTRY_SECTOR_ID) {
+                                $forestry_data = $sector;
+                                break;
+                            }
+                        }
+                        
+                        if ($forestry_data): 
+                        ?>
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <h5 class="card-title">Agencies</h5>
+                                        <div class="display-6"><?php echo $forestry_data['agency_count']; ?></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <h5 class="card-title">Programs</h5>
+                                        <div class="display-6"><?php echo $forestry_data['program_count']; ?></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <h5 class="card-title">Submission Progress</h5>
+                                        <div class="progress mb-3" style="height: 25px;">
+                                            <div class="progress-bar bg-<?php echo $forestry_data['submission_pct'] >= 100 ? 'success' : 'primary'; ?>" 
+                                                 role="progressbar" style="width: <?php echo $forestry_data['submission_pct']; ?>%" 
+                                                 aria-valuenow="<?php echo $forestry_data['submission_pct']; ?>" aria-valuemin="0" aria-valuemax="100">
+                                                <?php echo $forestry_data['submission_pct']; ?>%
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <?php if ($forestry_data['submission_pct'] >= 100): ?>
+                                                <span class="badge bg-success">Complete</span>
+                                            <?php elseif ($forestry_data['submission_pct'] >= 75): ?>
+                                                <span class="badge bg-info">Almost Complete</span>
+                                            <?php elseif ($forestry_data['submission_pct'] >= 25): ?>
+                                                <span class="badge bg-warning">In Progress</span>
+                                            <?php else: ?>
+                                                <span class="badge bg-secondary">Early Stage</span>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <?php else: ?>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i> 
+                            No data available for the Forestry sector.
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        <?php endif; ?>
 
             <!-- Recent Submissions -->
             <div class="col-lg-6 mb-4">

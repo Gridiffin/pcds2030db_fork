@@ -3,6 +3,7 @@
  * View All Sectors Programs
  * 
  * Page for agency users to view programs from all sectors (read-only).
+ * Currently focused only on Forestry sector based on system configuration.
  */
 
 // Include necessary files
@@ -20,7 +21,7 @@ if (!is_agency()) {
 }
 
 // Set page title
-$pageTitle = 'View All Sectors';
+$pageTitle = MULTI_SECTOR_ENABLED ? 'View All Sectors' : 'Forestry Sector Programs';
 
 // Get current reporting period
 $current_period = get_current_reporting_period();
@@ -31,7 +32,14 @@ $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'programs';
 // Process filters
 $filters = [];
 if (isset($_GET['status'])) $filters['status'] = $_GET['status'];
-if (isset($_GET['sector_id'])) $filters['sector_id'] = intval($_GET['sector_id']);
+
+// If multi-sector is disabled, force the sector filter to be Forestry
+if (!MULTI_SECTOR_ENABLED) {
+    $filters['sector_id'] = FORESTRY_SECTOR_ID;
+} else if (isset($_GET['sector_id'])) {
+    $filters['sector_id'] = intval($_GET['sector_id']);
+}
+
 if (isset($_GET['agency_id'])) $filters['agency_id'] = intval($_GET['agency_id']);
 if (isset($_GET['search'])) $filters['search'] = trim($_GET['search']);
 
@@ -55,23 +63,32 @@ if (!empty($all_programs) && !isset($all_programs['error'])) {
 $current_sector_id = $_SESSION['sector_id'];
 
 // Get all sectors from the database
-$sectors = get_all_sectors();
+if (MULTI_SECTOR_ENABLED) {
+    $sectors = get_all_sectors();
+} else {
+    // Only get the Forestry sector
+    $sectors = array_filter(get_all_sectors(), function($sector) {
+        return $sector['sector_id'] == FORESTRY_SECTOR_ID;
+    });
+}
 
 // Get all metrics for the selected period if tab is metrics
 $sector_metrics = [];
 if ($active_tab === 'metrics') {
-    // If specific sector is selected, get metrics only for that sector
-    if (isset($filters['sector_id']) && $filters['sector_id'] > 0) {
+    // If multi-sector is disabled or specific sector is selected, get metrics only for that sector
+    if (!MULTI_SECTOR_ENABLED || (isset($filters['sector_id']) && $filters['sector_id'] > 0)) {
+        $target_sector_id = MULTI_SECTOR_ENABLED ? $filters['sector_id'] : FORESTRY_SECTOR_ID;
+        
         // Check permissions - agencies can only see their own sector metrics and public metrics
-        if ($filters['sector_id'] == $current_sector_id) {
+        if ($target_sector_id == $current_sector_id) {
             // Own sector - can see all metrics
-            $sector_metrics[$filters['sector_id']] = get_agency_metrics_data($filters['sector_id'], $period_id);
+            $sector_metrics[$target_sector_id] = get_agency_metrics_data($target_sector_id, $period_id);
         } else {
             // Get public metrics for the selected sector - for now, assume all submitted metrics are public
-            $sector_metrics[$filters['sector_id']] = get_agency_metrics_data($filters['sector_id'], $period_id);
+            $sector_metrics[$target_sector_id] = get_agency_metrics_data($target_sector_id, $period_id);
         }
-    } else {
-        // No specific sector selected, get all sectors' metrics with permission checks
+    } else if (MULTI_SECTOR_ENABLED) {
+        // No specific sector selected and multi-sector is enabled, get all sectors' metrics with permission checks
         foreach ($sectors as $sector) {
             // For current agency's sector, get all metrics
             if ($sector['sector_id'] == $current_sector_id) {
@@ -101,11 +118,25 @@ if ($active_tab === 'metrics') {
 }
 
 // Get all agencies for filter dropdown
-$agencies = [];
-$agencies_query = "SELECT user_id, agency_name FROM users WHERE role = 'agency' ORDER BY agency_name";
-$agencies_result = $conn->query($agencies_query);
-while ($row = $agencies_result->fetch_assoc()) {
-    $agencies[] = $row;
+if (MULTI_SECTOR_ENABLED) {
+    $agencies = [];
+    $agencies_query = "SELECT user_id, agency_name FROM users WHERE role = 'agency' ORDER BY agency_name";
+    $agencies_result = $conn->query($agencies_query);
+    while ($row = $agencies_result->fetch_assoc()) {
+        $agencies[] = $row;
+    }
+} else {
+    // Only get agencies from the Forestry sector
+    $agencies = [];
+    $agencies_query = "SELECT user_id, agency_name FROM users WHERE role = 'agency' AND sector_id = ? ORDER BY agency_name";
+    $stmt = $conn->prepare($agencies_query);
+    $stmt->bind_param("i", $forestry_sector_id);
+    $forestry_sector_id = FORESTRY_SECTOR_ID;
+    $stmt->execute();
+    $agencies_result = $stmt->get_result();
+    while ($row = $agencies_result->fetch_assoc()) {
+        $agencies[] = $row;
+    }
 }
 
 // Additional scripts
@@ -135,8 +166,10 @@ require_once '../layouts/header.php';
 require_once '../layouts/agency_nav.php';
 
 // Set up the page header variables
-$title = "Cross-Sector Programs";
-$subtitle = "View and track programs across all sectors";
+$title = MULTI_SECTOR_ENABLED ? "Cross-Sector Programs" : "Forestry Sector Programs";
+$subtitle = MULTI_SECTOR_ENABLED ? 
+    "View and track programs across all sectors" : 
+    "View and track forestry sector programs";
 $headerStyle = 'light'; // Use light (white) style for inner pages
 $actions = []; // No actions needed for this view
 
@@ -147,6 +180,13 @@ require_once '../../includes/dashboard_header.php';
 <div class="container-fluid px-4">
     <!-- Period Selector Component -->
     <?php require_once '../../includes/period_selector.php'; ?>
+
+    <?php if (!MULTI_SECTOR_ENABLED): ?>
+    <div class="alert alert-info mb-4">
+        <i class="fas fa-info-circle me-2"></i>
+        <strong>Note:</strong> The dashboard is currently focused on the Forestry sector only.
+    </div>
+    <?php endif; ?>
 
     <!-- Tab Navigation -->
     <ul class="nav nav-tabs mb-4" id="viewTabs" role="tablist">
@@ -201,6 +241,7 @@ require_once '../../includes/dashboard_header.php';
                         </select>
                     </div>
                     
+                    <?php if (MULTI_SECTOR_ENABLED): ?>
                     <div class="col-md-3 filter-control-wrapper">
                         <label for="sector_id" class="form-label">Sector</label>
                         <select class="form-select" id="sector_id" name="sector_id">
@@ -228,6 +269,21 @@ require_once '../../includes/dashboard_header.php';
                         </select>
                     </div>
                     <?php else: ?>
+                    <!-- When multi-sector is disabled, only show agencies filter -->
+                    <div class="col-md-4 filter-control-wrapper">
+                        <label for="agency_id" class="form-label">Agency</label>
+                        <select class="form-select" id="agency_id" name="agency_id">
+                            <option value="">All Agencies</option>
+                            <?php foreach ($agencies as $agency): ?>
+                                <option value="<?php echo $agency['user_id']; ?>" 
+                                    <?php if(isset($_GET['agency_id']) && $_GET['agency_id'] == $agency['user_id']) echo 'selected'; ?>>
+                                    <?php echo htmlspecialchars($agency['agency_name']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <?php endif; ?>
+                    <?php else: ?>
                     <!-- Metrics-specific filters -->
                     <div class="col-md-4 filter-control-wrapper">
                         <label for="search" class="form-label">Search</label>
@@ -239,6 +295,7 @@ require_once '../../includes/dashboard_header.php';
                         </div>
                     </div>
                     
+                    <?php if (MULTI_SECTOR_ENABLED): ?>
                     <div class="col-md-6 filter-control-wrapper">
                         <label for="sector_id" class="form-label">Sector</label>
                         <select class="form-select" id="sector_id" name="sector_id">
@@ -252,6 +309,7 @@ require_once '../../includes/dashboard_header.php';
                             <?php endforeach; ?>
                         </select>
                     </div>
+                    <?php endif; ?>
                     <?php endif; ?>
                     
                     <div class="col-auto d-flex align-items-end">

@@ -14,6 +14,15 @@ State statutory bodies:
 - Sarawak Forestry Corporation (SFC)
 - Sarawak Timber Industry Development Corporation
 
+## CURRENT IMPLEMENTATION SCOPE
+
+**Important Note (May 2025):** While the system architecture supports multiple sectors, the current implementation phase is focused exclusively on the Forestry sector with its three key agencies:
+- Forestry Department
+- Sarawak Forestry Corporation (SFC)
+- Sarawak Timber Industry Development Corporation (STIDC)
+
+The multi-sector functionality remains in the codebase but is currently disabled via the `MULTI_SECTOR_ENABLED` configuration flag in config.php.
+
 ## PROBLEM STATEMENT
 
 Currently, agencies compile quarterly reports using Excel, generating tables and graphs which are then copied/converted into PowerPoint slides. This process is time-consuming and inefficient.
@@ -103,6 +112,13 @@ This allows adding new program attributes without database schema changes.
 - The system supports both assigned programs (by admins) and agency-created programs
 - Debug tools are available at `/debug/check_program_creation.php` and `/debug/check_status_values.php`
 
+## Forestry Sector Implementation (May 2025)
+- Current focus is exclusively on the Forestry sector
+- Three main agencies are included: Forestry Department, SFC, and STIDC
+- Forestry-specific metrics focus on timber exports, forest conservation, and sustainability
+- Multi-sector UI elements are hidden but code remains intact for future expansion
+- The `MULTI_SECTOR_ENABLED` configuration flag controls visibility of multi-sector features
+
 ## To Do List
 - Implement data export functionality for all program reports
 - Add reporting period comparison views in agency dashboard
@@ -112,6 +128,7 @@ This allows adding new program attributes without database schema changes.
 - Implement notification system for upcoming reporting deadlines
 - Optimize database queries for large program datasets
 - Add data visualization options for sector-specific metrics
+- Future: Re-enable multi-sector support once Forestry sector pilot is successful
 
 PCDS2030 Dashboard System Context
 =================================
@@ -173,10 +190,18 @@ New Features - Sector Metrics System:
 
 Cross-Sector Visibility:
 -----------------------
-- All agencies can view programs from other sectors (read-only)
+- All agencies can view programs from other sectors (read-only) [Currently disabled]
 - Unified cross-sector view with filtering capabilities
 - Filter by sector, status, or search terms
 - Visual highlighting of the agency's own sector
+
+Implementation Phase (May 2025):
+-------------------------------
+- Forestry sector pilot implementation with three key agencies
+- Multi-sector functionality temporarily disabled but preserved in codebase
+- Configuration-based feature toggling to enable/disable multi-sector views
+- Each agency can only view programs within the Forestry sector
+- UI simplified to focus on Forestry-specific requirements
 
 Technical Details:
 -----------------
@@ -185,6 +210,7 @@ Technical Details:
 - Bootstrap 5 frontend
 - Chart.js for visualizations
 - AJAX for dynamic data loading
+- Feature-flag based architecture for progressive enhancement
 
 Report Generation:
 -----------------

@@ -17,6 +17,10 @@ define('APP_NAME', 'PCDS2030 Dashboard');
 define('APP_URL', 'http://localhost/pcds2030_dashboard');
 define('APP_VERSION', '1.0.0');
 
+// Feature flags
+define('MULTI_SECTOR_ENABLED', false); // Set to false to focus only on Forestry sector
+define('FORESTRY_SECTOR_ID', 1);      // The ID of the Forestry sector in the database
+
 // File paths
 define('ROOT_PATH', dirname(__DIR__) . '/');
 define('UPLOAD_PATH', ROOT_PATH . 'uploads/');
