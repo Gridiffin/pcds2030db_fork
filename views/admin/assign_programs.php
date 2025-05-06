@@ -11,6 +11,7 @@ require_once '../../includes/db_connect.php';
 require_once '../../includes/session.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/admins/index.php';
+require_once '../../includes/status_helpers.php';
 
 // Verify user is admin
 if (!is_admin()) {
@@ -25,6 +26,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_program'])) {
     $agency_id = intval($_POST['agency_id']);
     $start_date = !empty($_POST['start_date']) ? $_POST['start_date'] : NULL;
     $end_date = !empty($_POST['end_date']) ? $_POST['end_date'] : NULL;
+    $rating = isset($_POST['rating']) ? $_POST['rating'] : 'not-started';
+    $remarks = isset($_POST['remarks']) ? trim($_POST['remarks']) : '';
     
     // Validation
     $errors = [];
@@ -54,24 +57,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_program'])) {
             // Process edit permissions
             $edit_permissions = isset($_POST['edit_permissions']) ? $_POST['edit_permissions'] : [];
             
-            // Collect default values for the fields
-            $default_values = [];
-            if (!in_array('target', $edit_permissions) && !empty($_POST['target_value'])) {
-                $default_values['target'] = $_POST['target_value'];
-            }
-            
-            if (!in_array('status', $edit_permissions) && !empty($_POST['status_value'])) {
-                $default_values['status'] = $_POST['status_value'];
-            }
-            
-            if (!in_array('status_text', $edit_permissions) && !empty($_POST['status_text_value'])) {
-                $default_values['status_text'] = $_POST['status_text_value'];
-            }
-            
             // Combine permissions and default values in one JSON structure
             $program_settings = [
-                'edit_permissions' => $edit_permissions,
-                'default_values' => $default_values
+                'edit_permissions' => $edit_permissions
             ];
             
             $program_settings_json = json_encode($program_settings);
@@ -105,31 +93,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_program'])) {
                 $period_row = $period_result->fetch_assoc();
                 $period_id = $period_row['period_id'];
                 
-                // Prepare status value from the form
-                $status = isset($_POST['status_value']) ? $_POST['status_value'] : 'not-started';
+                // Process targets data from form
+                $targets = [];
+                if (isset($_POST['target_text']) && is_array($_POST['target_text'])) {
+                    foreach ($_POST['target_text'] as $index => $text) {
+                        if (!empty($text)) {
+                            $targets[] = [
+                                'target_text' => $text,
+                                'status_description' => isset($_POST['status_description'][$index]) ? $_POST['status_description'][$index] : ''
+                            ];
+                        }
+                    }
+                }
                 
-                // Prepare content JSON - include any default values set by the admin
+                // If no targets were provided, add an empty one
+                if (empty($targets)) {
+                    $targets[] = [
+                        'target_text' => '',
+                        'status_description' => ''
+                    ];
+                }
+                
+                // Prepare content JSON with updated structure
                 $content_data = [
-                    'status_text' => isset($_POST['status_text_value']) ? $_POST['status_text_value'] : '',
-                    'description' => $description,
+                    'rating' => $rating,
+                    'targets' => $targets,
+                    'remarks' => $remarks
                 ];
                 
                 $content_json = json_encode($content_data);
                 
                 // Create an initial draft submission record
                 $submission_stmt = $conn->prepare("INSERT INTO program_submissions 
-                    (program_id, period_id, submitted_by, status, content_json, submission_date, updated_at, is_draft, target, achievement) 
-                    VALUES (?, ?, ?, ?, ?, NOW(), NOW(), 1, ?, 0)");
+                    (program_id, period_id, submitted_by, status, content_json, submission_date, updated_at, is_draft) 
+                    VALUES (?, ?, ?, ?, ?, NOW(), NOW(), 1)");
                 
-                $target_value = isset($_POST['target_value']) ? $_POST['target_value'] : '';
-                
-                $submission_stmt->bind_param("iiisss", 
+                $submission_stmt->bind_param("iiiss", 
                     $program_id,
                     $period_id,
                     $admin_id,
-                    $status,
-                    $content_json,
-                    $target_value
+                    $rating, // Use rating as status
+                    $content_json
                 );
                 
                 $submission_stmt->execute();
@@ -184,6 +188,11 @@ while ($row = $agencies_result->fetch_assoc()) {
 // Set page title
 $pageTitle = 'Assign Programs';
 
+// Additional scripts
+$additionalScripts = [
+    APP_URL . '/assets/js/utilities/status_utils.js'
+];
+
 // Include header
 require_once '../layouts/header.php';
 
@@ -224,168 +233,175 @@ require_once '../../includes/dashboard_header.php';
                     </div>
                 <?php endif; ?>
                 
-                <form method="POST" action="">
+                <form method="POST" action="" id="assignProgramForm">
                     <div class="row g-3">
-                        <div class="col-md-12">
-                            <label for="program_name" class="form-label">Program Name <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="program_name" name="program_name" required 
-                                   value="<?php echo isset($_POST['program_name']) ? htmlspecialchars($_POST['program_name']) : ''; ?>">
-                        </div>
-                        
-                        <div class="col-md-12">
-                            <label for="description" class="form-label">Description</label>
-                            <textarea class="form-control" id="description" name="description" rows="3"><?php echo isset($_POST['description']) ? htmlspecialchars($_POST['description']) : ''; ?></textarea>
-                        </div>
-                        
-                        <div class="col-md-6">
-                            <label for="agency_id" class="form-label">Assign to Agency <span class="text-danger">*</span></label>
-                            <select class="form-select" id="agency_id" name="agency_id" required>
-                                <option value="">Select Agency</option>
-                                <?php foreach ($agencies as $agency): ?>
-                                    <option value="<?php echo $agency['user_id']; ?>"
-                                        <?php echo (isset($_POST['agency_id']) && $_POST['agency_id'] == $agency['user_id']) ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($agency['agency_name']); ?> (<?php echo htmlspecialchars($agency['sector_name']); ?>)
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        
-                        <div class="col-md-6">
-                            <label for="start_date" class="form-label">Start Date</label>
-                            <input type="date" class="form-control" id="start_date" name="start_date" 
-                                   value="<?php echo isset($_POST['start_date']) ? htmlspecialchars($_POST['start_date']) : ''; ?>">
-                        </div>
-                        
-                        <div class="col-md-6">
-                            <label for="end_date" class="form-label">End Date</label>
-                            <input type="date" class="form-control" id="end_date" name="end_date"
-                                   value="<?php echo isset($_POST['end_date']) ? htmlspecialchars($_POST['end_date']) : ''; ?>">
-                        </div>
-                        
-                        <div class="col-md-12 mt-4">
-                            <h5 class="mb-3">Default Values & Permissions</h5>
-                            <p class="text-muted">Set default values for fields and control which ones the agency can edit.</p>
+                        <!-- Basic Information -->
+                        <div class="col-md-12 mb-4">
+                            <h6 class="fw-bold mb-3">Basic Information</h6>
+                            <div class="mb-3">
+                                <label for="program_name" class="form-label">Program Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="program_name" name="program_name" required 
+                                      value="<?php echo isset($_POST['program_name']) ? htmlspecialchars($_POST['program_name']) : ''; ?>">
+                                <div class="form-text">The name of the program as it will appear in reports and dashboards.</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Program Description</label>
+                                <textarea class="form-control" id="description" name="description" rows="3"><?php echo isset($_POST['description']) ? htmlspecialchars($_POST['description']) : ''; ?></textarea>
+                                <div class="form-text">Optional description of the program's purpose and goals.</div>
+                            </div>
                             
                             <div class="row g-3">
-                                <div class="col-md-12 mb-3">
-                                    <label for="target_value" class="form-label">Target</label>
-                                    <div class="input-group mb-2">
-                                        <input type="text" class="form-control" id="target_value" name="target_value" 
-                                               placeholder="Define a measurable target for this program"
-                                               value="<?php echo isset($_POST['target_value']) ? htmlspecialchars($_POST['target_value']) : ''; ?>">
-                                        <div class="input-group-text">
-                                            <div class="form-check form-switch mb-0">
-                                                <input class="form-check-input" type="checkbox" id="edit_target" name="edit_permissions[]" value="target" checked>
-                                                <label class="form-check-label" for="edit_target">Agency can edit</label>
-                                            </div>
-                                        </div>
-                                    </div>
+                                <div class="col-md-6">
+                                    <label for="agency_id" class="form-label">Assign to Agency <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="agency_id" name="agency_id" required>
+                                        <option value="">Select Agency</option>
+                                        <?php foreach ($agencies as $agency): ?>
+                                            <option value="<?php echo $agency['user_id']; ?>"
+                                                <?php echo (isset($_POST['agency_id']) && $_POST['agency_id'] == $agency['user_id']) ? 'selected' : ''; ?>>
+                                                <?php echo htmlspecialchars($agency['agency_name']); ?> (<?php echo htmlspecialchars($agency['sector_name']); ?>)
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </div>
                                 
-                                <div class="col-md-12 mb-3">
-                                    <label for="status_value" class="form-label">Status</label>
-                                    
-                                    <!-- Status Legend -->
-                                    <div class="mb-2 d-flex flex-wrap gap-2">
-                                        <span class="badge bg-success me-1">Monthly Target Achieved</span>
-                                        <span class="badge bg-warning me-1">On Track for Year</span>
-                                        <span class="badge bg-danger me-1">Severe Delays</span>
-                                        <span class="badge bg-secondary me-1">Not Started</span>
-                                    </div>
-                                    
-                                    <div class="input-group mb-2">
-                                        <select class="form-select" id="status_value" name="status_value">
-                                            <option value="target-achieved" <?php echo (isset($_POST['status_value']) && $_POST['status_value'] == 'target-achieved') ? 'selected' : ''; ?>>
-                                                <span class="status-indicator success"></span>Monthly Target Achieved
-                                            </option>
-                                            <option value="on-track-yearly" <?php echo (isset($_POST['status_value']) && $_POST['status_value'] == 'on-track-yearly') ? 'selected' : ''; ?>>
-                                                <span class="status-indicator warning"></span>On Track for Year
-                                            </option>
-                                            <option value="severe-delay" <?php echo (isset($_POST['status_value']) && $_POST['status_value'] == 'severe-delay') ? 'selected' : ''; ?>>
-                                                <span class="status-indicator danger"></span>Severe Delays
-                                            </option>
-                                            <option value="not-started" <?php echo (isset($_POST['status_value']) && $_POST['status_value'] == 'not-started') ? 'selected' : ''; ?> selected>
-                                                <span class="status-indicator secondary"></span>Not Started
-                                            </option>
-                                        </select>
-                                        <div class="input-group-text">
-                                            <div class="form-check form-switch mb-0">
-                                                <input class="form-check-input" type="checkbox" id="edit_status" name="edit_permissions[]" value="status" checked>
-                                                <label class="form-check-label" for="edit_status">Agency can edit</label>
-                                            </div>
-                                        </div>
-                                    </div>
+                                <div class="col-md-3">
+                                    <label for="start_date" class="form-label">Start Date</label>
+                                    <input type="date" class="form-control" id="start_date" name="start_date" 
+                                          value="<?php echo isset($_POST['start_date']) ? htmlspecialchars($_POST['start_date']) : ''; ?>">
+                                    <div class="form-text">When does/did the program start?</div>
                                 </div>
                                 
-                                <!-- Status Description Field -->
-                                <div class="col-md-12 mb-3">
-                                    <label for="status_text_value" class="form-label">Status Description</label>
-                                    <div class="input-group mb-2">
-                                        <textarea class="form-control" id="status_text_value" name="status_text_value" rows="2" placeholder="Describe the current status in detail"><?php echo isset($_POST['status_text_value']) ? htmlspecialchars($_POST['status_text_value']) : ''; ?></textarea>
-                                        <div class="input-group-text">
-                                            <div class="form-check form-switch mb-0">
-                                                <input class="form-check-input" type="checkbox" id="edit_status_text" name="edit_permissions[]" value="status_text" checked>
-                                                <label class="form-check-label" for="edit_status_text">Agency can edit</label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Target Configuration -->
-                                <div class="mb-3">
-                                    <label class="form-label">Program Targets</label>
-                                    <div id="targets-container">
-                                        <div class="target-entry mb-3 p-3 border rounded">
-                                            <div class="mb-3">
-                                                <label class="form-label">Target 1</label>
-                                                <div class="input-group">
-                                                    <input type="text" class="form-control target-input" name="target_text[]"
-                                                          placeholder="Specific, measurable target" value="<?php echo isset($_POST['target_text'][0]) ? htmlspecialchars($_POST['target_text'][0]) : ''; ?>">
-                                                    <div class="input-group-text">
-                                                        <div class="form-check form-switch mb-0">
-                                                            <input class="form-check-input" type="checkbox" id="edit_targets" name="edit_permissions[]" value="targets" checked>
-                                                            <label class="form-check-label" for="edit_targets">Agency can edit</label>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="mb-2">
-                                                <label class="form-label">Status Description</label>
-                                                <div class="input-group">
-                                                    <textarea class="form-control" name="status_description[]" rows="2" 
-                                                           placeholder="Current status or progress details"><?php echo isset($_POST['status_description'][0]) ? htmlspecialchars($_POST['status_description'][0]) : ''; ?></textarea>
-                                                    <div class="input-group-text">
-                                                        <div class="form-check form-switch mb-0">
-                                                            <input class="form-check-input" type="checkbox" id="edit_status_text" name="edit_permissions[]" value="status_text" checked>
-                                                            <label class="form-check-label" for="edit_status_text">Agency can edit</label>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <button type="button" id="add-target-btn" class="btn btn-outline-secondary btn-sm">
-                                        <i class="fas fa-plus-circle me-1"></i> Add Another Target
-                                    </button>
-                                </div>
-                                
-                                <div class="col-md-12">
-                                    <div class="form-check form-switch mb-3">
-                                        <input class="form-check-input" type="checkbox" id="edit_description" name="edit_permissions[]" value="description" checked>
-                                        <label class="form-check-label" for="edit_description">Agency can edit Description</label>
-                                    </div>
-                                    
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="edit_timeline" name="edit_permissions[]" value="timeline">
-                                        <label class="form-check-label" for="edit_timeline">Agency can edit Timeline (Start/End Dates)</label>
-                                    </div>
+                                <div class="col-md-3">
+                                    <label for="end_date" class="form-label">End Date</label>
+                                    <input type="date" class="form-control" id="end_date" name="end_date"
+                                          value="<?php echo isset($_POST['end_date']) ? htmlspecialchars($_POST['end_date']) : ''; ?>">
+                                    <div class="form-text">When is the program expected to end?</div>
                                 </div>
                             </div>
                         </div>
                         
+                        <!-- Program Rating -->
+                        <div class="col-md-12 mb-4">
+                            <h6 class="fw-bold mb-3">Program Rating</h6>
+                            <p class="text-muted mb-3">
+                                How would you rate the overall progress of this program?
+                            </p>
+                            
+                            <input type="hidden" id="rating" name="rating" value="<?php echo $_POST['rating'] ?? 'not-started'; ?>">
+                            
+                            <div class="rating-pills">
+                                <div class="rating-pill target-achieved <?php echo (isset($_POST['rating']) && $_POST['rating'] == 'target-achieved') ? 'active' : ''; ?>" data-rating="target-achieved">
+                                    <i class="fas fa-check-circle me-2"></i> Monthly Target Achieved
+                                </div>
+                                <div class="rating-pill on-track-yearly <?php echo (isset($_POST['rating']) && $_POST['rating'] == 'on-track-yearly') ? 'active' : ''; ?>" data-rating="on-track-yearly">
+                                    <i class="fas fa-calendar-check me-2"></i> On Track for Year
+                                </div>
+                                <div class="rating-pill severe-delay <?php echo (isset($_POST['rating']) && $_POST['rating'] == 'severe-delay') ? 'active' : ''; ?>" data-rating="severe-delay">
+                                    <i class="fas fa-exclamation-triangle me-2"></i> Severe Delays
+                                </div>
+                                <div class="rating-pill not-started <?php echo (!isset($_POST['rating']) || $_POST['rating'] == 'not-started') ? 'active' : ''; ?>" data-rating="not-started">
+                                    <i class="fas fa-clock me-2"></i> Not Started
+                                </div>
+                            </div>
+                        </div>
+                            
+                        <!-- Program Targets -->
+                        <div class="col-md-12 mb-4">
+                            <h6 class="fw-bold mb-3">Program Targets</h6>
+                            <p class="text-muted mb-3">
+                                Define one or more targets for this program, each with its own status description.
+                            </p>
+                            
+                            <div id="targets-container">
+                                <div class="target-entry">
+                                    <div class="mb-3">
+                                        <label class="form-label">Target 1 *</label>
+                                        <input type="text" class="form-control target-input" name="target_text[]" 
+                                              placeholder="Define a measurable target (e.g., 'Plant 100 trees')"
+                                              value="<?php echo htmlspecialchars($_POST['target_text'][0] ?? ''); ?>">
+                                        <div class="form-text">Define a specific, measurable target for this program.</div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label">Status Description</label>
+                                        <textarea class="form-control status-description" name="status_description[]" rows="2" 
+                                                  placeholder="Describe the current status or progress toward this target"><?php echo htmlspecialchars($_POST['status_description'][0] ?? ''); ?></textarea>
+                                        <div class="form-text">Describe the current status or achievement toward this target.</div>
+                                    </div>
+                                </div>
+                                
+                                <?php
+                                // Restore additional targets from previous form submission if any
+                                if (isset($_POST['target_text']) && is_array($_POST['target_text']) && count($_POST['target_text']) > 1) {
+                                    for ($i = 1; $i < count($_POST['target_text']); $i++) {
+                                        if (!empty($_POST['target_text'][$i])) {
+                                            echo '<div class="target-entry">';
+                                            echo '<button type="button" class="btn-close remove-target" aria-label="Remove target"></button>';
+                                            echo '<div class="mb-3">';
+                                            echo '<label class="form-label">Target ' . ($i + 1) . ' *</label>';
+                                            echo '<input type="text" class="form-control target-input" name="target_text[]" ';
+                                            echo 'value="' . htmlspecialchars($_POST['target_text'][$i]) . '" ';
+                                            echo 'placeholder="Define a measurable target (e.g., \'Plant 100 trees\')">';
+                                            echo '<div class="form-text">Define a specific, measurable target for this program.</div>';
+                                            echo '</div>';
+                                            echo '<div class="mb-2">';
+                                            echo '<label class="form-label">Status Description</label>';
+                                            echo '<textarea class="form-control status-description" name="status_description[]" rows="2" ';
+                                            echo 'placeholder="Describe the current status or progress toward this target">' . htmlspecialchars($_POST['status_description'][$i] ?? '') . '</textarea>';
+                                            echo '<div class="form-text">Describe the current status or achievement toward this target.</div>';
+                                            echo '</div>';
+                                            echo '</div>';
+                                        }
+                                    }
+                                }
+                                ?>
+                            </div>
+                            
+                            <button type="button" id="add-target-btn" class="btn btn-outline-secondary add-target-btn">
+                                <i class="fas fa-plus-circle me-1"></i> Add Another Target
+                            </button>
+                        </div>
+                        
+                        <!-- Remarks -->
+                        <div class="col-md-12 mb-4">
+                            <h6 class="fw-bold mb-3">Additional Remarks</h6>
+                            <div class="mb-3">
+                                <label for="remarks" class="form-label">Remarks (Optional)</label>
+                                <textarea class="form-control" id="remarks" name="remarks" rows="3"
+                                         placeholder="Enter any additional notes or context about this program"><?php echo htmlspecialchars($_POST['remarks'] ?? ''); ?></textarea>
+                                <div class="form-text">Any additional information that doesn't fit elsewhere.</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Edit Permissions -->
+                        <div class="col-md-12 mb-4">
+                            <h6 class="fw-bold mb-3">Agency Edit Permissions</h6>
+                            <div class="mb-3">
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" id="edit_description" name="edit_permissions[]" value="description" checked>
+                                    <label class="form-check-label" for="edit_description">Agency can edit Description</label>
+                                </div>
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" id="edit_targets" name="edit_permissions[]" value="targets" checked>
+                                    <label class="form-check-label" for="edit_targets">Agency can edit Targets</label>
+                                </div>
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" id="edit_status_text" name="edit_permissions[]" value="status_text" checked>
+                                    <label class="form-check-label" for="edit_status_text">Agency can edit Status Descriptions</label>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="edit_timeline" name="edit_permissions[]" value="timeline">
+                                    <label class="form-check-label" for="edit_timeline">Agency can edit Timeline (Start/End Dates)</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Form Actions -->
                         <div class="col-md-12 mt-4">
                             <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                                <a href="programs.php" class="btn btn-outline-secondary">Cancel</a>
+                                <a href="programs.php" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left me-1"></i> Cancel
+                                </a>
                                 <button type="submit" name="assign_program" class="btn btn-primary">
                                     <i class="fas fa-paper-plane me-1"></i> Assign Program
                                 </button>
@@ -398,82 +414,132 @@ require_once '../../includes/dashboard_header.php';
     </div>
 </div>
 
-<?php
-// Include footer
-require_once '../layouts/footer.php';
-?>
-
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Rating pills selection
+    const ratingPills = document.querySelectorAll('.rating-pill');
+    const ratingInput = document.getElementById('rating');
+    
+    ratingPills.forEach(pill => {
+        pill.addEventListener('click', function() {
+            // Remove active class from all pills
+            ratingPills.forEach(p => p.classList.remove('active'));
+            
+            // Add active class to clicked pill
+            this.classList.add('active');
+            
+            // Update hidden input
+            ratingInput.value = this.getAttribute('data-rating');
+        });
+    });
+    
     // Add target functionality
     const addTargetBtn = document.getElementById('add-target-btn');
-    if (addTargetBtn) {
-        const targetsContainer = document.getElementById('targets-container');
+    const targetsContainer = document.getElementById('targets-container');
+    
+    // Keep track of the highest target number used
+    let highestTargetNumber = document.querySelectorAll('.target-entry').length;
+    
+    // Function to update target numbers sequentially
+    function updateTargetNumbers() {
+        const targetEntries = document.querySelectorAll('.target-entry');
+        targetEntries.forEach((entry, index) => {
+            const label = entry.querySelector('.form-label');
+            if (label) {
+                label.textContent = `Target ${index + 1} *`;
+            }
+        });
+    }
+    
+    addTargetBtn.addEventListener('click', function() {
+        // Increment the highest target number
+        highestTargetNumber++;
         
-        // Keep track of the highest target number used
-        let targetCount = 1;
+        const targetEntry = document.createElement('div');
+        targetEntry.className = 'target-entry';
         
-        // Function to update target numbers sequentially
-        function updateTargetNumbers() {
-            const targetEntries = document.querySelectorAll('.target-entry');
-            targetEntries.forEach((entry, index) => {
-                const label = entry.querySelector('.form-label');
-                if (label && label.textContent.includes('Target')) {
-                    label.textContent = `Target ${index + 1}`;
-                }
+        const html = `
+            <button type="button" class="btn-close remove-target" aria-label="Remove target"></button>
+            <div class="mb-3">
+                <label class="form-label">Target ${highestTargetNumber} *</label>
+                <input type="text" class="form-control target-input" name="target_text[]" 
+                       placeholder="Define a measurable target (e.g., 'Plant 100 trees')">
+                <div class="form-text">Define a specific, measurable target for this program.</div>
+            </div>
+            <div class="mb-2">
+                <label class="form-label">Status Description</label>
+                <textarea class="form-control status-description" name="status_description[]" rows="2" 
+                          placeholder="Describe the current status or progress toward this target"></textarea>
+                <div class="form-text">Describe the current status or achievement toward this target.</div>
+            </div>
+        `;
+        
+        targetEntry.innerHTML = html;
+        targetsContainer.appendChild(targetEntry);
+        
+        // Attach remove event listener to the new target
+        const removeBtn = targetEntry.querySelector('.remove-target');
+        if (removeBtn) {
+            removeBtn.addEventListener('click', function() {
+                targetEntry.remove();
+                // Update target numbers after removing
+                updateTargetNumbers();
             });
         }
+    });
+    
+    // Initialize existing remove buttons
+    document.querySelectorAll('.remove-target').forEach(btn => {
+        btn.addEventListener('click', function() {
+            this.closest('.target-entry').remove();
+            // Update target numbers after removing
+            updateTargetNumbers();
+        });
+    });
+    
+    // Form validation
+    document.getElementById('assignProgramForm').addEventListener('submit', function(e) {
+        const programName = document.getElementById('program_name').value;
+        const agencyId = document.getElementById('agency_id').value;
+        const targetInputs = document.querySelectorAll('.target-input');
+        let hasFilledTarget = false;
         
-        addTargetBtn.addEventListener('click', function() {
-            // Increment the target count
-            targetCount++;
-            
-            const targetEntry = document.createElement('div');
-            targetEntry.className = 'target-entry mb-3 p-3 border rounded';
-            
-            const html = `
-                <button type="button" class="btn-close float-end remove-target" aria-label="Remove target"></button>
-                <div class="mb-3">
-                    <label class="form-label">Target ${targetCount}</label>
-                    <div class="input-group">
-                        <input type="text" class="form-control target-input" name="target_text[]" 
-                               placeholder="Specific, measurable target">
-                        <div class="input-group-text">
-                            <div class="form-check form-switch mb-0">
-                                <input class="form-check-input" type="checkbox" name="edit_permissions[]" value="targets" checked>
-                                <label class="form-check-label">Agency can edit</label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="mb-2">
-                    <label class="form-label">Status Description</label>
-                    <div class="input-group">
-                        <textarea class="form-control" name="status_description[]" rows="2" 
-                                placeholder="Current status or progress details"></textarea>
-                        <div class="input-group-text">
-                            <div class="form-check form-switch mb-0">
-                                <input class="form-check-input" type="checkbox" name="edit_permissions[]" value="status_text" checked>
-                                <label class="form-check-label">Agency can edit</label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            targetEntry.innerHTML = html;
-            targetsContainer.appendChild(targetEntry);
-            
-            // Attach remove event listener to the new target
-            const removeBtn = targetEntry.querySelector('.remove-target');
-            if (removeBtn) {
-                removeBtn.addEventListener('click', function() {
-                    targetEntry.remove();
-                    // Update target numbers after removing
-                    updateTargetNumbers();
-                });
+        // Validate program name
+        if (!programName.trim()) {
+            alert('Please enter a program name.');
+            e.preventDefault();
+            return false;
+        }
+        
+        // Validate agency selection
+        if (!agencyId) {
+            alert('Please select an agency.');
+            e.preventDefault();
+            return false;
+        }
+        
+        // Not requiring targets for admin assignments - they can be added later by agency
+        
+        return true;
+    });
+    
+    // Handle date validation
+    const startDateField = document.getElementById('start_date');
+    const endDateField = document.getElementById('end_date');
+    
+    if (startDateField && endDateField) {
+        endDateField.addEventListener('change', function() {
+            if (startDateField.value && this.value) {
+                if (new Date(this.value) < new Date(startDateField.value)) {
+                    alert('End date cannot be before start date');
+                    this.value = '';
+                }
             }
         });
     }
 });
 </script>
+<?php
+// Include footer
+require_once '../layouts/footer.php';
+?>
