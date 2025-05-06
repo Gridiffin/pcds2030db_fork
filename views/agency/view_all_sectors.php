@@ -421,7 +421,7 @@ require_once '../../includes/dashboard_header.php';
                                     </td>
                                     <td>
                                         <div class="btn-group btn-group-sm">
-                                            <a href="program_details.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="View Details">
+                                            <a href="program_details.php?id=<?php echo $program['program_id']; ?>&source=all_sectors" class="btn btn-outline-primary" title="View Details">
                                                 <i class="fas fa-eye"></i>
                                             </a>
                                         </div>

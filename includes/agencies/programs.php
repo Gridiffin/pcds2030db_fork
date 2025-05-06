@@ -515,20 +515,36 @@ function submit_program_data($data, $is_draft = false) {
 
 /**
  * Get detailed information about a specific program
+ * Modified to allow viewing from All Sectors page
  * 
  * @param int $program_id The ID of the program to retrieve
+ * @param bool $allow_cross_agency Whether to allow viewing programs from other agencies (for All Sectors view)
  * @return array|false Program details array or false if not found
  */
-function get_program_details($program_id) {
+function get_program_details($program_id, $allow_cross_agency = false) {
     global $conn;
     
     $agency_id = $_SESSION['user_id'];
     
-    $stmt = $conn->prepare("SELECT p.*, s.sector_name as sector_name, p.created_at, p.updated_at
-                          FROM programs p
-                          LEFT JOIN sectors s ON p.sector_id = s.sector_id
-                          WHERE p.program_id = ? AND p.owner_agency_id = ?");
-    $stmt->bind_param("ii", $program_id, $agency_id);
+    // Only filter by owner_agency_id if cross-agency viewing is not allowed
+    if ($allow_cross_agency) {
+        $stmt = $conn->prepare("SELECT p.*, s.sector_name as sector_name, p.created_at, p.updated_at,
+                              u.agency_name as agency_name
+                              FROM programs p
+                              LEFT JOIN sectors s ON p.sector_id = s.sector_id
+                              LEFT JOIN users u ON p.owner_agency_id = u.user_id
+                              WHERE p.program_id = ?");
+        $stmt->bind_param("i", $program_id);
+    } else {
+        $stmt = $conn->prepare("SELECT p.*, s.sector_name as sector_name, p.created_at, p.updated_at,
+                              u.agency_name as agency_name
+                              FROM programs p
+                              LEFT JOIN sectors s ON p.sector_id = s.sector_id
+                              LEFT JOIN users u ON p.owner_agency_id = u.user_id
+                              WHERE p.program_id = ? AND p.owner_agency_id = ?");
+        $stmt->bind_param("ii", $program_id, $agency_id);
+    }
+    
     $stmt->execute();
     $result = $stmt->get_result();
     
@@ -550,6 +566,18 @@ function get_program_details($program_id) {
     
     if ($submissions_result->num_rows > 0) {
         while ($submission = $submissions_result->fetch_assoc()) {
+            // Process content JSON for each submission
+            if (isset($submission['content_json']) && !empty($submission['content_json'])) {
+                $content = json_decode($submission['content_json'], true);
+                if ($content) {
+                    // Extract contents into submission array for easier access
+                    $submission = array_merge($submission, $content);
+                }
+            }
+            
+            // Get period info for this submission
+            $submission['period_info'] = get_reporting_period($submission['period_id']);
+            
             $program['submissions'][] = $submission;
         }
         

@@ -22,6 +22,9 @@ if (!is_agency()) {
 // Get program ID from URL
 $program_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
+// Get source parameter to determine where the user came from
+$source = isset($_GET['source']) ? $_GET['source'] : '';
+
 if (!$program_id) {
     $_SESSION['message'] = 'Invalid program ID.';
     $_SESSION['message_type'] = 'danger';
@@ -30,9 +33,21 @@ if (!$program_id) {
 }
 
 // Get program details
-$program = get_program_details($program_id);
+// Pass true as the second parameter when source is 'all_sectors' to allow cross-agency viewing
+$program = get_program_details($program_id, $source === 'all_sectors');
 
-if (!$program) {
+// If coming from all_sectors view, we allow viewing of any program
+// Otherwise, check if this agency owns the program
+$allow_view = ($source === 'all_sectors');
+
+// Check if current user is the owner of this program
+$is_owner = false;
+if (isset($program['owner_agency_id']) && $program['owner_agency_id'] == $_SESSION['user_id']) {
+    $allow_view = true;
+    $is_owner = true;
+}
+
+if (!$program || (!$allow_view)) {
     $_SESSION['message'] = 'Program not found or you do not have permission to view it.';
     $_SESSION['message_type'] = 'danger';
     header('Location: view_programs.php');
@@ -45,7 +60,6 @@ $is_draft = isset($current_submission['is_draft']) && $current_submission['is_dr
 
 // Set page title
 $pageTitle = 'Program Details';
-
 
 // Additional scripts
 $additionalScripts = [
@@ -62,10 +76,14 @@ require_once '../layouts/agency_nav.php';
 $title = "Program Details";
 $subtitle = $program['program_name'];
 $headerStyle = 'light'; // Use light (white) style for inner pages
+
+// Back button URL depends on source
+$backUrl = $source === 'all_sectors' ? 'view_all_sectors.php' : 'view_programs.php';
+
 $actions = [
     [
-        'url' => 'view_programs.php',
-        'text' => 'Back to Programs',
+        'url' => $backUrl,
+        'text' => 'Back to ' . ($source === 'all_sectors' ? 'All Sectors' : 'My Programs'),
         'icon' => 'fas fa-arrow-left',
         'class' => 'btn-outline-secondary'
     ]
@@ -82,7 +100,7 @@ require_once '../../includes/dashboard_header.php';
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h6 class="m-0 font-weight-bold text-white">Program Overview</h6>
                 <div class="d-flex align-items-center">
-                    <?php if ($is_draft): ?>
+                    <?php if ($is_owner && $is_draft): ?>
                         <a href="update_program.php?id=<?php echo $program_id; ?>" class="btn btn-warning btn-sm me-2">
                             <i class="fas fa-edit me-1"></i> Edit Draft
                         </a>
@@ -101,19 +119,18 @@ require_once '../../includes/dashboard_header.php';
                         'not-started' => ['label' => 'Not Started', 'class' => 'secondary']
                     ];
                     
-                    // Set default if status is not in our map
                     if (!isset($status_map[$status])) {
                         $status = 'not-started';
                     }
                     ?>
-                    <span class="badge bg-<?php echo $status_map[$status]['class']; ?> px-3 py-2">
+                    <span class="badge bg-<?php echo $status_map[$status]['class']; ?> ms-2">
                         <?php echo $status_map[$status]['label']; ?>
                     </span>
                 </div>
             </div>
             <div class="card-body">
                 <?php if ($is_draft): ?>
-                    <div class="draft-banner mb-3">
+                    <div class="alert alert-warning">
                         <i class="fas fa-exclamation-triangle me-2"></i>
                         <strong>Draft Status:</strong> This program has a draft submission that needs to be finalized.
                     </div>
@@ -167,43 +184,37 @@ require_once '../../includes/dashboard_header.php';
             <label class="text-muted">Current Target</label>
             <div class="fw-medium">
                 <?php 
-                // Properly extract targets from either content_json or direct field and display them as a table
-                if (isset($current_submission['content_json']) && is_string($current_submission['content_json'])) {
-                    $content = json_decode($current_submission['content_json'], true);
-                    if (isset($content['targets']) && is_array($content['targets'])) {
-                        echo '<table class="table table-sm current-target-table" style="margin-bottom: 0;">';
-                        echo '<thead><tr><th>Status</th><th>Achievements</th></tr></thead>';
-                        echo '<tbody>';
-                        foreach ($content['targets'] as $target) {
-                            $target_text = htmlspecialchars($target['target_text'] ?? 'No target text');
-                            $status_desc = htmlspecialchars($target['status_description'] ?? '');
-                            echo '<tr>';
-                            echo '<td><strong>' . $target_text . '</strong></td>';
-                            echo '<td>' . ($status_desc !== '' ? $status_desc : '&nbsp;') . '</td>';
-                            echo '</tr>';
-                        }
-                        echo '</tbody></table>';
-                    } else {
-                        echo 'Not set';
-                    }
-                } else {
-                    if (isset($current_submission['targets']) && is_array($current_submission['targets'])) {
-                        echo '<table class="table table-sm current-target-table" style="margin-bottom: 0;">';
-                        echo '<thead><tr><th>Target</th><th>Status Description</th></tr></thead>';
-                        echo '<tbody>';
-                        foreach ($current_submission['targets'] as $target) {
-                            $target_text = htmlspecialchars($target['target_text'] ?? 'No target text');
-                            $status_desc = htmlspecialchars($target['status_description'] ?? '');
-                            echo '<tr>';
-                            echo '<td><strong>' . $target_text . '</strong></td>';
-                            echo '<td>' . ($status_desc !== '' ? $status_desc : '&nbsp;') . '</td>';
-                            echo '</tr>';
-                        }
-                        echo '</tbody></table>';
-                    } else {
-                        echo htmlspecialchars($current_submission['targets'] ?? 'Not set');
-                    }
-                }
+                if (isset($current_submission['target']) && $current_submission['target']): 
+                    echo htmlspecialchars($current_submission['target']);
+                else: 
+                    echo '<span class="text-muted">Not set</span>';
+                endif; 
+                ?>
+            </div>
+        </div>
+        
+        <div class="info-group mb-3">
+            <label class="text-muted">Current Achievement</label>
+            <div class="fw-medium">
+                <?php 
+                if (isset($current_submission['achievement']) && $current_submission['achievement']): 
+                    echo htmlspecialchars($current_submission['achievement']);
+                else: 
+                    echo '<span class="text-muted">Not reported</span>';
+                endif; 
+                ?>
+            </div>
+        </div>
+        
+        <div class="info-group mb-3">
+            <label class="text-muted">Status Text</label>
+            <div class="fw-medium">
+                <?php 
+                if (isset($current_submission['status_text']) && $current_submission['status_text']): 
+                    echo htmlspecialchars($current_submission['status_text']);
+                else: 
+                    echo '<span class="text-muted">No status provided</span>';
+                endif; 
                 ?>
             </div>
         </div>
@@ -211,57 +222,34 @@ require_once '../../includes/dashboard_header.php';
         <div class="info-group mb-3">
             <label class="text-muted">Last Updated</label>
             <div class="fw-medium">
-                <?php echo isset($program['updated_at']) ? date('M j, Y', strtotime($program['updated_at'])) : 'Not updated'; ?>
-            </div>
-        </div>
-        
-        <div class="info-group mb-3">
-            <label class="text-muted">Created</label>
-            <div class="fw-medium">
-                <?php echo date('M j, Y', strtotime($program['created_at'])); ?>
+                <?php 
+                if (isset($current_submission['submission_date']) && $current_submission['submission_date']): 
+                    echo date('M j, Y', strtotime($current_submission['submission_date']));
+                else: 
+                    echo '<span class="text-muted">Not submitted</span>';
+                endif; 
+                ?>
             </div>
         </div>
     </div>
 </div>
-                    
-                    <!-- Description (full width) -->
-                    <div class="col-12 mt-3">
-                        <?php if (isset($program['description']) && $program['description']): ?>
+
+                    <!-- Description -->
+                    <div class="col-md-12 mt-4">
                         <div class="info-group">
                             <label class="text-muted">Program Description</label>
-                            <div class="description-box p-3 rounded bg-light">
-                                <?php echo nl2br(htmlspecialchars($program['description'])); ?>
-                            </div>
-                        </div>
-                        <?php endif; ?>
-                    </div>
-                    
-                    <!-- Achievement (full width) -->
-                    <?php if (isset($current_submission['status_text']) && $current_submission['status_text']): ?>
-                    <div class="col-12 mt-3">
-                        <div class="info-group">
-                            <label class="text-muted">Achievement</label>
-                            <div class="description-box p-3 rounded bg-light">
-                                <?php echo nl2br(htmlspecialchars($current_submission['status_text'])); ?>
+                            <div class="mt-2 p-3 bg-light-subtle border rounded">
+                                <?php if (!empty($program['description'])): ?>
+                                    <?php echo nl2br(htmlspecialchars($program['description'])); ?>
+                                <?php else: ?>
+                                    <span class="text-muted">No description available</span>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
-                    <?php endif; ?>
-                    
-                    <!-- Remarks (full width) -->
-                    <?php if (isset($current_submission['remarks']) && $current_submission['remarks']): ?>
-                    <div class="col-12 mt-3">
-                        <div class="info-group">
-                            <label class="text-muted">Remarks</label>
-                            <div class="description-box p-3 rounded bg-light">
-                                <?php echo nl2br(htmlspecialchars($current_submission['remarks'])); ?>
-                            </div>
-                        </div>
-                    </div>
-                    <?php endif; ?>
                 </div>
-                
-                <?php if (!$current_submission): ?>
+
+                <?php if ($is_owner && empty($current_submission)): ?>
                 <div class="alert alert-info mt-4">
                     <i class="fas fa-info-circle me-2"></i>
                     No data submitted for the current reporting period.
@@ -293,68 +281,53 @@ require_once '../../includes/dashboard_header.php';
                     <tbody>
                         <?php foreach ($program['submissions'] as $submission): ?>
                             <?php
-                            // Process content_json data if it exists and hasn't been processed already
-                            if (isset($submission['content_json']) && is_string($submission['content_json'])) {
-                                $content = json_decode($submission['content_json'], true);
-                                if ($content) {
-                                    // Extract content fields into submission array
-                                    $submission['current_target'] = $content['target'] ?? null;
-                                    $submission['status_text'] = $content['status_text'] ?? null;
-                                    $submission['remarks'] = $content['remarks'] ?? null;
-                                }
+                            // Skip draft submissions in history view
+                            if (isset($submission['is_draft']) && $submission['is_draft']) {
+                                continue;
                             }
+                            
+                            // Get period info if available
+                            $period_info = '';
+                            if (isset($submission['period_info'])) {
+                                $period_info = 'Q' . $submission['period_info']['quarter'] . '-' . $submission['period_info']['year'];
+                            }
+                            
+                            // Convert status for display
+                            $sub_status = isset($submission['status']) ? convert_legacy_status($submission['status']) : 'not-started';
                             ?>
-                            <tr class="<?php echo isset($submission['is_draft']) && $submission['is_draft'] ? 'draft-program' : ''; ?>">
+                            <tr>
+                                <td><?php echo $period_info; ?></td>
+                                <td><?php echo isset($submission['target']) ? htmlspecialchars($submission['target']) : 'Not set'; ?></td>
+                                <td><?php echo isset($submission['achievement']) ? htmlspecialchars($submission['achievement']) : 'Not reported'; ?></td>
                                 <td>
                                     <?php 
-                                    // Get period information from period_id
-                                    $period_info = get_reporting_period($submission['period_id'] ?? 0);
-                                    if ($period_info) {
-                                        echo 'Q' . $period_info['quarter'] . '-' . $period_info['year'];
-                                    } else {
-                                        echo 'Unknown Period';
-                                    }
+                                    if (isset($submission['status'])):
+                                        $status_class = 'secondary';
+                                        switch ($sub_status) {
+                                            case 'on-track':
+                                            case 'on-track-yearly':
+                                                $status_class = 'warning';
+                                                break;
+                                            case 'target-achieved':
+                                                $status_class = 'success';
+                                                break;
+                                            case 'delayed':
+                                            case 'severe-delay':
+                                                $status_class = 'danger';
+                                                break;
+                                            case 'completed':
+                                                $status_class = 'primary';
+                                                break;
+                                        }
                                     ?>
-                                    <?php if (isset($submission['is_draft']) && $submission['is_draft']): ?>
-                                        <span class="draft-indicator">Draft</span>
+                                        <span class="badge bg-<?php echo $status_class; ?>">
+                                            <?php echo ucfirst(str_replace('-', ' ', $sub_status)); ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="badge bg-secondary">Not reported</span>
                                     <?php endif; ?>
                                 </td>
-                                <td>
-                                    <?php echo htmlspecialchars($submission['current_target'] ?? $submission['target'] ?? 'Not set'); ?>
-                                </td>
-                                <td>
-                                    <?php 
-                                    // Extract achievement/status_text from either content_json or direct field
-                                    if (isset($submission['content_json']) && is_string($submission['content_json'])) {
-                                        $content = json_decode($submission['content_json'], true);
-                                        echo htmlspecialchars($content['status_text'] ?? $content['achievement'] ?? 'Not set');
-                                    } else {
-                                        echo htmlspecialchars($submission['status_text'] ?? $submission['achievement'] ?? 'Not set');
-                                    }
-                                    ?>
-                                </td>
-                                <td>
-                                    <?php 
-                                    $sub_status = convert_legacy_status($submission['status'] ?? 'not-started');
-                                    if (!isset($status_map[$sub_status])) {
-                                        $sub_status = 'not-started';
-                                    }
-                                    ?>
-                                    <span class="badge bg-<?php echo $status_map[$sub_status]['class']; ?>">
-                                        <?php echo $status_map[$sub_status]['label']; ?>
-                                    </span>
-                                </td>
-                                <td>
-                                    <?php 
-                                    if (isset($submission['created_at']) && $submission['created_at']) {
-                                        echo date('M j, Y', strtotime($submission['created_at']));
-                                    } else if (isset($submission['submission_date']) && $submission['submission_date']) {
-                                        echo date('M j, Y', strtotime($submission['submission_date']));
-                                    } else {
-                                        echo 'Not recorded';
-                                    }
-                                    ?>
-                                </td>
+                                <td><?php echo date('M j, Y', strtotime($submission['submission_date'])); ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -369,110 +342,12 @@ require_once '../../includes/dashboard_header.php';
     </div>
 </div>
 
-<!-- Add some enhanced styles for this page -->
-<style>
-.info-group label {
-    font-size: 0.85rem;
-    margin-bottom: 0.25rem;
-    display: block;
-    color: #6c757d;
-}
-
-.info-group .fw-medium {
-    font-weight: 500;
-}
-
-.description-box {
-    max-height: 150px;
-    overflow-y: auto;
-    font-size: 0.9rem;
-    border: 1px solid rgba(0,0,0,.1);
-}
-
-.border-start {
-    border-left: 1px solid #dee2e6;
-}
-
-@media (max-width: 767px) {
-    .border-start {
-        border-left: none;
-        border-top: 1px solid #dee2e6;
-        margin-top: 1rem;
-        padding-top: 1rem;
-    }
-    
-    .ps-md-4 {
-        padding-left: 0 !important;
-    }
-}
-
-.card-header .badge {
-    font-size: 0.9rem;
-}
-.description-hover {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.5s ease-in-out, padding 0.5s ease-in-out;
-    display: block;
-    color: #000;
-    padding: 0 8px;
-    border-radius: 0 0 0.25rem 0.25rem;
-    /* background-color: rgba(0,0,0,0.75); Removed black background */
-    font-size: 0.8rem;
-    margin-top: 4px;
-    white-space: normal;
-}
-
-.badge {
-    max-height: 50px;
-    overflow: hidden;
-    transition: max-height 0.3s ease;
-    position: relative;
-}
-
-.badge:hover {
-    max-height: 200px; /* enough to show description */
-}
-
-.badge:hover .description-hover {
-    max-height: 100px;
-    padding: 5px 8px;
-    transition: max-height 0.5s ease-in-out, padding 0.5s ease-in-out;
-}
-
-/* New styles for bullet point description slide on hover */
-ul.current-target-list {
-    padding-left: 1.25rem;
-    margin-bottom: 0;
-    list-style-type: disc;
-}
-
-ul.current-target-list li {
-    position: relative;
-    margin-bottom: 0.5rem;
-    cursor: pointer;
-}
-
-ul.current-target-list li small {
-    max-height: 0;
-    overflow: hidden;
-    display: block;
-    color: #6c757d;
-    transition: max-height 0.5s ease-in-out, padding 0.5s ease-in-out;
-    padding: 0 0;
-    margin-top: 0.25rem;
-}
-
-ul.current-target-list li:hover small {
-    max-height: 100px;
-    padding: 5px 8px;
-}
-
-/* Align status description text to left in current target table */
-.current-target-table td:nth-child(2) {
-    text-align: left;
-}
-</style>
+<?php if (!$is_owner): ?>
+<div class="alert alert-info">
+    <i class="fas fa-info-circle me-2"></i>
+    <strong>Note:</strong> You are viewing this program in read-only mode. Only the program's owning agency can submit updates.
+</div>
+<?php endif; ?>
 
 <?php
 // Include footer
