@@ -71,11 +71,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Add a notification for the agency user
         $notification_message = "Your program \"{$submission['program_name']}\" for Q{$submission['quarter']}-{$submission['year']} has been reopened for editing by an administrator.";
         
-        $notification_query = "INSERT INTO notifications (user_id, message, type, reference_id, reference_type) 
-                             VALUES (?, ?, 'program_reopened', ?, 'program')";
+        $notification_query = "INSERT INTO notifications (user_id, message, type) 
+                             VALUES (?, ?, 'program_reopened')";
         $agency_id = get_program_owner_id($program_id);
         $notif_stmt = $conn->prepare($notification_query);
-        $notif_stmt->bind_param("isi", $agency_id, $notification_message, $program_id);
+        $notif_stmt->bind_param("is", $agency_id, $notification_message);
         $notif_stmt->execute();
         
         // Log the action
