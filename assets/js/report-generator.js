@@ -366,7 +366,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const defaultFont = 'Calibri';
         
         // Define theme colors to match your template's color scheme
-        // These colors are based on the standard PCDS Dashboard colors
         const themeColors = {
             primary: '1F4E79',     // Darker blue for primary elements
             secondary: '375623',   // Dark green for secondary elements  
@@ -388,30 +387,13 @@ document.addEventListener('DOMContentLoaded', function() {
             slideNumber: { x: 0.5, y: 7.5, color: themeColors.lightText, fontFace: defaultFont, fontSize: 8 },
             margin: [0.5, 0.5, 0.5, 0.5],
             objects: [
-                // Title placeholders with formatting from your template
-                { 'title': { 
+                // Sector box with border - exact measurements from PowerPoint template (cm converted to inches)
+                { 'sectorBox': { 
+                    type: 'rect', 
                     options: { 
-                        x: 0.5, y: 0.3, w: 7.5, h: 0.8, 
-                        fontSize: 24, bold: true, 
-                        fontFace: defaultFont,
-                        color: themeColors.primary
-                    } 
-                }},
-                { 'subtitle': { 
-                    options: { 
-                        x: 0.5, y: 1.0, w: 7.0, h: 0.25, 
-                        fontSize: 12, 
-                        fontFace: defaultFont,
-                        color: themeColors.lightText
-                    } 
-                }},
-                { 'quarterTitle': { 
-                    options: { 
-                        x: 7.5, y: 0.3, w: 5.0, h: 0.6, 
-                        fontSize: 24, bold: true, 
-                        fontFace: defaultFont,
-                        color: themeColors.accent1,
-                        align: 'right'
+                        x: 0.22, y: 0.08, w: 3.06, h: 0.63, 
+                        fill: { color: 'FFFFFF' },
+                        line: { color: themeColors.primary, width: 1 }
                     } 
                 }},
                 
@@ -501,29 +483,56 @@ document.addEventListener('DOMContentLoaded', function() {
         // Define common font for consistency
         const defaultFont = 'Calibri';
         
-        // Add title and sector information
-        slide.addText(data.reportTitle || 'Sector Report', { 
-            x: 0.5, y: 0.3, w: 7.5, h: 0.8, 
-            fontSize: 24, bold: true, 
+        // Extract sector name from report data
+        const sectorName = data.reportTitle ? data.reportTitle.split(' ')[0] : 'Forestry';
+        
+        // Add the sector box with border - using exact measurements from PowerPoint (cm converted to inches)
+        slide.addShape(pptx.shapes.RECTANGLE, {
+            x: 0.22, y: 0.08, w: 3.06, h: 0.63,
+            fill: { color: 'FFFFFF' },
+            line: { color: themeColors.primary, width: 1 }
+        });
+        
+        try {
+            // Add forest icon - try-catch in case the image is not available
+            slide.addImage({
+                path: '../../assets/images/forest-icon.png', 
+                x: 0.26, y: 0.13, w: 0.57, h: 0.57
+            });
+        } catch (e) {
+            console.warn('Forest icon not found, skipping icon', e);
+            
+            // Fallback: Add a colored shape instead of the image
+            slide.addShape(pptx.shapes.RECTANGLE, {
+                x: 0.26, y: 0.13, w: 0.57, h: 0.57,
+                fill: { color: themeColors.secondary },
+                line: { color: themeColors.primary, width: 0.75 }
+            });
+        }
+        
+        // Add sector name text
+        slide.addText(sectorName, {
+            x: 0.74, y: 0.20, w: 2.44, h: 0.41,
+            fontSize: 18, bold: true,
             fontFace: defaultFont,
             color: themeColors.primary
         });
-
+        
+        // Add quarter information in top right corner
+        slide.addText(data.quarter || 'Q1 2025', { 
+            x: 8.0, y: 0.1, w: 4.5, h: 0.6, 
+            fontSize: 24, bold: true, 
+            fontFace: defaultFont,
+            color: themeColors.accent1,
+            align: 'right'
+        });
+        
         // Add sector leads information
         slide.addText(data.sectorLeads || 'Sector Lead: [Name]', { 
             x: 0.5, y: 1.0, w: 7.0, h: 0.25, 
             fontSize: 12, 
             fontFace: defaultFont,
             color: themeColors.lightText
-        });
-
-        // Add quarter information
-        slide.addText(data.quarter || 'Q1 2025', { 
-            x: 7.5, y: 0.3, w: 5.0, h: 0.6, 
-            fontSize: 24, bold: true, 
-            fontFace: defaultFont,
-            color: themeColors.accent1,
-            align: 'right'
         });
 
         // Add programs/projects title
