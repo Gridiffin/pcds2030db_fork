@@ -328,19 +328,21 @@ document.addEventListener('DOMContentLoaded', function() {
     function generatePresentation(data) {
         return new Promise((resolve, reject) => {
             try {
-                // Create new presentation
-                let pptx = new PptxGenJS();
+                // First, try to create a presentation from scratch using the data
+                statusMessage.textContent = 'Creating presentation...';
+                const pptx = new PptxGenJS();
                 
-                // Define report master slide
+                // Define our master slide with styling
                 const themeColors = defineReportMaster(pptx);
                 
-                // Create slide using the master
-                let slide = pptx.addSlide({ masterName: 'REPORT_MASTER_SLIDE' });
+                // Create a slide using the master
+                const slide = pptx.addSlide({ masterName: 'REPORT_MASTER_SLIDE' });
                 
                 // Populate slide with data
                 populateSlide(slide, data, pptx, themeColors);
                 
                 // Get PPTX as blob
+                statusMessage.textContent = 'Finalizing presentation...';
                 pptx.write('blob')
                     .then(blob => {
                         resolve(blob);
@@ -349,218 +351,113 @@ document.addEventListener('DOMContentLoaded', function() {
                         reject(new Error('Error generating PPTX: ' + error.message));
                     });
             } catch (error) {
+                console.error('Presentation generation error:', error);
                 reject(new Error('Error in presentation generation: ' + error.message));
             }
         });
     }
 
     /**
-     * Define the master slide layout
+     * Define the master slide layout with styling that matches your template
      * @param {Object} pptx - The PptxGenJS instance
      */
     function defineReportMaster(pptx) {
-        // Define a common font for consistency
+        // Define a common font to match your template
         const defaultFont = 'Calibri';
         
-        // Define theme colors for consistent styling
+        // Define theme colors to match your template's color scheme
+        // These colors are based on the standard PCDS Dashboard colors
         const themeColors = {
-            primary: '4472C4',     // Blue for primary elements
-            secondary: '70AD47',   // Green for secondary elements  
-            accent1: 'ED7D31',     // Orange for accent
-            accent2: '5B9BD5',     // Light blue for accent
+            primary: '1F4E79',     // Darker blue for primary elements
+            secondary: '375623',   // Dark green for secondary elements  
+            accent1: 'C55A11',     // Dark orange for accent
+            accent2: '2E75B6',     // Mid blue for accent
             text: '000000',        // Black for main text
-            lightText: '666666',   // Grey for secondary text
-            headerBg: 'F2F2F2',    // Light grey for section headers
-            greenStatus: '00B050', // Green for on-track status
-            yellowStatus: 'FFFF00', // Yellow for minor issues
-            redStatus: 'FF0000',   // Red for major issues
-            greyStatus: 'D9D9D9'   // Grey for no data
+            lightText: '444444',   // Dark grey for secondary text
+            headerBg: 'E9EDF1',    // Light blue-grey for section headers
+            greenStatus: '70AD47', // Green for on-track status
+            yellowStatus: 'FFC000', // Amber for minor issues
+            redStatus: 'C00000',   // Deep red for major issues
+            greyStatus: 'A5A5A5'   // Grey for no data
         };
         
-        // Create slide master with enhanced styling
+        // Create slide master with enhanced styling to match your template
         pptx.defineSlideMaster({
             title: 'REPORT_MASTER_SLIDE',
             background: { color: 'FFFFFF' }, // White background
-            slideNumber: { x: 0.3, y: 7.0, color: themeColors.lightText, fontFace: defaultFont, fontSize: 8 },
+            slideNumber: { x: 0.5, y: 7.5, color: themeColors.lightText, fontFace: defaultFont, fontSize: 8 },
+            margin: [0.5, 0.5, 0.5, 0.5],
             objects: [
-                // Title placeholders with professional formatting
+                // Title placeholders with formatting from your template
                 { 'title': { 
                     options: { 
-                        x: 0.5, y: 0.1, w: 7.0, h: 0.6, 
-                        fontSize: 28, bold: true, 
+                        x: 0.5, y: 0.3, w: 7.5, h: 0.8, 
+                        fontSize: 24, bold: true, 
                         fontFace: defaultFont,
-                        color: themeColors.primary,
-                        shadow: { type: 'outer', angle: 45, blur: 3, color: 'CFCFCF', offset: 1 }
+                        color: themeColors.primary
                     } 
                 }},
                 { 'subtitle': { 
                     options: { 
-                        x: 0.5, y: 0.5, w: 7.0, h: 0.25, 
-                        fontSize: 11, 
+                        x: 0.5, y: 1.0, w: 7.0, h: 0.25, 
+                        fontSize: 12, 
                         fontFace: defaultFont,
-                        color: themeColors.lightText,
-                        italic: true
+                        color: themeColors.lightText
                     } 
                 }},
                 { 'quarterTitle': { 
                     options: { 
-                        x: 8.0, y: 0.1, w: 4.5, h: 0.6, 
-                        fontSize: 32, bold: true, 
+                        x: 7.5, y: 0.3, w: 5.0, h: 0.6, 
+                        fontSize: 24, bold: true, 
                         fontFace: defaultFont,
                         color: themeColors.accent1,
                         align: 'right'
                     } 
                 }},
                 
-                // Project area with section background
-                { 'projectsHeader': { 
+                // Programs section with header
+                { 'programsHeader': { 
                     type: 'rect', 
                     options: { 
-                        x: 0.5, y: 0.8, w: 6.5, h: 0.3, 
+                        x: 0.5, y: 1.5, w: 7.5, h: 0.4, 
                         fill: { color: themeColors.headerBg },
                         line: { color: themeColors.primary, width: 1 }
                     } 
                 }},
-                { 'projectsTitle': { 
+                { 'programsTitle': { 
                     options: { 
-                        x: 0.6, y: 0.825, w: 6.0, h: 0.25, 
-                        fontSize: 12, bold: true,
+                        x: 0.7, y: 1.55, w: 7.0, h: 0.3, 
+                        fontSize: 14, bold: true,
                         fontFace: defaultFont,
                         color: themeColors.primary
                     } 
                 }},
-                { 'projectsArea': { 
-                    type: 'body', 
-                    options: { 
-                        x: 0.5, y: 1.2, w: 6.5, h: 5.0,
-                        fontFace: defaultFont
-                    } 
-                }},
                 
-                // Chart areas with subtle borders - Main chart
-                { 'mainChartBg': { 
+                // Status chart area with styling
+                { 'chartBg': { 
                     type: 'rect', 
                     options: { 
-                        x: 7.3, y: 0.8, w: 5.2, h: 2.7,
+                        x: 8.0, y: 1.5, w: 4.5, h: 3.0,
                         fill: { color: 'FFFFFF' },
-                        line: { color: themeColors.primary, width: 1, dashType: 'dash' }
-                    } 
-                }},
-                { 'mainChartArea': { 
-                    type: 'chart', 
-                    options: { 
-                        x: 7.5, y: 1.0, w: 4.8, h: 2.3
+                        line: { color: themeColors.primary, width: 0.75 }
                     } 
                 }},
                 
-                // Secondary chart area
-                { 'secondaryChartBg': { 
-                    type: 'rect', 
-                    options: { 
-                        x: 7.3, y: 5.0, w: 5.2, h: 2.0,
-                        fill: { color: 'FFFFFF' },
-                        line: { color: themeColors.secondary, width: 1, dashType: 'dash' }
-                    } 
-                }},
-                { 'secondaryChartArea': { 
-                    type: 'chart', 
-                    options: { 
-                        x: 7.5, y: 5.1, w: 4.8, h: 1.8
-                    } 
-                }},
-                
-                // KPI sections with background styling
+                // KPI section header
                 { 'kpiHeader': { 
                     type: 'rect', 
                     options: { 
-                        x: 7.3, y: 3.7, w: 5.2, h: 0.3,
+                        x: 8.0, y: 4.7, w: 4.5, h: 0.4,
                         fill: { color: themeColors.headerBg },
                         line: { color: themeColors.primary, width: 1 }
                     } 
                 }},
-                { 'kpiTitleArea': { 
+                { 'kpiTitle': { 
                     options: { 
-                        x: 7.4, y: 3.725, w: 5.0, h: 0.25, 
-                        fontSize: 12, bold: true,
+                        x: 8.2, y: 4.75, w: 4.0, h: 0.3, 
+                        fontSize: 14, bold: true,
                         fontFace: defaultFont,
                         color: themeColors.primary
-                    } 
-                }},
-                
-                // KPI 1 (Left)
-                { 'kpi1Bg': { 
-                    type: 'rect', 
-                    options: { 
-                        x: 7.3, y: 4.1, w: 2.1, h: 0.8,
-                        fill: { color: 'FFFFFF' },
-                        line: { color: themeColors.primary, width: 0.75 }
-                    } 
-                }},
-                { 'kpi1Area': { 
-                    type: 'body', 
-                    options: { 
-                        x: 7.5, y: 4.2, w: 1.9, h: 0.6,
-                        fontFace: defaultFont
-                    } 
-                }},
-                
-                // KPI 2 (Middle)
-                { 'kpi2Bg': { 
-                    type: 'rect', 
-                    options: { 
-                        x: 9.5, y: 4.1, w: 3.0, h: 0.8,
-                        fill: { color: 'FFFFFF' },
-                        line: { color: themeColors.primary, width: 0.75 }
-                    } 
-                }},
-                { 'kpi2Area': { 
-                    type: 'body', 
-                    options: { 
-                        x: 9.7, y: 4.2, w: 2.6, h: 0.6,
-                        fontFace: defaultFont
-                    } 
-                }},
-                
-                // KPI 3 (Bottom)
-                { 'kpi3Bg': { 
-                    type: 'rect', 
-                    options: { 
-                        x: 7.3, y: 7.1, w: 5.2, h: 0.6,
-                        fill: { color: 'FFFFFF' },
-                        line: { color: themeColors.primary, width: 0.75 }
-                    } 
-                }},
-                { 'kpi3Area': { 
-                    type: 'body', 
-                    options: { 
-                        x: 7.5, y: 7.2, w: 5.0, h: 0.4,
-                        fontFace: defaultFont
-                    } 
-                }},
-                
-                // Legend section with styling
-                { 'legendHeader': { 
-                    type: 'rect', 
-                    options: { 
-                        x: 0.5, y: 6.3, w: 6.5, h: 0.3,
-                        fill: { color: themeColors.headerBg },
-                        line: { color: themeColors.primary, width: 1 }
-                    } 
-                }},
-                { 'legendTitle': { 
-                    options: { 
-                        x: 0.6, y: 6.325, w: 6.0, h: 0.25, 
-                        fontSize: 12, bold: true,
-                        fontFace: defaultFont,
-                        color: themeColors.primary,
-                        text: 'Status Legend'
-                    } 
-                }},
-                { 'legendArea': { 
-                    type: 'body', 
-                    options: { 
-                        x: 0.5, y: 6.7, w: 6.5, h: 0.7,
-                        fontFace: defaultFont
                     } 
                 }},
                 
@@ -568,30 +465,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 { 'footerLine': { 
                     type: 'line', 
                     options: { 
-                        x: 0.5, y: 7.4, w: 12.0, h: 0, 
-                        line: { color: themeColors.lightText, width: 0.75, dashType: 'dash' }
+                        x: 0.5, y: 7.3, w: 12.0, h: 0, 
+                        line: { color: themeColors.lightText, width: 0.75 }
                     } 
                 }},
-                { 'draftDateArea': { 
-                    type: 'body', 
+                { 'draftDate': { 
                     options: { 
-                        x: 0.5, y: 7.5, w: 3.0, h: 0.3, 
+                        x: 0.5, y: 7.4, w: 3.0, h: 0.3, 
                         fontSize: 10, italic: true,
                         fontFace: defaultFont,
                         color: themeColors.lightText
                     } 
                 }},
-                { 'footerLogo': { 
-                    type: 'placeholder', 
+                // Logo space in footer
+                { 'logo': { 
+                    type: 'placeholder',
                     options: { 
-                        x: 11.0, y: 7.4, w: 1.5, h: 0.4
-                        // Will be populated with agency logo if available
+                        x: 11.0, y: 7.3, w: 1.5, h: 0.4
                     } 
                 }}
             ],
         });
         
-        // Return theme colors for use in populateSlide
         return themeColors;
     }
 
@@ -605,50 +500,50 @@ document.addEventListener('DOMContentLoaded', function() {
     function populateSlide(slide, data, pptx, themeColors) {
         // Define common font for consistency
         const defaultFont = 'Calibri';
-
-        // Add titles - Using EXPLICIT coordinates from master definition
-        slide.addText(data.reportTitle || 'Default Title', { 
-            x: 0.5, y: 0.1, w: 7.0, h: 0.6, 
-            fontSize: 28, bold: true, 
+        
+        // Add title and sector information
+        slide.addText(data.reportTitle || 'Sector Report', { 
+            x: 0.5, y: 0.3, w: 7.5, h: 0.8, 
+            fontSize: 24, bold: true, 
             fontFace: defaultFont,
-            color: themeColors.primary,
-            shadow: { type: 'outer', angle: 45, blur: 3, color: 'CFCFCF', offset: 1 }
+            color: themeColors.primary
         });
 
-        slide.addText(data.sectorLeads, { 
-            x: 0.5, y: 0.5, w: 7.0, h: 0.25, 
-            fontSize: 11, 
+        // Add sector leads information
+        slide.addText(data.sectorLeads || 'Sector Lead: [Name]', { 
+            x: 0.5, y: 1.0, w: 7.0, h: 0.25, 
+            fontSize: 12, 
             fontFace: defaultFont,
-            color: themeColors.lightText,
-            italic: true
+            color: themeColors.lightText
         });
 
-        slide.addText(data.quarter, { 
-            x: 8.0, y: 0.1, w: 4.5, h: 0.6, 
-            fontSize: 32, bold: true, 
+        // Add quarter information
+        slide.addText(data.quarter || 'Q1 2025', { 
+            x: 7.5, y: 0.3, w: 5.0, h: 0.6, 
+            fontSize: 24, bold: true, 
             fontFace: defaultFont,
             color: themeColors.accent1,
             align: 'right'
         });
 
-        // Add projects title
-        slide.addText('Projects / Programmes', { 
-            x: 0.6, y: 0.825, w: 6.0, h: 0.25, 
-            fontSize: 12, bold: true,
+        // Add programs/projects title
+        slide.addText('Programs / Projects', { 
+            x: 0.7, y: 1.55, w: 7.0, h: 0.3, 
+            fontSize: 14, bold: true,
             fontFace: defaultFont,
             color: themeColors.primary
         });
 
         // Add projects with alternating row background for readability
-        let yPos = 1.2; // Starting Y position (updated to match new projectsArea y-coord)
+        let yPos = 2.0; // Starting Y position for projects
         
         if (data.projects && Array.isArray(data.projects)) {
             data.projects.forEach((proj, index) => {
-                // Add alternating row background for better readability
+                // Add alternating row background
                 const rowBgColor = index % 2 === 0 ? 'FFFFFF' : 'F5F5F5';
                 
                 slide.addShape(pptx.shapes.RECTANGLE, {
-                    x: 0.5, y: yPos, w: 6.5, h: 0.4,
+                    x: 0.5, y: yPos, w: 7.5, h: 0.45,
                     fill: { color: rowBgColor },
                     line: { color: 'EEEEEE', width: 0.5 }
                 });
@@ -656,61 +551,121 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Status color indicator
                 let statusColor = '';
                 switch (proj.rating) {
-                    case 'green': statusColor = themeColors.greenStatus; break; // Green
-                    case 'yellow': statusColor = themeColors.yellowStatus; break; // Yellow
-                    case 'red': statusColor = themeColors.redStatus; break; // Red
-                    default: statusColor = themeColors.greyStatus; // Grey
+                    case 'green': statusColor = themeColors.greenStatus; break;
+                    case 'yellow': statusColor = themeColors.yellowStatus; break;
+                    case 'red': statusColor = themeColors.redStatus; break;
+                    default: statusColor = themeColors.greyStatus;
                 }
                 
-                // Add a colored rectangle for status with shadow for emphasis
+                // Add status indicator (colored box)
                 slide.addShape(pptx.shapes.RECTANGLE, { 
-                    x: 4.0, y: yPos + 0.05, w: 0.3, h: 0.3, 
+                    x: 6.0, y: yPos + 0.075, w: 0.3, h: 0.3, 
                     fill: { color: statusColor },
-                    line: { color: themeColors.text, width: 1 },
-                    shadow: { type: 'outer', angle: 45, blur: 3, color: 'CFCFCF', offset: 1 }
+                    line: { color: 'FFFFFF', width: 1 }
                 });
                 
-                // Add text for project name with improved styling
-                slide.addText(proj.name, { 
-                    x: 0.6, y: yPos + 0.05, w: 3.2, h: 0.3, 
-                    fontSize: 10, bold: true, 
+                // Add project name
+                slide.addText(proj.name || '[Project Name]', { 
+                    x: 0.7, y: yPos + 0.05, w: 5.0, h: 0.35, 
+                    fontSize: 12, bold: true, 
                     fontFace: defaultFont,
                     color: themeColors.text,
                     valign: 'middle'
                 });
                 
-                // Add target text with improved styling - lighter color
-                slide.addText(proj.target, { 
-                    x: 4.5, y: yPos + 0.05, w: 2.4, h: 0.3, // Explicit coordinates
-                    fontSize: 9, 
-                    fontFace: defaultFont,
-                    color: themeColors.lightText,
-                    valign: 'middle'
-                });
+                // Add target text if available
+                if (proj.target) {
+                    slide.addText(proj.target, { 
+                        x: 6.4, y: yPos + 0.125, w: 1.5, h: 0.2, 
+                        fontSize: 10, 
+                        fontFace: defaultFont,
+                        color: themeColors.lightText
+                    });
+                }
                 
                 // Move Y position down for next project
-                yPos += 0.45; // Slightly more space between rows
+                yPos += 0.5;
             });
         }
 
         // Add KPI section title
         slide.addText('Key Performance Indicators', { 
-            x: 7.4, y: 3.725, w: 5.0, h: 0.25, 
-            fontSize: 12, bold: true,
+            x: 8.2, y: 4.75, w: 4.0, h: 0.3, 
+            fontSize: 14, bold: true,
             fontFace: defaultFont,
             color: themeColors.primary
         });
 
-        // Rest of the slide population code...
-        // Add Draft Date
-        slide.addText(data.draftDate || new Date().toLocaleDateString(), { 
-            x: 0.5, y: 7.5, w: 3.0, h: 0.3, 
+        // Add charts if available
+        if (data.charts && data.charts.statusChart) {
+            // Add status distribution pie chart
+            slide.addChart(pptx.ChartType.PIE, data.charts.statusChart, { 
+                x: 8.2, y: 1.7, w: 4.0, h: 2.8,
+                showTitle: true, 
+                title: 'Project Status Distribution',
+                titleFontSize: 12,
+                titleColor: themeColors.primary,
+                showLegend: true,
+                legendPos: 'b',
+                legendFontSize: 9,
+                dataLabelColor: 'FFFFFF',
+                dataLabelFontSize: 9,
+                shadow: { type: 'subtle' }
+            });
+        }
+
+        // Add KPI metrics if available
+        if (data.kpis) {
+            let kpiYPos = 5.2;
+            
+            // Loop through KPIs and add them to the slide
+            Object.entries(data.kpis).forEach(([key, kpi], index) => {
+                if (kpi.title && kpi.value) {
+                    // Create KPI box
+                    slide.addShape(pptx.shapes.RECTANGLE, {
+                        x: 8.0, y: kpiYPos, w: 4.5, h: 0.7,
+                        fill: { color: 'FFFFFF' },
+                        line: { color: themeColors.primary, width: 0.75 }
+                    });
+                    
+                    // Add KPI title
+                    slide.addText(kpi.title, { 
+                        x: 8.2, y: kpiYPos + 0.1, w: 4.1, h: 0.25, 
+                        fontSize: 11, bold: true,
+                        fontFace: defaultFont,
+                        color: themeColors.primary
+                    });
+                    
+                    // Add KPI value
+                    slide.addText(kpi.value, { 
+                        x: 8.2, y: kpiYPos + 0.35, w: 4.1, h: 0.25, 
+                        fontSize: 10,
+                        fontFace: defaultFont,
+                        color: themeColors.text
+                    });
+                    
+                    kpiYPos += 0.8; // Move position for next KPI
+                }
+            });
+        }
+
+        // Add draft date in footer
+        slide.addText(data.draftDate || `DRAFT ${new Date().toLocaleDateString()}`, { 
+            x: 0.5, y: 7.4, w: 3.0, h: 0.3, 
             fontSize: 10, italic: true,
             fontFace: defaultFont,
             color: themeColors.lightText
         });
+        
+        // Add slide number
+        slide.addText('1', {
+            x: 0.5, y: 7.5, 
+            fontSize: 8,
+            fontFace: defaultFont,
+            color: themeColors.lightText
+        });
     }
-    
+
     /**
      * Upload the generated presentation to the server
      * @param {Blob} blob - The generated PPTX as a Blob

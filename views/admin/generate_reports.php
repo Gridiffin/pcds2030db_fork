@@ -264,7 +264,7 @@ require_once '../../includes/dashboard_header.php';
 </section>
 
 <!-- Load PptxGenJS Library -->
-<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs/dist/pptxgen.bundle.js"></script>
 <script src="../../assets/js/report-generator.js"></script>
 
 <!-- Delete Report Confirmation Modal -->
