@@ -21,7 +21,7 @@ $is_user_page = in_array($current_page, ['manage_users.php', 'add_user.php', 'ed
 $is_metric_page = in_array($current_page, ['manage_metrics.php', 'edit_metric.php', 'view_metric.php']);
 
 // Check if current page is settings related
-$is_settings_page = in_array($current_page, ['reporting_periods.php', 'audit_log.php', 'manage_periods.php']);
+$is_settings_page = in_array($current_page, ['reporting_periods.php', 'audit_log.php', 'manage_periods.php', 'system_settings.php']);
 
 // Check if audit log is active
 $audit_log = $current_page == 'audit_log.php';
@@ -108,6 +108,11 @@ $audit_log = $current_page == 'audit_log.php';
                         <i class="fas fa-caret-down nav-dropdown-icon small"></i>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="settingsDropdown">
+                        <li>
+                            <a class="dropdown-item <?php if ($current_page == 'system_settings.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/views/admin/system_settings.php">
+                                <i class="fas fa-sliders-h me-1"></i> System Settings
+                            </a>
+                        </li>
                         <li>
                             <a class="dropdown-item <?php if ($current_page == 'reporting_periods.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/views/admin/reporting_periods.php">
                                 <i class="fas fa-calendar-alt me-1"></i> Reporting Periods
