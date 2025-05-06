@@ -1144,7 +1144,8 @@ $additionalScripts = [
             }
             
             // Update all unit displays and store in metricUnits object
-            metricNames.forEach(metric => {
+            // Also send AJAX requests to save units to backend
+            const saveUnitPromises = metricNames.map(metric => {
                 updateUnitDisplay(metric, newUnit);
                 metricUnits[metric] = newUnit;
                 
@@ -1153,9 +1154,47 @@ $additionalScripts = [
                 if (unitBtn) {
                     unitBtn.dataset.currentUnit = newUnit;
                 }
+                
+                // Send AJAX request to save unit
+                return fetch('', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'update_unit',
+                        column_title: metric,
+                        metric_id: metricId,
+                        unit: newUnit
+                    })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.text().then(text => {
+                            throw new Error(`Server responded with status ${response.status}: ${text}`);
+                        });
+                    }
+                    return response.text().then(text => {
+                        if (!text) return {};
+                        try {
+                            return JSON.parse(text);
+                        } catch (e) {
+                            console.error('Failed to parse JSON:', text);
+                            throw new Error('Invalid JSON response from server');
+                        }
+                    });
+                });
             });
             
-            showToast(`Units updated for all ${metricNames.length} columns`, 'success');
+            Promise.all(saveUnitPromises)
+                .then(results => {
+                    showToast(`Units updated and saved for all ${metricNames.length} columns`, 'success');
+                })
+                .catch(error => {
+                    console.error('Error saving units:', error);
+                    showToast('Error saving units: ' + error.message, 'danger');
+                });
         } catch (error) {
             showToast('Error updating units: ' + error.message, 'danger');
         }
