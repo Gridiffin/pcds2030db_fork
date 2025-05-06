@@ -161,68 +161,68 @@ require_once '../../includes/dashboard_header.php';
                     </div>
                     
                     <!-- Current Period Reporting Data -->
-                    <div class="col-md-6 border-start">
-                        <div class="program-info ps-md-4">
-<div class="info-group mb-3">
-    <label class="text-muted">Current Target</label>
-    <div class="fw-medium">
-        <?php 
-        // Properly extract targets from either content_json or direct field and display them as bullet points
-        if (isset($current_submission['content_json']) && is_string($current_submission['content_json'])) {
-            $content = json_decode($current_submission['content_json'], true);
-            if (isset($content['targets']) && is_array($content['targets'])) {
-                echo '<ul class="current-target-list" style="padding-left: 1.25rem; margin-bottom: 0;">';
-                foreach ($content['targets'] as $target) {
-                    $target_text = htmlspecialchars($target['target_text'] ?? 'No target text');
-                    $status_desc = htmlspecialchars($target['status_description'] ?? '');
-                    echo '<li>';
-                    echo '<strong>' . $target_text . '</strong>';
-                    if ($status_desc !== '') {
-                        echo '<br><small class="text-muted">' . $status_desc . '</small>';
+<div class="col-md-6 border-start">
+    <div class="program-info ps-md-4">
+        <div class="info-group mb-3">
+            <label class="text-muted">Current Target</label>
+            <div class="fw-medium">
+                <?php 
+                // Properly extract targets from either content_json or direct field and display them as a table
+                if (isset($current_submission['content_json']) && is_string($current_submission['content_json'])) {
+                    $content = json_decode($current_submission['content_json'], true);
+                    if (isset($content['targets']) && is_array($content['targets'])) {
+                        echo '<table class="table table-sm current-target-table" style="margin-bottom: 0;">';
+                        echo '<thead><tr><th>Status</th><th>Achievements</th></tr></thead>';
+                        echo '<tbody>';
+                        foreach ($content['targets'] as $target) {
+                            $target_text = htmlspecialchars($target['target_text'] ?? 'No target text');
+                            $status_desc = htmlspecialchars($target['status_description'] ?? '');
+                            echo '<tr>';
+                            echo '<td><strong>' . $target_text . '</strong></td>';
+                            echo '<td>' . ($status_desc !== '' ? $status_desc : '&nbsp;') . '</td>';
+                            echo '</tr>';
+                        }
+                        echo '</tbody></table>';
+                    } else {
+                        echo 'Not set';
                     }
-                    echo '</li>';
-                }
-                echo '</ul>';
-            } else {
-                echo 'Not set';
-            }
-        } else {
-            if (isset($current_submission['targets']) && is_array($current_submission['targets'])) {
-                echo '<ul class="current-target-list" style="padding-left: 1.25rem; margin-bottom: 0;">';
-                foreach ($current_submission['targets'] as $target) {
-                    $target_text = htmlspecialchars($target['target_text'] ?? 'No target text');
-                    $status_desc = htmlspecialchars($target['status_description'] ?? '');
-                    echo '<li>';
-                    echo '<strong>' . $target_text . '</strong>';
-                    if ($status_desc !== '') {
-                        echo '<br><small class="text-muted">' . $status_desc . '</small>';
+                } else {
+                    if (isset($current_submission['targets']) && is_array($current_submission['targets'])) {
+                        echo '<table class="table table-sm current-target-table" style="margin-bottom: 0;">';
+                        echo '<thead><tr><th>Target</th><th>Status Description</th></tr></thead>';
+                        echo '<tbody>';
+                        foreach ($current_submission['targets'] as $target) {
+                            $target_text = htmlspecialchars($target['target_text'] ?? 'No target text');
+                            $status_desc = htmlspecialchars($target['status_description'] ?? '');
+                            echo '<tr>';
+                            echo '<td><strong>' . $target_text . '</strong></td>';
+                            echo '<td>' . ($status_desc !== '' ? $status_desc : '&nbsp;') . '</td>';
+                            echo '</tr>';
+                        }
+                        echo '</tbody></table>';
+                    } else {
+                        echo htmlspecialchars($current_submission['targets'] ?? 'Not set');
                     }
-                    echo '</li>';
                 }
-                echo '</ul>';
-            } else {
-                echo htmlspecialchars($current_submission['targets'] ?? 'Not set');
-            }
-        }
-        ?>
+                ?>
+            </div>
+        </div>
+        
+        <div class="info-group mb-3">
+            <label class="text-muted">Last Updated</label>
+            <div class="fw-medium">
+                <?php echo isset($program['updated_at']) ? date('M j, Y', strtotime($program['updated_at'])) : 'Not updated'; ?>
+            </div>
+        </div>
+        
+        <div class="info-group mb-3">
+            <label class="text-muted">Created</label>
+            <div class="fw-medium">
+                <?php echo date('M j, Y', strtotime($program['created_at'])); ?>
+            </div>
+        </div>
     </div>
 </div>
-                            
-                            <div class="info-group mb-3">
-                                <label class="text-muted">Last Updated</label>
-                                <div class="fw-medium">
-                                    <?php echo isset($program['updated_at']) ? date('M j, Y', strtotime($program['updated_at'])) : 'Not updated'; ?>
-                                </div>
-                            </div>
-                            
-                            <div class="info-group mb-3">
-                                <label class="text-muted">Created</label>
-                                <div class="fw-medium">
-                                    <?php echo date('M j, Y', strtotime($program['created_at'])); ?>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                     
                     <!-- Description (full width) -->
                     <div class="col-12 mt-3">
@@ -466,6 +466,11 @@ ul.current-target-list li small {
 ul.current-target-list li:hover small {
     max-height: 100px;
     padding: 5px 8px;
+}
+
+/* Align status description text to left in current target table */
+.current-target-table td:nth-child(2) {
+    text-align: left;
 }
 </style>
 
