@@ -102,9 +102,7 @@ function initProgramCreation() {
             validateDates(startDateField, endDateField);
         });
         
-        // Set minimum date for start date to today
-        const today = new Date().toISOString().split('T')[0];
-        startDateField.setAttribute('min', today);
+        // Removed the date restriction to allow selecting past dates
     }
     
     // Character counter for description
