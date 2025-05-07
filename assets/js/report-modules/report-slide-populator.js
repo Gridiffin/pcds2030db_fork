@@ -350,6 +350,7 @@ const ReportPopulator = (function() {
         
         // Define the current year for the yellow box description
         const currentYear = new Date().getFullYear();
+        const previousYear = currentYear - 1;
         
         // Define legend items with exact colors and text as specified
         const legendItems = [
@@ -359,55 +360,165 @@ const ReportPopulator = (function() {
             { color: '757070', label: 'Not started' }
         ];
         
-        // Starting position for the first legend square
-        let legendX = 1.0; // Position after "Legend:" text
-        const legendY = 7.14; // Same y-position as "Legend:" text
-        
-        // Add square indicators and labels
-        legendItems.forEach((item, index) => {
-            // Add color square with exact dimensions: H = 0.8cm (0.31"), W = 0.8cm (0.31")
-            slide.addShape(pptx.shapes.RECTANGLE, {
-                x: legendX, 
-                y: legendY, 
-                w: 0.31, 
-                h: 0.31,
-                fill: { color: item.color },
-                line: { color: '000000', width: 0.5 } // Adding thin border for better visibility
-            });
-            
-            // Add label text with Calibri 9, italic, left align as specified
-            slide.addText(item.label, {
-                x: legendX + 0.35, // Position right after the square with small gap
-                y: legendY, 
-                w: 2.0, // Width enough for the text
-                h: 0.31, // Same height as square for alignment
-                fontSize: 9,
-                italic: true,
-                fontFace: 'Calibri', // Explicitly using Calibri as specified
-                color: '000000', // Black text
-                align: 'left',
-                valign: 'middle'
-            });
-            
-            // Move to the next legend item position
-            // Position squares with enough space for labels
-            legendX += 2.5;
+        // Add legend squares and text with specified positions
+        // Square 1 (Green)
+        slide.addShape(pptx.shapes.RECTANGLE, {
+            x: 1.000, // 2.54cm converted to inches
+            y: 7.118, // 18.08cm converted to inches
+            w: 0.31, h: 0.31, // Original square dimensions maintained
+            fill: { color: legendItems[0].color },
+            line: { color: '000000', width: 0.5 }
         });
         
-        // Add draft date in the footer (optional)
-        const today = new Date();
-        const dateString = today.toLocaleDateString('en-US', { 
-            month: 'short', day: 'numeric', year: 'numeric' 
-        });
-        
-        slide.addText('Draft: ' + dateString, {
-            x: 0.2, y: 7.5, w: 2.0, h: 0.25,
-            fontSize: 8,
-            fontFace: defaultFont,
-            color: themeColors.lightText,
+        // Text 1
+        slide.addText(legendItems[0].label, {
+            x: 1.323, // 3.36cm converted to inches
+            y: 7.059, // 17.93cm converted to inches
+            w: 1.5748, // Width of 4cm converted to inches
+            h: 0.4055, // Height of 1.03cm converted to inches
+            fontSize: 9,
+            italic: true,
+            fontFace: 'Calibri',
+            color: '000000',
             align: 'left',
             valign: 'middle'
         });
+        
+        // Square 2 (Yellow)
+        slide.addShape(pptx.shapes.RECTANGLE, {
+            x: 2.953, // 7.5cm converted to inches
+            y: 7.118, // 18.08cm converted to inches
+            w: 0.31, h: 0.31,
+            fill: { color: legendItems[1].color },
+            line: { color: '000000', width: 0.5 }
+        });
+        
+        // Text 2
+        slide.addText(legendItems[1].label, {
+            x: 3.272, // 8.31cm converted to inches
+            y: 7.059, // 17.93cm converted to inches
+            w: 1.5748,
+            h: 0.4055,
+            fontSize: 9,
+            italic: true,
+            fontFace: 'Calibri',
+            color: '000000',
+            align: 'left',
+            valign: 'middle'
+        });
+        
+        // Square 3 (Red)
+        slide.addShape(pptx.shapes.RECTANGLE, {
+            x: 4.776, // 12.13cm converted to inches
+            y: 7.087, // 18.00cm converted to inches
+            w: 0.31, h: 0.31,
+            fill: { color: legendItems[2].color },
+            line: { color: '000000', width: 0.5 }
+        });
+        
+        // Text 3
+        slide.addText(legendItems[2].label, {
+            x: 5.094, // 12.94cm converted to inches
+            y: 7.102, // 18.04cm converted to inches
+            w: 1.5748,
+            h: 0.4055,
+            fontSize: 9,
+            italic: true,
+            fontFace: 'Calibri',
+            color: '000000',
+            align: 'left',
+            valign: 'middle'
+        });
+        
+        // Square 4 (Grey)
+        slide.addShape(pptx.shapes.RECTANGLE, {
+            x: 6.146, // 15.61cm converted to inches
+            y: 7.087, // 18.00cm converted to inches
+            w: 0.31, h: 0.31,
+            fill: { color: legendItems[3].color },
+            line: { color: '000000', width: 0.5 }
+        });
+        
+        // Text 4
+        slide.addText(legendItems[3].label, {
+            x: 6.520, // 16.56cm converted to inches
+            y: 7.110, // 18.06cm converted to inches
+            w: 1.5748,
+            h: 0.4055,
+            fontSize: 9,
+            italic: true,
+            fontFace: 'Calibri',
+            color: '000000',
+            align: 'left',
+            valign: 'middle'
+        });
+        
+        // Add year indicator circles and text
+        // Circle 1 - Previous Year (orange)
+        slide.addShape(pptx.shapes.OVAL, {
+            x: 7.657, // 19.45cm converted to inches
+            y: 7.193, // 18.27cm converted to inches
+            w: 0.118, // 0.3cm converted to inches
+            h: 0.118, // 0.3cm converted to inches
+            fill: { color: 'ED7D31' }, // Orange color
+            line: { color: 'ED7D31', width: 0.5 }
+        });
+        
+        // Text 1 - Previous Year (removed "previous year" text)
+        slide.addText(`${previousYear}`, {
+            x: 7.689, // 19.53cm converted to inches
+            y: 7.126, // 18.1cm converted to inches
+            w: 0.642, // 1.63cm converted to inches
+            h: 0.252, // 0.64cm converted to inches
+            fontSize: 8,
+            fontFace: 'Calibri',
+            color: '000000', // Black text
+            align: 'left',
+            valign: 'middle'
+        });
+        
+        // Circle 2 - Current Year (blue)
+        slide.addShape(pptx.shapes.OVAL, {
+            x: 8.193, // 20.81cm converted to inches
+            y: 7.193, // 18.27cm converted to inches
+            w: 0.118, // 0.3cm converted to inches
+            h: 0.118, // 0.3cm converted to inches
+            fill: { color: '0070C0' }, // Blue color
+            line: { color: '0070C0', width: 0.5 }
+        });
+        
+        // Text 2 - Current Year (removed "current year" text)
+        slide.addText(`${currentYear}`, {
+            x: 8.244, // 20.94cm converted to inches
+            y: 7.126, // 18.1cm converted to inches
+            w: 0.642, // 1.63cm converted to inches
+            h: 0.252, // 0.64cm converted to inches
+            fontSize: 8,
+            fontFace: 'Calibri',
+            color: '000000', // Black text
+            align: 'left',
+            valign: 'middle'
+        });
+        
+        // Format current date for the draft text (e.g., "DRAFT 7 May 2025")
+        const today = new Date();
+        const draftDateString = `DRAFT ${today.getDate()} ${today.toLocaleString('en-US', { month: 'long' })} ${today.getFullYear()}`;
+        
+        // Add Draft text box with red text, bold, Calibri 14
+        slide.addText(draftDateString, {
+            x: 9.197, // 23.36cm converted to inches
+            y: 7.098, // 18.03cm converted to inches
+            w: 2.150, // 5.46cm converted to inches
+            h: 0.339, // 0.86cm converted to inches
+            fontSize: 14, 
+            bold: true,
+            fontFace: 'Calibri',
+            color: 'FF0000', // Red color
+            align: 'left',
+            valign: 'middle'
+        });
+        
+        // Old draft date text removed as requested
     }
 
     /**
