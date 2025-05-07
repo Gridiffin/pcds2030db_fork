@@ -332,6 +332,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 statusMessage.textContent = 'Creating presentation...';
                 const pptx = new PptxGenJS();
                 
+                // Set slide size to match the template (widescreen 16:9)
+                // Your PowerPoint template uses 16:9 aspect ratio
+                pptx.layout = 'LAYOUT_WIDE'; // Changed from LAYOUT_4x3 to match your template
+                
                 // Define our master slide with styling
                 const themeColors = defineReportMaster(pptx);
                 
@@ -362,11 +366,29 @@ document.addEventListener('DOMContentLoaded', function() {
      * @param {Object} pptx - The PptxGenJS instance
      */
     function defineReportMaster(pptx) {
-        // Define a common font to match your template
-        const defaultFont = 'Calibri';
+        // Get theme and style definitions from the style module
+        const themeColors = getThemeColors();
+        const defaultFont = getDefaultFont();
         
-        // Define theme colors to match your template's color scheme
-        const themeColors = {
+        // Create slide master with enhanced styling to match your template
+        pptx.defineSlideMaster({
+            title: 'REPORT_MASTER_SLIDE',
+            background: { color: 'FFFFFF' }, // White background
+            slideNumber: { x: 0.5, y: 7.5, color: themeColors.lightText, fontFace: defaultFont, fontSize: 8 },
+            margin: [0.5, 0.5, 0.5, 0.5],
+            objects: getSlideObjects(themeColors, defaultFont),
+        });
+        
+        return themeColors;
+    }
+    
+    /**
+     * Get the theme colors for the presentation
+     * This function is separated to make styling updates easier
+     * @returns {Object} The theme colors
+     */
+    function getThemeColors() {
+        return {
             primary: '1F4E79',     // Darker blue for primary elements
             secondary: '375623',   // Dark green for secondary elements  
             accent1: 'C55A11',     // Dark orange for accent
@@ -379,97 +401,105 @@ document.addEventListener('DOMContentLoaded', function() {
             redStatus: 'C00000',   // Deep red for major issues
             greyStatus: 'A5A5A5'   // Grey for no data
         };
-        
-        // Create slide master with enhanced styling to match your template
-        pptx.defineSlideMaster({
-            title: 'REPORT_MASTER_SLIDE',
-            background: { color: 'FFFFFF' }, // White background
-            slideNumber: { x: 0.5, y: 7.5, color: themeColors.lightText, fontFace: defaultFont, fontSize: 8 },
-            margin: [0.5, 0.5, 0.5, 0.5],
-            objects: [
-                // Sector box with border - exact measurements from PowerPoint template (cm converted to inches)
-                { 'sectorBox': { 
-                    type: 'rect', 
-                    options: { 
-                        x: 0.22, y: 0.08, w: 3.06, h: 0.63, 
-                        fill: { color: 'FFFFFF' },
-                        line: { color: themeColors.primary, width: 1 }
-                    } 
-                }},
-                
-                // Programs section with header
-                { 'programsHeader': { 
-                    type: 'rect', 
-                    options: { 
-                        x: 0.5, y: 1.5, w: 7.5, h: 0.4, 
-                        fill: { color: themeColors.headerBg },
-                        line: { color: themeColors.primary, width: 1 }
-                    } 
-                }},
-                { 'programsTitle': { 
-                    options: { 
-                        x: 0.7, y: 1.55, w: 7.0, h: 0.3, 
-                        fontSize: 14, bold: true,
-                        fontFace: defaultFont,
-                        color: themeColors.primary
-                    } 
-                }},
-                
-                // Status chart area with styling
-                { 'chartBg': { 
-                    type: 'rect', 
-                    options: { 
-                        x: 8.0, y: 1.5, w: 4.5, h: 3.0,
-                        fill: { color: 'FFFFFF' },
-                        line: { color: themeColors.primary, width: 0.75 }
-                    } 
-                }},
-                
-                // KPI section header
-                { 'kpiHeader': { 
-                    type: 'rect', 
-                    options: { 
-                        x: 8.0, y: 4.7, w: 4.5, h: 0.4,
-                        fill: { color: themeColors.headerBg },
-                        line: { color: themeColors.primary, width: 1 }
-                    } 
-                }},
-                { 'kpiTitle': { 
-                    options: { 
-                        x: 8.2, y: 4.75, w: 4.0, h: 0.3, 
-                        fontSize: 14, bold: true,
-                        fontFace: defaultFont,
-                        color: themeColors.primary
-                    } 
-                }},
-                
-                // Footer with draft date
-                { 'footerLine': { 
-                    type: 'line', 
-                    options: { 
-                        x: 0.5, y: 7.3, w: 12.0, h: 0, 
-                        line: { color: themeColors.lightText, width: 0.75 }
-                    } 
-                }},
-                { 'draftDate': { 
-                    options: { 
-                        x: 0.5, y: 7.4, w: 3.0, h: 0.3, 
-                        fontSize: 10, italic: true,
-                        fontFace: defaultFont,
-                        color: themeColors.lightText
-                    } 
-                }},
-                // Logo space in footer
-                { 'logo': { 
-                    type: 'placeholder',
-                    options: { 
-                        x: 11.0, y: 7.3, w: 1.5, h: 0.4
-                    } 
-                }}
-            ],
-        });
-        
-        return themeColors;
+    }
+    
+    /**
+     * Get the default font for the presentation
+     * @returns {string} The default font name
+     */
+    function getDefaultFont() {
+        return 'Calibri';
+    }
+    
+    /**
+     * Get slide objects for the master slide
+     * This function is separated to make styling updates easier
+     * @param {Object} themeColors - The theme colors
+     * @param {string} defaultFont - The default font
+     * @returns {Array} Array of slide objects
+     */
+    function getSlideObjects(themeColors, defaultFont) {
+        return [
+            // Sector box with border - exact measurements from PowerPoint template (cm converted to inches)
+            { 'sectorBox': { 
+                type: 'rect', 
+                options: { 
+                    x: 0.22, y: 0.08, w: 3.06, h: 0.63, 
+                    fill: { color: 'FFFFFF' },
+                    line: { color: themeColors.primary, width: 1 }
+                } 
+            }},
+            
+            // Programs section with header
+            { 'programsHeader': { 
+                type: 'rect', 
+                options: { 
+                    x: 0.5, y: 1.5, w: 7.5, h: 0.4, 
+                    fill: { color: themeColors.headerBg },
+                    line: { color: themeColors.primary, width: 1 }
+                } 
+            }},
+            { 'programsTitle': { 
+                options: { 
+                    x: 0.7, y: 1.55, w: 7.0, h: 0.3, 
+                    fontSize: 14, bold: true,
+                    fontFace: defaultFont,
+                    color: themeColors.primary
+                } 
+            }},
+            
+            // Status chart area with styling
+            { 'chartBg': { 
+                type: 'rect', 
+                options: { 
+                    x: 8.0, y: 1.5, w: 4.5, h: 3.0,
+                    fill: { color: 'FFFFFF' },
+                    line: { color: themeColors.primary, width: 0.75 }
+                } 
+            }},
+            
+            // KPI section header
+            { 'kpiHeader': { 
+                type: 'rect', 
+                options: { 
+                    x: 8.0, y: 4.7, w: 4.5, h: 0.4,
+                    fill: { color: themeColors.headerBg },
+                    line: { color: themeColors.primary, width: 1 }
+                } 
+            }},
+            { 'kpiTitle': { 
+                options: { 
+                    x: 8.2, y: 4.75, w: 4.0, h: 0.3, 
+                    fontSize: 14, bold: true,
+                    fontFace: defaultFont,
+                    color: themeColors.primary
+                } 
+            }},
+            
+            // Footer with draft date
+            { 'footerLine': { 
+                type: 'line', 
+                options: { 
+                    x: 0.5, y: 7.3, w: 12.0, h: 0, 
+                    line: { color: themeColors.lightText, width: 0.75 }
+                } 
+            }},
+            { 'draftDate': { 
+                options: { 
+                    x: 0.5, y: 7.4, w: 3.0, h: 0.3, 
+                    fontSize: 10, italic: true,
+                    fontFace: defaultFont,
+                    color: themeColors.lightText
+                } 
+            }},
+            // Logo space in footer
+            { 'logo': { 
+                type: 'placeholder',
+                options: { 
+                    x: 11.0, y: 7.3, w: 1.5, h: 0.4
+                } 
+            }}
+        ];
     }
 
     /**
@@ -481,12 +511,14 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     function populateSlide(slide, data, pptx, themeColors) {
         // Define common font for consistency
-        const defaultFont = 'Calibri';
+        const defaultFont = getDefaultFont();
         
         // Extract sector name from report data
         const sectorName = data.reportTitle ? data.reportTitle.split(' ')[0] : 'Forestry';
         
-        // Add the sector box with border - using exact measurements from PowerPoint (cm converted to inches)
+        // ========== TOP SECTION ==========
+        
+        // Add the sector box with border - left side top
         slide.addShape(pptx.shapes.RECTANGLE, {
             x: 0.22, y: 0.08, w: 3.06, h: 0.63,
             fill: { color: 'FFFFFF' },
@@ -494,7 +526,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         try {
-            // Add forest icon - try-catch in case the image is not available
+            // Add forest icon
             slide.addImage({
                 path: '../../assets/images/forest-icon.png', 
                 x: 0.26, y: 0.13, w: 0.57, h: 0.57
@@ -510,32 +542,120 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
         
-        // Add sector name text
+        // Add sector name text - centered, bold, and black
         slide.addText(sectorName, {
-            x: 0.74, y: 0.20, w: 2.44, h: 0.41,
+            x: 0.79, y: 0.11, w: 2.44, h: 0.41,
             fontSize: 18, bold: true,
             fontFace: defaultFont,
-            color: themeColors.primary
+            color: themeColors.text,
+            align: 'center',
+            valign: 'middle'
         });
         
-        // Add quarter information in top right corner
+        // Add export target text below sector name
+        slide.addText('RM 8 bil in exports by 2030', {
+            x: 0.78, y: 0.39, w: 2.51, h: 0.29,
+            fontSize: 10.5, italic: true,
+            fontFace: defaultFont,
+            color: themeColors.text,
+            align: 'center'
+        });
+        
+        // Add larger box for MUDeNR outcomes - with exact dimensions from PowerPoint
+        slide.addShape(pptx.shapes.RECTANGLE, {
+            x: 3.28, y: 0.08, w: 9.83, h: 0.63, // 8.33cm, 0.2cm, 24.95cm, 1.6cm converted to inches
+            fill: { color: 'FFFFFF' },
+            line: { color: themeColors.primary, width: 1 }
+        });
+        
+        // Add MUDeNR Outcomes text box 1 - with exact dimensions from PowerPoint
+        slide.addText([
+            { text: 'MUDeNR Outcome:', options: { bold: true, fontSize: 8, fontFace: defaultFont } },
+            { text: '\nIncrease Timber & Non Wood Forest Products Exports Earnings', options: { 
+                fontSize: 8, 
+                fontFace: defaultFont,
+                bullet: { type: 'number', numberFormat: '%d.' } 
+            }},
+            { text: 'Community-Based Ecotourism and conservation Totally Protected Area', options: { 
+                fontSize: 8, 
+                fontFace: defaultFont,
+                bullet: { type: 'number', numberFormat: '%d.' } 
+            }},
+            { text: '\nCertify Long Term Forest License Area and Forest Plantation', options: { 
+                fontSize: 8, 
+                fontFace: defaultFont,
+                bullet: { type: 'number', numberFormat: '%d.' } 
+            }}
+        ], {
+            x: 3.35, y: 0.05, w: 3.56, h: 0.64, // 8.51cm, 0.12cm, 9.05cm, 1.62cm converted to inches
+            fontSize: 8,
+            fontFace: defaultFont,
+            color: themeColors.text,
+            align: 'left',
+            valign: 'top',
+            paraSpaceBefore: 0,
+            paraSpaceAfter: 0,
+            lineSpacingMultiple: 0.9
+        });
+        
+        // Add MUDeNR Outcomes text box 2 - with exact dimensions from PowerPoint
+        slide.addText([
+            { text: '200,000 ha degraded area (100%) planted/restored by 2030', options: { 
+                fontSize: 8, 
+                fontFace: defaultFont,
+                bullet: { type: 'number', startAt: 4, numberFormat: '%d.' } 
+            }},
+            { text: '\nObtain world recognition for sustainable management practices and conservation effort', options: { 
+                fontSize: 8, 
+                fontFace: defaultFont,
+                bullet: { type: 'number', startAt: 5, numberFormat: '%d.' } 
+            }}
+        ], {
+            x: 6.87, y: 0.06, w: 3.56, h: 0.64, // 17.45cm, 0.15cm, 9.05cm, 1.62cm converted to inches
+            fontSize: 8,
+            fontFace: defaultFont,
+            color: themeColors.text,
+            align: 'left',
+            valign: 'top',
+            paraSpaceBefore: 0,
+            paraSpaceAfter: 0,
+            lineSpacingMultiple: 0.9
+        });
+        
+        // Add quarter section box - with exact dimensions from PowerPoint
+        slide.addShape(pptx.shapes.RECTANGLE, {
+            x: 10.58, y: 0.08, w: 1.87, h: 0.63, // 26.88cm, 0.2cm, 4.74cm, 1.6cm converted to inches
+            fill: { color: 'FFFFFF' },
+            line: { color: themeColors.primary, width: 1 }
+        });
+        
+        // Add yellow square next to the quarter box with no gap
+        slide.addShape(pptx.shapes.RECTANGLE, {
+            x: 12.45, y: 0.08, w: 0.66, h: 0.63, // Positioned precisely next to quarter box
+            fill: { color: 'FFFF00' }, // Yellow color as requested
+            line: { color: themeColors.primary, width: 1 }
+        });
+        
+        // Add quarter information in the box
         slide.addText(data.quarter || 'Q1 2025', { 
-            x: 8.0, y: 0.1, w: 4.5, h: 0.6, 
-            fontSize: 24, bold: true, 
+            x: 10.58, y: 0.08, w: 1.87, h: 0.63,
+            fontSize: 14, bold: true, 
             fontFace: defaultFont,
-            color: themeColors.accent1,
-            align: 'right'
+            color: themeColors.text, // Black color
+            align: 'center',
+            valign: 'middle'
         });
         
-        // Add sector leads information
-        slide.addText(data.sectorLeads || 'Sector Lead: [Name]', { 
-            x: 0.5, y: 1.0, w: 7.0, h: 0.25, 
-            fontSize: 12, 
-            fontFace: defaultFont,
-            color: themeColors.lightText
+        // ========== MIDDLE SECTION ==========
+        
+        // Add Programs/Projects section header box
+        slide.addShape(pptx.shapes.RECTANGLE, {
+            x: 0.5, y: 1.5, w: 7.5, h: 0.4,
+            fill: { color: themeColors.headerBg },
+            line: { color: themeColors.primary, width: 1 }
         });
 
-        // Add programs/projects title
+        // Add Programs/Projects title text
         slide.addText('Programs / Projects', { 
             x: 0.7, y: 1.55, w: 7.0, h: 0.3, 
             fontSize: 14, bold: true,
@@ -543,6 +663,8 @@ document.addEventListener('DOMContentLoaded', function() {
             color: themeColors.primary
         });
 
+        // ========== PROJECTS SECTION ==========
+        
         // Add projects with alternating row background for readability
         let yPos = 2.0; // Starting Y position for projects
         
@@ -597,13 +719,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
-        // Add KPI section title
-        slide.addText('Key Performance Indicators', { 
-            x: 8.2, y: 4.75, w: 4.0, h: 0.3, 
-            fontSize: 14, bold: true,
-            fontFace: defaultFont,
-            color: themeColors.primary
-        });
 
         // Add charts if available
         if (data.charts && data.charts.statusChart) {
