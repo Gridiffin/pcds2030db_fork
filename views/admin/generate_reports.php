@@ -265,6 +265,12 @@ require_once '../../includes/dashboard_header.php';
 
 <!-- Load PptxGenJS Library -->
 <script src="https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs/dist/pptxgen.bundle.js"></script>
+<!-- Load report generator modules in the correct order -->
+<script src="../../assets/js/report-modules/report-slide-styler.js"></script>
+<script src="../../assets/js/report-modules/report-api.js"></script>
+<script src="../../assets/js/report-modules/report-slide-populator.js"></script>
+<script src="../../assets/js/report-modules/report-ui.js"></script>
+<!-- Main report generator controller -->
 <script src="../../assets/js/report-generator.js"></script>
 
 <!-- Delete Report Confirmation Modal -->

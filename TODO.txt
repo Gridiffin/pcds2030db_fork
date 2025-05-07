@@ -29,20 +29,69 @@
 
 ---
 
+**PROGRESS UPDATE (May 6, 2025): Slide Layout Implementation**
+
+We've successfully implemented the initial framework for generating PowerPoint presentations with the correct styling and layout based on the template. Here's what we've accomplished:
+
+1. **Template Analysis**: Analyzed the provided template (`6 1 2025 Q5 - PCDS Dashboard-1.pptx`) to extract exact positioning of elements.
+
+2. **Approach Selection**: Found that PptxGenJS doesn't support direct template loading, so we're recreating the template's layout programmatically.
+
+3. **Coordinate Conversion**: Successfully implemented a system to convert PowerPoint measurements (in cm) to the inches format required by PptxGenJS.
+
+4. **Initial Element Positioning**: Successfully implemented the first elements with exact positioning:
+   - Sector box with border at [0.22", 0.08"] with dimensions 3.06" × 0.63"
+   - Forest icon placement at [0.26", 0.13"] with dimensions 0.57" × 0.57"
+   - Sector name text at [0.74", 0.20"] with dimensions 2.44" × 0.41"
+
+5. **Default Structure**: Implemented a basic structure for the remaining slide elements (programs section, charts, KPIs, footer).
+
+**Still Needed - Layout Information**:
+To complete the slide layout to perfectly match the template, we need the exact positioning for the following elements:
+
+1. **Quarter Information Section**:
+   - Precise position and dimensions of the quarter box in the top-right corner
+   - Font style and size of the quarter text
+
+2. **Programs/Projects Section**:
+   - Header box position and dimensions
+   - Table structure measurements
+   - Status indicator position relative to each row
+   - Row height and padding measurements
+
+3. **Charts Area**:
+   - Specific positions and dimensions of chart containers
+   - Chart title positioning
+   - Legend positioning and style
+
+4. **KPI Sections**:
+   - Exact positions and dimensions of each KPI container
+   - Spacing between KPI elements
+   - Font sizes for KPI titles and values
+
+5. **Footer Elements**:
+   - Position of footer line
+   - Draft date text position and style
+   - Logo position and dimensions if applicable
+
+Each measurement should be provided in centimeters from PowerPoint, which we'll convert to inches for the code.
+
+---
+
 **Phase 1: Backend Data Preparation (PHP)**
 
-* **Task 1.1: Create API Endpoint**
+* **Task 1.1: Create API Endpoint** ✓
   * **Description:** Create a new PHP script (`api/report_data.php`) that will serve as the data source for the report. This script will receive parameters (like `reporting_period_id`) to filter the data.
   * **Context:** This endpoint separates data retrieval logic from the frontend presentation. It will be called via a `fetch` request from the JavaScript code.
   * **File:** `api/report_data.php`
   * **Requires:** Database connection (`config/config.php`), authentication checks (`includes/auth_check.php`).
 
-* **Task 1.2: Implement Data Fetching Logic**
+* **Task 1.2: Implement Data Fetching Logic** ✓
   * **Description:** Within `api/report_data.php`, write PHP and SQL code to query the necessary database tables (`programs`, `metrics`, `sector_metrics_data`, `reporting_periods`, etc.) based on the input parameters.
   * **Context:** Gather all specific data points shown in the sample report image (titles, project details, ratings, statuses, chart data points, KPI values, dates).
   * **Requires:** Understanding of the database schema (`database/pcds2030_dashboard.sql`) and how data relates to the report elements.
 
-* **Task 1.3: Format Data as JSON**
+* **Task 1.3: Format Data as JSON** ✓
   * **Description:** Structure the fetched data into a well-organized PHP associative array and then encode it as a JSON object using `json_encode()`. Set the `Content-Type` header to `application/json`.
   * **Context:** JSON is the standard format for transferring data between a web server and JavaScript running in a browser. The structure should be logical and easy for the JavaScript to parse (e.g., nested objects for charts, arrays for project lists).
   * **File:** `api/report_data.php`
@@ -51,39 +100,27 @@
 
 **Phase 2: Frontend Implementation (HTML & JavaScript)**
 
-* **Task 2.1: Integrate PptxGenJS Library**
+* **Task 2.1: Integrate PptxGenJS Library** ✓
   * **Description:** Download the `pptxgen.bundle.js` file from the official PptxGenJS library source/releases. Place it in a suitable location within the project's assets.
   * **Context:** This library provides the core functionality for creating PPTX files in JavaScript.
   * **Location:** Suggest `assets/js/libs/pptxgen.bundle.js`
 
-* **Task 2.2: Include JavaScript Files in View**
+* **Task 2.2: Include JavaScript Files in View** ✓
   * **Description:** In the relevant view file where the report generation will be triggered (e.g., `views/admin/generate_reports.php` or similar), add `<script>` tags to include the PptxGenJS library and a new custom JavaScript file for the report generation logic.
   * **Context:** Makes the library and custom code available to the browser on the specific page.
   * **File:** e.g., `views/admin/generate_reports.php`
-  * **Code:**
-    ```html
-    <!-- filepath: views/admin/generate_reports.php -->
-    <!-- ... existing scripts ... -->
-    <script src="../assets/js/libs/pptxgen.bundle.js"></script>
-    <script src="../assets/js/report-generator.js"></script>
-    ```
 
-* **Task 2.3: Create Trigger Button**
+* **Task 2.3: Create Trigger Button** ✓
   * **Description:** Add an HTML button to the view file that the user will click to initiate the report generation. Give it a unique ID.
   * **Context:** Provides the user interface element to start the process.
   * **File:** e.g., `views/admin/generate_reports.php`
-  * **Code:**
-    ```html
-    <!-- filepath: views/admin/generate_reports.php -->
-    <button id="generatePptxBtn" class="btn btn-primary">Generate PPTX Report</button>
-    ```
 
-* **Task 2.4: Create Report Generator Script**
+* **Task 2.4: Create Report Generator Script** ✓
   * **Description:** Create the new JavaScript file referenced in Task 2.2.
   * **Context:** This file will contain all the client-side logic for fetching data, defining the master slide, populating the slide, and triggering the download.
   * **File:** `assets/js/report-generator.js`
 
-* **Task 2.5: Implement Button Event Listener & Data Fetching**
+* **Task 2.5: Implement Button Event Listener & Data Fetching** ✓
   * **Description:** In `report-generator.js`, add an event listener to the button created in Task 2.3. When clicked, it should:
     1. Determine any necessary parameters (e.g., selected reporting period ID from the page).
     2. Use the `fetch` API to call the PHP endpoint created in Task 1.1, passing the parameters.
@@ -93,12 +130,12 @@
   * **Context:** Connects the user action to the data retrieval and generation process.
   * **File:** `assets/js/report-generator.js`
 
-* **Task 2.6: Define Master Slide Layout**
+* **Task 2.6: Define Master Slide Layout** ✓ (In progress - initial implementation completed, additional positioning needed)
   * **Description:** Within `report-generator.js`, create a function (e.g., `defineReportMaster`) that uses `pptx.defineSlideMaster()` to define the structure of the report slide. Define placeholders (`title`, `body`, `chart`, custom names) with their types, positions (`x`, `y`), and dimensions (`w`, `h`) based on the sample image layout.
   * **Context:** Creates a reusable template for the slide, making layout adjustments easier later. This avoids hardcoding positions for every single element directly when adding content.
   * **File:** `assets/js/report-generator.js`
 
-* **Task 2.7: Implement Presentation Generation Function**
+* **Task 2.7: Implement Presentation Generation Function** ✓ (Basic implementation completed, needs refinement)
   * **Description:** Create the main function (e.g., `generatePresentation(data)`) in `report-generator.js` that:
     1. Initializes a new PptxGenJS presentation object (`let pptx = new PptxGenJS();`).
     2. Calls the function to define the master slide (Task 2.6).
@@ -110,103 +147,14 @@
 
 ---
 
-**Phase 3: Server-Side Storage Implementation**
+**Next Steps**:
 
-* **Task 3.1: Create File Upload Endpoint**
-  * **Description:** Create a new PHP endpoint (e.g., `api/save_report.php`) that will receive the generated PPTX file from the client, save it to the server, and record it in the database.
-  * **Context:** Though generated client-side, we need to store the reports on the server for future access by admins and agencies.
-  * **File:** `api/save_report.php`
+1. **Continue Gathering Coordinates**: We need to gather precise coordinates for the remaining slide elements from the PowerPoint template.
 
-* **Task 3.2: Implement File Upload in JavaScript**
-  * **Description:** After the PPTX is generated client-side, upload the file to the server using a FormData object and fetch POST request.
-  * **Context:** Connects the client-side generation with server-side storage.
-  * **File:** `assets/js/report-generator.js`
-  * **Code snippet:**
-    ```javascript
-    // After generating the PPTX as a Blob
-    pptx.writeFile({ fileName: filename })
-      .then(fileName => {
-        // Convert generated file to a Blob for upload
-        pptx.write('blob')
-          .then(blob => {
-            // Create FormData for upload
-            const formData = new FormData();
-            formData.append('report_file', blob, filename);
-            formData.append('period_id', periodId);
-            formData.append('report_name', reportName);
-            
-            // Upload to server
-            fetch('../api/save_report.php', {
-              method: 'POST',
-              body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-              console.log('Report saved to server:', data);
-            })
-            .catch(err => {
-              console.error('Error saving report to server:', err);
-            });
-          });
-      });
-    ```
+2. **Styling Refinement**: Once all coordinates are implemented, we need to fine-tune fonts, colors, and other styling details to precisely match the template.
 
-* **Task 3.3: Database Integration**
-  * **Description:** In `api/save_report.php`, save the uploaded file to the server's filesystem and create a record in the `reports` table.
-  * **Context:** Ensures reports are properly tracked in the database and accessible through the interface.
-  * **File:** `api/save_report.php`
+3. **Data Integration Testing**: Ensure that the data from the API is correctly displayed in the correct positions on the slide.
 
----
+4. **Chart Implementation**: Add proper charts that match the style and format of those in the template.
 
-**Phase 4: Styling and Refinement**
-
-* **Task 4.1: Position and Style Elements**
-  * **Description:** Meticulously adjust the coordinates (`x`, `y`), dimensions (`w`, `h`), font sizes, colors, alignment, shape fills, and other PptxGenJS options for all elements added to the slide (both via placeholders in the master definition and elements added directly in Task 2.7).
-  * **Context:** This iterative process ensures the generated PPTX visually matches the target sample image as closely as possible. Requires referencing the PptxGenJS documentation for available options.
-  * **File:** `assets/js/report-generator.js` (primarily within `defineReportMaster` and `generatePresentation`)
-
-* **Task 4.2: Refine Chart Appearance**
-  * **Description:** Configure chart options (titles, legends, axes, colors, data labels) within the `slide.addChart()` calls to match the sample image.
-  * **Context:** Ensures charts are clear, correctly labelled, and visually consistent with the report style.
-  * **File:** `assets/js/report-generator.js`
-
-* **Task 4.3: Implement Rating Indicators**
-  * **Description:** Ensure the project "Rating" is visually represented (e.g., using colored shapes - green, yellow, red, grey) based on the data received from the API. Match status values from the database ('target-achieved', 'on-track-yearly', 'severe-delay', 'not-started') to the appropriate colors.
-  * **Context:** Translates the status data field into the visual color-coding seen in the sample.
-  * **File:** `assets/js/report-generator.js`
-
----
-
-**Phase 5: Testing and Deployment**
-
-* **Task 5.1: Test Data Retrieval**
-  * **Description:** Test the API endpoint (`api/report_data.php`) directly (e.g., in a browser or using a tool like Postman) with different parameters to ensure it fetches and returns the correct JSON data structure.
-  * **Context:** Verifies the backend data source before integrating with the frontend.
-
-* **Task 5.2: Test PPTX Generation**
-  * **Description:** Test the entire workflow by clicking the button on the webpage. Verify that the PPTX file downloads correctly and opens without errors.
-  * **Context:** End-to-end test of the feature.
-
-* **Task 5.3: Test Database Storage**
-  * **Description:** Verify that generated reports are properly uploaded to the server and recorded in the `reports` table.
-  * **Context:** Ensures the storage mechanism works as expected.
-
-* **Task 5.4: Cross-Browser Testing**
-  * **Description:** Test the generation process in major web browsers (Chrome, Firefox, Edge) to ensure compatibility.
-  * **Context:** PptxGenJS relies on browser features; testing ensures it works consistently for different users.
-
-* **Task 5.5: Test Layout Accuracy**
-  * **Description:** Compare the generated PPTX slide against the sample image across different screen resolutions or zoom levels (within PowerPoint) to ensure layout consistency.
-  * **Context:** Final visual check.
-
-* **Task 5.6: Code Review and Cleanup**
-  * **Description:** Review the PHP and JavaScript code for clarity, efficiency, error handling, and adherence to project standards. Remove any console logs used for debugging.
-  * **Context:** Maintain code quality.
-
-* **Task 5.7: Deployment**
-  * **Description:** Deploy the new/modified files (`api/report_data.php`, `api/save_report.php`, `assets/js/report-generator.js`, updated view files) to the cPanel hosting environment. Ensure proper folder permissions for report file storage.
-  * **Context:** Make the feature live.
-
-* **Task 5.8: User Permissions Testing**
-  * **Description:** Verify that only admin users can generate reports, while agency users can only view them.
-  * **Context:** Ensures proper access control according to system requirements.
+5. **Complete End-to-End Testing**: Test the full workflow from selection to generation to storage.
