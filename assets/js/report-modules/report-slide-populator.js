@@ -15,7 +15,7 @@ const ReportPopulator = (function() {
     function populateSlide(slide, data, pptx, themeColors) {
         try {
             // Define common font for consistency
-            const defaultFont = 'Calibri';
+            const defaultFont = ReportStyler.getDefaultFont();
             
             // Extract sector name from report data
             const sectorName = data.reportTitle ? data.reportTitle.split(' ')[0] : 'Forestry';
@@ -23,12 +23,12 @@ const ReportPopulator = (function() {
             // Add top and bottom sections
             addTopSection(slide, data, pptx, themeColors, defaultFont, sectorName);
             
-            // Add simple bar chart (using lowercase 'bar' as confirmed by diagnostics)
+            // Add line chart (replacing the bar chart)
             try {
-                addSimpleBarChart(slide, pptx, themeColors, defaultFont);
-                console.log("Bar chart added successfully");
+                addLineChart(slide, pptx, themeColors, defaultFont, data);
+                console.log("Line chart added successfully");
             } catch (chartError) {
-                console.error("Error adding bar chart:", chartError);
+                console.error("Error adding line chart:", chartError);
                 // Fallback to diagnostic if chart fails
                 addChartDiagnostic(slide, data, pptx, themeColors, defaultFont);
             }
@@ -41,68 +41,106 @@ const ReportPopulator = (function() {
     }
     
     /**
-     * Add a simple bar chart to the slide
+     * Add a simple line chart to the slide
      * @param {Object} slide - The slide to populate
      * @param {Object} pptx - The PptxGenJS instance
      * @param {Object} themeColors - The theme colors for styling
      * @param {string} defaultFont - The default font
+     * @param {Object} data - The data from the API
      */
-    function addSimpleBarChart(slide, pptx, themeColors, defaultFont) {
-        console.log("Adding simple bar chart with correct format");
+    function addLineChart(slide, pptx, themeColors, defaultFont, data) {
+        console.log("Adding timber export line chart with real data");
         
-        // Create container for the chart (optional)
-        slide.addShape(pptx.shapes.RECTANGLE, {
-            x: 2.0, y: 1.5, w: 9.0, h: 5.0,
-            fill: { color: 'FFFFFF' },
-            line: { color: themeColors.primary, width: 1 }
-        });
+        // Create container using the styler function
+        const container = ReportStyler.createChartContainer(slide, pptx, themeColors);
         
-        // Add title above chart
-        slide.addText('Timber Export Values (RM Billions)', {
-            x: 2.0, y: 1.7, w: 9.0, h: 0.4,
-            fontSize: 16, bold: true,
-            fontFace: defaultFont,
-            color: themeColors.primary,
-            align: 'center'
-        });
+        // Add title using the styler function
+        ReportStyler.createChartTitle(slide, 'Timber Export Value (RM Billions)', container, themeColors, defaultFont);
         
-        // Create chart data in the correct format
-        // Format confirmed by diagnostic: array of objects with name, labels, values
+        // Check if we have the required chart data from the API
+        if (!data || !data.charts || !data.charts.main_chart || !data.charts.main_chart.data) {
+            console.error("Missing chart data from API");
+            // Fallback to placeholder data if API data is missing
+            const chartData = [
+                {
+                    name: 'Export Value',
+                    labels: ['Q1', 'Q2', 'Q3', 'Q4', 'Q1', 'Q2', 'Q3', 'Q4'],
+                    values: [4.2, 4.5, 4.7, 4.8, 5.2, 5.5, 5.7, 6.0]
+                },
+                {
+                    name: 'Target Value',
+                    labels: ['Q1', 'Q2', 'Q3', 'Q4', 'Q1', 'Q2', 'Q3', 'Q4'],
+                    values: [4.0, 4.5, 5.0, 5.5, 5.5, 6.0, 6.5, 7.0]
+                }
+            ];
+            
+            // Get chart options from the styler
+            const chartOptions = ReportStyler.getLineChartOptions(container, themeColors, defaultFont);
+            
+            // Add chart
+            slide.addChart(pptx.ChartType.line || 'line', chartData, chartOptions);
+            return;
+        }
+        
+        // Get timber export data from API response
+        const timberData = data.charts.main_chart.data;
+        console.log("Timber export data from API:", timberData);
+        
+        // Convert monthly data to quarterly data
+        const quarterLabels = ['Q1', 'Q2', 'Q3', 'Q4'];
+        const data2022Quarterly = convertMonthlyToQuarterly(timberData.data2022);
+        const data2023Quarterly = convertMonthlyToQuarterly(timberData.data2023);
+        
+        // Convert to billions for better display
+        const data2022BillionsFormat = data2022Quarterly.map(val => Number((val / 1000000000).toFixed(2)));
+        const data2023BillionsFormat = data2023Quarterly.map(val => Number((val / 1000000000).toFixed(2)));
+        
+        console.log("2022 Quarterly data (billions):", data2022BillionsFormat);
+        console.log("2023 Quarterly data (billions):", data2023BillionsFormat);
+        
+        // Create chart data with the real values from API
         const chartData = [
             {
-                name: 'Export Value',
-                labels: ['2020', '2021', '2022', '2023', '2024', '2025'],
-                values: [4.2, 4.8, 5.5, 6.3, 7.1, 7.8]
+                name: '2022 Export Value',
+                labels: quarterLabels,
+                values: data2022BillionsFormat
+            },
+            {
+                name: '2023 Export Value',
+                labels: quarterLabels,
+                values: data2023BillionsFormat
             }
         ];
         
-        console.log("Chart data ready:", chartData);
+        // Get chart options from the styler
+        const chartOptions = ReportStyler.getLineChartOptions(container, themeColors, defaultFont);
         
-        // Define minimal chart options
-        const chartOptions = {
-            x: 2.5, y: 2.2, w: 8.0, h: 4.0,
-            barDir: 'col',                  // Column chart (vertical)
-            showTitle: false,               // Title already added separately
-            showValue: true,                // Show data values
-            dataLabelFormatCode: '#0.0',    // Format with one decimal
-            chartColors: ['375623'],        // Dark green
-            chartColorsOpacity: 80,         // 80% opacity
-            barGapWidthPct: 50,             // Gap between bars
-            dataBorder: { pt: 1, color: '1F4E79' }, // Border around bars
-            valAxisMaxVal: 10,              // Y-axis max
-            valAxisMinVal: 0,               // Y-axis min
-            valAxisMajorUnit: 2,            // Y-axis interval
-            catAxisLabelFontSize: 10,       // X-axis label size
-            valAxisLabelFontSize: 10,       // Y-axis label size
-            valAxisLabelFontFace: defaultFont,
-            catAxisLabelFontFace: defaultFont
-        };
+        // Add chart
+        slide.addChart(pptx.ChartType.line || 'line', chartData, chartOptions);
+        console.log("Line chart with real data added to slide");
+    }
+
+    /**
+     * Helper function to convert monthly data to quarterly data
+     * @param {Array} monthlyData - Array of 12 monthly values
+     * @returns {Array} - Array of 4 quarterly values
+     */
+    function convertMonthlyToQuarterly(monthlyData) {
+        const quarterlyData = [];
         
-        console.log("Chart options ready:", chartOptions);
+        // Q1: Jan + Feb + Mar
+        quarterlyData.push(monthlyData[0] + monthlyData[1] + monthlyData[2]);
         
-        // Add chart using the correct format (lowercase 'bar')
-        slide.addChart(pptx.ChartType.bar, chartData, chartOptions);
-        console.log("Chart added to slide");
+        // Q2: Apr + May + Jun
+        quarterlyData.push(monthlyData[3] + monthlyData[4] + monthlyData[5]);
+        
+        // Q3: Jul + Aug + Sep
+        quarterlyData.push(monthlyData[6] + monthlyData[7] + monthlyData[8]);
+        
+        // Q4: Oct + Nov + Dec
+        quarterlyData.push(monthlyData[9] + monthlyData[10] + monthlyData[11]);
+        
+        return quarterlyData;
     }
     
     /**
@@ -112,26 +150,16 @@ const ReportPopulator = (function() {
     function addChartDiagnostic(slide, data, pptx, themeColors, defaultFont) {
         console.log("Starting chart diagnostic steps");
         
-        // Create a container for the chart section
-        slide.addShape(pptx.shapes.RECTANGLE, {
-            x: 2.0, y: 1.5, w: 9.0, h: 5.0,
-            fill: { color: 'F9F9F9' },
-            line: { color: themeColors.primary, width: 1 }
-        });
+        // Create a container for the chart section using the styler function
+        const container = ReportStyler.createDiagnosticContainer(slide, pptx, themeColors);
         
-        // Add title for diagnostic section
-        slide.addText('Chart Diagnostic Steps', {
-            x: 2.1, y: 1.6, w: 8.8, h: 0.4,
-            fontSize: 16, bold: true,
-            fontFace: defaultFont,
-            color: themeColors.primary,
-            align: 'center'
-        });
+        // Add title for diagnostic section using the styler function
+        ReportStyler.createDiagnosticTitle(slide, container, themeColors, defaultFont);
         
         // STEP 1: Check if pptx is valid
-        const step1Y = 2.1;
-        slide.addText('Step 1: PptxGenJS Library Check', {
-            x: 2.2, y: step1Y, w: 8.6, h: 0.3,
+        const step1Y = container.y + 0.6;
+        ReportStyler.createTextBox(slide, 'Step 1: PptxGenJS Library Check', {
+            x: container.x + 0.2, y: step1Y, w: container.w - 0.4, h: 0.3,
             fontSize: 12, bold: true,
             fontFace: defaultFont,
             color: themeColors.text
@@ -139,8 +167,8 @@ const ReportPopulator = (function() {
         
         // Test pptx methods that should always exist
         const pptxValid = pptx && typeof pptx.addSlide === 'function' && typeof pptx.writeFile === 'function';
-        slide.addText(`PptxGenJS instance: ${pptxValid ? '✓ Valid' : '✗ Invalid'}`, {
-            x: 2.3, y: step1Y + 0.3, w: 8.4, h: 0.25,
+        ReportStyler.createTextBox(slide, `PptxGenJS instance: ${pptxValid ? '✓ Valid' : '✗ Invalid'}`, {
+            x: container.x + 0.3, y: step1Y + 0.3, w: container.w - 0.6, h: 0.25,
             fontSize: 10,
             fontFace: defaultFont,
             color: pptxValid ? '008800' : 'CC0000'
@@ -149,8 +177,8 @@ const ReportPopulator = (function() {
         
         // STEP 2: Check for chart types without using ChartType object
         const step2Y = step1Y + 0.6;
-        slide.addText('Step 2: Chart Type Availability', {
-            x: 2.2, y: step2Y, w: 8.6, h: 0.3,
+        ReportStyler.createTextBox(slide, 'Step 2: Chart Type Availability', {
+            x: container.x + 0.2, y: step2Y, w: container.w - 0.4, h: 0.3,
             fontSize: 12, bold: true,
             fontFace: defaultFont, 
             color: themeColors.text
@@ -176,8 +204,8 @@ const ReportPopulator = (function() {
             chartTypesText = `Error examining chart types: ${e.message}`;
         }
         
-        slide.addText(chartTypesText, {
-            x: 2.3, y: step2Y + 0.3, w: 8.4, h: 0.6,
+        ReportStyler.createTextBox(slide, chartTypesText, {
+            x: container.x + 0.3, y: step2Y + 0.3, w: container.w - 0.6, h: 0.6,
             fontSize: 10,
             fontFace: defaultFont,
             color: chartTypesList.length > 0 ? '008800' : '888888',
@@ -187,8 +215,8 @@ const ReportPopulator = (function() {
         
         // STEP 3: Attempt to create a simple chart data structure
         const step3Y = step2Y + 1.0;
-        slide.addText('Step 3: Chart Data Preparation', {
-            x: 2.2, y: step3Y, w: 8.6, h: 0.3,
+        ReportStyler.createTextBox(slide, 'Step 3: Chart Data Preparation', {
+            x: container.x + 0.2, y: step3Y, w: container.w - 0.4, h: 0.3,
             fontSize: 12, bold: true,
             fontFace: defaultFont,
             color: themeColors.text
@@ -204,8 +232,8 @@ const ReportPopulator = (function() {
                 }
             ];
             
-            slide.addText(`Chart data: ${JSON.stringify(chartData)}`, {
-                x: 2.3, y: step3Y + 0.3, w: 8.4, h: 0.5,
+            ReportStyler.createTextBox(slide, `Chart data: ${JSON.stringify(chartData)}`, {
+                x: container.x + 0.3, y: step3Y + 0.3, w: container.w - 0.6, h: 0.5,
                 fontSize: 10,
                 fontFace: defaultFont,
                 color: '008800'
@@ -214,8 +242,8 @@ const ReportPopulator = (function() {
             
             // STEP 4: Check for addChart method directly
             const step4Y = step3Y + 0.9;
-            slide.addText('Step 4: Check addChart Method', {
-                x: 2.2, y: step4Y, w: 8.6, h: 0.3,
+            ReportStyler.createTextBox(slide, 'Step 4: Check addChart Method', {
+                x: container.x + 0.2, y: step4Y, w: container.w - 0.4, h: 0.3,
                 fontSize: 12, bold: true,
                 fontFace: defaultFont,
                 color: themeColors.text
@@ -223,8 +251,8 @@ const ReportPopulator = (function() {
             
             // Check if slide has addChart method
             const hasAddChart = typeof slide.addChart === 'function';
-            slide.addText(`slide.addChart method: ${hasAddChart ? '✓ Available' : '✗ Not available'}`, {
-                x: 2.3, y: step4Y + 0.3, w: 8.4, h: 0.25,
+            ReportStyler.createTextBox(slide, `slide.addChart method: ${hasAddChart ? '✓ Available' : '✗ Not available'}`, {
+                x: container.x + 0.3, y: step4Y + 0.3, w: container.w - 0.6, h: 0.25,
                 fontSize: 10,
                 fontFace: defaultFont,
                 color: hasAddChart ? '008800' : 'CC0000'
@@ -233,8 +261,8 @@ const ReportPopulator = (function() {
             
             // STEP 5: Determine correct chart type format
             const step5Y = step4Y + 0.6;
-            slide.addText('Step 5: Determine Chart Type Format', {
-                x: 2.2, y: step5Y, w: 8.6, h: 0.3,
+            ReportStyler.createTextBox(slide, 'Step 5: Determine Chart Type Format', {
+                x: container.x + 0.2, y: step5Y, w: container.w - 0.4, h: 0.3,
                 fontSize: 12, bold: true,
                 fontFace: defaultFont,
                 color: themeColors.text
@@ -261,8 +289,8 @@ const ReportPopulator = (function() {
                 typeTests.push(`Will try direct string values: ${possibleTypes.join(', ')}`);
             }
             
-            slide.addText(typeTests.join('\n'), {
-                x: 2.3, y: step5Y + 0.3, w: 8.4, h: 0.8,
+            ReportStyler.createTextBox(slide, typeTests.join('\n'), {
+                x: container.x + 0.3, y: step5Y + 0.3, w: container.w - 0.6, h: 0.8,
                 fontSize: 10,
                 fontFace: defaultFont,
                 color: '000000'
@@ -271,8 +299,8 @@ const ReportPopulator = (function() {
             
         } catch (err) {
             console.error("Chart diagnostic error:", err);
-            slide.addText(`Chart diagnostic error: ${err.message}`, {
-                x: 2.3, y: step3Y + 0.3, w: 8.4, h: 0.5,
+            ReportStyler.createTextBox(slide, `Chart diagnostic error: ${err.message}`, {
+                x: container.x + 0.3, y: step3Y + 0.3, w: container.w - 0.6, h: 0.5,
                 fontSize: 10,
                 fontFace: defaultFont,
                 color: 'CC0000'
@@ -290,133 +318,23 @@ const ReportPopulator = (function() {
      * @param {string} sectorName - The sector name
      */
     function addTopSection(slide, data, pptx, themeColors, defaultFont, sectorName) {
-        // Add the sector box with border - left side top
-        slide.addShape(pptx.shapes.RECTANGLE, {
-            x: 0.22, y: 0.08, w: 3.06, h: 0.63,
-            fill: { color: 'FFFFFF' },
-            line: { color: themeColors.primary, width: 1 }
-        });
+        // Create the sector box in the top left
+        ReportStyler.createSectorBox(slide, pptx, themeColors);
         
-        try {
-            // Add forest icon
-            slide.addImage({
-                path: '../../assets/images/forest-icon.png', 
-                x: 0.26, y: 0.13, w: 0.57, h: 0.57
-            });
-        } catch (e) {
-            console.warn('Forest icon not found, skipping icon', e);
-            
-            // Fallback: Add a colored shape instead of the image
-            slide.addShape(pptx.shapes.RECTANGLE, {
-                x: 0.26, y: 0.13, w: 0.57, h: 0.57,
-                fill: { color: themeColors.secondary },
-                line: { color: themeColors.primary, width: 0.75 }
-            });
-        }
+        // Add sector icon or fallback shape
+        ReportStyler.addSectorIcon(slide, pptx, themeColors, '../../assets/images/forest-icon.png');
         
-        // Add sector name text - centered, bold, and black
-        slide.addText(sectorName, {
-            x: 0.79, y: 0.11, w: 2.44, h: 0.41,
-            fontSize: 18, bold: true,
-            fontFace: defaultFont,
-            color: themeColors.text,
-            align: 'center',
-            valign: 'middle'
-        });
+        // Add sector name and target text
+        ReportStyler.addSectorText(slide, sectorName, 'RM 8 bil in exports by 2030', themeColors, defaultFont);
         
-        // Add export target text below sector name
-        slide.addText('RM 8 bil in exports by 2030', {
-            x: 0.78, y: 0.39, w: 2.51, h: 0.29,
-            fontSize: 10.5, italic: true,
-            fontFace: defaultFont,
-            color: themeColors.text,
-            align: 'center'
-        });
+        // Create MUDeNR outcomes box
+        const mudenrBox = ReportStyler.createMudenrBox(slide, pptx, themeColors);
         
-        // Add larger box for MUDeNR outcomes
-        slide.addShape(pptx.shapes.RECTANGLE, {
-            x: 3.28, y: 0.08, w: 9.83, h: 0.63,
-            fill: { color: 'FFFFFF' },
-            line: { color: themeColors.primary, width: 1 }
-        });
+        // Add MUDeNR outcome bullets
+        ReportStyler.addMudenrOutcomes(slide, pptx, mudenrBox, defaultFont, themeColors);
         
-        // Add MUDeNR Outcomes text box 1
-        slide.addText([
-            { text: 'MUDeNR Outcome:', options: { bold: true, fontSize: 8, fontFace: defaultFont } },
-            { text: '\nIncrease Timber & Non Wood Forest Products Exports Earnings', options: { 
-                fontSize: 8, 
-                fontFace: defaultFont,
-                bullet: { type: 'number', numberFormat: '%d.' } 
-            }},
-            { text: 'Community-Based Ecotourism and conservation Totally Protected Area', options: { 
-                fontSize: 8, 
-                fontFace: defaultFont,
-                bullet: { type: 'number', numberFormat: '%d.' } 
-            }},
-            { text: '\nCertify Long Term Forest License Area and Forest Plantation', options: { 
-                fontSize: 8, 
-                fontFace: defaultFont,
-                bullet: { type: 'number', numberFormat: '%d.' } 
-            }}
-        ], {
-            x: 3.35, y: 0.05, w: 3.56, h: 0.64,
-            fontSize: 8,
-            fontFace: defaultFont,
-            color: themeColors.text,
-            align: 'left',
-            valign: 'top',
-            paraSpaceBefore: 0,
-            paraSpaceAfter: 0,
-            lineSpacingMultiple: 0.9
-        });
-        
-        // Add MUDeNR Outcomes text box 2
-        slide.addText([
-            { text: '200,000 ha degraded area (100%) planted/restored by 2030', options: { 
-                fontSize: 8, 
-                fontFace: defaultFont,
-                bullet: { type: 'number', startAt: 4, numberFormat: '%d.' } 
-            }},
-            { text: '\nObtain world recognition for sustainable management practices and conservation effort', options: { 
-                fontSize: 8, 
-                fontFace: defaultFont,
-                bullet: { type: 'number', startAt: 5, numberFormat: '%d.' } 
-            }}
-        ], {
-            x: 6.87, y: 0.06, w: 3.56, h: 0.64,
-            fontSize: 8,
-            fontFace: defaultFont,
-            color: themeColors.text,
-            align: 'left',
-            valign: 'top',
-            paraSpaceBefore: 0,
-            paraSpaceAfter: 0,
-            lineSpacingMultiple: 0.9
-        });
-        
-        // Add quarter section box
-        slide.addShape(pptx.shapes.RECTANGLE, {
-            x: 10.58, y: 0.08, w: 1.87, h: 0.63,
-            fill: { color: 'FFFFFF' },
-            line: { color: themeColors.primary, width: 1 }
-        });
-        
-        // Add yellow square next to the quarter box with no gap
-        slide.addShape(pptx.shapes.RECTANGLE, {
-            x: 12.45, y: 0.08, w: 0.66, h: 0.63,
-            fill: { color: 'FFFF00' },
-            line: { color: themeColors.primary, width: 1 }
-        });
-        
-        // Add quarter information in the box
-        slide.addText(data.quarter || 'Q2 2025', { 
-            x: 10.58, y: 0.08, w: 1.87, h: 0.63,
-            fontSize: 14, bold: true, 
-            fontFace: defaultFont,
-            color: themeColors.text,
-            align: 'center',
-            valign: 'middle'
-        });
+        // Create quarter box with yellow indicator
+        ReportStyler.createQuarterBox(slide, pptx, themeColors, data.quarter || 'Q2 2025', defaultFont);
     }
 
     /**
@@ -429,14 +347,7 @@ const ReportPopulator = (function() {
      */
     function addFooterSection(slide, data, pptx, themeColors, defaultFont) {
         // Add "Legend:" text
-        slide.addText('Legend:', {
-            x: 0.2, y: 7.14, w: 0.69, h: 0.25,
-            fontSize: 9, italic: true,
-            fontFace: defaultFont,
-            color: themeColors.lightText,
-            align: 'left',
-            valign: 'middle'
-        });
+        ReportStyler.addLegendTitle(slide, defaultFont, themeColors);
         
         // Define the current year for the yellow box description
         const currentYear = new Date().getFullYear();
@@ -450,163 +361,34 @@ const ReportPopulator = (function() {
             { color: '757070', label: 'Not started' }
         ];
         
-        // Add legend squares and text with specified positions
-        // Square 1 (Green)
-        slide.addShape(pptx.shapes.RECTANGLE, {
-            x: 1.000,
-            y: 7.118,
-            w: 0.31, h: 0.31,
-            fill: { color: legendItems[0].color },
-            line: { color: '000000', width: 0.5 }
-        });
-        
-        // Text 1
-        slide.addText(legendItems[0].label, {
-            x: 1.323,
-            y: 7.059,
-            w: 1.5748,
-            h: 0.4055,
-            fontSize: 9,
-            italic: true,
-            fontFace: defaultFont,
-            color: '000000',
-            align: 'left',
-            valign: 'middle'
-        });
-        
-        // Square 2 (Yellow)
-        slide.addShape(pptx.shapes.RECTANGLE, {
-            x: 2.953,
-            y: 7.118,
-            w: 0.31, h: 0.31,
-            fill: { color: legendItems[1].color },
-            line: { color: '000000', width: 0.5 }
-        });
-        
-        // Text 2
-        slide.addText(legendItems[1].label, {
-            x: 3.272,
-            y: 7.059,
-            w: 1.5748,
-            h: 0.4055,
-            fontSize: 9,
-            italic: true,
-            fontFace: defaultFont,
-            color: '000000',
-            align: 'left',
-            valign: 'middle'
-        });
-        
-        // Square 3 (Red)
-        slide.addShape(pptx.shapes.RECTANGLE, {
-            x: 4.776,
-            y: 7.087,
-            w: 0.31, h: 0.31,
-            fill: { color: legendItems[2].color },
-            line: { color: '000000', width: 0.5 }
-        });
-        
-        // Text 3
-        slide.addText(legendItems[2].label, {
-            x: 5.094,
-            y: 7.102,
-            w: 1.5748,
-            h: 0.4055,
-            fontSize: 9,
-            italic: true,
-            fontFace: defaultFont,
-            color: '000000',
-            align: 'left',
-            valign: 'middle'
-        });
-        
-        // Square 4 (Grey)
-        slide.addShape(pptx.shapes.RECTANGLE, {
-            x: 6.146,
-            y: 7.087,
-            w: 0.31, h: 0.31,
-            fill: { color: legendItems[3].color },
-            line: { color: '000000', width: 0.5 }
-        });
-        
-        // Text 4
-        slide.addText(legendItems[3].label, {
-            x: 6.520,
-            y: 7.110,
-            w: 1.5748,
-            h: 0.4055,
-            fontSize: 9,
-            italic: true,
-            fontFace: defaultFont,
-            color: '000000',
-            align: 'left',
-            valign: 'middle'
-        });
+        // Add each legend item with positions specified in the design
+        ReportStyler.addLegendItem(slide, pptx, legendItems[0].color, legendItems[0].label, 
+            1.000, 7.118, 1.323, 7.059, defaultFont);
+            
+        ReportStyler.addLegendItem(slide, pptx, legendItems[1].color, legendItems[1].label, 
+            2.953, 7.118, 3.272, 7.059, defaultFont);
+            
+        ReportStyler.addLegendItem(slide, pptx, legendItems[2].color, legendItems[2].label, 
+            4.776, 7.087, 5.094, 7.102, defaultFont);
+            
+        ReportStyler.addLegendItem(slide, pptx, legendItems[3].color, legendItems[3].label, 
+            6.146, 7.087, 6.520, 7.110, defaultFont);
         
         // Add year indicator circles and text
-        // Circle 1 - Previous Year (orange)
-        slide.addShape(pptx.shapes.OVAL, {
-            x: 7.657,
-            y: 7.193,
-            w: 0.118,
-            h: 0.118,
-            fill: { color: 'ED7D31' },
-            line: { color: 'ED7D31', width: 0.5 }
-        });
-        
-        // Text 1 - Previous Year
-        slide.addText(`${previousYear}`, {
-            x: 7.689,
-            y: 7.126,
-            w: 0.642,
-            h: 0.252,
-            fontSize: 8,
-            fontFace: defaultFont,
-            color: '000000',
-            align: 'left',
-            valign: 'middle'
-        });
-        
-        // Circle 2 - Current Year (blue)
-        slide.addShape(pptx.shapes.OVAL, {
-            x: 8.193,
-            y: 7.193,
-            w: 0.118,
-            h: 0.118,
-            fill: { color: '0070C0' },
-            line: { color: '0070C0', width: 0.5 }
-        });
-        
-        // Text 2 - Current Year
-        slide.addText(`${currentYear}`, {
-            x: 8.244,
-            y: 7.126,
-            w: 0.642,
-            h: 0.252,
-            fontSize: 8,
-            fontFace: defaultFont,
-            color: '000000',
-            align: 'left',
-            valign: 'middle'
-        });
+        // Previous year (orange)
+        ReportStyler.addYearIndicator(slide, pptx, previousYear.toString(), 'ED7D31',
+            7.657, 7.193, 7.689, 7.126, defaultFont);
+            
+        // Current year (blue)
+        ReportStyler.addYearIndicator(slide, pptx, currentYear.toString(), '0070C0',
+            8.193, 7.193, 8.244, 7.126, defaultFont);
         
         // Format current date for the draft text
         const today = new Date();
         const draftDateString = `DRAFT ${today.getDate()} ${today.toLocaleString('en-US', { month: 'long' })} ${today.getFullYear()}`;
         
-        // Add Draft text box with red text, bold
-        slide.addText(draftDateString, {
-            x: 9.197,
-            y: 7.098,
-            w: 2.150,
-            h: 0.339,
-            fontSize: 14, 
-            bold: true,
-            fontFace: defaultFont,
-            color: 'FF0000',
-            align: 'left',
-            valign: 'middle'
-        });
+        // Add Draft text box
+        ReportStyler.createDraftText(slide, draftDateString, defaultFont);
     }
 
     /**
@@ -627,19 +409,7 @@ const ReportPopulator = (function() {
                 pptx.layout = 'LAYOUT_WIDE';
                 
                 // Define theme colors
-                const themeColors = {
-                    primary: '1F4E79',     // Darker blue for primary elements
-                    secondary: '375623',   // Dark green for secondary elements  
-                    accent1: 'C55A11',     // Dark orange for accent
-                    accent2: '2E75B6',     // Mid blue for accent
-                    text: '000000',        // Black for main text
-                    lightText: '444444',   // Dark grey for secondary text
-                    headerBg: 'E9EDF1',    // Light blue-grey for section headers
-                    greenStatus: '70AD47', // Green for on-track status
-                    yellowStatus: 'FFC000', // Amber for minor issues
-                    redStatus: 'C00000',   // Deep red for major issues
-                    greyStatus: 'A5A5A5'   // Grey for no data
-                };
+                const themeColors = ReportStyler.getThemeColors();
                 
                 // Create a slide without using master slides
                 const slide = pptx.addSlide();
