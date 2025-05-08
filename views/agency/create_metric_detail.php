@@ -65,7 +65,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos($_SERVER['CONTENT_TYPE'] ?? 
             if ($stmt->execute()) {
                 header('Content-Type: application/json');
                 ob_end_clean();
-                echo json_encode(['success' => true, 'message' => 'Metric detail created successfully.']);
+                echo json_encode([
+                    'success' => true, 
+                    'message' => 'Metric detail created successfully.',
+                    'action' => 'create',
+                    'new_id' => $stmt->insert_id
+                ]);
                 exit;
             } else {
                 $errors[] = 'Database error: ' . $stmt->error;
@@ -82,7 +87,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos($_SERVER['CONTENT_TYPE'] ?? 
             if ($stmt->execute()) {
                 header('Content-Type: application/json');
                 ob_end_clean();
-                echo json_encode(['success' => true, 'message' => 'Metric detail updated successfully.']);
+                echo json_encode([
+                    'success' => true, 
+                    'message' => 'Metric detail updated successfully.',
+                    'action' => 'update',
+                    'updated_id' => $detail_id
+                ]);
                 exit;
             } else {
                 $errors[] = 'Database error: ' . $stmt->error;
@@ -99,7 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos($_SERVER['CONTENT_TYPE'] ?? 
     exit;
 }
 
-// Fetch existing metric details for display (in original format)
+// Fetch existing metric details for display
 $result = $conn->query("SELECT detail_id, detail_name, detail_json FROM metrics_details WHERE is_draft = 0 ORDER BY created_at DESC");
 $detailsArray = [];
 if ($result) {
@@ -137,23 +147,37 @@ if ($result) {
             padding: 15px;
             margin-bottom: 15px;
             background-color: #f9f9f9;
+            position: relative;
         }
         .remove-item {
-            float: right;
+            position: absolute;
+            top: 5px;
+            right: 10px;
             color: #dc3545;
             cursor: pointer;
             font-weight: bold;
+            font-size: 1.2rem;
         }
         .add-item-btn {
             margin-bottom: auto;
+        }
+        #metricDetailsContainer ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        #metricDetailsContainer li {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
         }
     </style>
 </head>
 <body>
     <div class="container mt-5">
         <h1>Create Metric Detail</h1>
-        <div id="errorContainer"></div>
-        <div id="successContainer"></div>
+        <div id="errorContainer" class="alert alert-danger" style="display: none;"></div>
+        <div id="successContainer" class="alert alert-success" style="display: none;"></div>
         
         <form id="metricDetailForm" method="post" action="">
             <div class="mb-3">
@@ -177,8 +201,8 @@ if ($result) {
             
             <button type="button" class="btn btn-secondary add-item-btn" onclick="addItem()">+ Add Another Value</button>
             
-            <button type="submit" class="btn btn-primary">Create</button>
-            <a href="<?php echo APP_URL; ?>/views/agency/submit_metrics.php" class="btn btn-secondary ms-2">Cancel</a>
+            <button type="submit" class="btn btn-primary" id="submitBtn">Create</button>
+            <a href="<?php echo APP_URL; ?>/views/agency/create_metric_detail.php" class="btn btn-secondary ms-2">Cancel</a>
         </form>
 
         <div class="mt-5">
@@ -187,16 +211,15 @@ if ($result) {
                 <?php if (empty($detailsArray)): ?>
                     <p>No metric details found.</p>
                 <?php else: ?>
-                    <ul style="list-style-type: none; padding: 0; display: block; gap: 20px;">
+                    <ul>
                         <?php foreach ($detailsArray as $detail): ?>
-                            <li style="border: 1px solid #ccc; border-radius: 8px; padding: 20px; box-sizing: border-box; min-width: 250px; margin-bottom: 20px;">
-                                <div style="display: flex; gap: 15px;">
-                                    <div style="flex: 1; display: flex; align-items: center;">
+                            <li>
+                                <div style="display: flex; gap: 15px; align-items: center;">
+                                    <div style="flex: 1;">
                                         <h3 style="font-weight: bold; margin: 0;"><?= htmlspecialchars($detail['title']) ?></h3>
                                     </div>
-                                    <div style="flex: 2;">
+                                    <div style="flex: 3;">
                                         <?php
-                                        // Split values by semicolon and trim
                                         $values = explode(';', $detail['value']);
                                         $descriptions = explode(';', $detail['description']);
                                         
@@ -216,7 +239,7 @@ if ($result) {
                                             </div>
                                         <?php endif; ?>
                                     </div>
-                                    <div style="display: flex; flex-direction: column; gap: 10px; justify-content: center;">
+                                    <div style="display: flex; flex-direction: column; gap: 10px;">
                                         <button class="btn btn-sm btn-outline-primary" onclick="editMetricDetail(<?= $detail['id'] ?>)">Edit</button>
                                         <button class="btn btn-sm btn-outline-danger delete-btn" onclick="deleteMetricDetail(<?= $detail['id'] ?>)">Delete</button>
                                     </div>
@@ -230,6 +253,10 @@ if ($result) {
     </div>
 
     <script>
+        // Embed detailsArray as JS object for edit lookup
+        const metricDetails = <?= json_encode($detailsArray) ?>;
+        let editingDetailId = null;
+
         // Function to add a new item
         function addItem() {
             const container = document.getElementById('itemsContainer');
@@ -274,154 +301,62 @@ if ($result) {
                 alert('You need at least one value-description pair.');
             }
         }
-        
-        // Handle form submission
-        document.addEventListener('DOMContentLoaded', function () {
-            const form = document.getElementById('metricDetailForm');
-            const errorContainer = document.getElementById('errorContainer');
-            const successContainer = document.getElementById('successContainer');
-
-            form.addEventListener('submit', function (e) {
-                e.preventDefault();
-                errorContainer.innerHTML = '';
-                successContainer.innerHTML = '';
-
-                const title = form.title.value.trim();
-                const items = [];
-                
-                // Collect all items
-                const itemContainers = document.querySelectorAll('.item-container');
-                itemContainers.forEach(container => {
-                    const index = container.dataset.index;
-                    const value = document.getElementById(`value_${index}`).value.trim();
-                    const description = document.getElementById(`description_${index}`).value.trim();
-                    
-                    items.push({
-                        value: value,
-                        description: description
-                    });
-                });
-
-                const data = {
-                    title: title,
-                    items: items
-                };
-
-                fetch(window.location.href, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(data)
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(result => {
-                    if (result.success) {
-                        successContainer.innerHTML = '<div class="alert alert-success">' + result.message + '</div>';
-                        form.reset();
-                        // Reset to one item
-                        const container = document.getElementById('itemsContainer');
-                        container.innerHTML = '';
-                        addItem(); // Add initial item
-                        
-                        // Reload the page to show updated metrics
-                        location.reload();
-                    } else {
-                        if (result.errors && result.errors.length > 0) {
-                            const ul = document.createElement('ul');
-                            result.errors.forEach(function (error) {
-                                const li = document.createElement('li');
-                                li.textContent = error;
-                                ul.appendChild(li);
-                            });
-                            errorContainer.appendChild(ul);
-                            errorContainer.className = 'alert alert-danger';
-                        } else {
-                            errorContainer.textContent = 'An unknown error occurred.';
-                            errorContainer.className = 'alert alert-danger';
-                        }
-                    }
-                })
-                .catch((error) => {
-                    console.error('Fetch error:', error);
-                    errorContainer.textContent = 'Failed to submit data. Please try again.';
-                    errorContainer.className = 'alert alert-danger';
-                });
-            });
-        });
-    </script>
-
-    <script>
-        // Embed detailsArray as JS object for edit lookup
-        const metricDetails = <?= json_encode($detailsArray) ?>;
-
-        // Current editing detail id
-        let editingDetailId = null;
 
         // Function to delete metric detail
-function deleteMetricDetail(id) {
-    if (!confirm('Are you sure you want to delete this metric detail? This action cannot be undone.')) {
-        return;
-    }
-    
-    // Show loading state
-    const deleteBtn = document.querySelector(`button[onclick="deleteMetricDetail(${id})"]`);
-    const originalText = deleteBtn.textContent;
-    deleteBtn.textContent = 'Deleting...';
-    deleteBtn.disabled = true;
-    
-    fetch(`delete_metric_detail.php?detail_id=${id}`, {
-        method: 'GET',
-        headers: {
-            'Accept': 'application/json'
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            // Remove the deleted item from the UI immediately
-            const itemToRemove = document.querySelector(`li button[onclick="deleteMetricDetail(${id})"]`).closest('li');
-            if (itemToRemove) {
-                itemToRemove.remove();
+        function deleteMetricDetail(id) {
+            if (!confirm('Are you sure you want to delete this metric detail? This action cannot be undone.')) {
+                return;
             }
-            // Show success message
-            alert(data.message);
-            // If we're on the last item, show "No metric details found" message
-            if (document.querySelectorAll('#metricDetailsContainer li').length === 0) {
-                document.getElementById('metricDetailsContainer').innerHTML = '<p>No metric details found.</p>';
-            }
-        } else {
-            alert('Error: ' + data.message);
+            
+            const deleteBtn = document.querySelector(`button[onclick="deleteMetricDetail(${id})"]`);
+            const originalText = deleteBtn.textContent;
+            deleteBtn.textContent = 'Deleting...';
+            deleteBtn.disabled = true;
+            
+            fetch(`delete_metric_detail.php?detail_id=${id}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Remove the deleted item from the UI
+                    const itemToRemove = document.querySelector(`li button[onclick="deleteMetricDetail(${id})"]`).closest('li');
+                    if (itemToRemove) {
+                        itemToRemove.remove();
+                    }
+                    // Show success message
+                    showAlert('Metric detail deleted successfully.', 'success');
+                    // If no items left, show message
+                    if (document.querySelectorAll('#metricDetailsContainer li').length === 0) {
+                        document.getElementById('metricDetailsContainer').innerHTML = '<p>No metric details found.</p>';
+                    }
+                } else {
+                    showAlert('Error: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Delete error:', error);
+                showAlert('Failed to delete metric detail. Please try again.', 'error');
+            })
+            .finally(() => {
+                deleteBtn.textContent = originalText;
+                deleteBtn.disabled = false;
+            });
         }
-    })
-    .catch(error => {
-        console.error('Delete error:', error);
-        alert('Failed to delete metric detail. Please try again.');
-    })
-    .finally(() => {
-        // Reset button state
-        if (deleteBtn) {
-            deleteBtn.textContent = originalText;
-            deleteBtn.disabled = false;
-        }
-    });
-}
 
         // Function to load metric detail into form for editing
         function editMetricDetail(id) {
             const detail = metricDetails.find(d => d.id == id);
             if (!detail) {
-                alert('Metric detail not found.');
+                showAlert('Metric detail not found.', 'error');
                 return;
             }
             editingDetailId = id;
@@ -456,30 +391,44 @@ function deleteMetricDetail(id) {
             }
 
             // Change submit button text to Update
-            const submitBtn = document.querySelector('#metricDetailForm button[type="submit"]');
-            submitBtn.textContent = 'Update';
+            document.getElementById('submitBtn').textContent = 'Update';
+            
+            // Scroll to the form
+            document.getElementById('metricDetailForm').scrollIntoView({ behavior: 'smooth' });
         }
 
-        // Modify form submission to handle update if editingDetailId is set
+        // Function to show alert messages
+        function showAlert(message, type) {
+            const container = document.getElementById(`${type}Container`);
+            container.textContent = message;
+            container.style.display = 'block';
+            setTimeout(() => {
+                container.style.display = 'none';
+            }, 5000);
+        }
+
+        // Handle form submission
         document.addEventListener('DOMContentLoaded', function () {
             const form = document.getElementById('metricDetailForm');
             const errorContainer = document.getElementById('errorContainer');
             const successContainer = document.getElementById('successContainer');
+            const submitBtn = document.getElementById('submitBtn');
 
             form.addEventListener('submit', function (e) {
                 e.preventDefault();
-                errorContainer.innerHTML = '';
-                successContainer.innerHTML = '';
+                errorContainer.style.display = 'none';
+                successContainer.style.display = 'none';
 
                 const title = form.title.value.trim();
                 const items = [];
-
+                
+                // Collect all items
                 const itemContainers = document.querySelectorAll('.item-container');
                 itemContainers.forEach(container => {
                     const index = container.dataset.index;
                     const value = document.getElementById(`value_${index}`).value.trim();
                     const description = document.getElementById(`description_${index}`).value.trim();
-
+                    
                     items.push({
                         value: value,
                         description: description
@@ -491,9 +440,14 @@ function deleteMetricDetail(id) {
                     items: items
                 };
 
+                // Only include detail_id if we're editing
                 if (editingDetailId !== null) {
                     data.detail_id = editingDetailId;
                 }
+
+                // Disable the submit button to prevent duplicate submissions
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Processing...';
 
                 fetch(window.location.href, {
                     method: 'POST',
@@ -510,14 +464,21 @@ function deleteMetricDetail(id) {
                 })
                 .then(result => {
                     if (result.success) {
-                        successContainer.innerHTML = '<div class="alert alert-success">' + result.message + '</div>';
-                        form.reset();
+                        showAlert(result.message, 'success');
+                        
+                        // Reset form only if it was a create action
+                        if (result.action === 'create') {
+                            form.reset();
+                            const container = document.getElementById('itemsContainer');
+                            container.innerHTML = '';
+                            addItem();
+                        }
+                        
+                        // Reset editing state
                         editingDetailId = null;
-                        const container = document.getElementById('itemsContainer');
-                        container.innerHTML = '';
-                        addItem();
-                        const submitBtn = document.querySelector('#metricDetailForm button[type="submit"]');
                         submitBtn.textContent = 'Create';
+                        
+                        // Reload the page to show updated metrics
                         location.reload();
                     } else {
                         if (result.errors && result.errors.length > 0) {
@@ -527,18 +488,22 @@ function deleteMetricDetail(id) {
                                 li.textContent = error;
                                 ul.appendChild(li);
                             });
+                            errorContainer.innerHTML = '';
                             errorContainer.appendChild(ul);
-                            errorContainer.className = 'alert alert-danger';
+                            errorContainer.style.display = 'block';
                         } else {
-                            errorContainer.textContent = 'An unknown error occurred.';
-                            errorContainer.className = 'alert alert-danger';
+                            showAlert('An unknown error occurred.', 'error');
                         }
                     }
                 })
                 .catch((error) => {
                     console.error('Fetch error:', error);
-                    errorContainer.textContent = 'Failed to submit data. Please try again.';
-                    errorContainer.className = 'alert alert-danger';
+                    showAlert('Failed to submit data. Please try again.', 'error');
+                })
+                .finally(() => {
+                    // Re-enable the submit button
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = editingDetailId ? 'Update' : 'Create';
                 });
             });
         });
