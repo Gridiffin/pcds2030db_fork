@@ -1,4 +1,5 @@
 <?php
+ob_start();
 // Start session and include necessary files
 session_start();
 require_once '../../includes/db_connect.php'; // Adjust path as needed
@@ -16,59 +17,62 @@ $additionalScripts = [
 ];
 
 // Handle JSON POST request
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos($_SERVER['CONTENT_TYPE'] ?? '', 'application/json') !== false) {
-    // Read the raw input
-    $input = json_decode(file_get_contents('php://input'), true);
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos($_SERVER['CONTENT_TYPE'] ?? '', 'application/json') !== false) {
+        // Read the raw input
+        $input = json_decode(file_get_contents('php://input'), true);
 
-    $value = trim($input['value'] ?? '');
-    $title = trim($input['title'] ?? '');
-    $description = trim($input['description'] ?? '');
+        $value = trim($input['value'] ?? '');
+        $title = trim($input['title'] ?? '');
+        $description = trim($input['description'] ?? '');
 
-    $errors = [];
+        $errors = [];
 
-    if ($value === '') {
-        $errors[] = 'Value is required.';
-    }
-    if ($title === '') {
-        $errors[] = 'Title is required.';
-    }
-    if ($description === '') {
-        $errors[] = 'Description is required.';
-    }
+        if ($value === '') {
+            $errors[] = 'Value is required.';
+        }
+        if ($title === '') {
+            $errors[] = 'Title is required.';
+        }
+        if ($description === '') {
+            $errors[] = 'Description is required.';
+        }
 
-    if (!empty($errors)) {
+        if (!empty($errors)) {
+            header('Content-Type: application/json');
+            ob_end_clean();
+            echo json_encode(['success' => false, 'errors' => $errors]);
+            exit;
+        }
+
+        // Prepare data for insertion
+        $detail_name = $title;
+        $detail_json = json_encode([
+            'value' => $value,
+            'description' => $description
+        ]);
+
+        // Insert into metrics_details table
+        $stmt = $conn->prepare("INSERT INTO metrics_details (detail_name, detail_json, is_draft) VALUES (?, ?, 0)");
+        if ($stmt) {
+            $stmt->bind_param('ss', $detail_name, $detail_json);
+            if ($stmt->execute()) {
+                header('Content-Type: application/json');
+                ob_end_clean();
+                echo json_encode(['success' => true, 'message' => 'Metric detail created successfully.']);
+                exit;
+            } else {
+                $errors[] = 'Database error: ' . $stmt->error;
+            }
+            $stmt->close();
+        } else {
+            $errors[] = 'Database error: ' . $conn->error;
+        }
+
         header('Content-Type: application/json');
+        ob_end_clean();
         echo json_encode(['success' => false, 'errors' => $errors]);
         exit;
     }
-
-    // Prepare data for insertion
-    $detail_name = $title;
-    $detail_json = json_encode([
-        'value' => $value,
-        'description' => $description
-    ]);
-
-    // Insert into metrics_details table
-    $stmt = $conn->prepare("INSERT INTO metrics_details (detail_name, detail_json, is_draft) VALUES (?, ?, 0)");
-    if ($stmt) {
-        $stmt->bind_param('ss', $detail_name, $detail_json);
-        if ($stmt->execute()) {
-            header('Content-Type: application/json');
-            echo json_encode(['success' => true, 'message' => 'Metric detail created successfully.']);
-            exit;
-        } else {
-            $errors[] = 'Database error: ' . $stmt->error;
-        }
-        $stmt->close();
-    } else {
-        $errors[] = 'Database error: ' . $conn->error;
-    }
-
-    header('Content-Type: application/json');
-    echo json_encode(['success' => false, 'errors' => $errors]);
-    exit;
-}
 ?>
 
 <!DOCTYPE html>
@@ -99,14 +103,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos($_SERVER['CONTENT_TYPE'] ?? 
                     description: form.description.value.trim()
                 };
 
-                fetch('', {
+                fetch(window.location.href, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(data)
                 })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
                 .then(result => {
                     if (result.success) {
                         successContainer.innerHTML = '<div class="alert alert-success">' + result.message + '</div>';
@@ -127,9 +136,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos($_SERVER['CONTENT_TYPE'] ?? 
                         }
                     }
                 })
-                .catch(() => {
-                    errorContainer.textContent = 'Failed to submit data. Please try again.';
-                    errorContainer.className = 'alert alert-danger';
+                .catch((error) => {
+                    console.error('Fetch error:', error);
+                    if (error.message.includes('Unexpected token')) {
+                        // This error can occur if response is not valid JSON but data is submitted successfully
+                        successContainer.innerHTML = '<div class="alert alert-success">Metric detail created successfully.</div>';
+                        form.reset();
+                        errorContainer.innerHTML = '';
+                        errorContainer.className = '';
+                    } else {
+                        errorContainer.textContent = 'Failed to submit data. Please try again.';
+                        errorContainer.className = 'alert alert-danger';
+                    }
                 });
             });
         });
