@@ -127,6 +127,10 @@ if ($result) {
     <link href="<?php echo APP_URL; ?>/assets/css/layout/dashboard.css" rel="stylesheet">
     <link href="<?php echo APP_URL; ?>/assets/css/custom/agency.css" rel="stylesheet">
     <style>
+        .delete-btn[disabled] {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
         .item-container {
             border: 1px solid #ddd;
             border-radius: 5px;
@@ -214,7 +218,7 @@ if ($result) {
                                     </div>
                                     <div style="display: flex; flex-direction: column; gap: 10px; justify-content: center;">
                                         <button class="btn btn-sm btn-outline-primary" onclick="editMetricDetail(<?= $detail['id'] ?>)">Edit</button>
-                                        <button class="btn btn-sm btn-outline-danger" onclick="deleteMetricDetail(<?= $detail['id'] ?>)">Delete</button>
+                                        <button class="btn btn-sm btn-outline-danger delete-btn" onclick="deleteMetricDetail(<?= $detail['id'] ?>)">Delete</button>
                                     </div>
                                 </div>
                             </li>
@@ -360,30 +364,58 @@ if ($result) {
         let editingDetailId = null;
 
         // Function to delete metric detail
-        function deleteMetricDetail(id) {
-            if (!confirm('Are you sure you want to delete this metric detail?')) {
-                return;
-            }
-            fetch(`delete_metric_detail.php?detail_id=${id}`, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert(data.message);
-                    location.reload();
-                } else {
-                    alert('Error: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Delete error:', error);
-                alert('Failed to delete metric detail.');
-            });
+function deleteMetricDetail(id) {
+    if (!confirm('Are you sure you want to delete this metric detail? This action cannot be undone.')) {
+        return;
+    }
+    
+    // Show loading state
+    const deleteBtn = document.querySelector(`button[onclick="deleteMetricDetail(${id})"]`);
+    const originalText = deleteBtn.textContent;
+    deleteBtn.textContent = 'Deleting...';
+    deleteBtn.disabled = true;
+    
+    fetch(`delete_metric_detail.php?detail_id=${id}`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json'
         }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Remove the deleted item from the UI immediately
+            const itemToRemove = document.querySelector(`li button[onclick="deleteMetricDetail(${id})"]`).closest('li');
+            if (itemToRemove) {
+                itemToRemove.remove();
+            }
+            // Show success message
+            alert(data.message);
+            // If we're on the last item, show "No metric details found" message
+            if (document.querySelectorAll('#metricDetailsContainer li').length === 0) {
+                document.getElementById('metricDetailsContainer').innerHTML = '<p>No metric details found.</p>';
+            }
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Delete error:', error);
+        alert('Failed to delete metric detail. Please try again.');
+    })
+    .finally(() => {
+        // Reset button state
+        if (deleteBtn) {
+            deleteBtn.textContent = originalText;
+            deleteBtn.disabled = false;
+        }
+    });
+}
 
         // Function to load metric detail into form for editing
         function editMetricDetail(id) {
