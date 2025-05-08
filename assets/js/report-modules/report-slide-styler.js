@@ -72,52 +72,6 @@ const ReportStyler = (function() {
                 } 
             }},
             
-            // Programs section with header
-            { 'programsHeader': { 
-                type: 'rect', 
-                options: { 
-                    x: 0.5, y: 1.5, w: 7.5, h: 0.4, 
-                    fill: { color: themeColors.headerBg },
-                    line: { color: themeColors.primary, width: 1 }
-                } 
-            }},
-            { 'programsTitle': { 
-                options: { 
-                    x: 0.7, y: 1.55, w: 7.0, h: 0.3, 
-                    fontSize: 14, bold: true,
-                    fontFace: defaultFont,
-                    color: themeColors.primary
-                } 
-            }},
-            
-            // Status chart area with styling
-            { 'chartBg': { 
-                type: 'rect', 
-                options: { 
-                    x: 8.0, y: 1.5, w: 4.5, h: 3.0,
-                    fill: { color: 'FFFFFF' },
-                    line: { color: themeColors.primary, width: 0.75 }
-                } 
-            }},
-            
-            // KPI section header
-            { 'kpiHeader': { 
-                type: 'rect', 
-                options: { 
-                    x: 8.0, y: 4.7, w: 4.5, h: 0.4,
-                    fill: { color: themeColors.headerBg },
-                    line: { color: themeColors.primary, width: 1 }
-                } 
-            }},
-            { 'kpiTitle': { 
-                options: { 
-                    x: 8.2, y: 4.75, w: 4.0, h: 0.3, 
-                    fontSize: 14, bold: true,
-                    fontFace: defaultFont,
-                    color: themeColors.primary
-                } 
-            }},
-            
             // Logo space in footer
             { 'logo': { 
                 type: 'placeholder',
