@@ -3,6 +3,18 @@
 session_start();
 require_once '../../includes/db_connect.php'; // Adjust path as needed
 
+// Include header
+require_once '../layouts/header.php';
+
+// Include agency navigation
+require_once '../layouts/agency_nav.php';
+
+// Additional scripts needed for dashboard
+$additionalScripts = [
+    APP_URL . '/assets/js/period_selector.js',
+    APP_URL . '/assets/js/agency/dashboard.js'
+];
+
 // Handle JSON POST request
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos($_SERVER['CONTENT_TYPE'] ?? '', 'application/json') !== false) {
     // Read the raw input
@@ -281,5 +293,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos($_SERVER['CONTENT_TYPE'] ?? 
             renderMetricDetails();
         });
     </script>
-</body>
-</html>
+<?php require_once '../layouts/footer.php'; ?>
