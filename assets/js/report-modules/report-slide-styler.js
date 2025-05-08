@@ -203,18 +203,19 @@ const ReportStyler = (function() {
             chartColors: [themeColors.primary, themeColors.secondary],
             // Add markers to data points
             showMarker: true,
-            markerSize: 6,
-            // Axis formatting
-            valAxisMaxVal: 8,              // Y-axis max
-            valAxisMinVal: 0,              // Y-axis min
-            valAxisMajorUnit: 1,           // Y-axis interval
-            catAxisLabelFontSize: 10,      // X-axis label size
-            valAxisLabelFontSize: 10,      // Y-axis label size
+            markerSize: 4,                  // Slightly smaller markers for monthly data
+            // Axis formatting with 50 million per row
+            valAxisMaxVal: 0.5,             // Y-axis max: 500 million (0.5 billion)
+            valAxisMinVal: 0,               // Y-axis min
+            valAxisMajorUnit: 0.05,         // Y-axis interval: 50 million (0.05 billion)
+            catAxisLabelFontSize: 8,        // Smaller X-axis label size for monthly labels
+            valAxisLabelFontSize: 10,       // Y-axis label size
             valAxisLabelFontFace: defaultFont,
             catAxisLabelFontFace: defaultFont,
+            catAxisLabelRotate: 45,         // Rotate X-axis labels to fit all 12 months
             // Add gridlines for better readability
             showCatAxisTitle: true,
-            catAxisTitle: 'Quarters (2024-2025)',
+            catAxisTitle: 'Months (2022-2023)',
             showValAxisTitle: true,
             valAxisTitle: 'Export Value (RM Billions)',
             // Title formatting

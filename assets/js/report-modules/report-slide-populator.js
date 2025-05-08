@@ -63,14 +63,14 @@ const ReportPopulator = (function() {
             // Fallback to placeholder data if API data is missing
             const chartData = [
                 {
-                    name: 'Export Value',
-                    labels: ['Q1', 'Q2', 'Q3', 'Q4', 'Q1', 'Q2', 'Q3', 'Q4'],
-                    values: [4.2, 4.5, 4.7, 4.8, 5.2, 5.5, 5.7, 6.0]
+                    name: '2022 Export Value',
+                    labels: ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'],
+                    values: [0.25, 0.24, 0.28, 0.3, 0.29, 0.27, 0.32, 0.31, 0.29, 0.28, 0.27, 0.26]
                 },
                 {
-                    name: 'Target Value',
-                    labels: ['Q1', 'Q2', 'Q3', 'Q4', 'Q1', 'Q2', 'Q3', 'Q4'],
-                    values: [4.0, 4.5, 5.0, 5.5, 5.5, 6.0, 6.5, 7.0]
+                    name: '2023 Export Value',
+                    labels: ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'],
+                    values: [0.2, 0.22, 0.25, 0.24, 0.3, 0.28, 0.26, 0.29, 0.25, 0.27, 0.28, 0.26]
                 }
             ];
             
@@ -86,29 +86,34 @@ const ReportPopulator = (function() {
         const timberData = data.charts.main_chart.data;
         console.log("Timber export data from API:", timberData);
         
-        // Convert monthly data to quarterly data
-        const quarterLabels = ['Q1', 'Q2', 'Q3', 'Q4'];
-        const data2022Quarterly = convertMonthlyToQuarterly(timberData.data2022);
-        const data2023Quarterly = convertMonthlyToQuarterly(timberData.data2023);
+        // Get monthly labels directly from the data
+        const monthLabels = timberData.labels || ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
         
-        // Convert to billions for better display
-        const data2022BillionsFormat = data2022Quarterly.map(val => Number((val / 1000000000).toFixed(2)));
-        const data2023BillionsFormat = data2023Quarterly.map(val => Number((val / 1000000000).toFixed(2)));
+        // Calculate maximum value to help with scaling
+        const maxMonthlyValue = Math.max(
+            ...timberData.data2022,
+            ...timberData.data2023
+        );
+        console.log("Maximum monthly value:", maxMonthlyValue);
         
-        console.log("2022 Quarterly data (billions):", data2022BillionsFormat);
-        console.log("2023 Quarterly data (billions):", data2023BillionsFormat);
+        // Convert to proper scale for chart display (0.05 = 50 million)
+        const data2022ScaledFormat = timberData.data2022.map(val => Number((val / 1000000000).toFixed(3)));
+        const data2023ScaledFormat = timberData.data2023.map(val => Number((val / 1000000000).toFixed(3)));
+        
+        console.log("2022 Monthly data (scaled):", data2022ScaledFormat);
+        console.log("2023 Monthly data (scaled):", data2023ScaledFormat);
         
         // Create chart data with the real values from API
         const chartData = [
             {
                 name: '2022 Export Value',
-                labels: quarterLabels,
-                values: data2022BillionsFormat
+                labels: monthLabels,
+                values: data2022ScaledFormat
             },
             {
                 name: '2023 Export Value',
-                labels: quarterLabels,
-                values: data2023BillionsFormat
+                labels: monthLabels,
+                values: data2023ScaledFormat
             }
         ];
         
@@ -120,29 +125,6 @@ const ReportPopulator = (function() {
         console.log("Line chart with real data added to slide");
     }
 
-    /**
-     * Helper function to convert monthly data to quarterly data
-     * @param {Array} monthlyData - Array of 12 monthly values
-     * @returns {Array} - Array of 4 quarterly values
-     */
-    function convertMonthlyToQuarterly(monthlyData) {
-        const quarterlyData = [];
-        
-        // Q1: Jan + Feb + Mar
-        quarterlyData.push(monthlyData[0] + monthlyData[1] + monthlyData[2]);
-        
-        // Q2: Apr + May + Jun
-        quarterlyData.push(monthlyData[3] + monthlyData[4] + monthlyData[5]);
-        
-        // Q3: Jul + Aug + Sep
-        quarterlyData.push(monthlyData[6] + monthlyData[7] + monthlyData[8]);
-        
-        // Q4: Oct + Nov + Dec
-        quarterlyData.push(monthlyData[9] + monthlyData[10] + monthlyData[11]);
-        
-        return quarterlyData;
-    }
-    
     /**
      * Add step-by-step chart diagnostic section 
      * Tests each part of chart generation incrementally
