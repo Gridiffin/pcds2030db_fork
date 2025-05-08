@@ -5,6 +5,11 @@ require_once '../../includes/db_connect.php';
 require_once '../layouts/header.php';
 require_once '../layouts/agency_nav.php';
 
+// Add cache control headers
+header("Cache-Control: no-cache, no-store, must-revalidate");
+header("Pragma: no-cache");
+header("Expires: 0");
+
 $additionalScripts = [
     APP_URL . '/assets/js/period_selector.js',
     APP_URL . '/assets/js/agency/dashboard.js'
@@ -46,11 +51,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos($_SERVER['CONTENT_TYPE'] ?? 
         exit;
     }
 
-    // Convert items to the original format (value1;value2 and description1;description2)
+    // Convert items to the original format
     $valueString = implode(';', array_column($items, 'value'));
     $descriptionString = implode(';', array_column($items, 'description'));
 
-    // Prepare data for insertion or update in original format
+    // Prepare data for insertion or update
     $detail_name = $title;
     $detail_json = json_encode([
         'value' => $valueString,
@@ -69,7 +74,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos($_SERVER['CONTENT_TYPE'] ?? 
                     'success' => true, 
                     'message' => 'Metric detail created successfully.',
                     'action' => 'create',
-                    'new_id' => $stmt->insert_id
+                    'new_id' => $stmt->insert_id,
+                    'title' => $detail_name,
+                    'items' => $items
                 ]);
                 exit;
             } else {
@@ -91,7 +98,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos($_SERVER['CONTENT_TYPE'] ?? 
                     'success' => true, 
                     'message' => 'Metric detail updated successfully.',
                     'action' => 'update',
-                    'updated_id' => $detail_id
+                    'updated_id' => $detail_id,
+                    'title' => $detail_name,
+                    'items' => $items
                 ]);
                 exit;
             } else {
@@ -397,6 +406,57 @@ if ($result) {
             document.getElementById('metricDetailForm').scrollIntoView({ behavior: 'smooth' });
         }
 
+        // Function to update metric detail in UI without reloading
+        function updateMetricDetailInUI(id, title, items) {
+            // Find the existing item in the UI
+            const itemElement = document.querySelector(`li button[onclick="editMetricDetail(${id})"]`)?.closest('li');
+            
+            if (!itemElement) return;
+            
+            // Update the title
+            const titleElement = itemElement.querySelector('h3');
+            if (titleElement) titleElement.textContent = title;
+            
+            // Update values and descriptions
+            const valuesContainer = itemElement.querySelector('div[style*="grid-template-columns"]') || 
+                                  itemElement.querySelector('div[style*="align-items: center"]');
+            
+            if (items.length === 1) {
+                valuesContainer.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div style="color: #007bff; font-weight: bold; font-size: 2rem;">${items[0].value}</div>
+                        <div style="color: #000; font-size: 1rem;">${items[0].description}</div>
+                    </div>
+                `;
+            } else {
+                let valuesHTML = '';
+                let descsHTML = '';
+                
+                items.forEach(item => {
+                    valuesHTML += `<div style="color: #007bff; font-weight: bold; font-size: 2rem;">${item.value}</div>`;
+                    descsHTML += `<div style="color: #000; font-size: 1rem;">${item.description}</div>`;
+                });
+                
+                valuesContainer.innerHTML = `
+                    <div style="display: grid; grid-template-columns: repeat(${items.length}, 1fr); grid-template-rows: auto auto; gap: 10px;">
+                        ${valuesHTML}
+                        ${descsHTML}
+                    </div>
+                `;
+            }
+            
+            // Also update the metricDetails array for future edits
+            const detailIndex = metricDetails.findIndex(d => d.id == id);
+            if (detailIndex !== -1) {
+                metricDetails[detailIndex] = {
+                    id: id,
+                    title: title,
+                    value: items.map(i => i.value).join(';'),
+                    description: items.map(i => i.description).join(';')
+                };
+            }
+        }
+
         // Function to show alert messages
         function showAlert(message, type) {
             const container = document.getElementById(`${type}Container`);
@@ -466,20 +526,23 @@ if ($result) {
                     if (result.success) {
                         showAlert(result.message, 'success');
                         
-                        // Reset form only if it was a create action
-                        if (result.action === 'create') {
-                            form.reset();
-                            const container = document.getElementById('itemsContainer');
-                            container.innerHTML = '';
-                            addItem();
-                        }
+                        // Reset form
+                        form.reset();
+                        const container = document.getElementById('itemsContainer');
+                        container.innerHTML = '';
+                        addItem();
                         
                         // Reset editing state
                         editingDetailId = null;
                         submitBtn.textContent = 'Create';
                         
-                        // Reload the page to show updated metrics
-                        location.reload();
+                        // Only reload if it was a create action
+                        if (result.action === 'create') {
+                            location.reload();
+                        } else {
+                            // For updates, manually update the specific item in the list
+                            updateMetricDetailInUI(result.updated_id || result.new_id, data.title, data.items);
+                        }
                     } else {
                         if (result.errors && result.errors.length > 0) {
                             const ul = document.createElement('ul');
