@@ -19,12 +19,8 @@ const ReportPopulator = (function() {
         // Extract sector name from report data
         const sectorName = data.reportTitle ? data.reportTitle.split(' ')[0] : 'Forestry';
         
-        // Add slide sections
+        // Add only top and bottom sections - removing all middle content
         addTopSection(slide, data, pptx, themeColors, defaultFont, sectorName);
-        addMiddleSection(slide, data, pptx, themeColors, defaultFont);
-        addProjectsSection(slide, data, pptx, themeColors, defaultFont);
-        addChartsSection(slide, data, pptx, themeColors, defaultFont);
-        addKPISection(slide, data, pptx, themeColors, defaultFont);
         addFooterSection(slide, data, pptx, themeColors, defaultFont);
     }
 
@@ -165,166 +161,6 @@ const ReportPopulator = (function() {
             align: 'center',
             valign: 'middle'
         });
-    }
-
-    /**
-     * Add the middle section of the slide (Programs/Projects header)
-     * @param {Object} slide - The slide to populate
-     * @param {Object} data - The data from the API
-     * @param {Object} pptx - The PptxGenJS instance
-     * @param {Object} themeColors - The theme colors for styling
-     * @param {string} defaultFont - The default font
-     */
-    function addMiddleSection(slide, data, pptx, themeColors, defaultFont) {
-        // Add Programs/Projects section header box
-        slide.addShape(pptx.shapes.RECTANGLE, {
-            x: 0.5, y: 1.5, w: 7.5, h: 0.4,
-            fill: { color: themeColors.headerBg },
-            line: { color: themeColors.primary, width: 1 }
-        });
-
-        // Add Programs/Projects title text
-        slide.addText('Programs / Projects', { 
-            x: 0.7, y: 1.55, w: 7.0, h: 0.3, 
-            fontSize: 14, bold: true,
-            fontFace: defaultFont,
-            color: themeColors.primary
-        });
-    }
-
-    /**
-     * Add the projects section of the slide
-     * @param {Object} slide - The slide to populate
-     * @param {Object} data - The data from the API
-     * @param {Object} pptx - The PptxGenJS instance
-     * @param {Object} themeColors - The theme colors for styling
-     * @param {string} defaultFont - The default font
-     */
-    function addProjectsSection(slide, data, pptx, themeColors, defaultFont) {
-        // Starting Y position for projects
-        let yPos = 2.0; 
-        
-        if (data.projects && Array.isArray(data.projects)) {
-            data.projects.forEach((proj, index) => {
-                // Add alternating row background
-                const rowBgColor = index % 2 === 0 ? 'FFFFFF' : 'F5F5F5';
-                
-                slide.addShape(pptx.shapes.RECTANGLE, {
-                    x: 0.5, y: yPos, w: 7.5, h: 0.45,
-                    fill: { color: rowBgColor },
-                    line: { color: 'EEEEEE', width: 0.5 }
-                });
-                
-                // Status color indicator
-                let statusColor = '';
-                switch (proj.rating) {
-                    case 'green': statusColor = themeColors.greenStatus; break;
-                    case 'yellow': statusColor = themeColors.yellowStatus; break;
-                    case 'red': statusColor = themeColors.redStatus; break;
-                    default: statusColor = themeColors.greyStatus;
-                }
-                
-                // Add status indicator (colored box)
-                slide.addShape(pptx.shapes.RECTANGLE, { 
-                    x: 6.0, y: yPos + 0.075, w: 0.3, h: 0.3, 
-                    fill: { color: statusColor },
-                    line: { color: 'FFFFFF', width: 1 }
-                });
-                
-                // Add project name
-                slide.addText(proj.name || '[Project Name]', { 
-                    x: 0.7, y: yPos + 0.05, w: 5.0, h: 0.35, 
-                    fontSize: 12, bold: true, 
-                    fontFace: defaultFont,
-                    color: themeColors.text,
-                    valign: 'middle'
-                });
-                
-                // Add target text if available
-                if (proj.target) {
-                    slide.addText(proj.target, { 
-                        x: 6.4, y: yPos + 0.125, w: 1.5, h: 0.2, 
-                        fontSize: 10, 
-                        fontFace: defaultFont,
-                        color: themeColors.lightText
-                    });
-                }
-                
-                // Move Y position down for next project
-                yPos += 0.5;
-            });
-        }
-    }
-
-    /**
-     * Add charts section to the slide
-     * @param {Object} slide - The slide to populate
-     * @param {Object} data - The data from the API
-     * @param {Object} pptx - The PptxGenJS instance
-     * @param {Object} themeColors - The theme colors for styling
-     * @param {string} defaultFont - The default font
-     */
-    function addChartsSection(slide, data, pptx, themeColors, defaultFont) {
-        if (data.charts && data.charts.statusChart) {
-            // Add status distribution pie chart
-            slide.addChart(pptx.ChartType.PIE, data.charts.statusChart, { 
-                x: 8.2, y: 1.7, w: 4.0, h: 2.8,
-                showTitle: true, 
-                title: 'Project Status Distribution',
-                titleFontSize: 12,
-                titleColor: themeColors.primary,
-                showLegend: true,
-                legendPos: 'b',
-                legendFontSize: 9,
-                dataLabelColor: 'FFFFFF',
-                dataLabelFontSize: 9,
-                shadow: { type: 'subtle' }
-            });
-        }
-    }
-
-    /**
-     * Add KPI metrics section to the slide
-     * @param {Object} slide - The slide to populate
-     * @param {Object} data - The data from the API
-     * @param {Object} pptx - The PptxGenJS instance
-     * @param {Object} themeColors - The theme colors for styling
-     * @param {string} defaultFont - The default font
-     */
-    function addKPISection(slide, data, pptx, themeColors, defaultFont) {
-        if (data.kpis) {
-            let kpiYPos = 5.2;
-            
-            // Loop through KPIs and add them to the slide
-            Object.entries(data.kpis).forEach(([key, kpi], index) => {
-                if (kpi.title && kpi.value) {
-                    // Create KPI box
-                    slide.addShape(pptx.shapes.RECTANGLE, {
-                        x: 8.0, y: kpiYPos, w: 4.5, h: 0.7,
-                        fill: { color: 'FFFFFF' },
-                        line: { color: themeColors.primary, width: 0.75 }
-                    });
-                    
-                    // Add KPI title
-                    slide.addText(kpi.title, { 
-                        x: 8.2, y: kpiYPos + 0.1, w: 4.1, h: 0.25, 
-                        fontSize: 11, bold: true,
-                        fontFace: defaultFont,
-                        color: themeColors.primary
-                    });
-                    
-                    // Add KPI value
-                    slide.addText(kpi.value, { 
-                        x: 8.2, y: kpiYPos + 0.35, w: 4.1, h: 0.25, 
-                        fontSize: 10,
-                        fontFace: defaultFont,
-                        color: themeColors.text
-                    });
-                    
-                    kpiYPos += 0.8; // Move position for next KPI
-                }
-            });
-        }
     }
 
     /**
@@ -517,8 +353,6 @@ const ReportPopulator = (function() {
             align: 'left',
             valign: 'middle'
         });
-        
-        // Old draft date text removed as requested
     }
 
     /**
@@ -544,7 +378,7 @@ const ReportPopulator = (function() {
                 // Create a slide using the master
                 const slide = pptx.addSlide({ masterName: 'REPORT_MASTER_SLIDE' });
                 
-                // Populate slide with data
+                // Populate slide with data - only top and bottom sections
                 populateSlide(slide, data, pptx, themeColors);
                 
                 // Get PPTX as blob
