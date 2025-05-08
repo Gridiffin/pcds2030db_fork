@@ -140,22 +140,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos($_SERVER['CONTENT_TYPE'] ?? 
         <h1>Create Metric Detail</h1>
         <div id="errorContainer"></div>
         <div id="successContainer"></div>
-        <form id="metricDetailForm" method="post" action="">
-            <div class="mb-3">
-                <label for="value" class="form-label">Value</label>
-                <input type="text" class="form-control" id="value" name="value" required>
+        <div style="display: flex; gap: 40px; align-items: flex-start;">
+            <form id="metricDetailForm" method="post" action="" style="flex: 1; min-width: 300px;">
+                <div class="mb-3">
+                    <label for="value" class="form-label">Value</label>
+                    <input type="text" class="form-control" id="value" name="value" required>
+                </div>
+                <div class="mb-3">
+                    <label for="title" class="form-label">Title</label>
+                    <input type="text" class="form-control" id="title" name="title" required>
+                </div>
+                <div class="mb-3">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea class="form-control" id="description" name="description" rows="4" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Create</button>
+                <a href="<?php echo APP_URL; ?>/views/agency/submit_metrics.php" class="btn btn-secondary ms-2">Cancel</a>
+            </form>
+            <div style="flex: 1; min-width: 300px; border: 1px solid #ccc; border-radius: 8px; padding: 20px; background-color: #f9f9f9; color: #333; font-size: 0.9rem; line-height: 1.4;">
+                <h2>Guide</h2>
+                <p>The <strong>Values</strong> can be separated with a <strong>semicolon (;)</strong></p>
+                <p>The <strong>Title</strong> should be descriptive and concise.</p>
+                <p>The <strong>Description</strong> can include additional details or context. You can separate the description for values with a <strong>semicolon (;)</strong> too!</p>
             </div>
-            <div class="mb-3">
-                <label for="title" class="form-label">Title</label>
-                <input type="text" class="form-control" id="title" name="title" required>
-            </div>
-            <div class="mb-3">
-                <label for="description" class="form-label">Description</label>
-                <textarea class="form-control" id="description" name="description" rows="4" required></textarea>
-            </div>
-            <button type="submit" class="btn btn-primary">Create</button>
-            <a href="<?php echo APP_URL; ?>/views/agency/submit_metrics.php" class="btn btn-secondary ms-2">Cancel</a>
-        </form>
+        </div>
 
         <div class="mt-5">
             <h2>Created Metric Details</h2>
@@ -227,8 +235,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos($_SERVER['CONTENT_TYPE'] ?? 
             const rightBox = document.createElement('div');
             rightBox.style.flex = '2';
 
-            // Split values by comma and trim
-            const values = detail.value.split(',').map(v => v.trim());
+            // Split values by semicolon and trim
+            const values = detail.value.split(';').map(v => v.trim());
 
             if (values.length === 1) {
                 // If only one value, place description next to value horizontally
@@ -250,32 +258,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos($_SERVER['CONTENT_TYPE'] ?? 
                 rightBox.appendChild(valueDiv);
                 rightBox.appendChild(descriptionDiv);
             } else {
-                // Multiple values, description under values vertically
-                rightBox.style.display = 'flex';
-                rightBox.style.flexDirection = 'column';
+                // Multiple values and descriptions, display in grid
+                rightBox.style.display = 'grid';
+                rightBox.style.gridTemplateColumns = `repeat(${values.length}, 1fr)`;
+                rightBox.style.gridTemplateRows = 'auto auto';
                 rightBox.style.gap = '10px';
 
-                const valuesContainer = document.createElement('div');
-                valuesContainer.style.display = 'flex';
-                valuesContainer.style.gap = '15px';
+                // Split descriptions by semicolon and trim
+                const descriptions = detail.description.split(';').map(d => d.trim());
 
+                // Add values in first row
                 values.forEach(val => {
                     const valDiv = document.createElement('div');
                     valDiv.textContent = val;
                     valDiv.style.color = '#007bff'; // Bootstrap primary blue
                     valDiv.style.fontWeight = 'bold';
                     valDiv.style.fontSize = '2rem';
-                    valuesContainer.appendChild(valDiv);
+                    rightBox.appendChild(valDiv);
                 });
 
-                rightBox.appendChild(valuesContainer);
-
-                // Description text
-                const description = document.createElement('div');
-                description.textContent = detail.description;
-                description.style.color = '#000';
-                description.style.fontSize = '1rem';
-                rightBox.appendChild(description);
+                // Add descriptions in second row
+                descriptions.forEach(desc => {
+                    const descDiv = document.createElement('div');
+                    descDiv.textContent = desc;
+                    descDiv.style.color = '#000';
+                    descDiv.style.fontSize = '1rem';
+                    rightBox.appendChild(descDiv);
+                });
             }
 
             detailFlex.appendChild(titleBox);
