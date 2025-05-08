@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 05, 2025 at 08:53 AM
+-- Generation Time: May 08, 2025 at 02:58 AM
 -- Server version: 10.4.32-MariaDB
--- PHP Version: 8.2.12
+-- PHP Version: 8.0.30
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -24,17 +24,16 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
--- Table structure for table `notifications`
+-- Table structure for table `metrics_details`
 --
 
-CREATE TABLE `notifications` (
-  `notification_id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
-  `message` text NOT NULL,
-  `type` varchar(50) NOT NULL DEFAULT 'update',
-  `read_status` tinyint(1) NOT NULL DEFAULT 0,
+CREATE TABLE `metrics_details` (
+  `detail_id` int(11) NOT NULL,
+  `detail_name` varchar(255) NOT NULL,
+  `detail_json` longtext NOT NULL,
+  `is_draft` int(11) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `action_url` varchar(255) DEFAULT NULL
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -58,6 +57,16 @@ CREATE TABLE `programs` (
   `created_by` int(11) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Dumping data for table `programs`
+--
+
+INSERT INTO `programs` (`program_id`, `program_name`, `description`, `owner_agency_id`, `sector_id`, `start_date`, `end_date`, `created_at`, `updated_at`, `is_assigned`, `edit_permissions`, `created_by`) VALUES
+(56, 'testing', 'there should be a description here', 12, 1, '2025-05-05', '2025-05-31', '2025-05-05 07:26:58', '2025-05-05 07:26:58', 0, NULL, 12),
+(57, 'wat', 'adf', 12, 1, '2025-05-05', '2025-05-06', '2025-05-05 07:31:36', '2025-05-05 07:31:36', 0, NULL, 12),
+(58, 'what', '123', 12, 1, '2025-05-06', '2025-05-30', '2025-05-06 02:21:58', '2025-05-06 02:21:58', 0, NULL, 12),
+(59, 'submitted', '123', 12, 1, '2025-05-06', '2025-05-07', '2025-05-06 02:22:20', '2025-05-06 02:22:20', 0, NULL, 12);
+
 -- --------------------------------------------------------
 
 --
@@ -75,6 +84,16 @@ CREATE TABLE `program_submissions` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `is_draft` tinyint(1) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `program_submissions`
+--
+
+INSERT INTO `program_submissions` (`submission_id`, `program_id`, `period_id`, `submitted_by`, `status`, `content_json`, `submission_date`, `updated_at`, `is_draft`) VALUES
+(47, 56, 2, 12, 'not-started', '{\"rating\":\"not-started\",\"targets\":[{\"target_text\":\"100% coverage in loremipsum\",\"status_description\":\"32% complete. weird isnt it that theres no loremipsum coverage.\"},{\"target_text\":\"1,000,000 tung tung sahur spread \",\"status_description\":\"bibo tax, sigma\"}]}', '2025-05-05 07:26:58', '2025-05-05 07:26:58', 0),
+(48, 57, 2, 12, 'not-started', '{\"rating\":\"not-started\",\"targets\":[{\"target_text\":\"asdf\",\"status_description\":\"af\"}],\"remarks\":\"adf\"}', '2025-05-05 07:31:36', '2025-05-05 07:32:13', 0),
+(49, 58, 2, 12, 'not-started', '{\"rating\":\"not-started\",\"targets\":[{\"target_text\":\"123\",\"status_description\":\"123\"}],\"remarks\":\"123\"}', '2025-05-06 02:21:58', '2025-05-06 02:21:58', 1),
+(50, 59, 2, 12, 'target-achieved', '{\"rating\":\"target-achieved\",\"targets\":[{\"target_text\":\"123\",\"status_description\":\"123\"}]}', '2025-05-06 02:22:20', '2025-05-06 02:22:20', 0);
 
 -- --------------------------------------------------------
 
@@ -165,7 +184,7 @@ CREATE TABLE `sector_metrics_data` (
 --
 
 INSERT INTO `sector_metrics_data` (`id`, `metric_id`, `sector_id`, `period_id`, `table_name`, `data_json`, `is_draft`, `created_at`, `updated_at`) VALUES
-(20, 7, 1, 2, 'TIMBER EXPORT VALUE (RM)', '{\"columns\":[\"2022\",\"2023\",\"2024\",\"2025\",\"2026\"],\"units\":{\"2022\":\"RM\",\"2023\":\"RM\",\"2024\":\"RM\",\"2025\":\"RM\"},\"data\":{\"January\":{\"2022\":408531176.77,\"2023\":263569916.63,\"2024\":276004972.69,\"2025\":null,\"2026\":0},\"February\":{\"2022\":239761718.38,\"2023\":226356164.3,\"2024\":191530929.47,\"2025\":null,\"2026\":0},\"March\":{\"2022\":394935606.46,\"2023\":261778295.29,\"2024\":214907671.7,\"2025\":null,\"2026\":0},\"April\":{\"2022\":400891037.27,\"2023\":215771835.07,\"2024\":232014272.14,\"2025\":null,\"2026\":0},\"May\":{\"2022\":345725679.36,\"2023\":324280067.64,\"2024\":324627750.87,\"2025\":null,\"2026\":0},\"June\":{\"2022\":268966198.26,\"2023\":235560482.89,\"2024\":212303812.34,\"2025\":null,\"2026\":0},\"July\":{\"2022\":359792973.34,\"2023\":244689028.37,\"2024\":274788036.68,\"2025\":null,\"2026\":0},\"August\":{\"2022\":310830376.16,\"2023\":344761866.36,\"2024\":210420404.31,\"2025\":null,\"2026\":0},\"September\":{\"2022\":318990291.52,\"2023\":210214202.2,\"2024\":191837139,\"2025\":null,\"2026\":0},\"October\":{\"2022\":304693148.3,\"2023\":266639022.25,\"2024\":null,\"2025\":null,\"2026\":0},\"November\":{\"2022\":303936172.09,\"2023\":296062485.55,\"2024\":null,\"2025\":null,\"2026\":0},\"December\":{\"2022\":289911760.38,\"2023\":251155864.77,\"2024\":null,\"2025\":null,\"2026\":0}}}', 0, '2025-04-27 11:45:15', '2025-05-05 06:42:42');
+(20, 7, 1, 2, 'TIMBER EXPORT VALUE (RM)', '{\"columns\":[\"2022\",\"2023\",\"2024\",\"2025\",\"2026\"],\"units\":{\"2022\":\"RM\",\"2023\":\"RM\",\"2024\":\"RM\",\"2025\":\"RM\"},\"data\":{\"January\":{\"2022\":408531176.77,\"2023\":263569916.63,\"2024\":276004972.69,\"2025\":null,\"2026\":0},\"February\":{\"2022\":239761718.38,\"2023\":226356164.3,\"2024\":191530929.47,\"2025\":null,\"2026\":0},\"March\":{\"2022\":394935606.46,\"2023\":261778295.29,\"2024\":214907671.7,\"2025\":null,\"2026\":0},\"April\":{\"2022\":400891037.27,\"2023\":215771835.07,\"2024\":232014272.14,\"2025\":null,\"2026\":0},\"May\":{\"2022\":345725679.36,\"2023\":324280067.64,\"2024\":324627750.87,\"2025\":null,\"2026\":0},\"June\":{\"2022\":268966198.26,\"2023\":235560482.89,\"2024\":212303812.34,\"2025\":null,\"2026\":0},\"July\":{\"2022\":359792973.34,\"2023\":244689028.37,\"2024\":274788036.68,\"2025\":null,\"2026\":0},\"August\":{\"2022\":310830376.16,\"2023\":344761866.36,\"2024\":210420404.31,\"2025\":null,\"2026\":0},\"September\":{\"2022\":318990291.52,\"2023\":210214202.2,\"2024\":191837139,\"2025\":null,\"2026\":0},\"October\":{\"2022\":304693148.3,\"2023\":266639022.25,\"2024\":null,\"2025\":null,\"2026\":0},\"November\":{\"2022\":303936172.09,\"2023\":296062485.55,\"2024\":null,\"2025\":null,\"2026\":0},\"December\":{\"2022\":289911760.38,\"2023\":251155864.77,\"2024\":null,\"2025\":null,\"2026\":0}}}', 1, '2025-04-27 11:45:15', '2025-05-05 07:05:34');
 
 -- --------------------------------------------------------
 
@@ -194,18 +213,19 @@ INSERT INTO `users` (`user_id`, `username`, `password`, `agency_name`, `role`, `
 (12, 'user', '$2y$10$/Z6xCsE7OknP.4HBT5CdBuWDZK5VNMf7MqwmGusJ0SM8xxaGQKdq2', 'testagency', 'agency', 1, '2025-03-25 07:42:27', '2025-05-05 06:41:55', 1),
 (25, 'sfc', '$2y$10$wkBLipOw1EvgvpfrFTXaRO9/1OuFyCT3enAz3fr4nyOhKFBiG5M7C', 'Sarawak Forestry Corporation', 'agency', 1, '2025-05-05 06:40:10', '2025-05-05 06:40:10', 1),
 (26, 'stidc', '$2y$10$ttWqO8C7DUAxBURRnvhKmu/swpsuLv.iTqsFrPnqRAECtqxsRbsA2', 'Sarawak Timber Industry Development Corporation', 'agency', 1, '2025-05-05 06:40:36', '2025-05-05 06:40:36', 1),
-(27, 'forestdept', '$2y$10$304gq1GLTQvKOhmBqTp3b.oPyiwLCqlCP5lZkTfTJplVOH3QWXPt6', 'Forestry Department', 'agency', 1, '2025-05-05 06:41:16', '2025-05-05 06:41:16', 1);
+(27, 'forestdept', '$2y$10$304gq1GLTQvKOhmBqTp3b.oPyiwLCqlCP5lZkTfTJplVOH3QWXPt6', 'Forestry Department', 'agency', 1, '2025-05-05 06:41:16', '2025-05-05 06:41:16', 1),
+(28, 'user1', '$2y$10$y2bjDeUjwYuIKb6.Ec61ee1RPZ81WbSR4.kZkvXSdeZCHvwz2cBOu', 'testagency', 'agency', 1, '2025-05-06 02:23:17', '2025-05-06 02:24:53', 1),
+(29, 'qwe', '$2y$10$3OwrsrayL090M36S7T76bebyVCP9gRZWaF/O9.M35IGmi3szl51Wq', 'qwe', 'agency', 1, '2025-05-06 03:07:15', '2025-05-06 03:07:15', 1);
 
 --
 -- Indexes for dumped tables
 --
 
 --
--- Indexes for table `notifications`
+-- Indexes for table `metrics_details`
 --
-ALTER TABLE `notifications`
-  ADD PRIMARY KEY (`notification_id`),
-  ADD KEY `user_id` (`user_id`);
+ALTER TABLE `metrics_details`
+  ADD PRIMARY KEY (`detail_id`);
 
 --
 -- Indexes for table `programs`
@@ -270,22 +290,22 @@ ALTER TABLE `users`
 --
 
 --
--- AUTO_INCREMENT for table `notifications`
+-- AUTO_INCREMENT for table `metrics_details`
 --
-ALTER TABLE `notifications`
-  MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `metrics_details`
+  MODIFY `detail_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `programs`
 --
 ALTER TABLE `programs`
-  MODIFY `program_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=56;
+  MODIFY `program_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=60;
 
 --
 -- AUTO_INCREMENT for table `program_submissions`
 --
 ALTER TABLE `program_submissions`
-  MODIFY `submission_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=47;
+  MODIFY `submission_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=51;
 
 --
 -- AUTO_INCREMENT for table `reporting_periods`
@@ -309,23 +329,17 @@ ALTER TABLE `sectors`
 -- AUTO_INCREMENT for table `sector_metrics_data`
 --
 ALTER TABLE `sector_metrics_data`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=40;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
 
 --
 -- Constraints for dumped tables
 --
-
---
--- Constraints for table `notifications`
---
-ALTER TABLE `notifications`
-  ADD CONSTRAINT `notifications_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `programs`

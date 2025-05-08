@@ -87,10 +87,24 @@ if (!function_exists('format_time_ago')) {
                         <i class="fas fa-project-diagram me-1"></i> My Programs
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link <?php if ($current_page == 'submit_metrics.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/views/agency/submit_metrics.php">
-                        <i class="fas fa-chart-line me-1"></i> Metrics
+                <?php $is_placeholder_page = ($current_page == 'submit_metrics.php'); ?>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle <?php if ($is_placeholder_page) echo 'active'; ?>" href="javascript:void(0)" id="placeholderDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="<?php echo $is_placeholder_page ? 'true' : 'false'; ?>">
+                        <i class="fas fa-chart-line me-1"></i> Metrics<i class="fas fa-caret-down nav-dropdown-icon"></i>
                     </a>
+                    <ul class="dropdown-menu" aria-labelledby="-">
+                        <li>
+                            <a class="dropdown-item <?php if ($current_page == 'submit_metrics.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/views/agency/submit_metrics.php">
+                                <i class="fas fa-chart-line me-1"></i> Metrics
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item <?php if ($current_page == 'create_metric_detail.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/views/agency/create_metric_detail.php">
+                                <i class="fas fa-chart-line me-1"></i> Create Metric Details
+                            </a>
+                        </li>
+                        <!-- Add more dropdown items here if needed -->
+                    </ul>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link <?php if ($current_page == 'view_all_sectors.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/views/agency/view_all_sectors.php">
