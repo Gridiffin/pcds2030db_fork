@@ -120,7 +120,7 @@ if ($result) {
             font-weight: bold;
         }
         .add-item-btn {
-            margin-bottom: 20px;
+            margin-bottom: auto;
         }
     </style>
 </head>
