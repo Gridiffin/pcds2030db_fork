@@ -522,43 +522,26 @@ if ($result) {
                     }
                     return response.json();
                 })
-                .then(result => {
-                    if (result.success) {
-                        showAlert(result.message, 'success');
-                        
-                        // Reset form
-                        form.reset();
-                        const container = document.getElementById('itemsContainer');
-                        container.innerHTML = '';
-                        addItem();
-                        
-                        // Reset editing state
-                        editingDetailId = null;
-                        submitBtn.textContent = 'Create';
-                        
-                        // Only reload if it was a create action
-                        if (result.action === 'create') {
-                            location.reload();
-                        } else {
-                            // For updates, manually update the specific item in the list
-                            updateMetricDetailInUI(result.updated_id || result.new_id, data.title, data.items);
-                        }
-                    } else {
-                        if (result.errors && result.errors.length > 0) {
-                            const ul = document.createElement('ul');
-                            result.errors.forEach(function (error) {
-                                const li = document.createElement('li');
-                                li.textContent = error;
-                                ul.appendChild(li);
-                            });
-                            errorContainer.innerHTML = '';
-                            errorContainer.appendChild(ul);
-                            errorContainer.style.display = 'block';
-                        } else {
-                            showAlert('An unknown error occurred.', 'error');
-                        }
-                    }
-                })
+.then(result => {
+    if (result.success) {
+        // Reload the page after create or update action
+        window.location.reload();
+    } else {
+        if (result.errors && result.errors.length > 0) {
+            const ul = document.createElement('ul');
+            result.errors.forEach(function (error) {
+                const li = document.createElement('li');
+                li.textContent = error;
+                ul.appendChild(li);
+            });
+            errorContainer.innerHTML = '';
+            errorContainer.appendChild(ul);
+            errorContainer.style.display = 'block';
+        } else {
+            showAlert('An unknown error occurred.', 'error');
+        }
+    }
+})
                 .catch((error) => {
                     console.error('Fetch error:', error);
                     showAlert('Failed to submit data. Please try again.', 'error');
