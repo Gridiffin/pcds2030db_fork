@@ -12,6 +12,7 @@ Coding standards, domain knowledge, and preferences that AI should follow.
 - remember that this project is going to be hosted on cPanel.
 - Use a consistent coding style throughout the project (refer to /layouts/headers.php)
 - remember to INCLUDE all files that is related to any functions that is specified. For example: if login functionality is being edited then scan the whole codebase to find anything related to login, including their styles.
+- suggest improvements to the codebase, including refactoring, optimization, and performance enhancements.
 
 ## Project Structure
 - Follow the project structure and organization as outlined in the project documentation.

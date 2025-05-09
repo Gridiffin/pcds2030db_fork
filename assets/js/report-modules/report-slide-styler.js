@@ -555,6 +555,57 @@ const ReportStyler = (function() {
             align: 'left',
             valign: 'middle'
         });
+    }    /**
+     * Create a total value box
+     * @param {Object} slide - The slide to add the box to
+     * @param {Object} pptx - The PptxGenJS instance
+     * @param {Object} themeColors - The theme colors
+     * @param {string} label - The label for the total box (e.g., "2024 Export")
+     * @param {string} value - The total value to display (with RM prefix)
+     * @param {number} x - The x position of the box
+     * @param {number} y - The y position of the box
+     * @param {string} defaultFont - The default font
+     */
+    function createTotalValueBox(slide, pptx, themeColors, label, value, x, y, defaultFont) {
+        // Box dimensions (smaller as requested - 2.5 inches width, 0.35 inches height)
+        const boxWidth = 2.5;  // Width in inches
+        const boxHeight = 0.35; // Height in inches
+        
+        // Add container shape with light gray background and border
+        slide.addShape(pptx.shapes.RECTANGLE, {
+            x: x, 
+            y: y, 
+            w: boxWidth, 
+            h: boxHeight,
+            fill: { color: 'F5F5F5' },
+            line: { color: themeColors.primary, width: 1 },
+            shadow: { type: 'outer', angle: 45, blur: 3, offset: 2, color: 'CCCCCC' }
+        });
+        
+        // Add label text (bold, as requested)
+        slide.addText(label, {
+            x: x + 0.1, 
+            y: y + 0.03, 
+            w: boxWidth - 0.2, 
+            h: 0.15,
+            fontSize: 10, 
+            bold: true,
+            fontFace: defaultFont,
+            color: themeColors.text,
+            align: 'left' // Left-aligned as requested
+        });
+        
+        // Add value text
+        slide.addText(value, {
+            x: x + 0.1, 
+            y: y + 0.18, 
+            w: boxWidth - 0.2, 
+            h: 0.15,
+            fontSize: 10,
+            fontFace: defaultFont,
+            color: themeColors.text,
+            align: 'left' // Left-aligned as requested
+        });
     }
 
     // Expose public methods
@@ -576,6 +627,7 @@ const ReportStyler = (function() {
         addLegendTitle,
         addLegendItem,
         addYearIndicator,
-        createDraftText
+        createDraftText,
+        createTotalValueBox
     };
 })();

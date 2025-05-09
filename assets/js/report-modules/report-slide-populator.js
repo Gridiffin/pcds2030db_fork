@@ -120,6 +120,40 @@ const ReportPopulator = (function() {
             1 // Ensure we always have a positive value for scaling
         );
         console.log("Maximum monthly value:", maxMonthlyValue);
+          // Calculate total values for each year
+        const previousYearTotal = clippedPreviousYearData.reduce((sum, val) => sum + (val || 0), 0);
+        const currentYearTotal = clippedCurrentYearData.reduce((sum, val) => sum + (val || 0), 0);
+        
+        // Format the totals with 2 decimal places and add commas for better readability
+        const formattedPreviousYearTotal = `RM ${previousYearTotal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        const formattedCurrentYearTotal = `RM ${currentYearTotal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        
+        // Position total boxes at bottom left of chart container
+        const boxY = container.y + container.h - 0.8; // Position near bottom of container
+        
+        // Add total boxes for current year at the bottom left corner of the chart container
+        ReportStyler.createTotalValueBox(
+            slide, 
+            pptx, 
+            themeColors, 
+            `${currentYear} Export`, 
+            formattedCurrentYearTotal, 
+            container.x + 0.2, // X position inside the chart container
+            boxY, // Positioned at the bottom of the container
+            defaultFont
+        );
+        
+        // Add total boxes for previous year below the current year box
+        ReportStyler.createTotalValueBox(
+            slide, 
+            pptx, 
+            themeColors, 
+            `${previousYear} Export`, 
+            formattedPreviousYearTotal, 
+            container.x + 0.2, // Same X position as current year box
+            boxY + 0.4, // Position below current year box
+            defaultFont
+        );
         
         // Create chart data with the real values from API
         const chartData = [
