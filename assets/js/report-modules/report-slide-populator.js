@@ -23,14 +23,23 @@ const ReportPopulator = (function() {
             // Add top and bottom sections
             addTopSection(slide, data, pptx, themeColors, defaultFont, sectorName);
             
-            // Add line chart (replacing the bar chart)
+            // Add line chart
             try {
                 addLineChart(slide, pptx, themeColors, defaultFont, data);
-                console.log("Line chart added successfully");
             } catch (chartError) {
-                console.error("Error adding line chart:", chartError);
-                // Fallback to diagnostic if chart fails
-                addChartDiagnostic(slide, data, pptx, themeColors, defaultFont);
+                // Add error text instead of chart
+                const container = ReportStyler.createChartContainer(slide, pptx, themeColors);
+                ReportStyler.createTextBox(slide, 'Error generating chart. Please check the data and try again.', {
+                    x: container.x + 0.5, 
+                    y: container.y + 2.0,
+                    w: container.w - 1.0, 
+                    h: 1.0,
+                    fontSize: 14, 
+                    fontFace: defaultFont,
+                    color: 'CC0000',
+                    align: 'center',
+                    bold: true
+                });
             }
             
             addFooterSection(slide, data, pptx, themeColors, defaultFont);
@@ -54,31 +63,17 @@ const ReportPopulator = (function() {
         // Create container using the styler function
         const container = ReportStyler.createChartContainer(slide, pptx, themeColors);
         
+        // Get current date and extract current year and previous year
+        const currentDate = new Date();
+        const currentYear = currentDate.getFullYear();
+        const previousYear = currentYear - 1;
+        
         // Add title using the styler function
-        ReportStyler.createChartTitle(slide, 'Timber Export Value (RM Billions)', container, themeColors, defaultFont);
+        ReportStyler.createChartTitle(slide, 'Timber Export Value (RM)', container, themeColors, defaultFont);
         
         // Check if we have the required chart data from the API
         if (!data || !data.charts || !data.charts.main_chart || !data.charts.main_chart.data) {
-            console.error("Missing chart data from API");
-            // Fallback to placeholder data if API data is missing
-            const chartData = [
-                {
-                    name: '2022 Export Value',
-                    labels: ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'],
-                    values: [0.25, 0.24, 0.28, 0.3, 0.29, 0.27, 0.32, 0.31, 0.29, 0.28, 0.27, 0.26]
-                },
-                {
-                    name: '2023 Export Value',
-                    labels: ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'],
-                    values: [0.2, 0.22, 0.25, 0.24, 0.3, 0.28, 0.26, 0.29, 0.25, 0.27, 0.28, 0.26]
-                }
-            ];
-            
-            // Get chart options from the styler
-            const chartOptions = ReportStyler.getLineChartOptions(container, themeColors, defaultFont);
-            
-            // Add chart
-            slide.addChart(pptx.ChartType.line || 'line', chartData, chartOptions);
+            console.warn("No timber export data available, using placeholder");
             return;
         }
         
@@ -89,205 +84,66 @@ const ReportPopulator = (function() {
         // Get monthly labels directly from the data
         const monthLabels = timberData.labels || ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
         
-        // Calculate maximum value to help with scaling
+        // Dynamic property names based on current and previous year
+        const currentYearProp = `data${currentYear}`;
+        const previousYearProp = `data${previousYear}`;
+        
+        // Get data for current and previous year, with fallbacks to empty arrays
+        const currentYearData = timberData[currentYearProp] || Array(12).fill(0);
+        const previousYearData = timberData[previousYearProp] || Array(12).fill(0);
+        
+        console.log(`${previousYear} Monthly data:`, previousYearData);
+        console.log(`${currentYear} Monthly data:`, currentYearData);
+        
+        // For current year, only include data up to the current month
+        const currentMonth = currentDate.getMonth(); // 0-based (0 = January)
+        
+        // Create arrays with exactly 12 values each
+        const fullPreviousYearData = [...previousYearData];
+        while (fullPreviousYearData.length < 12) {
+            fullPreviousYearData.push(0);
+        }
+        
+        const fullCurrentYearData = [...currentYearData];
+        while (fullCurrentYearData.length < 12) {
+            fullCurrentYearData.push(0);
+        }
+        
+        // Clip arrays to exactly 12 items
+        const clippedPreviousYearData = fullPreviousYearData.slice(0, 12);
+        const clippedCurrentYearData = fullCurrentYearData.slice(0, 12);
+        
+        // Calculate maximum value to help with scaling (using actual data)
         const maxMonthlyValue = Math.max(
-            ...timberData.data2022,
-            ...timberData.data2023
+            ...clippedPreviousYearData.filter(val => val !== undefined && val !== null),
+            ...clippedCurrentYearData.filter(val => val !== undefined && val !== null),
+            1 // Ensure we always have a positive value for scaling
         );
         console.log("Maximum monthly value:", maxMonthlyValue);
-        
-        // Convert to proper scale for chart display (0.05 = 50 million)
-        const data2022ScaledFormat = timberData.data2022.map(val => Number((val / 1000000000).toFixed(3)));
-        const data2023ScaledFormat = timberData.data2023.map(val => Number((val / 1000000000).toFixed(3)));
-        
-        console.log("2022 Monthly data (scaled):", data2022ScaledFormat);
-        console.log("2023 Monthly data (scaled):", data2023ScaledFormat);
         
         // Create chart data with the real values from API
         const chartData = [
             {
-                name: '2022 Export Value',
+                name: `${previousYear} Export Value`,
                 labels: monthLabels,
-                values: data2022ScaledFormat
+                values: clippedPreviousYearData
             },
             {
-                name: '2023 Export Value',
+                name: `${currentYear} Export Value`,
                 labels: monthLabels,
-                values: data2023ScaledFormat
+                values: clippedCurrentYearData
             }
         ];
         
         // Get chart options from the styler
         const chartOptions = ReportStyler.getLineChartOptions(container, themeColors, defaultFont);
         
+        // Update chart options X-axis title with dynamic years
+        chartOptions.catAxisTitle = `Months (${previousYear}-${currentYear})`;
+        
         // Add chart
         slide.addChart(pptx.ChartType.line || 'line', chartData, chartOptions);
         console.log("Line chart with real data added to slide");
-    }
-
-    /**
-     * Add step-by-step chart diagnostic section 
-     * Tests each part of chart generation incrementally
-     */
-    function addChartDiagnostic(slide, data, pptx, themeColors, defaultFont) {
-        console.log("Starting chart diagnostic steps");
-        
-        // Create a container for the chart section using the styler function
-        const container = ReportStyler.createDiagnosticContainer(slide, pptx, themeColors);
-        
-        // Add title for diagnostic section using the styler function
-        ReportStyler.createDiagnosticTitle(slide, container, themeColors, defaultFont);
-        
-        // STEP 1: Check if pptx is valid
-        const step1Y = container.y + 0.6;
-        ReportStyler.createTextBox(slide, 'Step 1: PptxGenJS Library Check', {
-            x: container.x + 0.2, y: step1Y, w: container.w - 0.4, h: 0.3,
-            fontSize: 12, bold: true,
-            fontFace: defaultFont,
-            color: themeColors.text
-        });
-        
-        // Test pptx methods that should always exist
-        const pptxValid = pptx && typeof pptx.addSlide === 'function' && typeof pptx.writeFile === 'function';
-        ReportStyler.createTextBox(slide, `PptxGenJS instance: ${pptxValid ? '✓ Valid' : '✗ Invalid'}`, {
-            x: container.x + 0.3, y: step1Y + 0.3, w: container.w - 0.6, h: 0.25,
-            fontSize: 10,
-            fontFace: defaultFont,
-            color: pptxValid ? '008800' : 'CC0000'
-        });
-        console.log("STEP 1: PptxGenJS valid:", pptxValid);
-        
-        // STEP 2: Check for chart types without using ChartType object
-        const step2Y = step1Y + 0.6;
-        ReportStyler.createTextBox(slide, 'Step 2: Chart Type Availability', {
-            x: container.x + 0.2, y: step2Y, w: container.w - 0.4, h: 0.3,
-            fontSize: 12, bold: true,
-            fontFace: defaultFont, 
-            color: themeColors.text
-        });
-        
-        // Examine pptx directly instead of using ChartType
-        let chartTypesText = '';
-        let chartTypesList = [];
-        
-        try {
-            // Look for any properties that might be chart types
-            for (const prop in pptx) {
-                if (prop.toLowerCase().includes('chart')) {
-                    chartTypesList.push(`${prop}`);
-                }
-            }
-            
-            chartTypesText = chartTypesList.length > 0 ? 
-                `Found ${chartTypesList.length} chart-related properties: ${chartTypesList.join(', ')}` : 
-                'No chart-related properties found directly on pptx object';
-            
-        } catch (e) {
-            chartTypesText = `Error examining chart types: ${e.message}`;
-        }
-        
-        ReportStyler.createTextBox(slide, chartTypesText, {
-            x: container.x + 0.3, y: step2Y + 0.3, w: container.w - 0.6, h: 0.6,
-            fontSize: 10,
-            fontFace: defaultFont,
-            color: chartTypesList.length > 0 ? '008800' : '888888',
-            lineSpacing: 1.2
-        });
-        console.log("STEP 2: Chart types found:", chartTypesList);
-        
-        // STEP 3: Attempt to create a simple chart data structure
-        const step3Y = step2Y + 1.0;
-        ReportStyler.createTextBox(slide, 'Step 3: Chart Data Preparation', {
-            x: container.x + 0.2, y: step3Y, w: container.w - 0.4, h: 0.3,
-            fontSize: 12, bold: true,
-            fontFace: defaultFont,
-            color: themeColors.text
-        });
-        
-        try {
-            // Create a very simple data structure for chart
-            const chartData = [
-                {
-                    name: 'Sample Data',
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
-                    values: [10, 20, 30, 20, 15]
-                }
-            ];
-            
-            ReportStyler.createTextBox(slide, `Chart data: ${JSON.stringify(chartData)}`, {
-                x: container.x + 0.3, y: step3Y + 0.3, w: container.w - 0.6, h: 0.5,
-                fontSize: 10,
-                fontFace: defaultFont,
-                color: '008800'
-            });
-            console.log("STEP 3: Chart data structure:", chartData);
-            
-            // STEP 4: Check for addChart method directly
-            const step4Y = step3Y + 0.9;
-            ReportStyler.createTextBox(slide, 'Step 4: Check addChart Method', {
-                x: container.x + 0.2, y: step4Y, w: container.w - 0.4, h: 0.3,
-                fontSize: 12, bold: true,
-                fontFace: defaultFont,
-                color: themeColors.text
-            });
-            
-            // Check if slide has addChart method
-            const hasAddChart = typeof slide.addChart === 'function';
-            ReportStyler.createTextBox(slide, `slide.addChart method: ${hasAddChart ? '✓ Available' : '✗ Not available'}`, {
-                x: container.x + 0.3, y: step4Y + 0.3, w: container.w - 0.6, h: 0.25,
-                fontSize: 10,
-                fontFace: defaultFont,
-                color: hasAddChart ? '008800' : 'CC0000'
-            });
-            console.log("STEP 4: slide.addChart available:", hasAddChart);
-            
-            // STEP 5: Determine correct chart type format
-            const step5Y = step4Y + 0.6;
-            ReportStyler.createTextBox(slide, 'Step 5: Determine Chart Type Format', {
-                x: container.x + 0.2, y: step5Y, w: container.w - 0.4, h: 0.3,
-                fontSize: 12, bold: true,
-                fontFace: defaultFont,
-                color: themeColors.text
-            });
-            
-            // Test different possible chart type formats
-            const typeTests = [];
-            
-            if (typeof pptx.ChartType === 'object') {
-                typeTests.push("pptx.ChartType is an object");
-                
-                if (pptx.ChartType.BAR) typeTests.push("pptx.ChartType.BAR is available");
-                if (pptx.ChartType.bar) typeTests.push("pptx.ChartType.bar is available");
-            } else {
-                typeTests.push("pptx.ChartType is not an object");
-                
-                // Look for direct string values that might work
-                if (typeof pptx.charts === 'object') {
-                    typeTests.push("pptx.charts object exists");
-                }
-                
-                // Common chart types in various formats
-                const possibleTypes = ['bar', 'column', 'pie', 'line', 'area', 'scatter'];
-                typeTests.push(`Will try direct string values: ${possibleTypes.join(', ')}`);
-            }
-            
-            ReportStyler.createTextBox(slide, typeTests.join('\n'), {
-                x: container.x + 0.3, y: step5Y + 0.3, w: container.w - 0.6, h: 0.8,
-                fontSize: 10,
-                fontFace: defaultFont,
-                color: '000000'
-            });
-            console.log("STEP 5: Chart type tests:", typeTests);
-            
-        } catch (err) {
-            console.error("Chart diagnostic error:", err);
-            ReportStyler.createTextBox(slide, `Chart diagnostic error: ${err.message}`, {
-                x: container.x + 0.3, y: step3Y + 0.3, w: container.w - 0.6, h: 0.5,
-                fontSize: 10,
-                fontFace: defaultFont,
-                color: 'CC0000'
-            });
-        }
     }
 
     /**
