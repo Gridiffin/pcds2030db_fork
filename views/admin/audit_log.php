@@ -73,6 +73,10 @@ require_once '../layouts/admin_nav.php';
             $tables[] = $row['TABLE_NAME'];
         }
     }
+    // Ensure metrics_details table is included in audit logs
+    if (!in_array('metrics_details', $tables)) {
+        $tables[] = 'metrics_details';
+    }
 
     $audit_entries = [];
 
@@ -109,6 +113,8 @@ require_once '../layouts/admin_nav.php';
             $name_column = 'username';
         } elseif ($table === 'programs') {
             $name_column = 'program_name';
+        } elseif ($table === 'metrics_details') {
+            $name_column = 'detail_name';
         }
 
         // Build select columns string
@@ -217,7 +223,7 @@ require_once '../layouts/admin_nav.php';
                         ?>
                         <?php echo $icon; ?>
                         <?php echo htmlspecialchars($entry['record_id'] ?? 'N/A'); ?>
-                        was <?php echo htmlspecialchars($entry['event_type']); ?>
+                        <small>was</small> <?php echo htmlspecialchars($entry['event_type']); ?>
                         at <small style="color: #666;"><?php echo htmlspecialchars($entry['event_date']); ?></small>
                     </span>
                     <div style="font-size: 0.9em; color: #555; margin-top: 4px;">
