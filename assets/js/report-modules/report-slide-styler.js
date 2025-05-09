@@ -121,22 +121,21 @@ const ReportStyler = (function() {
      */
     function createTextBox(slide, text, options) {
         slide.addText(text, options);
-    }
-
-    /**
+    }    /**
      * Create a chart container with border
      * @param {Object} slide - The slide to add the container to
      * @param {Object} pptx - The PptxGenJS instance
      * @param {Object} themeColors - The theme colors
      * @returns {Object} The container dimensions {x, y, w, h}
-     */
-    function createChartContainer(slide, pptx, themeColors) {
-        // Standard chart container dimensions
+     */    function createChartContainer(slide, pptx, themeColors) {
+        // Exact dimensions as specified:
+        // Converting from cm to inches: H = 6.13cm = 2.41 inches, W = 10.28cm = 4.05 inches
+        // Position: horizontal = 23.3cm = 9.17 inches, vertical = 1.47cm = 0.58 inches
         const container = {
-            x: 2.0, 
-            y: 1.5, 
-            w: 9.0, 
-            h: 5.0
+            x: 9.17, // Position from left (23.3cm)
+            y: 0.58, // Position from top (1.47cm)
+            w: 4.05, // Width in inches (10.28cm)
+            h: 2.41  // Height in inches (6.13cm)
         };
         
         // Add container shape
@@ -159,14 +158,13 @@ const ReportStyler = (function() {
      * @param {Object} container - The container dimensions
      * @param {Object} themeColors - The theme colors
      * @param {string} defaultFont - The default font
-     */
-    function createChartTitle(slide, titleText, container, themeColors, defaultFont) {
+     */    function createChartTitle(slide, titleText, container, themeColors, defaultFont) {
         slide.addText(titleText, {
             x: container.x, 
-            y: container.y + 0.2, 
+            y: container.y + 0.1, // Reduced spacing to fit smaller container
             w: container.w, 
-            h: 0.4,
-            fontSize: 16, 
+            h: 0.3, // Reduced height
+            fontSize: 14, // Reduced font size to fit smaller container
             bold: true,
             fontFace: defaultFont,
             color: themeColors.primary,
@@ -180,51 +178,43 @@ const ReportStyler = (function() {
      * @param {Object} themeColors - The theme colors
      * @param {string} defaultFont - The default font
      * @returns {Object} The chart options
-     */
-    function getLineChartOptions(container, themeColors, defaultFont) {
-        // Calculate chart position within container (with some padding)
-        const chartX = container.x + 0.5;
-        const chartY = container.y + 0.7;  // Extra space for title
-        const chartW = container.w - 1.0;
-        const chartH = container.h - 1.0;
+     */    function getLineChartOptions(container, themeColors, defaultFont) {
+        // Calculate chart position with minimal padding to maximize chart area
+        const chartX = container.x + 0.15;  // Small left margin
+        const chartY = container.y + 0.4;   // Space for title
+        const chartW = container.w - 0.3;   // Wide chart with minimal horizontal padding
+        const chartH = container.h - 0.7;   // Allow space for the total boxes at bottom
         
         return {
             x: chartX, 
             y: chartY, 
             w: chartW, 
             h: chartH,
-            chartType: 'line',              // Line chart type
-            lineSize: 2,                    // Line thickness
-            showTitle: false,               // Title already added separately
-            showValue: false,               // Hide data values on plot points
-            showLegend: true,               // Show legend
-            legendPos: 'b',                 // Legend position: bottom
-            // Line colors for each data series
-            chartColors: [themeColors.primary, themeColors.secondary],
-            // Add markers to data points
+            chartType: 'line',
+            lineSize: 2,
+            showTitle: false,
+            showValue: false,
+            showLegend: false,              // Legend removed as requested (already in footer)
+            // Colors matching the footer indicators
+            chartColors: ['0070C0', 'ED7D31'], // Blue for current year, Orange for previous year
             showMarker: true,
-            markerSize: 4,                  // Slightly smaller markers for monthly data
+            markerSize: 4,
             // Axis formatting
-            valAxisMaxVal: 400000000,       // Y-axis max: 400 million
-            valAxisMinVal: 0,               // Y-axis min: 0 (changed from 50000 to fix increments)
-            valAxisMajorUnit: 50000000,     // Y-axis interval: 50 million
-            catAxisLabelFontSize: 10,       // X-axis label size increased
-            valAxisLabelFontSize: 10,       // Y-axis label size
+            valAxisMaxVal: 400000000,
+            valAxisMinVal: 0,
+            valAxisMajorUnit: 50000000,
+            catAxisLabelFontSize: 8,        // Smaller font for axis labels
+            valAxisLabelFontSize: 8,        // Smaller font for axis labels
             valAxisLabelFontFace: defaultFont,
             catAxisLabelFontFace: defaultFont,
-            catAxisLabelRotate: 45,         // Rotate X-axis labels to fit all 12 months
-            // Number format to display millions properly
-            valAxisLabelFormatCode: '#,##0',  // Added to format numbers with commas
-            // Add gridlines for better readability
-            showCatAxisTitle: true,
-            catAxisTitle: 'Months',         // Base title, will be updated with dynamic years
-            showValAxisTitle: true,
-            valAxisTitle: 'Export Value (RM)',
-            // Title formatting
-            catAxisTitleFontSize: 10,
-            valAxisTitleFontSize: 10,
-            catAxisTitleFontFace: defaultFont,
-            valAxisTitleFontFace: defaultFont
+            catAxisLabelRotate: 45,
+            valAxisLabelFormatCode: '#,##0', // Format numbers with commas
+            // Hide axis titles as requested
+            showCatAxisTitle: false,
+            showValAxisTitle: false,
+            // Grid lines
+            showHorizGridLines: true,
+            showVertGridLines: false
         };
     }
     
@@ -565,46 +555,48 @@ const ReportStyler = (function() {
      * @param {number} x - The x position of the box
      * @param {number} y - The y position of the box
      * @param {string} defaultFont - The default font
-     */
-    function createTotalValueBox(slide, pptx, themeColors, label, value, x, y, defaultFont) {
-        // Box dimensions (smaller as requested - 2.5 inches width, 0.35 inches height)
-        const boxWidth = 2.5;  // Width in inches
-        const boxHeight = 0.35; // Height in inches
+     */    function createTotalValueBox(slide, pptx, themeColors, label, value, x, y, defaultFont) {
+        // More compact boxes that fit within the chart container
+        // H = 0.25 inches, W = 1.8 inches - smaller but still readable
+        const boxWidth = 1.8;   
+        const boxHeight = 0.25; 
         
-        // Add container shape with light gray background and border
+        // Add container shape with solid white background for better visibility
         slide.addShape(pptx.shapes.RECTANGLE, {
             x: x, 
             y: y, 
             w: boxWidth, 
             h: boxHeight,
-            fill: { color: 'F5F5F5' },
-            line: { color: themeColors.primary, width: 1 },
-            shadow: { type: 'outer', angle: 45, blur: 3, offset: 2, color: 'CCCCCC' }
+            fill: { color: 'FFFFFF' }, // Solid white for better readability
+            line: { color: themeColors.primary, width: 0.75 }, // Slightly thicker border
+            shadow: { type: 'outer', angle: 45, blur: 2, offset: 1, color: 'CCCCCC' } // Shadow for separation
         });
         
         // Add label text (bold, as requested)
         slide.addText(label, {
-            x: x + 0.1, 
-            y: y + 0.03, 
-            w: boxWidth - 0.2, 
-            h: 0.15,
-            fontSize: 10, 
+            x: x + 0.05, 
+            y: y + 0.01, 
+            w: boxWidth * 0.35, 
+            h: boxHeight - 0.02,
+            fontSize: 9, 
             bold: true,
             fontFace: defaultFont,
-            color: themeColors.text,
-            align: 'left' // Left-aligned as requested
+            color: themeColors.primary,
+            align: 'left',
+            valign: 'middle'
         });
         
-        // Add value text
+        // Add value text (right-aligned to fit large numbers better)
         slide.addText(value, {
-            x: x + 0.1, 
-            y: y + 0.18, 
-            w: boxWidth - 0.2, 
-            h: 0.15,
-            fontSize: 10,
+            x: x + (boxWidth * 0.35), 
+            y: y + 0.01, 
+            w: boxWidth * 0.65 - 0.05, 
+            h: boxHeight - 0.02,
+            fontSize: 8, // Smaller for better fit
             fontFace: defaultFont,
             color: themeColors.text,
-            align: 'left' // Left-aligned as requested
+            align: 'right',
+            valign: 'middle'
         });
     }
 

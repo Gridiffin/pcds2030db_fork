@@ -119,43 +119,37 @@ const ReportPopulator = (function() {
             ...clippedCurrentYearData.filter(val => val !== undefined && val !== null),
             1 // Ensure we always have a positive value for scaling
         );
-        console.log("Maximum monthly value:", maxMonthlyValue);
-          // Calculate total values for each year
+        console.log("Maximum monthly value:", maxMonthlyValue);          // Calculate total values for each year
         const previousYearTotal = clippedPreviousYearData.reduce((sum, val) => sum + (val || 0), 0);
         const currentYearTotal = clippedCurrentYearData.reduce((sum, val) => sum + (val || 0), 0);
         
         // Format the totals with 2 decimal places and add commas for better readability
         const formattedPreviousYearTotal = `RM ${previousYearTotal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-        const formattedCurrentYearTotal = `RM ${currentYearTotal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-        
-        // Position total boxes at bottom left of chart container
-        const boxY = container.y + container.h - 0.8; // Position near bottom of container
-        
-        // Add total boxes for current year at the bottom left corner of the chart container
+        const formattedCurrentYearTotal = `RM ${currentYearTotal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;        // Position total boxes side by side in bottom of chart container
+        // Add total box for current year on the bottom-left
         ReportStyler.createTotalValueBox(
             slide, 
             pptx, 
             themeColors, 
             `${currentYear} Export`, 
             formattedCurrentYearTotal, 
-            container.x + 0.2, // X position inside the chart container
-            boxY, // Positioned at the bottom of the container
+            container.x + 0.15, // Small margin from left edge
+            container.y + container.h - 0.35, // Position at the bottom
             defaultFont
         );
         
-        // Add total boxes for previous year below the current year box
+        // Add total box for previous year next to the current year box
         ReportStyler.createTotalValueBox(
             slide, 
             pptx, 
             themeColors, 
             `${previousYear} Export`, 
             formattedPreviousYearTotal, 
-            container.x + 0.2, // Same X position as current year box
-            boxY + 0.4, // Position below current year box
+            container.x + 2.05, // Position to the right of first box
+            container.y + container.h - 0.35, // Same vertical position
             defaultFont
         );
-        
-        // Create chart data with the real values from API
+          // Create chart data with the real values from API
         const chartData = [
             {
                 name: `${previousYear} Export Value`,
@@ -168,14 +162,10 @@ const ReportPopulator = (function() {
                 values: clippedCurrentYearData
             }
         ];
-        
-        // Get chart options from the styler
+          // Get chart options from the styler
         const chartOptions = ReportStyler.getLineChartOptions(container, themeColors, defaultFont);
         
-        // Update chart options X-axis title with dynamic years
-        chartOptions.catAxisTitle = `Months (${previousYear}-${currentYear})`;
-        
-        // Add chart
+        // Add chart (no need to set axis titles as they've been removed)
         slide.addChart(pptx.ChartType.line || 'line', chartData, chartOptions);
         console.log("Line chart with real data added to slide");
     }
