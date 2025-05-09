@@ -524,8 +524,10 @@ if ($result) {
                 })
 .then(result => {
     if (result.success) {
+        showAlert(result.message, 'success');
+        
         // Reload the page after create or update action
-        window.location.reload();
+        window.location.href = window.location.href;
     } else {
         if (result.errors && result.errors.length > 0) {
             const ul = document.createElement('ul');
