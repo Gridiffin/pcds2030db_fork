@@ -204,20 +204,22 @@ const ReportStyler = (function() {
             // Add markers to data points
             showMarker: true,
             markerSize: 4,                  // Slightly smaller markers for monthly data
-            // Axis formatting with 50 million per row
-            valAxisMaxVal: 0.5,             // Y-axis max: 500 million (0.5 billion)
-            valAxisMinVal: 0,               // Y-axis min
-            valAxisMajorUnit: 0.05,         // Y-axis interval: 50 million (0.05 billion)
-            catAxisLabelFontSize: 8,        // Smaller X-axis label size for monthly labels
+            // Axis formatting
+            valAxisMaxVal: 400000000,       // Y-axis max: 400 million
+            valAxisMinVal: 0,               // Y-axis min: 0 (changed from 50000 to fix increments)
+            valAxisMajorUnit: 50000000,     // Y-axis interval: 50 million
+            catAxisLabelFontSize: 10,       // X-axis label size increased
             valAxisLabelFontSize: 10,       // Y-axis label size
             valAxisLabelFontFace: defaultFont,
             catAxisLabelFontFace: defaultFont,
             catAxisLabelRotate: 45,         // Rotate X-axis labels to fit all 12 months
+            // Number format to display millions properly
+            valAxisLabelFormatCode: '#,##0',  // Added to format numbers with commas
             // Add gridlines for better readability
             showCatAxisTitle: true,
-            catAxisTitle: 'Months (2022-2023)',
+            catAxisTitle: 'Months',         // Base title, will be updated with dynamic years
             showValAxisTitle: true,
-            valAxisTitle: 'Export Value (RM Billions)',
+            valAxisTitle: 'Export Value (RM)',
             // Title formatting
             catAxisTitleFontSize: 10,
             valAxisTitleFontSize: 10,
@@ -226,56 +228,6 @@ const ReportStyler = (function() {
         };
     }
     
-    /**
-     * Get diagnostic container styling
-     * @param {Object} slide - The slide to add the container to
-     * @param {Object} pptx - The PptxGenJS instance
-     * @param {Object} themeColors - The theme colors
-     * @returns {Object} The container dimensions {x, y, w, h}
-     */
-    function createDiagnosticContainer(slide, pptx, themeColors) {
-        // Standard diagnostic container dimensions (same as chart container)
-        const container = {
-            x: 2.0, 
-            y: 1.5, 
-            w: 9.0, 
-            h: 5.0
-        };
-        
-        // Add container shape with different background
-        slide.addShape(pptx.shapes.RECTANGLE, {
-            x: container.x, 
-            y: container.y, 
-            w: container.w, 
-            h: container.h,
-            fill: { color: 'F9F9F9' },  // Light gray for diagnostic
-            line: { color: themeColors.primary, width: 1 }
-        });
-        
-        return container;
-    }
-    
-    /**
-     * Create a diagnostic title
-     * @param {Object} slide - The slide to add the title to
-     * @param {Object} container - The container dimensions
-     * @param {Object} themeColors - The theme colors
-     * @param {string} defaultFont - The default font
-     */
-    function createDiagnosticTitle(slide, container, themeColors, defaultFont) {
-        slide.addText('Chart Diagnostic Steps', {
-            x: container.x + 0.1, 
-            y: container.y + 0.1, 
-            w: container.w - 0.2, 
-            h: 0.4,
-            fontSize: 16, 
-            bold: true,
-            fontFace: defaultFont,
-            color: themeColors.primary,
-            align: 'center'
-        });
-    }
-
     /**
      * Create the sector box in the top-left corner
      * @param {Object} slide - The slide to add the box to
@@ -615,8 +567,6 @@ const ReportStyler = (function() {
         createChartContainer,
         createChartTitle,
         getLineChartOptions,
-        createDiagnosticContainer,
-        createDiagnosticTitle,
         createSectorBox,
         addSectorIcon,
         addSectorText,

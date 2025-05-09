@@ -165,10 +165,10 @@ $sector_metrics = [];
 $charts_data = [];
 $kpis_data = [];
 
-// First, try to find timber export value data for 2022 and 2023 specifically
+// Initialize timber export data for current year and previous year (instead of hardcoded 2022/2023)
 $timber_export_data = [
-    '2022' => array_fill(0, 12, 0), // Initialize with zeros for each month
-    '2023' => array_fill(0, 12, 0)  // Initialize with zeros for each month
+    $current_year => array_fill(0, 12, 0), // Initialize with zeros for each month of current year
+    $previous_year => array_fill(0, 12, 0)  // Initialize with zeros for each month of previous year
 ];
 
 // Query to find Timber Export Value records
@@ -191,19 +191,24 @@ if ($timber_result->num_rows > 0) {
         
         // Check if we have the structure with years as columns and months as rows
         if (isset($data['columns']) && isset($data['data'])) {
+            // Try to find current year and previous year data
+            $current_year_str = (string)$current_year;
+            $previous_year_str = (string)$previous_year;
+            
             // Check if the data follows the format where years are columns
-            if (in_array('2022', $data['columns']) && in_array('2023', $data['columns'])) {
+            if (in_array($current_year_str, $data['columns']) || in_array($previous_year_str, $data['columns'])) {
                 // Direct year-based structure with months as keys
                 foreach ($data['data'] as $month => $values) {
                     // Get month index (0-based)
                     $month_index = array_search(strtoupper(substr($month, 0, 3)), array_map('strtoupper', $monthly_labels));
                     if ($month_index !== false) {
-                        // Store values for 2022 and 2023
-                        if (isset($values['2022']) && is_numeric($values['2022'])) {
-                            $timber_export_data['2022'][$month_index] = floatval($values['2022']);
+                        // Store values for current year if available
+                        if (isset($values[$current_year_str]) && is_numeric($values[$current_year_str])) {
+                            $timber_export_data[$current_year][$month_index] = floatval($values[$current_year_str]);
                         }
-                        if (isset($values['2023']) && is_numeric($values['2023'])) {
-                            $timber_export_data['2023'][$month_index] = floatval($values['2023']);
+                        // Store values for previous year if available
+                        if (isset($values[$previous_year_str]) && is_numeric($values[$previous_year_str])) {
+                            $timber_export_data[$previous_year][$month_index] = floatval($values[$previous_year_str]);
                         }
                     }
                 }
@@ -219,11 +224,14 @@ if ($timber_result->num_rows > 0) {
                                 // Get month index (0-based)
                                 $month_index = array_search(strtoupper(substr($month, 0, 3)), array_map('strtoupper', $monthly_labels));
                                 if ($month_index !== false) {
-                                    // If we have data from 2022 or 2023, store it
-                                    if (isset($data['year']) && $data['year'] == 2022) {
-                                        $timber_export_data['2022'][$month_index] = floatval($values[$column]);
-                                    } else if (isset($data['year']) && $data['year'] == 2023) {
-                                        $timber_export_data['2023'][$month_index] = floatval($values[$column]);
+                                    // Check if year is specified in the data
+                                    if (isset($data['year'])) {
+                                        $year = (int)$data['year'];
+                                        if ($year == $current_year) {
+                                            $timber_export_data[$current_year][$month_index] = floatval($values[$column]);
+                                        } else if ($year == $previous_year) {
+                                            $timber_export_data[$previous_year][$month_index] = floatval($values[$column]);
+                                        }
                                     }
                                 }
                             }
@@ -246,10 +254,10 @@ $metrics_result = $stmt->get_result();
 // Prepare the main chart data with the timber export values we found
 $main_chart_data = [
     'labels' => $monthly_labels,
-    'data2022' => $timber_export_data['2022'],
-    'data2023' => $timber_export_data['2023'],
-    'total2022' => array_sum($timber_export_data['2022']),
-    'total2023' => array_sum($timber_export_data['2023'])
+    'data' . $previous_year => $timber_export_data[$previous_year],
+    'data' . $current_year => $timber_export_data[$current_year],
+    'total' . $previous_year => array_sum($timber_export_data[$previous_year]),
+    'total' . $current_year => array_sum($timber_export_data[$current_year])
 ];
 
 // Default secondary chart data - still using placeholder data
