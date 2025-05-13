@@ -62,7 +62,7 @@ require_once '../layouts/admin_nav.php';
         SELECT TABLE_NAME
         FROM INFORMATION_SCHEMA.COLUMNS
         WHERE TABLE_SCHEMA = DATABASE()
-          AND COLUMN_NAME IN ('created_at', 'updated_at')
+        AND COLUMN_NAME IN ('created_at', 'updated_at')
         GROUP BY TABLE_NAME
         HAVING COUNT(DISTINCT COLUMN_NAME) = 2
     ";
@@ -86,8 +86,8 @@ require_once '../layouts/admin_nav.php';
             SELECT COLUMN_NAME
             FROM INFORMATION_SCHEMA.COLUMNS
             WHERE TABLE_SCHEMA = DATABASE()
-              AND TABLE_NAME = ?
-              AND COLUMN_KEY = 'PRI'
+            AND TABLE_NAME = ?
+            AND COLUMN_KEY = 'PRI'
             LIMIT 1
         ";
         $stmt = $conn->prepare($pk_sql);
