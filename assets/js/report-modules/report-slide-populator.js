@@ -51,8 +51,7 @@ const ReportPopulator = (function() {
             console.error("Error in populateSlide:", err);
         }
     }
-    
-    /**
+      /**
      * Add KPI boxes with data from metrics_details
      * @param {Object} slide - The slide to populate
      * @param {Object} data - The data from the API
@@ -75,55 +74,55 @@ const ReportPopulator = (function() {
             );
             
             if (tpaDetail && tpaDetail.items && tpaDetail.items.length > 0) {
-                // Use the first KPI box (boxIndex = 0) for TPA Protection
-                ReportStyler.createKpiBox(slide, pptx, themeColors, defaultFont, {
+                // Use the first KPI box (KPI1) for TPA Protection
+                ReportStyler.createKpi1Box(slide, pptx, themeColors, defaultFont, {
                     name: tpaDetail.name,
                     value: tpaDetail.items[0].value || '0',
                     description: tpaDetail.items[0].description || ''
-                }, 0);
+                });
                 
                 console.log("Added TPA Protection KPI box with data:", tpaDetail.name);
             } else {
                 // Fallback to data.kpi1 if available, otherwise use default
                 const kpi1 = data.kpi1 || { name: 'TPA Protection & Biodiversity Conserved', value: '32', description: 'On-going conservation programs' };
-                ReportStyler.createKpiBox(slide, pptx, themeColors, defaultFont, kpi1, 0);
+                ReportStyler.createKpi1Box(slide, pptx, themeColors, defaultFont, kpi1);
                 console.log("Added fallback KPI1 box");
             }
             
             // Add other KPI boxes if available from metrics_details
             if (data.metrics_details.length > 1 && data.metrics_details[1].items && data.metrics_details[1].items.length > 0) {
-                ReportStyler.createKpiBox(slide, pptx, themeColors, defaultFont, {
+                ReportStyler.createKpi2Box(slide, pptx, themeColors, defaultFont, {
                     name: data.metrics_details[1].name,
                     value: data.metrics_details[1].items[0].value || '0',
                     description: data.metrics_details[1].items[0].description || ''
-                }, 1);
+                });
             } else if (data.kpi2) {
-                ReportStyler.createKpiBox(slide, pptx, themeColors, defaultFont, data.kpi2, 1);
+                ReportStyler.createKpi2Box(slide, pptx, themeColors, defaultFont, data.kpi2);
             }
             
             if (data.metrics_details.length > 2 && data.metrics_details[2].items && data.metrics_details[2].items.length > 0) {
-                ReportStyler.createKpiBox(slide, pptx, themeColors, defaultFont, {
+                ReportStyler.createKpi3Box(slide, pptx, themeColors, defaultFont, {
                     name: data.metrics_details[2].name,
                     value: data.metrics_details[2].items[0].value || '0',
                     description: data.metrics_details[2].items[0].description || ''
-                }, 2);
+                });
             } else if (data.kpi3) {
-                ReportStyler.createKpiBox(slide, pptx, themeColors, defaultFont, data.kpi3, 2);
+                ReportStyler.createKpi3Box(slide, pptx, themeColors, defaultFont, data.kpi3);
             }
         } else if (data.kpi1 || data.kpi2 || data.kpi3) {
             console.log("Using legacy KPI data format");
             
             // Use legacy KPI data if metrics_details is not available
             if (data.kpi1) {
-                ReportStyler.createKpiBox(slide, pptx, themeColors, defaultFont, data.kpi1, 0);
+                ReportStyler.createKpi1Box(slide, pptx, themeColors, defaultFont, data.kpi1);
             }
             
             if (data.kpi2) {
-                ReportStyler.createKpiBox(slide, pptx, themeColors, defaultFont, data.kpi2, 1);
+                ReportStyler.createKpi2Box(slide, pptx, themeColors, defaultFont, data.kpi2);
             }
             
             if (data.kpi3) {
-                ReportStyler.createKpiBox(slide, pptx, themeColors, defaultFont, data.kpi3, 2);
+                ReportStyler.createKpi3Box(slide, pptx, themeColors, defaultFont, data.kpi3);
             }
         } else {
             console.warn("No KPI data available");

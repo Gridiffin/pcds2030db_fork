@@ -610,15 +610,38 @@ const ReportStyler = (function() {
      * @param {string} defaultFont - The default font
      * @param {Object} kpiData - The KPI data (title, value, description)
      * @param {number} boxIndex - Index for positioning multiple boxes (0, 1, 2, etc.)
-     */      
+     */        /**
+     * Create a KPI box with formatted title, value and description (Legacy support)
+     * @param {Object} slide - The slide to add the KPI box to
+     * @param {Object} pptx - The PptxGenJS instance
+     * @param {Object} themeColors - The theme colors
+     * @param {string} defaultFont - The default font
+     * @param {Object} kpiData - The KPI data (title, value, description)
+     * @param {number} boxIndex - Index for positioning multiple boxes (0, 1, 2, etc.)
+     */    
     function createKpiBox(slide, pptx, themeColors, defaultFont, kpiData, boxIndex = 0) {
-        // Base dimensions and positions
-        // Using exact specifications from the design
+        // Call the appropriate KPI box function based on boxIndex for backward compatibility
+        if (boxIndex === 0) {
+            createKpi1Box(slide, pptx, themeColors, defaultFont, kpiData);
+        } else if (boxIndex === 1) {
+            createKpi2Box(slide, pptx, themeColors, defaultFont, kpiData);
+        } else if (boxIndex === 2) {
+            createKpi3Box(slide, pptx, themeColors, defaultFont, kpiData);
+        }
+    }
+    
+    /**
+     * Create the first KPI box with formatted title, value and description
+     * @param {Object} slide - The slide to add the KPI box to
+     * @param {Object} pptx - The PptxGenJS instance
+     * @param {Object} themeColors - The theme colors
+     * @param {string} defaultFont - The default font
+     * @param {Object} kpiData - The KPI data (title, value, description)
+     */
+    function createKpi1Box(slide, pptx, themeColors, defaultFont, kpiData) {
+        // Base dimensions and positions for KPI1 (first box)
+        const verticalSpacing = 0;  // No spacing for the first box
         const baseVerticalPos = 7.53; // Base vertical position in cm
-        const verticalSpacing = 1.8;  // Vertical spacing between boxes in cm
-        
-        // Calculate vertical position based on boxIndex
-        const verticalPos = baseVerticalPos + (boxIndex * verticalSpacing);
         
         // Convert cm to inches - using exact dimensions from specifications provided by user
         const boxDimensions = {
@@ -627,7 +650,7 @@ const ReportStyler = (function() {
             w: 11.0 / 2.54, // Convert cm to inches
             h: 1.57 / 2.54, // Convert cm to inches
             x: 22.58 / 2.54, // Exact horizontal position
-            y: verticalPos / 2.54  // Position based on boxIndex
+            y: baseVerticalPos / 2.54  // Position for KPI1
         };
         
         // Create the box container with border
@@ -639,11 +662,12 @@ const ReportStyler = (function() {
             fill: { color: 'FFFFFF' },
             line: { color: themeColors.primary, width: 1 }
         });
-          // Element 1: Title/Name text (underlined, bold, centered)
-        // H = 1.41cm, W = 4.39cm with position offset based on boxIndex
+        
+        // Element 1: Title/Name text (underlined, bold, centered)
+        // H = 1.41cm, W = 4.39cm
         slide.addText(kpiData.name || kpiData.title || '', {
             x: 22.81 / 2.54, // Exact horizontal position
-            y: (7.69 + (boxIndex * verticalSpacing)) / 2.54, // Position based on boxIndex
+            y: (7.69 + verticalSpacing) / 2.54,
             w: 4.39 / 2.54, // Exact width
             h: 1.41 / 2.54, // Exact height
             fontSize: 8, // Explicitly set to 8pt
@@ -654,14 +678,15 @@ const ReportStyler = (function() {
             align: 'center',
             valign: 'middle'
         });
-          // Element 2: Value (larger font, blue, bold)
+        
+        // Element 2: Value (larger font, blue, bold)
         // H = 1.2cm, W = 1.74cm, position = horizontal 27.21cm, vertical 7.73cm
         
         // Check if we need to format as percentage
         let valueText = kpiData.value || '0';
         let valueOptions = {
             x: 27.21 / 2.54, // Exact horizontal position
-            y: (7.73 + (boxIndex * verticalSpacing)) / 2.54, // Position based on boxIndex
+            y: (7.73 + verticalSpacing) / 2.54,
             w: 1.74 / 2.54, // Exact width
             h: 1.2 / 2.54, // Exact height
             fontSize: 30, // Exact font size
@@ -684,7 +709,7 @@ const ReportStyler = (function() {
             // Add % symbol in smaller font, slightly offset
             slide.addText('%', {
                 x: (27.21 + 0.9) / 2.54, // Positioned to the right of the number
-                y: (7.73 + 0.15 + (boxIndex * verticalSpacing)) / 2.54, // Slightly above middle
+                y: (7.73 + 0.15 + verticalSpacing) / 2.54, // Slightly above middle
                 w: 0.4 / 2.54,
                 h: 0.5 / 2.54,
                 fontSize: 18, // Smaller font for % symbol
@@ -711,7 +736,7 @@ const ReportStyler = (function() {
             const firstDesc = descriptions[0] || kpiData.description || '';
             slide.addText(firstDesc.trim(), {
                 x: 29.51 / 2.54, // Exact horizontal position
-                y: (7.78 + (boxIndex * verticalSpacing)) / 2.54, // Position based on boxIndex
+                y: (7.78 + verticalSpacing) / 2.54,
                 w: 3.33 / 2.54, // Exact width
                 h: 0.55 / 2.54, // Half height for first description
                 fontSize: 8, // Exact font size
@@ -725,7 +750,7 @@ const ReportStyler = (function() {
             if (descriptions.length > 1 && descriptions[1]) {
                 slide.addText(descriptions[1].trim(), {
                     x: 29.51 / 2.54, // Exact horizontal position
-                    y: ((7.78 + 0.6) + (boxIndex * verticalSpacing)) / 2.54, // Position below the first description with boxIndex offset
+                    y: ((7.78 + 0.6) + verticalSpacing) / 2.54, // Position below the first description
                     w: 3.33 / 2.54, // Exact width
                     h: 0.55 / 2.54, // Half height for second description
                     fontSize: 8, // Exact font size
@@ -739,7 +764,7 @@ const ReportStyler = (function() {
             // Standard description for other boxes
             slide.addText(kpiData.description || '', {
                 x: 29.51 / 2.54, // Exact horizontal position
-                y: (7.78 + (boxIndex * verticalSpacing)) / 2.54, // Position based on boxIndex
+                y: (7.78 + verticalSpacing) / 2.54,
                 w: 3.33 / 2.54, // Exact width
                 h: 1.2 / 2.54, // Exact height
                 fontSize: 8, // Exact font size
@@ -751,8 +776,300 @@ const ReportStyler = (function() {
             });
         }
     }
-
-    // Expose public methods
+    
+    /**
+     * Create the second KPI box with formatted title, value and description
+     * @param {Object} slide - The slide to add the KPI box to
+     * @param {Object} pptx - The PptxGenJS instance
+     * @param {Object} themeColors - The theme colors
+     * @param {string} defaultFont - The default font
+     * @param {Object} kpiData - The KPI data (title, value, description)
+     */
+    function createKpi2Box(slide, pptx, themeColors, defaultFont, kpiData) {
+        // Base dimensions and positions for KPI2 (second box)
+        const verticalSpacing = 1.8;  // Vertical spacing for the second box
+        const baseVerticalPos = 7.53; // Base vertical position in cm
+        
+        // Convert cm to inches - using exact dimensions from specifications provided by user
+        const boxDimensions = {
+            // Base dimensions from specs: H = 1.57cm, W = 11cm
+            // horizontal 22.58cm, vertical position calculated above
+            w: 11.0 / 2.54, // Convert cm to inches
+            h: 1.57 / 2.54, // Convert cm to inches
+            x: 22.58 / 2.54, // Exact horizontal position
+            y: (baseVerticalPos + verticalSpacing) / 2.54  // Position for KPI2
+        };
+        
+        // Create the box container with border
+        slide.addShape(pptx.shapes.RECTANGLE, {
+            x: boxDimensions.x,
+            y: boxDimensions.y,
+            w: boxDimensions.w,
+            h: boxDimensions.h,
+            fill: { color: 'FFFFFF' },
+            line: { color: themeColors.primary, width: 1 }
+        });
+        
+        // Element 1: Title/Name text (underlined, bold, centered)
+        // H = 1.41cm, W = 4.39cm
+        slide.addText(kpiData.name || kpiData.title || '', {
+            x: 22.81 / 2.54, // Exact horizontal position
+            y: (7.69 + verticalSpacing) / 2.54,
+            w: 4.39 / 2.54, // Exact width
+            h: 1.41 / 2.54, // Exact height
+            fontSize: 8, // Explicitly set to 8pt
+            bold: true,
+            underline: true,
+            fontFace: defaultFont,
+            color: themeColors.text,
+            align: 'center',
+            valign: 'middle'
+        });
+        
+        // Element 2: Value (larger font, blue, bold)
+        // H = 1.2cm, W = 1.74cm, position = horizontal 27.21cm, vertical 7.73cm
+        
+        // Check if we need to format as percentage
+        let valueText = kpiData.value || '0';
+        let valueOptions = {
+            x: 27.21 / 2.54, // Exact horizontal position
+            y: (7.73 + verticalSpacing) / 2.54,
+            w: 1.74 / 2.54, // Exact width
+            h: 1.2 / 2.54, // Exact height
+            fontSize: 30, // Exact font size
+            bold: true,
+            fontFace: defaultFont,
+            color: '4472C4', // Blue color
+            align: 'center', 
+            valign: 'middle'
+        };
+        
+        // Special handling for percentage values
+        if (valueText.includes('%')) {
+            // Format percentage values in a special way
+            // Remove % from display value - it will be shown separately
+            const numericValue = valueText.replace('%', '');
+            
+            // Add the numeric part in large font
+            slide.addText(numericValue, valueOptions);
+            
+            // Add % symbol in smaller font, slightly offset
+            slide.addText('%', {
+                x: (27.21 + 0.9) / 2.54, // Positioned to the right of the number
+                y: (7.73 + 0.15 + verticalSpacing) / 2.54, // Slightly above middle
+                w: 0.4 / 2.54,
+                h: 0.5 / 2.54,
+                fontSize: 18, // Smaller font for % symbol
+                bold: true,
+                fontFace: defaultFont,
+                color: '4472C4', // Same blue color
+                align: 'left',
+                valign: 'top'
+            });
+        } else {
+            // Regular value display
+            slide.addText(valueText, valueOptions);
+        }
+        
+        // Element 3: Description text
+        // H = 1.2cm, W = 3.33cm, position = horizontal 29.51cm, vertical 7.78cm
+        // Special handling for "Obtain world recognition" box which needs two descriptions
+        if (kpiData.title && kpiData.title.includes("Obtain world recognition")) {
+            // Check if we have multiple descriptions (stored in an array or comma-separated)
+            const descriptions = Array.isArray(kpiData.descriptions) ? kpiData.descriptions : 
+                                (kpiData.description && kpiData.description.includes(',') ? 
+                                kpiData.description.split(',') : [kpiData.description]);            
+            // First description (SDGP UNESCO Global Geopark)
+            const firstDesc = descriptions[0] || kpiData.description || '';
+            slide.addText(firstDesc.trim(), {
+                x: 29.51 / 2.54, // Exact horizontal position
+                y: (7.78 + verticalSpacing) / 2.54,
+                w: 3.33 / 2.54, // Exact width
+                h: 0.55 / 2.54, // Half height for first description
+                fontSize: 8, // Exact font size
+                fontFace: defaultFont,
+                color: themeColors.text,
+                align: 'center', 
+                valign: 'middle'
+            });
+            
+            // Second description (Lambir Hill NP and Bako NP)
+            if (descriptions.length > 1 && descriptions[1]) {
+                slide.addText(descriptions[1].trim(), {
+                    x: 29.51 / 2.54, // Exact horizontal position
+                    y: ((7.78 + 0.6) + verticalSpacing) / 2.54, // Position below the first description
+                    w: 3.33 / 2.54, // Exact width
+                    h: 0.55 / 2.54, // Half height for second description
+                    fontSize: 8, // Exact font size
+                    fontFace: defaultFont,
+                    color: themeColors.text,
+                    align: 'center', 
+                    valign: 'middle'
+                });
+            }
+        } else {
+            // Standard description for other boxes
+            slide.addText(kpiData.description || '', {
+                x: 29.51 / 2.54, // Exact horizontal position
+                y: (7.78 + verticalSpacing) / 2.54,
+                w: 3.33 / 2.54, // Exact width
+                h: 1.2 / 2.54, // Exact height
+                fontSize: 8, // Exact font size
+                fontFace: defaultFont,
+                color: themeColors.text,
+                align: 'center', 
+                valign: 'middle',
+                breakLine: true
+            });
+        }
+    }
+    
+    /**
+     * Create the third KPI box with formatted title, value and description
+     * @param {Object} slide - The slide to add the KPI box to
+     * @param {Object} pptx - The PptxGenJS instance
+     * @param {Object} themeColors - The theme colors
+     * @param {string} defaultFont - The default font
+     * @param {Object} kpiData - The KPI data (title, value, description)
+     */
+    function createKpi3Box(slide, pptx, themeColors, defaultFont, kpiData) {
+        // Base dimensions and positions for KPI3 (third box)
+        const verticalSpacing = 3.6;  // Vertical spacing for the third box (2x of one spacing)
+        const baseVerticalPos = 7.53; // Base vertical position in cm
+        
+        // Convert cm to inches - using exact dimensions from specifications provided by user
+        const boxDimensions = {
+            // Base dimensions from specs: H = 1.57cm, W = 11cm
+            // horizontal 22.58cm, vertical position calculated above
+            w: 11.0 / 2.54, // Convert cm to inches
+            h: 1.57 / 2.54, // Convert cm to inches
+            x: 22.58 / 2.54, // Exact horizontal position
+            y: (baseVerticalPos + verticalSpacing) / 2.54  // Position for KPI3
+        };
+        
+        // Create the box container with border
+        slide.addShape(pptx.shapes.RECTANGLE, {
+            x: boxDimensions.x,
+            y: boxDimensions.y,
+            w: boxDimensions.w,
+            h: boxDimensions.h,
+            fill: { color: 'FFFFFF' },
+            line: { color: themeColors.primary, width: 1 }
+        });
+        
+        // Element 1: Title/Name text (underlined, bold, centered)
+        // H = 1.41cm, W = 4.39cm
+        slide.addText(kpiData.name || kpiData.title || '', {
+            x: 22.81 / 2.54, // Exact horizontal position
+            y: (7.69 + verticalSpacing) / 2.54,
+            w: 4.39 / 2.54, // Exact width
+            h: 1.41 / 2.54, // Exact height
+            fontSize: 8, // Explicitly set to 8pt
+            bold: true,
+            underline: true,
+            fontFace: defaultFont,
+            color: themeColors.text,
+            align: 'center',
+            valign: 'middle'
+        });
+        
+        // Element 2: Value (larger font, blue, bold)
+        // H = 1.2cm, W = 1.74cm, position = horizontal 27.21cm, vertical 7.73cm
+        
+        // Check if we need to format as percentage
+        let valueText = kpiData.value || '0';
+        let valueOptions = {
+            x: 27.21 / 2.54, // Exact horizontal position
+            y: (7.73 + verticalSpacing) / 2.54,
+            w: 1.74 / 2.54, // Exact width
+            h: 1.2 / 2.54, // Exact height
+            fontSize: 30, // Exact font size
+            bold: true,
+            fontFace: defaultFont,
+            color: '4472C4', // Blue color
+            align: 'center', 
+            valign: 'middle'
+        };
+        
+        // Special handling for percentage values
+        if (valueText.includes('%')) {
+            // Format percentage values in a special way
+            // Remove % from display value - it will be shown separately
+            const numericValue = valueText.replace('%', '');
+            
+            // Add the numeric part in large font
+            slide.addText(numericValue, valueOptions);
+            
+            // Add % symbol in smaller font, slightly offset
+            slide.addText('%', {
+                x: (27.21 + 0.9) / 2.54, // Positioned to the right of the number
+                y: (7.73 + 0.15 + verticalSpacing) / 2.54, // Slightly above middle
+                w: 0.4 / 2.54,
+                h: 0.5 / 2.54,
+                fontSize: 18, // Smaller font for % symbol
+                bold: true,
+                fontFace: defaultFont,
+                color: '4472C4', // Same blue color
+                align: 'left',
+                valign: 'top'
+            });
+        } else {
+            // Regular value display
+            slide.addText(valueText, valueOptions);
+        }
+        
+        // Element 3: Description text
+        // H = 1.2cm, W = 3.33cm, position = horizontal 29.51cm, vertical 7.78cm
+        // Special handling for "Obtain world recognition" box which needs two descriptions
+        if (kpiData.title && kpiData.title.includes("Obtain world recognition")) {
+            // Check if we have multiple descriptions (stored in an array or comma-separated)
+            const descriptions = Array.isArray(kpiData.descriptions) ? kpiData.descriptions : 
+                                (kpiData.description && kpiData.description.includes(',') ? 
+                                kpiData.description.split(',') : [kpiData.description]);            
+            // First description (SDGP UNESCO Global Geopark)
+            const firstDesc = descriptions[0] || kpiData.description || '';
+            slide.addText(firstDesc.trim(), {
+                x: 29.51 / 2.54, // Exact horizontal position
+                y: (7.78 + verticalSpacing) / 2.54,
+                w: 3.33 / 2.54, // Exact width
+                h: 0.55 / 2.54, // Half height for first description
+                fontSize: 8, // Exact font size
+                fontFace: defaultFont,
+                color: themeColors.text,
+                align: 'center', 
+                valign: 'middle'
+            });
+            
+            // Second description (Lambir Hill NP and Bako NP)
+            if (descriptions.length > 1 && descriptions[1]) {
+                slide.addText(descriptions[1].trim(), {
+                    x: 29.51 / 2.54, // Exact horizontal position
+                    y: ((7.78 + 0.6) + verticalSpacing) / 2.54, // Position below the first description
+                    w: 3.33 / 2.54, // Exact width
+                    h: 0.55 / 2.54, // Half height for second description
+                    fontSize: 8, // Exact font size
+                    fontFace: defaultFont,
+                    color: themeColors.text,
+                    align: 'center', 
+                    valign: 'middle'
+                });
+            }
+        } else {
+            // Standard description for other boxes
+            slide.addText(kpiData.description || '', {
+                x: 29.51 / 2.54, // Exact horizontal position
+                y: (7.78 + verticalSpacing) / 2.54,
+                w: 3.33 / 2.54, // Exact width
+                h: 1.2 / 2.54, // Exact height
+                fontSize: 8, // Exact font size
+                fontFace: defaultFont,
+                color: themeColors.text,
+                align: 'center', 
+                valign: 'middle',
+                breakLine: true
+            });
+        }
+    }    // Expose public methods
     return {
         getThemeColors,
         getDefaultFont,
@@ -773,6 +1090,9 @@ const ReportStyler = (function() {
         addYearIndicator,
         createDraftText,
         createTotalValueBox,
-        createKpiBox
+        createKpiBox,
+        createKpi1Box,
+        createKpi2Box,
+        createKpi3Box
     };
 })();
