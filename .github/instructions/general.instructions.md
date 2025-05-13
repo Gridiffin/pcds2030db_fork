@@ -13,6 +13,8 @@ Coding standards, domain knowledge, and preferences that AI should follow.
 - Use a consistent coding style throughout the project (refer to /layouts/headers.php)
 - remember to INCLUDE all files that is related to any functions that is specified. For example: if login functionality is being edited then scan the whole codebase to find anything related to login, including their styles.
 - suggest improvements to the codebase, including refactoring, optimization, and performance enhancements.
+- any database operations please use DBCode extension to help you.
+- Ensure that all database queries are properly parameterized to prevent SQL injection attacks.
 
 ## Project Structure
 - Follow the project structure and organization as outlined in the project documentation.

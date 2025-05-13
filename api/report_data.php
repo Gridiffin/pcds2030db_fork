@@ -165,6 +165,77 @@ $sector_metrics = [];
 $charts_data = [];
 $kpis_data = [];
 
+// NEW: Fetch metrics_details data for KPI sections
+$metrics_details = [];
+
+// First, try to find a "TPA Protection" metric specifically
+$tpa_query = "SELECT detail_id, detail_name, detail_json FROM metrics_details 
+              WHERE is_draft = 0 
+              AND (detail_name LIKE '%TPA%' OR detail_name LIKE '%Protection%' OR detail_name LIKE '%Biodiversity%') 
+              ORDER BY created_at DESC LIMIT 1";
+$tpa_result = $conn->query($tpa_query);
+
+// Then get other metrics
+$metrics_details_query = "SELECT detail_id, detail_name, detail_json FROM metrics_details 
+                          WHERE is_draft = 0 
+                          AND (detail_name NOT LIKE '%TPA%' AND detail_name NOT LIKE '%Protection%' AND detail_name NOT LIKE '%Biodiversity%')
+                          ORDER BY created_at DESC LIMIT 2";
+$metrics_details_result = $conn->query($metrics_details_query);
+
+// Process TPA metric if found
+if ($tpa_result && $tpa_result->num_rows > 0) {
+    $row = $tpa_result->fetch_assoc();
+    $jsonData = json_decode($row['detail_json'], true);
+    // Process the values and descriptions (they're stored as semicolon-separated strings)
+    $values = explode(';', $jsonData['value'] ?? '');
+    $descriptions = explode(';', $jsonData['description'] ?? '');
+    
+    // Create an array of items with value-description pairs
+    $items = [];
+    for ($i = 0; $i < count($values); $i++) {
+        if (isset($values[$i]) && isset($descriptions[$i])) {
+            $items[] = [
+                'value' => $values[$i],
+                'description' => $descriptions[$i]
+            ];
+        }
+    }
+    
+    // Add TPA as first element
+    $metrics_details[] = [
+        'id' => $row['detail_id'],
+        'name' => $row['detail_name'],
+        'items' => $items
+    ];
+}
+
+// Process other metrics
+if ($metrics_details_result && $metrics_details_result->num_rows > 0) {
+    while ($row = $metrics_details_result->fetch_assoc()) {
+        $jsonData = json_decode($row['detail_json'], true);
+        // Process the values and descriptions
+        $values = explode(';', $jsonData['value'] ?? '');
+        $descriptions = explode(';', $jsonData['description'] ?? '');
+        
+        // Create an array of items with value-description pairs
+        $items = [];
+        for ($i = 0; $i < count($values); $i++) {
+            if (isset($values[$i]) && isset($descriptions[$i])) {
+                $items[] = [
+                    'value' => $values[$i],
+                    'description' => $descriptions[$i]
+                ];
+            }
+        }
+        
+        $metrics_details[] = [
+            'id' => $row['detail_id'],
+            'name' => $row['detail_name'],
+            'items' => $items
+        ];
+    }
+}
+
 // Initialize timber export data for current year and previous year (instead of hardcoded 2022/2023)
 $timber_export_data = [
     $current_year => array_fill(0, 12, 0), // Initialize with zeros for each month of current year
@@ -274,6 +345,35 @@ $kpi1_data = ['name' => '', 'value' => '0', 'description' => ''];
 $kpi2_data = ['name' => '', 'value' => '0', 'description' => ''];
 $kpi3_data = ['name' => '', 'value' => '0', 'description' => ''];
 
+// Update KPI data with metrics_details if available
+if (!empty($metrics_details)) {
+    // If we have TPA Protection data (first detail), use it for KPI1
+    if (isset($metrics_details[0]) && strpos(strtolower($metrics_details[0]['name']), 'tpa') !== false) {
+        $kpi1_data = [
+            'name' => $metrics_details[0]['name'],
+            'value' => $metrics_details[0]['items'][0]['value'] ?? '0',
+            'description' => $metrics_details[0]['items'][0]['description'] ?? ''
+        ];
+    }
+    
+    // Use other metrics for KPI2 and KPI3 if available
+    if (isset($metrics_details[1])) {
+        $kpi2_data = [
+            'name' => $metrics_details[1]['name'],
+            'value' => $metrics_details[1]['items'][0]['value'] ?? '0',
+            'description' => $metrics_details[1]['items'][0]['description'] ?? ''
+        ];
+    }
+    
+    if (isset($metrics_details[2])) {
+        $kpi3_data = [
+            'name' => $metrics_details[2]['name'],
+            'value' => $metrics_details[2]['items'][0]['value'] ?? '0',
+            'description' => $metrics_details[2]['items'][0]['description'] ?? ''
+        ];
+    }
+}
+
 if ($metrics_result->num_rows > 0) {
     // Process each metric
     while ($metric = $metrics_result->fetch_assoc()) {
@@ -358,7 +458,13 @@ $report_data = [
     'charts' => $charts_data,
     'kpis' => $kpis_data,
     'draftDate' => $draft_date,
-    'sector_id' => $sector_id  // Include sector_id for client-side use
+    'sector_id' => $sector_id,  // Include sector_id for client-side use
+    'metrics_details' => $metrics_details,  // Include the new metrics details for KPIs
+    
+    // Include individual KPI data for easier access in the JS code
+    'kpi1' => $kpi1_data,
+    'kpi2' => $kpi2_data, 
+    'kpi3' => $kpi3_data
 ];
 
 // Clear all previous output

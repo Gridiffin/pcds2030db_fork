@@ -42,6 +42,9 @@ const ReportPopulator = (function() {
                 });
             }
             
+            // Add KPI boxes with metrics_details data
+            addKpiBoxes(slide, data, pptx, themeColors, defaultFont);
+            
             addFooterSection(slide, data, pptx, themeColors, defaultFont);
             
         } catch (err) {
@@ -49,6 +52,84 @@ const ReportPopulator = (function() {
         }
     }
     
+    /**
+     * Add KPI boxes with data from metrics_details
+     * @param {Object} slide - The slide to populate
+     * @param {Object} data - The data from the API
+     * @param {Object} pptx - The PptxGenJS instance
+     * @param {Object} themeColors - The theme colors for styling
+     * @param {string} defaultFont - The default font
+     */
+    function addKpiBoxes(slide, data, pptx, themeColors, defaultFont) {
+        console.log("Adding KPI boxes with metrics_details data");
+        
+        // Check if we have metrics_details data available
+        if (data && data.metrics_details && data.metrics_details.length > 0) {
+            console.log("Using metrics_details data for KPIs:", data.metrics_details);
+            
+            // Use TPA Protection data from metrics_details if available
+            const tpaDetail = data.metrics_details.find(detail => 
+                detail.name.toLowerCase().includes('tpa') ||
+                detail.name.toLowerCase().includes('protection') ||
+                detail.name.toLowerCase().includes('biodiversity')
+            );
+            
+            if (tpaDetail && tpaDetail.items && tpaDetail.items.length > 0) {
+                // Use the first KPI box (boxIndex = 0) for TPA Protection
+                ReportStyler.createKpiBox(slide, pptx, themeColors, defaultFont, {
+                    name: tpaDetail.name,
+                    value: tpaDetail.items[0].value || '0',
+                    description: tpaDetail.items[0].description || ''
+                }, 0);
+                
+                console.log("Added TPA Protection KPI box with data:", tpaDetail.name);
+            } else {
+                // Fallback to data.kpi1 if available, otherwise use default
+                const kpi1 = data.kpi1 || { name: 'TPA Protection & Biodiversity Conserved', value: '32', description: 'On-going conservation programs' };
+                ReportStyler.createKpiBox(slide, pptx, themeColors, defaultFont, kpi1, 0);
+                console.log("Added fallback KPI1 box");
+            }
+            
+            // Add other KPI boxes if available from metrics_details
+            if (data.metrics_details.length > 1 && data.metrics_details[1].items && data.metrics_details[1].items.length > 0) {
+                ReportStyler.createKpiBox(slide, pptx, themeColors, defaultFont, {
+                    name: data.metrics_details[1].name,
+                    value: data.metrics_details[1].items[0].value || '0',
+                    description: data.metrics_details[1].items[0].description || ''
+                }, 1);
+            } else if (data.kpi2) {
+                ReportStyler.createKpiBox(slide, pptx, themeColors, defaultFont, data.kpi2, 1);
+            }
+            
+            if (data.metrics_details.length > 2 && data.metrics_details[2].items && data.metrics_details[2].items.length > 0) {
+                ReportStyler.createKpiBox(slide, pptx, themeColors, defaultFont, {
+                    name: data.metrics_details[2].name,
+                    value: data.metrics_details[2].items[0].value || '0',
+                    description: data.metrics_details[2].items[0].description || ''
+                }, 2);
+            } else if (data.kpi3) {
+                ReportStyler.createKpiBox(slide, pptx, themeColors, defaultFont, data.kpi3, 2);
+            }
+        } else if (data.kpi1 || data.kpi2 || data.kpi3) {
+            console.log("Using legacy KPI data format");
+            
+            // Use legacy KPI data if metrics_details is not available
+            if (data.kpi1) {
+                ReportStyler.createKpiBox(slide, pptx, themeColors, defaultFont, data.kpi1, 0);
+            }
+            
+            if (data.kpi2) {
+                ReportStyler.createKpiBox(slide, pptx, themeColors, defaultFont, data.kpi2, 1);
+            }
+            
+            if (data.kpi3) {
+                ReportStyler.createKpiBox(slide, pptx, themeColors, defaultFont, data.kpi3, 2);
+            }
+        } else {
+            console.warn("No KPI data available");
+        }
+    }
+
     /**
      * Add a simple line chart to the slide
      * @param {Object} slide - The slide to populate
