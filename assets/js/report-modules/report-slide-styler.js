@@ -138,15 +138,8 @@ const ReportStyler = (function() {
             h: 2.41  // Height in inches (6.13cm)
         };
         
-        // Add container shape
-        slide.addShape(pptx.shapes.RECTANGLE, {
-            x: container.x, 
-            y: container.y, 
-            w: container.w, 
-            h: container.h,
-            fill: { color: 'FFFFFF' },
-            line: { color: themeColors.primary, width: 1 }
-        });
+        // Container is completely transparent - no shape needed
+        // We'll just return the dimensions for positioning other elements
         
         return container;
     }
@@ -180,10 +173,10 @@ const ReportStyler = (function() {
      * @returns {Object} The chart options
      */    function getLineChartOptions(container, themeColors, defaultFont) {
         // Calculate chart position with minimal padding to maximize chart area
-        const chartX = container.x + 0.15;  // Small left margin
-        const chartY = container.y + 0.4;   // Space for title
-        const chartW = container.w - 0.3;   // Wide chart with minimal horizontal padding
-        const chartH = container.h - 0.7;   // Allow space for the total boxes at bottom
+        const chartX = container.x + 0.1;   // Reduced left margin
+        const chartY = container.y + 0.35;  // Less space for title to maximize chart area
+        const chartW = container.w - 0.2;   // Wider chart with minimal horizontal padding
+        const chartH = container.h - 0.65;  // Slightly more space at bottom for the larger total boxes
         
         return {
             x: chartX, 
@@ -191,14 +184,14 @@ const ReportStyler = (function() {
             w: chartW, 
             h: chartH,
             chartType: 'line',
-            lineSize: 2,
+            lineSize: 2.5,                  // Slightly thicker lines for better visibility
             showTitle: false,
             showValue: false,
             showLegend: false,              // Legend removed as requested (already in footer)
             // Colors matching the footer indicators
             chartColors: ['0070C0', 'ED7D31'], // Blue for current year, Orange for previous year
             showMarker: true,
-            markerSize: 4,
+            markerSize: 5,                  // Slightly larger markers
             // Axis formatting
             valAxisMaxVal: 400000000,
             valAxisMinVal: 0,
@@ -209,12 +202,14 @@ const ReportStyler = (function() {
             catAxisLabelFontFace: defaultFont,
             catAxisLabelRotate: 45,
             valAxisLabelFormatCode: '#,##0', // Format numbers with commas
-            // Hide axis titles as requested
+            // Hide axis titles
             showCatAxisTitle: false,
             showValAxisTitle: false,
-            // Grid lines
+            // Grid lines - enhance visibility
             showHorizGridLines: true,
-            showVertGridLines: false
+            lineWidthGrid: 0.5,             // Thinner grid lines
+            showVertGridLines: false,
+            border: { pt: 0, color: 'FFFFFF' } // No border around the chart
         };
     }
     
@@ -549,17 +544,18 @@ const ReportStyler = (function() {
      * Create a total value box
      * @param {Object} slide - The slide to add the box to
      * @param {Object} pptx - The PptxGenJS instance
-     * @param {Object} themeColors - The theme colors
-     * @param {string} label - The label for the total box (e.g., "2024 Export")
+     * @param {Object} themeColors - The theme colors for styling
+     * @param {string} label - The label for the total box (e.g., "'24 Total")
      * @param {string} value - The total value to display (with RM prefix)
      * @param {number} x - The x position of the box
      * @param {number} y - The y position of the box
      * @param {string} defaultFont - The default font
-     */    function createTotalValueBox(slide, pptx, themeColors, label, value, x, y, defaultFont) {
+     */    
+    function createTotalValueBox(slide, pptx, themeColors, label, value, x, y, defaultFont) {
         // More compact boxes that fit within the chart container
-        // H = 0.25 inches, W = 1.8 inches - smaller but still readable
-        const boxWidth = 1.8;   
-        const boxHeight = 0.25; 
+        // Slightly wider and taller to accommodate large numbers
+        const boxWidth = 1.9;   
+        const boxHeight = 0.28; 
         
         // Add container shape with solid white background for better visibility
         slide.addShape(pptx.shapes.RECTANGLE, {
@@ -572,13 +568,13 @@ const ReportStyler = (function() {
             shadow: { type: 'outer', angle: 45, blur: 2, offset: 1, color: 'CCCCCC' } // Shadow for separation
         });
         
-        // Add label text (bold, as requested)
+        // Add label text - make it smaller to leave more room for values
         slide.addText(label, {
             x: x + 0.05, 
             y: y + 0.01, 
-            w: boxWidth * 0.35, 
+            w: boxWidth * 0.35, // Slightly narrower to give more space to value
             h: boxHeight - 0.02,
-            fontSize: 9, 
+            fontSize: 9, // Smaller font size
             bold: true,
             fontFace: defaultFont,
             color: themeColors.primary,
@@ -586,13 +582,21 @@ const ReportStyler = (function() {
             valign: 'middle'
         });
         
+        // Dynamically calculate font size based on value length
+        // This helps prevent text overflow with large numbers
+        const valueLength = value.length;
+        const fontSize = valueLength > 16 ? 7 : // Very large numbers (hundreds of millions with 2 decimals)
+                         valueLength > 13 ? 8 : // Large numbers (tens of millions with 2 decimals)
+                         8.5; // Default size for smaller numbers
+        
         // Add value text (right-aligned to fit large numbers better)
         slide.addText(value, {
             x: x + (boxWidth * 0.35), 
             y: y + 0.01, 
-            w: boxWidth * 0.65 - 0.05, 
+            w: boxWidth * 0.65 - 0.05, // Wider area for value text
             h: boxHeight - 0.02,
-            fontSize: 8, // Smaller for better fit
+            fontSize: fontSize, // Dynamic font size based on length
+            bold: true, // Make the value bold for emphasis
             fontFace: defaultFont,
             color: themeColors.text,
             align: 'right',

@@ -121,20 +121,37 @@ const ReportPopulator = (function() {
         );
         console.log("Maximum monthly value:", maxMonthlyValue);          // Calculate total values for each year
         const previousYearTotal = clippedPreviousYearData.reduce((sum, val) => sum + (val || 0), 0);
-        const currentYearTotal = clippedCurrentYearData.reduce((sum, val) => sum + (val || 0), 0);
+        const currentYearTotal = clippedCurrentYearData.reduce((sum, val) => sum + (val || 0), 0);        // For large export values, reduce precision to conserve space while maintaining readability
+        // Large values (over 1 million) use fewer decimal places to prevent overflow
+        const formatNumberWithSmartPrecision = (num) => {
+            if (num >= 10000000) { // Over 10 million
+                return num.toLocaleString('en-US', {maximumFractionDigits: 0}); // No decimals
+            } else if (num >= 1000000) { // 1-10 million
+                return num.toLocaleString('en-US', {maximumFractionDigits: 1}); // One decimal
+            } else {
+                return num.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}); // Two decimals
+            }
+        };
         
-        // Format the totals with 2 decimal places and add commas for better readability
-        const formattedPreviousYearTotal = `RM ${previousYearTotal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-        const formattedCurrentYearTotal = `RM ${currentYearTotal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;        // Position total boxes side by side in bottom of chart container
-        // Add total box for current year on the bottom-left
+        // Format the totals with adaptive precision and add RM prefix
+        const formattedPreviousYearTotal = `RM ${formatNumberWithSmartPrecision(previousYearTotal)}`;
+        const formattedCurrentYearTotal = `RM ${formatNumberWithSmartPrecision(currentYearTotal)}`;
+          // Format years as requested - abbreviated with apostrophe (e.g., '24 Total)
+        // Ensure the apostrophe is visible by using the correct character
+        const currentYearAbbr = "'" + currentYear.toString().substring(2) + " Total";
+        const previousYearAbbr = "'" + previousYear.toString().substring(2) + " Total";
+          // Position total boxes side by side at the bottom-left of chart container
+        // Make sure they're aligned properly with small separation between boxes
+          // SWAPPED ORDER: Current year first (on the left), then previous year
+        // Add total box for current year at the bottom-left
         ReportStyler.createTotalValueBox(
             slide, 
             pptx, 
             themeColors, 
-            `${currentYear} Export`, 
+            currentYearAbbr, 
             formattedCurrentYearTotal, 
-            container.x + 0.15, // Small margin from left edge
-            container.y + container.h - 0.35, // Position at the bottom
+            container.x + 0.10, // Small margin from left edge
+            container.y + container.h - 0.38, // Positioned slightly higher to prevent overlap with container bottom
             defaultFont
         );
         
@@ -143,10 +160,10 @@ const ReportPopulator = (function() {
             slide, 
             pptx, 
             themeColors, 
-            `${previousYear} Export`, 
+            previousYearAbbr, 
             formattedPreviousYearTotal, 
-            container.x + 2.05, // Position to the right of first box
-            container.y + container.h - 0.35, // Same vertical position
+            container.x + 2.15, // Slightly more spacing between boxes for large numbers
+            container.y + container.h - 0.38, // Same vertical position as current year
             defaultFont
         );
           // Create chart data with the real values from API
