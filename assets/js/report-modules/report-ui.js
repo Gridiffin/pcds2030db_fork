@@ -179,6 +179,13 @@ const ReportUI = (function() {
         const reportName = elements.reportNameInput.value;
         const description = elements.reportDescInput.value;
         const isPublic = elements.isPublicCheckbox.checked ? 1 : 0;
+
+        // Get selected KPI IDs
+        const selectedKpiIds = [];
+        const kpiCheckboxes = document.querySelectorAll('#kpiSelector input[name="selected_kpi_ids[]"]:checked');
+        kpiCheckboxes.forEach(checkbox => {
+            selectedKpiIds.push(checkbox.value);
+        });
         
         // Hide existing messages and show status
         elements.successMessage.classList.add('d-none');
@@ -191,7 +198,8 @@ const ReportUI = (function() {
         // Step 1: Fetch data from API
         elements.statusMessage.textContent = 'Fetching data...';
         
-        ReportAPI.fetchReportData(periodId, sectorId)
+        // Pass selectedKpiIds to fetchReportData
+        ReportAPI.fetchReportData(periodId, sectorId, selectedKpiIds)
             .then(data => {
                 elements.statusMessage.textContent = 'Generating PPTX...';
                 return ReportPopulator.generatePresentation(data, elements.statusMessage);

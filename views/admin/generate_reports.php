@@ -35,6 +35,16 @@ while ($sector = $sectors_result->fetch_assoc()) {
     $sectors[] = $sector;
 }
 
+// Get available KPIs for selection
+$kpis_query = "SELECT detail_id, detail_name FROM metrics_details WHERE is_draft = 0 ORDER BY detail_name ASC";
+$kpis_result = $conn->query($kpis_query);
+$available_kpis = [];
+if ($kpis_result) {
+    while ($kpi = $kpis_result->fetch_assoc()) {
+        $available_kpis[] = $kpi;
+    }
+}
+
 // Get recently generated reports
 $reports_query = "SELECT r.*, rp.quarter, rp.year, s.sector_name, u.username 
                  FROM reports r
@@ -146,6 +156,23 @@ require_once '../../includes/dashboard_header.php';
                                 </div>
                             </div>
                             
+                            <div class="report-form-group mb-3">
+                                <label class="form-label">Select Key Performance Indicators (KPIs) - Up to 3</label>
+                                <div id="kpiSelector" class="list-group kpi-selector-list-group">
+                                    <?php if (!empty($available_kpis)): ?>
+                                        <?php foreach ($available_kpis as $kpi): ?>
+                                            <label class="list-group-item">
+                                                <input class="form-check-input me-1" type="checkbox" name="selected_kpi_ids[]" value="<?php echo $kpi['detail_id']; ?>">
+                                                <?php echo htmlspecialchars($kpi['detail_name']); ?>
+                                            </label>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <p class="text-muted">No KPIs available for selection. Please create some first.</p>
+                                    <?php endif; ?>
+                                </div>
+                                <small class="form-text text-muted">If no KPIs are selected, the report will use default or automatic KPI selection.</small>
+                            </div>
+
                             <div class="report-form-group mb-3">
                                 <label for="reportName" class="form-label">Report Name</label>
                                 <input type="text" class="form-control" id="reportName" name="report_name" required placeholder="e.g., Forestry Sector Report - Q2 2025">

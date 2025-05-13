@@ -169,6 +169,37 @@
     white-space: nowrap; /* Prevent header wrapping */
 }
 
+/* KPI Selector Styling */
+.kpi-selector-list-group {
+    max-height: 220px;
+    overflow-y: auto;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.375rem;
+}
+
+.kpi-selector-list-group .list-group-item {
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    transition: background-color 0.15s ease;
+    display: flex;
+    align-items: center;
+}
+
+.kpi-selector-list-group .list-group-item:hover {
+    background-color: var(--bs-light);
+}
+
+.kpi-selector-list-group .form-check-input {
+    margin-right: 0.75rem;
+    cursor: pointer;
+}
+
+.kpi-selector-list-group .form-check-input:checked {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+}
+
+/* Reports table styling - continued */
 .reports-table td {
     vertical-align: middle;
     font-size: 0.9rem;

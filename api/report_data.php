@@ -31,6 +31,7 @@ if (!is_admin()) {
 // Get parameters from request
 $period_id = isset($_GET['period_id']) ? intval($_GET['period_id']) : null;
 $sector_id = isset($_GET['sector_id']) ? intval($_GET['sector_id']) : 1; // Default to Forestry (sector_id 1)
+$selected_kpi_ids_raw = isset($_GET['selected_kpi_ids']) ? $_GET['selected_kpi_ids'] : null; // Expecting a comma-separated string or an array
 
 // If no period_id provided, use current reporting period
 if (!$period_id) {
@@ -163,76 +164,108 @@ $year_before_previous = $current_year - 2;
 // Fetch metrics for this sector and period
 $sector_metrics = [];
 $charts_data = [];
-$kpis_data = [];
 
 // NEW: Fetch metrics_details data for KPI sections
-$metrics_details = [];
+$metrics_details = []; // This will hold the KPI data to be sent to the client
 
-// First, try to find a "TPA Protection" metric specifically
-$tpa_query = "SELECT detail_id, detail_name, detail_json FROM metrics_details 
-              WHERE is_draft = 0 
-              AND (detail_name LIKE '%TPA%' OR detail_name LIKE '%Protection%' OR detail_name LIKE '%Biodiversity%') 
-              ORDER BY created_at DESC LIMIT 1";
-$tpa_result = $conn->query($tpa_query);
-
-// Then get other metrics
-$metrics_details_query = "SELECT detail_id, detail_name, detail_json FROM metrics_details 
-                          WHERE is_draft = 0 
-                          AND (detail_name NOT LIKE '%TPA%' AND detail_name NOT LIKE '%Protection%' AND detail_name NOT LIKE '%Biodiversity%')
-                          ORDER BY created_at DESC LIMIT 2";
-$metrics_details_result = $conn->query($metrics_details_query);
-
-// Process TPA metric if found
-if ($tpa_result && $tpa_result->num_rows > 0) {
-    $row = $tpa_result->fetch_assoc();
-    $jsonData = json_decode($row['detail_json'], true);
-    // Process the values and descriptions (they're stored as semicolon-separated strings)
-    $values = explode(';', $jsonData['value'] ?? '');
-    $descriptions = explode(';', $jsonData['description'] ?? '');
-    
-    // Create an array of items with value-description pairs
-    $items = [];
-    for ($i = 0; $i < count($values); $i++) {
-        if (isset($values[$i]) && isset($descriptions[$i])) {
-            $items[] = [
-                'value' => $values[$i],
-                'description' => $descriptions[$i]
-            ];
-        }
+// Process selected KPI IDs if provided
+if (!empty($selected_kpi_ids_raw)) {
+    $selected_kpi_ids = [];
+    if (is_string($selected_kpi_ids_raw)) {
+        $selected_kpi_ids = array_map('intval', explode(',', $selected_kpi_ids_raw));
+    } elseif (is_array($selected_kpi_ids_raw)) {
+        $selected_kpi_ids = array_map('intval', $selected_kpi_ids_raw);
     }
-    
-    // Add TPA as first element
-    $metrics_details[] = [
-        'id' => $row['detail_id'],
-        'name' => $row['detail_name'],
-        'items' => $items
-    ];
-}
 
-// Process other metrics
-if ($metrics_details_result && $metrics_details_result->num_rows > 0) {
-    while ($row = $metrics_details_result->fetch_assoc()) {
-        $jsonData = json_decode($row['detail_json'], true);
-        // Process the values and descriptions
-        $values = explode(';', $jsonData['value'] ?? '');
-        $descriptions = explode(';', $jsonData['description'] ?? '');
-        
-        // Create an array of items with value-description pairs
-        $items = [];
-        for ($i = 0; $i < count($values); $i++) {
-            if (isset($values[$i]) && isset($descriptions[$i])) {
-                $items[] = [
-                    'value' => $values[$i],
-                    'description' => $descriptions[$i]
+    // Filter out any zero or negative IDs to prevent issues
+    $selected_kpi_ids = array_filter($selected_kpi_ids, function($id) {
+        return $id > 0;
+    });
+
+    if (!empty($selected_kpi_ids)) {
+        try {            $placeholders = implode(',', array_fill(0, count($selected_kpi_ids), '?'));
+            
+            // Using named placeholders for FIELD function to avoid parameter binding issues
+            $order_fields = implode(',', $selected_kpi_ids); // No need for placeholders here since we'll use a direct list
+            
+            $kpi_query = "SELECT detail_id, detail_name, detail_json FROM metrics_details 
+                          WHERE is_draft = 0 AND detail_id IN ($placeholders)
+                          ORDER BY FIELD(detail_id, $order_fields)"; // Use direct values for ORDER BY
+            
+            $stmt_kpi = $conn->prepare($kpi_query);
+            if (!$stmt_kpi) {
+                throw new Exception("Database query preparation failed: " . $conn->error);
+            }
+            
+            // Bind parameters only for the IN clause now
+            $types = str_repeat('i', count($selected_kpi_ids));
+            $bind_params = array_merge([$types], $selected_kpi_ids);
+            
+            // Use call_user_func_array to bind parameters
+            // Ensure that each parameter is passed by reference for bind_param
+            $ref_params = [];
+            foreach ($bind_params as $key => $value) {
+                $ref_params[$key] = &$bind_params[$key];
+            }
+            call_user_func_array([$stmt_kpi, 'bind_param'], $ref_params);
+
+            $stmt_kpi->execute();
+            $result_kpi = $stmt_kpi->get_result();
+            
+            while ($row = $result_kpi->fetch_assoc()) {
+                // The detail_json is passed raw, client-side will parse it
+                $metrics_details[] = [
+                    'id' => $row['detail_id'],
+                    'name' => $row['detail_name'],
+                    'detail_json' => $row['detail_json']
                 ];
             }
+            $stmt_kpi->close();
+        } catch (Exception $e) {
+            ob_end_clean();
+            header('HTTP/1.1 500 Internal Server Error');
+            echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
+            exit;
         }
-        
+    }
+}
+
+// Fallback to old logic if no KPIs were selected or fetched
+if (empty($metrics_details)) {
+    // First, try to find a "TPA Protection" metric specifically
+    $tpa_query = "SELECT detail_id, detail_name, detail_json FROM metrics_details 
+                  WHERE is_draft = 0 
+                  AND (detail_name LIKE '%TPA%' OR detail_name LIKE '%Protection%' OR detail_name LIKE '%Biodiversity%') 
+                  ORDER BY created_at DESC LIMIT 1";
+    $tpa_result = $conn->query($tpa_query);
+
+    // Then get other metrics
+    $other_metrics_query = "SELECT detail_id, detail_name, detail_json FROM metrics_details 
+                              WHERE is_draft = 0 
+                              AND (detail_name NOT LIKE '%TPA%' AND detail_name NOT LIKE '%Protection%' AND detail_name NOT LIKE '%Biodiversity%')
+                              ORDER BY created_at DESC LIMIT 2";
+    $other_metrics_result = $conn->query($other_metrics_query);
+
+    if ($tpa_result && $tpa_result->num_rows > 0) {
+        $row = $tpa_result->fetch_assoc();
         $metrics_details[] = [
             'id' => $row['detail_id'],
             'name' => $row['detail_name'],
-            'items' => $items
+            'detail_json' => $row['detail_json']
         ];
+    }
+
+    if ($other_metrics_result && $other_metrics_result->num_rows > 0) {
+        while ($row = $other_metrics_result->fetch_assoc()) {
+            // Ensure we don't add more than 3 KPIs in total for fallback
+            if (count($metrics_details) < 3) {
+                $metrics_details[] = [
+                    'id' => $row['detail_id'],
+                    'name' => $row['detail_name'],
+                    'detail_json' => $row['detail_json']
+                ];
+            }
+        }
     }
 }
 
@@ -340,40 +373,6 @@ $secondary_chart_data = [
     'total' . $current_year => "0"
 ];
 
-// Default KPI values (can be customized by sector)
-$kpi1_data = ['name' => '', 'value' => '0', 'description' => ''];
-$kpi2_data = ['name' => '', 'value' => '0', 'description' => ''];
-$kpi3_data = ['name' => '', 'value' => '0', 'description' => ''];
-
-// Update KPI data with metrics_details if available
-if (!empty($metrics_details)) {
-    // If we have TPA Protection data (first detail), use it for KPI1
-    if (isset($metrics_details[0]) && strpos(strtolower($metrics_details[0]['name']), 'tpa') !== false) {
-        $kpi1_data = [
-            'name' => $metrics_details[0]['name'],
-            'value' => $metrics_details[0]['items'][0]['value'] ?? '0',
-            'description' => $metrics_details[0]['items'][0]['description'] ?? ''
-        ];
-    }
-    
-    // Use other metrics for KPI2 and KPI3 if available
-    if (isset($metrics_details[1])) {
-        $kpi2_data = [
-            'name' => $metrics_details[1]['name'],
-            'value' => $metrics_details[1]['items'][0]['value'] ?? '0',
-            'description' => $metrics_details[1]['items'][0]['description'] ?? ''
-        ];
-    }
-    
-    if (isset($metrics_details[2])) {
-        $kpi3_data = [
-            'name' => $metrics_details[2]['name'],
-            'value' => $metrics_details[2]['items'][0]['value'] ?? '0',
-            'description' => $metrics_details[2]['items'][0]['description'] ?? ''
-        ];
-    }
-}
-
 if ($metrics_result->num_rows > 0) {
     // Process each metric
     while ($metric = $metrics_result->fetch_assoc()) {
@@ -383,8 +382,6 @@ if ($metrics_result->num_rows > 0) {
         if (isset($data['type'])) {
             if ($data['type'] === 'chart') {
                 $charts_data[$data['key']] = $data;
-            } elseif ($data['type'] === 'kpi') {
-                $kpis_data[$data['key']] = $data;
             }
         }
     }
@@ -395,45 +392,30 @@ switch ($sector_id) {
     case 1: // Forestry
         $main_chart_title = "Timber Export Value (RM)";
         $secondary_chart_title = "Total Degraded Area Restored (Ha)";
-        $kpi1_data = ['name' => 'TPA Protection & Biodiversity Conserved', 'value' => '32', 'description' => 'On-going conservation programs'];
-        $kpi2_data = ['name' => 'Forest Management Unit (FMU)', 'value' => '78%', 'description' => '2,327,221 ha'];
-        $kpi3_data = ['name' => 'Forest Plantation Management Unit', 'value' => '69%', 'description' => '122,800 ha'];
         break;
             
     case 2: // Land
         $main_chart_title = "Land Development (Ha)";
         $secondary_chart_title = "Land Title Applications Processed";
-        $kpi1_data = ['name' => 'New Native Land Titles', 'value' => '1.2K', 'description' => 'New titles issued this year'];
-        $kpi2_data = ['name' => 'Land Survey Completion', 'value' => '65%', 'description' => 'Of annual target'];
-        $kpi3_data = ['name' => 'Digital Registry Progress', 'value' => '80%', 'description' => 'Implementation completed'];
         break;
             
     case 3: // Environment
         $main_chart_title = "Air Quality Index";
         $secondary_chart_title = "Waste Management (Tons)";
-        $kpi1_data = ['name' => 'Environmental Compliance', 'value' => '84%', 'description' => 'Industries in compliance'];
-        $kpi2_data = ['name' => 'Water Quality Index', 'value' => '72%', 'description' => 'Clean water bodies'];
-        $kpi3_data = ['name' => 'Recycling Rate', 'value' => '45%', 'description' => 'Of total waste'];
         break;
             
     case 4: // Natural Resources
         $main_chart_title = "Resource Extraction (Units)";
         $secondary_chart_title = "Sustainable Resource Management (%)";
-        $kpi1_data = ['name' => 'Resource Inventory Completion', 'value' => '66%', 'description' => 'Statewide mapping'];
-        $kpi2_data = ['name' => 'Sustainable Yield', 'value' => '87%', 'description' => 'Within sustainable limits'];
-        $kpi3_data = ['name' => 'Conservation Areas', 'value' => '28%', 'description' => 'Of total resource lands'];
         break;
             
     case 5: // Urban Development
         $main_chart_title = "Urban Growth (km²)";
         $secondary_chart_title = "Housing Development (Units)";
-        $kpi1_data = ['name' => 'Affordable Housing', 'value' => '3.4K', 'description' => 'New units completed'];
-        $kpi2_data = ['name' => 'Green Space Ratio', 'value' => '22%', 'description' => 'Of urban area'];
-        $kpi3_data = ['name' => 'Infrastructure Development', 'value' => '76%', 'description' => 'Of annual plan completed'];
         break;
 }
 
-// Store default charts and KPIs in the arrays
+// Store default charts in the arrays
 $charts_data['main_chart'] = [
     'type' => 'chart',
     'key' => 'main_chart',
@@ -456,17 +438,12 @@ $report_data = [
     'quarter' => $quarter,
     'projects' => $programs,
     'charts' => $charts_data,
-    'kpis' => $kpis_data,
     'draftDate' => $draft_date,
     'sector_id' => $sector_id,  // Include sector_id for client-side use
-    'metrics_details' => $metrics_details,  // Include the new metrics details for KPIs
-    
-    // Include individual KPI data for easier access in the JS code
-    'kpi1' => $kpi1_data,
-    'kpi2' => $kpi2_data, 
-    'kpi3' => $kpi3_data
+    'metrics_details' => $metrics_details,  // This is the primary source for KPIs now
 ];
 
+// Remove any undefined variables reference that could cause PHP warnings
 // Clear all previous output
 ob_end_clean();
 

@@ -61,71 +61,84 @@ const ReportPopulator = (function() {
      */
     function addKpiBoxes(slide, data, pptx, themeColors, defaultFont) {
         console.log("Adding KPI boxes with metrics_details data");
-        
-        // Check if we have metrics_details data available
+
         if (data && data.metrics_details && data.metrics_details.length > 0) {
             console.log("Using metrics_details data for KPIs:", data.metrics_details);
-            
-            // Use TPA Protection data from metrics_details if available
-            const tpaDetail = data.metrics_details.find(detail => 
-                detail.name.toLowerCase().includes('tpa') ||
-                detail.name.toLowerCase().includes('protection') ||
-                detail.name.toLowerCase().includes('biodiversity')
-            );
-            
-            if (tpaDetail && tpaDetail.items && tpaDetail.items.length > 0) {
-                // Use the first KPI box (KPI1) for TPA Protection
-                ReportStyler.createKpi1Box(slide, pptx, themeColors, defaultFont, {
-                    name: tpaDetail.name,
-                    value: tpaDetail.items[0].value || '0',
-                    description: tpaDetail.items[0].description || ''
-                });
-                
-                console.log("Added TPA Protection KPI box with data:", tpaDetail.name);
-            } else {
-                // Fallback to data.kpi1 if available, otherwise use default
-                const kpi1 = data.kpi1 || { name: 'TPA Protection & Biodiversity Conserved', value: '32', description: 'On-going conservation programs' };
-                ReportStyler.createKpi1Box(slide, pptx, themeColors, defaultFont, kpi1);
-                console.log("Added fallback KPI1 box");
-            }
-            
-            // Add other KPI boxes if available from metrics_details
-            if (data.metrics_details.length > 1 && data.metrics_details[1].items && data.metrics_details[1].items.length > 0) {
-                ReportStyler.createKpi2Box(slide, pptx, themeColors, defaultFont, {
-                    name: data.metrics_details[1].name,
-                    value: data.metrics_details[1].items[0].value || '0',
-                    description: data.metrics_details[1].items[0].description || ''
-                });
-            } else if (data.kpi2) {
-                ReportStyler.createKpi2Box(slide, pptx, themeColors, defaultFont, data.kpi2);
-            }
-            
-            if (data.metrics_details.length > 2 && data.metrics_details[2].items && data.metrics_details[2].items.length > 0) {
-                ReportStyler.createKpi3Box(slide, pptx, themeColors, defaultFont, {
-                    name: data.metrics_details[2].name,
-                    value: data.metrics_details[2].items[0].value || '0',
-                    description: data.metrics_details[2].items[0].description || ''
-                });
-            } else if (data.kpi3) {
-                ReportStyler.createKpi3Box(slide, pptx, themeColors, defaultFont, data.kpi3);
-            }
-        } else if (data.kpi1 || data.kpi2 || data.kpi3) {
-            console.log("Using legacy KPI data format");
-            
-            // Use legacy KPI data if metrics_details is not available
-            if (data.kpi1) {
-                ReportStyler.createKpi1Box(slide, pptx, themeColors, defaultFont, data.kpi1);
-            }
-            
-            if (data.kpi2) {
-                ReportStyler.createKpi2Box(slide, pptx, themeColors, defaultFont, data.kpi2);
-            }
-            
-            if (data.kpi3) {
-                ReportStyler.createKpi3Box(slide, pptx, themeColors, defaultFont, data.kpi3);
-            }
+
+            data.metrics_details.forEach((kpi, index) => {
+                if (index < 3) { // Ensure we only process up to 3 KPIs
+                    try {
+                        const detailJson = JSON.parse(kpi.detail_json);
+                        
+                        // Check if this is a legacy format (without layout_type)
+                        // If so, adapt it to a format our new renderer can handle
+                        if (!detailJson.layout_type) {
+                            // Convert legacy format to new format
+                            console.log(`Converting legacy format for KPI: ${kpi.name}`);
+                            
+                            // Determine if this contains multiple values (indicated by ; in value or description)
+                            const hasMultipleValues = 
+                                (detailJson.value && detailJson.value.includes(';')) || 
+                                (detailJson.description && detailJson.description.includes(';'));
+                            
+                            if (hasMultipleValues) {
+                                // Split values and descriptions at semicolons
+                                const values = detailJson.value ? detailJson.value.split(';') : ['N/A'];
+                                const descriptions = detailJson.description ? detailJson.description.split(';') : [''];
+                                
+                                // Create items array
+                                const items = values.map((val, idx) => ({
+                                    value: val.trim(),
+                                    description: descriptions[idx] ? descriptions[idx].trim() : ''
+                                }));
+                                
+                                // Use detailed_list layout for multiple items
+                                detailJson.layout_type = 'detailed_list';
+                                detailJson.items = items;
+                            } else {
+                                // Use simple layout for single value/description
+                                detailJson.layout_type = 'simple';
+                                detailJson.items = [{
+                                    value: detailJson.value || 'N/A',
+                                    description: detailJson.description || ''
+                                }];
+                            }
+                        }
+                        
+                        // Call a generic KPI box creation function from ReportStyler
+                        // The ReportStyler will handle layout based on detailJson.layout_type and detailJson.items
+                        ReportStyler.createKpiBox(slide, pptx, themeColors, defaultFont, kpi.name, detailJson, index);
+                        console.log(`Added KPI box ${index + 1} for:`, kpi.name);
+                    } catch (e) {
+                        console.error("Error parsing detail_json for KPI:", kpi.name, e);
+                        // Optionally, add a placeholder or error message on the slide
+                        ReportStyler.createErrorKpiBox(slide, pptx, themeColors, defaultFont, `Error: KPI ${index + 1} data invalid`, index);
+                    }
+                }
+            });
         } else {
-            console.warn("No KPI data available");
+            console.warn("No KPI data available in metrics_details. Falling back to legacy or default KPIs if defined.");
+            // Fallback to legacy kpi1, kpi2, kpi3 if metrics_details is empty
+            // This part can be adjusted or removed if strict adherence to selected KPIs is required
+            // and no fallback to old kpi objects is desired when metrics_details is empty.
+            if (data.kpi1) {
+                console.log("Fallback to legacy kpi1");
+                // Assuming kpi1, kpi2, kpi3 are simple {name, value, description}
+                // We might need a simplified layout or a specific layout_type for these.
+                // For now, let's assume a default simple layout.
+                ReportStyler.createKpiBox(slide, pptx, themeColors, defaultFont, data.kpi1.name, { layout_type: 'simple', items: [{ value: data.kpi1.value, description: data.kpi1.description }] }, 0);
+            }
+            if (data.kpi2) {
+                console.log("Fallback to legacy kpi2");
+                ReportStyler.createKpiBox(slide, pptx, themeColors, defaultFont, data.kpi2.name, { layout_type: 'simple', items: [{ value: data.kpi2.value, description: data.kpi2.description }] }, 1);
+            }
+            if (data.kpi3) {
+                console.log("Fallback to legacy kpi3");
+                ReportStyler.createKpiBox(slide, pptx, themeColors, defaultFont, data.kpi3.name, { layout_type: 'simple', items: [{ value: data.kpi3.value, description: data.kpi3.description }] }, 2);
+            }
+            if (!data.kpi1 && !data.kpi2 && !data.kpi3) {
+                 console.warn("No KPI data available at all.");
+            }
         }
     }
 

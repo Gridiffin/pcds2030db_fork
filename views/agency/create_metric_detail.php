@@ -49,17 +49,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos($_SERVER['CONTENT_TYPE'] ?? 
         ob_end_clean();
         echo json_encode(['success' => false, 'errors' => $errors]);
         exit;
-    }
-
-    // Convert items to the original format
-    $valueString = implode(';', array_column($items, 'value'));
-    $descriptionString = implode(';', array_column($items, 'description'));
-
-    // Prepare data for insertion or update
+    }    // Get the selected layout type
+    $layout_type = trim($input['layout_type'] ?? 'simple');
+    
+    // Prepare data for insertion or update using the new format
     $detail_name = $title;
     $detail_json = json_encode([
-        'value' => $valueString,
-        'description' => $descriptionString
+        'layout_type' => $layout_type,
+        'items' => $items
     ]);
 
     if ($detail_id === null) {
@@ -124,11 +121,36 @@ $detailsArray = [];
 if ($result) {
     while ($row = $result->fetch_assoc()) {
         $jsonData = json_decode($row['detail_json'], true);
+        
+        // Handle both new and legacy format
+        $items = [];
+        $layout_type = 'simple'; // Default
+        
+        if (isset($jsonData['layout_type']) && isset($jsonData['items'])) {
+            // New format
+            $layout_type = $jsonData['layout_type'];
+            $items = $jsonData['items'];
+        } elseif (isset($jsonData['value']) && isset($jsonData['description'])) {
+            // Legacy format - convert to new format
+            $values = explode(';', $jsonData['value']);
+            $descriptions = explode(';', $jsonData['description']);
+            
+            for ($i = 0; $i < count($values); $i++) {
+                $items[] = [
+                    'value' => $values[$i],
+                    'description' => $descriptions[$i] ?? ''
+                ];
+            }
+        }
+        
         $detailsArray[] = [
             'id' => $row['detail_id'],
             'title' => $row['detail_name'],
-            'value' => $jsonData['value'] ?? '',
-            'description' => $jsonData['description'] ?? ''
+            'layout_type' => $layout_type,
+            'items' => $items,
+            // Keep these fields for backward compatibility in the UI
+            'value' => isset($jsonData['value']) ? $jsonData['value'] : implode(';', array_column($items, 'value')),
+            'description' => isset($jsonData['description']) ? $jsonData['description'] : implode(';', array_column($items, 'description'))
         ];
     }
 }
@@ -187,11 +209,25 @@ if ($result) {
         <h1>Create Metric Detail</h1>
         <div id="errorContainer" class="alert alert-danger" style="display: none;"></div>
         <div id="successContainer" class="alert alert-success" style="display: none;"></div>
-        
-        <form id="metricDetailForm" method="post" action="">
+          <form id="metricDetailForm" method="post" action="">
             <div class="mb-3">
                 <label for="title" class="form-label">Title</label>
                 <input type="text" class="form-control" id="title" name="title" required>
+            </div>
+            
+            <div class="mb-3">
+                <label for="layout_type" class="form-label">Layout Type</label>
+                <select class="form-control" id="layout_type" name="layout_type" required>
+                    <option value="simple">Simple (Default)</option>
+                    <option value="detailed_list">Detailed List</option>
+                    <option value="comparison">Comparison</option>
+                </select>
+                <small class="text-muted">Select the visual presentation style for this KPI.</small>
+            </div>
+            
+            <div class="mb-3">
+                <h4>KPI Values and Descriptions</h4>
+                <p class="text-muted small">Add the values and descriptions for this KPI. For simple layout, only the first item will be used. For detailed list, each item represents a row. For comparison layout, items are shown side by side.</p>
             </div>
             
             <div id="itemsContainer">
@@ -372,31 +408,59 @@ if ($result) {
 
             // Set title
             document.getElementById('title').value = detail.title;
+            
+            // Set layout type
+            const layoutSelect = document.getElementById('layout_type');
+            if (layoutSelect) {
+                layoutSelect.value = detail.layout_type || 'simple';
+            }
 
             // Clear existing items
             const container = document.getElementById('itemsContainer');
             container.innerHTML = '';
 
-            // Parse values and descriptions
-            const values = detail.value.split(';');
-            const descriptions = detail.description.split(';');
+            // Handle both legacy format and new format
+            if (detail.items && Array.isArray(detail.items)) {
+                // New format with items array
+                detail.items.forEach((item, i) => {
+                    const newItem = document.createElement('div');
+                    newItem.className = 'item-container';
+                    newItem.dataset.index = i;
+                    newItem.innerHTML = `
+                        <span class="remove-item" onclick="removeItem(this)">×</span>
+                        <div class="mb-3">
+                            <label for="value_${i}" class="form-label">Value</label>
+                            <input type="text" class="form-control" id="value_${i}" name="value_${i}" required value="${escapeHtml(item.value)}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="description_${i}" class="form-label">Description</label>
+                            <textarea class="form-control" id="description_${i}" name="description_${i}" rows="3" required>${escapeHtml(item.description)}</textarea>
+                        </div>
+                    `;
+                    container.appendChild(newItem);
+                });
+            } else {
+                // Legacy format with value and description as semicolon-separated strings
+                const values = detail.value.split(';');
+                const descriptions = detail.description.split(';');
 
-            for (let i = 0; i < values.length; i++) {
-                const newItem = document.createElement('div');
-                newItem.className = 'item-container';
-                newItem.dataset.index = i;
-                newItem.innerHTML = `
-                    <span class="remove-item" onclick="removeItem(this)">×</span>
-                    <div class="mb-3">
-                        <label for="value_${i}" class="form-label">Value</label>
-                        <input type="text" class="form-control" id="value_${i}" name="value_${i}" required value="${values[i]}">
-                    </div>
-                    <div class="mb-3">
-                        <label for="description_${i}" class="form-label">Description</label>
-                        <textarea class="form-control" id="description_${i}" name="description_${i}" rows="3" required>${descriptions[i] || ''}</textarea>
-                    </div>
-                `;
-                container.appendChild(newItem);
+                for (let i = 0; i < values.length; i++) {
+                    const newItem = document.createElement('div');
+                    newItem.className = 'item-container';
+                    newItem.dataset.index = i;
+                    newItem.innerHTML = `
+                        <span class="remove-item" onclick="removeItem(this)">×</span>
+                        <div class="mb-3">
+                            <label for="value_${i}" class="form-label">Value</label>
+                            <input type="text" class="form-control" id="value_${i}" name="value_${i}" required value="${escapeHtml(values[i])}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="description_${i}" class="form-label">Description</label>
+                            <textarea class="form-control" id="description_${i}" name="description_${i}" rows="3" required>${escapeHtml(descriptions[i] || '')}</textarea>
+                        </div>
+                    `;
+                    container.appendChild(newItem);
+                }
             }
 
             // Change submit button text to Update

@@ -9,33 +9,63 @@ const ReportAPI = (function() {
      * Fetches report data from the API
      * @param {number} periodId - The reporting period ID
      * @param {number} sectorId - The sector ID
+     * @param {number[]} [selectedKpiIds] - Optional array of selected KPI IDs
      * @returns {Promise<Object>} - A promise that resolves to the report data
      */
-    function fetchReportData(periodId, sectorId) {
+    function fetchReportData(periodId, sectorId, selectedKpiIds = []) {
         return new Promise((resolve, reject) => {
-            const apiUrl = `../../api/report_data.php?period_id=${periodId}&sector_id=${sectorId}`;
+            let apiUrl = `../../api/report_data.php?period_id=${periodId}&sector_id=${sectorId}`;
+            if (selectedKpiIds && selectedKpiIds.length > 0) {
+                apiUrl += `&selected_kpi_ids=${selectedKpiIds.join(',')}`;
+                console.log('Selected KPI IDs:', selectedKpiIds);
+            } else {
+                console.log('No KPI IDs selected, will use default KPIs');
+            }
             console.log('Fetching from URL:', apiUrl);
             
             fetch(apiUrl)
                 .then(response => {
                     console.log('Response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
+                    }
                     return response.text(); // Get the raw text first to see what's actually being returned
                 })
                 .then(rawText => {
-                    console.log('Raw response:', rawText);
-                    // Try to parse the JSON
-                    try {
-                        const data = JSON.parse(rawText);
-                        return data;
-                    } catch (error) {
-                        console.error('JSON parsing error:', error);
-                        throw new Error('API returned invalid JSON. See console for details.');
+                    console.log('Raw response length:', rawText.length);
+                    // Check if it starts with <?php or has PHP error indicators
+                    if (rawText.trim().startsWith('<?php') || 
+                        rawText.includes('Warning:') || 
+                        rawText.includes('Notice:') || 
+                        rawText.includes('Fatal error:') ||
+                        rawText.includes('Parse error:')) {
+                        console.error('PHP code or error in response:', rawText.substring(0, 1000));
+                        throw new Error('PHP error detected in response. Check console for details.');
+                    }
+                    
+                    if (rawText.length > 0) {
+                        console.log('First 500 chars of response:', rawText.substring(0, 500));
+                        // Try to parse the JSON
+                        try {
+                            const data = JSON.parse(rawText);
+                            console.log('JSON parsed successfully');
+                            return data;
+                        } catch (error) {
+                            console.error('JSON parsing error:', error);
+                            console.error('Raw response causing JSON parse error:', rawText.substring(0, 1000));
+                            throw new Error('API returned invalid JSON. See console for details.');
+                        }
+                    } else {
+                        console.error('Empty response received from API');
+                        throw new Error('API returned empty response');
                     }
                 })
                 .then(data => {
+                    console.log('API request successful');
                     resolve(data);
                 })
                 .catch(error => {
+                    console.error('API request failed:', error);
                     reject(error);
                 });
         });
