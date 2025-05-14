@@ -269,6 +269,72 @@ if (empty($metrics_details)) {
     }
 }
 
+// Initialize degraded area data for 2022, 2023, 2024
+$degraded_area_data = [
+    '2022' => array_fill(0, 12, 0),
+    '2023' => array_fill(0, 12, 0),
+    '2024' => array_fill(0, 12, 0)
+];
+$degraded_area_units = '';
+
+// Query to find Total Degraded Area records
+$degraded_area_query = "SELECT m.data_json, m.table_name 
+                        FROM sector_metrics_data m 
+                        WHERE m.sector_id = ? 
+                        AND m.is_draft = 0 
+                        AND m.table_name = 'TOTAL DEGRADED AREA'
+                        ORDER BY m.updated_at DESC LIMIT 1"; // Assuming one relevant record
+
+$stmt_degraded = $conn->prepare($degraded_area_query);
+if ($stmt_degraded) {
+    $stmt_degraded->bind_param("i", $sector_id);
+    $stmt_degraded->execute();
+    $degraded_result = $stmt_degraded->get_result();
+
+    if ($degraded_result->num_rows > 0) {
+        $row_degraded = $degraded_result->fetch_assoc();
+        $data_json_degraded = json_decode($row_degraded['data_json'], true);
+
+        if (isset($data_json_degraded['data']) && isset($data_json_degraded['columns'])) {
+            $year_columns = $data_json_degraded['columns'];
+            $monthly_data_rows = $data_json_degraded['data'];
+
+            foreach ($monthly_labels as $month_index => $month_name_short) {
+                // Find the full month name key used in data_json (e.g., 'January', 'February')
+                $full_month_name = '';
+                foreach (array_keys($monthly_data_rows) as $json_month_key) {
+                    if (strtoupper(substr($json_month_key, 0, 3)) === $month_name_short) {
+                        $full_month_name = $json_month_key;
+                        break;
+                    }
+                }
+
+                if ($full_month_name && isset($monthly_data_rows[$full_month_name])) {
+                    $month_values = $monthly_data_rows[$full_month_name];
+                    foreach (['2022', '2023', '2024'] as $year) {
+                        if (in_array($year, $year_columns) && isset($month_values[$year]) && is_numeric($month_values[$year])) {
+                            $degraded_area_data[$year][$month_index] = floatval($month_values[$year]);
+                        }
+                    }
+                }
+            }
+            // Extract units. Assuming units are consistent or pick one if varied by year.
+            if(isset($data_json_degraded['units'])) {
+                if(is_array($data_json_degraded['units'])) {
+                    // If units is an array, try to get for a specific year or the first one
+                    $degraded_area_units = $data_json_degraded['units']['2022'] ?? $data_json_degraded['units'][array_key_first($data_json_degraded['units'])] ?? 'Ha';
+                } else {
+                    $degraded_area_units = $data_json_degraded['units'];
+                }
+            }
+        }
+    }
+    $stmt_degraded->close();
+} else {
+    // Handle error in preparing statement if necessary
+    error_log("Failed to prepare statement for degraded area data: " . $conn->error);
+}
+
 // Initialize timber export data for current year and previous year (instead of hardcoded 2022/2023)
 $timber_export_data = [
     $current_year => array_fill(0, 12, 0), // Initialize with zeros for each month of current year
@@ -364,6 +430,18 @@ $main_chart_data = [
     'total' . $current_year => array_sum($timber_export_data[$current_year])
 ];
 
+// Add degraded area chart data
+$degraded_area_chart_data_prepared = [
+    'labels' => $monthly_labels,
+    'data2022' => $degraded_area_data['2022'],
+    'data2023' => $degraded_area_data['2023'],
+    'data2024' => $degraded_area_data['2024'],
+    'total2022' => array_sum($degraded_area_data['2022']),
+    'total2023' => array_sum($degraded_area_data['2023']),
+    'total2024' => array_sum($degraded_area_data['2024']),
+    'units' => $degraded_area_units ?: 'Ha' // Default to 'Ha' if not found
+];
+
 // Default secondary chart data - still using placeholder data
 $secondary_chart_data = [
     'labels' => $monthly_labels,
@@ -421,6 +499,13 @@ $charts_data['main_chart'] = [
     'key' => 'main_chart',
     'title' => $main_chart_title,
     'data' => $main_chart_data
+];
+
+$charts_data['degraded_area_chart'] = [
+    'type' => 'chart',
+    'key' => 'degraded_area_chart',
+    'title' => 'Total Degraded Area (' . ($degraded_area_units ?: 'Ha') . ')',
+    'data' => $degraded_area_chart_data_prepared
 ];
 
 $charts_data['secondary_chart'] = [

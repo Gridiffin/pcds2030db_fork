@@ -223,7 +223,7 @@ const ReportStyler = (function() {
     
     /**
      * Get line chart options with proper styling
-     * @param {Object} container - The container dimensions
+     * @param {Object} container - The container dimensions {x, y, w, h}
      * @param {Object} themeColors - The theme colors
      * @param {string} defaultFont - The default font
      * @returns {Object} The chart options
@@ -234,6 +234,12 @@ const ReportStyler = (function() {
         const chartW = container.w - 0.2;   // Wider chart with minimal horizontal padding
         const chartH = container.h - 0.65;  // Slightly more space at bottom for the larger total boxes
         
+        // Default chart colors, can be overridden by specific chart calls
+        let defaultChartColors = ['0070C0', 'ED7D31', 'A5A5A5', 'FFC000', '4472C4', '70AD47'];
+        if (themeColors.chartSeriesColors && themeColors.chartSeriesColors.length > 0) {
+            defaultChartColors = themeColors.chartSeriesColors;
+        }
+
         return {
             x: chartX, 
             y: chartY, 
@@ -244,12 +250,12 @@ const ReportStyler = (function() {
             showTitle: false,
             showValue: false,
             showLegend: false,              // Legend removed as requested (already in footer)
-            chartColors: ['0070C0', 'ED7D31'], // Blue for current year, Orange for previous year
+            chartColors: defaultChartColors, // Use dynamic/default series colors
             showMarker: true,
             markerSize: 5,                  // Slightly larger markers
-            valAxisMaxVal: 400000000,
+            valAxisMaxVal: 400000000,       // Default, should be overridden by specific chart logic if needed
             valAxisMinVal: 0,
-            valAxisMajorUnit: 50000000,
+            valAxisMajorUnit: 50000000,     // Default, should be overridden
             catAxisLabelFontSize: 8,        // Smaller font for axis labels
             valAxisLabelFontSize: 8,        // Smaller font for axis labels
             valAxisLabelFontFace: defaultFont,
@@ -263,6 +269,51 @@ const ReportStyler = (function() {
             showVertGridLines: false,
             border: { pt: 0, color: 'FFFFFF' } // No border around the chart
         };
+    }
+
+    /**
+     * Calculate a reasonable major unit for a chart axis based on its max value.
+     * @param {number} maxValue - The maximum value on the axis.
+     * @returns {number} A suitable major unit.
+     */
+    function calculateMajorUnit(maxValue) {
+        if (maxValue <= 0) return 10; // Default for zero or negative max
+        const magnitude = Math.pow(10, Math.floor(Math.log10(maxValue)));
+        const mostSignificantDigit = Math.floor(maxValue / magnitude);
+
+        if (mostSignificantDigit < 2) return magnitude / 5; // e.g., max 150, unit 20
+        if (mostSignificantDigit < 5) return magnitude / 2; // e.g., max 350, unit 50
+        return magnitude; // e.g., max 750, unit 100
+    }
+
+    /**
+     * Get an array of distinct colors for chart series.
+     * @param {number} numSeries - The number of series that need colors.
+     * @returns {Array<string>} An array of hex color codes.
+     */
+    function getChartSeriesColors(numSeries) {
+        const defaultColors = [
+            '0072C6', // Blue
+            'ED7D31', // Orange
+            'A5A5A5', // Grey
+            'FFC000', // Gold
+            '4472C4', // Light Blue
+            '70AD47', // Green
+            '255E91', // Darker Blue
+            '9E480E', // Darker Orange
+            '636363', // Darker Grey
+            'BF8F00'  // Darker Gold
+        ];
+        if (numSeries <= defaultColors.length) {
+            return defaultColors.slice(0, numSeries);
+        }
+        // If more colors are needed, you might want to generate them or repeat with slight variations
+        // For now, just repeat the list if numSeries is too large
+        const colors = [];
+        for (let i = 0; i < numSeries; i++) {
+            colors.push(defaultColors[i % defaultColors.length]);
+        }
+        return colors;
     }
     
     /**
@@ -932,6 +983,8 @@ const ReportStyler = (function() {
         createTotalValueBox,
         createChartTitle,
         getLineChartOptions,
+        calculateMajorUnit,
+        getChartSeriesColors,
         createSectorBox,
         addSectorIcon,
         addSectorText,
