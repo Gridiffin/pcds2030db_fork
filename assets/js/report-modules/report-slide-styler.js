@@ -739,52 +739,131 @@ const ReportStyler = (function() {
                 fontSize: 8, fontFace: defaultFont, color: themeColors.lightText, align: 'center'
             });
         }
-    }
-
+    }    
     function renderComparisonKpiLayout(slide, pptx, themeColors, defaultFont, kpiName, items, boxXIn, boxYIn, boxWidthIn, boxHeightIn) {
-        slide.addText(kpiName, {
-            x: boxXIn + 0.1, y: boxYIn + 0.05, w: boxWidthIn - 0.2, h: 0.2,
-            fontSize: 10, bold: true, underline: true, fontFace: defaultFont,
-            color: themeColors.primary, align: 'center', valign: 'top'
+        const boxPadding = 0.1; // Inches, for internal padding within the KPI box
+
+        // --- 1. KPI Name Column (Left Side) ---
+        const kpiNameW = boxWidthIn * 0.35; // 35% of box width for KPI name, adjust as needed
+        const kpiNameX = boxXIn + boxPadding;
+        const kpiNameY = boxYIn + boxPadding;
+        const kpiNameH = boxHeightIn - (2 * boxPadding);
+
+        slide.addText(kpiName || '', {
+            x: kpiNameX,
+            y: kpiNameY,
+            w: kpiNameW,
+            h: kpiNameH,
+            fontSize: 9, // Adjust as needed
+            bold: true,
+            fontFace: defaultFont,
+            color: themeColors.primary,
+            align: 'left',
+            valign: 'top', // Start text at the top
+            breakLine: true // Enable word wrapping
         });
 
-        const itemAreaY = boxYIn + 0.25;
-        const itemAreaH = boxHeightIn - 0.3;
-        const numItems = items ? items.length : 0;
-        const itemWidth = numItems > 0 ? (boxWidthIn - 0.2) / numItems : boxWidthIn - 0.2;
+        // --- 2. Data Area (Right Side for Value/Description Pairs) ---
+        const dataAreaX = kpiNameX + kpiNameW + boxPadding;
+        const dataAreaW = boxWidthIn - kpiNameW - (3 * boxPadding); // Remaining width
+        const dataAreaY = boxYIn + boxPadding;
+        const dataAreaH = boxHeightIn - (2 * boxPadding);
 
-        if (items && items.length > 0) {
-            items.forEach((item, index) => {
-                const itemX = boxXIn + 0.1 + (index * itemWidth);
-                
-                if (item.label) {
-                    slide.addText(item.label, {
-                        x: itemX, y: itemAreaY, w: itemWidth, h: 0.15,
-                        fontSize: 8, bold: true, fontFace: defaultFont,
-                        color: themeColors.text, align: 'center', valign: 'top'
+        const displayItems = items && items.length ? items.slice(0, 2) : []; // Max 2 value/description pairs
+
+        if (displayItems.length > 0) {
+            const numDataRows = displayItems.length;
+            const dataRowH = dataAreaH / numDataRows; // Height for each value/description pair
+
+            displayItems.forEach((item, index) => {
+                const currentRowY = dataAreaY + (index * dataRowH);
+                const itemPadding = 0.05; // Padding within each data row item
+
+                // Value for the current item
+                let valueText = item.value || '0';
+                const valueFontSize = 20; // Adjust as needed
+                const percentFontSize = Math.floor(valueFontSize * 0.6); // Smaller for %
+                const valueColor = themeColors.secondary || '4472C4';
+
+                const valueTextW = dataAreaW * 0.4; // 40% of data area for value, adjust as needed
+                const valueTextH = dataRowH - (2 * itemPadding);
+                const valueTextX = dataAreaX;
+                const valueTextY = currentRowY + itemPadding;
+
+                if (String(valueText).includes('%')) {
+                    const numericValue = String(valueText).replace('%', '');
+                    // Add numeric part of the value
+                    slide.addText(numericValue, {
+                        x: valueTextX,
+                        y: valueTextY,
+                        w: valueTextW * 0.8, // Adjust width to leave space for %
+                        h: valueTextH,
+                        fontSize: valueFontSize,
+                        bold: true,
+                        fontFace: defaultFont,
+                        color: valueColor,
+                        align: 'right', // Align numeric part to the right, % will be to its right
+                        valign: 'middle'
+                    });
+                    // Add percentage symbol
+                    slide.addText('%', {
+                        x: valueTextX + valueTextW * 0.8, // Position % next to numeric value
+                        y: valueTextY + (valueTextH - percentFontSize*1.2) / 2, // Attempt to align baseline
+                        w: valueTextW * 0.2,
+                        h: percentFontSize * 1.2, // Height based on font size
+                        fontSize: percentFontSize,
+                        bold: true,
+                        fontFace: defaultFont,
+                        color: valueColor,
+                        align: 'left',
+                        valign: 'middle' // Middle of its own small box
+                    });
+                } else {
+                    slide.addText(String(valueText), {
+                        x: valueTextX,
+                        y: valueTextY,
+                        w: valueTextW,
+                        h: valueTextH,
+                        fontSize: valueFontSize,
+                        bold: true,
+                        fontFace: defaultFont,
+                        color: valueColor,
+                        align: 'center',
+                        valign: 'middle'
                     });
                 }
 
-                if (item.value) {
-                    slide.addText(String(item.value), {
-                        x: itemX, y: itemAreaY + 0.15, w: itemWidth, h: 0.2,
-                        fontSize: 18, bold: true, fontFace: defaultFont,
-                        color: themeColors.secondary, align: 'center', valign: 'middle'
-                    });
-                }
+                // Description for the current item
+                const descX = dataAreaX + valueTextW + itemPadding;
+                const descW = dataAreaW - valueTextW - itemPadding;
+                const descH = dataRowH - (2 * itemPadding);
+                const descY = currentRowY + itemPadding;
 
-                if (item.description) {
-                    slide.addText(item.description, {
-                        x: itemX, y: itemAreaY + 0.35, w: itemWidth, h: 0.1,
-                        fontSize: 7, italic: true, fontFace: defaultFont,
-                        color: themeColors.lightText, align: 'center', valign: 'top'
-                    });
-                }
+                slide.addText(item.description || '', {
+                    x: descX,
+                    y: descY,
+                    w: descW,
+                    h: descH,
+                    fontSize: 8, // Adjust as needed
+                    fontFace: defaultFont,
+                    color: themeColors.text,
+                    align: 'left',
+                    valign: 'middle',
+                    breakLine: true
+                });
             });
         } else {
-            slide.addText('No comparison data available.', {
-                x: boxXIn + 0.1, y: itemAreaY, w: boxWidthIn - 0.2, h: itemAreaH,
-                fontSize: 8, fontFace: defaultFont, color: themeColors.lightText, align: 'center'
+            // Fallback if no items to display in the data area
+            slide.addText('No data available.', {
+                x: dataAreaX,
+                y: dataAreaY,
+                w: dataAreaW,
+                h: dataAreaH,
+                fontSize: 8,
+                fontFace: defaultFont,
+                color: themeColors.lightText,
+                align: 'center',
+                valign: 'middle'
             });
         }
     }
@@ -795,7 +874,7 @@ const ReportStyler = (function() {
         const kpiBoxHeightCm = 1.57;
 
         const yPosIn = (baseVerticalPosCm + (boxIndex * verticalSpacingCm)) / 2.54;
-        const boxWidthIn = 11.0 / 2.54;
+        const boxWidthIn = 3.67 / 2.54;
         const boxHeightIn = kpiBoxHeightCm / 2.54;
         const boxXIn = 22.58 / 2.54;
 
@@ -809,270 +888,6 @@ const ReportStyler = (function() {
             x: boxXIn + 0.1, y: yPosIn + 0.1, w: boxWidthIn - 0.2, h: boxHeightIn - 0.2,
             fontSize: 8, fontFace: defaultFont, color: themeColors.redStatus,
             align: 'center', valign: 'middle',
-            breakLine: true
-        });
-    }
-
-    /**
-     * Create the first KPI box with formatted title, value and description
-     * @param {Object} slide - The slide to add the KPI box to
-     * @param {Object} pptx - The PptxGenJS instance
-     * @param {Object} themeColors - The theme colors
-     * @param {string} defaultFont - The default font
-     * @param {Object} kpiData - The KPI data (title, value, description)
-     */
-    function createKpi1Box(slide, pptx, themeColors, defaultFont, kpiData) {
-        const verticalSpacing = 0;
-        const baseVerticalPos = 9.5; // Increased for breathing gap
-        const boxDimensions = {
-            w: 11.0 / 2.54,
-            h: 1.57 / 2.54,
-            x: 22.58 / 2.54,
-            y: baseVerticalPos / 2.54
-        };
-        
-        slide.addShape(pptx.shapes.RECTANGLE, {
-            x: boxDimensions.x,
-            y: boxDimensions.y,
-            w: boxDimensions.w,
-            h: boxDimensions.h,
-            fill: { color: 'FFFFFF' },
-            line: { color: themeColors.primary, width: 1 }
-        });
-        
-        slide.addText(kpiData.name || kpiData.title || '', {
-            x: 22.81 / 2.54,
-            y: (7.69 + verticalSpacing) / 2.54,
-            w: 4.39 / 2.54,
-            h: 1.41 / 2.54,
-            fontSize: 8,
-            bold: true,
-            underline: true,
-            fontFace: defaultFont,
-            color: themeColors.text,
-            align: 'center',
-            valign: 'middle'
-        });
-        
-        let valueText = kpiData.value || '0';
-        let valueOptions = {
-            x: 27.21 / 2.54,
-            y: (7.73 + verticalSpacing) / 2.54,
-            w: 1.74 / 2.54,
-            h: 1.2 / 2.54,
-            fontSize: 30,
-            bold: true,
-            fontFace: defaultFont,
-            color: '4472C4',
-            align: 'center', 
-            valign: 'middle'
-        };
-        
-        if (valueText.includes('%')) {
-            const numericValue = valueText.replace('%', '');
-            slide.addText(numericValue, valueOptions);
-            slide.addText('%', {
-                x: (27.21 + 0.9) / 2.54,
-                y: (7.73 + 0.15 + verticalSpacing) / 2.54,
-                w: 0.4 / 2.54,
-                h: 0.5 / 2.54,
-                fontSize: 18,
-                bold: true,
-                fontFace: defaultFont,
-                color: '4472C4',
-                align: 'left',
-                valign: 'top'
-            });
-        } else {
-            slide.addText(valueText, valueOptions);
-        }
-        
-        slide.addText(kpiData.description || '', {
-            x: 29.51 / 2.54,
-            y: (7.78 + verticalSpacing) / 2.54,
-            w: 3.33 / 2.54,
-            h: 1.2 / 2.54,
-            fontSize: 8,
-            fontFace: defaultFont,
-            color: themeColors.text,
-            align: 'center', 
-            valign: 'middle',
-            breakLine: true
-        });
-    }
-    
-    /**
-     * Create the second KPI box with formatted title, value and description
-     * @param {Object} slide - The slide to add the KPI box to
-     * @param {Object} pptx - The PptxGenJS instance
-     * @param {Object} themeColors - The theme colors
-     * @param {string} defaultFont - The default font
-     * @param {Object} kpiData - The KPI data (title, value, description)
-     */
-    function createKpi2Box(slide, pptx, themeColors, defaultFont, kpiData) {
-        const verticalSpacing = 1.8;
-        const baseVerticalPos = 9.5; // Increased for breathing gap
-        const boxDimensions = {
-            w: 11.0 / 2.54,
-            h: 1.57 / 2.54,
-            x: 22.58 / 2.54,
-            y: (baseVerticalPos + verticalSpacing) / 2.54
-        };
-        
-        slide.addShape(pptx.shapes.RECTANGLE, {
-            x: boxDimensions.x,
-            y: boxDimensions.y,
-            w: boxDimensions.w,
-            h: boxDimensions.h,
-            fill: { color: 'FFFFFF' },
-            line: { color: themeColors.primary, width: 1 }
-        });
-        
-        slide.addText(kpiData.name || kpiData.title || '', {
-            x: 22.81 / 2.54,
-            y: (7.69 + verticalSpacing) / 2.54,
-            w: 4.39 / 2.54,
-            h: 1.41 / 2.54,
-            fontSize: 8,
-            bold: true,
-            underline: true,
-            fontFace: defaultFont,
-            color: themeColors.text,
-            align: 'center',
-            valign: 'middle'
-        });
-        
-        let valueText = kpiData.value || '0';
-        let valueOptions = {
-            x: 27.21 / 2.54,
-            y: (7.73 + verticalSpacing) / 2.54,
-            w: 1.74 / 2.54,
-            h: 1.2 / 2.54,
-            fontSize: 30,
-            bold: true,
-            fontFace: defaultFont,
-            color: '4472C4',
-            align: 'center', 
-            valign: 'middle'
-        };
-        
-        if (valueText.includes('%')) {
-            const numericValue = valueText.replace('%', '');
-            slide.addText(numericValue, valueOptions);
-            slide.addText('%', {
-                x: (27.21 + 0.9) / 2.54,
-                y: (7.73 + 0.15 + verticalSpacing) / 2.54,
-                w: 0.4 / 2.54,
-                h: 0.5 / 2.54,
-                fontSize: 18,
-                bold: true,
-                fontFace: defaultFont,
-                color: '4472C4',
-                align: 'left',
-                valign: 'top'
-            });
-        } else {
-            slide.addText(valueText, valueOptions);
-        }
-        
-        slide.addText(kpiData.description || '', {
-            x: 29.51 / 2.54,
-            y: (7.78 + verticalSpacing) / 2.54,
-            w: 3.33 / 2.54,
-            h: 1.2 / 2.54,
-            fontSize: 8,
-            fontFace: defaultFont,
-            color: themeColors.text,
-            align: 'center', 
-            valign: 'middle',
-            breakLine: true
-        });
-    }
-    
-    /**
-     * Create the third KPI box with formatted title, value and description
-     * @param {Object} slide - The slide to add the KPI box to
-     * @param {Object} pptx - The PptxGenJS instance
-     * @param {Object} themeColors - The theme colors
-     * @param {string} defaultFont - The default font
-     * @param {Object} kpiData - The KPI data (title, value, description)
-     */
-    function createKpi3Box(slide, pptx, themeColors, defaultFont, kpiData) {
-        const verticalSpacing = 3.6;
-        const baseVerticalPos = 9.5; // Increased for breathing gap
-        const boxDimensions = {
-            w: 11.0 / 2.54,
-            h: 1.57 / 2.54,
-            x: 22.58 / 2.54,
-            y: (baseVerticalPos + verticalSpacing) / 2.54
-        };
-        
-        slide.addShape(pptx.shapes.RECTANGLE, {
-            x: boxDimensions.x,
-            y: boxDimensions.y,
-            w: boxDimensions.w,
-            h: boxDimensions.h,
-            fill: { color: 'FFFFFF' },
-            line: { color: themeColors.primary, width: 1 }
-        });
-        
-        slide.addText(kpiData.name || kpiData.title || '', {
-            x: 22.81 / 2.54,
-            y: (7.69 + verticalSpacing) / 2.54,
-            w: 4.39 / 2.54,
-            h: 1.41 / 2.54,
-            fontSize: 8,
-            bold: true,
-            underline: true,
-            fontFace: defaultFont,
-            color: themeColors.text,
-            align: 'center',
-            valign: 'middle'
-        });
-        
-        let valueText = kpiData.value || '0';
-        let valueOptions = {
-            x: 27.21 / 2.54,
-            y: (7.73 + verticalSpacing) / 2.54,
-            w: 1.74 / 2.54,
-            h: 1.2 / 2.54,
-            fontSize: 30,
-            bold: true,
-            fontFace: defaultFont,
-            color: '4472C4',
-            align: 'center', 
-            valign: 'middle'
-        };
-        
-        if (valueText.includes('%')) {
-            const numericValue = valueText.replace('%', '');
-            slide.addText(numericValue, valueOptions);
-            slide.addText('%', {
-                x: (27.21 + 0.9) / 2.54,
-                y: (7.73 + 0.15 + verticalSpacing) / 2.54,
-                w: 0.4 / 2.54,
-                h: 0.5 / 2.54,
-                fontSize: 18,
-                bold: true,
-                fontFace: defaultFont,
-                color: '4472C4',
-                align: 'left',
-                valign: 'top'
-            });
-        } else {
-            slide.addText(valueText, valueOptions);
-        }
-        
-        slide.addText(kpiData.description || '', {
-            x: 29.51 / 2.54,
-            y: (7.78 + verticalSpacing) / 2.54,
-            w: 3.33 / 2.54,
-            h: 1.2 / 2.54,
-            fontSize: 8,
-            fontFace: defaultFont,
-            color: themeColors.text,
-            align: 'center', 
-            valign: 'middle',
             breakLine: true
         });
     }
@@ -1099,9 +914,6 @@ const ReportStyler = (function() {
         addYearIndicator,
         createDraftText,
         createKpiBox,
-        createErrorKpiBox,
-        createKpi1Box, 
-        createKpi2Box,
-        createKpi3Box
+        createErrorKpiBox
     };
 })();
