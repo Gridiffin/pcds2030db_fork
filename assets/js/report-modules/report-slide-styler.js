@@ -168,10 +168,10 @@ const ReportStyler = (function() {
         
         // Add title text (year) on the left
         slide.addText(titleText, {
-            x: x + 0.05,
+            x: x + 0.05, 
             y: y + 0.03,
-            w: 0.75,
-            h: boxHeight - 0.06,
+            w: (1.37 / 2.54), // Adjusted width to 1.37cm
+            h: (0.74 / 2.54), // Adjusted height to 0.74cm
             fontSize: 9,
             bold: true,
             fontFace: defaultFont,
@@ -181,16 +181,20 @@ const ReportStyler = (function() {
         });
         
         // Add value on the right
+        const valueTextW_inch = (2.97 / 2.54); // Width of the valueText text box in inches
+
         slide.addText(valueText, {
-            x: x + 0.80,
+            // To make the valueText's right edge align with the parent box's right edge (x + boxWidth):
+            // The left edge of valueText (its x property) must be: (parent box right edge) - (valueText width)
+            x: (x + boxWidth) - valueTextW_inch,
             y: y + 0.03,
-            w: boxWidth - 0.85,
+            w: valueTextW_inch, // Set the width of the text box
             h: boxHeight - 0.06,
-            fontSize: 10,
+            fontSize: 7, 
             bold: true,
             fontFace: defaultFont,
             color: themeColors.accent1,
-            align: 'right',
+            align: 'right', // Text content will align to the right of this text box
             valign: 'middle'
         });
     }
@@ -585,7 +589,7 @@ const ReportStyler = (function() {
      * @param {number} boxIndex - Index for positioning multiple boxes (0, 1, 2)
      */
     function createKpiBox(slide, pptx, themeColors, defaultFont, kpiName, detailJson, boxIndex = 0) {
-        const baseVerticalPosCm = 7.53; // Base vertical position in cm
+        const baseVerticalPosCm = 9.5; // Increased for breathing gap
         const verticalSpacingCm = 1.8;  // Vertical spacing between boxes in cm
         const kpiBoxHeightCm = 1.57;    // Height of a single KPI box in cm
 
@@ -770,7 +774,7 @@ const ReportStyler = (function() {
     }
     
     function createErrorKpiBox(slide, pptx, themeColors, defaultFont, errorMessage, boxIndex = 0) {
-        const baseVerticalPosCm = 7.53;
+        const baseVerticalPosCm = 9.5;
         const verticalSpacingCm = 1.8;
         const kpiBoxHeightCm = 1.57;
 
@@ -803,7 +807,7 @@ const ReportStyler = (function() {
      */
     function createKpi1Box(slide, pptx, themeColors, defaultFont, kpiData) {
         const verticalSpacing = 0;
-        const baseVerticalPos = 7.53;
+        const baseVerticalPos = 9.5; // Increased for breathing gap
         const boxDimensions = {
             w: 11.0 / 2.54,
             h: 1.57 / 2.54,
@@ -891,7 +895,7 @@ const ReportStyler = (function() {
      */
     function createKpi2Box(slide, pptx, themeColors, defaultFont, kpiData) {
         const verticalSpacing = 1.8;
-        const baseVerticalPos = 7.53;
+        const baseVerticalPos = 9.5; // Increased for breathing gap
         const boxDimensions = {
             w: 11.0 / 2.54,
             h: 1.57 / 2.54,
@@ -979,7 +983,7 @@ const ReportStyler = (function() {
      */
     function createKpi3Box(slide, pptx, themeColors, defaultFont, kpiData) {
         const verticalSpacing = 3.6;
-        const baseVerticalPos = 7.53;
+        const baseVerticalPos = 9.5; // Increased for breathing gap
         const boxDimensions = {
             w: 11.0 / 2.54,
             h: 1.57 / 2.54,
