@@ -589,18 +589,34 @@ const ReportStyler = (function() {
      * @param {number} boxIndex - Index for positioning multiple boxes (0, 1, 2)
      */
     function createKpiBox(slide, pptx, themeColors, defaultFont, kpiName, detailJson, boxIndex = 0) {
-        const baseVerticalPosCm = 9.5; // Increased for breathing gap
-        const verticalSpacingCm = 1.8;  // Vertical spacing between boxes in cm
+        // Define positioning and dimensions in cm
+        const firstKpiHorizontalPosCm = 22.75;
         const kpiBoxHeightCm = 1.57;    // Height of a single KPI box in cm
+        const kpiBoxWidthCm = 11.0;     // Width of a single KPI box in cm
 
-        const yPosIn = (baseVerticalPosCm + (boxIndex * verticalSpacingCm)) / 2.54;
+        let yPosCm;
+        if (boxIndex === 0) {
+            yPosCm = 7.64; // Vertical position for the first box
+        } else if (boxIndex === 1) {
+            yPosCm = 9.31; // Vertical position for the second box
+        } else if (boxIndex === 2) {
+            yPosCm = 10.97; // Vertical position for the third box
+        } else {
+            // Fallback for any additional boxes, though typically only 3 are expected
+            // This maintains a consistent spacing based on the last defined gap if more than 3 KPIs were somehow processed.
+            const previousBoxYPosCm = 10.97;
+            const verticalSpacingCm = 1.5; // Default spacing if more than 3 boxes
+            yPosCm = previousBoxYPosCm + ((boxIndex - 2) * (kpiBoxHeightCm + verticalSpacingCm));
+        }
 
-        const boxWidthIn = 11.0 / 2.54;
+        // Convert cm to inches for PptxGenJS
+        const yPosIn = yPosCm / 2.54;
+        const xPosIn = firstKpiHorizontalPosCm / 2.54;
+        const boxWidthIn = kpiBoxWidthCm / 2.54;
         const boxHeightIn = kpiBoxHeightCm / 2.54;
-        const boxXIn = 22.58 / 2.54; // Horizontal position for all KPI boxes
 
         slide.addShape(pptx.shapes.RECTANGLE, {
-            x: boxXIn,
+            x: xPosIn,
             y: yPosIn,
             w: boxWidthIn,
             h: boxHeightIn,
@@ -610,17 +626,17 @@ const ReportStyler = (function() {
 
         switch (detailJson.layout_type) {
             case 'simple':
-                renderSimpleKpiLayout(slide, pptx, themeColors, defaultFont, kpiName, detailJson.items, boxXIn, yPosIn, boxWidthIn, boxHeightIn);
+                renderSimpleKpiLayout(slide, pptx, themeColors, defaultFont, kpiName, detailJson.items, xPosIn, yPosIn, boxWidthIn, boxHeightIn);
                 break;
             case 'detailed_list':
-                renderDetailedListKpiLayout(slide, pptx, themeColors, defaultFont, kpiName, detailJson.items, boxXIn, yPosIn, boxWidthIn, boxHeightIn);
+                renderDetailedListKpiLayout(slide, pptx, themeColors, defaultFont, kpiName, detailJson.items, xPosIn, yPosIn, boxWidthIn, boxHeightIn);
                 break;
             case 'comparison':
-                renderComparisonKpiLayout(slide, pptx, themeColors, defaultFont, kpiName, detailJson.items, boxXIn, yPosIn, boxWidthIn, boxHeightIn);
+                renderComparisonKpiLayout(slide, pptx, themeColors, defaultFont, kpiName, detailJson.items, xPosIn, yPosIn, boxWidthIn, boxHeightIn);
                 break;
             default:
                 console.warn(`Unsupported KPI layout_type: ${detailJson.layout_type}`);
-                renderSimpleKpiLayout(slide, pptx, themeColors, defaultFont, kpiName, [{ value: 'N/A', description: 'Unsupported layout' }], boxXIn, yPosIn, boxWidthIn, boxHeightIn);
+                renderSimpleKpiLayout(slide, pptx, themeColors, defaultFont, kpiName, [{ value: 'N/A', description: 'Unsupported layout' }], xPosIn, yPosIn, boxWidthIn, boxHeightIn);
         }
     }
 
