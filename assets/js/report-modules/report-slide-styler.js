@@ -741,10 +741,10 @@ const ReportStyler = (function() {
         }
     }    
     function renderComparisonKpiLayout(slide, pptx, themeColors, defaultFont, kpiName, items, boxXIn, boxYIn, boxWidthIn, boxHeightIn) {
-        const boxPadding = 0.1; // Inches, for internal padding within the KPI box
+        const boxPadding = 0.05; // Padding inside the main KPI box
 
         // --- 1. KPI Name Column (Left Side) ---
-        const kpiNameW = boxWidthIn * 0.35; // 35% of box width for KPI name, adjust as needed
+        const kpiNameW = boxWidthIn * 0.40; 
         const kpiNameX = boxXIn + boxPadding;
         const kpiNameY = boxYIn + boxPadding;
         const kpiNameH = boxHeightIn - (2 * boxPadding);
@@ -754,76 +754,86 @@ const ReportStyler = (function() {
             y: kpiNameY,
             w: kpiNameW,
             h: kpiNameH,
-            fontSize: 9, // Adjust as needed
+            fontSize: 8,
             bold: true,
             fontFace: defaultFont,
             color: themeColors.primary,
             align: 'left',
-            valign: 'top', // Start text at the top
-            breakLine: true // Enable word wrapping
+            valign: 'top',
+            breakLine: true
         });
 
-        // --- 2. Data Area (Right Side for Value/Description Pairs) ---
+        // --- 2. Data Area (Right Side for Value/Label/Description Sets) ---
         const dataAreaX = kpiNameX + kpiNameW + boxPadding;
-        const dataAreaW = boxWidthIn - kpiNameW - (3 * boxPadding); // Remaining width
+        const dataAreaW = boxWidthIn - kpiNameW - (3 * boxPadding);
         const dataAreaY = boxYIn + boxPadding;
         const dataAreaH = boxHeightIn - (2 * boxPadding);
 
-        const displayItems = items && items.length ? items.slice(0, 2) : []; // Max 2 value/description pairs
+        const displayItems = items && items.length ? items.slice(0, 2) : [];
 
         if (displayItems.length > 0) {
             const numDataRows = displayItems.length;
-            const dataRowH = dataAreaH / numDataRows; // Height for each value/description pair
+            const dataRowH = dataAreaH / numDataRows; 
 
             displayItems.forEach((item, index) => {
                 const currentRowY = dataAreaY + (index * dataRowH);
-                const itemPadding = 0.05; // Padding within each data row item
+                const itemInternalPadding = 0.03;
 
-                // Value for the current item
+                const valueColW = dataAreaW * 0.35; 
+                const textStackColX = dataAreaX + valueColW + itemInternalPadding;
+                const textStackColW = dataAreaW - valueColW - itemInternalPadding;
+
                 let valueText = item.value || '0';
-                const valueFontSize = 20; // Adjust as needed
-                const percentFontSize = Math.floor(valueFontSize * 0.6); // Smaller for %
+                const valueFontSize = 18;
+                const percentFontSize = 10;
                 const valueColor = themeColors.secondary || '4472C4';
-
-                const valueTextW = dataAreaW * 0.4; // 40% of data area for value, adjust as needed
-                const valueTextH = dataRowH - (2 * itemPadding);
-                const valueTextX = dataAreaX;
-                const valueTextY = currentRowY + itemPadding;
+                
+                const valueElX = dataAreaX; // Base X for the value area
+                const valueElY = currentRowY + itemInternalPadding;
+                const valueElH = dataRowH - (2 * itemInternalPadding);
 
                 if (String(valueText).includes('%')) {
                     const numericValue = String(valueText).replace('%', '');
-                    // Add numeric part of the value
+                    const percentSymbol = '%';
+                    
+                    // Estimate width for numeric part. This might need fine-tuning based on typical value lengths.
+                    const numericPartWEst = valueColW * 0.70; // Estimate 70% for number
+                    const percentSymbolW = valueColW * 0.30; // Estimate 30% for symbol
+
+                    // Add numeric part
                     slide.addText(numericValue, {
-                        x: valueTextX,
-                        y: valueTextY,
-                        w: valueTextW * 0.8, // Adjust width to leave space for %
-                        h: valueTextH,
+                        x: valueElX,
+                        y: valueElY,
+                        w: numericPartWEst,
+                        h: valueElH,
                         fontSize: valueFontSize,
                         bold: true,
                         fontFace: defaultFont,
                         color: valueColor,
-                        align: 'right', // Align numeric part to the right, % will be to its right
+                        align: 'right', 
                         valign: 'middle'
                     });
-                    // Add percentage symbol
-                    slide.addText('%', {
-                        x: valueTextX + valueTextW * 0.8, // Position % next to numeric value
-                        y: valueTextY + (valueTextH - percentFontSize*1.2) / 2, // Attempt to align baseline
-                        w: valueTextW * 0.2,
-                        h: percentFontSize * 1.2, // Height based on font size
+
+                    // Add percent symbol
+                    slide.addText(percentSymbol, {
+                        x: valueElX + numericPartWEst - (0.02 / 2.54), // Position it slightly overlapping or very close to the number
+                        y: valueElY, // Same Y as numeric part
+                        w: percentSymbolW, 
+                        h: valueElH, // Same H as numeric part
                         fontSize: percentFontSize,
                         bold: true,
                         fontFace: defaultFont,
                         color: valueColor,
-                        align: 'left',
-                        valign: 'middle' // Middle of its own small box
+                        align: 'left', 
+                        valign: 'middle' 
                     });
+
                 } else {
                     slide.addText(String(valueText), {
-                        x: valueTextX,
-                        y: valueTextY,
-                        w: valueTextW,
-                        h: valueTextH,
+                        x: valueElX,
+                        y: valueElY,
+                        w: valueColW,
+                        h: valueElH,
                         fontSize: valueFontSize,
                         bold: true,
                         fontFace: defaultFont,
@@ -833,27 +843,46 @@ const ReportStyler = (function() {
                     });
                 }
 
-                // Description for the current item
-                const descX = dataAreaX + valueTextW + itemPadding;
-                const descW = dataAreaW - valueTextW - itemPadding;
-                const descH = dataRowH - (2 * itemPadding);
-                const descY = currentRowY + itemPadding;
+                const labelStackH = dataRowH - (2 * itemInternalPadding);
+                const labelH = labelStackH * 0.45; 
+                const descH = labelStackH * 0.55;  
 
-                slide.addText(item.description || '', {
-                    x: descX,
-                    y: descY,
-                    w: descW,
-                    h: descH,
-                    fontSize: 8, // Adjust as needed
-                    fontFace: defaultFont,
-                    color: themeColors.text,
-                    align: 'left',
-                    valign: 'middle',
-                    breakLine: true
-                });
+                const labelY = currentRowY + itemInternalPadding;
+                const descY = labelY + labelH; 
+
+                if (item.label) {
+                    slide.addText(item.label || '', {
+                        x: textStackColX,
+                        y: labelY,
+                        w: textStackColW,
+                        h: labelH,
+                        fontSize: 6,
+                        bold: true,
+                        fontFace: defaultFont,
+                        color: themeColors.text,
+                        align: 'left',
+                        valign: 'top',
+                        breakLine: true
+                    });
+                }
+
+                if (item.description) {
+                    slide.addText(item.description || '', {
+                        x: textStackColX,
+                        y: descY,
+                        w: textStackColW,
+                        h: descH,
+                        fontSize: 6,
+                        italic: true, 
+                        fontFace: defaultFont,
+                        color: themeColors.lightText,
+                        align: 'left',
+                        valign: 'top',
+                        breakLine: true
+                    });
+                }
             });
         } else {
-            // Fallback if no items to display in the data area
             slide.addText('No data available.', {
                 x: dataAreaX,
                 y: dataAreaY,
