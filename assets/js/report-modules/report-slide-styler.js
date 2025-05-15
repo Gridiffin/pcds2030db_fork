@@ -1128,29 +1128,6 @@ const ReportStyler = (function() {
             line: { color: themeColors.primary, width: 1 }
         });
         
-        // Add table title
-        slide.addText('PROGRAM STATUS', {
-            x: tableDimensions.x, 
-            y: tableDimensions.y + 0.05, 
-            w: tableDimensions.w, 
-            h: 0.25,
-            fontSize: 10, 
-            bold: true,
-            fontFace: defaultFont,
-            color: themeColors.primary,
-            align: 'center',
-            valign: 'middle'
-        });
-        
-        // Add horizontal line below the title
-        slide.addShape(pptx.shapes.LINE, {
-            x: tableDimensions.x,
-            y: tableDimensions.y + 0.3,
-            w: tableDimensions.w,
-            h: 0,
-            line: { color: themeColors.primary, width: 0.75, dashType: 'solid' }
-        });
-        
         // Use provided programs data or create empty array if none
         const programs = programsData || [];
         const quarter = currentQuarter || 'Current Quarter';
@@ -1160,7 +1137,7 @@ const ReportStyler = (function() {
             'Program', 
             quarter + ' Target', 
             'Rating', 
-            'Status'
+            quarter + ' Status'
         ];
         
         // Column widths (in proportion to total table width)
@@ -1171,17 +1148,17 @@ const ReportStyler = (function() {
         const colWidths = columnWidths.map(w => w * availableWidth);
         
         // Add header row
-        const headerY = tableDimensions.y + 0.35;
+        const headerY = tableDimensions.y;
         const rowHeight = 0.28;
         const padding = 0.05;
-        let xPos = tableDimensions.x + padding;
+        let xPos = tableDimensions.x;
           headers.forEach((header, i) => {
             slide.addText(header, {
                 x: xPos,
                 y: headerY,
                 w: colWidths[i],
                 h: rowHeight,
-                fontSize: 8,
+                fontSize: 10,
                 bold: true,
                 fontFace: defaultFont,
                 color: themeColors.text,
@@ -1199,8 +1176,7 @@ const ReportStyler = (function() {
             h: 0,
             line: { color: themeColors.primary, width: 0.5, dashType: 'solid' }
         });
-        
-        // Add data rows
+          // Add data rows - now with increased spacing for variable height rows
         let startY = headerY + rowHeight + 0.05;
         
         // If no programs data available, show a message
@@ -1218,34 +1194,41 @@ const ReportStyler = (function() {
                 italic: true
             });
         } else {
-            // Add each program row (limit to 8 programs to fit the space)
-            programs.slice(0, 8).forEach((program, rowIndex) => {
-                const rowY = startY + (rowIndex * (rowHeight + 0.05));
-                xPos = tableDimensions.x + padding;
-                  // Program name (truncate if too long)
-                slide.addText(truncateText(program.name || 'N/A', 20), {
+            // Define a larger row height for accommodating multiline content
+            const dynamicRowHeight = rowHeight * 2; // Double the row height to fit more text
+            const rowSpacing = 0.08; // Slightly increased spacing between rows
+            
+            // Add each program row (limit to 5 programs due to increased height per row)
+            const maxProgramsToShow = 5; // Reduced from 8 due to larger row heights
+            programs.slice(0, maxProgramsToShow).forEach((program, rowIndex) => {
+                const rowY = startY + (rowIndex * (dynamicRowHeight + rowSpacing));
+                xPos = tableDimensions.x + padding;                // Program name - no truncation
+                slide.addText(program.name || 'N/A', {
                     x: xPos,
                     y: rowY,
                     w: colWidths[0],
-                    h: rowHeight,
+                    h: rowHeight * 2, // Increased height to accommodate longer text
                     fontSize: 9,
                     fontFace: defaultFont,
                     color: themeColors.text,
                     align: 'center',
-                    valign: 'middle'
+                    valign: 'top',
+                    wrap: true, // Enable text wrapping
+                    breakLine: true // Allow line breaks
                 });
-                xPos += colWidths[0];
-                  // Target
+                xPos += colWidths[0];                // Target - no truncation with wrapping enabled
                 slide.addText(program.target || 'N/A', {
                     x: xPos,
                     y: rowY,
                     w: colWidths[1],
-                    h: rowHeight,
+                    h: rowHeight * 2, // Increased height to accommodate longer text
                     fontSize: 8,
                     fontFace: defaultFont,
                     color: themeColors.text,
                     align: 'center',
-                    valign: 'middle'
+                    valign: 'top',
+                    wrap: true, // Enable text wrapping
+                    breakLine: true // Allow line breaks
                 });
                 xPos += colWidths[1];
                 
@@ -1261,35 +1244,34 @@ const ReportStyler = (function() {
                 } else if (rating.includes('not-started') || rating === 'grey') {
                     ratingColor = themeColors.greyStatus;
                 }
-                
-                // Add colored rating indicator
+                  // Add colored rating indicator - centered vertically in the larger row
                 slide.addShape(pptx.shapes.OVAL, {
-                    x: xPos,
-                    y: rowY + (rowHeight - 0.1) / 2,
+                    x: xPos + (colWidths[2] / 2) - 0.05, // Centered in column
+                    y: rowY + 0.15, // Place near the top of the row for better visibility with wrapped text
                     w: 0.1,
                     h: 0.1,
                     fill: { color: ratingColor },
                     line: { color: ratingColor, width: 0.5 }
                 });
-                xPos += colWidths[2];
-                  // Status
-                slide.addText(truncateText(program.status || 'N/A', 15), {
+                xPos += colWidths[2];// Status - no truncation with wrapping enabled
+                slide.addText(program.status || 'N/A', {
                     x: xPos,
                     y: rowY,
                     w: colWidths[3],
-                    h: rowHeight,
+                    h: rowHeight * 2, // Increased height to accommodate longer text
                     fontSize: 8,
                     fontFace: defaultFont,
                     color: themeColors.text,
                     align: 'center',
-                    valign: 'middle'
+                    valign: 'top',
+                    wrap: true, // Enable text wrapping
+                    breakLine: true // Allow line breaks
                 });
-                
-                // Add separator line (except after last row)
-                if (rowIndex < Math.min(programs.length, 8) - 1) {
+                  // Add separator line (except after last row)
+                if (rowIndex < Math.min(programs.length, maxProgramsToShow) - 1) {
                     slide.addShape(pptx.shapes.LINE, {
                         x: tableDimensions.x + padding,
-                        y: rowY + rowHeight + 0.025,
+                        y: rowY + dynamicRowHeight + (rowSpacing / 2),
                         w: availableWidth,
                         h: 0,
                         line: { color: themeColors.lightText, width: 0.25, dashType: 'dash' }
@@ -1298,9 +1280,8 @@ const ReportStyler = (function() {
             });
             
             // If there are more programs than can be shown
-            if (programs.length > 8) {
-                const moreY = startY + (8 * (rowHeight + 0.05)) + 0.1;
-                slide.addText(`+ ${programs.length - 8} more programs`, {
+            if (programs.length > maxProgramsToShow) {
+                const moreY = startY + (maxProgramsToShow * (dynamicRowHeight + rowSpacing)) + 0.1;                slide.addText(`+ ${programs.length - maxProgramsToShow} more programs`, {
                     x: tableDimensions.x + padding,
                     y: moreY,
                     w: availableWidth,
