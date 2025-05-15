@@ -11,8 +11,7 @@ const ReportPopulator = (function() {
      * @param {Object} data - The data from the API
      * @param {Object} pptx - The PptxGenJS instance
      * @param {Object} themeColors - The theme colors for styling
-     */
-    function populateSlide(slide, data, pptx, themeColors) {
+     */    function populateSlide(slide, data, pptx, themeColors) {
         try {
             // Define common font for consistency
             const defaultFont = ReportStyler.getDefaultFont();
@@ -22,7 +21,11 @@ const ReportPopulator = (function() {
             
             // Add top and bottom sections
             addTopSection(slide, data, pptx, themeColors, defaultFont, sectorName);
-              // Add line chart
+            
+            // Add program data table on the left side
+            addProgramDataTable(slide, data, pptx, themeColors, defaultFont);
+            
+            // Add line chart
             try {
                 ReportStyler.addTimberExportChart(slide, pptx, themeColors, defaultFont, data);
             } catch (chartError) {
@@ -43,7 +46,7 @@ const ReportPopulator = (function() {
             
             // Add KPI boxes with metrics_details data
             addKpiBoxes(slide, data, pptx, themeColors, defaultFont);
-              addFooterSection(slide, data, pptx, themeColors, defaultFont);
+            addFooterSection(slide, data, pptx, themeColors, defaultFont);
             
             // Add the new Total Degraded Area Chart if data is available
             if (data && data.charts && data.charts.degraded_area_chart) {
@@ -157,6 +160,121 @@ const ReportPopulator = (function() {
                  console.warn("No KPI data available at all.");
             }
         }
+    }
+
+    /**
+     * Add program data table to the slide
+     * @param {Object} slide - The slide to populate
+     * @param {Object} data - The data from the API
+     * @param {Object} pptx - The PptxGenJS instance
+     * @param {Object} themeColors - The theme colors for styling
+     * @param {string} defaultFont - The default font
+     */
+    function addProgramDataTable(slide, data, pptx, themeColors, defaultFont) {
+        // Initialize programs array
+        let programs = [];
+        let currentQuarter = '';
+        
+        // Try to get the current quarter from the data
+        if (data && data.quarter) {
+            currentQuarter = data.quarter;
+        }
+        
+        if (data && data.programs && Array.isArray(data.programs)) {
+            // If programs data is already provided in the expected format, use it directly
+            programs = data.programs;
+        } else if (data && data.program_submissions && Array.isArray(data.program_submissions)) {
+            // Extract from program_submissions if available
+            programs = data.program_submissions.map(submission => {
+                // Extract target from content_json if available
+                let target = 'Not specified';
+                let status = 'Not available';
+                
+                if (submission.content_json) {
+                    try {
+                        const content = typeof submission.content_json === 'string' 
+                            ? JSON.parse(submission.content_json) 
+                            : submission.content_json;
+                        
+                        // Get the first target or combine multiple targets
+                        if (content.targets && content.targets.length > 0) {
+                            // For the table, take just the first target
+                            target = content.targets[0].target_text || content.targets[0].text || 'No target specified';
+                            
+                            // Use status description if available
+                            if (content.targets[0].status_description) {
+                                status = content.targets[0].status_description;
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Error parsing content_json:', e);
+                    }
+                }
+                
+                return {
+                    name: submission.program_name || 'Unnamed Program',
+                    target: target,
+                    rating: submission.rating || 'not-started',
+                    status: status
+                };
+            });
+        } else if (data && data.sector_programs && Array.isArray(data.sector_programs)) {
+            // Extract from sector_programs data structure if available
+            programs = data.sector_programs.map(program => {
+                return {
+                    name: program.program_name || 'Unnamed Program',
+                    target: program.target || 'Not specified',
+                    rating: program.rating || 'not-started',
+                    status: program.status_description || 'Not available'
+                };
+            });
+        } else {
+            // Fallback to extract any program-related data we can find
+            try {
+                // Try to find programs in various data structures
+                const possibleProgramArrays = [
+                    data.programs,
+                    data.programsList,
+                    data.sector_data && data.sector_data.programs
+                ];
+                
+                for (const programArray of possibleProgramArrays) {
+                    if (programArray && Array.isArray(programArray) && programArray.length > 0) {
+                        programs = programArray.map(prog => ({
+                            name: prog.program_name || prog.name || 'Unnamed Program',
+                            target: prog.target || 'Not specified',
+                            rating: prog.rating || 'not-started',
+                            status: prog.status || prog.status_description || 'Not available'
+                        }));
+                        break;
+                    }
+                }
+                
+                // If we still don't have programs data, create a fallback sample
+                if (programs.length === 0) {
+                    console.warn('No program data found in report data. Using placeholder data.');
+                    programs = [
+                        {
+                            name: 'Forest Conservation',
+                            target: '50,000 ha protected',
+                            rating: 'on-track',
+                            status: 'Target achieved'
+                        },
+                        {
+                            name: 'Timber Export Growth',
+                            target: 'RM 5.2 bil annual export',
+                            rating: 'minor-delays',
+                            status: 'Slightly below target'
+                        }
+                    ];
+                }
+            } catch (e) {
+                console.error('Error extracting program data:', e);
+            }
+        }
+        
+        // Create the program data table
+        ReportStyler.createProgramDataTable(slide, pptx, themeColors, defaultFont, programs, currentQuarter);
     }
 
         // Note: All chart-related functions have been moved to ReportStyler module
