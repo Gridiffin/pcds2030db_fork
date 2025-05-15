@@ -12,6 +12,7 @@ require_once '../../includes/session.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/admins/index.php';
 require_once '../../includes/status_helpers.php'; // For status badge display
+require_once '../../includes/admins/statistics.php'; // For get_admin_program_details function
 
 // Verify user is admin
 if (!is_admin()) {
@@ -356,12 +357,21 @@ require_once '../../includes/dashboard_header.php';
                                 </td>
                                 <td>
                                     <div class="btn-group btn-group-sm">
+                                        <?php
+                                        $program_details = get_admin_program_details($program['program_id']);
+                                        $current_submission = $program_details['current_submission'] ?? null;
+                                        ?>
                                         <a href="view_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="View Details">
                                             <i class="fas fa-eye"></i>
                                         </a>
                                         <a href="edit_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-secondary" title="Edit Program">
                                             <i class="fas fa-edit"></i>
                                         </a>
+                                        <?php if ($current_submission && isset($current_submission['submission_id']) && $current_submission['is_draft'] == 0): ?>
+                                            <a href="reopen_program.php?program_id=<?php echo $program['program_id']; ?>&submission_id=<?php echo $current_submission['submission_id']; ?>" class="btn btn-warning btn-sm me-1" title="Unsubmit Program" onclick="return confirm('Are you sure you want to unsubmit this program?');">
+                                                <i class="fas fa-undo me-1"></i> Unsubmit
+                                            </a>
+                                        <?php endif; ?>
                                         <a href="delete_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-danger" title="Delete Program">
                                             <i class="fas fa-trash-alt"></i>
                                         </a>

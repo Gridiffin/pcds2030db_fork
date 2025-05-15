@@ -68,15 +68,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $update_stmt->bind_param("i", $submission_id);
     
     if ($update_stmt->execute()) {
-        // Add a notification for the agency user
-        $notification_message = "Your program \"{$submission['program_name']}\" for Q{$submission['quarter']}-{$submission['year']} has been reopened for editing by an administrator.";
+        // // Add a notification for the agency user
+        // $notification_message = "Your program \"{$submission['program_name']}\" for Q{$submission['quarter']}-{$submission['year']} has been reopened for editing by an administrator.";
         
-        $notification_query = "INSERT INTO notifications (user_id, message, type) 
-                             VALUES (?, ?, 'program_reopened')";
-        $agency_id = get_program_owner_id($program_id);
-        $notif_stmt = $conn->prepare($notification_query);
-        $notif_stmt->bind_param("is", $agency_id, $notification_message);
-        $notif_stmt->execute();
+        // $notification_query = "INSERT INTO notifications (user_id, message, type) 
+        //                      VALUES (?, ?, 'program_reopened')";
+        // $agency_id = get_program_owner_id($program_id);
+        // $notif_stmt = $conn->prepare($notification_query);
+        // $notif_stmt->bind_param("is", $agency_id, $notification_message);
+        // $notif_stmt->execute();
         
         // Log the action
         error_log("Admin user {$_SESSION['username']} (ID: {$_SESSION['user_id']}) reopened submission ID {$submission_id} for program \"{$submission['program_name']}\"");
