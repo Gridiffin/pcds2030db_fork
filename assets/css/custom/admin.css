@@ -92,6 +92,74 @@
     height: 100%;
 }
 
+/* Danger button styles */
+.btn-outline-danger {
+    border-color: var(--danger-color);
+    color: var(--danger-color);
+    border-width: 2px;
+    font-weight: 500;
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+}
+
+.btn-outline-danger:hover, 
+.btn-outline-danger:focus {
+    background-color: var(--danger-color);
+    border-color: var(--danger-color);
+    color: white;
+}
+
+.btn-outline-danger::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 0;
+    background-color: rgba(0, 0, 0, 0.05);
+    transition: height 0.3s ease;
+    z-index: -1;
+}
+
+.btn-outline-danger:hover::after {
+    height: 100%;
+}
+
+/* Info button styles */
+.btn-outline-info {
+    border-color: var(--info-color, #0dcaf0);
+    color: var(--info-color, #0dcaf0);
+    border-width: 2px;
+    font-weight: 500;
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+}
+
+.btn-outline-info:hover, 
+.btn-outline-info:focus {
+    background-color: var(--info-color, #0dcaf0);
+    border-color: var(--info-color, #0dcaf0);
+    color: white;
+}
+
+.btn-outline-info::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 0;
+    background-color: rgba(0, 0, 0, 0.05);
+    transition: height 0.3s ease;
+    z-index: -1;
+}
+
+.btn-outline-info:hover::after {
+    height: 100%;
+}
+
 /* Navigation styles */
 .navbar {
     background: rgba(255, 255, 255, 0.9) !important;
@@ -407,6 +475,7 @@
     position: relative;
     overflow: hidden;
     z-index: 1;
+    border-width: 2px !important; /* Ensure border width is always 2px */
 }
 
 .quick-actions-container .btn:after {
@@ -439,6 +508,23 @@
 .quick-actions-container .btn:hover i {
     opacity: 1;
     transform: scale(1.1);
+}
+
+/* Custom border classes for quick action buttons */
+.quick-actions-container .btn.border-primary {
+    border: 2px solid var(--primary-color) !important;
+}
+
+.quick-actions-container .btn.border-success {
+    border: 2px solid var(--secondary-color) !important;
+}
+
+.quick-actions-container .btn.border-danger {
+    border: 2px solid var(--danger-color, #dc3545) !important;
+}
+
+.quick-actions-container .btn.border-info {
+    border: 2px solid var(--info-color, #0dcaf0) !important;
 }
 
 /* Quick actions - fix possible contrast issues */

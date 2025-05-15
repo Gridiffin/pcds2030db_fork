@@ -92,27 +92,26 @@ require_once '../../includes/dashboard_header.php';
                             // Get current period status for contextual actions
                             $periodOpen = isset($current_period) && isset($current_period['status']) && $current_period['status'] === 'open';
                             $periodId = $current_period['period_id'] ?? 0;
-                            ?>
-                            <div class="col-lg-3 col-md-4 col-6">
+                            ?>                            <div class="col-lg-3 col-md-4 col-6">
                                 <a href="assign_programs.php" class="btn btn-outline-success w-100 d-flex flex-column align-items-center justify-content-center quick-action-btn border-success">
                                     <i class="fas fa-tasks fa-2x"></i>
                                     <span class="mt-2">Assign Programs</span>
                                 </a>
                             </div>
                             <div class="col-lg-3 col-md-4 col-6">
-                                <a href="reporting_periods.php" class="btn <?php echo $periodOpen ? 'btn-outline-danger' : 'btn-outline-success'; ?> w-100 d-flex flex-column align-items-center justify-content-center quick-action-btn">
+                                <a href="reporting_periods.php" class="btn <?php echo $periodOpen ? 'btn-outline-danger' : 'btn-outline-success'; ?> w-100 d-flex flex-column align-items-center justify-content-center quick-action-btn <?php echo $periodOpen ? 'border-danger' : 'border-success'; ?>">
                                     <i class="fas fa-calendar-alt fa-2x"></i>
                                     <span class="mt-2"><?php echo $periodOpen ? 'Close Current Period' : 'Open New Period'; ?></span>
                                 </a>
                             </div>
                             <div class="col-lg-3 col-md-4 col-6">
-                                <a href="generate_reports.php" class="btn btn-outline-primary w-100 d-flex flex-column align-items-center justify-content-center quick-action-btn">
+                                <a href="generate_reports.php" class="btn btn-outline-primary w-100 d-flex flex-column align-items-center justify-content-center quick-action-btn border-primary">
                                     <i class="fas fa-file-powerpoint fa-2x"></i>
                                     <span class="mt-2">Generate Reports</span>
                                 </a>
                             </div>
                             <div class="col-lg-3 col-md-4 col-6">
-                                <a href="manage_users.php?action=new" class="btn btn-outline-info w-100 d-flex flex-column align-items-center justify-content-center quick-action-btn">
+                                <a href="manage_users.php?action=new" class="btn btn-outline-info w-100 d-flex flex-column align-items-center justify-content-center quick-action-btn border-info">
                                     <i class="fas fa-user-plus fa-2x"></i>
                                     <span class="mt-2">Add New User</span>
                                 </a>
