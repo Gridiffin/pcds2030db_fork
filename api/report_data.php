@@ -33,6 +33,10 @@ $period_id = isset($_GET['period_id']) ? intval($_GET['period_id']) : null;
 $sector_id = isset($_GET['sector_id']) ? intval($_GET['sector_id']) : 1; // Default to Forestry (sector_id 1)
 $selected_kpi_ids_raw = isset($_GET['selected_kpi_ids']) ? $_GET['selected_kpi_ids'] : null; // Expecting a comma-separated string or an array
 
+// Add debug logging for parameters
+error_log("API parameters - period_id: {$period_id}, sector_id: {$sector_id}");
+error_log("Raw GET parameters: " . json_encode($_GET));
+
 // If no period_id provided, use current reporting period
 if (!$period_id) {
     $current_period = get_current_reporting_period();
@@ -103,6 +107,9 @@ if ($sector_id == 1) { // Forestry
 $sector_leads = $dept_prefix . $sector_leads;
 
 // --- 2. Get Programs for this Sector ---
+// Add debug logging
+error_log("Fetching programs for sector_id: {$sector_id} and period_id: {$period_id}");
+
 $programs_query = "SELECT p.program_id, p.program_name, 
                     ps.status, ps.content_json
                   FROM programs p
@@ -113,13 +120,26 @@ $stmt = $conn->prepare($programs_query);
 $stmt->bind_param("ii", $period_id, $sector_id);
 $stmt->execute();
 $programs_result = $stmt->get_result();
+$programs_count = $programs_result->num_rows;
+error_log("Query returned {$programs_count} programs");
 
 $programs = [];
 while ($program = $programs_result->fetch_assoc()) {
     // Extract target from content_json
     $content = json_decode($program['content_json'] ?? '{}', true);
-    $target = $content['target'] ?? 'No target set';
-    $status_text = $content['status_text'] ?? 'No status update available';
+    $target = 'No target set';
+    $status_text = 'No status update available';
+    
+    // Check if we have the new format with targets array
+    if (isset($content['targets']) && is_array($content['targets']) && !empty($content['targets'])) {
+        // Get the first target from the array
+        $target = $content['targets'][0]['target_text'] ?? 'No target set';
+        $status_text = $content['targets'][0]['status_description'] ?? 'No status update available';
+    } else {
+        // Fall back to old format
+        $target = $content['target'] ?? 'No target set';
+        $status_text = $content['status_text'] ?? 'No status update available';
+    }
     
     // Map status to color (green, yellow, red, grey)
     $status_color = 'grey'; // Default for not reported
@@ -522,6 +542,7 @@ $report_data = [
     'sectorLeads' => $sector_leads,
     'quarter' => $quarter,
     'projects' => $programs,
+    'programs' => $programs, // Add programs with the correct key name that the frontend expects
     'charts' => $charts_data,
     'draftDate' => $draft_date,
     'sector_id' => $sector_id,  // Include sector_id for client-side use

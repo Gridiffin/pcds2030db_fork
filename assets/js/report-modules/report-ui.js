@@ -196,14 +196,15 @@ const ReportUI = (function() {
         elements.generateBtn.disabled = true;
         
         // Step 1: Fetch data from API
-        elements.statusMessage.textContent = 'Fetching data...';
-        
-        // Pass selectedKpiIds to fetchReportData
-        ReportAPI.fetchReportData(periodId, sectorId, selectedKpiIds)
-            .then(data => {
-                elements.statusMessage.textContent = 'Generating PPTX...';
-                return ReportPopulator.generatePresentation(data, elements.statusMessage);
-            })
+        elements.statusMessage.textContent = 'Fetching data...';            // Pass selectedKpiIds to fetchReportData
+            ReportAPI.fetchReportData(periodId, sectorId, selectedKpiIds)
+                .then(data => {
+                    console.log('Received API data:', data);
+                    console.log('Programs in API data:', data.programs);
+                    console.log('Sector info:', data.reportTitle, 'sector_id:', data.sector_id);
+                    elements.statusMessage.textContent = 'Generating PPTX...';
+                    return ReportPopulator.generatePresentation(data, elements.statusMessage);
+                })
             .then(blob => {
                 elements.statusMessage.textContent = 'Saving report...';
                 return ReportAPI.uploadPresentation(blob, periodId, sectorId, reportName, description, isPublic);

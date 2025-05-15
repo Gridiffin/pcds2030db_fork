@@ -182,8 +182,7 @@ const ReportPopulator = (function() {
         
         if (data && data.programs && Array.isArray(data.programs)) {
             // If programs data is already provided in the expected format, use it directly
-            programs = data.programs;
-        } else if (data && data.program_submissions && Array.isArray(data.program_submissions)) {
+            programs = data.programs;        } else if (data && data.program_submissions && Array.isArray(data.program_submissions)) {
             // Extract from program_submissions if available
             programs = data.program_submissions.map(submission => {
                 // Extract target from content_json if available
@@ -196,18 +195,26 @@ const ReportPopulator = (function() {
                             ? JSON.parse(submission.content_json) 
                             : submission.content_json;
                         
+                        console.log('Processing content_json for program:', submission.program_name, content);
+                        
                         // Get the first target or combine multiple targets
                         if (content.targets && content.targets.length > 0) {
                             // For the table, take just the first target
                             target = content.targets[0].target_text || content.targets[0].text || 'No target specified';
+                            console.log('Found target:', target);
                             
                             // Use status description if available
                             if (content.targets[0].status_description) {
                                 status = content.targets[0].status_description;
+                                console.log('Found status:', status);
                             }
+                        } else if (content.target) {
+                            // Old format with direct target property
+                            target = content.target;
+                            status = content.status_text || status;
                         }
                     } catch (e) {
-                        console.error('Error parsing content_json:', e);
+                        console.error('Error parsing content_json:', e, submission.content_json);
                     }
                 }
                 
@@ -249,10 +256,14 @@ const ReportPopulator = (function() {
                         break;
                     }
                 }
-                
-                // If we still don't have programs data, create a fallback sample
+                  // If we still don't have programs data, create a fallback sample
                 if (programs.length === 0) {
                     console.warn('No program data found in report data. Using placeholder data.');
+                    console.warn('Data received from API:', JSON.stringify(data));
+                    console.warn('Data.programs:', data.programs);
+                    console.warn('Data.program_submissions:', data.program_submissions);
+                    console.warn('Data.projects:', data.projects);
+                    
                     programs = [
                         {
                             name: 'Forest Conservation',
@@ -367,10 +378,13 @@ const ReportPopulator = (function() {
      * Generate the PPTX presentation using PptxGenJS
      * @param {Object} data - The data from the API
      * @returns {Promise<Blob>} - A promise that resolves to a Blob containing the PPTX file
-     */
-    function generatePresentation(data, statusMessage) {
+     */    function generatePresentation(data, statusMessage) {
         return new Promise((resolve, reject) => {
             try {
+                console.log('Starting presentation generation with data:', data);
+                console.log('Data contains programs array?', Array.isArray(data.programs), 'Length:', data.programs ? data.programs.length : 0);
+                console.log('Data contains projects array?', Array.isArray(data.projects), 'Length:', data.projects ? data.projects.length : 0);
+                
                 // Update status if available
                 if (statusMessage) statusMessage.textContent = 'Creating presentation...';
                 
