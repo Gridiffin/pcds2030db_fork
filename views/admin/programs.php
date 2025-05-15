@@ -369,7 +369,7 @@ require_once '../../includes/dashboard_header.php';
                                         </a>
                                         <?php if ($current_submission && isset($current_submission['submission_id']) && $current_submission['is_draft'] == 0): ?>
                                             <a href="reopen_program.php?program_id=<?php echo $program['program_id']; ?>&submission_id=<?php echo $current_submission['submission_id']; ?>" class="btn btn-warning btn-sm me-1" title="Unsubmit Program" onclick="return confirm('Are you sure you want to unsubmit this program?');">
-                                                <i class="fas fa-undo me-1"></i> Unsubmit
+                                                <i class="fas fa-undo me-1"></i>
                                             </a>
                                         <?php endif; ?>
                                         <a href="delete_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-danger" title="Delete Program">
