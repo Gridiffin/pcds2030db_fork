@@ -22,10 +22,9 @@ const ReportPopulator = (function() {
             
             // Add top and bottom sections
             addTopSection(slide, data, pptx, themeColors, defaultFont, sectorName);
-            
-            // Add line chart
+              // Add line chart
             try {
-                addLineChart(slide, pptx, themeColors, defaultFont, data);
+                ReportStyler.addTimberExportChart(slide, pptx, themeColors, defaultFont, data);
             } catch (chartError) {
                 // Add error text instead of chart
                 const container = ReportStyler.createChartContainer(slide, pptx, themeColors);
@@ -44,25 +43,23 @@ const ReportPopulator = (function() {
             
             // Add KPI boxes with metrics_details data
             addKpiBoxes(slide, data, pptx, themeColors, defaultFont);
+              addFooterSection(slide, data, pptx, themeColors, defaultFont);
             
-            addFooterSection(slide, data, pptx, themeColors, defaultFont);
-
             // Add the new Total Degraded Area Chart if data is available
             if (data && data.charts && data.charts.degraded_area_chart) {
                 console.log("Attempting to add Total Degraded Area chart.");
-                // Define a position for the new chart. This might need adjustment.
-                // For example, placing it below the main chart or to the side if space allows.
-                // Let's assume it goes below the KPIs or in a new designated area.
-                // This is a placeholder position, adjust as per slide layout requirements.
+                
+                // Position the Total Degraded Area chart with adjusted position for better placement in slide
+                // Converting from cm to inches (1 inch = 2.54 cm)
                 const degradedAreaChartPosition = {
-                    x: 0.5, // Example X position (inches from left)
-                    y: 3.5, // Example Y position (inches from top, below KPIs)
-                    w: 6.0, // Example width
-                    h: 3.0  // Example height
+                    x: 23.24 / 2.54, // 23.24cm from left (shifted more into the slide)
+                    y: 12.59 / 2.54, // 12.59cm from top 
+                    w: 4.2, // Width in inches - slightly increased
+                    h: 2.4  // Height in inches - maintained for proper spacing
                 };
-                // Ensure the function addTotalDegradedAreaChart is correctly defined and called.
-                // It was previously defined but not called within populateSlide.
-                addTotalDegradedAreaChart(slide, pptx, themeColors, defaultFont, data.charts.degraded_area_chart, degradedAreaChartPosition);
+                
+                // Use the new ReportStyler function to add the chart with improved styling
+                ReportStyler.addTotalDegradedAreaChart(slide, pptx, themeColors, defaultFont, data.charts.degraded_area_chart, degradedAreaChartPosition);
             } else {
                 console.warn("No data found for Total Degraded Area chart.");
             }
@@ -162,259 +159,8 @@ const ReportPopulator = (function() {
         }
     }
 
-    /**
-     * Add a simple line chart to the slide
-     * @param {Object} slide - The slide to populate
-     * @param {Object} pptx - The PptxGenJS instance
-     * @param {Object} themeColors - The theme colors for styling
-     * @param {string} defaultFont - The default font
-     * @param {Object} data - The data from the API
-     */
-    function addLineChart(slide, pptx, themeColors, defaultFont, data) {
-        console.log("Adding timber export line chart with real data");
-        
-        // Create container using the styler function
-        const container = ReportStyler.createChartContainer(slide, pptx, themeColors);
-        
-        // Get current date and extract current year and previous year
-        const currentDate = new Date();
-        const currentYear = currentDate.getFullYear();
-        const previousYear = currentYear - 1;
-        
-        // Add title using the styler function
-        ReportStyler.createChartTitle(slide, 'Timber Export Value (RM)', container, themeColors, defaultFont);
-        
-        // Check if we have the required chart data from the API
-        if (!data || !data.charts || !data.charts.main_chart || !data.charts.main_chart.data) {
-            console.warn("No timber export data available, using placeholder");
-            return;
-        }
-        
-        // Get timber export data from API response
-        const timberData = data.charts.main_chart.data;
-        console.log("Timber export data from API:", timberData);
-        
-        // Get monthly labels directly from the data
-        const monthLabels = timberData.labels || ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-        
-        // Dynamic property names based on current and previous year
-        const currentYearProp = `data${currentYear}`;
-        const previousYearProp = `data${previousYear}`;
-        
-        // Get data for current and previous year, with fallbacks to empty arrays
-        const currentYearData = timberData[currentYearProp] || Array(12).fill(0);
-        const previousYearData = timberData[previousYearProp] || Array(12).fill(0);
-        
-        console.log(`${previousYear} Monthly data:`, previousYearData);
-        console.log(`${currentYear} Monthly data:`, currentYearData);
-        
-        // For current year, only include data up to the current month
-        const currentMonth = currentDate.getMonth(); // 0-based (0 = January)
-        
-        // Create arrays with exactly 12 values each
-        const fullPreviousYearData = [...previousYearData];
-        while (fullPreviousYearData.length < 12) {
-            fullPreviousYearData.push(0);
-        }
-        
-        const fullCurrentYearData = [...currentYearData];
-        while (fullCurrentYearData.length < 12) {
-            fullCurrentYearData.push(0);
-        }
-        
-        // Clip arrays to exactly 12 items
-        const clippedPreviousYearData = fullPreviousYearData.slice(0, 12);
-        const clippedCurrentYearData = fullCurrentYearData.slice(0, 12);
-        
-        // Calculate maximum value to help with scaling (using actual data)
-        const maxMonthlyValue = Math.max(
-            ...clippedPreviousYearData.filter(val => val !== undefined && val !== null),
-            ...clippedCurrentYearData.filter(val => val !== undefined && val !== null),
-            1 // Ensure we always have a positive value for scaling
-        );
-        console.log("Maximum monthly value:", maxMonthlyValue);          // Calculate total values for each year
-        const previousYearTotal = clippedPreviousYearData.reduce((sum, val) => sum + (val || 0), 0);
-        const currentYearTotal = clippedCurrentYearData.reduce((sum, val) => sum + (val || 0), 0);        // For large export values, reduce precision to conserve space while maintaining readability
-        // Large values (over 1 million) use fewer decimal places to prevent overflow
-        const formatNumberWithSmartPrecision = (num) => {
-            if (num >= 10000000) { // Over 10 million
-                return num.toLocaleString('en-US', {maximumFractionDigits: 0}); // No decimals
-            } else if (num >= 1000000) { // 1-10 million
-                return num.toLocaleString('en-US', {maximumFractionDigits: 1}); // One decimal
-            } else {
-                return num.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}); // Two decimals
-            }
-        };
-        
-        // Format the totals with adaptive precision and add RM prefix
-        const formattedPreviousYearTotal = `RM ${formatNumberWithSmartPrecision(previousYearTotal)}`;
-        const formattedCurrentYearTotal = `RM ${formatNumberWithSmartPrecision(currentYearTotal)}`;
-          // Format years as requested - abbreviated with apostrophe (e.g., '24 Total)
-        // Ensure the apostrophe is visible by using the correct character
-        const currentYearAbbr = "'" + currentYear.toString().substring(2) + " Total";
-        const previousYearAbbr = "'" + previousYear.toString().substring(2) + " Total";
-          // Position total boxes side by side at the bottom-left of chart container
-        // Make sure they're aligned properly with small separation between boxes
-          // SWAPPED ORDER: Current year first (on the left), then previous year
-        // Add total box for current year at the bottom-left
-        ReportStyler.createTotalValueBox(
-            slide, 
-            pptx, 
-            themeColors, 
-            currentYearAbbr, 
-            formattedCurrentYearTotal, 
-            container.x + 0.10, // Small margin from left edge
-            container.y + container.h - 0.38, // Positioned slightly higher to prevent overlap with container bottom
-            defaultFont
-        );
-        
-        // Add total box for previous year next to the current year box
-        ReportStyler.createTotalValueBox(
-            slide, 
-            pptx, 
-            themeColors, 
-            previousYearAbbr, 
-            formattedPreviousYearTotal, 
-            container.x + 2.15, // Slightly more spacing between boxes for large numbers
-            container.y + container.h - 0.38, // Same vertical position as current year
-            defaultFont
-        );
-          // Create chart data with the real values from API
-        const chartData = [
-            {
-                name: `${previousYear} Export Value`,
-                labels: monthLabels,
-                values: clippedPreviousYearData
-            },
-            {
-                name: `${currentYear} Export Value`,
-                labels: monthLabels,
-                values: clippedCurrentYearData
-            }
-        ];
-          // Get chart options from the styler
-        const chartOptions = ReportStyler.getLineChartOptions(container, themeColors, defaultFont);
-        
-        // Add chart (no need to set axis titles as they've been removed)
-        slide.addChart(pptx.ChartType.line || 'line', chartData, chartOptions);
-        console.log("Line chart with real data added to slide");
-    }
-
-    /**
-     * Adds a multi-year line chart for 'Total Degraded Area' to the slide.
-     * @param {Object} slide - The PptxGenJS slide object.
-     * @param {Object} pptx - The PptxGenJS instance.
-     * @param {Object} themeColors - Object containing theme colors.
-     * @param {string} defaultFont - The default font family.
-     * @param {Object} chartApiData - The chart data object from the API (data.charts.degraded_area_chart).
-     * @param {Object} position - Object with x, y, w, h for chart position (in inches).
-     */
-    function addTotalDegradedAreaChart(slide, pptx, themeColors, defaultFont, chartApiData, position) {
-        console.log("Adding Total Degraded Area chart with data:", chartApiData);
-        if (!chartApiData || !chartApiData.data || !chartApiData.data.labels) {
-            console.error('Total Degraded Area chart data from API is missing or malformed.', chartApiData);
-            ReportStyler.createTextBox(slide, 'Total Degraded Area data unavailable.', { 
-                x: position.x, y: position.y, w: position.w, h: 0.5, 
-                fontFace: defaultFont, fontSize: 10, color: themeColors.redStatus || 'FF0000', 
-                align: 'center', valign: 'middle' 
-            });
-            return;
-        }
-
-        const degradedAreaMetricData = chartApiData.data;
-        const chartTitle = chartApiData.title || 'Total Degraded Area';
-        const chartUnit = degradedAreaMetricData.units || 'Ha';
-
-        const yearsToShow = ['2022', '2023', '2024'];
-        const monthLabels = degradedAreaMetricData.labels || ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-        
-        const chartDataSeries = [];
-
-        // Define colors for the series - ensure themeColors has these or use fallbacks
-        // These should ideally come from ReportStyler or be more configurable
-        const seriesColors = ReportStyler.getChartSeriesColors ? ReportStyler.getChartSeriesColors(yearsToShow.length) : [
-            themeColors.accent1 || '0072C6', // Blue
-            themeColors.accent2 || 'ED7D31', // Orange
-            themeColors.accent3 || 'A5A5A5', // Grey
-            themeColors.accent4 || 'FFC000', // Gold
-            themeColors.accent5 || '4472C4', // Light Blue
-            themeColors.accent6 || '70AD47'  // Green
-        ];
-        let colorIndex = 0;
-
-        yearsToShow.forEach(year => {
-            const yearDataKey = `data${year}`;
-            if (degradedAreaMetricData.hasOwnProperty(yearDataKey)) {
-                const yearValues = degradedAreaMetricData[yearDataKey] || Array(12).fill(0);
-                
-                // Ensure yearValues is an array of 12 numbers
-                const fullYearValues = [...yearValues];
-                while (fullYearValues.length < 12) fullYearValues.push(0);
-                const clippedYearValues = fullYearValues.slice(0,12);
-
-                chartDataSeries.push({
-                    name: year, // Legend entry for the year
-                    labels: monthLabels, // X-axis labels (months)
-                    values: clippedYearValues, // Y-axis values for this year
-                    opts: { color: seriesColors[colorIndex % seriesColors.length] } // Series-specific color
-                });
-                colorIndex++;
-            } else {
-                console.warn(`Data for year ${year} not found in degraded_area_chart data.`);
-            }
-        });
-
-        if (chartDataSeries.length === 0) {
-            console.error('No data series to plot for Total Degraded Area chart.');
-            ReportStyler.createTextBox(slide, 'No data series for Total Degraded Area.', { 
-                x: position.x, y: position.y, w: position.w, h: 0.5, 
-                fontFace: defaultFont, fontSize: 10, color: themeColors.text || '000000', 
-                align: 'center', valign: 'middle' 
-            });
-            return;
-        }
-
-        // Use a generic line chart options function from ReportStyler if available,
-        // or adapt the existing one. For now, we'll create specific options here.
-        const chartOptions = ReportStyler.getLineChartOptions(position, themeColors, defaultFont); // Pass position as container
-        
-        // Override/set specific options for this new chart
-        chartOptions.showLegend = true;
-        chartOptions.legendPos = 'b'; // Legend at the bottom
-        chartOptions.catAxisTitle = 'Month';
-        chartOptions.valAxisTitle = `${chartTitle} (${chartUnit})`; 
-        chartOptions.catAxisLabels = monthLabels; // Already 3-letter month abbreviations from API
-        
-        // Adjust valAxis settings based on data, if necessary
-        const allValues = chartDataSeries.flatMap(series => series.values);
-        const maxVal = Math.max(...allValues, 0);
-        if (maxVal > 0) {
-            chartOptions.valAxisMaxVal = maxVal * 1.1; // Add 10% buffer
-            chartOptions.valAxisMajorUnit = ReportStyler.calculateMajorUnit(maxVal * 1.1); // Helper needed in ReportStyler
-        } else {
-            chartOptions.valAxisMaxVal = 100; // Default if no data or all zeros
-            chartOptions.valAxisMajorUnit = 20;
-        }
-        chartOptions.valAxisMinVal = 0;
-
-        // Line specific styles
-        chartOptions.lineDataSymbol = 'circle';
-        chartOptions.lineDataSymbolSize = 6;
-        chartOptions.lineWidth = 2.5;
-        chartOptions.lineSmooth = false;
-        chartOptions.chartColors = seriesColors.slice(0, chartDataSeries.length); // Pass only used colors
-
-        // Add chart title using ReportStyler, adjusting y position if needed
-        ReportStyler.createChartTitle(slide, chartTitle, {
-            x: position.x, 
-            y: position.y - 0.35, // Position title above the chart
-            w: position.w, 
-            h: 0.3
-        }, themeColors, defaultFont);
-
-        slide.addChart(pptx.ChartType.line, chartDataSeries, chartOptions);
-        console.log("Total Degraded Area chart added to slide.");
-    }
+        // Note: All chart-related functions have been moved to ReportStyler module
+    // to maintain proper separation of concerns - addLineChart, addTotalDegradedAreaChart, etc.
 
     /**
      * Add the top section of the slide
@@ -549,8 +295,6 @@ const ReportPopulator = (function() {
     // Expose public methods
     return {
         populateSlide,
-        generatePresentation,
-        addLineChart,
-        addTotalDegradedAreaChart
+        generatePresentation
     };
 })();
