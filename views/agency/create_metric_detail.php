@@ -590,6 +590,9 @@ if ($result) {
     if (result.success) {
         showAlert(result.message, 'success');
         
+        // Reset editingDetailId before reload
+        editingDetailId = null;
+
         // Reload the page after create or update action
         window.location.href = window.location.href;
     } else {
