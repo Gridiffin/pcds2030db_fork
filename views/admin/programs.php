@@ -11,7 +11,7 @@ require_once '../../includes/db_connect.php';
 require_once '../../includes/session.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/admins/index.php';
-require_once '../../includes/status_helpers.php'; // For status badge display
+require_once '../../includes/rating_helpers.php'; // For rating badge display
 require_once '../../includes/admins/statistics.php'; // For get_admin_program_details function
 
 // Verify user is admin
@@ -28,7 +28,7 @@ $current_period = get_current_reporting_period();
 
 // Process filters
 $filters = [];
-if (isset($_GET['status'])) $filters['status'] = $_GET['status'];
+if (isset($_GET['rating'])) $filters['status'] = $_GET['rating']; // Still maps to status in DB but uses "rating" in UI
 if (isset($_GET['sector_id'])) $filters['sector_id'] = intval($_GET['sector_id']);
 if (isset($_GET['agency_id'])) $filters['agency_id'] = intval($_GET['agency_id']);
 if (isset($_GET['search'])) $filters['search'] = trim($_GET['search']);
@@ -180,15 +180,14 @@ require_once '../../includes/dashboard_header.php';
                         <option value="agency" <?php if(isset($_GET['program_type']) && $_GET['program_type'] === 'agency') echo 'selected'; ?>>Agency Created</option>
                     </select>
                 </div>
-                
-                <div class="col-md-2 filter-control-wrapper">
-                    <label for="status" class="form-label">Status</label>
-                    <select class="form-select" id="status" name="status">
-                        <option value="">All Statuses</option>
-                        <option value="target-achieved" <?php if(isset($_GET['status']) && $_GET['status'] === 'target-achieved') echo 'selected'; ?>>Target Achieved</option>
-                        <option value="on-track-yearly" <?php if(isset($_GET['status']) && $_GET['status'] === 'on-track-yearly') echo 'selected'; ?>>On Track</option>
-                        <option value="severe-delay" <?php if(isset($_GET['status']) && $_GET['status'] === 'severe-delay') echo 'selected'; ?>>Delayed</option>
-                        <option value="not-started" <?php if(isset($_GET['status']) && $_GET['status'] === 'not-started') echo 'selected'; ?>>Not Started</option>
+                  <div class="col-md-2 filter-control-wrapper">
+                    <label for="rating" class="form-label">Rating</label>
+                    <select class="form-select" id="rating" name="rating">
+                        <option value="">All Ratings</option>
+                        <option value="target-achieved" <?php if(isset($_GET['rating']) && $_GET['rating'] === 'target-achieved') echo 'selected'; ?>>Target Achieved</option>
+                        <option value="on-track-yearly" <?php if(isset($_GET['rating']) && $_GET['rating'] === 'on-track-yearly') echo 'selected'; ?>>On Track</option>
+                        <option value="severe-delay" <?php if(isset($_GET['rating']) && $_GET['rating'] === 'severe-delay') echo 'selected'; ?>>Delayed</option>
+                        <option value="not-started" <?php if(isset($_GET['rating']) && $_GET['rating'] === 'not-started') echo 'selected'; ?>>Not Started</option>
                     </select>
                 </div>
                 
@@ -256,12 +255,11 @@ require_once '../../includes/dashboard_header.php';
         <div class="table-responsive">
             <table class="table table-hover" id="programsTable">
                 <thead class="table-light">
-                    <tr>
-                        <th>Program Name</th>
+                    <tr>                        <th>Program Name</th>
                         <th>Agency</th>
                         <th>Sector</th>
                         <th>Type</th>
-                        <th>Status</th>
+                        <th>Rating</th>
                         <th>Timeline</th>
                         <th>Last Updated</th>
                         <th>Actions</th>
@@ -303,37 +301,35 @@ require_once '../../includes/dashboard_header.php';
                                     <?php else: ?>
                                         <span class="badge bg-info">Agency Created</span>
                                     <?php endif; ?>
-                                </td>
-                                <td>
+                                </td>                                <td>
                                     <?php if (isset($program['status'])): ?>
                                         <?php 
-                                        $status = $program['status'];
-                                        $status_class = 'secondary'; // Default
-                                        $status_label = 'Not Started';
+                                        $rating = $program['status']; // Column still named 'status' in DB
+                                        $rating_class = 'secondary'; // Default
+                                        $rating_label = 'Not Started';
                                         
-                                        switch($status) {
+                                        switch($rating) {
                                             case 'on-track':
                                             case 'on-track-yearly':
-                                                $status_class = 'warning';
-                                                $status_label = 'On Track';
-                                                break;
-                                            case 'delayed':
+                                                $rating_class = 'warning';
+                                                $rating_label = 'On Track';
+                                                break;                                            case 'delayed':
                                             case 'severe-delay':
-                                                $status_class = 'danger';
-                                                $status_label = 'Delayed';
+                                                $rating_class = 'danger';
+                                                $rating_label = 'Delayed';
                                                 break;
                                             case 'completed':
                                             case 'target-achieved':
-                                                $status_class = 'success';
-                                                $status_label = 'Target Achieved';
+                                                $rating_class = 'success';
+                                                $rating_label = 'Target Achieved';
                                                 break;
                                             case 'not-started':
-                                                $status_class = 'secondary';
-                                                $status_label = 'Not Started';
+                                                $rating_class = 'secondary';
+                                                $rating_label = 'Not Started';
                                                 break;
                                         }
                                         ?>
-                                        <span class="badge bg-<?php echo $status_class; ?>"><?php echo $status_label; ?></span>
+                                        <span class="badge bg-<?php echo $rating_class; ?>"><?php echo $rating_label; ?></span>
                                     <?php else: ?>
                                         <span class="badge bg-secondary">Not Reported</span>
                                     <?php endif; ?>

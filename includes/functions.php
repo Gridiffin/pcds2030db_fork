@@ -3,8 +3,8 @@
  * Common functions used throughout the application
  */
 
-// Include status helpers
-require_once 'status_helpers.php';
+// Include rating helpers
+require_once 'rating_helpers.php';
 
 
 /**

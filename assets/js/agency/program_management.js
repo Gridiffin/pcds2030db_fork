@@ -135,26 +135,23 @@ function initProgramCreation() {
 /**
  * Initialize program submission functionality
  */
-function initProgramSubmission() {
-    // Use shared status pill selection from status_utils.js
-    if (typeof initStatusPills === 'function') {
-        initStatusPills();
+function initProgramSubmission() {    // Use shared rating pill selection from rating_utils.js
+    if (typeof initRatingPills === 'function') {
+        initRatingPills();
     } else {
-        // Fallback implementation
-        const statusPills = document.querySelectorAll('.status-pill');
-        const statusInput = document.getElementById('status');
+        // Fallback implementation        const ratingPills = document.querySelectorAll('.rating-pill');
+        const ratingInput = document.getElementById('rating');
         
-        if (statusPills.length && statusInput) {
-            statusPills.forEach(pill => {
+        if (ratingPills.length && ratingInput) {
+            ratingPills.forEach(pill => {
                 pill.addEventListener('click', function() {
                     // Remove active class from all pills
-                    statusPills.forEach(p => p.classList.remove('active'));
+                    ratingPills.forEach(p => p.classList.remove('active'));
                     
                     // Add active class to clicked pill
                     this.classList.add('active');
-                    
-                    // Update hidden input
-                    statusInput.value = this.getAttribute('data-status');
+                      // Update hidden input
+                    ratingInput.value = this.getAttribute('data-rating');
                 });
             });
         }

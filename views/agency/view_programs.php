@@ -11,7 +11,7 @@ require_once '../../includes/db_connect.php';
 require_once '../../includes/session.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/agencies/index.php';
-require_once '../../includes/status_helpers.php'; // Make sure this file is included
+require_once '../../includes/rating_helpers.php'; // Make sure this file is included
 
 // Verify user is an agency
 if (!is_agency()) {
@@ -106,7 +106,7 @@ foreach ($programs as $program) {
 
 // Additional scripts - Make sure view_programs.js is loaded
 $additionalScripts = [
-    APP_URL . '/assets/js/utilities/status_utils.js',
+    APP_URL . '/assets/js/utilities/rating_utils.js',
     APP_URL . '/assets/js/agency/view_programs.js' // Ensure this script is included
 ];
 
@@ -203,16 +203,14 @@ require_once '../../includes/dashboard_header.php';
                             <td colspan="4" class="text-center py-4">No draft programs found.</td>
                         </tr>
                     <?php else: ?>
-                        <?php 
-                        foreach ($draft_programs as $program): 
+                        <?php                        foreach ($draft_programs as $program): 
                             // Determine program type (assigned or custom)
                             $is_assigned = isset($program['is_assigned']) && $program['is_assigned'] ? true : false;
+                              // Convert rating for display
+                            $current_rating = isset($program['status']) ? convert_legacy_rating($program['status']) : 'not-started';
                             
-                            // Convert status for display
-                            $current_status = isset($program['status']) ? convert_legacy_status($program['status']) : 'not-started';
-                            
-                            // Map database status values to display labels and classes
-                            $status_map = [
+                            // Map database rating values to display labels and classes
+                            $rating_map = [
                                 'on-track' => ['label' => 'On Track', 'class' => 'warning'],
                                 'on-track-yearly' => ['label' => 'On Track for Year', 'class' => 'warning'],
                                 'target-achieved' => ['label' => 'Monthly Target Achieved', 'class' => 'success'],
@@ -222,9 +220,9 @@ require_once '../../includes/dashboard_header.php';
                                 'not-started' => ['label' => 'Not Started', 'class' => 'secondary']
                             ];
                             
-                            // Set default if status is not in our map
-                            if (!isset($status_map[$current_status])) {
-                                $current_status = 'not-started';
+                            // Set default if rating is not in our map
+                            if (!isset($rating_map[$current_rating])) {
+                                $current_rating = 'not-started';
                             }
                             
                             // Check if this is a draft
@@ -245,8 +243,8 @@ require_once '../../includes/dashboard_header.php';
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="badge bg-<?php echo $status_map[$current_status]['class']; ?>">
-                                        <?php echo $status_map[$current_status]['label']; ?>
+                                    <span class="badge bg-<?php echo $rating_map[$current_rating]['class']; ?>">
+                                        <?php echo $rating_map[$current_rating]['label']; ?>
                                     </span>
                                 </td>
                                 <td>
@@ -351,16 +349,15 @@ require_once '../../includes/dashboard_header.php';
                             <td colspan="4" class="text-center py-4">No finalized programs found.</td>
                         </tr>
                     <?php else: ?>
-                        <?php 
-                        foreach ($finalized_programs as $program): 
+                        <?php                        foreach ($finalized_programs as $program): 
                             // Determine program type (assigned or custom)
                             $is_assigned = isset($program['is_assigned']) && $program['is_assigned'] ? true : false;
                             
-                            // Convert status for display
-                            $current_status = isset($program['status']) ? convert_legacy_status($program['status']) : 'not-started';
+                            // Convert rating for display
+                            $current_rating = isset($program['status']) ? convert_legacy_rating($program['status']) : 'not-started';
                             
-                            // Map database status values to display labels and classes
-                            $status_map = [
+                            // Map database rating values to display labels and classes
+                            $rating_map = [
                                 'on-track' => ['label' => 'On Track', 'class' => 'warning'],
                                 'on-track-yearly' => ['label' => 'On Track for Year', 'class' => 'warning'],
                                 'target-achieved' => ['label' => 'Monthly Target Achieved', 'class' => 'success'],
@@ -370,9 +367,9 @@ require_once '../../includes/dashboard_header.php';
                                 'not-started' => ['label' => 'Not Started', 'class' => 'secondary']
                             ];
                             
-                            // Set default if status is not in our map
-                            if (!isset($status_map[$current_status])) {
-                                $current_status = 'not-started';
+                            // Set default if rating is not in our map
+                            if (!isset($rating_map[$current_rating])) {
+                                $current_rating = 'not-started';
                             }
                         ?>
                             <tr data-program-type="<?php echo $is_assigned ? 'assigned' : 'created'; ?>">
@@ -386,8 +383,8 @@ require_once '../../includes/dashboard_header.php';
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="badge bg-<?php echo $status_map[$current_status]['class']; ?>">
-                                        <?php echo $status_map[$current_status]['label']; ?>
+                                    <span class="badge bg-<?php echo $rating_map[$current_rating]['class']; ?>">
+                                        <?php echo $rating_map[$current_rating]['label']; ?>
                                     </span>
                                 </td>
                                 <td>
@@ -441,8 +438,15 @@ require_once '../../includes/dashboard_header.php';
 
 <!-- Add program data for JavaScript pagination -->
 <style>
-    /* Custom styles for program status indicators */
+    /* Custom styles for program rating indicators */
     .badge.bg-info {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        font-weight: 500;
+    }
+    
+    /* Rating badge adjustments */
+    .rating-pill, .badge {
         font-size: 0.75rem;
         padding: 0.25rem 0.5rem;
         font-weight: 500;

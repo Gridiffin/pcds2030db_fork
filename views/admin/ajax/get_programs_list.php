@@ -9,7 +9,7 @@ require_once '../../../includes/db_connect.php';
 require_once '../../../includes/session.php';
 require_once '../../../includes/functions.php';
 require_once '../../../includes/admin_functions.php';
-require_once '../../../includes/status_helpers.php';
+require_once '../../../includes/rating_helpers.php';
 
 // Verify user is admin
 if (!is_admin()) {
@@ -19,7 +19,7 @@ if (!is_admin()) {
 
 // Process filters
 $filters = [];
-if (isset($_GET['status'])) $filters['status'] = $_GET['status'];
+if (isset($_GET['rating'])) $filters['status'] = $_GET['rating'];  // Still maps to status in DB but uses "rating" in UI
 if (isset($_GET['sector_id'])) $filters['sector_id'] = intval($_GET['sector_id']);
 if (isset($_GET['agency_id'])) $filters['agency_id'] = intval($_GET['agency_id']);
 if (isset($_GET['search'])) $filters['search'] = trim($_GET['search']);
@@ -62,36 +62,35 @@ if (empty($programs)): ?>
             </td>
             <td><?php echo htmlspecialchars($program['agency_name']); ?></td>
             <td><?php echo htmlspecialchars($program['sector_name']); ?></td>
-            <td>
-                <?php if (isset($program['status'])): ?>
+            <td>                <?php if (isset($program['status'])): ?>
                     <?php 
-                    $status = $program['status'];
-                    $status_class = 'secondary'; // Default
-                    $status_label = 'Not Started';
+                    $rating = $program['status']; // Column still named 'status' in DB
+                    $rating_class = 'secondary'; // Default
+                    $rating_label = 'Not Started';
                     
-                    switch($status) {
+                    switch($rating) {
                         case 'on-track':
                         case 'on-track-yearly':
-                            $status_class = 'warning';
-                            $status_label = 'On Track';
+                            $rating_class = 'warning';
+                            $rating_label = 'On Track';
                             break;
                         case 'delayed':
                         case 'severe-delay':
-                            $status_class = 'danger';
-                            $status_label = 'Delayed';
+                            $rating_class = 'danger';
+                            $rating_label = 'Delayed';
                             break;
                         case 'completed':
                         case 'target-achieved':
-                            $status_class = 'success';
-                            $status_label = 'Target Achieved';
+                            $rating_class = 'success';
+                            $rating_label = 'Target Achieved';
                             break;
                         case 'not-started':
-                            $status_class = 'secondary';
-                            $status_label = 'Not Started';
+                            $rating_class = 'secondary';
+                            $rating_label = 'Not Started';
                             break;
                     }
                     ?>
-                    <span class="badge bg-<?php echo $status_class; ?>"><?php echo $status_label; ?></span>
+                    <span class="badge bg-<?php echo $rating_class; ?>"><?php echo $rating_label; ?></span>
                 <?php else: ?>
                     <span class="badge bg-secondary">Not Reported</span>
                 <?php endif; ?>

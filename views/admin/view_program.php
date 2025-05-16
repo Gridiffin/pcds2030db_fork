@@ -11,7 +11,7 @@ require_once '../../includes/db_connect.php';
 require_once '../../includes/session.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/admins/index.php';
-require_once '../../includes/status_helpers.php';
+require_once '../../includes/rating_helpers.php';
 
 // Verify user is admin
 if (!is_admin()) {
@@ -161,8 +161,8 @@ $additionalStyles = '
 </style>
 ';
 
-// Define status mapping for display
-$status_map = [
+// Define rating mapping for display
+$rating_map = [
     'on-track' => ['label' => 'On Track', 'class' => 'warning', 'icon' => 'fas fa-chart-line'],
     'on-track-yearly' => ['label' => 'On Track for Year', 'class' => 'warning', 'icon' => 'fas fa-calendar-check'],
     'target-achieved' => ['label' => 'Monthly Target Achieved', 'class' => 'success', 'icon' => 'fas fa-check-circle'],
@@ -172,15 +172,15 @@ $status_map = [
     'not-started' => ['label' => 'Not Started', 'class' => 'secondary', 'icon' => 'fas fa-hourglass-start']
 ];
 
-// Convert status for display
-$status = isset($rating) ? convert_legacy_status($rating) : 'not-started';
-if (!isset($status_map[$status])) {
-    $status = 'not-started';
+// Convert rating for display
+$rating_value = isset($rating) ? convert_legacy_rating($rating) : 'not-started';
+if (!isset($rating_map[$rating_value])) {
+    $rating_value = 'not-started';
 }
 
 // Additional scripts
 $additionalScripts = [
-    APP_URL . '/assets/js/utilities/status_utils.js',
+    APP_URL . '/assets/js/utilities/rating_utils.js',
     APP_URL . '/assets/js/utilities/program_details_table.js',
     APP_URL . '/assets/js/utilities/program_details_responsive.js'
 ];
@@ -229,12 +229,11 @@ require_once '../../includes/dashboard_header.php';
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title m-0">
                     <i class="fas fa-clipboard-list me-2 text-primary"></i>Program Information
-                </h5>
-                <div>
+                </h5>                <div>
                     <?php if (isset($program['status'])): ?>
-                    <span class="status-badge badge bg-<?php echo $status_map[$status]['class']; ?> py-2 px-3">
-                        <i class="<?php echo $status_map[$status]['icon']; ?> me-1"></i> 
-                        <?php echo $status_map[$status]['label']; ?>
+                    <span class="rating-badge badge bg-<?php echo $rating_map[$rating_value]['class']; ?> py-2 px-3">
+                        <i class="<?php echo $rating_map[$rating_value]['icon']; ?> me-1"></i> 
+                        <?php echo $rating_map[$rating_value]['label']; ?>
                     </span>
                     <?php endif; ?>
                     <a href="edit_program.php?id=<?php echo $program_id; ?>" class="btn btn-sm btn-primary ms-2">
@@ -323,6 +322,25 @@ require_once '../../includes/dashboard_header.php';
                             </div>
                         </div>
                         <?php endif; ?>
+                        
+                        <!-- Program Rating Pills -->
+                        <div class="mt-4">
+                            <h6 class="info-section-title border-bottom pb-2 mb-3">
+                                <i class="fas fa-star me-2"></i>Program Rating
+                            </h6>
+                            <div class="rating-pills read-only">
+                                <?php if (isset($rating_map[$rating_value])): ?>
+                                <div class="rating-pill <?php echo $rating_value; ?> active">
+                                    <i class="<?php echo $rating_map[$rating_value]['icon']; ?> me-2"></i> 
+                                    <?php echo $rating_map[$rating_value]['label']; ?>
+                                </div>
+                                <?php else: ?>
+                                <div class="rating-pill not-started active">
+                                    <i class="fas fa-hourglass-start me-2"></i> Not Started
+                                </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -399,10 +417,24 @@ require_once '../../includes/dashboard_header.php';
                                                 </div>
                                             </td>
                                             <td class="achievement-cell long-text">
-                                                <div class="status-pill status-<?php echo $status; ?>">
-                                                    <i class="<?php echo $status_map[$status]['icon']; ?>"></i>
-                                                    <?php echo $status_map[$status]['label']; ?>
-                                                </div>
+                                                <?php
+                                                // Define status map for display
+                                                $status_map = [
+                                                    'on-track' => ['label' => 'On Track', 'class' => 'warning', 'icon' => 'fas fa-chart-line'],
+                                                    'on-track-yearly' => ['label' => 'On Track for Year', 'class' => 'warning', 'icon' => 'fas fa-calendar-check'],
+                                                    'target-achieved' => ['label' => 'Monthly Target Achieved', 'class' => 'success', 'icon' => 'fas fa-check-circle'],
+                                                    'delayed' => ['label' => 'Delayed', 'class' => 'danger', 'icon' => 'fas fa-exclamation-triangle'],
+                                                    'severe-delay' => ['label' => 'Severe Delay', 'class' => 'danger', 'icon' => 'fas fa-exclamation-circle'],
+                                                    'completed' => ['label' => 'Completed', 'class' => 'primary', 'icon' => 'fas fa-flag-checkered'],
+                                                    'not-started' => ['label' => 'Not Started', 'class' => 'secondary', 'icon' => 'fas fa-clock']
+                                                ];
+                                                
+                                                // Ensure status is defined and valid
+                                                $status = isset($target['status']) ? $target['status'] : 'not-started';
+                                                if (!isset($status_map[$status])) {
+                                                    $status = 'not-started'; // Default fallback
+                                                }
+                                                ?>
                                                 
                                                 <?php if (!empty($target['status_description'])): ?>
                                                     <div class="achievement-description">
