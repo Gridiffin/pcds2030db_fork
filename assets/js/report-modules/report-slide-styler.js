@@ -1277,23 +1277,8 @@ const ReportStyler = (function() {
                         line: { color: themeColors.lightText, width: 0.25, dashType: 'dash' }
                     });
                 }
-            });
-            
-            // If there are more programs than can be shown
-            if (programs.length > maxProgramsToShow) {
-                const moreY = startY + (maxProgramsToShow * (dynamicRowHeight + rowSpacing)) + 0.1;                slide.addText(`+ ${programs.length - maxProgramsToShow} more programs`, {
-                    x: tableDimensions.x + padding,
-                    y: moreY,
-                    w: availableWidth,
-                    h: rowHeight - 0.1,
-                    fontSize: 6,
-                    italic: true,
-                    fontFace: defaultFont,
-                    color: themeColors.lightText,
-                    align: 'center',
-                    valign: 'middle'
-                });
-            }
+            });            // No indicator for additional programs as requested
+            // Additional programs beyond the display limit will simply not be shown
         }
         
         return tableDimensions;
