@@ -97,6 +97,70 @@ if (isset($program['current_submission']['content_json']) && !empty($program['cu
 // Set page title
 $pageTitle = 'Program Details: ' . $program['program_name'];
 
+// Add inline CSS to ensure text wrapping works
+$additionalStyles = '
+<style>
+    /* Force text wrapping in table cells */
+    .target-cell, .achievement-cell {
+        white-space: normal !important;
+        word-wrap: break-word !important;
+        word-break: break-word !important;
+        max-width: 0;
+    }
+    
+    .targets-table table {
+        table-layout: fixed !important;
+        width: 100% !important;
+    }
+    
+    .targets-container .table-responsive {
+        overflow-x: visible !important;
+    }
+    
+    .target-content, .achievement-description {
+        width: 100%;
+        overflow-wrap: break-word;
+    }
+    
+    /* Override any conflicting Bootstrap styles */
+    .table td {
+        max-width: none;
+    }
+    
+    /* Additional mobile styling */
+    @media (max-width: 768px) {
+        .mobile-target-item {
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            padding-bottom: 1.5rem;
+        }
+        
+        .mobile-target-label, 
+        .mobile-achievement-label {
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px dashed rgba(var(--primary-rgb), 0.2);
+        }
+        
+        .mobile-target-content,
+        .mobile-achievement-content {
+            padding: 0.75rem;
+            background-color: rgba(255,255,255,0.6);
+            border-radius: 0.5rem;
+            border: 1px solid rgba(0,0,0,0.05);
+            word-wrap: break-word;
+            word-break: break-word;
+        }
+        
+        .mobile-achievement-section {
+            margin-top: 1.25rem;
+        }
+    }
+</style>
+';
+
 // Define status mapping for display
 $status_map = [
     'on-track' => ['label' => 'On Track', 'class' => 'warning', 'icon' => 'fas fa-chart-line'],
@@ -116,7 +180,9 @@ if (!isset($status_map[$status])) {
 
 // Additional scripts
 $additionalScripts = [
-    APP_URL . '/assets/js/utilities/status_utils.js'
+    APP_URL . '/assets/js/utilities/status_utils.js',
+    APP_URL . '/assets/js/utilities/program_details_table.js',
+    APP_URL . '/assets/js/utilities/program_details_responsive.js'
 ];
 
 // Include header
@@ -143,10 +209,10 @@ require_once '../../includes/dashboard_header.php';
 ?>
 
 <?php if (isset($program['current_submission']['is_draft']) && $program['current_submission']['is_draft']): ?>
-<div class="alert alert-warning alert-dismissible fade show" role="alert">
+<div class="alert alert-warning alert-dismissible fade show custom-alert" role="alert">
     <div class="d-flex">
-        <div class="me-3">
-            <i class="fas fa-exclamation-triangle fa-2x"></i>
+        <div class="alert-icon me-3">
+            <i class="fas fa-exclamation-triangle"></i>
         </div>
         <div>
             <h5 class="alert-heading">Draft Submission</h5>
@@ -157,17 +223,16 @@ require_once '../../includes/dashboard_header.php';
 </div>
 <?php endif; ?>
 
-<div class="row">
-    <!-- Program Information Card -->
+<div class="row">    <!-- Program Information Card -->
     <div class="col-lg-12 mb-4">
-        <div class="card shadow-sm">
+        <div class="card shadow-sm program-info-card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title m-0">
-                    <i class="fas fa-clipboard-list me-2"></i>Program Information
+                    <i class="fas fa-clipboard-list me-2 text-primary"></i>Program Information
                 </h5>
                 <div>
                     <?php if (isset($program['status'])): ?>
-                    <span class="badge bg-<?php echo $status_map[$status]['class']; ?> py-2 px-3">
+                    <span class="status-badge badge bg-<?php echo $status_map[$status]['class']; ?> py-2 px-3">
                         <i class="<?php echo $status_map[$status]['icon']; ?> me-1"></i> 
                         <?php echo $status_map[$status]['label']; ?>
                     </span>
@@ -177,11 +242,12 @@ require_once '../../includes/dashboard_header.php';
                     </a>
                 </div>
             </div>
-            <div class="card-body">
-                <div class="row">
+            <div class="card-body">                <div class="row">
                     <!-- Program Basic Info -->
                     <div class="col-lg-12 mb-4">
-                        <h6 class="border-bottom pb-2 mb-3">Basic Information</h6>
+                        <h6 class="info-section-title border-bottom pb-2 mb-3">
+                            <i class="fas fa-info-circle me-2"></i>Basic Information
+                        </h6>
                         
                         <div class="row">
                             <div class="col-md-6 mb-3">
@@ -247,11 +313,12 @@ require_once '../../includes/dashboard_header.php';
                                 </div>
                             </div>
                         </div>
-                        
-                        <?php if (!empty($program['description'])): ?>
+                          <?php if (!empty($program['description'])): ?>
                         <div class="mt-4">
-                            <h6 class="border-bottom pb-2 mb-3">Description</h6>
-                            <div class="p-3 bg-light rounded border">
+                            <h6 class="info-section-title border-bottom pb-2 mb-3">
+                                <i class="fas fa-align-left me-2"></i>Description
+                            </h6>
+                            <div class="description-box p-3 rounded">
                                 <?php echo nl2br(htmlspecialchars($program['description'])); ?>
                             </div>
                         </div>
@@ -261,14 +328,13 @@ require_once '../../includes/dashboard_header.php';
             </div>
         </div>
     </div>
-    
-    <!-- Current Submission Details -->
+      <!-- Current Submission Details -->
     <?php if (isset($program['current_submission']) && !empty($program['current_submission'])): ?>
     <div class="col-lg-12 mb-4">
-        <div class="card shadow-sm">
+        <div class="card shadow-sm performance-card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title m-0">
-                    <i class="fas fa-tasks me-2"></i>Current Period Performance
+                    <i class="fas fa-tasks me-2 text-primary"></i>Current Period Performance
                 </h5>
                 <?php if (isset($program['current_submission']['is_draft']) && $program['current_submission']['is_draft'] == 0): ?>
                 <div>
@@ -279,69 +345,86 @@ require_once '../../includes/dashboard_header.php';
                 </div>
                 <?php endif; ?>
             </div>
-            <div class="card-body">
-                <div class="row mb-3">
+            <div class="card-body">                <div class="row mb-4">
                     <div class="col-md-6">
-                        <div class="row">
-                            <div class="col-md-4 text-muted">Reporting Period:</div>
-                            <div class="col-md-8">
-                                Q<?php echo $program['current_submission']['quarter']; ?>-<?php echo $program['current_submission']['year']; ?>
-                                <?php if (isset($program['current_submission']['is_draft']) && $program['current_submission']['is_draft'] == 1): ?>
-                                    <span class="badge bg-secondary ms-1">Draft</span>
-                                <?php else: ?>
-                                    <span class="badge bg-success ms-1">Final</span>
-                                <?php endif; ?>
+                        <div class="info-item d-flex align-items-center">
+                            <div class="info-icon me-3">
+                                <i class="fas fa-calendar-alt text-primary"></i>
+                            </div>
+                            <div>
+                                <div class="info-label text-muted">Reporting Period</div>
+                                <div class="info-value d-flex align-items-center">
+                                    <strong class="me-2">Q<?php echo $program['current_submission']['quarter']; ?>-<?php echo $program['current_submission']['year']; ?></strong>
+                                    <?php if (isset($program['current_submission']['is_draft']) && $program['current_submission']['is_draft'] == 1): ?>
+                                        <span class="badge bg-secondary">Draft</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-success">Final</span>
+                                    <?php endif; ?>
+                                </div>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="row">
-                            <div class="col-md-4 text-muted">Submission Date:</div>
-                            <div class="col-md-8">
-                                <i class="far fa-clock me-1"></i>
-                                <?php echo date('M j, Y', strtotime($program['current_submission']['submission_date'])); ?>
+                        <div class="info-item d-flex align-items-center">
+                            <div class="info-icon me-3">
+                                <i class="fas fa-clock text-primary"></i>
+                            </div>
+                            <div>
+                                <div class="info-label text-muted">Submission Date</div>
+                                <div class="info-value">
+                                    <strong><?php echo date('M j, Y', strtotime($program['current_submission']['submission_date'])); ?></strong>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <?php if (!empty($targets)): ?>
+                </div><?php if (!empty($targets)): ?>
                     <div class="targets-container">
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-hover">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th width="50%">Target</th>
-                                        <th width="50%">Status / Achievements</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($targets as $index => $target): ?>
-                                    <tr class="<?php echo ($index % 2 == 0) ? 'bg-light' : ''; ?>">
-                                        <td>
-                                            <?php if (!empty($target['text'])): ?>
-                                                <?php echo nl2br(htmlspecialchars($target['text'])); ?>
-                                            <?php else: ?>
-                                                <span class="text-muted fst-italic">No target specified</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td>
-                                            <?php if (!empty($target['status_description'])): ?>
-                                                <?php echo nl2br(htmlspecialchars($target['status_description'])); ?>
-                                            <?php else: ?>
-                                                <span class="text-muted fst-italic">No status update provided</span>
-                                            <?php endif; ?>
-                                        </td>
-                                    </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
+                        <div class="targets-table">
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Program Target</th>
+                                            <th>Status & Achievements</th>
+                                        </tr>
+                                    </thead>                                    <tbody class="program-targets-tbody">
+                                        <?php foreach ($targets as $index => $target): ?><tr class="program-target-row">
+                                            <td class="target-cell long-text">
+                                                <div class="target-content">
+                                                    <?php if (!empty($target['text'])): ?>
+                                                        <?php echo nl2br(htmlspecialchars($target['text'])); ?>
+                                                    <?php else: ?>
+                                                        <div class="empty-value">No target specified</div>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </td>
+                                            <td class="achievement-cell long-text">
+                                                <div class="status-pill status-<?php echo $status; ?>">
+                                                    <i class="<?php echo $status_map[$status]['icon']; ?>"></i>
+                                                    <?php echo $status_map[$status]['label']; ?>
+                                                </div>
+                                                
+                                                <?php if (!empty($target['status_description'])): ?>
+                                                    <div class="achievement-description">
+                                                        <?php echo nl2br(htmlspecialchars($target['status_description'])); ?>
+                                                    </div>
+                                                <?php else: ?>
+                                                    <div class="empty-value">No status update provided</div>
+                                                <?php endif; ?>
+                                            </td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                         
                         <?php if (isset($program['current_submission']['achievement']) && !empty($program['current_submission']['achievement'])): ?>
-                        <div class="mt-3 p-3 rounded border bg-light">
-                            <label class="fw-medium mb-1">Overall Achievement:</label>
-                            <div>
+                        <div class="overall-achievement p-4">
+                            <div class="overall-achievement-label">
+                                <i class="fas fa-award me-2"></i>Overall Achievement
+                            </div>
+                            <div class="achievement-content">
                                 <?php echo nl2br(htmlspecialchars($program['current_submission']['achievement'])); ?>
                             </div>
                         </div>
@@ -349,9 +432,11 @@ require_once '../../includes/dashboard_header.php';
                     </div>
                     
                     <?php if (!empty($remarks)): ?>
-                    <div class="remarks-section mt-4">
-                        <h6 class="border-bottom pb-2 mb-3">Additional Remarks</h6>
-                        <div class="p-3 bg-light rounded border">
+                    <div class="remarks-section">
+                        <h6 class="border-bottom pb-2 mb-3">
+                            <i class="fas fa-comment-alt me-2"></i>Additional Remarks
+                        </h6>
+                        <div class="remarks-container">
                             <?php echo nl2br(htmlspecialchars($remarks)); ?>
                         </div>
                     </div>
