@@ -106,9 +106,8 @@ if (empty($programs)): ?>
                     <span class="text-muted">Not specified</span>
                 <?php endif; ?>
             </td>
-            <td><?php echo date('M j, Y', strtotime($program['updated_at'])); ?></td>
-            <td>
-                <div class="btn-group btn-group-sm">
+            <td><?php echo date('M j, Y', strtotime($program['updated_at'])); ?></td>            <td>
+                <div class="btn-group btn-group-sm d-flex flex-wrap justify-content-start">
                     <a href="view_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="View Details">
                         <i class="fas fa-eye"></i>
                     </a>

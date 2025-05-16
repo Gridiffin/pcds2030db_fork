@@ -354,9 +354,8 @@ require_once '../../includes/dashboard_header.php';
                                     <?php else: ?>
                                         <span class="text-muted">Not available</span>
                                     <?php endif; ?>
-                                </td>
-                                <td>
-                                    <div class="btn-group btn-group-sm">
+                                </td>                                <td>
+                                    <div class="btn-group btn-group-sm d-flex flex-wrap justify-content-start">
                                         <?php
                                         $program_details = get_admin_program_details($program['program_id']);
                                         $current_submission = $program_details['current_submission'] ?? null;
@@ -366,10 +365,9 @@ require_once '../../includes/dashboard_header.php';
                                         </a>
                                         <a href="edit_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-secondary" title="Edit Program">
                                             <i class="fas fa-edit"></i>
-                                        </a>
-                                        <?php if ($current_submission && isset($current_submission['submission_id']) && $current_submission['is_draft'] == 0): ?>
-                                            <a href="reopen_program.php?program_id=<?php echo $program['program_id']; ?>&submission_id=<?php echo $current_submission['submission_id']; ?>" class="btn btn-warning btn-sm me-1" title="Unsubmit Program" onclick="return confirm('Are you sure you want to unsubmit this program?');">
-                                                <i class="fas fa-undo me-1"></i>
+                                        </a>                                        <?php if ($current_submission && isset($current_submission['submission_id']) && $current_submission['is_draft'] == 0): ?>
+                                            <a href="reopen_program.php?program_id=<?php echo $program['program_id']; ?>&submission_id=<?php echo $current_submission['submission_id']; ?>" class="btn btn-warning btn-sm" title="Reopen for editing" onclick="return confirm('Are you sure you want to reopen this program submission for editing?');">
+                                                <i class="fas fa-lock-open"></i> Reopen
                                             </a>
                                         <?php endif; ?>
                                         <a href="delete_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-danger" title="Delete Program">
