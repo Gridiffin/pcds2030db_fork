@@ -234,7 +234,9 @@ function renderStatusChart(chartData) {
  * Initialize the program table sorting functionality
  */
 function initProgramTableSorting() {
-    const programTable = document.getElementById('dashboardProgramsTable');
+    console.log('initProgramTableSorting called');
+    const programTable = document.getElementById('dashboardProgramsTable')?.closest('table');
+    console.log('programTable:', programTable);
     const sortableHeaders = document.querySelectorAll('th.sortable');
     
     if (!programTable || !sortableHeaders.length) return;
@@ -276,11 +278,56 @@ function initProgramTableSorting() {
     });
 }
 
+function sortProgramTable(table, sortBy, direction) {
+    const tbody = table.querySelector('tbody');
+    if (!tbody) {
+        console.error('sortProgramTable: tbody not found in table', table);
+        return;
+    }
+    const rows = Array.from(tbody.querySelectorAll('tr:not(.no-filter-results)'));
+    
+    // Skip if no rows or only one row
+    if (rows.length <= 1) return;
+    
+    // Sort rows
+    const sortedRows = rows.sort((a, b) => {
+        if (sortBy === 'name') {
+            const aText = a.querySelector('td:nth-child(1) .fw-medium')?.textContent.trim().toLowerCase() || '';
+            const bText = b.querySelector('td:nth-child(1) .fw-medium')?.textContent.trim().toLowerCase() || '';
+            return direction === 'asc' ? aText.localeCompare(bText) : bText.localeCompare(aText);
+        } else if (sortBy === 'status') {
+            const statusOrder = {
+                'target achieved': 1,
+                'on track yearly': 2,
+                'severe delay': 3,
+                'not started': 4
+            };
+            const aStatus = a.querySelector('td:nth-child(2) .badge')?.textContent.trim().toLowerCase() || '';
+            const bStatus = b.querySelector('td:nth-child(2) .badge')?.textContent.trim().toLowerCase() || '';
+            const aRank = statusOrder[aStatus] || 999;
+            const bRank = statusOrder[bStatus] || 999;
+            return direction === 'asc' ? aRank - bRank : bRank - aRank;
+        } else if (sortBy === 'date') {
+            const aDate = new Date(a.querySelector('td:nth-child(3)')?.textContent.trim() || 0);
+            const bDate = new Date(b.querySelector('td:nth-child(3)')?.textContent.trim() || 0);
+            return direction === 'asc' ? aDate - bDate : bDate - aDate;
+        }
+        return 0;
+    });
+    
+    // Reorder rows in the DOM
+    sortedRows.forEach(row => tbody.appendChild(row));
+}
+
 /**
  * Sort the programs table
  */
 function sortProgramTable(table, sortBy, direction) {
     const tbody = table.querySelector('tbody');
+    if (!tbody) {
+        console.error('sortProgramTable: tbody not found in table', table);
+        return;
+    }
     const rows = Array.from(tbody.querySelectorAll('tr:not(.no-filter-results)'));
     
     // Skip if no rows or only one row
