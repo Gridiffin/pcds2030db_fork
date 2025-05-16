@@ -77,7 +77,7 @@ if (!$program) {
 
 // Fetch list of agencies for owner selection
 $agencies = [];
-$agencyQuery = "SELECT agency_id, agency_name FROM agencies ORDER BY agency_name";
+$agencyQuery = "SELECT u.user_id AS owner_agency_id, u.agency_name FROM users u JOIN programs p ON u.user_id = p.owner_agency_id GROUP BY u.user_id, u.agency_name ORDER BY u.agency_name";
 $agencyResult = $conn->query($agencyQuery);
 if ($agencyResult) {
     while ($row = $agencyResult->fetch_assoc()) {
@@ -127,7 +127,7 @@ require_once '../../includes/dashboard_header.php';
         <select class="form-select" id="owner_agency_id" name="owner_agency_id" required>
             <option value="">Select an agency</option>
             <?php foreach ($agencies as $agency): ?>
-                <option value="<?php echo $agency['agency_id']; ?>" <?php echo ($agency['agency_id'] == $program['owner_agency_id']) ? 'selected' : ''; ?>>
+                <option value="<?php echo $agency['owner_agency_id']; ?>" <?php echo ($agency['owner_agency_id'] == $program['owner_agency_id']) ? 'selected' : ''; ?>>
                     <?php echo htmlspecialchars($agency['agency_name']); ?>
                 </option>
             <?php endforeach; ?>
