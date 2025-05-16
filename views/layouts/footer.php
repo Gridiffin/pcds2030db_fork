@@ -23,7 +23,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 
 <!-- Utility scripts -->
-<script src="<?php echo APP_URL; ?>/assets/js/utilities/status_utils.js"></script>
+<script src="<?php echo APP_URL; ?>/assets/js/utilities/rating_utils.js"></script>
 <script src="<?php echo APP_URL; ?>/assets/js/utilities/dropdown_init.js"></script>
     
 <!-- Core App JavaScript -->

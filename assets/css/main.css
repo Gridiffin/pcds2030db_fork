@@ -19,7 +19,7 @@
 @import 'components/modals.css';
 @import 'components/tables.css';
 @import 'components/toast.css';
-@import 'components/status-indicators.css';
+@import 'components/rating-indicators.css';
 @import 'components/admin.css'; /* Add the new admin components CSS */
 @import 'components/program-details.css'; /* Program details component styling */
 @import 'components/program-animations.css'; /* Program animations */

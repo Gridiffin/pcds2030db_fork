@@ -18,7 +18,7 @@ require_once '../includes/db_connect.php';
 require_once '../includes/session.php';
 require_once '../includes/functions.php';
 require_once '../includes/admins/index.php';
-require_once '../includes/status_helpers.php';
+require_once '../includes/rating_helpers.php';
 
 // Verify user is admin
 if (!is_admin()) {

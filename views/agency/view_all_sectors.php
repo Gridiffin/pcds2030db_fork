@@ -12,7 +12,7 @@ require_once '../../includes/db_connect.php';
 require_once '../../includes/session.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/agencies/index.php';
-require_once '../../includes/status_helpers.php';
+require_once '../../includes/rating_helpers.php';
 
 // Verify user is an agency
 if (!is_agency()) {
@@ -141,7 +141,7 @@ if (MULTI_SECTOR_ENABLED) {
 
 // Additional scripts
 $additionalScripts = [
-    APP_URL . '/assets/js/utilities/status_utils.js',
+    APP_URL . '/assets/js/utilities/rating_utils.js',
     APP_URL . '/assets/js/period_selector.js',
     APP_URL . '/assets/js/agency/all_sectors.js'
 ];
