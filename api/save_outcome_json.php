@@ -1,10 +1,9 @@
 <?php
 /**
- * API Endpoint: Save Metric JSON Data
+ * API Endpoint: Save Outcome JSON Data
  * 
- * Handles saving the JSON structure for metric data
- * Used by the metric editor to initialize or update the JSON structure
- * @deprecated Use save_outcome_json.php instead
+ * Handles saving the JSON structure for outcome data
+ * Used by the outcome editor to initialize or update the JSON structure
  */
 
 // Include necessary files
@@ -37,7 +36,8 @@ $table_name = $input['table_name'] ?? 'Table_' . $metric_id;
 $data_json = json_encode($input['data_json']);
 $is_draft = isset($input['is_draft']) ? intval($input['is_draft']) : 1;
 
-try {    // Check if the record already exists in outcomes table (new system)
+try {
+    // Check if the record already exists
     $check_query = "SELECT id FROM sector_outcomes_data 
                    WHERE metric_id = ? AND sector_id = ? 
                    LIMIT 1";
@@ -47,14 +47,16 @@ try {    // Check if the record already exists in outcomes table (new system)
     $check_stmt->execute();
     $result = $check_stmt->get_result();
     
-    if ($row = $result->fetch_assoc()) {        // Record exists, update it in outcomes table (new system)
+    if ($row = $result->fetch_assoc()) {
+        // Record exists, update it
         $query = "UPDATE sector_outcomes_data 
                  SET table_name = ?, data_json = ?, updated_at = NOW() 
                  WHERE metric_id = ? AND sector_id = ?";
         
         $stmt = $conn->prepare($query);
         $stmt->bind_param("ssii", $table_name, $data_json, $metric_id, $sector_id);
-    } else {        // Create new record in outcomes table (new system)
+    } else {
+        // Create new record
         $query = "INSERT INTO sector_outcomes_data 
                  (metric_id, sector_id, table_name, data_json, is_draft) 
                  VALUES (?, ?, ?, ?, ?)";
@@ -66,7 +68,7 @@ try {    // Check if the record already exists in outcomes table (new system)
     if ($stmt->execute()) {
         echo json_encode([
             'success' => true, 
-            'message' => 'Metric data saved successfully'
+            'message' => 'Outcome data saved successfully'
         ]);
     } else {
         throw new Exception($conn->error);

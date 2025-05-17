@@ -1,10 +1,9 @@
 <?php
 /**
- * API Endpoint: Check if a metric exists
+ * API Endpoint: Check if an outcome exists
  * 
- * Checks if a metric_id + sector_id combination exists in the sector_metrics_data table
- * Used by the metric editor to determine if it needs to create or update records
- * @deprecated Use check_outcome.php instead
+ * Checks if a metric_id + sector_id combination exists in the sector_outcomes_data table
+ * Used by the outcome editor to determine if it needs to create or update records
  */
 
 // Include necessary files
@@ -32,9 +31,8 @@ if ($metric_id <= 0 || $sector_id <= 0) {
     exit;
 }
 
-// Check if the metric exists with data_json
+// Check if the outcome exists with data_json
 try {
-    // Try looking in the outcomes table first (new system)
     $query = "SELECT id, data_json FROM sector_outcomes_data 
               WHERE metric_id = ? AND sector_id = ? 
               LIMIT 1";

@@ -1,9 +1,8 @@
 <?php
 /**
- * API Endpoint: Get Metric Data
+ * API Endpoint: Get Outcome Data
  * 
  * Returns the data_json contents for a specified metric_id and sector_id
- * @deprecated Use get_outcome_data.php instead
  */
 
 // Include necessary files
@@ -32,7 +31,8 @@ if ($metric_id <= 0 || $sector_id <= 0) {
     exit;
 }
 
-try {    // Prepare query to get the metric data from outcomes table (new system)
+try {
+    // Prepare query to get the outcome data
     $query = "SELECT data_json, table_name FROM sector_outcomes_data 
               WHERE metric_id = ? AND sector_id = ? AND is_draft = ?
               LIMIT 1";
@@ -64,7 +64,7 @@ try {    // Prepare query to get the metric data from outcomes table (new system
     } else {
         echo json_encode([
             'success' => false, 
-            'error' => 'Metric data not found',
+            'error' => 'Outcome data not found',
             'metric_id' => $metric_id,
             'sector_id' => $sector_id
         ]);

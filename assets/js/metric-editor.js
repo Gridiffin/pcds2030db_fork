@@ -1,26 +1,44 @@
 /**
  * Outcome Editor JavaScript
  * Handles interactive features for the sector outcomes editor
+ * @deprecated Use outcome-editor.js instead
  */
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize metric editor functionality
-    initializeMetricEditor();
-    
-    // Add debugging for delete buttons
-    console.log('Adding event listeners to delete buttons');
-    document.querySelectorAll('.delete-column-btn').forEach(btn => {
-        console.log('Delete button found:', btn.dataset.metric);
-        btn.addEventListener('click', function(e) {
-            console.log('Delete button clicked for:', this.dataset.metric);
-            e.stopPropagation(); // Prevent event bubbling
-            handleDeleteColumn.call(this);
+// Load the new outcome-editor.js script dynamically
+(function loadOutcomeEditor() {
+    const script = document.createElement('script');
+    script.src = '/pcds2030_dashboard/assets/js/outcome-editor.js';
+    script.onload = function() {
+        console.log('Outcome editor script loaded successfully');
+    };
+    script.onerror = function() {
+        console.error('Failed to load outcome editor script, falling back to metric editor');
+        initFallbackMetricEditor();
+    };
+    document.head.appendChild(script);
+})();
+
+function initFallbackMetricEditor() {
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize metric editor functionality
+        initializeMetricEditor();
+        
+        // Add debugging for delete buttons
+        console.log('Adding event listeners to delete buttons');
+        document.querySelectorAll('.delete-column-btn').forEach(btn => {
+            console.log('Delete button found:', btn.dataset.metric);
+            btn.addEventListener('click', function(e) {
+                console.log('Delete button clicked for:', this.dataset.metric);
+                e.stopPropagation(); // Prevent event bubbling
+                handleDeleteColumn.call(this);
+            });
         });
     });
-});
+}
 
 /**
  * Initialize all metric editor functionality
+ * @deprecated Use initializeOutcomeEditor from outcome-editor.js instead
  */
 function initializeMetricEditor() {
     // Set up event listeners for metric value cells
