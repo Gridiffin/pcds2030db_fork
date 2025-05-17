@@ -1,8 +1,8 @@
 <?php
 /**
- * View Submitted Metric Details
+ * View Submitted Outcome Details
  * 
- * Allows agency users to view the details of submitted metrics
+ * Allows agency users to view the details of submitted outcomes
  */
 
 // Include necessary files
@@ -80,13 +80,12 @@ require_once '../layouts/header.php';
 require_once '../layouts/agency_nav.php';
 
 // Set up the page header variables for dashboard_header.php
-$title = "View Metric Details";
-$subtitle = "Review your submitted metric data";
+$title = "View Outcome Details";
+$subtitle = "Review your submitted outcomes data";
 $headerStyle = 'light'; // Use light (white) style for inner pages
 $actions = [
-    [
-        'url' => 'submit_metrics.php',
-        'text' => 'Back to Metrics',
+    [        'url' => 'submit_metrics.php',
+        'text' => 'Back to Outcomes',
         'icon' => 'fa-arrow-left',
         'class' => 'btn-outline-primary'
     ]
@@ -133,7 +132,7 @@ require_once '../../includes/dashboard_header.php';
                     <div class="row mb-4">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <strong>Metric ID:</strong> <?= $metric_id ?>
+                                <strong>Outcomes ID:</strong> <?= $metric_id ?>
                             </div>
                             <div class="mb-3">
                                 <strong>Submitted:</strong> <?= $created_at->format('F j, Y g:i A') ?>
@@ -155,7 +154,7 @@ require_once '../../includes/dashboard_header.php';
                                         <th><?= htmlspecialchars($name) ?></th>
                                     <?php endforeach; ?>
                                     <?php if (empty($metric_names)): ?>
-                                        <th class="text-center text-muted">No metrics defined</th>
+                                        <th class="text-center text-muted">No outcomes defined</th>
                                     <?php endif; ?>
                                 </tr>
                             </thead>
@@ -219,8 +218,7 @@ require_once '../../includes/dashboard_header.php';
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="metricToChart" class="form-label">Metrics to Display</label>
+                            <div class="form-group">                                <label for="metricToChart" class="form-label">Outcomes to Display</label>
                                 <select class="form-select" id="metricToChart" multiple>
                                     <?php foreach ($metric_names as $name): ?>
                                         <option value="<?= htmlspecialchars($name) ?>" selected>
@@ -228,7 +226,7 @@ require_once '../../includes/dashboard_header.php';
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
-                                <small class="text-muted">Hold Ctrl/Cmd to select multiple metrics</small>
+                                <small class="text-muted">Hold Ctrl/Cmd to select multiple outcomes</small>
                             </div>
                         </div>
                     </div>

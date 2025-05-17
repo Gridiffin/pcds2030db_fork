@@ -70,9 +70,8 @@ const ReportPopulator = (function() {
         } catch (err) {
             console.error("Error in populateSlide:", err);
         }
-    }
-      /**
-     * Add KPI boxes with data from metrics_details
+    }    /**
+     * Add KPI boxes with data from outcomes_details
      * @param {Object} slide - The slide to populate
      * @param {Object} data - The data from the API
      * @param {Object} pptx - The PptxGenJS instance
@@ -80,10 +79,8 @@ const ReportPopulator = (function() {
      * @param {string} defaultFont - The default font
      */
     function addKpiBoxes(slide, data, pptx, themeColors, defaultFont) {
-        console.log("Adding KPI boxes with metrics_details data");
-
-        if (data && data.metrics_details && data.metrics_details.length > 0) {
-            console.log("Using metrics_details data for KPIs:", data.metrics_details);
+        console.log("Adding KPI boxes with outcomes_details data");        if (data && data.metrics_details && data.metrics_details.length > 0) {
+            console.log("Using outcomes_details data for KPIs:", data.metrics_details);
 
             data.metrics_details.forEach((kpi, index) => {
                 if (index < 3) { // Ensure we only process up to 3 KPIs
@@ -137,10 +134,10 @@ const ReportPopulator = (function() {
                 }
             });
         } else {
-            console.warn("No KPI data available in metrics_details. Falling back to legacy or default KPIs if defined.");
-            // Fallback to legacy kpi1, kpi2, kpi3 if metrics_details is empty
+            console.warn("No KPI data available in outcomes_details. Falling back to legacy or default KPIs if defined.");
+            // Fallback to legacy kpi1, kpi2, kpi3 if outcomes_details is empty
             // This part can be adjusted or removed if strict adherence to selected KPIs is required
-            // and no fallback to old kpi objects is desired when metrics_details is empty.
+            // and no fallback to old kpi objects is desired when outcomes_details is empty.
             if (data.kpi1) {
                 console.log("Fallback to legacy kpi1");
                 // Assuming kpi1, kpi2, kpi3 are simple {name, value, description}

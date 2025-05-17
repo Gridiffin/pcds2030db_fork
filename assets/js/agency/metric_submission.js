@@ -1,6 +1,6 @@
 /**
- * Metric Submission Form
- * Handles metric submission form validation and formatting
+ * Outcome Submission Form
+ * Handles outcome submission form validation and formatting
  */
 document.addEventListener('DOMContentLoaded', function() {
     // Format numeric inputs

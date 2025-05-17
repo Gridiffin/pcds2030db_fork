@@ -1,8 +1,8 @@
 <?php
 /**
-* Manage Metrics
+* Manage Outcomes
 * 
-* Admin page to manage metrics.
+* Admin page to manage outcomes.
 */
 
 // Include necessary files
@@ -19,7 +19,7 @@ if (!is_admin()) {
 }
 
 // Set page title
-$pageTitle = 'Manage Metrics';
+$pageTitle = 'Manage Outcomes';
 
 require_once '../../includes/admins/index.php';
 
@@ -52,15 +52,14 @@ require_once '../layouts/header.php';
 require_once '../layouts/admin_nav.php';
 ?>
 
-<div class="container-fluid px-4 py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="container-fluid px-4 py-4">    <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h1 class="h2 mb-0">Manage Metrics</h1>
-            <p class="text-muted">Admin interface to manage metrics</p>
+            <h1 class="h2 mb-0">Manage Outcomes</h1>
+            <p class="text-muted">Admin interface to manage outcomes</p>
         </div>
         <div>
             <a href="javascript:void(0)" class="btn btn-primary me-2" id="createMetricBtn">
-                <i class="fas fa-plus-circle me-1"></i> Create New Metric
+                <i class="fas fa-plus-circle me-1"></i> Create New Outcome
             </a>
             <button class="btn btn-sm btn-outline-primary" id="refreshPage">
                 <i class="fas fa-sync-alt me-1"></i> Refresh
@@ -68,10 +67,9 @@ require_once '../layouts/admin_nav.php';
         </div>
     </div>
 
-    <!-- Sector Filter -->
-    <div class="card mb-4">
+    <!-- Sector Filter -->    <div class="card mb-4">
         <div class="card-header">
-            <h5 class="card-title m-0">Filter Metrics</h5>
+            <h5 class="card-title m-0">Filter Outcomes</h5>
         </div>
         <div class="card-body">
             <form method="get" class="row g-3">
@@ -106,17 +104,15 @@ require_once '../layouts/admin_nav.php';
                 </div>
             </form>
         </div>
-    </div>
-
-    <div class="card mb-4">
+    </div>    <div class="card mb-4">
         <div class="card-header">
-            <h5 class="card-title m-0">Metrics</h5>
+            <h5 class="card-title m-0">Outcomes</h5>
         </div>
         <div class="card-body">
             <table id="metricsTable" class="table table-striped table-bordered" style="width:100%">
                 <thead>
                     <tr>
-                        <th>Metric ID</th>
+                        <th>Outcome ID</th>
                         <th>Sector</th>
                         <th>Table Name</th>
                         <th>Reporting Period</th>
@@ -134,16 +130,15 @@ require_once '../layouts/admin_nav.php';
                         <tr>
                             <td colspan="7" class="text-center py-4">
                                 <div class="alert alert-info mb-0">
-                                    <i class="fas fa-info-circle me-2"></i>
-                                    <?php
+                                    <i class="fas fa-info-circle me-2"></i>                                    <?php
                                     if ($selected_sector > 0 && $selected_period > 0) {
-                                        echo 'No metrics found for the selected sector and reporting period.';
+                                        echo 'No outcomes found for the selected sector and reporting period.';
                                     } elseif ($selected_sector > 0) {
-                                        echo 'No metrics found for the selected sector.';
+                                        echo 'No outcomes found for the selected sector.';
                                     } elseif ($selected_period > 0) {
-                                        echo 'No metrics found for the selected reporting period.';
+                                        echo 'No outcomes found for the selected reporting period.';
                                     } else {
-                                        echo 'No metrics found in the system.';
+                                        echo 'No outcomes found in the system.';
                                     }
                                     ?>
                                 </div>
@@ -175,8 +170,7 @@ require_once '../layouts/admin_nav.php';
                                     </a>
                                     <a href="edit_metric.php?metric_id=<?php echo $metric['metric_id']; ?>" class="btn btn-sm btn-primary me-1" role="button">
                                         <i class="fas fa-edit me-1"></i> Edit
-                                    </a>
-                                    <a href="delete_metric.php?metric_id=<?php echo $metric['metric_id']; ?>" class="btn btn-sm btn-danger" role="button" onclick="return confirm('Are you sure you want to delete this metric?');">
+                                    </a>                                    <a href="delete_metric.php?metric_id=<?php echo $metric['metric_id']; ?>" class="btn btn-sm btn-danger" role="button" onclick="return confirm('Are you sure you want to delete this outcome?');">
                                         <i class="fas fa-trash-alt me-1"></i> Delete
                                     </a>
                                 </td>

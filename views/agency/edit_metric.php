@@ -1,8 +1,8 @@
 <?php
 /**
- * Edit Sector Metrics
+ * Edit Sector Outcomes
  * 
- * Interface for agency users to edit sector-specific metrics
+ * Interface for agency users to edit sector-specific outcomes
  */
 
 // Include necessary files

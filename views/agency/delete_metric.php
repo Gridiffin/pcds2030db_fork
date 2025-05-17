@@ -1,8 +1,8 @@
 <?php
 /**
- * Delete Sector Metric Draft
+ * Delete Sector Outcome Draft
  * 
- * Allows agency users to delete a sector metric draft by metric_id.
+ * Allows agency users to delete a sector outcome draft by metric_id.
  */
 
 require_once '../../config/config.php';
@@ -19,7 +19,7 @@ if (!is_agency()) {
 
 // Check if metric_id is provided
 if (!isset($_GET['metric_id']) || !is_numeric($_GET['metric_id'])) {
-    header('Location: submit_metrics.php?error=Invalid metric ID');
+    header('Location: submit_metrics.php?error=Invalid outcome ID');
     exit;
 }
 

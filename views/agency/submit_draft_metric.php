@@ -19,7 +19,7 @@ $metric_id = isset($_GET['metric_id']) ? intval($_GET['metric_id']) : 0;
 $sector_id = $_SESSION['sector_id'] ?? 0;
 
 if ($metric_id <= 0 || $sector_id <= 0) {
-    $_SESSION['flash_error'] = 'Invalid metric ID or sector ID.';
+    $_SESSION['flash_error'] = 'Invalid outcome ID or sector ID.';
     header('Location: submit_metrics.php');
     exit;
 }
@@ -46,10 +46,8 @@ try {
     $stmt = $conn->prepare($draft_query);
     $stmt->bind_param("ii", $metric_id, $sector_id);
     $stmt->execute();
-    $result = $stmt->get_result();
-
-    if ($result->num_rows === 0) {
-        throw new Exception('No draft data found for the selected metric.');
+    $result = $stmt->get_result();    if ($result->num_rows === 0) {
+        throw new Exception('No draft data found for the selected outcome.');
     }
 
     $draft_data = $result->fetch_assoc();
@@ -76,14 +74,12 @@ try {
     $delete_stmt->execute();
 
     // Commit transaction
-    $conn->commit();
-
-    $_SESSION['flash_success'] = 'Metric draft submitted successfully.';
+    $conn->commit();    $_SESSION['flash_success'] = 'Outcome draft submitted successfully.';
     header('Location: submit_metrics.php');
     exit;
 } catch (Exception $e) {
     $conn->rollback();
-    $_SESSION['flash_error'] = 'Failed to submit metric draft: ' . $e->getMessage();
+    $_SESSION['flash_error'] = 'Failed to submit outcome draft: ' . $e->getMessage();
     header('Location: submit_metrics.php');
     exit;
 }

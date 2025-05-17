@@ -626,16 +626,14 @@ const ReportStyler = (function() {
             align: 'left',
             valign: 'middle'
         });
-    }
-
-    /**
+    }    /**
      * Create a KPI box with formatted title, value and description (Legacy support)
      * This function is now a dispatcher based on layout_type in detailJson.
      * @param {Object} slide - The slide to add the KPI box to
      * @param {Object} pptx - The PptxGenJS instance
      * @param {Object} themeColors - The theme colors
      * @param {string} defaultFont - The default font
-     * @param {string} kpiName - The name/title of the KPI (from metrics_details.name)
+     * @param {string} kpiName - The name/title of the KPI (from outcomes_details.name)
      * @param {Object} detailJson - The parsed detail_json object for the KPI
      * @param {number} boxIndex - Index for positioning multiple boxes (0, 1, 2)
      */

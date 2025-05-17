@@ -166,10 +166,9 @@ require_once '../layouts/agency_nav.php';
                 <div class="d-flex">
                     <div class="flex-shrink-0">
                         <span class="badge bg-info p-2"><i class="fas fa-chart-bar"></i></span>
-                    </div>
-                    <div class="flex-grow-1 ms-3">
+                    </div>                    <div class="flex-grow-1 ms-3">
                         <h5 class="mt-0">Sector Reports</h5>
-                        <p class="mb-0">These reports provide an overview of your sector's performance metrics, aggregated data, and comparative analysis.</p>
+                        <p class="mb-0">These reports provide an overview of your sector's performance outcomes, aggregated data, and comparative analysis.</p>
                     </div>
                 </div>
             </div>

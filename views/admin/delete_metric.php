@@ -1,8 +1,8 @@
 <?php
 /**
- * Delete Sector Metric
+ * Delete Sector Outcome
  * 
- * Allows admin users to delete a sector metric by metric_id.
+ * Allows admin users to delete a sector outcome by metric_id.
  */
 
 require_once '../../config/config.php';
@@ -19,7 +19,7 @@ if (!is_admin()) {
 
 // Check if metric_id is provided
 if (!isset($_GET['metric_id']) || !is_numeric($_GET['metric_id'])) {
-    header('Location: manage_metrics.php?error=Invalid metric ID');
+    header('Location: manage_metrics.php?error=Invalid outcome ID');
     exit;
 }
 

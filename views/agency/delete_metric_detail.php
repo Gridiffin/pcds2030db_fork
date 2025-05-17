@@ -17,12 +17,11 @@ try {
     $stmt->execute();
     $result = $stmt->get_result();
     
-    if ($result->num_rows === 0) {
-        echo json_encode(['success' => false, 'message' => 'Metric detail not found']);
+    if ($result->num_rows === 0) {        echo json_encode(['success' => false, 'message' => 'Outcome detail not found']);
         exit;
     }
     
-    // Delete the metric detail
+    // Delete the outcome detail
     $stmt = $conn->prepare("DELETE FROM metrics_details WHERE detail_id = ?");
     $stmt->bind_param('i', $detail_id);
     

@@ -1,6 +1,6 @@
 /**
- * Metric Editor JavaScript
- * Handles interactive features for the sector metrics editor
+ * Outcome Editor JavaScript
+ * Handles interactive features for the sector outcomes editor
  */
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -205,13 +205,11 @@ function removeColumnFromTable(columnIndex) {
             row.children[actualIndex].remove();
         }
     });
-    
-    // Add "No metrics" placeholder if we removed the last column
+      // Add "No outcomes" placeholder if we removed the last column
     const remainingColumns = headerRow.querySelectorAll('th');
     if (remainingColumns.length === 1) { // Only month column remains
-        const placeholderTh = document.createElement('th');
-        placeholderTh.className = 'text-center text-muted';
-        placeholderTh.innerHTML = '<em>No metrics defined. Click "Add Column" to start.</em>';
+        const placeholderTh = document.createElement('th');        placeholderTh.className = 'text-center text-muted';
+        placeholderTh.innerHTML = '<em>No outcomes defined. Click "Add Column" to start.</em>';
         headerRow.appendChild(placeholderTh);
         
         // Add empty cells to data rows
@@ -272,10 +270,9 @@ async function handleMetricNameSave() {
     const cell = this.parentElement.querySelector('.metric-name');
     const oldName = cell.dataset.metric;
     const newName = cell.textContent.trim();
-    
-    if (!newName) {
-        showToast('Metric name cannot be empty', 'warning');
-        cell.textContent = oldName || 'Unnamed Metric';
+      if (!newName) {
+        showToast('Outcome name cannot be empty', 'warning');
+        cell.textContent = oldName || 'Unnamed Outcome';
         return;
     }
     
@@ -305,11 +302,10 @@ async function handleMetricNameSave() {
         // Update all corresponding value cells
         document.querySelectorAll(`.metric-value[data-metric="${oldName}"]`)
             .forEach(cell => cell.dataset.metric = newName);
-        
-        // Show a toast notification
-        showToast('Metric name updated successfully', 'success');
+          // Show a toast notification
+        showToast('Outcome name updated successfully', 'success');
     } catch (error) {
-        showToast('Error updating metric name: ' + error.message, 'danger');
+        showToast('Error updating outcome name: ' + error.message, 'danger');
         cell.textContent = oldName;
     }
 }
@@ -353,7 +349,7 @@ async function handleSaveTableName() {
 }
 
 /**
- * Handle editing units for metrics
+ * Handle editing units for outcomes
  */
 async function handleUnitEdit() {
     const metric = this.dataset.metric;
@@ -431,9 +427,8 @@ async function handleSetAllUnits() {
                 metricNames.push(metric);
             }
         });
-        
-        if (metricNames.length === 0) {
-            showToast('No metrics found to update', 'warning');
+          if (metricNames.length === 0) {
+            showToast('No outcomes found to update', 'warning');
             return;
         }
         

@@ -59,8 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos($_SERVER['CONTENT_TYPE'] ?? 
         'items' => $items
     ]);
 
-    if ($detail_id === null) {
-        // Insert new metric detail
+    if ($detail_id === null) {        // Insert new outcome detail
         $stmt = $conn->prepare("INSERT INTO metrics_details (detail_name, detail_json, is_draft) VALUES (?, ?, 0)");
         if ($stmt) {
             $stmt->bind_param('ss', $detail_name, $detail_json);
@@ -69,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos($_SERVER['CONTENT_TYPE'] ?? 
                 ob_end_clean();
                 echo json_encode([
                     'success' => true, 
-                    'message' => 'Metric detail created successfully.',
+                    'message' => 'Outcome detail created successfully.',
                     'action' => 'create',
                     'new_id' => $stmt->insert_id,
                     'title' => $detail_name,
@@ -83,8 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos($_SERVER['CONTENT_TYPE'] ?? 
         } else {
             $errors[] = 'Database error: ' . $conn->error;
         }
-    } else {
-        // Update existing metric detail
+    } else {        // Update existing outcome detail
         $stmt = $conn->prepare("UPDATE metrics_details SET detail_name = ?, detail_json = ? WHERE detail_id = ?");
         if ($stmt) {
             $stmt->bind_param('ssi', $detail_name, $detail_json, $detail_id);
@@ -93,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos($_SERVER['CONTENT_TYPE'] ?? 
                 ob_end_clean();
                 echo json_encode([
                     'success' => true, 
-                    'message' => 'Metric detail updated successfully.',
+                    'message' => 'Outcome detail updated successfully.',
                     'action' => 'update',
                     'updated_id' => $detail_id,
                     'title' => $detail_name,
@@ -158,9 +156,8 @@ if ($result) {
 
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Create Metric Detail</title>
+<head>    <meta charset="UTF-8">
+    <title>Create Outcome Detail</title>
     <link href="<?php echo APP_URL; ?>/assets/css/main.css" rel="stylesheet">
     <link href="<?php echo APP_URL; ?>/assets/css/components/forms.css" rel="stylesheet">
     <link href="<?php echo APP_URL; ?>/assets/css/components/buttons.css" rel="stylesheet">
@@ -204,9 +201,8 @@ if ($result) {
         }
     </style>
 </head>
-<body>
-    <div class="container mt-5">
-        <h1>Create Metric Detail</h1>
+<body>    <div class="container mt-5">
+        <h1>Create Outcome Detail</h1>
         <div id="errorContainer" class="alert alert-danger" style="display: none;"></div>
         <div id="successContainer" class="alert alert-success" style="display: none;"></div>
           <form id="metricDetailForm" method="post" action="">
@@ -248,13 +244,10 @@ if ($result) {
             
             <button type="submit" class="btn btn-primary" id="submitBtn">Create</button>
             <a href="<?php echo APP_URL; ?>/views/agency/create_metric_detail.php" class="btn btn-secondary ms-2">Cancel</a>
-        </form>
-
-        <div class="mt-5">
-            <h2>Created Metric Details</h2>
-            <div id="metricDetailsContainer">
+        </form>        <div class="mt-5">
+            <h2>Created Outcome Details</h2>            <div id="metricDetailsContainer">
                 <?php if (empty($detailsArray)): ?>
-                    <p>No metric details found.</p>
+                    <p>No outcome details found.</p>
                 <?php else: ?>
                     <ul>
                         <?php foreach ($detailsArray as $detail): ?>
@@ -345,11 +338,9 @@ if ($result) {
             } else {
                 alert('You need at least one value-description pair.');
             }
-        }
-
-        // Function to delete metric detail
+        }        // Function to delete metric detail
         function deleteMetricDetail(id) {
-            if (!confirm('Are you sure you want to delete this metric detail? This action cannot be undone.')) {
+            if (!confirm('Are you sure you want to delete this outcome detail? This action cannot be undone.')) {
                 return;
             }
             

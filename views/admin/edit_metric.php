@@ -1,8 +1,8 @@
 <?php
 /**
- * Edit Sector Metrics
+ * Edit Sector Outcomes
  * 
- * Admin interface to edit sector-specific metrics
+ * Admin interface to edit sector-specific outcomes
  */
 
 // Include necessary files

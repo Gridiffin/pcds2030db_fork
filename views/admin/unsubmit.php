@@ -1,6 +1,6 @@
 <?php
 /**
- * Unsubmit Metric
+ * Unsubmit Outcome
  * 
  * Sets the is_draft flag to 1 for the selected metric_id.
  */

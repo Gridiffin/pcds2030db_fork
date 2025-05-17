@@ -1,9 +1,9 @@
 <?php
 ob_start(); // Start output buffering to prevent headers already sent issues
 /**
- * Create Sector Metrics
+ * Create Sector Outcomes
  * 
- * Interface for agency users to create sector-specific metrics
+ * Interface for agency users to create sector-specific outcomes
  */
 
 // Include necessary files
@@ -32,7 +32,7 @@ if (!$period_id) {
 $sector_id = $_GET['sector_id'] ?? $_SESSION['sector_id'];
 
 // Set page title
-$pageTitle = 'Create Sector Metrics';
+$pageTitle = 'Create Sector Outcomes';
 
 // Handle form submission for new metrics
 $message = '';
@@ -64,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['CONTENT_TYPE']) && 
                 
                 // If no valid JSON data exists, initialize the structure
                 if (empty($metrics_data) || !is_array($metrics_data)) {
-                    echo json_encode(['success' => false, 'error' => 'No valid metric data found']);
+                    echo json_encode(['success' => false, 'error' => 'No valid outcome data found']);
                     exit;
                 }
                 
@@ -360,8 +360,8 @@ require_once '../layouts/header.php';
 require_once '../layouts/agency_nav.php';
 
 // Set up the page header variables for dashboard_header.php
-$title = "Create Sector Metrics";
-$subtitle = "Define and manage your sector-specific metrics";
+$title = "Create Sector Outcomes";
+$subtitle = "Define and manage your sector-specific outcomes";
 $headerStyle = 'light'; // Use light (white) style for inner pages
 $actions = [
     [
@@ -400,7 +400,7 @@ require_once '../../includes/dashboard_header.php';
                         <label for="unitInput" class="form-label">Unit</label>
                         <input type="text" class="form-control" id="unitInput" placeholder="e.g., kg, ha, $, %, etc.">
                     </div>
-                    <p class="text-muted small">Enter the unit of measurement for this metric.</p>
+                    <p class="text-muted small">Enter the unit of measurement for this outcome.</p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -410,10 +410,9 @@ require_once '../../includes/dashboard_header.php';
         </div>
     </div>
 
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-primary text-white">
+    <div class="card shadow-sm mb-4">        <div class="card-header bg-primary text-white">
             <h5 class="card-title m-0">
-                <i class="fas fa-table me-2"></i>Metric Table Definition
+                <i class="fas fa-table me-2"></i>Outcome Table Definition
             </h5>
         </div>
         <div class="card-body">
@@ -422,15 +421,14 @@ require_once '../../includes/dashboard_header.php';
                     <div class="col-md-6">
                         <label for="tableNameInput" class="form-label">Table Name</label>
                         <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-signature"></i></span>
-                            <input type="text" class="form-control" id="tableNameInput" 
-                                   placeholder="Enter a descriptive name for this metric table" 
+                            <span class="input-group-text"><i class="fas fa-signature"></i></span>                            <input type="text" class="form-control" id="tableNameInput" 
+                                   placeholder="Enter a descriptive name for this outcome table" 
                                    value="<?= htmlspecialchars($table_name) ?>" required />
                             <button type="button" class="btn btn-primary" id="saveTableNameBtn">
                                 <i class="fas fa-save me-1"></i> Save
                             </button>
                         </div>
-                        <div class="form-text">Provide a clear, descriptive name for your metric table</div>
+                        <div class="form-text">Provide a clear, descriptive name for your outcome table</div>
                     </div>
                     <div class="col-md-6 text-md-end mt-3 mt-md-0">
                         <div class="btn-group">
@@ -1009,7 +1007,7 @@ $additionalScripts = [
             return;
         }
         
-        console.log('Deleting column:', metric); // Debug info
+        console.log('Deleting outcome column:', metric); // Debug info
         
         // Delete directly from the current page instead of from update_metric.php
         fetch('', {

@@ -10,7 +10,7 @@ if (!is_agency()) {
     exit;
 }
 
-$pageTitle = 'Submit Sector Metrics';
+$pageTitle = 'Submit Sector Outcomes';
 
 $current_period = get_current_reporting_period();
 $show_form = $current_period && $current_period['status'] === 'open';
@@ -40,8 +40,8 @@ require_once '../layouts/header.php';
 require_once '../layouts/agency_nav.php';
 
 // Set up the page header variables for dashboard_header.php
-$title = "Submit Sector Metrics";
-$subtitle = "Update your sector-specific metrics for this reporting period";
+$title = "Submit Sector Outcomes";
+$subtitle = "Update your sector-specific outcomes for this reporting period";
 $headerStyle = 'light'; // Use light (white) style for inner pages
 
 // Get next metric ID for the Create New Metric button
@@ -68,10 +68,10 @@ if ($current_period) {
     ];
 }
 
-// Add Create New Metric button after the period badges
+// Add Create New Outcome button after the period badges
 $actions[] = [
     'url' => "create_metric.php?sector_id={$_SESSION['sector_id']}&next_metric_id={$next_metric_id}",
-    'text' => 'Create New Metric',
+    'text' => 'Create New Outcome',
     'icon' => 'fa-plus-circle',
     'class' => 'btn-primary ms-3' // Added margin-start for spacing from badges
 ];
@@ -109,26 +109,24 @@ require_once '../../includes/dashboard_header.php';
         </div>
     </div>
 
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+    <div class="card shadow-sm mb-4">        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h5 class="card-title m-0">
-                <i class="fas fa-chart-bar me-2"></i>Submitted Metrics
+                <i class="fas fa-chart-bar me-2"></i>Submitted Outcomes
             </h5>
-            <span class="badge bg-light text-primary"><?= count(array_unique(array_column($metrics, 'metric_id'))) ?> Metrics</span>
+            <span class="badge bg-light text-primary"><?= count(array_unique(array_column($metrics, 'metric_id'))) ?> Outcomes</span>
         </div>
         <div class="card-body">
-            <?php if (empty($metrics)): ?>
-                <div class="alert alert-info mt-3">
+            <?php if (empty($metrics)): ?>                <div class="alert alert-info mt-3">
                     <i class="fas fa-info-circle me-2"></i>
-                    No metrics have been submitted for your sector yet. Click the "Create New Metric" button to get started.
+                    No outcomes have been submitted for your sector yet. Click the "Create New Outcome" button to get started.
                 </div>
             <?php else: ?>
-                <p class="mb-3">These metrics have been submitted for the current reporting period (Q<?= $current_period['quarter'] ?>-<?= $current_period['year'] ?>).</p>
+                <p class="mb-3">These outcomes have been submitted for the current reporting period (Q<?= $current_period['quarter'] ?>-<?= $current_period['year'] ?>).</p>
                 <div class="table-responsive">
                     <table class="table table-hover border">
                         <thead class="table-light">
                             <tr>
-                                <th width="70%">Metric Name</th>
+                                <th width="70%">Outcome Name</th>
                                 <th width="30%" class="text-center">Actions</th>
                             </tr>
                         </thead>
@@ -162,16 +160,16 @@ require_once '../../includes/dashboard_header.php';
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                 <h5 class="card-title m-0">
-                    <i class="fas fa-edit me-2"></i>Metric Drafts
+                    <i class="fas fa-edit me-2"></i>Outcomes Drafts
                 </h5>
                 <span class="badge bg-light text-primary"><?= count(array_unique(array_column($draft_metrics, 'metric_id'))) ?> Drafts</span>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-hover border">
+                    <table class="table table-hover borsder">
                         <thead class="table-light">
                             <tr>
-                                <th width="60%">Metric</th>
+                                <th width="60%">Outcomes</th>
                                 <th width="40%" class="text-center">Actions</th>
                             </tr>
                         </thead>
@@ -191,8 +189,7 @@ require_once '../../includes/dashboard_header.php';
                                             </a>
                                             <a href="submit_draft_metric.php?metric_id=<?= $metric['metric_id'] ?>" class="btn btn-sm btn-outline-success" onclick="return confirm('Are you sure you want to submit this metric draft?');">
                                                 <i class="fas fa-check me-1"></i> Submit
-                                            </a>
-                                            <a href="delete_metric.php?metric_id=<?= $metric['metric_id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this metric draft?');">
+                                            </a>                                            <a href="delete_metric.php?metric_id=<?= $metric['metric_id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this outcome draft?');">
                                                 <i class="fas fa-trash-alt me-1"></i> Delete
                                             </a>
                                         </div>
@@ -212,23 +209,23 @@ require_once '../../includes/dashboard_header.php';
     <div class="card shadow-sm mt-4">
         <div class="card-header bg-primary text-white">
             <h5 class="card-title m-0">
-                <i class="fas fa-info-circle me-2"></i>Guidelines for Metrics
+                <i class="fas fa-info-circle me-2"></i>Guidelines for Outcomes
             </h5>
         </div>
         <div class="card-body">
             <div class="row g-4">
                 <div class="col-md-3">
                     <div class="h-100 p-3 border rounded bg-light-subtle">
-                        <h6><i class="fas fa-table me-2 text-primary"></i>Metric Tables</h6>
-                        <p class="small mb-1">Create a table for each related set of metrics that share the same reporting frequency.</p>
+                        <h6><i class="fas fa-table me-2 text-primary"></i>Outcomes Tables</h6>
+                        <p class="small mb-1">Create a table for each related set of outcomes that share the same reporting frequency.</p>
                         <div class="alert alert-light py-2 px-3 mb-0 small">Example: "Timber Production Volume"</div>
                     </div>
                 </div>
 
                 <div class="col-md-3">
                     <div class="h-100 p-3 border rounded bg-light-subtle">
-                        <h6><i class="fas fa-columns me-2 text-success"></i>Metric Columns</h6>
-                        <p class="small mb-1">Each column represents a specific metric with its own unit of measurement.</p>
+                        <h6><i class="fas fa-columns me-2 text-success"></i>Outcomes Columns</h6>
+                        <p class="small mb-1">Each column represents a specific outcomes with its own unit of measurement.</p>
                         <div class="alert alert-light py-2 px-3 mb-0 small">Example: "Timber Exports", "Forest Coverage"</div>
                     </div>
                 </div>
@@ -236,7 +233,7 @@ require_once '../../includes/dashboard_header.php';
                 <div class="col-md-3">
                     <div class="h-100 p-3 border rounded bg-light-subtle">
                         <h6><i class="fas fa-ruler me-2 text-info"></i>Measurement Units</h6>
-                        <p class="small mb-1">Specify the appropriate unit for each metric. Units can be set individually or for all columns.</p>
+                        <p class="small mb-1">Specify the appropriate unit for each outcome. Units can be set individually or for all columns.</p>
                         <div class="alert alert-light py-2 px-3 mb-0 small">Examples: RM, Ha, %, tons, m³</div>
                     </div>
                 </div>

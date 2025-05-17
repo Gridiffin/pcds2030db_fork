@@ -18,7 +18,7 @@ $is_report_page = $current_page == 'generate_reports.php';
 $is_user_page = in_array($current_page, ['manage_users.php', 'add_user.php', 'edit_user.php']);
 
 // Check if current page is metric related
-$is_metric_page = in_array($current_page, ['manage_metrics.php', 'edit_metric.php', 'view_metric.php']);
+$is_outcome_page = in_array($current_page, ['manage_metrics.php', 'edit_metric.php', 'view_metric.php']);
 
 // Check if current page is settings related
 $is_settings_page = in_array($current_page, ['reporting_periods.php', 'audit_log.php', 'manage_periods.php', 'system_settings.php']);
@@ -85,11 +85,10 @@ $audit_log = $current_page == 'audit_log.php';
                         </li>
                     </ul>
                 </li>
-                
-                <!-- Metrics (Direct Link) -->
+                  <!-- Outcomes (Direct Link) -->
                 <li class="nav-item">
-                    <a class="nav-link <?php if ($is_metric_page) echo 'active'; ?>" href="<?php echo APP_URL; ?>/views/admin/manage_metrics.php">
-                        <i class="fas fa-chart-line me-1"></i> Metrics
+                    <a class="nav-link <?php if ($is_outcome_page) echo 'active'; ?>" href="<?php echo APP_URL; ?>/views/admin/manage_metrics.php">
+                        <i class="fas fa-chart-line me-1"></i> Outcomes
                     </a>
                 </li>
                 

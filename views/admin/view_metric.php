@@ -1,8 +1,8 @@
 <?php
 /**
- * View Submitted Metric Details for Admin
+ * View Submitted Outcome Details for Admin
  * 
- * Allows admin users to view the details of submitted metrics from any sector
+ * Allows admin users to view the details of submitted outcomes from any sector
  */
 
 // Include necessary files
@@ -20,7 +20,7 @@ if (!is_admin()) {
 
 // Check if metric_id is provided
 if (!isset($_GET['metric_id']) || !is_numeric($_GET['metric_id'])) {
-    $_SESSION['error_message'] = 'Invalid metric ID.';
+    $_SESSION['error_message'] = 'Invalid outcome ID.';
     header('Location: manage_metrics.php');
     exit;
 }
@@ -37,8 +37,7 @@ $stmt->bind_param("i", $metric_id);
 $stmt->execute();
 $result = $stmt->get_result();
 
-if ($result->num_rows === 0) {
-    $_SESSION['error_message'] = 'Metric not found.';
+if ($result->num_rows === 0) {    $_SESSION['error_message'] = 'Outcome not found.';
     header('Location: manage_metrics.php');
     exit;
 }
@@ -88,7 +87,7 @@ $headerStyle = 'light'; // Use light (white) style for inner pages
 $actions = [
     [
         'url' => 'manage_metrics.php',
-        'text' => 'Back to Metrics',
+        'text' => 'Back to Outcomes',
         'icon' => 'fa-arrow-left',
         'class' => 'btn-outline-primary'
     ]
@@ -113,9 +112,8 @@ require_once '../../includes/dashboard_header.php';
                 </span>
             </div>
         </div>
-        
-        <!-- Tab Navigation -->
-        <ul class="nav nav-tabs" id="metricTabs" role="tablist">
+          <!-- Tab Navigation -->
+        <ul class="nav nav-tabs" id="outcomeTabs" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="table-tab" data-bs-toggle="tab" data-bs-target="#table-view" 
                     type="button" role="tab" aria-controls="table-view" aria-selected="true">
@@ -234,8 +232,7 @@ require_once '../../includes/dashboard_header.php';
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="metricToChart" class="form-label">Metrics to Display</label>
+                            <div class="form-group">                                <label for="metricToChart" class="form-label">Outcomes to Display</label>
                                 <select class="form-select" id="metricToChart" multiple>
                                     <?php foreach ($metric_names as $name): ?>
                                         <option value="<?= htmlspecialchars($name) ?>" selected>
@@ -243,7 +240,7 @@ require_once '../../includes/dashboard_header.php';
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
-                                <small class="text-muted">Hold Ctrl/Cmd to select multiple metrics</small>
+                                <small class="text-muted">Hold Ctrl/Cmd to select multiple outcomes</small>
                             </div>
                         </div>
                     </div>
