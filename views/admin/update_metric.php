@@ -89,9 +89,21 @@ else if ($action === 'add_column' && !empty($new_name)) {
     if (!in_array($new_name, $metrics_data['columns'])) {
         $metrics_data['columns'][] = $new_name;
         
-        // Initialize data for the new column
-        foreach ($metrics_data['data'] as $m => &$values) {
-            $values[$new_name] = 0;  // Default value
+        // Ensure all months are properly initialized
+        $months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                  'July', 'August', 'September', 'October', 'November', 'December'];
+        
+        // Make sure the data array exists
+        if (!isset($metrics_data['data']) || !is_array($metrics_data['data'])) {
+            $metrics_data['data'] = [];
+        }
+        
+        // Initialize any missing months and add new column to all months
+        foreach ($months as $month) {
+            if (!isset($metrics_data['data'][$month]) || !is_array($metrics_data['data'][$month])) {
+                $metrics_data['data'][$month] = [];
+            }
+            $metrics_data['data'][$month][$new_name] = 0;  // Default value
         }
         
         // Set unit if provided
@@ -144,14 +156,31 @@ else if (!empty($month) && !empty($old_name)) {
 // Save data back to the database
 $json_data = json_encode($metrics_data);
 
-$upsert_query = "UPDATE sector_metrics_data 
-                SET table_name = ?, 
-                    data_json = ?,
-                    updated_at = NOW()
-                WHERE metric_id = ? AND is_draft = 0";
+// Update both tables for compatibility
+$tables = ["sector_outcomes_data", "sector_metrics_data"];
+$success = false;
 
-$stmt = $conn->prepare($upsert_query);
-$stmt->bind_param("ssi", $table_name, $json_data, $metric_id);
+foreach ($tables as $table) {
+    $upsert_query = "UPDATE $table 
+                    SET table_name = ?, 
+                        data_json = ?,
+                        updated_at = NOW()
+                    WHERE metric_id = ? AND is_draft = 0";
+    
+    $stmt = $conn->prepare($upsert_query);
+    if (!$stmt) {
+        continue; // Skip if prepare fails
+    }
+    
+    $stmt->bind_param("ssi", $table_name, $json_data, $metric_id);
+    if ($stmt->execute()) {
+        $success = true;
+    }
+    $stmt->close();
+}
+
+// Create a temporary statement for the last condition check
+$stmt = (object)['error' => ''];
 
 if ($stmt->execute()) {
     echo json_encode([

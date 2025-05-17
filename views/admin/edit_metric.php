@@ -21,6 +21,11 @@ if (!is_admin()) {
 // Set page title
 $pageTitle = 'Edit Sector Metrics';
 
+// Function to log messages to browser console
+function console_log($message) {
+    echo '<script>console.log(' . json_encode($message) . ');</script>';
+}
+
 // Initialize variables
 $message = '';
 $message_type = '';
@@ -29,10 +34,14 @@ $sector_id = isset($_GET['sector_id']) ? intval($_GET['sector_id']) : 0;
 
 // If we have a metric_id, get the sector_id from the metric
 if ($metric_id > 0) {
+    // Try to get outcome data first, fall back to metric data for backwards compatibility
+$metric_data = get_outcome_data($metric_id);
+if (!$metric_data) {
     $metric_data = get_metric_data($metric_id);
-    if ($metric_data) {
-        $sector_id = $metric_data['sector_id'];
-    }
+}
+if ($metric_data) {
+    $sector_id = $metric_data['sector_id'];
+}
 }
 
 // If we still don't have a sector_id and this is a new metric, we need to select a sector
@@ -46,23 +55,63 @@ if ($metric_id === 0 && $sector_id === 0) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['select_sector'])) {
     $sector_id = intval($_POST['sector_id']);
     if ($sector_id > 0) {
-        // Get max metric_id from sector_metrics_data table
+        // Get max metric_id from outcomes data table
         $max_metric_id = 0;
-        $max_query = "SELECT MAX(metric_id) AS max_id FROM sector_metrics_data";
+        
+        // First check sector_outcomes_data (new system)
+        $max_query = "SELECT MAX(metric_id) AS max_id FROM sector_outcomes_data";
         $max_stmt = $conn->prepare($max_query);
         if ($max_stmt) {
             $max_stmt->execute();
             $max_result = $max_stmt->get_result();
             if ($max_result && $max_result->num_rows > 0) {
                 $row = $max_result->fetch_assoc();
-                $max_metric_id = intval($row['max_id']);
+                if ($row['max_id'] !== null) {
+                    $max_metric_id = intval($row['max_id']);
+                }
             }
             $max_stmt->close();
         }
+        
+        // Then check sector_metrics_data (legacy system) if we need to
+        if ($max_metric_id == 0) {
+            $max_query = "SELECT MAX(metric_id) AS max_id FROM sector_metrics_data";
+            $max_stmt = $conn->prepare($max_query);
+            if ($max_stmt) {
+                $max_stmt->execute();
+                $max_result = $max_stmt->get_result();
+                if ($max_result && $max_result->num_rows > 0) {
+                    $row = $max_result->fetch_assoc();
+                    if ($row['max_id'] !== null) {
+                        $max_metric_id = intval($row['max_id']);
+                    }
+                }
+                $max_stmt->close();
+            }
+        }
+        
+        console_log("Current max metric_id: " . $max_metric_id);
         $new_metric_id = $max_metric_id + 1;
-
-        // Create empty data_json placeholder
+        
+        // Create empty data_json placeholder with all 12 months
+        $month_names = ['January', 'February', 'March', 'April', 'May', 'June', 
+                       'July', 'August', 'September', 'October', 'November', 'December'];
+        
         $metrics_data = [
+            'columns' => [],
+            'units' => [],
+            'data' => []
+        ];
+        
+        // Initialize data structure for each month
+        foreach ($month_names as $month) {
+            $metrics_data['data'][$month] = [];
+        }
+        
+        console_log("Created new metrics_data with " . count($metrics_data['data']) . " months");
+        
+        // Legacy structure for backwards compatibility
+        $metrics_data_legacy = [
             'columns' => [],
             'units' => [],
             'data' => [
@@ -82,13 +131,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['select_sector'])) {
         ];
         $json_data = json_encode($metrics_data);
 
-        // Insert new metric row with new_metric_id, sector_id, empty table_name, data_json, is_draft=0
-        $insert_query = "INSERT INTO sector_metrics_data (metric_id, sector_id, table_name, data_json, is_draft) VALUES (?, ?, '', ?, 0)";
-        $insert_stmt = $conn->prepare($insert_query);
-        if ($insert_stmt) {
-            $insert_stmt->bind_param("iis", $new_metric_id, $sector_id, $json_data);
-            $insert_stmt->execute();
-            $insert_stmt->close();
+        // Insert new outcome data in both tables for compatibility
+        $tables_to_use = ["sector_outcomes_data", "sector_metrics_data"];
+        
+        foreach ($tables_to_use as $table_to_use) {
+            console_log("Inserting new outcome into table: $table_to_use");
+            $insert_query = "INSERT INTO $table_to_use (metric_id, sector_id, table_name, data_json, is_draft) VALUES (?, ?, '', ?, 0)";
+            $insert_stmt = $conn->prepare($insert_query);
+            if ($insert_stmt) {
+                $insert_stmt->bind_param("iis", $new_metric_id, $sector_id, $json_data);
+                if ($insert_stmt->execute()) {
+                    // Success!
+                    console_log("Successfully created new outcome in $table_to_use with ID: $new_metric_id");
+                } else {
+                    // Log error
+                    console_log("Error creating new outcome in $table_to_use: " . $insert_stmt->error);
+                }
+                $insert_stmt->close();
+            } else {
+                console_log("Failed to prepare insert statement for table: $table_to_use");
+            }
         }
 
         header("Location: edit_metric.php?sector_id=$sector_id&metric_id=$new_metric_id");
@@ -175,13 +237,20 @@ $metrics_data = [];
 $sector_name = '';
 
 if ($metric_id > 0) {
-    $metric_data = get_metric_data($metric_id);
+    // Try to get outcome data first, fall back to metric data for backwards compatibility
+    $metric_data = get_outcome_data($metric_id);
+    if (!$metric_data) {
+        $metric_data = get_metric_data($metric_id);
+    }
     
     if ($metric_data) {
         $table_name = $metric_data['table_name'];
         $sector_id = $metric_data['sector_id'];
         $sector_name = $metric_data['sector_name'];
         $metrics_data = json_decode($metric_data['data_json'], true);
+        
+        // Log the structure for debugging
+        console_log("Data structure from database: " . json_encode(array_keys($metrics_data)));
         
         // Get column names
         $metric_names = $metrics_data['columns'] ?? [];
@@ -191,7 +260,12 @@ if ($metric_id > 0) {
             $metrics_data['units'] = [];
         }
         
-        // Organize data for display
+        // Ensure data array exists
+        if (!isset($metrics_data['data'])) {
+            $metrics_data['data'] = [];
+        }
+        
+        // Organize data for display and ensure all months are present
         foreach ($month_names as $month_name) {
             $month_data = ['month_name' => $month_name, 'metrics' => []];
             
@@ -202,6 +276,8 @@ if ($metric_id > 0) {
             
             $table_data[] = $month_data;
         }
+        
+        console_log("Processed table_data has " . count($table_data) . " months");
     }
 } else if ($sector_id > 0) {
     // Get sector name
@@ -217,9 +293,22 @@ if ($metric_id > 0) {
     }
     
     // Initialize empty table_data for a new metric
+    // This is important - ensure we always have 12 months displayed
+    $metrics_data = [
+        'columns' => [],
+        'units' => [],
+        'data' => []
+    ];
+    
+    // Ensure months are properly initialized
     foreach ($month_names as $month_name) {
+        $metrics_data['data'][$month_name] = [];
         $table_data[] = ['month_name' => $month_name, 'metrics' => []];
     }
+    
+    // Add debug output
+    $debug_msg = "New outcomes table initialized with " . count($table_data) . " months";
+    echo "<!-- $debug_msg -->";
 }
 
 // Add CSS references
@@ -229,8 +318,22 @@ $additionalStyles = [
 
 // Add JS references
 $additionalScripts = [
-    APP_URL . '/assets/js/metric-editor.js'
+    APP_URL . '/assets/js/outcome-editor.js',
+    APP_URL . '/assets/js/metric-editor.js' // Keep for backward compatibility
 ];
+
+// Inline fallback script in case external JS files fail to load
+$inlineScript = <<<EOT
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if either initializeOutcomeEditor or initializeMetricEditor is defined
+    if (typeof initializeOutcomeEditor !== 'function' && typeof initializeMetricEditor !== 'function') {
+        console.warn('Neither outcome-editor.js nor metric-editor.js loaded correctly. Using inline fallback.');
+        setupInlineMetricEditor();
+    }
+});
+</script>
+EOT;
 
 // Include header
 require_once '../layouts/header.php';
@@ -239,15 +342,15 @@ require_once '../layouts/header.php';
 require_once '../layouts/admin_nav.php';
 
 // Set up the page header variables
-$title = $metric_id > 0 ? "Edit Sector Metrics" : "Create New Metric";
+$title = $metric_id > 0 ? "Edit Sector Outcomes" : "Create New Outcomes";
 $subtitle = $metric_id > 0 
-    ? "Edit metrics for " . htmlspecialchars($sector_name) . " sector" 
-    : "Create a new metric table" . ($sector_id > 0 ? " for " . htmlspecialchars($sector_name) . " sector" : "");
+    ? "Edit outcomes for " . htmlspecialchars($sector_name) . " sector" 
+    : "Create a new outcomes table" . ($sector_id > 0 ? " for " . htmlspecialchars($sector_name) . " sector" : "");
 $headerStyle = 'light'; // Use light (white) style for inner pages
 $actions = [
     [
         'url' => 'manage_metrics.php',
-        'text' => 'Back to Metrics',
+        'text' => 'Back to Outcomes',
         'icon' => 'fa-arrow-left',
         'class' => 'btn-outline-primary'
     ]
@@ -269,7 +372,7 @@ require_once '../../includes/dashboard_header.php';
         <!-- Sector Selection Form -->
         <div class="card mb-4">
             <div class="card-header">
-                <h5 class="card-title m-0">Select Sector for New Metric</h5>
+                <h5 class="card-title m-0">Select Sector for New Outcomes</h5>
             </div>
             <div class="card-body">
                 <form method="post" class="row g-3">
@@ -385,9 +488,33 @@ require_once '../../includes/dashboard_header.php';
                                     </th>
                                 <?php endif; ?>
                             </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($table_data as $month_data): ?>
+                        </thead>                        <tbody>
+                            <?php 
+                            // Debug information
+                            console_log("Table data count: " . count($table_data));
+                            console_log("Metric names count: " . count($metric_names));
+                            
+                            // Ensure table_data exists and has entries
+                            if (empty($table_data) || count($table_data) < count($month_names)) {
+                                // If table_data is empty or doesn't have all months, create default months
+                                $existing_months = [];
+                                foreach ($table_data as $month_entry) {
+                                    if (isset($month_entry['month_name'])) {
+                                        $existing_months[] = $month_entry['month_name'];
+                                    }
+                                }
+                                
+                                // Create entries for missing months
+                                foreach ($month_names as $month_name) {
+                                    if (!in_array($month_name, $existing_months)) {
+                                        $table_data[] = ['month_name' => $month_name, 'metrics' => []];
+                                    }
+                                }
+                                console_log("Created default table_data with " . count($table_data) . " months");
+                            }
+                            
+                            foreach ($table_data as $month_data): 
+                            ?>
                                 <tr>
                                     <td>
                                         <span class="month-badge"><?= $month_data['month_name'] ?></span>
@@ -469,6 +596,12 @@ require_once '../../includes/dashboard_header.php';
         document.getElementById('doneBtn')?.addEventListener('click', function() {
             window.location.href = 'manage_metrics.php';
         });
+        
+        // Make sure table has all 12 months rows
+        setTimeout(function() {
+            console.log('Ensuring table structure is complete...');
+            ensureTableStructure();
+        }, 500);
     });
     
     // Setup inline metric editor if the external JS file fails to load
@@ -578,6 +711,98 @@ require_once '../../includes/dashboard_header.php';
         sel.addRange(range);
     }
     
+    // Ensure table structure has all required months
+    function ensureTableStructure() {
+        const tableBody = document.querySelector('.metrics-table tbody');
+        const tableRows = document.querySelectorAll('.metrics-table tbody tr:not(.table-light)'); // Skip total row
+        
+        if (!tableBody) {
+            console.error('Table body not found!');
+            return;
+        }
+        
+        // Check if all 12 months exist
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                       'July', 'August', 'September', 'October', 'November', 'December'];
+        
+        // Get existing month names from the table
+        const existingMonths = [];
+        tableRows.forEach(row => {
+            const monthBadge = row.querySelector('.month-badge');
+            if (monthBadge) {
+                existingMonths.push(monthBadge.textContent.trim());
+            }
+        });
+        
+        console.log('Existing months:', existingMonths);
+        
+        // Create rows for any missing months
+        months.forEach(month => {
+            if (!existingMonths.includes(month)) {
+                console.log(`Creating missing month row: ${month}`);
+                const newRow = document.createElement('tr');
+                
+                // Create month cell
+                const monthCell = document.createElement('td');
+                monthCell.innerHTML = `<span class="month-badge">${month}</span>`;
+                newRow.appendChild(monthCell);
+                
+                // Add empty cells for each column
+                const columnCount = document.querySelectorAll('.metrics-table thead th').length - 1; // -1 for month header
+                for (let i = 0; i < columnCount; i++) {
+                    const columnName = document.querySelectorAll('.metric-name')[i]?.dataset.metric || '';
+                    const dataCell = document.createElement('td');
+                    
+                    if (columnName) {
+                        dataCell.innerHTML = `
+                            <div class="metric-cell">
+                                <span class="metric-value" 
+                                    contenteditable="true" 
+                                    data-metric="${columnName}" 
+                                    data-month="${month}">
+                                    0.00
+                                </span>
+                                <button class="save-btn" data-metric="${columnName}" data-month="${month}">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                            </div>
+                        `;
+                    } else {
+                        // Empty cell for placeholder column
+                        dataCell.innerHTML = '';
+                    }
+                    
+                    newRow.appendChild(dataCell);
+                }
+                
+                // Insert the new month in the correct position (sort months chronologically)
+                const monthIndex = months.indexOf(month);
+                let inserted = false;
+                
+                for (let i = 0; i < tableRows.length; i++) {
+                    const rowMonth = tableRows[i].querySelector('.month-badge')?.textContent.trim();
+                    const rowMonthIndex = months.indexOf(rowMonth);
+                    
+                    if (rowMonthIndex > monthIndex) {
+                        tableBody.insertBefore(newRow, tableRows[i]);
+                        inserted = true;
+                        break;
+                    }
+                }
+                
+                // If not inserted yet (last month or empty table), append to the end
+                if (!inserted) {
+                    tableBody.appendChild(newRow);
+                }
+                
+                existingMonths.push(month);
+            }
+        });
+        
+        // Set up event handlers for newly added elements
+        setupInlineMetricEditor();
+    }
+    
     // Handle saving table name
     async function handleSaveTableName() {
         const tableNameInput = document.getElementById('tableNameInput');
@@ -640,12 +865,52 @@ require_once '../../includes/dashboard_header.php';
             showToast('Error adding column: ' + error.message, 'danger');
         }
     }
-    
-    // Add column to UI
+      // Add column to UI
     function addColumnToUI(columnName) {
+        console.log(`Adding column to UI: ${columnName}`);
+        
         // Add to table header
         const tableHead = document.querySelector('.metrics-table thead tr');
+        if (!tableHead) {
+            console.error('Table header not found!');
+            return;
+        }
+        
+        // Check if we have rows and ensure all 12 months exist
+        const tableBody = document.querySelector('.metrics-table tbody');
         const tableRows = document.querySelectorAll('.metrics-table tbody tr:not(.table-light)'); // Skip total row
+        
+        // Ensure the table structure is complete before adding a column
+        ensureTableStructure();
+        
+        // If no rows exist or not all months exist, create month rows
+        if (tableRows.length === 0 || tableRows.length < 12) {
+            console.log('Missing month rows, creating them');
+            const months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                           'July', 'August', 'September', 'October', 'November', 'December'];
+            
+            // Check which months already exist
+            const existingMonths = [];
+            tableRows.forEach(row => {
+                const monthBadge = row.querySelector('.month-badge');
+                if (monthBadge) {
+                    existingMonths.push(monthBadge.textContent.trim());
+                }
+            });
+            
+            // Create rows for missing months
+            months.forEach(month => {
+                if (!existingMonths.includes(month)) {
+                    const newRow = document.createElement('tr');
+                    newRow.innerHTML = `
+                        <td>
+                            <span class="month-badge">${month}</span>
+                        </td>
+                    `;
+                    tableBody.appendChild(newRow);
+                }
+            });
+        }
         
         // Create new header cell
         const newTh = document.createElement('th');

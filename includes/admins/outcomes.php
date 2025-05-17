@@ -52,11 +52,28 @@ function get_all_outcomes_data($period_id = null) {
 function get_outcome_data($metric_id) {
     global $conn;
     
+    // First try the new outcomes table
     $query = "SELECT sod.*, s.sector_name, rp.year, rp.quarter 
               FROM sector_outcomes_data sod
               LEFT JOIN sectors s ON sod.sector_id = s.sector_id
               LEFT JOIN reporting_periods rp ON sod.period_id = rp.period_id
               WHERE sod.metric_id = ? AND sod.is_draft = 0";
+    
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("i", $metric_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result && $result->num_rows > 0) {
+        return $result->fetch_assoc();
+    }
+    
+    // If not found, try the legacy metrics table
+    $query = "SELECT smd.*, s.sector_name, rp.year, rp.quarter 
+              FROM sector_metrics_data smd
+              LEFT JOIN sectors s ON smd.sector_id = s.sector_id
+              LEFT JOIN reporting_periods rp ON smd.period_id = rp.period_id
+              WHERE smd.metric_id = ? AND smd.is_draft = 0";
     
     $stmt = $conn->prepare($query);
     $stmt->bind_param("i", $metric_id);
