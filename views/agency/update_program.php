@@ -39,6 +39,9 @@ if (!$program) {
     exit;
 }
 
+// Get program edit history
+$program_history = get_program_edit_history($program_id);
+
 // Check if this program has a finalized (non-draft) submission for the current period
 // If it does, redirect to the program details page, as editing is not allowed
 if (isset($program['submissions']) && !empty($program['submissions'])) {
@@ -222,8 +225,14 @@ $pageTitle = 'Update Program';
 // Additional scripts
 $additionalScripts = [
     APP_URL . '/assets/js/agency/program_management.js',
-    APP_URL . '/assets/js/utilities/rating_utils.js'
+    APP_URL . '/assets/js/utilities/rating_utils.js',
+    APP_URL . '/assets/js/utilities/program-history.js'
 ];
+
+// Additional styles
+$additionalStyles = '
+<link rel="stylesheet" href="' . APP_URL . '/assets/css/components/program-history.css">
+';
 
 // Include header (which contains the DOCTYPE declaration)
 require_once '../layouts/header.php';
@@ -258,6 +267,53 @@ if ($is_draft): ?>
 </div>
 <?php endif; ?>
 
+<?php if (isset($program_history['submissions']) && count($program_history['submissions']) > 1): ?>
+<!-- Program History Panel -->
+<div class="mb-4">
+    <div class="history-panel-title">
+        <h6 class="fw-bold"><i class="fas fa-history me-2"></i> Program Edit History</h6>
+        <button type="button" class="history-toggle-btn" data-target="programHistoryPanel">
+            <i class="fas fa-history"></i> Show History
+        </button>
+    </div>
+    
+    <div id="programHistoryPanel" class="history-panel" style="display: none;">
+        <?php foreach($program_history['submissions'] as $idx => $submission): ?>
+        <div class="history-version">
+            <div class="history-version-info">
+                <strong><?php echo $submission['formatted_date']; ?></strong>
+                <span class="history-version-label"><?php echo $submission['is_draft_label']; ?></span>
+            </div>
+            <?php if ($idx === 0): ?>
+                <div><em>Current version</em></div>
+            <?php else: ?>
+                <div class="small text-muted mb-1">
+                    <?php echo isset($submission['submission_date']) ? 
+                        date('M j, Y g:i A', strtotime($submission['submission_date'])) : 
+                        $submission['formatted_date']; ?>
+                </div>
+                <?php if (isset($submission['period_name'])): ?>
+                <div>Period: <?php echo htmlspecialchars($submission['period_name']); ?></div>
+                <?php endif; ?>
+                
+                <?php if (isset($submission['target'])): ?>
+                <div>Target: <?php echo htmlspecialchars($submission['target']); ?></div>
+                <?php endif; ?>
+                
+                <?php if (isset($submission['achievement'])): ?>
+                <div>Achievement: <?php echo htmlspecialchars($submission['achievement']); ?></div>
+                <?php endif; ?>
+                
+                <?php if (isset($submission['status'])): ?>
+                <div>Status: <?php echo ucfirst($submission['status']); ?></div>
+                <?php endif; ?>
+            <?php endif; ?>
+        </div>
+        <?php endforeach; ?>
+    </div>
+</div>
+<?php endif; ?>
+
 <!-- Program Update Form -->
 <div class="card shadow-sm mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
@@ -275,8 +331,7 @@ if ($is_draft): ?>
             
             <!-- Basic Information -->
             <div class="mb-4">
-                <h6 class="fw-bold mb-3">Basic Information</h6>
-                <div class="mb-3">
+                <h6 class="fw-bold mb-3">Basic Information</h6>                <div class="mb-3">
                     <label for="program_name" class="form-label">Program Name *</label>
                     <input type="text" class="form-control" id="program_name" name="program_name" required
                             value="<?php echo htmlspecialchars($program['program_name']); ?>"
@@ -284,13 +339,84 @@ if ($is_draft): ?>
                     <?php if ($program['is_assigned'] && !is_editable('program_name')): ?>
                         <div class="form-text">Program name was set by an administrator and cannot be changed.</div>
                     <?php endif; ?>
-                </div>
-                <div class="mb-3">
+                    
+                    <?php if (isset($program_history['submissions']) && count($program_history['submissions']) > 1): ?>
+                        <?php
+                        // Get complete history of program name changes
+                        $name_history = get_field_edit_history($program_history['submissions'], 'program_name');
+                        
+                        if (!empty($name_history)):
+                        ?>
+                            <div class="d-flex align-items-center mt-2">
+                                <button type="button" class="btn btn-sm btn-outline-secondary field-history-toggle" 
+                                        data-history-target="programNameHistory">
+                                    <i class="fas fa-history"></i> Show Name History
+                                </button>
+                            </div>
+                            <div id="programNameHistory" class="history-complete" style="display: none;">
+                                <h6 class="small text-muted mb-2">Program Name History</h6>
+                                <ul class="history-list">
+                                    <?php foreach($name_history as $idx => $item): ?>
+                                    <li class="history-list-item">
+                                        <div class="history-list-value">
+                                            <?php echo htmlspecialchars($item['value']); ?>
+                                        </div>
+                                        <div class="history-list-meta">
+                                            <?php echo $item['timestamp']; ?>
+                                            <?php if (isset($item['submission_id']) && $item['submission_id'] > 0): ?>
+                                                <span class="<?php echo ($item['is_draft'] ?? 0) ? 'history-draft-badge' : 'history-final-badge'; ?>">
+                                                    <?php echo ($item['is_draft'] ?? 0) ? 'Draft' : 'Final'; ?>
+                                                </span>
+                                            <?php endif; ?>
+                                        </div>
+                                    </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            </div>
+                        <?php endif; ?>
+                    <?php endif; ?>
+                </div>                <div class="mb-3">
                     <label for="description" class="form-label">Program Description</label>
                     <textarea class="form-control" id="description" name="description" rows="3"
                                 <?php echo (!is_editable('description')) ? 'readonly' : ''; ?>><?php echo htmlspecialchars($program['description']); ?></textarea>
                     <?php if ($program['is_assigned'] && !is_editable('description')): ?>
                         <div class="form-text">Description was set by an administrator and cannot be changed.</div>
+                    <?php endif; ?>
+                    
+                    <?php if (isset($program_history['submissions']) && count($program_history['submissions']) > 1): ?>
+                        <?php
+                        // Get complete history of program description changes
+                        $description_history = get_field_edit_history($program_history['submissions'], 'description');
+                        
+                        if (!empty($description_history)):
+                        ?>
+                            <div class="d-flex align-items-center mt-2">
+                                <button type="button" class="btn btn-sm btn-outline-secondary field-history-toggle" 
+                                        data-history-target="programDescriptionHistory">
+                                    <i class="fas fa-history"></i> Show Description History
+                                </button>
+                            </div>
+                            <div id="programDescriptionHistory" class="history-complete" style="display: none;">
+                                <h6 class="small text-muted mb-2">Program Description History</h6>
+                                <ul class="history-list">
+                                    <?php foreach($description_history as $idx => $item): ?>
+                                    <li class="history-list-item">
+                                        <div class="history-list-value">
+                                            <?php echo htmlspecialchars($item['value']); ?>
+                                        </div>
+                                        <div class="history-list-meta">
+                                            <?php echo $item['timestamp']; ?>
+                                            <?php if (isset($item['submission_id']) && $item['submission_id'] > 0): ?>
+                                                <span class="<?php echo ($item['is_draft'] ?? 0) ? 'history-draft-badge' : 'history-final-badge'; ?>">
+                                                    <?php echo ($item['is_draft'] ?? 0) ? 'Draft' : 'Final'; ?>
+                                                </span>
+                                            <?php endif; ?>
+                                        </div>
+                                    </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            </div>
+                        <?php endif; ?>
                     <?php endif; ?>
                 </div>
                 <div class="row g-3">
@@ -343,13 +469,57 @@ if ($is_draft): ?>
                     <div class="form-text">Rating was set by an administrator and cannot be changed.</div>
                 <?php endif; ?>
             </div>
-            
-            <!-- Targets Section -->
+              <!-- Targets Section -->
             <div class="mb-4">
                 <h6 class="fw-bold mb-3">Program Targets</h6>
                 <p class="text-muted mb-3">
                     Define one or more targets for this program, each with its own status description.
                 </p>
+                
+                <?php if (isset($program_history['submissions']) && count($program_history['submissions']) > 1): ?>
+                    <?php
+                    // Get complete history of program targets
+                    $targets_history = get_field_edit_history($program_history['submissions'], 'targets');
+                    
+                    if (!empty($targets_history)):
+                    ?>
+                        <div class="d-flex align-items-center mt-2 mb-3">
+                            <button type="button" class="btn btn-sm btn-outline-secondary field-history-toggle" 
+                                    data-history-target="programTargetsHistory">
+                                <i class="fas fa-history"></i> Show Target History
+                            </button>
+                        </div>
+                        <div id="programTargetsHistory" class="history-complete" style="display: none;">
+                            <h6 class="small text-muted mb-2">Program Target History</h6>
+                            <ul class="history-list">
+                                <?php foreach($targets_history as $idx => $item): ?>
+                                <li class="history-list-item">
+                                    <div class="history-list-value">
+                                        <?php 
+                                        if (is_array($item['value'])):
+                                            foreach($item['value'] as $target_idx => $target): 
+                                                echo '<strong>Target ' . ($target_idx + 1) . ':</strong> ' . 
+                                                     htmlspecialchars($target['target_text'] ?? $target['text'] ?? '') . '<br>';
+                                            endforeach;
+                                        else:
+                                            echo htmlspecialchars($item['value']);
+                                        endif;
+                                        ?>
+                                    </div>
+                                    <div class="history-list-meta">
+                                        <?php echo $item['timestamp']; ?>
+                                        <?php if (isset($item['submission_id']) && $item['submission_id'] > 0): ?>
+                                            <span class="<?php echo ($item['is_draft'] ?? 0) ? 'history-draft-badge' : 'history-final-badge'; ?>">
+                                                <?php echo ($item['is_draft'] ?? 0) ? 'Draft' : 'Final'; ?>
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
+                                </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                    <?php endif; ?>
+                <?php endif; ?>
                 
                 <div id="targets-container">
                     <?php 

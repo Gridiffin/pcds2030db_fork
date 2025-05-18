@@ -80,8 +80,14 @@ $pageTitle = 'Create Program';
 // Additional scripts
 $additionalScripts = [
     APP_URL . '/assets/js/agency/program_management.js',
-    APP_URL . '/assets/js/utilities/rating_utils.js'
+    APP_URL . '/assets/js/utilities/rating_utils.js',
+    APP_URL . '/assets/js/utilities/program-history.js'
 ];
+
+// Additional styles
+$additionalStyles = '
+<link rel="stylesheet" href="' . APP_URL . '/assets/css/components/program-history.css">
+';
 
 // Include header
 require_once '../layouts/header.php';

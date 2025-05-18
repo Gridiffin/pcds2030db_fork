@@ -11,6 +11,7 @@ require_once '../../includes/session.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/admin_functions.php';
 require_once '../../includes/rating_helpers.php';
+require_once '../../includes/agencies/programs.php'; // Added for program history feature
 
 // Verify user is admin
 if (!is_admin()) {
@@ -98,29 +99,71 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $edit_permissions_json, 
             $program_id
         );
-        
-        if ($stmt->execute()) {
-            // Check if there's an active submission for this program
-            $submission_query = "SELECT submission_id FROM program_submissions 
-                                WHERE program_id = ? 
-                                ORDER BY submission_date DESC LIMIT 1";
-            $sub_stmt = $conn->prepare($submission_query);
-            $sub_stmt->bind_param('i', $program_id);
-            $sub_stmt->execute();
-            $sub_result = $sub_stmt->get_result();
+          if ($stmt->execute()) {
+            // IMPORTANT: Ensure program history is tracked in program_submissions table for admin edits
+            // This ensures program edit history is consistent across both admin and agency interfaces            // Get the current reporting period - using existing function if available
+            $current_period_id = null;
+            if (function_exists('get_current_reporting_period')) {
+                $current_period = get_current_reporting_period();
+                if ($current_period && isset($current_period['period_id'])) {
+                    $current_period_id = $current_period['period_id'];
+                }
+            } else {
+                // Fallback if function not available
+                $current_period_query = "SELECT period_id FROM reporting_periods WHERE CURDATE() BETWEEN start_date AND end_date";
+                $period_stmt = $conn->prepare($current_period_query);
+                $period_stmt->execute();
+                $period_result = $period_stmt->get_result();
+                
+                if ($period_result->num_rows > 0) {
+                    $current_period = $period_result->fetch_assoc();
+                    $current_period_id = $current_period['period_id'];
+                } else {
+                    // If no active period, get the latest one
+                    $latest_period_query = "SELECT period_id FROM reporting_periods ORDER BY year DESC, quarter DESC LIMIT 1";
+                    $latest_stmt = $conn->prepare($latest_period_query);
+                    $latest_stmt->execute();
+                    $latest_result = $latest_stmt->get_result();
+                    
+                    if ($latest_result->num_rows > 0) {
+                        $latest_period = $latest_result->fetch_assoc();
+                        $current_period_id = $latest_period['period_id'];
+                    }
+                }
+            }
             
-            // If there's a submission, update its status too if rating changed
-            if ($sub_result->num_rows > 0) {
-                $submission = $sub_result->fetch_assoc();
-                $update_sub = "UPDATE program_submissions SET status = ?, content_json = ? WHERE submission_id = ?";
-                $content_json = json_encode([
-                    'rating' => $rating,
-                    'targets' => $targets,
-                    'remarks' => $remarks
-                ]);
+            // Encode content for submission
+            $content_json = json_encode([
+                'rating' => $rating,
+                'targets' => $targets,
+                'remarks' => $remarks
+            ]);
+            
+            // Check if there's an existing submission for this program and period
+            $check_sub_query = "SELECT submission_id FROM program_submissions 
+                              WHERE program_id = ? AND period_id = ?";
+            $check_stmt = $conn->prepare($check_sub_query);
+            $check_stmt->bind_param('ii', $program_id, $current_period_id);
+            $check_stmt->execute();
+            $check_result = $check_stmt->get_result();
+            
+            if ($check_result->num_rows > 0) {
+                // Update existing submission for current period
+                $submission = $check_result->fetch_assoc();
+                $update_sub = "UPDATE program_submissions SET status = ?, content_json = ?, updated_at = NOW() 
+                              WHERE submission_id = ?";
                 $update_stmt = $conn->prepare($update_sub);
                 $update_stmt->bind_param('ssi', $rating, $content_json, $submission['submission_id']);
                 $update_stmt->execute();
+            } else if ($current_period_id) {
+                // Create new submission for current period
+                $insert_sub = "INSERT INTO program_submissions (program_id, period_id, submitted_by, 
+                             content_json, status, is_draft, submission_date) 
+                             VALUES (?, ?, ?, ?, ?, 0, NOW())";
+                $admin_id = $_SESSION['user_id'];
+                $insert_stmt = $conn->prepare($insert_sub);
+                $insert_stmt->bind_param('iiiss', $program_id, $current_period_id, $admin_id, $content_json, $rating);
+                $insert_stmt->execute();
             }
             
             $message = 'Program updated successfully.';
@@ -160,6 +203,9 @@ if (!empty($program['edit_permissions'])) {
         $edit_permissions = $permissions_data['edit_permissions'];
     }
 }
+
+// Get program edit history
+$program_history = get_program_edit_history($program_id);
 
 // Get program submission status and content
 $status_query = "SELECT status, content_json, submission_id FROM program_submissions 
@@ -231,8 +277,14 @@ $hidden_rating_input = '<input type="hidden" id="rating" name="rating" value="' 
 
 // Additional scripts
 $additionalScripts = [
-    APP_URL . '/assets/js/utilities/rating_utils.js'
+    APP_URL . '/assets/js/utilities/rating_utils.js',
+    APP_URL . '/assets/js/utilities/program-history.js'
 ];
+
+// Additional styles
+$additionalStyles = '
+<link rel="stylesheet" href="' . APP_URL . '/assets/css/components/program-history.css">
+';
 
 // Set page title
 $pageTitle = 'Edit Program';
@@ -272,6 +324,46 @@ require_once '../../includes/dashboard_header.php';
     </div>
     
     <div class="card-body">
+        <?php if (isset($program_history['submissions']) && count($program_history['submissions']) > 1): ?>
+        <!-- Program History Panel -->
+        <div class="mb-4">
+            <div class="history-panel-title">
+                <h6 class="fw-bold"><i class="fas fa-history me-2"></i> Program Edit History</h6>
+                <button type="button" class="history-toggle-btn" data-target="programHistoryPanel">
+                    <i class="fas fa-history"></i> Show History
+                </button>
+            </div>
+            
+            <div id="programHistoryPanel" class="history-panel" style="display: none;">                        <?php foreach($program_history['submissions'] as $idx => $submission): ?>
+                        <div class="history-version">
+                            <div class="history-version-info">
+                                <strong><?php echo $submission['formatted_date']; ?></strong>
+                                <span class="history-version-label"><?php echo $submission['is_draft_label']; ?></span>
+                            </div>
+                            <?php if ($idx === 0): ?>
+                                <div><em>Current version</em></div>
+                            <?php else: ?>
+                                <div class="small text-muted mb-1">
+                                    <?php echo isset($submission['submission_date']) ? 
+                                        date('M j, Y g:i A', strtotime($submission['submission_date'])) : 
+                                        $submission['formatted_date']; ?>
+                                </div>
+                                <?php if (isset($submission['period_name'])): ?>
+                                <div>Period: <?php echo htmlspecialchars($submission['period_name']); ?></div>
+                                <?php endif; ?>
+                                <?php if (isset($submission['program_name'])): ?>
+                                <div>Name: <?php echo htmlspecialchars($submission['program_name']); ?></div>
+                                <?php endif; ?>
+                                <?php if (isset($submission['status'])): ?>
+                                <div>Status: <?php echo ucfirst($submission['status']); ?></div>
+                                <?php endif; ?>
+                            <?php endif; ?>
+                        </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+        
         <form method="post" action="edit_program.php?id=<?php echo $program_id; ?>" id="editProgramForm">
             <!-- Hidden rating field -->
             <?php echo $hidden_rating_input; ?>
@@ -280,12 +372,47 @@ require_once '../../includes/dashboard_header.php';
                 <!-- Basic Information -->
                 <div class="col-md-12 mb-4">
                     <h6 class="fw-bold mb-3">Basic Information</h6>
-                    
-                    <div class="row mb-3">
+                      <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="program_name" class="form-label">Program Name <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="program_name" name="program_name" 
                                    value="<?php echo htmlspecialchars($program['program_name']); ?>" required>
+                              <?php if (isset($program_history['submissions']) && count($program_history['submissions']) > 1): ?>
+                                <?php
+                                // Get complete history of program name changes
+                                $name_history = get_field_edit_history($program_history['submissions'], 'program_name');
+                                
+                                if (!empty($name_history)):
+                                ?>
+                                    <div class="d-flex align-items-center mt-2">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary field-history-toggle" 
+                                                data-history-target="programNameHistory">
+                                            <i class="fas fa-history"></i> Show Name History
+                                        </button>
+                                    </div>
+                                    
+                                    <div id="programNameHistory" class="history-complete" style="display: none;">
+                                        <h6 class="small text-muted mb-2">Program Name History</h6>
+                                        <ul class="history-list">
+                                            <?php foreach($name_history as $idx => $item): ?>
+                                            <li class="history-list-item">
+                                                <div class="history-list-value">
+                                                    <?php echo htmlspecialchars($item['value']); ?>
+                                                </div>
+                                                <div class="history-list-meta">
+                                                    <?php echo $item['timestamp']; ?>
+                                                    <?php if (isset($item['submission_id']) && $item['submission_id'] > 0): ?>
+                                                        <span class="<?php echo ($item['is_draft'] ?? 0) ? 'history-draft-badge' : 'history-final-badge'; ?>">
+                                                            <?php echo ($item['is_draft'] ?? 0) ? 'Draft' : 'Final'; ?>
+                                                        </span>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </li>
+                                            <?php endforeach; ?>
+                                        </ul>
+                                    </div>
+                                <?php endif; ?>
+                            <?php endif; ?>
                         </div>
                         
                         <div class="col-md-6">
@@ -339,10 +466,45 @@ require_once '../../includes/dashboard_header.php';
                                    value="<?php echo isset($program['end_date']) ? date('Y-m-d', strtotime($program['end_date'])) : ''; ?>">
                         </div>
                     </div>
-                    
-                    <div class="mb-3">
+                      <div class="mb-3">
                         <label for="description" class="form-label">Description</label>
                         <textarea class="form-control" id="description" name="description" rows="4"><?php echo htmlspecialchars($program['description']); ?></textarea>
+                          <?php if (isset($program_history['submissions']) && count($program_history['submissions']) > 1): ?>
+                            <?php
+                            // Get complete description history
+                            $desc_history = get_field_edit_history($program_history['submissions'], 'description');
+                            
+                            if (!empty($desc_history)):
+                            ?>
+                                <div class="d-flex align-items-center mt-2">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary field-history-toggle" 
+                                            data-history-target="descriptionHistory">
+                                        <i class="fas fa-history"></i> Show Description History
+                                    </button>
+                                </div>
+                                
+                                <div id="descriptionHistory" class="history-complete" style="display: none;">
+                                    <h6 class="small text-muted mb-2">Description History</h6>
+                                    <ul class="history-list">
+                                        <?php foreach($desc_history as $idx => $item): ?>
+                                        <li class="history-list-item">
+                                            <div class="history-list-value">
+                                                <?php echo htmlspecialchars($item['value']); ?>
+                                            </div>
+                                            <div class="history-list-meta">
+                                                <?php echo $item['timestamp']; ?>
+                                                <?php if (isset($item['submission_id']) && $item['submission_id'] > 0): ?>
+                                                    <span class="<?php echo ($item['is_draft'] ?? 0) ? 'history-draft-badge' : 'history-final-badge'; ?>">
+                                                        <?php echo ($item['is_draft'] ?? 0) ? 'Draft' : 'Final'; ?>
+                                                    </span>
+                                                <?php endif; ?>
+                                            </div>
+                                        </li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                </div>
+                            <?php endif; ?>
+                        <?php endif; ?>
                     </div>
                     
                     <h6 class="fw-bold mb-3 mt-4">Program Status</h6>
@@ -361,10 +523,46 @@ require_once '../../includes/dashboard_header.php';
                         </div>
                     </div>
                 </div>
-                
-                <!-- Program Targets Section -->
+                  <!-- Program Targets Section -->
                 <div class="col-md-12 mb-4">
-                    <h6 class="fw-bold mb-3">Program Targets</h6>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold mb-0">Program Targets</h6>
+                        
+                        <?php if (isset($program_history['submissions']) && count($program_history['submissions']) > 1): ?>
+                            <button type="button" class="history-toggle-btn" data-target="targetsHistoryContainer">
+                                <i class="fas fa-history"></i> Show Target History
+                            </button>
+                        <?php endif; ?>
+                    </div>
+                    
+                    <?php if (isset($program_history['submissions']) && count($program_history['submissions']) > 1): ?>
+                        <div id="targetsHistoryContainer" class="targets-history-container mb-3" style="display: none;">
+                            <h6 class="mb-2">Target History</h6>
+                            
+                            <?php foreach($program_history['submissions'] as $idx => $submission): ?>
+                                <?php if ($idx > 0 && isset($submission['targets']) && !empty($submission['targets'])): ?>
+                                    <div class="target-history-item">
+                                        <div class="target-history-header">
+                                            <strong><?php echo $submission['formatted_date']; ?></strong>
+                                            <span><?php echo $submission['period_name'] ?? ''; ?></span>
+                                        </div>
+                                        
+                                        <?php foreach($submission['targets'] as $t_idx => $target): ?>
+                                            <div class="mb-1">
+                                                <strong>Target #<?php echo ($t_idx + 1); ?>:</strong> 
+                                                <?php echo htmlspecialchars($target['target_text'] ?? ''); ?>
+                                            </div>
+                                            <?php if (!empty($target['status_description'])): ?>
+                                                <div class="mb-1 ps-3">
+                                                    <em>Status:</em> <?php echo htmlspecialchars($target['status_description']); ?>
+                                                </div>
+                                            <?php endif; ?>
+                                        <?php endforeach; ?>
+                                    </div>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
                     
                     <div id="targets-container">
                         <?php if (!empty($current_targets)): ?>
@@ -627,6 +825,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     this.value = '';
                 }
             }
+        });
+    }
+    
+    // History panel toggle
+    const historyToggleBtn = document.querySelector('.history-toggle-btn');
+    const programHistoryPanel = document.getElementById('programHistoryPanel');
+    
+    if (historyToggleBtn && programHistoryPanel) {
+        historyToggleBtn.addEventListener('click', function() {
+            const isVisible = programHistoryPanel.style.display === 'block';
+            programHistoryPanel.style.display = isVisible ? 'none' : 'block';
+            this.innerHTML = isVisible ? '<i class="fas fa-history"></i> Show History' : '<i class="fas fa-history"></i> Hide History';
         });
     }
 });

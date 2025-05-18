@@ -625,4 +625,214 @@ function finalize_draft_submission($submission_id) {
         ];
     }
 }
+
+/**
+ * Get program edit history with all previous submissions
+ * Shows how program data has changed over time
+ * 
+ * @param int $program_id The program ID to get history for
+ * @return array Program history with all submissions
+ */
+function get_program_edit_history($program_id) {
+    global $conn;
+    
+    $program_id = intval($program_id);
+    if (!$program_id) {
+        return ['error' => 'Invalid program ID'];
+    }
+    
+    // First get the program details
+    $program = get_program_details($program_id, true); // Allow cross-agency viewing for history
+    
+    if (!$program || isset($program['error'])) {
+        return ['error' => 'Program not found'];
+    }
+      // Get all submissions for this program, ordered by date
+    $stmt = $conn->prepare("SELECT ps.*, 
+                           CONCAT('Q', rp.quarter, '-', rp.year) as period_name, 
+                           rp.start_date as period_start, rp.end_date as period_end,
+                           u.agency_name as submitted_by_name
+                           FROM program_submissions ps
+                           LEFT JOIN reporting_periods rp ON ps.period_id = rp.period_id
+                           LEFT JOIN users u ON ps.submitted_by = u.user_id
+                           WHERE ps.program_id = ?
+                           ORDER BY ps.submission_date DESC");
+    
+    $stmt->bind_param("i", $program_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    $submissions = [];
+    $has_content_json = has_content_json_schema();
+    
+    while ($row = $result->fetch_assoc()) {
+        // Process submission data based on schema
+        if ($has_content_json && isset($row['content_json']) && !empty($row['content_json'])) {
+            // Parse content_json for newer schema
+            $content = json_decode($row['content_json'], true);
+            if ($content) {
+                // Extract content fields for easier access
+                foreach ($content as $key => $value) {
+                    $row[$key] = $value;
+                }
+            }
+        }
+        
+        // Format dates for display
+        $row['formatted_date'] = date('M j, Y', strtotime($row['submission_date']));
+        $row['is_draft_label'] = $row['is_draft'] ? 'Draft' : 'Final';
+        
+        $submissions[] = $row;
+    }
+    
+    // Add original program creation date as first "version"
+    $program_creation = [
+        'submission_id' => 0,
+        'submission_date' => $program['created_at'],
+        'formatted_date' => date('M j, Y', strtotime($program['created_at'])),
+        'period_name' => 'Initial Creation',
+        'status' => 'not-started',
+        'is_draft' => 0,
+        'is_draft_label' => 'Creation',
+        'program_name' => $program['program_name'],
+        'description' => $program['description'],
+        'start_date' => $program['start_date'],
+        'end_date' => $program['end_date'],
+        'targets' => [],
+        'remarks' => ''
+    ];
+    
+    // Add to end of submissions array (it's in reverse chronological order)
+    $submissions[] = $program_creation;
+    
+    return [
+        'program' => $program,
+        'submissions' => $submissions
+    ];
+}
+
+/**
+ * Compare two program submission values and format for display
+ * 
+ * @param mixed $current_value Current value
+ * @param mixed $previous_value Previous value
+ * @param bool $show_diff Whether to show the difference
+ * @return array Formatted comparison result
+ */
+function compare_submission_values($current_value, $previous_value, $show_diff = true) {
+    $has_changed = false;
+    $formatted_diff = '';
+    
+    // Handle arrays (like targets)
+    if (is_array($current_value) && is_array($previous_value)) {
+        return [
+            'has_changed' => true, // Arrays are complex, always show history option
+            'formatted_diff' => 'Click to view previous versions',
+            'previous_value' => $previous_value,
+            'current_value' => $current_value
+        ];
+    }
+    
+    // Handle numeric values
+    if (is_numeric($current_value) && is_numeric($previous_value)) {
+        $diff = $current_value - $previous_value;
+        $has_changed = ($diff != 0);
+        
+        if ($has_changed && $show_diff) {
+            $sign = ($diff > 0) ? '+' : '';
+            $formatted_diff = "{$sign}{$diff}";
+        }
+    } 
+    // Handle string values
+    else if (is_string($current_value) && is_string($previous_value)) {
+        $has_changed = ($current_value !== $previous_value);
+        
+        // For dates, format them nicely
+        if (preg_match('/^\d{4}-\d{2}-\d{2}/', $current_value) && preg_match('/^\d{4}-\d{2}-\d{2}/', $previous_value)) {
+            $current_formatted = date('M j, Y', strtotime($current_value));
+            $previous_formatted = date('M j, Y', strtotime($previous_value));
+            $previous_value = $previous_formatted;
+        }
+    }
+    // Other types
+    else {
+        $has_changed = ($current_value != $previous_value);
+    }
+    
+    return [
+        'has_changed' => $has_changed,
+        'formatted_diff' => $formatted_diff,
+        'previous_value' => $previous_value,
+        'current_value' => $current_value
+    ];
+}
+
+/**
+ * Get complete edit history for a specific field in a program
+ * Shows all changes to a field over time with timestamps
+ * 
+ * @param array $submissions Array of program submissions 
+ * @param string $field_name The field name to track history for
+ * @param array $options Additional options (nested_field, use_formatted_date)
+ * @return array Array of field values with timestamps
+ */
+function get_field_edit_history($submissions, $field_name, $options = []) {
+    $history = [];
+    $nested_field = $options['nested_field'] ?? null;
+    $use_formatted_date = $options['use_formatted_date'] ?? true;
+    $previous_value = null;
+    
+    // Process submissions in reverse (from oldest to newest)
+    $submissions_reversed = array_reverse($submissions);
+    
+    foreach ($submissions_reversed as $idx => $submission) {
+        $timestamp = $use_formatted_date ? 
+            $submission['formatted_date'] : 
+            date('Y-m-d H:i:s', strtotime($submission['submission_date'] ?? $submission['created_at']));
+        
+        // Handle nested field within JSON content (e.g., targets[0].target_text)
+        if ($nested_field && isset($submission[$field_name]) && is_array($submission[$field_name])) {
+            $path = explode('.', $nested_field);
+            $value = $submission[$field_name];
+            
+            // Navigate the nested path
+            foreach ($path as $key) {
+                // Handle array index notation like targets[0]
+                if (preg_match('/^(\w+)\[(\d+)\]$/', $key, $matches)) {
+                    $array_key = $matches[1];
+                    $index = (int)$matches[2];
+                    
+                    if (isset($value[$array_key]) && isset($value[$array_key][$index])) {
+                        $value = $value[$array_key][$index];
+                    } else {
+                        $value = null;
+                        break;
+                    }
+                } else if (isset($value[$key])) {
+                    $value = $value[$key];
+                } else {
+                    $value = null;
+                    break;
+                }
+            }
+        } else {
+            // Direct field access
+            $value = $submission[$field_name] ?? null;
+        }
+        
+        // Only add to history if value exists and is different from previous value
+        if ($value !== null && $value !== $previous_value) {
+            $history[] = [
+                'timestamp' => $timestamp,
+                'value' => $value,
+                'is_draft' => $submission['is_draft'] ?? 0,
+                'submission_id' => $submission['submission_id'] ?? 0,
+                'period_name' => $submission['period_name'] ?? null
+            ];
+            $previous_value = $value;
+        }
+    }
+    
+    return $history;
+}
 ?>
