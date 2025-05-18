@@ -180,7 +180,7 @@ function create_agency_program($data) {
     
     $user_id = $_SESSION['user_id'];
     $sector_id = $_SESSION['sector_id'];
-    $has_content_json = has_content_json_schema();
+    $has_content_json = has_content_json_schema(); // Assuming this remains relevant for other logic not shown
     $has_is_assigned = has_is_assigned_column();
     
     // Begin transaction
@@ -216,17 +216,19 @@ function create_agency_program($data) {
         }
         
         // Insert submission with the new structure
-        // The content_json now contains a rating and an array of targets
         $content = [
+            'program_name' => $program_name, // Snapshot program name
+            'description' => $description,   // Snapshot description
             'rating' => $rating,
-            'targets' => $targets
+            'targets' => $targets,
+            'remarks' => $data['remarks'] ?? '' // Snapshot remarks if provided
         ];
         
         $content_json = json_encode($content);
         
         $sub_query = "INSERT INTO program_submissions (program_id, period_id, submitted_by, 
-                    content_json, status) 
-                    VALUES (?, ?, ?, ?, ?)";
+                    content_json, status, submission_date) 
+                    VALUES (?, ?, ?, ?, ?, NOW())"; // Added submission_date
         
         $stmt = $conn->prepare($sub_query);
         $stmt->bind_param("iiiss", $program_id, $current_period['period_id'], $user_id, 
@@ -295,7 +297,7 @@ function create_agency_program_draft($data) {
     
     $user_id = $_SESSION['user_id'];
     $sector_id = $_SESSION['sector_id'];
-    $has_content_json = has_content_json_schema();
+    $has_content_json = has_content_json_schema(); // Assuming this remains relevant
     $has_is_assigned = has_is_assigned_column();
     
     // Begin transaction
@@ -332,6 +334,8 @@ function create_agency_program_draft($data) {
         
         // Insert submission as draft with new structure
         $content = [
+            'program_name' => $program_name, // Snapshot program name
+            'description' => $description,   // Snapshot description
             'rating' => $rating,
             'targets' => $targets,
             'remarks' => $data['remarks'] ?? ''
@@ -341,8 +345,8 @@ function create_agency_program_draft($data) {
         $is_draft = 1; // Set as draft
         
         $sub_query = "INSERT INTO program_submissions (program_id, period_id, submitted_by, 
-                    content_json, status, is_draft) 
-                    VALUES (?, ?, ?, ?, ?, ?)";
+                    content_json, status, is_draft, submission_date) 
+                    VALUES (?, ?, ?, ?, ?, ?, NOW())"; // Added submission_date
         
         $stmt = $conn->prepare($sub_query);
         $stmt->bind_param("iiissi", $program_id, $current_period['period_id'], $user_id, 
@@ -374,30 +378,34 @@ function submit_program_data($data, $is_draft = false) {
     // Validate and sanitize inputs
     $program_id = intval($data['program_id'] ?? 0);
     $period_id = intval($data['period_id'] ?? 0);
-    
+    $user_id = $_SESSION['user_id']; // Moved user_id up for use in program update ownership check
+
     if (!$program_id || !$period_id) {
         return ['error' => 'Missing required parameters'];
     }
     
-    // Only perform full validation if not a draft
-    if (!$is_draft) {
-        $validation_fields = ['rating'];
-        $validated = validate_form_input($data, $validation_fields);
-        if (isset($validated['error'])) {
-            return $validated;
-        }
-        
-        // Validate at least one target for non-drafts
-        if (empty($data['targets']) || !is_array($data['targets'])) {
-            return ['error' => 'At least one target is required'];
-        }
-    } else {
-        // Basic validation even for drafts
-        $validated = [];
-        foreach ($data as $key => $value) {
-            if (!is_array($value)) {
-                $validated[$key] = $conn->real_escape_string($value);
+    // Basic validation for all fields that might be submitted
+    // $validated array will hold sanitized values
+    $validated = [];
+    $allowed_keys = ['rating', 'remarks', 'start_date', 'end_date', 'program_name', 'description'];
+    foreach ($allowed_keys as $key) {
+        if (isset($data[$key])) {
+            // For arrays (like targets), handle separately. For strings, sanitize.
+            if (!is_array($data[$key])) {
+                 $validated[$key] = $conn->real_escape_string(trim($data[$key]));
+            } else {
+                 $validated[$key] = $data[$key]; // Targets are processed later
             }
+        }
+    }
+    
+    // Only perform full validation for rating and targets if not a draft
+    if (!$is_draft) {
+        if (empty($validated['rating'])) {
+             return ['error' => 'Rating is required for final submission.'];
+        }
+        if (empty($data['targets']) || !is_array($data['targets'])) {
+            return ['error' => 'At least one target is required for final submission.'];
         }
     }
     
@@ -405,101 +413,153 @@ function submit_program_data($data, $is_draft = false) {
     $rating = $validated['rating'] ?? 'not-started';
     $remarks = $validated['remarks'] ?? '';
     
-    // Extract timeline data for program table update
-    $start_date = $validated['start_date'] ?? null;
-    $end_date = $validated['end_date'] ?? null;
-    
+    // Extract timeline and name/description data for program table update
+    $program_name_from_data = $validated['program_name'] ?? null;
+    $description_from_data = $validated['description'] ?? null;
+    $start_date_from_data = !empty($validated['start_date']) ? $validated['start_date'] : null;
+    $end_date_from_data = !empty($validated['end_date']) ? $validated['end_date'] : null;
+
     // Process targets
     $targets = [];
     if (isset($data['targets']) && is_array($data['targets'])) {
         foreach ($data['targets'] as $target_data) {
-            // For non-drafts, require target text
-            if (!$is_draft && empty($target_data['text'])) {
-                continue;
+            $target_text = $conn->real_escape_string($target_data['text'] ?? '');
+            if (!$is_draft && empty($target_text)) { // For non-drafts, require target text
+                continue; 
             }
-            
             $targets[] = [
-                'target_text' => $conn->real_escape_string($target_data['text'] ?? ''),
+                'target_text' => $target_text,
                 'status_description' => $conn->real_escape_string($target_data['status_description'] ?? '')
             ];
         }
     }
     
-    // For non-drafts, require at least one filled target
     if (!$is_draft && empty($targets)) {
-        return ['error' => 'At least one target with text is required'];
+        return ['error' => 'At least one target with text is required for final submission.'];
     }
     
-    // If it's a draft and no targets provided, add an empty one
-    if ($is_draft && empty($targets)) {
-        $targets[] = [
-            'target_text' => '',
-            'status_description' => ''
-        ];
+    if ($is_draft && empty($targets) && !(isset($data['targets']) && is_array($data['targets']))) {
+        // If it\'s a draft and no targets array was submitted at all, don\'t force an empty one.
+        // Only add an empty one if \'targets\' was an empty array.
+        // This preserves existing targets if only other fields are saved in a draft.
+        // However, for a *new* submission history entry, we should snapshot current targets.
+        // To simplify and ensure snapshot, let's assume if targets are not in $data, they are not being changed for this submission.
+        // The $content_json will then reflect this.
+    } else if ($is_draft && empty($targets) && isset($data['targets']) && is_array($data['targets'])) {
+         // If 'targets' was submitted as an empty array for a draft, then record that.
+         $targets = []; // Explicitly empty, or add a placeholder if business logic requires
     }
-    
-    // Create new JSON content with the updated structure
-    $content = [
-        'rating' => $rating,
-        'targets' => $targets,
-        'remarks' => $remarks
-    ];
-    
-    $content_json = json_encode($content);
-    $user_id = $_SESSION['user_id'];
-    
+
+
     // Begin transaction
     $conn->begin_transaction();
     
     try {
-        // Check if this is an assigned program
-        $check_query = "SELECT is_assigned FROM programs WHERE program_id = ? AND owner_agency_id = ?";
-        $stmt = $conn->prepare($check_query);
-        $stmt->bind_param("ii", $program_id, $user_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $is_assigned = 0;
-        
-        if ($result->num_rows > 0) {
-            $program = $result->fetch_assoc();
-            $is_assigned = $program['is_assigned'];
+        // Check if this program belongs to the current agency (security check)
+        $check_owner_stmt = $conn->prepare("SELECT program_id FROM programs WHERE program_id = ? AND owner_agency_id = ?");
+        $check_owner_stmt->bind_param("ii", $program_id, $user_id);
+        $check_owner_stmt->execute();
+        if ($check_owner_stmt->get_result()->num_rows === 0) {
+            $conn->rollback();
+            return ['error' => 'Permission denied or program not found.'];
         }
-        
-        // First update the program's timeline if provided
-        if ($start_date && $end_date) {
-            // Update timeline regardless of assigned status (allow update)
-            $update_program = "UPDATE programs SET start_date = ?, end_date = ?, updated_at = NOW() WHERE program_id = ?";
-            $stmt = $conn->prepare($update_program);
-            $stmt->bind_param("ssi", $start_date, $end_date, $program_id);
-            $stmt->execute();
+        $check_owner_stmt->close();
+
+        // Update program\'s main details (name, description, timeline) in \'programs\' table if provided
+        $update_fields_pg = [];
+        $update_params_pg = [];
+        $update_types_pg = "";
+
+        if ($program_name_from_data !== null && !empty(trim($program_name_from_data))) {
+            $update_fields_pg[] = "program_name = ?";
+            $update_params_pg[] = $program_name_from_data;
+            $update_types_pg .= "s";
         }
-        
-        // Check if a submission already exists for this program and period
-        $check_query = "SELECT submission_id FROM program_submissions 
-                       WHERE program_id = ? AND period_id = ?";
-        $stmt = $conn->prepare($check_query);
-        $stmt->bind_param("ii", $program_id, $period_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        if ($result->num_rows > 0) {
-            // Update existing submission
-            $submission_id = $result->fetch_assoc()['submission_id'];
-            $query = "UPDATE program_submissions SET content_json = ?, status = ?, is_draft = ?, 
-                     updated_at = NOW() WHERE submission_id = ?";
-            $stmt = $conn->prepare($query);
-            $stmt->bind_param("ssii", $content_json, $rating, $is_draft, $submission_id);
-        } else {
-            // Create new submission
-            $query = "INSERT INTO program_submissions (program_id, period_id, submitted_by, 
-                     content_json, status, is_draft) VALUES (?, ?, ?, ?, ?, ?)";
-            $stmt = $conn->prepare($query);
-            $stmt->bind_param("iiissi", $program_id, $period_id, $user_id, $content_json, $rating, $is_draft);
+        if ($description_from_data !== null) { // Allow empty description
+            $update_fields_pg[] = "description = ?";
+            $update_params_pg[] = $description_from_data;
+            $update_types_pg .= "s";
         }
+        if ($start_date_from_data) {
+            $update_fields_pg[] = "start_date = ?";
+            $update_params_pg[] = $start_date_from_data;
+            $update_types_pg .= "s";
+        }
+        if ($end_date_from_data) {
+            $update_fields_pg[] = "end_date = ?";
+            $update_params_pg[] = $end_date_from_data;
+            $update_types_pg .= "s";
+        }
+
+        if (!empty($update_fields_pg)) {
+            $update_fields_pg[] = "updated_at = NOW()";
+            $query_update_program = "UPDATE programs SET " . implode(", ", $update_fields_pg) . " WHERE program_id = ? AND owner_agency_id = ?";
+            $update_params_pg[] = $program_id;
+            $update_params_pg[] = $user_id;
+            $update_types_pg .= "ii";
+            
+            $stmt_update_program = $conn->prepare($query_update_program);
+            if (!$stmt_update_program) { throw new Exception("Prepare failed for program update: " . $conn->error); }
+            $stmt_update_program->bind_param($update_types_pg, ...$update_params_pg);
+            if (!$stmt_update_program->execute()) { throw new Exception("Execute failed for program update: " . $stmt_update_program->error); }
+            $stmt_update_program->close();
+        }
+
+        // Fetch the current program_name and description (authoritative, could have been just updated)
+        // Also fetch current targets if not provided in $data, to ensure content_json is a full snapshot
+        $stmt_fetch_details = $conn->prepare(
+            "SELECT p.program_name, p.description, ps_latest.content_json as latest_content 
+             FROM programs p
+             LEFT JOIN (
+                 SELECT program_id, content_json 
+                 FROM program_submissions 
+                 WHERE program_id = ?
+                 ORDER BY submission_date DESC, submission_id DESC LIMIT 1
+             ) ps_latest ON p.program_id = ps_latest.program_id
+             WHERE p.program_id = ?"
+        );
+        $stmt_fetch_details->bind_param("ii", $program_id, $program_id);
+        $stmt_fetch_details->execute();
+        $result_program_details = $stmt_fetch_details->get_result();
+        if ($result_program_details->num_rows === 0) {
+            throw new Exception("Failed to fetch current program details after update.");
+        }
+        $current_program_data = $result_program_details->fetch_assoc();
+        $current_program_name = $current_program_data['program_name'];
+        $current_description = $current_program_data['description'];
+        $stmt_fetch_details->close();
+
+        // Determine targets for snapshot: use $data['targets'] if provided, else use latest known targets
+        $snapshot_targets = $targets; // Targets processed from $data
+        if (!isset($data['targets']) && $current_program_data['latest_content']) {
+            $latest_content_decoded = json_decode($current_program_data['latest_content'], true);
+            if ($latest_content_decoded && isset($latest_content_decoded['targets'])) {
+                $snapshot_targets = $latest_content_decoded['targets'];
+            }
+        }
+
+
+        // Create new JSON content for the submission history
+        $content = [
+            'program_name' => $current_program_name,
+            'description' => $current_description,
+            'rating' => $rating,
+            'targets' => $snapshot_targets, // Use determined targets for snapshot
+            'remarks' => $remarks
+        ];
+        $content_json = json_encode($content);
         
-        $stmt->execute();
+        // Always INSERT a new submission record for history
+        $query_insert_submission = "INSERT INTO program_submissions (program_id, period_id, submitted_by, 
+                                 content_json, status, is_draft, submission_date) 
+                                 VALUES (?, ?, ?, ?, ?, ?, NOW())";
+        $stmt_insert_submission = $conn->prepare($query_insert_submission);
+        if (!$stmt_insert_submission) { throw new Exception("Prepare failed for submission insert: " . $conn->error); }
+        // $rating is used as status, $is_draft is 0 or 1
+        $stmt_insert_submission->bind_param("iiissi", $program_id, $period_id, $user_id, $content_json, $rating, $is_draft);
+        if (!$stmt_insert_submission->execute()) { throw new Exception("Execute failed for submission insert: " . $stmt_insert_submission->error); }
+        $stmt_insert_submission->close();
         
-        // Commit the transaction
         $conn->commit();
         
         return [
@@ -507,7 +567,6 @@ function submit_program_data($data, $is_draft = false) {
             'message' => $is_draft ? 'Program data saved as draft' : 'Program data submitted successfully'
         ];
     } catch (Exception $e) {
-        // Rollback on error
         $conn->rollback();
         return ['error' => 'Failed to submit program data: ' . $e->getMessage()];
     }
@@ -641,14 +700,23 @@ function get_program_edit_history($program_id) {
         return ['error' => 'Invalid program ID'];
     }
     
-    // First get the program details
-    $program = get_program_details($program_id, true); // Allow cross-agency viewing for history
+    // First get the current program details from the \'programs\' table
+    $stmt_program = $conn->prepare("SELECT p.*, u_creator.agency_name as creator_agency_name 
+                                  FROM programs p 
+                                  LEFT JOIN users u_creator ON p.created_by = u_creator.user_id
+                                  WHERE p.program_id = ?");
+    $stmt_program->bind_param("i", $program_id);
+    $stmt_program->execute();
+    $result_program = $stmt_program->get_result();
     
-    if (!$program || isset($program['error'])) {
+    if ($result_program->num_rows === 0) {
         return ['error' => 'Program not found'];
     }
-      // Get all submissions for this program, ordered by date
-    $stmt = $conn->prepare("SELECT ps.*, 
+    $program_details_current = $result_program->fetch_assoc();
+    $stmt_program->close();
+      
+    // Get all submissions for this program, ordered by date (newest first)
+    $stmt_submissions = $conn->prepare("SELECT ps.*, 
                            CONCAT('Q', rp.quarter, '-', rp.year) as period_name, 
                            rp.start_date as period_start, rp.end_date as period_end,
                            u.agency_name as submitted_by_name
@@ -656,58 +724,57 @@ function get_program_edit_history($program_id) {
                            LEFT JOIN reporting_periods rp ON ps.period_id = rp.period_id
                            LEFT JOIN users u ON ps.submitted_by = u.user_id
                            WHERE ps.program_id = ?
-                           ORDER BY ps.submission_date DESC");
+                           ORDER BY ps.submission_date DESC, ps.submission_id DESC");
     
-    $stmt->bind_param("i", $program_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
+    $stmt_submissions->bind_param("i", $program_id);
+    $stmt_submissions->execute();
+    $result_submissions = $stmt_submissions->get_result();
     
-    $submissions = [];
-    $has_content_json = has_content_json_schema();
+    $submissions_history = [];
     
-    while ($row = $result->fetch_assoc()) {
-        // Process submission data based on schema
-        if ($has_content_json && isset($row['content_json']) && !empty($row['content_json'])) {
-            // Parse content_json for newer schema
+    while ($row = $result_submissions->fetch_assoc()) {
+        if (isset($row['content_json']) && !empty($row['content_json'])) {
             $content = json_decode($row['content_json'], true);
             if ($content) {
-                // Extract content fields for easier access
                 foreach ($content as $key => $value) {
+                    // Prefer values from content_json as they are the snapshot for that submission
                     $row[$key] = $value;
+                }
+                // Ensure \'rating\' from content_json is used as status for that historical point
+                if (isset($content['rating'])){
+                    $row['status'] = $content['rating'];
                 }
             }
         }
         
-        // Format dates for display
-        $row['formatted_date'] = date('M j, Y', strtotime($row['submission_date']));
-        $row['is_draft_label'] = $row['is_draft'] ? 'Draft' : 'Final';
+        $row['formatted_date'] = date('M j, Y H:i', strtotime($row['submission_date']));
+        $row['is_draft_label'] = ($row['is_draft'] ?? 0) ? 'Draft' : 'Final'; // Handle potential null is_draft
         
-        $submissions[] = $row;
+        $submissions_history[] = $row;
+    }
+    $stmt_submissions->close();
+    
+    if (empty($submissions_history)) {
+        $creator_display_name = $program_details_current['creator_agency_name'] ?? (isset($program_details_current['created_by']) ? 'User ID: ' . $program_details_current['created_by'] : 'N/A');
+        $submissions_history[] = [
+            'submission_id' => 0, 
+            'submission_date' => $program_details_current['created_at'],
+            'formatted_date' => date('M j, Y H:i', strtotime($program_details_current['created_at'])),
+            'period_name' => 'Initial Record',
+            'status' => 'not-started', 
+            'is_draft' => 0, 
+            'is_draft_label' => 'Created',
+            'program_name' => $program_details_current['program_name'], 
+            'description' => $program_details_current['description'], 
+            'targets' => [], 
+            'remarks' => 'Program created.',
+            'submitted_by_name' => $creator_display_name
+        ];
     }
     
-    // Add original program creation date as first "version"
-    $program_creation = [
-        'submission_id' => 0,
-        'submission_date' => $program['created_at'],
-        'formatted_date' => date('M j, Y', strtotime($program['created_at'])),
-        'period_name' => 'Initial Creation',
-        'status' => 'not-started',
-        'is_draft' => 0,
-        'is_draft_label' => 'Creation',
-        'program_name' => $program['program_name'],
-        'description' => $program['description'],
-        'start_date' => $program['start_date'],
-        'end_date' => $program['end_date'],
-        'targets' => [],
-        'remarks' => ''
-    ];
-    
-    // Add to end of submissions array (it's in reverse chronological order)
-    $submissions[] = $program_creation;
-    
     return [
-        'program' => $program,
-        'submissions' => $submissions
+        'program' => $program_details_current, 
+        'submissions' => $submissions_history
     ];
 }
 

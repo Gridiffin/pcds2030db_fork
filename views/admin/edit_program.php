@@ -35,36 +35,35 @@ $messageType = 'info';
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validate inputs
-    $program_name = trim($_POST['program_name'] ?? '');
+    $program_name_form = trim($_POST['program_name'] ?? '');
     $owner_agency_id = intval($_POST['owner_agency_id'] ?? 0);
     $sector_id = intval($_POST['sector_id'] ?? 0);
-    $description = trim($_POST['description'] ?? '');
-    $start_date = !empty($_POST['start_date']) ? $_POST['start_date'] : null;
-    $end_date = !empty($_POST['end_date']) ? $_POST['end_date'] : null;
+    $description_form = trim($_POST['description'] ?? '');
+    $start_date_form = !empty($_POST['start_date']) ? $_POST['start_date'] : null;
+    $end_date_form = !empty($_POST['end_date']) ? $_POST['end_date'] : null;
     $is_assigned = isset($_POST['is_assigned']) ? 1 : 0;
-    $rating = isset($_POST['rating']) ? $_POST['rating'] : 'not-started';
-    $remarks = trim($_POST['remarks'] ?? '');
-    $targets = [];
+    $rating_form = isset($_POST['rating']) ? $_POST['rating'] : 'not-started'; // This is the overall program rating/status
+    $remarks_form = trim($_POST['remarks'] ?? '');
+    $targets_form = [];
     if (isset($_POST['target_text']) && is_array($_POST['target_text'])) {
-        foreach ($_POST['target_text'] as $key => $target_text) {
-            if (!empty($target_text)) {
-                $targets[] = [
-                    'target_text' => $target_text,
+        foreach ($_POST['target_text'] as $key => $target_text_item) {
+            if (!empty($target_text_item)) {
+                $targets_form[] = [
+                    'target_text' => $target_text_item,
                     'status_description' => $_POST['status_description'][$key] ?? '',
-                    'status' => $_POST['target_status'][$key] ?? 'not-started'
+                    // Individual target status might be part of a more complex setup, not directly in this simplified rating
                 ];
             }
         }
     }
     
-    // Process edit permissions
     $edit_permissions = isset($_POST['edit_permissions']) ? $_POST['edit_permissions'] : [];
     $program_settings = [
         'edit_permissions' => $edit_permissions
     ];
     $edit_permissions_json = json_encode($program_settings);
 
-    if (empty($program_name)) {
+    if (empty($program_name_form)) {
         $message = 'Program name is required.';
         $messageType = 'danger';
     } elseif ($owner_agency_id <= 0) {
@@ -74,105 +73,113 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $message = 'Valid sector is required.';
         $messageType = 'danger';
     } else {
-        // Update program in database
-        $query = "UPDATE programs SET 
-                  program_name = ?, 
-                  owner_agency_id = ?, 
-                  sector_id = ?,
-                  description = ?, 
-                  start_date = ?, 
-                  end_date = ?, 
-                  is_assigned = ?,
-                  edit_permissions = ?,
-                  updated_at = NOW()
-                  WHERE program_id = ?";
-                  
-        $stmt = $conn->prepare($query);
-        $stmt->bind_param('siisssisi', 
-            $program_name, 
-            $owner_agency_id, 
-            $sector_id, 
-            $description, 
-            $start_date, 
-            $end_date, 
-            $is_assigned, 
-            $edit_permissions_json, 
-            $program_id
-        );
-          if ($stmt->execute()) {
-            // IMPORTANT: Ensure program history is tracked in program_submissions table for admin edits
-            // This ensures program edit history is consistent across both admin and agency interfaces            // Get the current reporting period - using existing function if available
+        $conn->begin_transaction();
+        try {
+            // Update program in programs table
+            $query_update_program = "UPDATE programs SET 
+                      program_name = ?, 
+                      owner_agency_id = ?, 
+                      sector_id = ?,
+                      description = ?, 
+                      start_date = ?, 
+                      end_date = ?, 
+                      is_assigned = ?,
+                      edit_permissions = ?,
+                      updated_at = NOW()
+                      WHERE program_id = ?";
+                      
+            $stmt_update_program = $conn->prepare($query_update_program);
+            $stmt_update_program->bind_param('siisssisi', 
+                $program_name_form, 
+                $owner_agency_id, 
+                $sector_id, 
+                $description_form, 
+                $start_date_form, 
+                $end_date_form, 
+                $is_assigned, 
+                $edit_permissions_json, 
+                $program_id
+            );
+
+            if (!$stmt_update_program->execute()) {
+                throw new Exception('Failed to update program details: ' . $stmt_update_program->error);
+            }
+            $stmt_update_program->close();
+
+            // Program details successfully updated in \'programs\' table.
+            // Now, create a new submission entry for history.
+
+            // Get the current reporting period
             $current_period_id = null;
-            if (function_exists('get_current_reporting_period')) {
-                $current_period = get_current_reporting_period();
-                if ($current_period && isset($current_period['period_id'])) {
-                    $current_period_id = $current_period['period_id'];
-                }
+            $current_period_data = get_current_reporting_period(); // Assumes this function is robust
+            if ($current_period_data && isset($current_period_data['period_id'])) {
+                $current_period_id = $current_period_data['period_id'];
             } else {
-                // Fallback if function not available
-                $current_period_query = "SELECT period_id FROM reporting_periods WHERE CURDATE() BETWEEN start_date AND end_date";
-                $period_stmt = $conn->prepare($current_period_query);
-                $period_stmt->execute();
-                $period_result = $period_stmt->get_result();
-                
-                if ($period_result->num_rows > 0) {
-                    $current_period = $period_result->fetch_assoc();
-                    $current_period_id = $current_period['period_id'];
-                } else {
-                    // If no active period, get the latest one
-                    $latest_period_query = "SELECT period_id FROM reporting_periods ORDER BY year DESC, quarter DESC LIMIT 1";
-                    $latest_stmt = $conn->prepare($latest_period_query);
-                    $latest_stmt->execute();
-                    $latest_result = $latest_stmt->get_result();
-                    
-                    if ($latest_result->num_rows > 0) {
-                        $latest_period = $latest_result->fetch_assoc();
-                        $current_period_id = $latest_period['period_id'];
-                    }
+                // Fallback: Get the latest period if no current active one
+                $latest_period_query = "SELECT period_id FROM reporting_periods ORDER BY year DESC, quarter DESC LIMIT 1";
+                $latest_stmt = $conn->prepare($latest_period_query);
+                if (!$latest_stmt) throw new Exception("Failed to prepare latest period query: " . $conn->error);
+                $latest_stmt->execute();
+                $latest_result = $latest_stmt->get_result();
+                if ($latest_result->num_rows > 0) {
+                    $current_period_id = $latest_result->fetch_assoc()['period_id'];
                 }
+                $latest_stmt->close();
+            }
+
+            if (!$current_period_id) {
+                // If still no period ID, this is a problem. For now, we might have to skip submission or use a placeholder.
+                // Or, decide if admin edits outside a period context should still create a submission.
+                // For consistency, let's assume a submission should be created. If period_id is crucial, this needs a policy.
+                // For now, let\'s throw an error if no period can be determined, as submissions are tied to periods.
+                throw new Exception("Could not determine a valid reporting period for submission history.");
             }
             
-            // Encode content for submission
-            $content_json = json_encode([
-                'rating' => $rating,
-                'targets' => $targets,
-                'remarks' => $remarks
-            ]);
-            
-            // Check if there's an existing submission for this program and period
-            $check_sub_query = "SELECT submission_id FROM program_submissions 
-                              WHERE program_id = ? AND period_id = ?";
-            $check_stmt = $conn->prepare($check_sub_query);
-            $check_stmt->bind_param('ii', $program_id, $current_period_id);
-            $check_stmt->execute();
-            $check_result = $check_stmt->get_result();
-            
-            if ($check_result->num_rows > 0) {
-                // Update existing submission for current period
-                $submission = $check_result->fetch_assoc();
-                $update_sub = "UPDATE program_submissions SET status = ?, content_json = ?, updated_at = NOW() 
-                              WHERE submission_id = ?";
-                $update_stmt = $conn->prepare($update_sub);
-                $update_stmt->bind_param('ssi', $rating, $content_json, $submission['submission_id']);
-                $update_stmt->execute();
-            } else if ($current_period_id) {
-                // Create new submission for current period
-                $insert_sub = "INSERT INTO program_submissions (program_id, period_id, submitted_by, 
-                             content_json, status, is_draft, submission_date) 
-                             VALUES (?, ?, ?, ?, ?, 0, NOW())";
-                $admin_id = $_SESSION['user_id'];
-                $insert_stmt = $conn->prepare($insert_sub);
-                $insert_stmt->bind_param('iiiss', $program_id, $current_period_id, $admin_id, $content_json, $rating);
-                $insert_stmt->execute();
+            // Content for program_submissions.content_json
+            // This snapshot includes the program name and description AS THEY ARE NOW in the \'programs\' table (just updated)
+            $content_for_history = [
+                'program_name' => $program_name_form, // Name as submitted in this form
+                'description'  => $description_form,  // Description as submitted in this form
+                'rating'       => $rating_form,       // Rating/status from the form
+                'targets'      => $targets_form,      // Targets from the form
+                'remarks'      => $remarks_form       // Remarks from the form
+            ];
+            $content_json_history = json_encode($content_for_history);
+            $admin_id = $_SESSION['user_id'];
+            $is_draft_history = 0; // Admin edits are final
+
+            // Insert new submission for history
+            $query_insert_submission = "INSERT INTO program_submissions (program_id, period_id, submitted_by, 
+                                         content_json, status, is_draft, submission_date) 
+                                         VALUES (?, ?, ?, ?, ?, ?, NOW())";
+            $stmt_insert_submission = $conn->prepare($query_insert_submission);
+            if (!$stmt_insert_submission) {
+                 throw new Exception('Failed to prepare submission insert: ' . $conn->error);
             }
+            // Using $rating_form as the status for this submission record
+            $stmt_insert_submission->bind_param('iiissi', 
+                $program_id, 
+                $current_period_id, 
+                $admin_id, 
+                $content_json_history, 
+                $rating_form, 
+                $is_draft_history
+            );
+
+            if (!$stmt_insert_submission->execute()) {
+                throw new Exception('Failed to insert program submission history: ' . $stmt_insert_submission->error);
+            }
+            $stmt_insert_submission->close();
             
-            $message = 'Program updated successfully.';
+            $conn->commit();
+            $message = 'Program updated successfully and history recorded.';
             $messageType = 'success';
-        } else {
-            $message = 'Failed to update program: ' . $stmt->error;
+
+        } catch (Exception $e) {
+            $conn->rollback();
+            $message = 'Operation failed: ' . $e->getMessage();
             $messageType = 'danger';
         }
-        $stmt->close();
     }
 }
 

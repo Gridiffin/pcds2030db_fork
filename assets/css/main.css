@@ -23,6 +23,7 @@
 @import 'components/admin.css'; /* Add the new admin components CSS */
 @import 'components/program-details.css'; /* Program details component styling */
 @import 'components/program-animations.css'; /* Program animations */
+@import 'components/program-history.css'; /* Program history component styling */
 @import 'components/table-word-wrap.css'; /* Table word wrap styling */
 @import 'components/table-browser-fixes.css'; /* Browser-specific table fixes */
 @import 'components/mobile-targets-display.css'; /* Mobile-friendly div-based display */
