@@ -8,6 +8,30 @@ require_once 'rating_helpers.php';
 
 
 /**
+ * Get a display name for a reporting period.
+ * Example: Q1-2023, H1-2023
+ * @param array $period Associative array of the period (must contain 'quarter' and 'year')
+ * @return string Formatted period name
+ */
+function get_period_display_name($period) {
+    if (!isset($period['quarter']) || !isset($period['year'])) {
+        return 'Invalid Period';
+    }
+    $year = $period['year'];
+    $quarter = $period['quarter'];
+
+    if ($quarter >= 1 && $quarter <= 4) {
+        return "Q{$quarter}-{$year}";
+    } elseif ($quarter == 5) {
+        return "Half Year 1 {$year}"; // Updated from H1-{$year}
+    } elseif ($quarter == 6) {
+        return "Half Year 2 {$year}"; // Updated from H2-{$year}
+    } else {
+        return "Unknown-{$year}";
+    }
+}
+
+/**
  * Get all metrics
  */
 function get_all_metrics(){
@@ -88,34 +112,40 @@ function auto_manage_reporting_periods($respect_admin_open = true) {
     
     // Define the quarters with their start and end dates
     $current_year = date('Y');
-    $quarters = [
-        1 => [
-            'start' => "$current_year-01-01",
-            'end' => "$current_year-03-31"
-        ],
-        2 => [
-            'start' => "$current_year-04-01",
-            'end' => "$current_year-06-30"
-        ],
-        3 => [
-            'start' => "$current_year-07-01",
-            'end' => "$current_year-09-30"
-        ],
-        4 => [
-            'start' => "$current_year-10-01",
-            'end' => "$current_year-12-31"
-        ]
+    $periods_definition = [
+        // Quarters
+        ['type' => 'quarterly', 'q_num' => 1, 'start_month' => 1, 'start_day' => 1, 'end_month' => 3, 'end_day' => 31],
+        ['type' => 'quarterly', 'q_num' => 2, 'start_month' => 4, 'start_day' => 1, 'end_month' => 6, 'end_day' => 30],
+        ['type' => 'quarterly', 'q_num' => 3, 'start_month' => 7, 'start_day' => 1, 'end_month' => 9, 'end_day' => 30],
+        ['type' => 'quarterly', 'q_num' => 4, 'start_month' => 10, 'start_day' => 1, 'end_month' => 12, 'end_day' => 31],
+        // Half-yearly
+        ['type' => 'half_yearly', 'q_num' => 5, 'start_month' => 1, 'start_day' => 1, 'end_month' => 6, 'end_day' => 30], // H1
+        ['type' => 'half_yearly', 'q_num' => 6, 'start_month' => 7, 'start_day' => 1, 'end_month' => 12, 'end_day' => 31], // H2
     ];
     
-    // Create next year's Q1 if we're in Q4
+    $managed_periods = []; // To store details for creation/update
+
+    // Current Year Periods
+    foreach ($periods_definition as $def) {
+        $managed_periods[] = [
+            'year' => $current_year,
+            'quarter' => $def['q_num'],
+            'start' => sprintf("%d-%02d-%02d", $current_year, $def['start_month'], $def['start_day']),
+            'end' => sprintf("%d-%02d-%02d", $current_year, $def['end_month'], $def['end_day']),
+            'type' => $def['type']
+        ];
+    }
+
+    // Create next year's Q1 if we're in Q4 (October onwards)
     $current_month = date('n');
     if ($current_month >= 10) {
         $next_year = $current_year + 1;
-        $quarters[5] = [
-            'quarter' => 1,
+        $managed_periods[] = [
             'year' => $next_year,
+            'quarter' => 1, // Q1 of next year
             'start' => "$next_year-01-01",
-            'end' => "$next_year-03-31"
+            'end' => "$next_year-03-31",
+            'type' => 'quarterly'
         ];
     }
     
@@ -137,15 +167,11 @@ function auto_manage_reporting_periods($respect_admin_open = true) {
     }
     
     // Check and create missing periods
-    foreach ($quarters as $quarter_num => $dates) {
-        // Handle next year's Q1 special case
-        if (isset($dates['quarter'])) {
-            $q = $dates['quarter'];
-            $y = $dates['year'];
-        } else {
-            $q = $quarter_num;
-            $y = $current_year;
-        }
+    foreach ($managed_periods as $p_data) {
+        $y = $p_data['year'];
+        $q = $p_data['quarter'];
+        $start = $p_data['start'];
+        $end = $p_data['end'];
         
         // Check if this period exists
         $query = "SELECT period_id, status FROM reporting_periods WHERE year = ? AND quarter = ?";
@@ -156,11 +182,15 @@ function auto_manage_reporting_periods($respect_admin_open = true) {
         
         if ($result->num_rows === 0) {
             // Period doesn't exist, create it
-            $start = $dates['start'];
-            $end = $dates['end'];
-            
             // Determine if this should be open
-            $status = ($q == $current_quarter && $y == $current_year) ? 'open' : 'closed';
+            // For quarterly:
+            $is_current_q_for_year = ($q == $current_quarter && $y == $current_year);
+            // For half-yearly H1 (q=5): open if current month is Jan-Jun
+            $is_current_h1_for_year = ($q == 5 && $y == $current_year && $current_month >= 1 && $current_month <= 6);
+            // For half-yearly H2 (q=6): open if current month is Jul-Dec
+            $is_current_h2_for_year = ($q == 6 && $y == $current_year && $current_month >= 7 && $current_month <= 12);
+
+            $status = ($is_current_q_for_year || $is_current_h1_for_year || $is_current_h2_for_year) ? 'open' : 'closed';
             
             // Create the period
             $insert = "INSERT INTO reporting_periods (year, quarter, start_date, end_date, status) VALUES (?, ?, ?, ?, ?)";
@@ -179,8 +209,12 @@ function auto_manage_reporting_periods($respect_admin_open = true) {
                 continue;
             }
             
-            // Current quarter should be open, others closed
-            $should_be_open = ($q == $current_quarter && $y == $current_year);
+            // Current quarter/half should be open, others closed
+            $is_current_q_for_year = ($q == $current_quarter && $y == $current_year && $p_data['type'] == 'quarterly');
+            $is_current_h1_for_year = ($q == 5 && $y == $current_year && $current_month >= 1 && $current_month <= 6 && $p_data['type'] == 'half_yearly');
+            $is_current_h2_for_year = ($q == 6 && $y == $current_year && $current_month >= 7 && $current_month <= 12 && $p_data['type'] == 'half_yearly');
+            
+            $should_be_open = ($is_current_q_for_year || $is_current_h1_for_year || $is_current_h2_for_year);
             
             // Only auto-update if no admin selection or this isn't the admin-selected period
             $current_status = $period['status'];
@@ -205,14 +239,42 @@ function auto_manage_reporting_periods($respect_admin_open = true) {
 function get_current_reporting_period() {
     global $conn;
     
-    $query = "SELECT * FROM reporting_periods WHERE status = 'open' ORDER BY year DESC, quarter DESC LIMIT 1";
-    $result = $conn->query($query);
-    
+    // Prefer open quarterly period first if available and current
+    $current_month = date('n');
+    $current_year = date('Y');
+    $current_q_val = ceil($current_month / 3);
+
+    $query = "SELECT * FROM reporting_periods WHERE status = 'open' AND year = ? AND quarter = ? LIMIT 1";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("ii", $current_year, $current_q_val);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
     if ($result->num_rows > 0) {
         return $result->fetch_assoc();
     }
+
+    // Then prefer open half-yearly period if available and current
+    $current_h_val = ($current_month <= 6) ? 5 : 6;
+    $query_h = "SELECT * FROM reporting_periods WHERE status = 'open' AND year = ? AND quarter = ? LIMIT 1";
+    $stmt_h = $conn->prepare($query_h);
+    $stmt_h->bind_param("ii", $current_year, $current_h_val);
+    $stmt_h->execute();
+    $result_h = $stmt_h->get_result();
+
+    if ($result_h->num_rows > 0) {
+        return $result_h->fetch_assoc();
+    }
     
-    // If no open period, get the next upcoming one
+    // Fallback: any other open period (could be manually opened by admin)
+    $query_any_open = "SELECT * FROM reporting_periods WHERE status = 'open' ORDER BY year DESC, quarter DESC LIMIT 1";
+    $result_any_open = $conn->query($query_any_open);
+    
+    if ($result_any_open->num_rows > 0) {
+        return $result_any_open->fetch_assoc();
+    }
+    
+    // If no open period, get the next upcoming one (quarterly or half-yearly)
     $query = "SELECT * FROM reporting_periods 
               WHERE start_date > NOW() 
               ORDER BY start_date ASC 
@@ -224,7 +286,7 @@ function get_current_reporting_period() {
         return $result->fetch_assoc();
     }
     
-    // If no upcoming period, get the most recent one
+    // If no upcoming period, get the most recent one (quarterly or half-yearly)
     $query = "SELECT * FROM reporting_periods 
               ORDER BY year DESC, quarter DESC 
               LIMIT 1";
@@ -267,8 +329,13 @@ function get_reporting_period($period_id) {
     
     // Check if connection is valid, if not reconnect
     if (!$conn || $conn->connect_error) {
-        // Include database connection if not already included
-        require_once dirname(__DIR__) . '/db_connect.php';
+        // Make sure db_connect.php path is correct if this file is moved
+        $db_connect_path = dirname(__FILE__) . '/db_connect.php'; // Assumes db_connect.php is in the same directory
+        if (!file_exists($db_connect_path)) {
+             // Try one level up if functions.php is in includes/ and db_connect.php is in root
+            $db_connect_path = dirname(__DIR__) . '/db_connect.php';
+        }
+        require_once $db_connect_path;
     }
     
     $query = "SELECT * FROM reporting_periods WHERE period_id = ?";

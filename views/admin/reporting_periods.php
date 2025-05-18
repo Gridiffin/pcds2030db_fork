@@ -139,6 +139,19 @@ require_once '../layouts/admin_nav.php';
 
 // Include the dashboard header component
 require_once '../../includes/dashboard_header.php';
+
+// Function to get display name for quarter in admin table
+function get_admin_quarter_display_name($quarter_val) {
+    if ($quarter_val >= 1 && $quarter_val <= 4) {
+        return "Q" . $quarter_val;
+    } elseif ($quarter_val == 5) {
+        return "Half Year 1";
+    } elseif ($quarter_val == 6) {
+        return "Half Year 2";
+    } else {
+        return "Unknown";
+    }
+}
 ?>
 
 <?php if (!empty($message)): ?>
@@ -200,36 +213,40 @@ require_once '../../includes/dashboard_header.php';
                                 <table class="table table-hover table-custom period-table mb-0">
                                     <thead class="table-light">
                                         <tr>
-                                            <th>Quarter</th>
-                                            <th>Start Date</th>
-                                            <th>End Date</th>
-                                            <th>Status</th>
-                                            <th class="text-end">Actions</th>
+                                            <th scope="col" class="text-center" style="width: 5%;">#</th>
+                                            <th scope="col" style="width: 15%;">Period</th>
+                                            <th scope="col" style="width: 20%;">Dates</th>
+                                            <th scope="col" class="text-center" style="width: 10%;">Status</th>
+                                            <th scope="col" class="text-center" style="width: 15%;">Last Updated</th>
+                                            <th scope="col" class="text-center" style="width: 15%;">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php foreach ($year_periods as $period): 
-                                            $is_standard = isset($period['is_standard_dates']) ? 
-                                                intval($period['is_standard_dates']) : 
-                                                is_standard_quarter_date($period['year'], $period['quarter'], $period['start_date'], $period['end_date']);
-                                        ?>
-                                            <tr class="period-row" data-year="<?php echo $period['year']; ?>" data-quarter="<?php echo $period['quarter']; ?>">
+                                        <?php foreach ($year_periods as $index => $period): ?>
+                                            <tr data-period-id="<?php echo $period['period_id']; ?>">
+                                                <td class="text-center"><?php echo $index + 1; ?></td>
                                                 <td>
-                                                    <span class="fw-bold">Q<?php echo $period['quarter']; ?></span>
-                                                    <?php if (!$is_standard): ?>
-                                                        <span class="ms-1 badge bg-warning" title="Custom date range">
-                                                            <i class="fas fa-calendar-alt"></i>
-                                                        </span>
-                                                    <?php endif; ?>
+                                                    <strong><?php echo get_admin_quarter_display_name($period['quarter']); ?></strong> 
+                                                    <small class="text-muted">(<?php echo $period['year']; ?>)</small>
                                                 </td>
-                                                <td><?php echo date('M j, Y', strtotime($period['start_date'])); ?></td>
-                                                <td><?php echo date('M j, Y', strtotime($period['end_date'])); ?></td>
                                                 <td>
+                                                    <?php echo date('M j, Y', strtotime($period['start_date'])) . ' - ' . date('M j, Y', strtotime($period['end_date'])); ?>
+                                                </td>
+                                                <td class="text-center">
                                                     <span class="badge bg-<?php echo $period['status'] === 'open' ? 'success' : 'secondary'; ?> rounded-pill px-3">
                                                         <?php echo ucfirst($period['status']); ?>
                                                     </span>
                                                 </td>
-                                                <td class="text-end">
+                                                <td class="text-center">
+                                                    <?php 
+                                                        if (!empty($period['updated_at'])) {
+                                                            echo date('M j, Y g:i A', strtotime($period['updated_at'])); 
+                                                        } else {
+                                                            echo 'N/A'; // Or some other placeholder
+                                                        }
+                                                    ?>
+                                                </td>
+                                                <td class="text-center">
                                                     <div class="btn-group btn-group-sm">
                                                         <button type="button" class="btn btn-outline-<?php echo $period['status'] === 'open' ? 'danger' : 'success'; ?> toggle-period-status"
                                                                 data-period-id="<?php echo $period['period_id']; ?>"

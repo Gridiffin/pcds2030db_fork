@@ -21,6 +21,9 @@ if ($periods_result) {
 $selected_period = $viewing_period ?? $current_period ?? null;
 $selected_period_id = $selected_period ? $selected_period['period_id'] : null;
 
+// Include functions to get display name
+require_once __DIR__ . '/functions.php';
+
 // Determine if this is the current active period
 $is_current_active = $selected_period && $selected_period['status'] === 'open';
 ?>
@@ -36,7 +39,7 @@ $is_current_active = $selected_period && $selected_period['status'] === 'open';
                     <div class="period-selector-info">
                         <h5 class="mb-0 d-flex align-items-center">
                             <?php if ($selected_period): ?>
-                                Q<?php echo $selected_period['quarter']; ?>-<?php echo $selected_period['year']; ?> 
+                                <?php echo get_period_display_name($selected_period); ?> 
                                 <span class="badge ms-2 <?php echo $is_current_active ? 'bg-success' : 'bg-secondary'; ?>">
                                     <?php echo $is_current_active ? 'Active Period' : 'Closed'; ?>
                                 </span>
@@ -61,7 +64,7 @@ $is_current_active = $selected_period && $selected_period['status'] === 'open';
                             <?php foreach ($periods as $period): ?>
                                 <option value="<?php echo $period['period_id']; ?>" 
                                         <?php echo ($selected_period_id == $period['period_id']) ? 'selected' : ''; ?>>
-                                    Q<?php echo $period['quarter']; ?>-<?php echo $period['year']; ?>
+                                    <?php echo get_period_display_name($period); ?>
                                     <?php echo $period['status'] === 'open' ? ' (Open)' : ''; ?>
                                 </option>
                             <?php endforeach; ?>
