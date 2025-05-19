@@ -374,7 +374,61 @@
     display: inline-block;
     word-break: break-word;
     white-space: normal;
-    width: 100%;
+    width: calc(100% - 70px); /* Make room for the order input and some padding */
+    margin-right: 10px; /* Add some space between text and order input */
+}
+
+/* Program order input styling */
+.program-order-input {
+    width: 50px;
+    margin-left: 10px;
+    padding: 1px 5px;
+    font-size: 0.85rem;
+    text-align: center;
+    border-radius: 3px;
+    border: 1px solid #ced4da;
+}
+
+.program-order-input:focus {
+    border-color: #80bdff;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.program-order-input.border-warning {
+    border-color: #ffc107;
+    background-color: rgba(255, 193, 7, 0.1);
+    transition: border-color 0.3s, background-color 0.3s;
+}
+
+/* Add hover effect for program order input for accessibility */
+.program-order-input:hover {
+    border-color: #0056b3;
+    background-color: #e9f5ff;
+}
+
+.program-checkbox-container {
+    display: flex;
+    align-items: flex-start; /* Align items at the top to handle wrapping text better */
+    flex-wrap: nowrap;
+    margin-bottom: 8px; /* Add more space between program items */
+    padding-right: 10px; /* Add some padding on the right */
+}
+
+/* Tooltip for long program names */
+.program-checkbox-container .form-check-label[title] {
+    cursor: help;
+    text-decoration: underline dotted #adb5bd 1px;
+}
+
+/* Sort success notice animation */
+.sort-success-notice {
+    opacity: 1;
+    transition: opacity 0.5s ease;
+}
+
+.sort-success-notice.fade {
+    opacity: 0;
 }
 
 @media (max-width: 768px) {

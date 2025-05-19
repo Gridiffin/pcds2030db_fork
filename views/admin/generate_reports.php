@@ -183,21 +183,37 @@ require_once '../../includes/dashboard_header.php';
                                     <div class="alert alert-info">
                                         <i class="fas fa-info-circle me-2"></i>
                                         Select the programs you want to include in the report. If none are selected, all programs for the chosen sector will be included.
-                                    </div>
-                                    <div class="program-selector-container border rounded p-2" style="max-height: 250px; overflow-y: auto;">
+                                    </div>                                    <div class="program-selector-container border rounded p-2" style="max-height: 250px; overflow-y: auto;">
                                         <?php if (!empty($available_programs)): ?>
                                             <div class="pb-2 mb-2 border-bottom">
                                                 <div class="row align-items-center">
                                                     <div class="col">
                                                         <h6 class="m-0 program-selection-title">Programs <span id="programCount" class="badge bg-primary">0</span></h6>
-                                                    </div>
-                                                    <div class="col-auto">
+                                                    </div>                                                <div class="col-auto">
                                                         <button type="button" class="btn btn-sm btn-outline-primary" id="selectAllPrograms">
                                                             <i class="fas fa-check-square me-1"></i> Select All
                                                         </button>
                                                         <button type="button" class="btn btn-sm btn-outline-secondary" id="deselectAllPrograms">
                                                             <i class="fas fa-square me-1"></i> Deselect All
                                                         </button>
+                                                        <button type="button" class="btn btn-sm btn-outline-info ms-1" id="sortProgramOrder" title="Sort programs by their assigned numbers">
+                                                            <i class="fas fa-sort-numeric-down me-1"></i> Sort Numerically
+                                                        </button>
+                                                    </div>
+                                                </div>                                <div class="row mt-2">
+                                                    <div class="col-12">
+                                                        <small class="text-muted">
+                                                            <i class="fas fa-info-circle me-1"></i> 
+                                                            Select programs and use the number inputs to set the display order in the report. Lower numbers will appear first.
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                                <div class="row mt-1">
+                                                    <div class="col-12">
+                                                        <small class="text-muted fst-italic">
+                                                            <i class="fas fa-sort-numeric-down me-1"></i>
+                                                            Order numbers will appear automatically when you select programs.
+                                                        </small>
                                                     </div>
                                                 </div>
                                             </div>

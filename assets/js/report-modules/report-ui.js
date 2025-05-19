@@ -178,13 +178,20 @@ const ReportUI = (function() {
         const sectorId = elements.sectorSelect.value;
         const reportName = elements.reportNameInput.value;
         const reportDescription = elements.reportDescInput.value || '';
-        const isPublic = elements.isPublicCheckbox.checked ? 1 : 0;
-
-        // Get selected program IDs
+        const isPublic = elements.isPublicCheckbox.checked ? 1 : 0;        // Get selected program IDs with their order
         const selectedProgramIds = [];
+        const programOrders = {};
         const programCheckboxes = document.querySelectorAll('#programSelector input[name="selected_program_ids[]"]:checked');
+        
         programCheckboxes.forEach(checkbox => {
-            selectedProgramIds.push(checkbox.value);
+            const programId = checkbox.value;
+            selectedProgramIds.push(programId);
+            
+            // Get the order value for this program
+            const orderInput = document.getElementById(`order_${programId}`);
+            if (orderInput && orderInput.value) {
+                programOrders[programId] = parseInt(orderInput.value);
+            }
         });
         
         // Hide existing messages and show status
@@ -197,9 +204,8 @@ const ReportUI = (function() {
         
         // Step 1: Fetch data from API
         elements.statusMessage.textContent = 'Fetching data...';
-            
-        // Pass selectedProgramIds to fetchReportData
-        ReportAPI.fetchReportData(periodId, sectorId, [], selectedProgramIds)
+              // Pass selectedProgramIds and programOrders to fetchReportData
+        ReportAPI.fetchReportData(periodId, sectorId, [], selectedProgramIds, programOrders)
             .then(data => {
                 console.log('Received API data:', data);
                 console.log('Programs in API data:', data.programs);

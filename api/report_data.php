@@ -32,9 +32,28 @@ if (!is_admin()) {
 $period_id = isset($_GET['period_id']) ? intval($_GET['period_id']) : null;
 $sector_id = isset($_GET['sector_id']) ? intval($_GET['sector_id']) : 1; // Default to Forestry (sector_id 1)
 $selected_program_ids_raw = isset($_GET['selected_program_ids']) ? $_GET['selected_program_ids'] : null;
+$program_orders_raw = isset($_GET['program_orders']) ? $_GET['program_orders'] : null;
+
+// Parse program orders if provided
+$program_orders = [];
+if ($program_orders_raw) {
+    try {
+        $program_orders = json_decode($program_orders_raw, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            error_log("Error parsing program_orders JSON: " . json_last_error_msg());
+            $program_orders = [];
+        }
+    } catch (Exception $e) {
+        error_log("Exception parsing program_orders: " . $e->getMessage());
+        $program_orders = [];
+    }
+}
 
 // Add debug logging for parameters
 error_log("API parameters - period_id: {$period_id}, sector_id: {$sector_id}");
+if (!empty($program_orders)) {
+    error_log("Program orders provided: " . json_encode($program_orders));
+}
 
 // If no period_id provided, use current reporting period
 if (!$period_id) {
@@ -148,12 +167,39 @@ if (!empty($selected_program_ids_raw)) {
 // Add debug logging
 error_log("Fetching programs for sector_id: {$sector_id} and period_id: {$period_id}");
 
+// Prepare custom order case statement if program orders are provided
+$order_by_clause = "p.program_name"; // Default alphabetical order
+if (!empty($program_orders) && !empty($selected_program_ids)) {
+    $case_parts = [];
+    $valid_orders = 0;
+    
+    // Validate program orders and create case statements
+    foreach ($program_orders as $prog_id => $order) {
+        $prog_id = (int)$prog_id;
+        $order = (int)$order;
+        
+        if (in_array($prog_id, $selected_program_ids) && $prog_id > 0 && $order > 0) {
+            $case_parts[] = "WHEN p.program_id = {$prog_id} THEN {$order}";
+            $valid_orders++;
+        }
+    }
+    
+    if (!empty($case_parts)) {
+        $order_by_clause = "CASE " . implode(" ", $case_parts) . " ELSE 999999 END, p.program_name";
+        error_log("Using custom order by clause with {$valid_orders} valid program orders");
+    } else {
+        error_log("No valid program orders found, using default alphabetical order");
+    }
+} else {
+    error_log("No program orders provided or no programs selected, using default alphabetical order");
+}
+
 $programs_query = "SELECT p.program_id, p.program_name, 
                     ps.status, ps.content_json
                   FROM programs p
                   LEFT JOIN program_submissions ps ON p.program_id = ps.program_id AND ps.period_id = ? AND ps.is_draft = 0
                   WHERE $program_filter_condition
-                  ORDER BY p.program_name";
+                  ORDER BY $order_by_clause";
 
 $stmt = $conn->prepare($programs_query);
 if (!$stmt) {

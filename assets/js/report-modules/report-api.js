@@ -4,16 +4,16 @@
  * Handles all API calls and server communication for the report generator
  */
 
-const ReportAPI = (function() {
-    /**
+const ReportAPI = (function() {    /**
      * Fetches report data from the API
      * @param {number} periodId - The reporting period ID
      * @param {number} sectorId - The sector ID
      * @param {number[]} [selectedKpiIds] - Optional array of selected KPI IDs (this will be an empty array)
      * @param {number[]} [selectedProgramIds] - Optional array of selected program IDs
+     * @param {Object} [programOrders] - Optional object mapping program IDs to their display order
      * @returns {Promise<Object>} - A promise that resolves to the report data
      */
-    function fetchReportData(periodId, sectorId, selectedKpiIds = [], selectedProgramIds = []) {
+    function fetchReportData(periodId, sectorId, selectedKpiIds = [], selectedProgramIds = [], programOrders = {}) {
         return new Promise((resolve, reject) => {
             let apiUrl = `../../api/report_data.php?period_id=${periodId}&sector_id=${sectorId}`;
             
@@ -21,6 +21,13 @@ const ReportAPI = (function() {
             if (selectedProgramIds && selectedProgramIds.length > 0) {
                 apiUrl += `&selected_program_ids=${selectedProgramIds.join(',')}`;
                 console.log('Selected Program IDs:', selectedProgramIds);
+                
+                // Add program orders if provided
+                if (programOrders && Object.keys(programOrders).length > 0) {
+                    const orderParam = JSON.stringify(programOrders);
+                    apiUrl += `&program_orders=${encodeURIComponent(orderParam)}`;
+                    console.log('Program Orders:', programOrders);
+                }
             } else {
                 console.log('No Program IDs selected, will include all programs for the sector');
             }
