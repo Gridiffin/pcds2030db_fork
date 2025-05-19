@@ -13,7 +13,7 @@ define('DB_PASS', ''); // Change this to your MySQL password (default for XAMPP 
 define('DB_NAME', 'pcds2030_dashboard'); // Updated to correct database name
 
 // Application settings
-define('APP_NAME', 'PCDS2030 Dashboard');
+define('APP_NAME', 'PCDS2030 Dashboard Forestry Sector'); 
 define('APP_URL', 'http://localhost/pcds2030_dashboard');
 define('APP_VERSION', '1.0.0');
 
