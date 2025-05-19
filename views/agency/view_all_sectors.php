@@ -157,6 +157,24 @@ $additionalStyles = '
     tr.current-sector-row {
         background-color: rgba(var(--bs-primary-rgb), 0.05);
     }
+
+    /* Rating option background colors */
+    select#status option.status-target-achieved {
+        background-color: #28a745;
+        color: white;
+    }
+    select#status option.status-on-track-yearly {
+        background-color: #ffc107;
+        color: white;
+    }
+    select#status option.status-severe-delay {
+        background-color: #dc3545;
+        color: white;
+    }
+    select#status option.status-not-started {
+        background-color: #6c757d;
+        color: white;
+    }
 </style>';
 
 // Include header
@@ -231,13 +249,13 @@ require_once '../../includes/dashboard_header.php';
                     </div>
                     
                     <div class="col-md-2 filter-control-wrapper">
-                        <label for="status" class="form-label">Status</label>
+                        <label for="status" class="form-label">Rating</label>
                         <select class="form-select" id="status" name="status">
-                            <option value="">All Statuses</option>
-                            <option value="target-achieved" <?php if(isset($_GET['status']) && $_GET['status'] === 'target-achieved') echo 'selected'; ?>>Target Achieved</option>
-                            <option value="on-track-yearly" <?php if(isset($_GET['status']) && $_GET['status'] === 'on-track-yearly') echo 'selected'; ?>>On Track</option>
-                            <option value="severe-delay" <?php if(isset($_GET['status']) && $_GET['status'] === 'severe-delay') echo 'selected'; ?>>Delayed</option>
-                            <option value="not-started" <?php if(isset($_GET['status']) && $_GET['status'] === 'not-started') echo 'selected'; ?>>Not Started</option>
+                            <option value="">All Ratings</option>
+                            <option class="status-target-achieved" value="target-achieved" <?php if(isset($_GET['status']) && $_GET['status'] === 'target-achieved') echo 'selected'; ?>>Target Achieved</option>
+                            <option class="status-on-track-yearly" value="on-track-yearly" <?php if(isset($_GET['status']) && $_GET['status'] === 'on-track-yearly') echo 'selected'; ?>>On Track</option>
+                            <option class="status-severe-delay" value="severe-delay" <?php if(isset($_GET['status']) && $_GET['status'] === 'severe-delay') echo 'selected'; ?>>Delayed</option>
+                            <option class="status-not-started" value="not-started" <?php if(isset($_GET['status']) && $_GET['status'] === 'not-started') echo 'selected'; ?>>Not Started</option>
                         </select>
                     </div>
                     
@@ -358,7 +376,7 @@ require_once '../../includes/dashboard_header.php';
                             <th>Program Name</th>
                             <th>Agency</th>
                             <th>Sector</th>
-                            <th>Status</th>
+                            <th>Rating</th>
                             <th>Timeline</th>
                             <th>Last Updated</th>
                             <th>Actions</th>
