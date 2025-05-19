@@ -860,13 +860,11 @@ const ReportStyler = (function() {
 
             displayItems.forEach((item, index) => {
                 const currentRowY = dataAreaY + (index * dataRowH);
-                const itemInternalPadding = 0.02; 
-
-                const valueColWProportion = 0.40; // Value column takes 40% of data area width
+                const itemInternalPadding = 0.02;                const valueColWProportion = 0.35; // Value column now takes 35% of data area width (reduced from 40%)
                 const valueColW = dataAreaW * valueColWProportion; 
-                const textStackColX = dataAreaX + valueColW + itemInternalPadding;
-                // Ensure textStackColW is not negative
-                const textStackColW = Math.max(0, dataAreaW - valueColW - (2 * itemInternalPadding)); 
+                const textStackColX = dataAreaX + valueColW + (itemInternalPadding / 2); // Reduced padding between value and text stack
+                // Ensure textStackColW is not negative and extend its width to be closer to the value
+                const textStackColW = Math.max(0, dataAreaW - valueColW - itemInternalPadding); // Reduced padding from 2*itemInternalPadding to just itemInternalPadding
 
                 let valueText = item.value || '0';
                 const valueFontSize = 16; // Reduced font size for value
@@ -896,7 +894,7 @@ const ReportStyler = (function() {
                 if (item.label) {
                     slide.addText(item.label || '', {
                         x: textStackColX, y: labelY, w: textStackColW, h: labelH,
-                        fontSize: 7, bold: true, fontFace: defaultFont, // Increased font size slightly
+                        fontSize: 6, bold: true, fontFace: defaultFont, // Increased font size slightly
                         color: themeColors.text, align: 'left', valign: 'top',
                         breakLine: true, fit: 'shrink' 
                     });
@@ -905,7 +903,7 @@ const ReportStyler = (function() {
                 if (item.description) {
                     slide.addText(item.description || '', {
                         x: textStackColX, y: descY, w: textStackColW, h: descH,
-                        fontSize: 7, italic: true, fontFace: defaultFont, // Increased font size slightly
+                        fontSize: 6, italic: true, fontFace: defaultFont, // Increased font size slightly
                         color: themeColors.lightText, align: 'left', valign: 'top',
                         breakLine: true, fit: 'shrink' 
                     });
