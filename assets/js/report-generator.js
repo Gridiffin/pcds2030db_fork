@@ -19,24 +19,6 @@ document.addEventListener('DOMContentLoaded', function() {
     reportGeneratorInitialized = true;
     console.log('Initializing report generator...');
 
-    // KPI Selector Logic
-    const kpiSelector = document.getElementById('kpiSelector');
-    if (kpiSelector) {
-        const kpiCheckboxes = kpiSelector.querySelectorAll('input[type="checkbox"][name="selected_kpi_ids[]"]');
-        const maxKpis = 3;
-
-        kpiCheckboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                const checkedKpis = kpiSelector.querySelectorAll('input[type="checkbox"][name="selected_kpi_ids[]"]:checked');
-                if (checkedKpis.length > maxKpis) {
-                    this.checked = false; // Prevent checking more than maxKpis
-                    // Optionally, show a message to the user
-                    alert(`You can select a maximum of ${maxKpis} KPIs.`);
-                }
-            });
-        });
-    }
-
     // Initialize the UI
     if (typeof ReportUI !== 'undefined') {
         ReportUI.initUI();

@@ -31,11 +31,9 @@ if (!is_admin()) {
 // Get parameters from request
 $period_id = isset($_GET['period_id']) ? intval($_GET['period_id']) : null;
 $sector_id = isset($_GET['sector_id']) ? intval($_GET['sector_id']) : 1; // Default to Forestry (sector_id 1)
-$selected_kpi_ids_raw = isset($_GET['selected_kpi_ids']) ? $_GET['selected_kpi_ids'] : null; // Expecting a comma-separated string or an array
 
 // Add debug logging for parameters
 error_log("API parameters - period_id: {$period_id}, sector_id: {$sector_id}");
-error_log("Raw GET parameters: " . json_encode($_GET));
 
 // If no period_id provided, use current reporting period
 if (!$period_id) {
@@ -188,7 +186,11 @@ $charts_data = [];
 // NEW: Fetch metrics_details data for KPI sections
 $metrics_details = []; // This will hold the KPI data to be sent to the client
 
-// Process selected KPI IDs if provided
+// Process selected KPI IDs if provided - KPI selection functionality is removed.
+// The following block that processed $selected_kpi_ids_raw and fetched specific KPIs
+// is now entirely commented out or removed, so $metrics_details remains empty here.
+
+/*
 if (!empty($selected_kpi_ids_raw)) {
     $selected_kpi_ids = [];
     if (is_string($selected_kpi_ids_raw)) {
@@ -197,32 +199,27 @@ if (!empty($selected_kpi_ids_raw)) {
         $selected_kpi_ids = array_map('intval', $selected_kpi_ids_raw);
     }
 
-    // Filter out any zero or negative IDs to prevent issues
     $selected_kpi_ids = array_filter($selected_kpi_ids, function($id) {
         return $id > 0;
     });
 
     if (!empty($selected_kpi_ids)) {
-        try {            $placeholders = implode(',', array_fill(0, count($selected_kpi_ids), '?'));
-            
-            // Using named placeholders for FIELD function to avoid parameter binding issues
-            $order_fields = implode(',', $selected_kpi_ids); // No need for placeholders here since we'll use a direct list
+        try {
+            $placeholders = implode(',', array_fill(0, count($selected_kpi_ids), '?'));
+            $order_fields = implode(',', $selected_kpi_ids);
             
             $kpi_query = "SELECT detail_id, detail_name, detail_json FROM metrics_details 
                           WHERE is_draft = 0 AND detail_id IN ($placeholders)
-                          ORDER BY FIELD(detail_id, $order_fields)"; // Use direct values for ORDER BY
+                          ORDER BY FIELD(detail_id, $order_fields)";
             
             $stmt_kpi = $conn->prepare($kpi_query);
             if (!$stmt_kpi) {
                 throw new Exception("Database query preparation failed: " . $conn->error);
             }
             
-            // Bind parameters only for the IN clause now
             $types = str_repeat('i', count($selected_kpi_ids));
             $bind_params = array_merge([$types], $selected_kpi_ids);
             
-            // Use call_user_func_array to bind parameters
-            // Ensure that each parameter is passed by reference for bind_param
             $ref_params = [];
             foreach ($bind_params as $key => $value) {
                 $ref_params[$key] = &$bind_params[$key];
@@ -233,7 +230,6 @@ if (!empty($selected_kpi_ids_raw)) {
             $result_kpi = $stmt_kpi->get_result();
             
             while ($row = $result_kpi->fetch_assoc()) {
-                // The detail_json is passed raw, client-side will parse it
                 $metrics_details[] = [
                     'id' => $row['detail_id'],
                     'name' => $row['detail_name'],
@@ -249,8 +245,9 @@ if (!empty($selected_kpi_ids_raw)) {
         }
     }
 }
+*/
 
-// Fallback to old logic if no KPIs were selected or fetched
+// Fallback to old logic if no KPIs were selected or fetched (Now default behavior as $metrics_details is empty)
 if (empty($metrics_details)) {
     // First, try to find a "TPA Protection" metric specifically
     $tpa_query = "SELECT detail_id, detail_name, detail_json FROM metrics_details 

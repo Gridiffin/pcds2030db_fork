@@ -135,7 +135,18 @@ require_once '../../includes/dashboard_header.php';
                                             <option value="">Select Reporting Period</option>
                                             <?php foreach ($periods as $period): ?>
                                                 <option value="<?php echo $period['period_id']; ?>">
-                                                    Q<?php echo $period['quarter']; ?> <?php echo $period['year']; ?>
+                                                    <?php
+                                                    $display_text = '';
+                                                    if ($period['quarter'] == 5) { // Q5 maps to Half Yearly 1
+                                                        $display_text = 'Half Yearly 1 ' . $period['year'];
+                                                    } elseif ($period['quarter'] == 6) { // Q6 maps to Half Yearly 2
+                                                        $display_text = 'Half Yearly 2 ' . $period['year'];
+                                                    } else {
+                                                        // Fallback for Q1, Q2, Q3, Q4 and any other quarter values
+                                                        $display_text = 'Q' . $period['quarter'] . ' ' . $period['year'];
+                                                    }
+                                                    echo htmlspecialchars($display_text);
+                                                    ?>
                                                 </option>
                                             <?php endforeach; ?>
                                         </select>
@@ -156,23 +167,6 @@ require_once '../../includes/dashboard_header.php';
                                 </div>
                             </div>
                             
-                            <div class="report-form-group mb-3">
-                                <label class="form-label">Select Key Performance Indicators (KPIs) - Up to 3</label>
-                                <div id="kpiSelector" class="list-group kpi-selector-list-group">
-                                    <?php if (!empty($available_kpis)): ?>
-                                        <?php foreach ($available_kpis as $kpi): ?>
-                                            <label class="list-group-item">
-                                                <input class="form-check-input me-1" type="checkbox" name="selected_kpi_ids[]" value="<?php echo $kpi['detail_id']; ?>">
-                                                <?php echo htmlspecialchars($kpi['detail_name']); ?>
-                                            </label>
-                                        <?php endforeach; ?>
-                                    <?php else: ?>
-                                        <p class="text-muted">No KPIs available for selection. Please create some first.</p>
-                                    <?php endif; ?>
-                                </div>
-                                <small class="form-text text-muted">If no KPIs are selected, the report will use default or automatic KPI selection.</small>
-                            </div>
-
                             <div class="report-form-group mb-3">
                                 <label for="reportName" class="form-label">Report Name</label>
                                 <input type="text" class="form-control" id="reportName" name="report_name" required placeholder="e.g., Forestry Sector Report - Q2 2025">

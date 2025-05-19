@@ -181,11 +181,12 @@ const ReportUI = (function() {
         const isPublic = elements.isPublicCheckbox.checked ? 1 : 0;
 
         // Get selected KPI IDs
-        const selectedKpiIds = [];
-        const kpiCheckboxes = document.querySelectorAll('#kpiSelector input[name="selected_kpi_ids[]"]:checked');
-        kpiCheckboxes.forEach(checkbox => {
-            selectedKpiIds.push(checkbox.value);
-        });
+        // const selectedKpiIds = [];
+        // const kpiCheckboxes = document.querySelectorAll('#kpiSelector input[name="selected_kpi_ids[]"]:checked');
+        // kpiCheckboxes.forEach(checkbox => {
+        //     selectedKpiIds.push(checkbox.value);
+        // });
+        const selectedKpiIds = []; // Pass an empty array as KPI selection is removed
         
         // Hide existing messages and show status
         elements.successMessage.classList.add('d-none');

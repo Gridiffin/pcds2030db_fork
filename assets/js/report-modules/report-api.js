@@ -9,19 +9,13 @@ const ReportAPI = (function() {
      * Fetches report data from the API
      * @param {number} periodId - The reporting period ID
      * @param {number} sectorId - The sector ID
-     * @param {number[]} [selectedKpiIds] - Optional array of selected KPI IDs
+     * @param {number[]} [selectedKpiIds] - Optional array of selected KPI IDs (this will be an empty array)
      * @returns {Promise<Object>} - A promise that resolves to the report data
      */
     function fetchReportData(periodId, sectorId, selectedKpiIds = []) {
         return new Promise((resolve, reject) => {
             let apiUrl = `../../api/report_data.php?period_id=${periodId}&sector_id=${sectorId}`;
-            if (selectedKpiIds && selectedKpiIds.length > 0) {
-                apiUrl += `&selected_kpi_ids=${selectedKpiIds.join(',')}`;
-                console.log('Selected KPI IDs:', selectedKpiIds);
-            } else {
-                console.log('No KPI IDs selected, will use default KPIs');
-            }
-            console.log('Fetching from URL:', apiUrl);
+            console.log('Fetching from URL (KPI selection removed):', apiUrl);
             
             fetch(apiUrl)
                 .then(response => {
