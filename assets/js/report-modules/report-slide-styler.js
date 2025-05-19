@@ -1090,11 +1090,15 @@ const ReportStyler = (function() {
      * @param {string} currentQuarter - Current reporting quarter (e.g., "Q2 2025")
      * @returns {Object} The table dimensions {x, y, w, h}
      */    function createProgramDataTable(slide, pptx, themeColors, defaultFont, programsData, currentQuarter) {
+        const rightSectionStartXInches = 9.17; // Assuming the right section (graphs/KPIs) starts at this x-coordinate
+        const tablePaddingRightInches = 0.1; // Padding between the table and the right section
+
         // Position the table below the sector box with some space
         const tableDimensions = { 
             x: 0.22, // Same x position as sector box
             y: 0.8,  // Below the sector box (0.08 + 0.63 + spacing)
-            w: 8.64, // Width of 21.94 cm converted to inches
+            // Original w: 8.64, // Width of 21.94 cm converted to inches
+            w: rightSectionStartXInches - 0.22 - tablePaddingRightInches, // New width to fill space before the right section
             h: 6.24  // Extend downward, but leave space for the legend at the bottom
         };
           // Create the outer container with border and background
@@ -1157,16 +1161,15 @@ const ReportStyler = (function() {
             line: { color: themeColors.primary, width: 0.5, dashType: 'solid' }
         });
         
-        // Add data rows - now with increased spacing for variable height rows
-        let startY = headerY + rowHeight + 0.05;
-        
-        // If no programs data available, show a message
+        // Add data rows
+        let dataRowsAreaStartY = headerY + rowHeight + 0.05; // Start Y for the data rows area
+
         if (!programs.length) {
             slide.addText("No program data available", {
                 x: tableDimensions.x + padding,
-                y: startY + 0.5,
+                y: dataRowsAreaStartY + 0.5, // Adjusted to use dataRowsAreaStartY
                 w: availableWidth,
-                h: rowHeight,
+                h: rowHeight, // Standard rowHeight for this message
                 fontSize: 8,
                 fontFace: defaultFont,
                 color: themeColors.lightText,
@@ -1175,48 +1178,64 @@ const ReportStyler = (function() {
                 italic: true
             });
         } else {
-            // Define a larger row height for accommodating multiline content
-            const dynamicRowHeight = rowHeight * 2; // Double the row height to fit more text
-            const rowSpacing = 0.08; // Slightly increased spacing between rows
+            const targetDataRowCount = 10; // We want to display exactly 10 rows
+            const tableBottomY = tableDimensions.y + tableDimensions.h;
+            const totalAvailableHeightForDataRows = tableBottomY - dataRowsAreaStartY;
 
-            // Add each program row (limit to 10 programs due to increased height per row)
-            const maxProgramsToShow = 10; 
-            programs.slice(0, maxProgramsToShow).forEach((program, rowIndex) => {
-                const rowY = startY + (rowIndex * (dynamicRowHeight + rowSpacing));
-                xPos = tableDimensions.x + padding;                // Program name - no truncation
+            // Define the spacing between rows
+            const newRowSpacing = 0.03; // inches, adjust as needed for visual preference
+
+            // Calculate the height for each data cell content area
+            // This height is for the content itself, excluding the spacing below it.
+            let newDynamicRowHeight = (totalAvailableHeightForDataRows - ((targetDataRowCount - 1) * newRowSpacing)) / targetDataRowCount;
+
+            // Ensure a minimum sensible height for rows
+            if (newDynamicRowHeight < 0.2) { 
+                newDynamicRowHeight = 0.2;
+                // If clamped, actual layout might differ slightly from perfect 10-row fit
+            }
+
+            const programsToDisplay = programs.slice(0, targetDataRowCount);
+
+            programsToDisplay.forEach((program, rowIndex) => {
+                // Calculate the Y position for the top of the current row's content area
+                const rowY = dataRowsAreaStartY + (rowIndex * (newDynamicRowHeight + newRowSpacing));
+                let currentXPos = tableDimensions.x + padding;
+
+                // Program name
                 slide.addText(program.name || 'N/A', {
-                    x: xPos,
+                    x: currentXPos,
                     y: rowY,
                     w: colWidths[0],
-                    h: rowHeight * 2, // Increased height to accommodate longer text
+                    h: newDynamicRowHeight, // Use new calculated height
                     fontSize: 7,
                     fontFace: defaultFont,
                     color: themeColors.text,
                     align: 'left',
                     valign: 'top',
-                    wrap: true, // Enable text wrapping
-                    breakLine: true // Allow line breaks
+                    wrap: true,
+                    breakLine: true
                 });
-                xPos += colWidths[0];                // Target - no truncation with wrapping enabled
+                currentXPos += colWidths[0];
+
+                // Target
                 slide.addText(program.target || 'N/A', {
-                    x: xPos,
+                    x: currentXPos,
                     y: rowY,
                     w: colWidths[1],
-                    h: rowHeight * 2, // Increased height to accommodate longer text
-                    fontSize: 6,
+                    h: newDynamicRowHeight, // Use new calculated height
+                    fontSize: 7,
                     fontFace: defaultFont,
                     color: themeColors.text,
                     align: 'left',
                     valign: 'top',
-                    wrap: true, // Enable text wrapping
-                    breakLine: true // Allow line breaks
+                    wrap: true,
+                    breakLine: true
                 });
-                xPos += colWidths[1];
+                currentXPos += colWidths[1];
                 
                 // Rating and status indicator
-                let ratingColor = themeColors.greenStatus; // Default color
-                
-                // Determine status color based on rating
+                let ratingColor = themeColors.greenStatus;
                 const rating = (program.rating || '').toLowerCase();
                 if (rating.includes('minor') || rating.includes('caution') || rating === 'yellow') {
                     ratingColor = themeColors.yellowStatus;
@@ -1225,40 +1244,45 @@ const ReportStyler = (function() {
                 } else if (rating.includes('not-started') || rating === 'grey') {
                     ratingColor = themeColors.greyStatus;
                 }
-                  // Add colored rating indicator - centered vertically in the larger row
+
+                // Add colored rating indicator
                 slide.addShape(pptx.shapes.OVAL, {
-                    x: xPos + (colWidths[2] / 2) - 0.05, // Centered in column
-                    y: rowY + 0.15, // Place near the top of the row for better visibility with wrapped text
+                    x: currentXPos + (colWidths[2] / 2) - 0.05, // Centered in column
+                    y: rowY + 0.15, // Positioned from the top of the cell
                     w: 0.1,
                     h: 0.1,
                     fill: { color: ratingColor },
                     line: { color: ratingColor, width: 0.5 }
                 });
-                xPos += colWidths[2];// Status - no truncation with wrapping enabled
+                currentXPos += colWidths[2];
+
+                // Status
                 slide.addText(program.status || 'N/A', {
-                    x: xPos,
+                    x: currentXPos,
                     y: rowY,
                     w: colWidths[3],
-                    h: rowHeight * 2, // Increased height to accommodate longer text
-                    fontSize: 6,
+                    h: newDynamicRowHeight, // Use new calculated height
+                    fontSize: 7,
                     fontFace: defaultFont,
                     color: themeColors.text,
                     align: 'left',
                     valign: 'top',
-                    wrap: true, // Enable text wrapping
-                    breakLine: true // Allow line breaks
+                    wrap: true,
+                    breakLine: true
                 });
-                  // Add separator line (except after last row)
-                if (rowIndex < Math.min(programs.length, maxProgramsToShow) - 1) {
+
+                // Add separator line (except after last displayed row)
+                if (rowIndex < programsToDisplay.length - 1) {
                     slide.addShape(pptx.shapes.LINE, {
                         x: tableDimensions.x + padding,
-                        y: rowY + dynamicRowHeight + (rowSpacing / 2),
+                        y: rowY + newDynamicRowHeight + (newRowSpacing / 2), // After content, in middle of spacing
                         w: availableWidth,
                         h: 0,
                         line: { color: themeColors.lightText, width: 0.25, dashType: 'dash' }
                     });
                 }
-            });            // No indicator for additional programs as requested
+            });
+            // No indicator for additional programs as requested
             // Additional programs beyond the display limit will simply not be shown
         }
         
