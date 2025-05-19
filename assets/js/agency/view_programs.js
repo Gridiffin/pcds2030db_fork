@@ -6,6 +6,39 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize delete functionality
     initDeleteButtons();
     
+    // Initialize table sorting
+    const tables = ['draftProgramsTable', 'finalizedProgramsTable'];
+    tables.forEach(tableId => {
+        const table = document.getElementById(tableId);
+        if (!table) return;
+        
+        const sortableHeaders = table.querySelectorAll('th.sortable');
+        sortableHeaders.forEach(header => {
+            header.style.cursor = 'pointer';
+            header.addEventListener('click', function() {
+                const sortBy = this.getAttribute('data-sort');
+                const currentDirection = this.getAttribute('data-direction') || 'asc';
+                const newDirection = currentDirection === 'asc' ? 'desc' : 'asc';
+                
+                // Update all icons in this table
+                sortableHeaders.forEach(h => {
+                    const icon = h.querySelector('i');
+                    if (h === this) {
+                        icon.className = newDirection === 'asc' 
+                            ? 'fas fa-sort-up ms-1' 
+                            : 'fas fa-sort-down ms-1';
+                    } else {
+                        icon.className = 'fas fa-sort ms-1';
+                        h.removeAttribute('data-direction');
+                    }
+                });
+                
+                // Update direction attribute
+                this.setAttribute('data-direction', newDirection);
+            });
+        });
+    });
+    
     // Initialize draft table filters
     const draftSearchInput = document.getElementById('draftProgramSearch');
     const draftRatingFilter = document.getElementById('draftRatingFilter');
