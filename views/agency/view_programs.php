@@ -32,6 +32,12 @@ if (isset($_SESSION['message'])) {
 // Set page title
 $pageTitle = 'View Programs';
 
+// Add additional scripts
+$additionalScripts = [
+    APP_URL . '/assets/js/agency/view_programs.js',
+    APP_URL . '/assets/js/utilities/table_sorting.js'
+];
+
 // Get agency programs
 $agency_id = $_SESSION['user_id'];
 
@@ -107,7 +113,8 @@ foreach ($programs as $program) {
 // Additional scripts - Make sure view_programs.js is loaded
 $additionalScripts = [
     APP_URL . '/assets/js/utilities/rating_utils.js',
-    APP_URL . '/assets/js/agency/view_programs.js' // Ensure this script is included
+    APP_URL . '/assets/js/agency/view_programs.js', // Ensure this script is included
+    APP_URL . '/assets/js/utilities/table_sorting.js' // Add table sorting script
 ];
 
 // Include header
