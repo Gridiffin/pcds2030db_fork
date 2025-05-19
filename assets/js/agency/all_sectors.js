@@ -4,8 +4,8 @@
  * Handles searching and filtering for the All Sectors view
  */
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize search and filtering
-    initializeFiltering();
+    // Disable client-side filtering to avoid conflict with server-side filtering
+    // initializeFiltering();
 });
 
 /**

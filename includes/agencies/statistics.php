@@ -179,37 +179,34 @@ function get_all_sectors_programs($period_id = null, $filters = []) {
               FROM programs p
               JOIN sectors s ON p.sector_id = s.sector_id
               JOIN users u ON p.owner_agency_id = u.user_id
-              INNER JOIN (";
+              LEFT JOIN (";
     
-    // Changed to INNER JOIN to exclude programs with no submissions
+    // Changed to LEFT JOIN to include programs with no submissions
     
     // Subquery to get latest submission for each program 
-    $subquery = "SELECT 
-                    program_id, 
-                    status, 
-                    is_draft";
+    $subquery = "SELECT ps1.program_id, ps1.status, ps1.is_draft";
     
     if ($has_content_json) {
-        $subquery .= ", content_json";
+        $subquery .= ", ps1.content_json";
     } else {
-        $subquery .= ", target, achievement, status_date, status_text";
+        $subquery .= ", ps1.target, ps1.achievement, ps1.status_date, ps1.status_text";
     }
     
-    $subquery .= " FROM program_submissions";
+    $subquery .= " FROM program_submissions ps1
+                   LEFT JOIN program_submissions ps2 
+                   ON ps1.program_id = ps2.program_id 
+                   AND (ps1.submission_id < ps2.submission_id OR (ps1.submission_id = ps2.submission_id AND ps1.period_id < ps2.period_id))
+                   WHERE ps2.submission_id IS NULL";
     
     // Add period filter if specified
     if ($period_id) {
-        $subquery .= " WHERE period_id = " . intval($period_id);
+        $subquery .= " AND ps1.period_id = " . intval($period_id);
     }
-    
-    // Use window function to rank submissions by recency
-    $subquery .= " ORDER BY CASE WHEN period_id = " . ($period_id ?? 0) . " THEN 0 ELSE 1 END, 
-                   submission_id DESC";
     
     $query .= $subquery . ") ps ON p.program_id = ps.program_id";
     
-    // Start with base condition: only show finalized submissions
-    $filterConditions[] = "ps.is_draft = 0";
+    // Start with base condition: only show finalized submissions or no submissions
+    $filterConditions[] = "(ps.is_draft = 0 OR ps.is_draft IS NULL)";
     
     // Apply additional filters
     if (!empty($filters)) {
