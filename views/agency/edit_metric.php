@@ -183,7 +183,7 @@ if ($metric_id === 0) {
 }
 
 // Get metric data using JSON-based storage
-$query = "SELECT data_json, table_name FROM sector_metrics_data 
+$query = "SELECT data_json, table_name FROM sector_outcomes_data 
           WHERE metric_id = ? AND sector_id = ? AND is_draft = 1 LIMIT 1";
 $stmt = $conn->prepare($query);
 $stmt->bind_param("ii", $metric_id, $sector_id);
