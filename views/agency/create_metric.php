@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['CONTENT_TYPE']) && 
     if ($action === 'delete_column' && !empty($column_title) && $metric_id > 0) {
         try {
             // Get existing data from data_json column
-            $select_query = "SELECT data_json FROM sector_metrics_data WHERE metric_id = ? AND sector_id = ? LIMIT 1";
+            $select_query = "SELECT data_json FROM sector_outcomes_data WHERE metric_id = ? AND sector_id = ? LIMIT 1";
             $stmt = $conn->prepare($select_query);
             $stmt->bind_param("ii", $metric_id, $sector_id);
             $stmt->execute();
@@ -90,7 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['CONTENT_TYPE']) && 
                 
                 // Save updated data back to database
                 $json_data = json_encode($metrics_data);
-                $update_query = "UPDATE sector_metrics_data SET data_json = ? WHERE metric_id = ? AND sector_id = ?";
+                $update_query = "UPDATE sector_outcomes_data SET data_json = ? WHERE metric_id = ? AND sector_id = ?";
                 $update_stmt = $conn->prepare($update_query);
                 $update_stmt->bind_param("sii", $json_data, $metric_id, $sector_id);
                 
@@ -113,7 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['CONTENT_TYPE']) && 
     } else if ($action === 'update_unit' && !empty($column_title)) {
         try {
             // Get existing data from data_json column
-            $select_query = "SELECT data_json FROM sector_metrics_data WHERE metric_id = ? AND sector_id = ? LIMIT 1";
+            $select_query = "SELECT data_json FROM sector_outcomes_data WHERE metric_id = ? AND sector_id = ? LIMIT 1";
             $stmt = $conn->prepare($select_query);
             $stmt->bind_param("ii", $metric_id, $sector_id);
             $stmt->execute();
@@ -132,7 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['CONTENT_TYPE']) && 
                 
                 // Save updated data back to database
                 $json_data = json_encode($metrics_data);
-                $update_query = "UPDATE sector_metrics_data SET data_json = ? WHERE metric_id = ? AND sector_id = ?";
+                $update_query = "UPDATE sector_outcomes_data SET data_json = ? WHERE metric_id = ? AND sector_id = ?";
                 $update_stmt = $conn->prepare($update_query);
                 $update_stmt->bind_param("sii", $json_data, $metric_id, $sector_id);
                 
@@ -175,7 +175,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if ($metric_id > 0 && $sector_id !== '' && $column_title !== '' && $month !== '') {
                 // Get existing data_json for this metric and sector
-                $select_query = "SELECT data_json FROM sector_metrics_data WHERE metric_id = ? AND sector_id = ? LIMIT 1";
+                $select_query = "SELECT data_json FROM sector_outcomes_data WHERE metric_id = ? AND sector_id = ? LIMIT 1";
                 $stmt = $conn->prepare($select_query);
                 $stmt->bind_param("ii", $metric_id, $sector_id);
                 $stmt->execute();
@@ -207,7 +207,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     // Encode JSON and update database
                     $json_data = json_encode($metrics_data);
-                    $update_query = "UPDATE sector_metrics_data SET data_json = ? WHERE metric_id = ? AND sector_id = ?";
+                    $update_query = "UPDATE sector_outcomes_data SET data_json = ? WHERE metric_id = ? AND sector_id = ?";
                     $update_stmt = $conn->prepare($update_query);
                     $update_stmt->bind_param("sii", $json_data, $metric_id, $sector_id);
 
@@ -234,7 +234,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if (empty($table_name_post)) {
                         $table_name_post = "Table_" . $metric_id;
                     }
-                    $insert_query = "INSERT INTO sector_metrics_data (metric_id, sector_id, table_name, data_json, is_draft) VALUES (?, ?, ?, ?, 1)";
+                    $insert_query = "INSERT INTO sector_outcomes_data (metric_id, sector_id, table_name, data_json, is_draft) VALUES (?, ?, ?, ?, 1)";
                     $insert_stmt = $conn->prepare($insert_query);
                     $insert_stmt->bind_param("iiss", $metric_id, $sector_id, $table_name_post, $json_data);
 
@@ -256,11 +256,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['table_name']) && trim($_POST['table_name']) !== '') {
         $new_table_name = $conn->real_escape_string($_POST['table_name']);
         // Check if a row exists for this metric_id and sector_id
-        $check_query = "SELECT 1 FROM sector_metrics_data WHERE metric_id = $metric_id AND sector_id = '$sector_id' LIMIT 1";
+        $check_query = "SELECT 1 FROM sector_outcomes_data WHERE metric_id = $metric_id AND sector_id = '$sector_id' LIMIT 1";
         $check_result = $conn->query($check_query);
         if ($check_result && $check_result->num_rows > 0) {
             // Update existing row
-            $update_query = "UPDATE sector_metrics_data SET table_name = '$new_table_name' WHERE sector_id = '$sector_id' AND metric_id = $metric_id";
+            $update_query = "UPDATE sector_outcomes_data SET table_name = '$new_table_name' WHERE sector_id = '$sector_id' AND metric_id = $metric_id";
             if ($conn->query($update_query) === TRUE) {
                 $message = "Table name updated successfully.";
                 $message_type = "success";
@@ -270,7 +270,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         } else {
             // Insert new row with table_name
-            $insert_table_name_query = "INSERT INTO sector_metrics_data (metric_id, table_name, column_title, table_content, month, sector_id) 
+            $insert_table_name_query = "INSERT INTO sector_outcomes_data (metric_id, table_name, column_title, table_content, month, sector_id) 
                 VALUES ($metric_id, '$new_table_name', '', 0, 'January', '$sector_id')";
             if ($conn->query($insert_table_name_query) === TRUE) {
                 $message = "Table name saved successfully.";
@@ -293,7 +293,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // Insert new metric with table_name and metric_id
-        $query = "INSERT INTO sector_metrics_data (metric_id, table_name, column_title, table_content, month, sector_id) 
+        $query = "INSERT INTO sector_outcomes_data (metric_id, table_name, column_title, table_content, month, sector_id) 
                 VALUES ($metric_id, '$table_name_post', '$name', '$value', '$month', '$sector_id')";
 
         if ($conn->query($query) === TRUE) {
@@ -309,12 +309,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Retrieve all metrics for display
 $metric_id = isset($_GET['next_metric_id']) ? intval($_GET['next_metric_id']) : 0;
 if ($metric_id === 0) {
-    $result = $conn->query("SELECT MAX(metric_id) AS max_id FROM sector_metrics_data");
+    $result = $conn->query("SELECT MAX(metric_id) AS max_id FROM sector_outcomes_data");
     if ($result && $row = $result->fetch_assoc()) {
         $metric_id = $row['max_id'] + 1;
     }
 }
-$select_query = "SELECT * FROM sector_metrics_data WHERE metric_id = $metric_id";
+$select_query = "SELECT * FROM sector_outcomes_data WHERE metric_id = $metric_id";
 $metrics = $conn->query($select_query);
 if (!$metrics) die("Error getting metrics: " . $conn->error);
 
@@ -333,7 +333,7 @@ while ($row = $metrics->fetch_assoc()) {
 
 // Get the table_name from the first metric row for the sector
 $table_name = '';
-$result = $conn->query("SELECT table_name FROM sector_metrics_data WHERE metric_id = $metric_id AND sector_id = $sector_id LIMIT 1");
+$result = $conn->query("SELECT table_name FROM sector_outcomes_data WHERE metric_id = $metric_id AND sector_id = $sector_id LIMIT 1");
 if ($result && $row = $result->fetch_assoc()) {
     $table_name = $row['table_name'];
 }
