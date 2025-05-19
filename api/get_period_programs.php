@@ -47,7 +47,10 @@ try {
                             ))
                             " . ($sector_id ? "AND p.sector_id = ?" : "") . "
                       ORDER BY s.sector_name, p.program_name";
-
+    
+    // Add debug logging
+    error_log("Fetching programs for period_id: {$period_id}" . ($sector_id ? ", sector_id: {$sector_id}" : ", all sectors"));
+    
     $stmt = $conn->prepare($programs_query);
 
     if ($sector_id) {
@@ -56,8 +59,10 @@ try {
         $stmt->bind_param("ii", $period_id, $period_id);
     }
 
-    $stmt->execute();
-    $result = $stmt->get_result();
+    $stmt->execute();    $result = $stmt->get_result();
+    $program_count = $result->num_rows;
+    
+    error_log("Found {$program_count} programs matching criteria");
 
     $programs = [];
     while ($program = $result->fetch_assoc()) {
@@ -71,6 +76,24 @@ try {
             'program_id' => $program['program_id'],
             'program_name' => $program['program_name']
         ];
+    }
+    
+    // If filtering by sector but no programs found, still return the sector info
+    if ($sector_id && empty($programs)) {
+        // Get sector info
+        $sector_query = "SELECT sector_id, sector_name FROM sectors WHERE sector_id = ?";
+        $sector_stmt = $conn->prepare($sector_query);
+        $sector_stmt->bind_param("i", $sector_id);
+        $sector_stmt->execute();
+        $sector_result = $sector_stmt->get_result();
+        
+        if ($sector_data = $sector_result->fetch_assoc()) {
+            $programs[$sector_id] = [
+                'sector_name' => $sector_data['sector_name'],
+                'programs' => []
+            ];
+            error_log("No programs found for sector {$sector_data['sector_name']}, returning empty array");
+        }
     }
 
     // Return the programs

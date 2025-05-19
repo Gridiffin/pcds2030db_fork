@@ -96,14 +96,38 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderPrograms(programs, selectedSectorId) {
         if (!programContainerElement) return;
         
-        // If there are no programs
+    // If there are no programs
         if (Object.keys(programs).length === 0) {
             programContainerElement.innerHTML = `
                 <div class="alert alert-warning">
                     <i class="fas fa-exclamation-triangle me-2"></i>
-                    No programs available for the selected period.
+                    No programs available for the selected period${selectedSectorId ? ' and sector' : ''}.
                 </div>
             `;
+            return;
+        }
+        
+        // If we're filtering by sector and there are programs but none for this sector
+        if (selectedSectorId && !programs[selectedSectorId]) {
+            programContainerElement.innerHTML = `
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    No programs available for the selected sector in this reporting period. 
+                    <button type="button" class="btn btn-sm btn-outline-secondary ms-2" id="clearSectorFilterBtn">
+                        <i class="fas fa-times me-1"></i> Clear Sector Filter
+                    </button>
+                </div>
+            `;
+            // Add event listener to the clear filter button
+            const clearSectorFilterBtn = document.getElementById('clearSectorFilterBtn');
+            if (clearSectorFilterBtn) {
+                clearSectorFilterBtn.addEventListener('click', function() {
+                    if (sectorSelect) {
+                        sectorSelect.value = '';
+                        loadPrograms(); // Reload without sector filter
+                    }
+                });
+            }
             return;
         }
         
@@ -167,10 +191,22 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Update the count
         updateProgramCount();
-    }
-      // Filter programs by sector
+    }    // Filter programs by sector
     function filterProgramsBySector(selectedSectorId) {
         const sectorPrograms = programSelector.querySelectorAll('.sector-programs');
+        
+        // If no programs are loaded yet, show appropriate message
+        if (sectorPrograms.length === 0) {
+            if (programContainerElement) {
+                programContainerElement.innerHTML = `
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Please select a reporting period first to load programs for this sector.
+                    </div>
+                `;
+            }
+            return;
+        }
         
         // Show all sectors' programs initially (if none selected)
         if (!selectedSectorId) {
@@ -194,8 +230,22 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-    // Update the count after filtering
+        // Update the count after filtering
         updateProgramCount();
+        
+        // Display message if no visible programs for selected sector
+        const visiblePrograms = programSelector.querySelectorAll(`.sector-programs[data-sector-id="${selectedSectorId}"]`);
+        if (visiblePrograms.length === 0) {
+            if (programContainerElement) {
+                const existingContent = programContainerElement.innerHTML;
+                programContainerElement.innerHTML = `
+                    <div class="alert alert-warning mb-3">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        No programs available for the selected sector. Please select a different sector.
+                    </div>
+                ` + existingContent;
+            }
+        }
     }
     
     // Initialize the UI
@@ -256,16 +306,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 loadPrograms();
             });
         }
-        
-        if (sectorSelect && programSelector) {
+          if (sectorSelect && programSelector) {
             // Filter programs when sector changes
             sectorSelect.addEventListener('change', function() {
                 if (periodSelect.value) {
                     // If a period is selected, reload programs with the new sector filter
                     loadPrograms();
                 } else {
-                    // Otherwise just filter existing programs
+                    // If no period is selected yet, prompt user
                     filterProgramsBySector(this.value);
+                    // Highlight the period selector to indicate it should be selected
+                    if (periodSelect) {
+                        periodSelect.classList.add('border-warning');
+                        setTimeout(() => {
+                            periodSelect.classList.remove('border-warning');
+                        }, 2000);
+                    }
                 }
             });
         }
