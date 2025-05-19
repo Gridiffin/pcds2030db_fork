@@ -400,7 +400,7 @@ require_once '../../includes/dashboard_header.php';
                             </tr>
                         <?php else: ?>
                             <?php foreach ($all_programs as $program): ?>
-                                <tr class="<?php echo ($program['sector_id'] == $current_sector_id) ? 'current-sector-row' : ''; ?>">
+                            <tr class="<?php echo ($program['sector_id'] == $current_sector_id) ? 'current-sector-row' : ''; ?> sector-<?php echo $program['sector_id']; ?>">
                                     <td>
                                         <div class="fw-medium">
                                             <?php echo htmlspecialchars($program['program_name']); ?>
