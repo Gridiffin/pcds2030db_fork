@@ -273,19 +273,19 @@ function get_admin_programs_list($period_id = null, $filters = []) {
     }
     
     // Add other existing filters
-    if (isset($filters['status'])) {
+    if (isset($filters['status']) && $filters['status'] !== 'all' && $filters['status'] !== '') {
         $conditions[] = "ps.status = ?";
         $params[] = $filters['status'];
         $param_types .= "s";
     }
     
-    if (isset($filters['sector_id'])) {
+    if (isset($filters['sector_id']) && $filters['sector_id'] !== 'all' && $filters['sector_id'] !== 0 && $filters['sector_id'] !== '') {
         $conditions[] = "p.sector_id = ?";
         $params[] = $filters['sector_id'];
         $param_types .= "i";
     }
     
-    if (isset($filters['agency_id'])) {
+    if (isset($filters['agency_id']) && $filters['agency_id'] !== 'all' && $filters['agency_id'] !== 0 && $filters['agency_id'] !== '') {
         $conditions[] = "p.owner_agency_id = ?";
         $params[] = $filters['agency_id'];
         $param_types .= "i";
