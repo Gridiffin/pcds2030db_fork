@@ -393,6 +393,10 @@ const ReportPopulator = (function() {
                 
                 // Define theme colors
                 const themeColors = ReportStyler.getThemeColors();
+                const defaultFont = ReportStyler.getDefaultFont(); // Assuming you have a way to get defaultFont
+
+                // REMOVING THE TEMPORARY CODE FOR fit:shrink TEST
+                // if (typeof ReportStyler.testFitShrink === 'function') { ... }
                 
                 // Create a slide without using master slides
                 const slide = pptx.addSlide();

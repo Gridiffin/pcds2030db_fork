@@ -860,13 +860,11 @@ const ReportStyler = (function() {
 
             displayItems.forEach((item, index) => {
                 const currentRowY = dataAreaY + (index * dataRowH);
-                const itemInternalPadding = 0.02; 
-
-                const valueColWProportion = 0.40; // Value column takes 40% of data area width
+                const itemInternalPadding = 0.02;                const valueColWProportion = 0.35; // Value column now takes 35% of data area width (reduced from 40%)
                 const valueColW = dataAreaW * valueColWProportion; 
-                const textStackColX = dataAreaX + valueColW + itemInternalPadding;
-                // Ensure textStackColW is not negative
-                const textStackColW = Math.max(0, dataAreaW - valueColW - (2 * itemInternalPadding)); 
+                const textStackColX = dataAreaX + valueColW + (itemInternalPadding / 2); // Reduced padding between value and text stack
+                // Ensure textStackColW is not negative and extend its width to be closer to the value
+                const textStackColW = Math.max(0, dataAreaW - valueColW - itemInternalPadding); // Reduced padding from 2*itemInternalPadding to just itemInternalPadding
 
                 let valueText = item.value || '0';
                 const valueFontSize = 16; // Reduced font size for value
@@ -896,7 +894,7 @@ const ReportStyler = (function() {
                 if (item.label) {
                     slide.addText(item.label || '', {
                         x: textStackColX, y: labelY, w: textStackColW, h: labelH,
-                        fontSize: 7, bold: true, fontFace: defaultFont, // Increased font size slightly
+                        fontSize: 6, bold: true, fontFace: defaultFont, // Increased font size slightly
                         color: themeColors.text, align: 'left', valign: 'top',
                         breakLine: true, fit: 'shrink' 
                     });
@@ -905,7 +903,7 @@ const ReportStyler = (function() {
                 if (item.description) {
                     slide.addText(item.description || '', {
                         x: textStackColX, y: descY, w: textStackColW, h: descH,
-                        fontSize: 7, italic: true, fontFace: defaultFont, // Increased font size slightly
+                        fontSize: 6, italic: true, fontFace: defaultFont, // Increased font size slightly
                         color: themeColors.lightText, align: 'left', valign: 'top',
                         breakLine: true, fit: 'shrink' 
                     });
@@ -1092,11 +1090,12 @@ const ReportStyler = (function() {
      * @param {string} currentQuarter - Current reporting quarter (e.g., "Q2 2025")
      * @returns {Object} The table dimensions {x, y, w, h}
      */    function createProgramDataTable(slide, pptx, themeColors, defaultFont, programsData, currentQuarter) {
-        // Position the table below the sector box with some space
+        // Position the table below the sector box with some space        // Calculate the table width based on the chart container position
+        const chartContainerEndXInches = 9.17 + 4.05; // Chart container end X position in inches
         const tableDimensions = { 
             x: 0.22, // Same x position as sector box
             y: 0.8,  // Below the sector box (0.08 + 0.63 + spacing)
-            w: 8.64, // Width of 21.94 cm converted to inches
+            w: chartContainerEndXInches - 0.22, // Extend width to align with chart container end
             h: 6.24  // Extend downward, but leave space for the legend at the bottom
         };
           // Create the outer container with border and background
@@ -1185,28 +1184,28 @@ const ReportStyler = (function() {
             const maxProgramsToShow = 10; 
             programs.slice(0, maxProgramsToShow).forEach((program, rowIndex) => {
                 const rowY = startY + (rowIndex * (dynamicRowHeight + rowSpacing));
-                xPos = tableDimensions.x + padding;                // Program name - no truncation
-                slide.addText(program.name || 'N/A', {
+                xPos = tableDimensions.x + padding;                // Program name - no truncation                slide.addText(program.name || 'N/A', {
                     x: xPos,
                     y: rowY,
                     w: colWidths[0],
                     h: rowHeight * 2, // Increased height to accommodate longer text
                     fontSize: 7,
                     fontFace: defaultFont,
+                    fit: 'shrink', // Automatically shrink text to fit if needed
                     color: themeColors.text,
                     align: 'left',
                     valign: 'top',
                     wrap: true, // Enable text wrapping
                     breakLine: true // Allow line breaks
                 });
-                xPos += colWidths[0];                // Target - no truncation with wrapping enabled
-                slide.addText(program.target || 'N/A', {
+                xPos += colWidths[0];                // Target - no truncation with wrapping enabled                slide.addText(program.target || 'N/A', {
                     x: xPos,
                     y: rowY,
                     w: colWidths[1],
                     h: rowHeight * 2, // Increased height to accommodate longer text
                     fontSize: 6,
                     fontFace: defaultFont,
+                    fit: 'shrink', // Automatically shrink text to fit if needed
                     color: themeColors.text,
                     align: 'left',
                     valign: 'top',
@@ -1245,6 +1244,7 @@ const ReportStyler = (function() {
                     fontSize: 6,
                     fontFace: defaultFont,
                     color: themeColors.text,
+                    fit: 'shrink', // Automatically shrink text to fit if needed
                     align: 'left',
                     valign: 'top',
                     wrap: true, // Enable text wrapping
