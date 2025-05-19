@@ -29,7 +29,8 @@ const ReportUI = (function() {
             isPublicCheckbox: document.getElementById('isPublic'),
             deleteReportModal: document.getElementById('deleteReportModal'),
             reportNameToDelete: document.getElementById('reportNameToDelete'),
-            confirmDeleteBtn: document.getElementById('confirmDeleteBtn')
+            confirmDeleteBtn: document.getElementById('confirmDeleteBtn'),
+            programSelector: document.getElementById('programSelector')
         };
         
         // Set up event listeners
@@ -168,25 +169,23 @@ const ReportUI = (function() {
         e.preventDefault();
         
         // Validate form
-        if (!elements.generationForm.checkValidity()) {
-            elements.generationForm.reportValidity();
+        if (!elements.periodSelect.value || !elements.sectorSelect.value || !elements.reportNameInput.value) {
+            alert('Please fill out all required fields.');
             return;
         }
         
-        // Get form values
         const periodId = elements.periodSelect.value;
         const sectorId = elements.sectorSelect.value;
         const reportName = elements.reportNameInput.value;
-        const description = elements.reportDescInput.value;
+        const reportDescription = elements.reportDescInput.value || '';
         const isPublic = elements.isPublicCheckbox.checked ? 1 : 0;
 
-        // Get selected KPI IDs
-        // const selectedKpiIds = [];
-        // const kpiCheckboxes = document.querySelectorAll('#kpiSelector input[name="selected_kpi_ids[]"]:checked');
-        // kpiCheckboxes.forEach(checkbox => {
-        //     selectedKpiIds.push(checkbox.value);
-        // });
-        const selectedKpiIds = []; // Pass an empty array as KPI selection is removed
+        // Get selected program IDs
+        const selectedProgramIds = [];
+        const programCheckboxes = document.querySelectorAll('#programSelector input[name="selected_program_ids[]"]:checked');
+        programCheckboxes.forEach(checkbox => {
+            selectedProgramIds.push(checkbox.value);
+        });
         
         // Hide existing messages and show status
         elements.successMessage.classList.add('d-none');
@@ -197,18 +196,20 @@ const ReportUI = (function() {
         elements.generateBtn.disabled = true;
         
         // Step 1: Fetch data from API
-        elements.statusMessage.textContent = 'Fetching data...';            // Pass selectedKpiIds to fetchReportData
-            ReportAPI.fetchReportData(periodId, sectorId, selectedKpiIds)
-                .then(data => {
-                    console.log('Received API data:', data);
-                    console.log('Programs in API data:', data.programs);
-                    console.log('Sector info:', data.reportTitle, 'sector_id:', data.sector_id);
-                    elements.statusMessage.textContent = 'Generating PPTX...';
-                    return ReportPopulator.generatePresentation(data, elements.statusMessage);
-                })
+        elements.statusMessage.textContent = 'Fetching data...';
+            
+        // Pass selectedProgramIds to fetchReportData
+        ReportAPI.fetchReportData(periodId, sectorId, [], selectedProgramIds)
+            .then(data => {
+                console.log('Received API data:', data);
+                console.log('Programs in API data:', data.programs);
+                console.log('Sector info:', data.reportTitle, 'sector_id:', data.sector_id);
+                elements.statusMessage.textContent = 'Generating PPTX...';
+                return ReportPopulator.generatePresentation(data, elements.statusMessage);
+            })
             .then(blob => {
                 elements.statusMessage.textContent = 'Saving report...';
-                return ReportAPI.uploadPresentation(blob, periodId, sectorId, reportName, description, isPublic);
+                return ReportAPI.uploadPresentation(blob, periodId, sectorId, reportName, reportDescription, isPublic);
             })
             .then(result => {
                 // Hide status and show success

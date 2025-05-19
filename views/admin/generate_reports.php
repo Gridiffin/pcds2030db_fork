@@ -35,14 +35,16 @@ while ($sector = $sectors_result->fetch_assoc()) {
     $sectors[] = $sector;
 }
 
-// Get available KPIs for selection
-$kpis_query = "SELECT detail_id, detail_name FROM metrics_details WHERE is_draft = 0 ORDER BY detail_name ASC";
-$kpis_result = $conn->query($kpis_query);
-$available_kpis = [];
-if ($kpis_result) {
-    while ($kpi = $kpis_result->fetch_assoc()) {
-        $available_kpis[] = $kpi;
-    }
+// Get available programs for selection grouped by sector
+// We'll fetch this when a period is selected via AJAX to ensure only relevant programs are shown
+$available_programs = [];
+
+// Prepare a default structure for the programs
+foreach ($sectors as $sector) {
+    $available_programs[$sector['sector_id']] = [
+        'sector_name' => $sector['sector_name'],
+        'programs' => []
+    ];
 }
 
 // Get recently generated reports
@@ -164,9 +166,7 @@ require_once '../../includes/dashboard_header.php';
                                             <?php endforeach; ?>
                                         </select>
                                     </div>
-                                </div>
-                            </div>
-                            
+                                </div>                            </div>
                             <div class="report-form-group mb-3">
                                 <label for="reportName" class="form-label">Report Name</label>
                                 <input type="text" class="form-control" id="reportName" name="report_name" required placeholder="e.g., Forestry Sector Report - Q2 2025">
@@ -175,6 +175,53 @@ require_once '../../includes/dashboard_header.php';
                             <div class="report-form-group mb-3">
                                 <label for="reportDescription" class="form-label">Description (Optional)</label>
                                 <textarea class="form-control" id="reportDescription" name="description" rows="2" placeholder="Brief description of the report content"></textarea>
+                            </div>
+                            
+                            <div class="report-form-group mb-3">
+                                <label class="form-label">Select Programs to Include (Optional)</label>
+                                <div id="programSelector" class="program-selector">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        Select the programs you want to include in the report. If none are selected, all programs for the chosen sector will be included.
+                                    </div>
+                                    <div class="program-selector-container border rounded p-2" style="max-height: 250px; overflow-y: auto;">
+                                        <?php if (!empty($available_programs)): ?>
+                                            <div class="pb-2 mb-2 border-bottom">
+                                                <div class="row align-items-center">
+                                                    <div class="col">
+                                                        <h6 class="m-0 program-selection-title">Programs <span id="programCount" class="badge bg-primary">0</span></h6>
+                                                    </div>
+                                                    <div class="col-auto">
+                                                        <button type="button" class="btn btn-sm btn-outline-primary" id="selectAllPrograms">
+                                                            <i class="fas fa-check-square me-1"></i> Select All
+                                                        </button>
+                                                        <button type="button" class="btn btn-sm btn-outline-secondary" id="deselectAllPrograms">
+                                                            <i class="fas fa-square me-1"></i> Deselect All
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <?php foreach ($available_programs as $sector_id => $sector_data): ?>
+                                                <div class="sector-programs mb-2" data-sector-id="<?php echo $sector_id; ?>">
+                                                    <h6 class="sector-name fw-bold ms-2 mb-1"><?php echo htmlspecialchars($sector_data['sector_name']); ?></h6>
+                                                    <div class="ms-3">
+                                                        <?php foreach ($sector_data['programs'] as $program): ?>
+                                                            <div class="form-check">
+                                                                <input class="form-check-input program-checkbox" type="checkbox" name="selected_program_ids[]" value="<?php echo $program['program_id']; ?>" id="program_<?php echo $program['program_id']; ?>">
+                                                                <label class="form-check-label" for="program_<?php echo $program['program_id']; ?>">
+                                                                    <?php echo htmlspecialchars($program['program_name']); ?>
+                                                                </label>
+                                                            </div>
+                                                        <?php endforeach; ?>
+                                                    </div>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        <?php else: ?>
+                                            <p class="text-muted">No programs available for selection.</p>
+                                        <?php endif; ?>
+                                    </div>
+                                    <small class="form-text text-muted">Selected programs will appear in the report. If none are selected, all programs for the sector will be included.</small>
+                                </div>
                             </div>
                             
                             <div class="report-form-group mb-3 form-check">

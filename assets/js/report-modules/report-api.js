@@ -10,12 +10,22 @@ const ReportAPI = (function() {
      * @param {number} periodId - The reporting period ID
      * @param {number} sectorId - The sector ID
      * @param {number[]} [selectedKpiIds] - Optional array of selected KPI IDs (this will be an empty array)
+     * @param {number[]} [selectedProgramIds] - Optional array of selected program IDs
      * @returns {Promise<Object>} - A promise that resolves to the report data
      */
-    function fetchReportData(periodId, sectorId, selectedKpiIds = []) {
+    function fetchReportData(periodId, sectorId, selectedKpiIds = [], selectedProgramIds = []) {
         return new Promise((resolve, reject) => {
             let apiUrl = `../../api/report_data.php?period_id=${periodId}&sector_id=${sectorId}`;
-            console.log('Fetching from URL (KPI selection removed):', apiUrl);
+            
+            // Add selected program IDs to the API call if provided
+            if (selectedProgramIds && selectedProgramIds.length > 0) {
+                apiUrl += `&selected_program_ids=${selectedProgramIds.join(',')}`;
+                console.log('Selected Program IDs:', selectedProgramIds);
+            } else {
+                console.log('No Program IDs selected, will include all programs for the sector');
+            }
+            
+            console.log('Fetching from URL:', apiUrl);
             
             fetch(apiUrl)
                 .then(response => {

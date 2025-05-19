@@ -293,7 +293,90 @@
     animation: pulse-opacity 1.5s infinite;
 }
 
-/* Responsive adjustments */
+/* Report Generator Styles */
+
+.report-generator-card, .generation-status-card {
+    border-radius: .5rem;
+    transition: box-shadow 0.3s;
+}
+
+/* Add program selector styling */
+.program-selector-container {
+    background: #f8f9fa;
+}
+
+.sector-programs {
+    border-left: 3px solid #dee2e6;
+    margin-bottom: 12px;
+}
+
+.sector-programs.active {
+    border-left-color: #007bff;
+}
+
+/* Create a distinct style for each sector */
+.sector-programs[data-sector-id="1"] { /* Forestry */
+    border-left-color: #28a745;
+}
+
+.sector-programs[data-sector-id="2"] { /* Land */
+    border-left-color: #fd7e14;
+}
+
+.sector-programs[data-sector-id="3"] { /* Environment */
+    border-left-color: #20c997;
+}
+
+.sector-programs[data-sector-id="4"] { /* Natural Resources */
+    border-left-color: #6f42c1;
+}
+
+.sector-programs[data-sector-id="5"] { /* Urban Development */
+    border-left-color: #17a2b8;
+}
+
+.program-selection-title {
+    font-weight: 500;
+    color: #495057;
+}
+
+#programCount {
+    font-size: 0.75rem;
+    vertical-align: middle;
+}
+
+.program-selector-container {
+    transition: all 0.3s ease;
+}
+
+.program-selector-container::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.program-selector-container::-webkit-scrollbar-thumb {
+    background: #ced4da;
+    border-radius: 4px;
+}
+
+.program-selector-container::-webkit-scrollbar-track {
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+.form-check-input.program-checkbox:checked {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.form-check-label {
+    /* Allow text to wrap instead of truncating */
+    display: inline-block;
+    word-break: break-word;
+    white-space: normal;
+    width: 100%;
+}
+
 @media (max-width: 768px) {
     .reports-table .action-btn {
         padding: 0.25rem 0.5rem;

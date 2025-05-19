@@ -31,6 +31,7 @@ if (!is_admin()) {
 // Get parameters from request
 $period_id = isset($_GET['period_id']) ? intval($_GET['period_id']) : null;
 $sector_id = isset($_GET['sector_id']) ? intval($_GET['sector_id']) : 1; // Default to Forestry (sector_id 1)
+$selected_program_ids_raw = isset($_GET['selected_program_ids']) ? $_GET['selected_program_ids'] : null;
 
 // Add debug logging for parameters
 error_log("API parameters - period_id: {$period_id}, sector_id: {$sector_id}");
@@ -105,6 +106,45 @@ if ($sector_id == 1) { // Forestry
 $sector_leads = $dept_prefix . $sector_leads;
 
 // --- 2. Get Programs for this Sector ---
+// Process selected program IDs if provided
+$selected_program_ids = [];
+$program_filter_condition = "p.sector_id = ?"; // Default filter by sector only
+$program_params = [$period_id, $sector_id]; // Default parameters
+$program_param_types = "ii"; // Default parameter types
+
+if (!empty($selected_program_ids_raw)) {
+    error_log("Selected program IDs raw: {$selected_program_ids_raw}");
+    
+    if (is_string($selected_program_ids_raw)) {
+        $selected_program_ids = array_map('intval', explode(',', $selected_program_ids_raw));
+    } elseif (is_array($selected_program_ids_raw)) {
+        $selected_program_ids = array_map('intval', $selected_program_ids_raw);
+    }
+    
+    // Filter out any zero or negative IDs to prevent issues
+    $selected_program_ids = array_filter($selected_program_ids, function($id) {
+        return $id > 0;
+    });
+    
+    // If we have valid program IDs, update the query
+    if (!empty($selected_program_ids)) {
+        $placeholders = implode(',', array_fill(0, count($selected_program_ids), '?'));
+        $program_filter_condition = "p.program_id IN ($placeholders)";
+        
+        // Reset params and add period_id first, then all program IDs
+        $program_params = [$period_id];
+        $program_param_types = "i";
+        
+        // Add each program_id to params
+        foreach ($selected_program_ids as $prog_id) {
+            $program_params[] = $prog_id;
+            $program_param_types .= "i";
+        }
+        
+        error_log("Filtering by " . count($selected_program_ids) . " selected programs");
+    }
+}
+
 // Add debug logging
 error_log("Fetching programs for sector_id: {$sector_id} and period_id: {$period_id}");
 
@@ -112,10 +152,20 @@ $programs_query = "SELECT p.program_id, p.program_name,
                     ps.status, ps.content_json
                   FROM programs p
                   LEFT JOIN program_submissions ps ON p.program_id = ps.program_id AND ps.period_id = ? AND ps.is_draft = 0
-                  WHERE p.sector_id = ?
+                  WHERE $program_filter_condition
                   ORDER BY p.program_name";
+
 $stmt = $conn->prepare($programs_query);
-$stmt->bind_param("ii", $period_id, $sector_id);
+if (!$stmt) {
+    error_log("Failed to prepare statement: " . $conn->error);
+    ob_end_clean();
+    header('HTTP/1.1 500 Internal Server Error');
+    echo json_encode(['error' => 'Database error preparing statement']);
+    exit;
+}
+
+// Bind parameters using the array
+$stmt->bind_param($program_param_types, ...$program_params);
 $stmt->execute();
 $programs_result = $stmt->get_result();
 $programs_count = $programs_result->num_rows;
