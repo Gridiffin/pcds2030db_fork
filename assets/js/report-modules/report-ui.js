@@ -222,8 +222,14 @@ const ReportUI = (function() {
                 // Re-enable generate button
                 elements.generateBtn.disabled = false;
 
-                // Update recent reports table directly
-                return ReportAPI.refreshReportsTable();
+                // Try to update recent reports table but don't fail the whole operation if it doesn't work
+                ReportAPI.refreshReportsTable()
+                    .catch(refreshError => {
+                        console.warn('Failed to refresh reports table:', refreshError);
+                        showToast('Note', 'Report generated successfully. Refresh the page to see it in the list.', 'info');
+                    });
+                
+                return result; // Return the original result so the promise chain is not broken
             })
             .catch(error => {
                 console.error('Error:', error);
@@ -289,6 +295,7 @@ const ReportUI = (function() {
     return {
         initUI,
         showToast,
-        updateReportName
+        updateReportName,
+        setupDeleteModal // Make this function publicly accessible so it can be called after table refresh
     };
 })();

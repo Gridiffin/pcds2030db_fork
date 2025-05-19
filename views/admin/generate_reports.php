@@ -242,7 +242,7 @@ require_once '../../includes/dashboard_header.php';
                     <div class="card-header">
                         <h5 class="mb-0"><i class="fas fa-history me-2"></i>Recent Reports</h5>
                     </div>
-                    <div class="card-body">
+                    <div class="card-body" id="recentReportsContainer">
                         <?php if (count($reports) > 0): ?>
                             <div class="table-responsive">
                                 <table class="table table-striped table-hover reports-table">

@@ -136,76 +136,40 @@ const ReportAPI = (function() {
      */
     function refreshReportsTable() {
         return new Promise((resolve, reject) => {
-            // Look for the table body to update
-            const tableBody = document.querySelector('.reports-table tbody');
-            const tableContainer = document.querySelector('.table-responsive');
+            // Find the container where the table should be displayed
+            const reportsTableContainer = document.getElementById('recentReportsContainer');
             
-            if (!tableBody || !tableContainer) {
-                console.error('Could not find reports table elements');
-                reject(new Error('Could not find reports table elements'));
+            if (!reportsTableContainer) {
+                console.error('Could not find reports container element (ID: recentReportsContainer)');
+                reject(new Error('Could not find reports container element'));
                 return;
             }
             
             // Show loading indicator
-            tableBody.innerHTML = '<tr><td colspan="4" class="text-center"><div class="spinner-border spinner-border-sm text-primary" role="status"></div> Refreshing report list...</td></tr>';
+            reportsTableContainer.innerHTML = '<div class="text-center p-4"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Refreshing report list...</p></div>';
             
-            // Fetch the latest reports
-            fetch('../../api/get_recent_reports.php')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && Array.isArray(data.reports)) {
-                        // Clear existing table content
-                        tableBody.innerHTML = '';
-                        
-                        if (data.reports.length > 0) {
-                            // Add each report to the table
-                            data.reports.forEach(report => {
-                                const row = document.createElement('tr');
-                                
-                                // Format the date
-                                const generatedDate = new Date(report.generated_at).toLocaleDateString('en-US', { 
-                                    month: 'short', day: 'numeric', year: 'numeric' 
-                                });
-                                
-                                // Create row content
-                                row.innerHTML = `
-                                    <td>${report.report_name}</td>
-                                    <td>Q${report.quarter} ${report.year}</td>
-                                    <td>${generatedDate}</td>
-                                    <td>
-                                        <div class="btn-group">
-                                            <a href="../../download.php?type=report&file=${report.pptx_path}" class="btn btn-sm btn-outline-secondary action-btn action-btn-download" title="Download Report">
-                                                <i class="fas fa-download"></i>
-                                            </a>
-                                            <button type="button" class="btn btn-sm btn-outline-secondary action-btn action-btn-delete" title="Delete Report" 
-                                                    data-bs-toggle="modal" data-bs-target="#deleteReportModal" 
-                                                    data-report-id="${report.report_id}" 
-                                                    data-report-name="${report.report_name}">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                `;
-                                
-                                // Add the row to the table
-                                tableBody.appendChild(row);
-                            });
-                            resolve(true);
-                        } else {
-                            // No reports found
-                            tableBody.innerHTML = '<tr><td colspan="4" class="text-center">No reports generated yet.</td></tr>';
-                            resolve(true);
-                        }
-                    } else {
-                        // Error handling
-                        tableBody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Could not load reports.</td></tr>';
-                        console.error('API error:', data);
-                        reject(new Error('API error: ' + JSON.stringify(data)));
+            // Fetch the table HTML directly from a dedicated endpoint
+            fetch('../../views/admin/ajax/recent_reports_table.php')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
                     }
+                    return response.text(); // We're expecting HTML, not JSON
+                })
+                .then(html => {
+                    // Simply insert the HTML into the container
+                    reportsTableContainer.innerHTML = html;
+                    
+                    // Re-setup delete modal functionality for the new buttons
+                    if (typeof ReportUI !== 'undefined' && ReportUI.setupDeleteModal) {
+                        ReportUI.setupDeleteModal();
+                    }
+                    
+                    resolve(true);
                 })
                 .catch(error => {
-                    console.error('Fetch error:', error);
-                    tableBody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Error loading reports.</td></tr>';
+                    console.error('Error refreshing reports table:', error);
+                    reportsTableContainer.innerHTML = '<div class="alert alert-danger">Error loading reports. Please refresh the page.</div>';
                     reject(error);
                 });
         });
@@ -236,26 +200,22 @@ const ReportAPI = (function() {
                 body: formData
             })
             .then(response => {
-                // First check if the response is ok
                 if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
+                    return response.text().then(text => {
+                        throw new Error(`HTTP error ${response.status}: ${response.statusText}. Response: ${text.substring(0, 200)}`);
+                    });
                 }
-                
-                // Get the raw text first to see what's actually being returned
-                return response.text();
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                    return response.json();
+                } else {
+                    return response.text().then(text => {
+                        console.error("Delete report response was not JSON. Received:", text.substring(0, 500));
+                        throw new Error('Server did not return JSON for delete operation. Check console for the raw response.');
+                    });
+                }
             })
-            .then(rawText => {
-                console.log('Raw API response:', rawText);
-                
-                // Try to parse as JSON, with error handling
-                let data;
-                try {
-                    data = JSON.parse(rawText);
-                } catch (e) {
-                    console.error('JSON parsing error:', e);
-                    throw new Error('Invalid JSON response from server. See console for details.');
-                }
-                
+            .then(data => { // 'data' is already parsed JSON here if successful
                 if (data.success) {
                     // Remove the row from the table if it exists
                     if (rowToDelete) {
