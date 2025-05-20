@@ -34,7 +34,7 @@ $audit_log = $current_page == 'audit_log.php';
     <div class="container-fluid px-4">
         <a class="navbar-brand" href="<?php echo APP_URL; ?>/views/admin/dashboard.php">
             <?php echo APP_NAME; ?>
-            <span class="badge bg-primary ms-2">Admin</span>
+            
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
