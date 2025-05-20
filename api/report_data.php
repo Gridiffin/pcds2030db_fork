@@ -150,9 +150,9 @@ if (!empty($selected_program_ids_raw)) {
         $placeholders = implode(',', array_fill(0, count($selected_program_ids), '?'));
         $program_filter_condition = "p.program_id IN ($placeholders)";
         
-        // Reset params and add period_id first, then all program IDs
-        $program_params = [$period_id];
-        $program_param_types = "i";
+        // Reset params and add period_id twice (for subquery and main query), then all program IDs
+        $program_params = [$period_id, $period_id];
+        $program_param_types = "ii";
         
         // Add each program_id to params
         foreach ($selected_program_ids as $prog_id) {
@@ -197,7 +197,17 @@ if (!empty($program_orders) && !empty($selected_program_ids)) {
 $programs_query = "SELECT p.program_id, p.program_name, 
                     ps.status, ps.content_json
                   FROM programs p
-                  LEFT JOIN program_submissions ps ON p.program_id = ps.program_id AND ps.period_id = ? AND ps.is_draft = 0
+                  LEFT JOIN (
+                      SELECT ps1.*
+                      FROM program_submissions ps1
+                      INNER JOIN (
+                          SELECT program_id, MAX(submission_date) as latest_date
+                          FROM program_submissions
+                          WHERE period_id = ? AND is_draft = 0
+                          GROUP BY program_id
+                      ) ps2 ON ps1.program_id = ps2.program_id AND ps1.submission_date = ps2.latest_date
+                      WHERE ps1.period_id = ? AND ps1.is_draft = 0
+                  ) ps ON p.program_id = ps.program_id
                   WHERE $program_filter_condition
                   ORDER BY $order_by_clause";
 
