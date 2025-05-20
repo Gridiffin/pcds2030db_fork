@@ -1,0 +1,44 @@
+.program-checkbox-container {
+    cursor: grab;
+    padding: 8px;
+    background-color: var(--bs-white);
+    border: 1px solid transparent;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    transition: all 0.2s ease-in-out;
+    display: flex;
+    align-items: center;
+}
+
+.program-checkbox-container:hover {
+    border-color: var(--bs-primary);
+    background-color: var(--bs-light);
+}
+
+.program-checkbox-container.dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+    border: 2px dashed var(--bs-primary);
+}
+
+.program-checkbox-container .drag-handle {
+    cursor: grab;
+    color: #6c757d;
+    padding: 0 8px;
+    margin-right: 8px;
+}
+
+.program-checkbox-container .drag-handle:hover {
+    color: var(--bs-primary);
+}
+
+.program-order-input {
+    width: 50px;
+    margin-left: auto;
+    padding: 2px 6px;
+    text-align: center;
+}
+
+.drop-target {
+    border-top: 2px solid var(--bs-primary);
+}

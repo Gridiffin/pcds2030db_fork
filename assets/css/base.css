@@ -271,3 +271,20 @@ a.btn:hover {
     background-color: rgba(var(--primary-rgb), 0.1);
     color: var(--primary-color);
 }
+
+/* Drag handle icon styles */
+.drag-handle {
+    cursor: grab;
+    color: #6c757d;
+    padding: 0 8px;
+    margin-right: 8px;
+    transition: color 0.2s ease-in-out;
+}
+
+.drag-handle:hover {
+    color: var(--bs-primary);
+}
+
+.dragging {
+    cursor: grabbing !important;
+}

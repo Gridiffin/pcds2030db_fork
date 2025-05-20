@@ -180,8 +180,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `;
         }
-        
-        // Update the UI
+          // Update the UI
         programContainerElement.innerHTML = html;
         
         // Re-initialize the buttons
@@ -189,6 +188,22 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Update the count
         updateProgramCount();
+        
+        // Initialize program ordering
+        if (typeof ProgramOrderManager !== 'undefined') {
+            // Wait for DOM to be updated
+            setTimeout(() => {
+                const programOrderManager = new ProgramOrderManager();
+                
+                // Listen for changes in program order
+                programOrderManager.onOrderChange = function() {
+                    updateProgramCount();
+                    if (typeof updateOrderNumbers === 'function') {
+                        updateOrderNumbers();
+                    }
+                };
+            }, 0);
+        }
     }    // Filter programs by sector
     function filterProgramsBySector(selectedSectorId) {
         const sectorPrograms = programSelector.querySelectorAll('.sector-programs');
