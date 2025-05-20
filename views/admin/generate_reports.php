@@ -373,7 +373,7 @@ require_once '../../includes/dashboard_header.php';
 <script src="https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs/dist/pptxgen.bundle.js"></script>
 
 <!-- Load utilities and modules in the correct order -->
-<script src="../../assets/js/program-ordering.js"></script>
+<!-- program-ordering.js is already included in the header -->
 <script src="../../assets/js/report-modules/report-slide-styler.js"></script>
 <script src="../../assets/js/report-modules/report-api.js"></script>
 <script src="../../assets/js/report-modules/report-slide-populator.js"></script>
