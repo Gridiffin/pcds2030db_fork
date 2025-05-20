@@ -1136,11 +1136,12 @@ const ReportStyler = (function() {
             'Rating', 
             quarter + ' Status'
         ];
-        
-        // Column widths (in proportion to total table width)
-        // Old: const columnWidths = [0.32, 0.28, 0.17, 0.23];
-        // const columnWidths = [0.28, 0.25, 0.17, 0.30];        
-        const columnWidths = [0.25, 0.25, 0.07, 0.43];
+          // Column widths (in proportion to total table width)
+        // Adjusted widths to better accommodate character limits:
+        // - Target column: 33 chars/line
+        // - Status column: 72 chars/line
+        // Proportions calculated based on character limits and padding
+        const columnWidths = [0.25, 0.28, 0.07, 0.40];
         // Calculate actual column widths in inches
         const availableWidth = tableDimensions.w - 0.1; // Accounting for padding
         const colWidths = columnWidths.map(w => w * availableWidth);
@@ -1194,10 +1195,8 @@ const ReportStyler = (function() {
         } else {
             const targetDataRowCount = 10; // We want to display exactly 10 rows
             const tableBottomY = tableDimensions.y + tableDimensions.h;
-            const totalAvailableHeightForDataRows = tableBottomY - dataRowsAreaStartY;
-
-            // Define the spacing between rows
-            const newRowSpacing = 0.03; // inches, adjust as needed for visual preference
+            const totalAvailableHeightForDataRows = tableBottomY - dataRowsAreaStartY;            // Define precise spacing between rows
+            const newRowSpacing = 0.03; // Total gap between rows (0.015 above + 0.015 below separator)
 
             // Calculate the height for each data cell content area
             // This height is for the content itself, excluding the spacing below it.
@@ -1482,19 +1481,19 @@ slide.addText(statusText, {
     paraSpaceAfter: 0  // REDUCED from 2 to 0
 });
 
+                // Update Y position for next row - this gives us 0.015 inches gap above and below the separator line
+                currentYPos += currentRowHeight + newRowSpacing;
+
                 // Add separator line (except after last displayed row)
                 if (rowIndex < programsToDisplay.length - 1) {
                     slide.addShape(pptx.shapes.LINE, {
                         x: tableDimensions.x + padding,
-                        y: rowY + currentRowHeight + (newRowSpacing / 2), // Position after this row
+                        y: rowY + currentRowHeight + 0.015, // Position exactly 0.015 inches after text end
                         w: availableWidth,
                         h: 0,
                         line: { color: themeColors.lightText, width: 0.25, dashType: 'dash' }
                     });
                 }
-                
-                // Update Y position for next row
-                currentYPos += currentRowHeight + newRowSpacing;
             });
             // No indicator for additional programs as requested
             // Additional programs beyond the display limit will simply not be shown

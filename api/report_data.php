@@ -319,10 +319,9 @@ while ($program = $programs_result->fetch_assoc()) {    // Extract target from c
     // Calculate average and max characters per line to better estimate space needs
     $target_chars = array_map('strlen', $target_lines);
     $status_chars = array_map('strlen', $status_lines);
-    
-    // Calculate wrapping metrics based on typical column widths
-    $target_col_chars_per_line = 50; // Typical target column can fit ~50 chars before wrapping
-    $status_col_chars_per_line = 72; // Typical status column can fit ~72 chars before wrapping
+      // Calculate wrapping metrics based on actual column widths
+    $target_col_chars_per_line = 33; // Target column can fit 33 chars before wrapping (verified)
+    $status_col_chars_per_line = 72; // Status column can fit ~72 chars before wrapping
     
     // Calculate how many wrapped lines would be needed for each bullet
     $target_wrapped_lines = 0;
