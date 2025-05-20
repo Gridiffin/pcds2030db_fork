@@ -1195,37 +1195,91 @@ const ReportStyler = (function() {
                 // If clamped, actual layout might differ slightly from perfect 10-row fit
             }
 
-            const programsToDisplay = programs.slice(0, targetDataRowCount);
-
-            // First pass: Calculate required height for each row based on content
-            const rowHeights = programsToDisplay.map(program => {
-                // Count bullet points
-                const targetLines = (program.target || 'N/A').split('\\n').length;
-                const statusLines = (program.status || 'N/A').split('\\n').length;
-                
-                // Estimate how many lines the program name might wrap to
-                // Roughly: 45 chars fit on one line at font size 7 in the given width
-                const nameChars = (program.name || 'N/A').length;
-                const estimatedNameLines = Math.max(1, Math.ceil(nameChars / 45));
-                
-                // Get max needed lines across all columns
-                const maxLines = Math.max(estimatedNameLines, targetLines, statusLines);
-                
-                // Calculate height: base height per line + padding
-                return Math.max(0.18, (maxLines * 0.15) + 0.05);
-            });
-
-            // Check if total height exceeds available space
-            const totalRequiredHeight = rowHeights.reduce((sum, height) => sum + height, 0) + 
-                                       ((programsToDisplay.length - 1) * newRowSpacing);
+            const programsToDisplay = programs.slice(0, targetDataRowCount);            // Use a fixed approach with equal height rows
+            // Simply divide available space by number of rows
+            const rowCount = Math.min(programsToDisplay.length, targetDataRowCount);
+            const fixedRowHeight = (totalAvailableHeightForDataRows - 
+                                  ((rowCount - 1) * newRowSpacing)) / rowCount;
             
-            // If total exceeds available space, scale down proportionally
-            let scaleRatio = 1;
+            // Fill array with the same height value for each row
+            const rowHeights = Array(programsToDisplay.length).fill(fixedRowHeight);// Instead of variable height rows, let's use a more fixed approach
+            // Calculate the maximum number of rows we can fit based on content
+            const availableRowCount = Math.min(programsToDisplay.length, 10);
+            
+            // Use a different approach - calculate total height needed
+            // Estimate a base height per bullet point across all text fields
+            const heightPerBullet = 0.2; // Base height per bullet point
+            const heightPerExtraLine = 0.15; // Additional height per wrapped line
+            const baseRowHeight = 0.25; // Minimum row height
+            
+            // Calculate row heights based on content
+            for (let i = 0; i < rowHeights.length; i++) {
+                const program = programsToDisplay[i];
+                const targets = (program.target || 'N/A').split('\\n');
+                const statuses = (program.status || 'N/A').split('\\n');
+                
+                // Count bullet points
+                const bulletCount = targets.length + statuses.length;
+                
+                // Calculate extra lines needed for wrapping long text
+                const extraLines = targets.reduce((sum, target) => 
+                    sum + Math.max(0, Math.floor(target.length / 50) - 1), 0) +
+                    statuses.reduce((sum, status) => 
+                    sum + Math.max(0, Math.floor(status.length / 70) - 1), 0);
+                
+                // Set row height based on content
+                rowHeights[i] = baseRowHeight + 
+                    (bulletCount * heightPerBullet) + 
+                    (extraLines * heightPerExtraLine);
+            }
+            
+            // Check if total height exceeds available space and scale if needed
+            const totalRequiredHeight = rowHeights.reduce((sum, height) => sum + height, 0) + 
+                                       ((availableRowCount - 1) * newRowSpacing);
+                                   
+            // Scale all rows proportionally if needed
             if (totalRequiredHeight > totalAvailableHeightForDataRows) {
-                scaleRatio = totalAvailableHeightForDataRows / totalRequiredHeight;
-                // Apply scaling with minimum height protection
+                const scaleRatio = totalAvailableHeightForDataRows / totalRequiredHeight;
                 for (let i = 0; i < rowHeights.length; i++) {
-                    rowHeights[i] = Math.max(0.18, rowHeights[i] * scaleRatio);
+                    rowHeights[i] = Math.max(0.22, rowHeights[i] * scaleRatio);
+                }
+            }
+                    // Identify rows with complex content (high bullet count or very long text)
+                    const complexRows = programsToDisplay.map((program, idx) => {
+                        // Use text_metrics if available from backend
+                        if (program.text_metrics) {
+                            const metrics = program.text_metrics;
+                            const complexity = 
+                                (metrics.status_bullet_count * 2) + // Weight bullet count higher
+                                (metrics.target_bullet_count * 1.5) +
+                                (metrics.status_total_chars / 100) + // Factor in total characters
+                                (metrics.target_total_chars / 100);
+                            return { index: idx, complexity: complexity };
+                        } else {
+                            // Fallback if metrics not available
+                            const targets = (program.target || 'N/A').split('\\n');
+                            const statuses = (program.status || 'N/A').split('\\n');
+                            const complexity = 
+                                (statuses.length * 2) + 
+                                (targets.length * 1.5) +
+                                (program.status ? program.status.length / 100 : 0) +
+                                (program.target ? program.target.length / 100 : 0);
+                            return { index: idx, complexity: complexity };
+                        }
+                    });
+                    
+                    // Sort by complexity (highest first)
+                    complexRows.sort((a, b) => b.complexity - a.complexity);
+                    
+                    // Distribute extra space to the top 40% most complex rows
+                    const rowsToEnhance = Math.max(1, Math.ceil(complexRows.length * 0.4));
+                    const extraPerComplexRow = extraSpace / rowsToEnhance;
+                    
+                    for (let i = 0; i < rowsToEnhance; i++) {
+                        if (i < complexRows.length) {
+                            rowHeights[complexRows[i].index] += extraPerComplexRow;
+                        }
+                    }
                 }
             }
 
@@ -1272,8 +1326,7 @@ const ReportStyler = (function() {
                     valign: 'top'
                 });
                 currentXPos += colWidths[1];
-                
-                // Rating and status indicator
+                  // Rating and status indicator
                 let ratingColor = themeColors.greenStatus;
                 const rating = (program.rating || '').toLowerCase();
                 if (rating.includes('minor') || rating.includes('caution') || rating === 'yellow') {
@@ -1283,16 +1336,24 @@ const ReportStyler = (function() {
                 } else if (rating.includes('not-started') || rating === 'grey') {
                     ratingColor = themeColors.greyStatus;
                 }
-
-                // Add colored rating indicator - center vertically in the dynamic row height
+                
+                // Fixed indicator size
+                const indicatorSize = 0.1;
+                  // Position aligned with content, not row center
                 slide.addShape(pptx.shapes.OVAL, {
-                    x: currentXPos + (colWidths[2] / 2) - 0.05, // Centered in column
-                    y: rowY + (currentRowHeight / 2) - 0.05, // Vertically centered
-                    w: 0.1,
-                    h: 0.1,
+                    x: currentXPos + (colWidths[2] / 2) - (indicatorSize/2), // Centered in column
+                    y: rowY + 0.15, // Fixed position aligned with first line of text
+                    w: indicatorSize,
+                    h: indicatorSize,
                     fill: { color: ratingColor },
                     line: { color: ratingColor, width: 0.5 }
                 });
+                
+                // If this row has a lot of content, we need to reduce the row height
+                // to eliminate gaps between rows
+                if (currentRowHeight > fixedRowHeight * 1.2) {
+                    rowHeights[rowIndex] = fixedRowHeight * 1.1;
+                }
                 currentXPos += colWidths[2];
 
                 // Status
@@ -1444,7 +1505,7 @@ const ReportStyler = (function() {
         // Create arrays with exactly 12 values each
         const fullPreviousYearData = [...previousYearData];
         while (fullPreviousYearData.length < 12) {
-            fullPreviousYearData.push(0);
+            fullPreviousYearData.push( 0);
         }
         
         const fullCurrentYearData = [...currentYearData];

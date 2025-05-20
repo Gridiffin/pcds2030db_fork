@@ -264,11 +264,30 @@ while ($program = $programs_result->fetch_assoc()) {
         }
     }
     
+    // Calculate text complexity metrics to help with frontend layout decisions
+    $target_lines = explode("\n", $target);
+    $status_lines = explode("\n", $status_text);
+    
+    // Calculate average and max characters per line to better estimate space needs
+    $target_chars = array_map('strlen', $target_lines);
+    $status_chars = array_map('strlen', $status_lines);
+    
+    $text_metrics = [
+        'target_bullet_count' => count($target_lines),
+        'target_max_chars' => !empty($target_chars) ? max($target_chars) : 0,
+        'target_total_chars' => array_sum($target_chars),
+        'status_bullet_count' => count($status_lines),
+        'status_max_chars' => !empty($status_chars) ? max($status_chars) : 0,
+        'status_total_chars' => array_sum($status_chars),
+        'name_length' => strlen($program['program_name'])
+    ];
+    
     $programs[] = [
         'name' => $program['program_name'],
         'target' => $target,
         'rating' => $status_color,
-        'status' => $status_text
+        'status' => $status_text,
+        'text_metrics' => $text_metrics
     ];
 }
 
