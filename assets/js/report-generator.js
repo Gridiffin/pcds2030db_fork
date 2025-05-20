@@ -162,11 +162,12 @@ document.addEventListener('DOMContentLoaded', function() {
             `;                // Add each program
                 if (sectorData.programs && sectorData.programs.length > 0) {
                     sectorData.programs.forEach(program => {
-                        html += `
-                            <div class="form-check program-checkbox-container">                                <input class="form-check-input program-checkbox" type="checkbox" name="selected_program_ids[]" value="${program.program_id}" id="program_${program.program_id}">
+                        html += `                            <div class="form-check program-checkbox-container">
+                                <input class="form-check-input program-checkbox" type="checkbox" name="selected_program_ids[]" value="${program.program_id}" id="program_${program.program_id}">
                                 <label class="form-check-label" for="program_${program.program_id}" title="${program.program_name}">
                                     ${program.program_name}
                                 </label>
+                                <div class="program-order-badge" id="badge_${program.program_id}" style="display: none;" title="Click to edit order">#</div>
                                 <input type="number" min="1" class="program-order-input" name="program_order_${program.program_id}" id="order_${program.program_id}" aria-label="Program display order" style="display: none;" placeholder="#">
                             </div>
                         `;

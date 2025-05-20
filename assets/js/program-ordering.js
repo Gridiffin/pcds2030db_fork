@@ -29,6 +29,14 @@ class ProgramOrderManager {
         this.container.addEventListener('drop', this.boundHandlers.drop);
         this.container.addEventListener('dragleave', this.boundHandlers.dragLeave);
 
+        // Add checkbox change listeners
+        document.querySelectorAll('.program-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                this.toggleOrderElements(checkbox);
+                this.updateOrderNumbers();
+            });
+        });
+
         this.initOrderInputs();
         this.updateOrderNumbers();
     }
@@ -49,6 +57,31 @@ class ProgramOrderManager {
         document.querySelectorAll('.program-order-input').forEach(input => {
             input.addEventListener('change', () => this.updateOrderNumbers());
         });
+    }    toggleOrderElements(checkbox) {
+        const container = checkbox.closest('.program-checkbox-container');
+        if (container) {
+            const orderBadge = container.querySelector('.program-order-badge');
+            const orderInput = container.querySelector('.program-order-input');
+            
+            if (checkbox.checked) {
+                if (orderBadge) orderBadge.style.display = 'flex';
+                if (orderInput) {
+                    orderInput.style.display = 'none';
+                    if (!orderInput.value) {
+                        const checkedCount = document.querySelectorAll('.program-checkbox:checked').length;
+                        orderInput.value = checkedCount;
+                        orderBadge.textContent = checkedCount;
+                    }
+                }
+            } else {
+                if (orderBadge) orderBadge.style.display = 'none';
+                if (orderInput) {
+                    orderInput.style.display = 'none';
+                    orderInput.value = '';
+                    orderBadge.textContent = '#';
+                }
+            }
+        }
     }
 
     handleDragStart(e) {
@@ -139,6 +172,47 @@ class ProgramOrderManager {
         document.querySelectorAll('.program-checkbox-container').forEach(container => {
             container.classList.remove('dragging', 'drop-target');
         });
+    }    initOrderInputs() {
+        // Update order numbers when input values change
+        document.querySelectorAll('.program-order-input').forEach(input => {
+            input.addEventListener('change', () => {
+                this.updateOrderNumbers();
+                input.style.display = 'none';
+                const badge = input.previousElementSibling;
+                if (badge) {
+                    badge.style.display = 'flex';
+                    badge.textContent = input.value;
+                }
+            });
+
+            input.addEventListener('blur', () => {
+                input.style.display = 'none';
+                const badge = input.previousElementSibling;
+                if (badge) {
+                    badge.style.display = 'flex';
+                    badge.textContent = input.value;
+                }
+            });
+
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    input.blur();
+                }
+            });
+        });
+
+        // Handle badge clicks
+        document.querySelectorAll('.program-order-badge').forEach(badge => {
+            badge.addEventListener('click', () => {
+                badge.style.display = 'none';
+                const input = badge.nextElementSibling;
+                if (input) {
+                    input.style.display = 'block';
+                    input.focus();
+                    input.select();
+                }
+            });
+        });
     }
 
     updateOrderNumbers() {
@@ -148,9 +222,14 @@ class ProgramOrderManager {
         checkedPrograms.forEach(checkbox => {
             const container = checkbox.closest('.program-checkbox-container');
             const orderInput = container.querySelector('.program-order-input');
-            if (orderInput) {
-                orderInput.value = order++;
-                orderInput.style.display = 'inline-block';
+            const orderBadge = container.querySelector('.program-order-badge');
+            
+            if (orderInput && orderBadge) {
+                orderInput.value = order;
+                orderBadge.textContent = order;
+                orderBadge.style.display = 'flex';
+                orderInput.style.display = 'none';
+                order++;
             }
         });
     }
