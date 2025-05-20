@@ -86,11 +86,15 @@ try {
 $pageTitle = "Generate Reports";
 
 // Add page-specific CSS
-$additionalStyles = [APP_URL . '/assets/css/pages/report-generator.css'];
+$additionalStyles = [
+    APP_URL . '/assets/css/pages/report-generator.css',
+    APP_URL . '/assets/css/pages/program-ordering.css'
+];
 
 // Additional scripts for report generation
 $additionalScripts = [
-    APP_URL . '/assets/js/report-generator.js'
+    APP_URL . '/assets/js/report-generator.js',
+    APP_URL . '/assets/js/program-ordering.js'
 ];
 
 // Include header
@@ -183,7 +187,7 @@ require_once '../../includes/dashboard_header.php';
                                     <div class="alert alert-info">
                                         <i class="fas fa-info-circle me-2"></i>
                                         Select the programs you want to include in the report. If none are selected, all programs for the chosen sector will be included.
-                                    </div>                                    <div class="program-selector-container border rounded p-2" style="max-height: 250px; overflow-y: auto;">
+                                    </div>                                    <div class="program-selector-container border rounded p-2" style="max-height: 250px; overflow-y: auto;" role="list">
                                         <?php if (!empty($available_programs)): ?>
                                             <div class="pb-2 mb-2 border-bottom">
                                                 <div class="row align-items-center">
@@ -218,15 +222,33 @@ require_once '../../includes/dashboard_header.php';
                                                 </div>
                                             </div>
                                             <?php foreach ($available_programs as $sector_id => $sector_data): ?>
-                                                <div class="sector-programs mb-2" data-sector-id="<?php echo $sector_id; ?>">
+                                                <div class="sector-programs mb-2" data-sector-id="<?php echo $sector_id; ?>" role="group" aria-label="<?php echo htmlspecialchars($sector_data['sector_name']); ?> programs">
                                                     <h6 class="sector-name fw-bold ms-2 mb-1"><?php echo htmlspecialchars($sector_data['sector_name']); ?></h6>
-                                                    <div class="ms-3">
+                                                    <div class="ms-3" role="listbox">
                                                         <?php foreach ($sector_data['programs'] as $program): ?>
-                                                            <div class="form-check">
-                                                                <input class="form-check-input program-checkbox" type="checkbox" name="selected_program_ids[]" value="<?php echo $program['program_id']; ?>" id="program_<?php echo $program['program_id']; ?>">
+                                                            <div class="form-check program-checkbox-container" draggable="true" 
+                                                                 data-program-id="<?php echo $program['program_id']; ?>"
+                                                                 role="listitem"
+                                                                 aria-label="<?php echo htmlspecialchars($program['program_name']); ?>"
+                                                                 title="Drag to reorder">
+                                                                <i class="fas fa-grip-vertical drag-handle" aria-hidden="true"></i>
+                                                                <input class="form-check-input program-checkbox" 
+                                                                       type="checkbox" 
+                                                                       name="selected_program_ids[]" 
+                                                                       value="<?php echo $program['program_id']; ?>" 
+                                                                       id="program_<?php echo $program['program_id']; ?>"
+                                                                       aria-label="Select <?php echo htmlspecialchars($program['program_name']); ?>">
                                                                 <label class="form-check-label" for="program_<?php echo $program['program_id']; ?>">
                                                                     <?php echo htmlspecialchars($program['program_name']); ?>
                                                                 </label>
+                                                                <input type="number" 
+                                                                       min="1" 
+                                                                       class="program-order-input" 
+                                                                       name="program_order_<?php echo $program['program_id']; ?>" 
+                                                                       id="order_<?php echo $program['program_id']; ?>" 
+                                                                       aria-label="Order for <?php echo htmlspecialchars($program['program_name']); ?>" 
+                                                                       style="display: none;" 
+                                                                       placeholder="#">
                                                             </div>
                                                         <?php endforeach; ?>
                                                     </div>
@@ -347,13 +369,16 @@ require_once '../../includes/dashboard_header.php';
     </div>
 </section>
 
-<!-- Load PptxGenJS Library -->
+<!-- Load external libraries -->
 <script src="https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs/dist/pptxgen.bundle.js"></script>
-<!-- Load report generator modules in the correct order -->
+
+<!-- Load utilities and modules in the correct order -->
+<script src="../../assets/js/program-ordering.js"></script>
 <script src="../../assets/js/report-modules/report-slide-styler.js"></script>
 <script src="../../assets/js/report-modules/report-api.js"></script>
 <script src="../../assets/js/report-modules/report-slide-populator.js"></script>
 <script src="../../assets/js/report-modules/report-ui.js"></script>
+
 <!-- Main report generator controller -->
 <script src="../../assets/js/report-generator.js"></script>
 
