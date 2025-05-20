@@ -1398,9 +1398,9 @@ slide.addText(targetText, {
     bullet: true, // Use PowerPoint's native bullet formatting
     breakLine: true,
     wrap: true,
-    lineSpacingPt: 10, // Add spacing between bullet points
-    paraSpaceBefore: 2,
-    paraSpaceAfter: 2
+    lineSpacingPt: 7, // REDUCED from 10 to 7 to match status column
+    paraSpaceBefore: 0, // REDUCED from 2 to 0 to match status column
+    paraSpaceAfter: 0  // REDUCED from 2 to 0 to match status column
 });
 currentXPos += colWidths[1];
 
@@ -1415,16 +1415,19 @@ currentXPos += colWidths[1];
                     ratingColor = themeColors.greyStatus;
                 }
 
-                // Add colored rating indicator - center vertically in the dynamic row height
-                slide.addShape(pptx.shapes.OVAL, {
-                    x: currentXPos + (colWidths[2] / 2) - 0.05, // Centered in column
-                    y: rowY + (currentRowHeight / 2) - 0.05, // Vertically centered
-                    w: 0.1,
-                    h: 0.1,
-                    fill: { color: ratingColor },
-                    line: { color: ratingColor, width: 0.5 }
-                });
-                currentXPos += colWidths[2];
+// Add colored rating indicator - align with the first line of content
+// Position the dot to align with the first line of text rather than center of row
+const contentTopPadding = 0.03; // Space from top of cell to first line of text
+const indicatorSize = 0.1;  // Size of the rating indicator dot
+slide.addShape(pptx.shapes.OVAL, {
+    x: currentXPos + (colWidths[2] / 2) - (indicatorSize / 2), // Centered horizontally in column
+    y: rowY + contentTopPadding, // Aligned with first line of content instead of center
+    w: indicatorSize,
+    h: indicatorSize,
+    fill: { color: ratingColor },
+    line: { color: ratingColor, width: 0.5 }
+});
+currentXPos += colWidths[2];
 
                 // ====== STATUS COLUMN - COMPLETE REWRITE ======
                 // Split the status text by newlines to create bullet points
@@ -1461,7 +1464,6 @@ currentXPos += colWidths[1];
                     }];
                 }
                 
-                // Add the bullet point text objects to the slide
 slide.addText(statusText, {
     x: currentXPos,
     y: rowY,
@@ -1475,9 +1477,9 @@ slide.addText(statusText, {
     bullet: true, // Use PowerPoint's native bullet formatting
     breakLine: true,
     wrap: true,
-    lineSpacingPt: 10, // Add spacing between bullet points
-    paraSpaceBefore: 2,
-    paraSpaceAfter: 2
+    lineSpacingPt: 7, // REDUCED from 10 to 7
+    paraSpaceBefore: 0, // REDUCED from 2 to 0
+    paraSpaceAfter: 0  // REDUCED from 2 to 0
 });
 
                 // Add separator line (except after last displayed row)
