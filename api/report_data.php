@@ -263,10 +263,13 @@ while ($program = $programs_result->fetch_assoc()) {
                 $status_color = 'grey';
         }
     }
+      // Calculate text complexity metrics to help with frontend layout decisions
+    // Handle different types of newlines that might appear in the data
+    $normalized_target = str_replace(['\n', '\r', '\r\n'], "\n", $target);
+    $normalized_status = str_replace(['\n', '\r', '\r\n'], "\n", $status_text);
     
-    // Calculate text complexity metrics to help with frontend layout decisions
-    $target_lines = explode("\n", $target);
-    $status_lines = explode("\n", $status_text);
+    $target_lines = explode("\n", $normalized_target);
+    $status_lines = explode("\n", $normalized_status);
     
     // Calculate average and max characters per line to better estimate space needs
     $target_chars = array_map('strlen', $target_lines);

@@ -214,22 +214,38 @@ const ReportPopulator = (function() {
                         console.error('Error parsing content_json:', e, submission.content_json);
                     }
                 }
-                
-                return {
+                  return {
                     name: submission.program_name || 'Unnamed Program',
                     target: target,
                     rating: submission.rating || 'not-started',
-                    status: status
+                    status: status,
+                    text_metrics: submission.text_metrics || {
+                        // Create basic text metrics if not provided
+                        name_length: (submission.program_name || 'Unnamed Program').length,
+                        target_bullet_count: target.split('\n').length,
+                        target_max_chars: Math.max(...target.split('\n').map(line => line.length), 0),
+                        status_bullet_count: status.split('\n').length,
+                        status_max_chars: Math.max(...status.split('\n').map(line => line.length), 0)
+                    }
                 };
-            });
-        } else if (data && data.sector_programs && Array.isArray(data.sector_programs)) {
+            });        } else if (data && data.sector_programs && Array.isArray(data.sector_programs)) {
             // Extract from sector_programs data structure if available
             programs = data.sector_programs.map(program => {
+                const targetText = program.target || 'Not specified';
+                const statusText = program.status_description || 'Not available';
                 return {
                     name: program.program_name || 'Unnamed Program',
-                    target: program.target || 'Not specified',
+                    target: targetText,
                     rating: program.rating || 'not-started',
-                    status: program.status_description || 'Not available'
+                    status: statusText,
+                    text_metrics: program.text_metrics || {
+                        // Create basic text metrics if not provided
+                        name_length: (program.program_name || 'Unnamed Program').length,
+                        target_bullet_count: targetText.split('\n').length,
+                        target_max_chars: Math.max(...targetText.split('\n').map(line => line.length), 0),
+                        status_bullet_count: statusText.split('\n').length,
+                        status_max_chars: Math.max(...statusText.split('\n').map(line => line.length), 0)
+                    }
                 };
             });
         } else {
@@ -243,13 +259,26 @@ const ReportPopulator = (function() {
                 ];
                 
                 for (const programArray of possibleProgramArrays) {
-                    if (programArray && Array.isArray(programArray) && programArray.length > 0) {
-                        programs = programArray.map(prog => ({
-                            name: prog.program_name || prog.name || 'Unnamed Program',
-                            target: prog.target || 'Not specified',
-                            rating: prog.rating || 'not-started',
-                            status: prog.status || prog.status_description || 'Not available'
-                        }));
+                    if (programArray && Array.isArray(programArray) && programArray.length > 0) {                        programs = programArray.map(prog => {
+                            const targetText = prog.target || 'Not specified';
+                            const statusText = prog.status || prog.status_description || 'Not available';
+                            const programName = prog.program_name || prog.name || 'Unnamed Program';
+                            
+                            return {
+                                name: programName,
+                                target: targetText,
+                                rating: prog.rating || 'not-started',
+                                status: statusText,
+                                text_metrics: prog.text_metrics || {
+                                    // Create basic text metrics if not provided
+                                    name_length: programName.length,
+                                    target_bullet_count: targetText.split('\n').length,
+                                    target_max_chars: Math.max(...targetText.split('\n').map(line => line.length), 0),
+                                    status_bullet_count: statusText.split('\n').length,
+                                    status_max_chars: Math.max(...statusText.split('\n').map(line => line.length), 0)
+                                }
+                            };
+                        });
                         break;
                     }
                 }
@@ -260,19 +289,32 @@ const ReportPopulator = (function() {
                     console.warn('Data.programs:', data.programs);
                     console.warn('Data.program_submissions:', data.program_submissions);
                     console.warn('Data.projects:', data.projects);
-                    
-                    programs = [
+                      programs = [
                         {
                             name: 'Forest Conservation',
                             target: '50,000 ha protected',
                             rating: 'on-track',
-                            status: 'Target achieved'
+                            status: 'Target achieved',
+                            text_metrics: {
+                                name_length: 'Forest Conservation'.length,
+                                target_bullet_count: 1,
+                                target_max_chars: '50,000 ha protected'.length,
+                                status_bullet_count: 1,
+                                status_max_chars: 'Target achieved'.length
+                            }
                         },
                         {
                             name: 'Timber Export Growth',
                             target: 'RM 5.2 bil annual export',
                             rating: 'minor-delays',
-                            status: 'Slightly below target'
+                            status: 'Slightly below target',
+                            text_metrics: {
+                                name_length: 'Timber Export Growth'.length,
+                                target_bullet_count: 1,
+                                target_max_chars: 'RM 5.2 bil annual export'.length,
+                                status_bullet_count: 1,
+                                status_max_chars: 'Slightly below target'.length
+                            }
                         }
                     ];
                 }

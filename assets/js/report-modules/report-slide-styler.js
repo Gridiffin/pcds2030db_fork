@@ -1195,29 +1195,85 @@ const ReportStyler = (function() {
                 // If clamped, actual layout might differ slightly from perfect 10-row fit
             }
 
-            const programsToDisplay = programs.slice(0, targetDataRowCount);
-
-            // First pass: Calculate required height for each row based on content
-            const rowHeights = programsToDisplay.map(program => {
-                // Count bullet points
-                const targetLines = (program.target || 'N/A').split('\\n').length;
-                const statusLines = (program.status || 'N/A').split('\\n').length;
+            const programsToDisplay = programs.slice(0, targetDataRowCount);            // First pass: Calculate required height for each row based on precise text metrics
+            console.log('Calculating row heights using text metrics:', programsToDisplay.map(p => p.text_metrics));
+            
+            const rowHeights = programsToDisplay.map((program, index) => {
+                // Get text metrics if available
+                const metrics = program.text_metrics || {};
                 
-                // Estimate how many lines the program name might wrap to
-                // Roughly: 45 chars fit on one line at font size 7 in the given width
-                const nameChars = (program.name || 'N/A').length;
-                const estimatedNameLines = Math.max(1, Math.ceil(nameChars / 45));
+                // Calculate characters per line for the table columns based on widths and font size
+                // The Status column can fit 72 characters as specified
+                const statusColCharsPerLine = 72;
+                
+                // Calculate ratio of other columns to status column based on their widths
+                const programColCharsPerLine = Math.floor(statusColCharsPerLine * (colWidths[0] / colWidths[3]));
+                const targetColCharsPerLine = Math.floor(statusColCharsPerLine * (colWidths[1] / colWidths[3]));
+                  // Count bullet points (fallback to splitting by newlines if metrics not available)
+                // Handle various newline encodings: \n, \\n, or literal newlines
+                const normalizeNewlines = (text) => {
+                    // Handle different ways newlines might be encoded
+                    return text.replace(/\\n/g, '\n').split('\n');
+                };
+                
+                const targetLines = metrics.target_bullet_count || 
+                                    normalizeNewlines(program.target || 'N/A').length;
+                const statusLines = metrics.status_bullet_count || 
+                                    normalizeNewlines(program.status || 'N/A').length;
+                
+                // Calculate lines needed for program name based on word wrapping
+                const nameChars = metrics.name_length || (program.name || 'N/A').length;
+                const estimatedNameLines = Math.max(1, Math.ceil(nameChars / programColCharsPerLine));
+                
+                // Calculate how many additional lines needed for long lines that will wrap
+                let additionalTargetLines = 0;
+                let additionalStatusLines = 0;
+                
+                // If we have access to the max chars per line in each field, calculate additional lines
+                if (metrics.target_max_chars) {
+                    const maxTargetChars = metrics.target_max_chars;
+                    additionalTargetLines = Math.max(0, Math.floor(maxTargetChars / targetColCharsPerLine));
+                }
+                
+                if (metrics.status_max_chars) {
+                    const maxStatusChars = metrics.status_max_chars;
+                    additionalStatusLines = Math.max(0, Math.floor(maxStatusChars / statusColCharsPerLine));
+                }
+                
+                // Sum up all lines with wrapping consideration
+                const totalTargetLines = targetLines + additionalTargetLines;
+                const totalStatusLines = statusLines + additionalStatusLines;
                 
                 // Get max needed lines across all columns
-                const maxLines = Math.max(estimatedNameLines, targetLines, statusLines);
+                const maxLines = Math.max(estimatedNameLines, totalTargetLines, totalStatusLines);
+                  // Calculate height: base height per line + padding
+                // Each line is approximately 0.15 inches tall at font size 7
+                const rowHeight = Math.max(0.18, (maxLines * 0.15) + 0.05);
                 
-                // Calculate height: base height per line + padding
-                return Math.max(0.18, (maxLines * 0.15) + 0.05);
-            });
-
-            // Check if total height exceeds available space
+                // Log detailed height calculation for debugging
+                console.log(`Row ${index} (${program.name}) height calculation:`, {
+                    nameChars: nameChars,
+                    estimatedNameLines: estimatedNameLines,
+                    targetLines: targetLines,
+                    additionalTargetLines: additionalTargetLines,
+                    statusLines: statusLines,
+                    additionalStatusLines: additionalStatusLines,
+                    maxLines: maxLines,
+                    calculatedHeight: rowHeight
+                });
+                
+                return rowHeight;
+            });            // Check if total height exceeds available space
             const totalRequiredHeight = rowHeights.reduce((sum, height) => sum + height, 0) + 
                                        ((programsToDisplay.length - 1) * newRowSpacing);
+            
+            console.log('Row height summary:', {
+                availableHeight: totalAvailableHeightForDataRows,
+                requiredHeight: totalRequiredHeight,
+                individualRowHeights: rowHeights,
+                rowSpacing: newRowSpacing,
+                totalRows: programsToDisplay.length
+            });
             
             // If total exceeds available space, scale down proportionally
             let scaleRatio = 1;
@@ -1227,6 +1283,8 @@ const ReportStyler = (function() {
                 for (let i = 0; i < rowHeights.length; i++) {
                     rowHeights[i] = Math.max(0.18, rowHeights[i] * scaleRatio);
                 }
+                
+                console.log(`Scaling down row heights by factor ${scaleRatio} to fit table. New heights:`, rowHeights);
             }
 
             // Apply the calculated row heights
@@ -1253,14 +1311,29 @@ const ReportStyler = (function() {
                 });
                 currentXPos += colWidths[0];
 
-                // Target
-                const targets = (program.target || 'N/A').split('\\n');
-                const targetTextObjects = targets.map(target => ({
-                    text: target,
-                    options: { bullet: true, indentLevel: 0 }
-                }));
-
-                slide.addText(targetTextObjects, {
+                // Target                // Handle various newline encodings in the text
+                const normalizeNewlines = (text) => {
+                    return text.replace(/\\n/g, '\n').split('\n');
+                };
+                
+                const targets = normalizeNewlines(program.target || 'N/A');
+                
+                // Create target text objects with improved wrapping for long lines
+                const targetColCharsPerLine = 50; // Based on our earlier calculation
+                const targetTextObjects = targets.map(target => {
+                    // Check if target exceeds the reference character count per line
+                    const needsWrap = target.length > targetColCharsPerLine;
+                    
+                    return {
+                        text: target,
+                        options: { 
+                            bullet: true, 
+                            indentLevel: 0,
+                            breakLine: needsWrap, // Enable line breaking for long text
+                            fit: needsWrap ? 'shrink' : undefined // Apply shrink fitting for long text
+                        }
+                    };
+                });slide.addText(targetTextObjects, {
                     x: currentXPos,
                     y: rowY,
                     w: colWidths[1],
@@ -1269,7 +1342,10 @@ const ReportStyler = (function() {
                     fontFace: defaultFont,
                     color: themeColors.text,
                     align: 'left',
-                    valign: 'top'
+                    valign: 'top',
+                    wrap: true,
+                    breakLine: true,
+                    fit: program.text_metrics && program.text_metrics.target_max_chars > 50 ? 'shrink' : undefined
                 });
                 currentXPos += colWidths[1];
                 
@@ -1293,16 +1369,24 @@ const ReportStyler = (function() {
                     fill: { color: ratingColor },
                     line: { color: ratingColor, width: 0.5 }
                 });
-                currentXPos += colWidths[2];
-
-                // Status
-                const statuses = (program.status || 'N/A').split('\\n');
-                const statusTextObjects = statuses.map(status => ({
-                    text: status,
-                    options: { bullet: true, indentLevel: 0 }
-                }));
-
-                slide.addText(statusTextObjects, {
+                currentXPos += colWidths[2];                // Status
+                const statuses = normalizeNewlines(program.status || 'N/A');
+                
+                // Create status text objects for each line with improved text wrapping
+                const statusTextObjects = statuses.map(status => {
+                    // Check if status exceeds the reference of 72 characters per line
+                    const needsWrap = status.length > 72;
+                    
+                    return {
+                        text: status,
+                        options: { 
+                            bullet: true, 
+                            indentLevel: 0,
+                            breakLine: needsWrap, // Enable line breaking for long text
+                            fit: needsWrap ? 'shrink' : undefined // Apply shrink fitting for long text
+                        }
+                    };
+                });                slide.addText(statusTextObjects, {
                     x: currentXPos,
                     y: rowY,
                     w: colWidths[3],
@@ -1311,7 +1395,10 @@ const ReportStyler = (function() {
                     fontFace: defaultFont,
                     color: themeColors.text,
                     align: 'left',
-                    valign: 'top'
+                    valign: 'top',
+                    wrap: true,
+                    breakLine: true,
+                    fit: program.text_metrics && program.text_metrics.status_max_chars > 72 ? 'shrink' : undefined
                 });
 
                 // Add separator line (except after last displayed row)
