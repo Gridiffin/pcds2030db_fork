@@ -1219,7 +1219,13 @@ const ReportStyler = (function() {
                 currentXPos += colWidths[0];
 
                 // Target
-                slide.addText(program.target || 'N/A', {
+                const targets = (program.target || 'N/A').split('\\n');
+                const targetTextObjects = targets.map(target => ({
+                    text: target,
+                    options: { bullet: true, indentLevel: 0 }
+                }));
+
+                slide.addText(targetTextObjects, {
                     x: currentXPos,
                     y: rowY,
                     w: colWidths[1],
@@ -1229,8 +1235,8 @@ const ReportStyler = (function() {
                     color: themeColors.text,
                     align: 'left',
                     valign: 'top',
-                    wrap: true,
-                    breakLine: true
+                    // wrap: true, // wrap is not a direct option here, bulleted lists handle wrapping
+                    // breakLine: true // breakLine is not a direct option here
                 });
                 currentXPos += colWidths[1];
                 
@@ -1257,7 +1263,13 @@ const ReportStyler = (function() {
                 currentXPos += colWidths[2];
 
                 // Status
-                slide.addText(program.status || 'N/A', {
+                const statuses = (program.status || 'N/A').split('\\n');
+                const statusTextObjects = statuses.map(status => ({
+                    text: status,
+                    options: { bullet: true, indentLevel: 0 }
+                }));
+
+                slide.addText(statusTextObjects, {
                     x: currentXPos,
                     y: rowY,
                     w: colWidths[3],
@@ -1267,8 +1279,8 @@ const ReportStyler = (function() {
                     color: themeColors.text,
                     align: 'left',
                     valign: 'top',
-                    wrap: true,
-                    breakLine: true
+                    // wrap: true,
+                    // breakLine: true 
                 });
 
                 // Add separator line (except after last displayed row)

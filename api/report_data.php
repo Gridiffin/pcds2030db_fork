@@ -226,11 +226,15 @@ while ($program = $programs_result->fetch_assoc()) {
     
     // Check if we have the new format with targets array
     if (isset($content['targets']) && is_array($content['targets']) && !empty($content['targets'])) {
-        // Get the first target from the array
-        $target = $content['targets'][0]['target_text'] ?? 'No target set';
-        $status_text = $content['targets'][0]['status_description'] ?? 'No status update available';
-    } else {
-        // Fall back to old format
+        $target_texts = [];
+        $status_texts = [];
+        foreach ($content['targets'] as $t) {
+            $target_texts[] = $t['target_text'] ?? $t['text'] ?? 'No target set'; // Added fallback for 'text' key consistent with JS
+            $status_texts[] = $t['status_description'] ?? 'No status update available';
+        }
+        $target = implode("\n", $target_texts);
+        $status_text = implode("\n", $status_texts);
+    } elseif (isset($content['target'])) { // Old format with direct target property
         $target = $content['target'] ?? 'No target set';
         $status_text = $content['status_text'] ?? 'No status update available';
     }
