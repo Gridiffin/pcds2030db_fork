@@ -1211,96 +1211,57 @@ const ReportStyler = (function() {
             const programsToDisplay = programs.slice(0, targetDataRowCount);            // First pass: Calculate required height for each row based on precise text metrics
             console.log('Calculating row heights using text metrics:', programsToDisplay.map(p => p.text_metrics));
             
-            const rowHeights = programsToDisplay.map((program, index) => {                // Get text metrics if available
+            const rowHeights = programsToDisplay.map((program, index) => {
                 const metrics = program.text_metrics || {};
                 
                 // Calculate characters per line for the table columns based on widths and font size
-                // The Status column can fit 72 characters as specified
                 const statusColCharsPerLine = 72;
+                const programColCharsPerLine = Math.floor(statusColCharsPerLine * (colWidths[0] / colWidths[3]));
+                const targetColCharsPerLine = Math.floor(statusColCharsPerLine * (colWidths[1] / colWidths[3]));
                 
-                // Calculate ratio of other columns to status column based on their widths
-                const programColCharsPerLine = Math.floor(statusColCharsPerLine * (colWidths[0] / colWidths[3]));                const targetColCharsPerLine = Math.floor(statusColCharsPerLine * (colWidths[1] / colWidths[3]));
+                // Get the raw text lines
+                const targetLines = normalizeNewlines(program.target || 'N/A');
+                const statusLines = normalizeNewlines(program.status || 'N/A');
+                const nameText = program.name || 'N/A';
+
+                // Calculate height for program name
+                const nameChars = nameText.length;
+                const nameWrappedLines = Math.ceil(nameChars / programColCharsPerLine);
+                const nameHeight = nameWrappedLines * 0.15; // 0.15 inches per line at font size 7
+
+                // Calculate height for target bullet points
+                const targetHeight = targetLines.reduce((height, line) => {
+                    const wrappedLines = Math.ceil(line.length / targetColCharsPerLine);
+                    return height + (wrappedLines * 0.15); // 0.15 inches per wrapped line
+                }, 0);
+
+                // Calculate height for status bullet points
+                const statusHeight = statusLines.reduce((height, line) => {
+                    const wrappedLines = Math.ceil(line.length / statusColCharsPerLine);
+                    return height + (wrappedLines * 0.15); // 0.15 inches per wrapped line
+                }, 0);
+
+                // Get maximum height needed across all columns
+                const maxContentHeight = Math.max(nameHeight, targetHeight, statusHeight);
                 
-                // Count bullet points, using metrics if available or parsing the text
-                const targetLines = metrics.target_bullet_count || 
-                                    normalizeNewlines(program.target || 'N/A').length;
-                const statusLines = metrics.status_bullet_count || 
-                                    normalizeNewlines(program.status || 'N/A').length;
+                // Add padding based on number of bullet points
+                const bulletPadding = Math.max(targetLines.length, statusLines.length) > 1 ? 0.08 : 0.05;
                 
-                // Calculate lines needed for program name based on word wrapping
-                const nameChars = metrics.name_length || (program.name || 'N/A').length;
-                const estimatedNameLines = Math.max(1, Math.ceil(nameChars / programColCharsPerLine));
-                
-                // Calculate lines needed for wrapped content, using our improved metrics if available
-                let totalTargetLines, totalStatusLines;
-                
-                if (metrics.target_wrapped_lines) {
-                    // Use our improved calculation from the backend
-                    totalTargetLines = metrics.target_wrapped_lines;
-                } else {
-                    // Calculate how many additional lines needed for long lines that will wrap
-                    let additionalTargetLines = 0;
-                    if (metrics.target_max_chars) {
-                        const maxTargetChars = metrics.target_max_chars;
-                        additionalTargetLines = Math.max(0, Math.ceil(maxTargetChars / targetColCharsPerLine) - 1);
-                    }
-                    totalTargetLines = targetLines + additionalTargetLines;
-                }
-                
-                if (metrics.status_wrapped_lines) {
-                    // Use our improved calculation from the backend
-                    totalStatusLines = metrics.status_wrapped_lines;
-                } else {
-                    // Calculate how many additional lines needed for long lines that will wrap
-                    let additionalStatusLines = 0;
-                    if (metrics.status_max_chars) {
-                        const maxStatusChars = metrics.status_max_chars;
-                        additionalStatusLines = Math.max(0, Math.ceil(maxStatusChars / statusColCharsPerLine) - 1);
-                    }
-                    totalStatusLines = statusLines + additionalStatusLines;
-                }
-                
-                // Get max needed lines across all columns
-                const maxLines = Math.max(estimatedNameLines, totalTargetLines, totalStatusLines);
-                  // Log detailed metrics for debugging 
-                console.log(`Row height metrics for "${program.name}":`, {
-                    targetBulletCount: targetLines,
-                    targetTotalLines: totalTargetLines,
-                    targetText: program.target, // Log the actual target text for debugging
-                    statusBulletCount: statusLines, 
-                    statusTotalLines: totalStatusLines,
-                    statusText: program.status, // Log the actual status text for debugging
-                    nameLines: estimatedNameLines,
-                    maxLines: maxLines
-                });// Calculate height: base height per line + padding + additional space for bullets
-                // Each line is approximately 0.15 inches tall at font size 7
-                // Add slightly more space when there are multiple bullet points
-                const bulletSpaceFactor = maxLines > 1 ? 0.08 : 0.05; // More padding for multiple bullets
-                const rowHeight = Math.max(0.18, (maxLines * 0.15) + bulletSpaceFactor);
-                
-                // Save additional line calculations for logging, handling cases where they might be undefined
-                const additionalTargetLinesLog = metrics.target_wrapped_lines ? 
-                    totalTargetLines - targetLines : // If using wrapped_lines metric
-                    (metrics.target_max_chars ? Math.max(0, Math.ceil(metrics.target_max_chars / targetColCharsPerLine) - 1) : 0);
-                    
-                const additionalStatusLinesLog = metrics.status_wrapped_lines ?
-                    totalStatusLines - statusLines : // If using wrapped_lines metric
-                    (metrics.status_max_chars ? Math.max(0, Math.ceil(metrics.status_max_chars / statusColCharsPerLine) - 1) : 0);
-                
-                // Log detailed height calculation for debugging
-                console.log(`Row ${index} (${program.name}) height calculation:`, {
-                    nameChars: nameChars,
-                    estimatedNameLines: estimatedNameLines,
-                    targetLines: targetLines,
-                    additionalTargetLines: additionalTargetLinesLog,
-                    statusLines: statusLines,
-                    additionalStatusLines: additionalStatusLinesLog,
-                    maxLines: maxLines,
-                    calculatedHeight: rowHeight
+                // Ensure minimum height and add bullet padding
+                const rowHeight = Math.max(0.18, maxContentHeight + bulletPadding);
+
+                console.log(`Row height calculation for "${nameText}":`, {
+                    nameHeight,
+                    targetHeight,
+                    statusHeight,
+                    bulletPadding,
+                    finalHeight: rowHeight
                 });
-                
+
                 return rowHeight;
-            });            // Check if total height exceeds available space
+            });
+
+            // Check if total height exceeds available space
             const totalRequiredHeight = rowHeights.reduce((sum, height) => sum + height, 0) + 
                                        ((programsToDisplay.length - 1) * newRowSpacing);
             
