@@ -1090,6 +1090,20 @@ const ReportStyler = (function() {
      * @param {string} currentQuarter - Current reporting quarter (e.g., "Q2 2025")
      * @returns {Object} The table dimensions {x, y, w, h}
      */    function createProgramDataTable(slide, pptx, themeColors, defaultFont, programsData, currentQuarter) {
+        // Define normalizeNewlines function at the beginning to make it available throughout the function
+        const normalizeNewlines = (text) => {
+            if (!text || typeof text !== 'string' || text.trim() === 'N/A' || text.trim() === '') return ['N/A'];
+            
+            // Handle all types of newlines consistently
+            let normalizedText = text.replace(/\\n/g, '\n')
+                                    .replace(/\\r\\n/g, '\n')
+                                    .replace(/\\r/g, '\n');
+            
+            // Split by newlines and filter empty lines
+            const lines = normalizedText.split('\n').filter(line => line.trim() !== '');
+            return lines.length > 0 ? lines : ['N/A']; // If all lines are empty, return ['N/A']
+        };
+        
         const rightSectionStartXInches = 9.17; // Assuming the right section (graphs/KPIs) starts at this x-coordinate
         const tablePaddingRightInches = 0.1; // Padding between the table and the right section
 
@@ -1097,11 +1111,11 @@ const ReportStyler = (function() {
         const tableDimensions = { 
             x: 0.22, // Same x position as sector box
             y: 0.8,  // Below the sector box (0.08 + 0.63 + spacing)
-            // Original w: 8.64, // Width of 21.94 cm converted to inches
             w: rightSectionStartXInches - 0.22 - tablePaddingRightInches, // New width to fill space before the right section
             h: 6.24  // Extend downward, but leave space for the legend at the bottom
         };
-          // Create the outer container with border and background
+        
+        // Create the outer container with border and background
         slide.addShape(pptx.shapes.RECTANGLE, {
             x: tableDimensions.x,
             y: tableDimensions.y, 
@@ -1198,8 +1212,7 @@ const ReportStyler = (function() {
             const programsToDisplay = programs.slice(0, targetDataRowCount);            // First pass: Calculate required height for each row based on precise text metrics
             console.log('Calculating row heights using text metrics:', programsToDisplay.map(p => p.text_metrics));
             
-            const rowHeights = programsToDisplay.map((program, index) => {
-                // Get text metrics if available
+            const rowHeights = programsToDisplay.map((program, index) => {                // Get text metrics if available
                 const metrics = program.text_metrics || {};
                 
                 // Calculate characters per line for the table columns based on widths and font size
@@ -1207,15 +1220,9 @@ const ReportStyler = (function() {
                 const statusColCharsPerLine = 72;
                 
                 // Calculate ratio of other columns to status column based on their widths
-                const programColCharsPerLine = Math.floor(statusColCharsPerLine * (colWidths[0] / colWidths[3]));
-                const targetColCharsPerLine = Math.floor(statusColCharsPerLine * (colWidths[1] / colWidths[3]));
-                  // Count bullet points (fallback to splitting by newlines if metrics not available)
-                // Handle various newline encodings: \n, \\n, or literal newlines
-                const normalizeNewlines = (text) => {
-                    // Handle different ways newlines might be encoded
-                    return text.replace(/\\n/g, '\n').split('\n');
-                };
+                const programColCharsPerLine = Math.floor(statusColCharsPerLine * (colWidths[0] / colWidths[3]));                const targetColCharsPerLine = Math.floor(statusColCharsPerLine * (colWidths[1] / colWidths[3]));
                 
+                // Count bullet points, using metrics if available or parsing the text
                 const targetLines = metrics.target_bullet_count || 
                                     normalizeNewlines(program.target || 'N/A').length;
                 const statusLines = metrics.status_bullet_count || 
@@ -1225,39 +1232,70 @@ const ReportStyler = (function() {
                 const nameChars = metrics.name_length || (program.name || 'N/A').length;
                 const estimatedNameLines = Math.max(1, Math.ceil(nameChars / programColCharsPerLine));
                 
-                // Calculate how many additional lines needed for long lines that will wrap
-                let additionalTargetLines = 0;
-                let additionalStatusLines = 0;
+                // Calculate lines needed for wrapped content, using our improved metrics if available
+                let totalTargetLines, totalStatusLines;
                 
-                // If we have access to the max chars per line in each field, calculate additional lines
-                if (metrics.target_max_chars) {
-                    const maxTargetChars = metrics.target_max_chars;
-                    additionalTargetLines = Math.max(0, Math.floor(maxTargetChars / targetColCharsPerLine));
+                if (metrics.target_wrapped_lines) {
+                    // Use our improved calculation from the backend
+                    totalTargetLines = metrics.target_wrapped_lines;
+                } else {
+                    // Calculate how many additional lines needed for long lines that will wrap
+                    let additionalTargetLines = 0;
+                    if (metrics.target_max_chars) {
+                        const maxTargetChars = metrics.target_max_chars;
+                        additionalTargetLines = Math.max(0, Math.ceil(maxTargetChars / targetColCharsPerLine) - 1);
+                    }
+                    totalTargetLines = targetLines + additionalTargetLines;
                 }
                 
-                if (metrics.status_max_chars) {
-                    const maxStatusChars = metrics.status_max_chars;
-                    additionalStatusLines = Math.max(0, Math.floor(maxStatusChars / statusColCharsPerLine));
+                if (metrics.status_wrapped_lines) {
+                    // Use our improved calculation from the backend
+                    totalStatusLines = metrics.status_wrapped_lines;
+                } else {
+                    // Calculate how many additional lines needed for long lines that will wrap
+                    let additionalStatusLines = 0;
+                    if (metrics.status_max_chars) {
+                        const maxStatusChars = metrics.status_max_chars;
+                        additionalStatusLines = Math.max(0, Math.ceil(maxStatusChars / statusColCharsPerLine) - 1);
+                    }
+                    totalStatusLines = statusLines + additionalStatusLines;
                 }
-                
-                // Sum up all lines with wrapping consideration
-                const totalTargetLines = targetLines + additionalTargetLines;
-                const totalStatusLines = statusLines + additionalStatusLines;
                 
                 // Get max needed lines across all columns
                 const maxLines = Math.max(estimatedNameLines, totalTargetLines, totalStatusLines);
-                  // Calculate height: base height per line + padding
+                  // Log detailed metrics for debugging 
+                console.log(`Row height metrics for "${program.name}":`, {
+                    targetBulletCount: targetLines,
+                    targetTotalLines: totalTargetLines,
+                    targetText: program.target, // Log the actual target text for debugging
+                    statusBulletCount: statusLines, 
+                    statusTotalLines: totalStatusLines,
+                    statusText: program.status, // Log the actual status text for debugging
+                    nameLines: estimatedNameLines,
+                    maxLines: maxLines
+                });// Calculate height: base height per line + padding + additional space for bullets
                 // Each line is approximately 0.15 inches tall at font size 7
-                const rowHeight = Math.max(0.18, (maxLines * 0.15) + 0.05);
+                // Add slightly more space when there are multiple bullet points
+                const bulletSpaceFactor = maxLines > 1 ? 0.08 : 0.05; // More padding for multiple bullets
+                const rowHeight = Math.max(0.18, (maxLines * 0.15) + bulletSpaceFactor);
+                
+                // Save additional line calculations for logging, handling cases where they might be undefined
+                const additionalTargetLinesLog = metrics.target_wrapped_lines ? 
+                    totalTargetLines - targetLines : // If using wrapped_lines metric
+                    (metrics.target_max_chars ? Math.max(0, Math.ceil(metrics.target_max_chars / targetColCharsPerLine) - 1) : 0);
+                    
+                const additionalStatusLinesLog = metrics.status_wrapped_lines ?
+                    totalStatusLines - statusLines : // If using wrapped_lines metric
+                    (metrics.status_max_chars ? Math.max(0, Math.ceil(metrics.status_max_chars / statusColCharsPerLine) - 1) : 0);
                 
                 // Log detailed height calculation for debugging
                 console.log(`Row ${index} (${program.name}) height calculation:`, {
                     nameChars: nameChars,
                     estimatedNameLines: estimatedNameLines,
                     targetLines: targetLines,
-                    additionalTargetLines: additionalTargetLines,
+                    additionalTargetLines: additionalTargetLinesLog,
                     statusLines: statusLines,
-                    additionalStatusLines: additionalStatusLines,
+                    additionalStatusLines: additionalStatusLinesLog,
                     maxLines: maxLines,
                     calculatedHeight: rowHeight
                 });
@@ -1311,44 +1349,61 @@ const ReportStyler = (function() {
                 });
                 currentXPos += colWidths[0];
 
-                // Target                // Handle various newline encodings in the text
-                const normalizeNewlines = (text) => {
-                    return text.replace(/\\n/g, '\n').split('\n');
-                };
+                // ====== TARGET COLUMN - COMPLETE REWRITE ======
+                // Split the target text by newlines to create bullet points
+                const targetText = program.target || 'N/A';
+                let targetTextObjects = [];
                 
-                const targets = normalizeNewlines(program.target || 'N/A');
-                
-                // Create target text objects with improved wrapping for long lines
-                const targetColCharsPerLine = 50; // Based on our earlier calculation
-                const targetTextObjects = targets.map(target => {
-                    // Check if target exceeds the reference character count per line
-                    const needsWrap = target.length > targetColCharsPerLine;
+                // Only process if we have valid text and it's not just 'N/A'
+                if (targetText && targetText !== 'N/A') {
+                    // Split by newlines and filter empty lines
+                    const targetLines = normalizeNewlines(targetText);
                     
-                    return {
-                        text: target,
-                        options: { 
-                            bullet: true, 
-                            indentLevel: 0,
-                            breakLine: needsWrap, // Enable line breaking for long text
-                            fit: needsWrap ? 'shrink' : undefined // Apply shrink fitting for long text
+                    // Create text objects with bullet styling for each line
+                    targetTextObjects = targetLines.map(line => ({
+                        text: line,
+                        options: {
+                            bullet: { type: 'bullet' },
+                            fontSize: 7,
+                            fontFace: defaultFont,
+                            color: themeColors.text
                         }
-                    };
-                });slide.addText(targetTextObjects, {
-                    x: currentXPos,
-                    y: rowY,
-                    w: colWidths[1],
-                    h: currentRowHeight, // Use row-specific height
-                    fontSize: 7,
-                    fontFace: defaultFont,
-                    color: themeColors.text,
-                    align: 'left',
-                    valign: 'top',
-                    wrap: true,
-                    breakLine: true,
-                    fit: program.text_metrics && program.text_metrics.target_max_chars > 50 ? 'shrink' : undefined
-                });
-                currentXPos += colWidths[1];
+                    }));
+                    
+                    console.log(`Program "${program.name}" - Created ${targetTextObjects.length} bullet points for targets`);
+                } else {
+                    // If there's no target text, just add a placeholder
+                    targetTextObjects = [{ 
+                        text: 'N/A', 
+                        options: { 
+                            fontSize: 7, 
+                            fontFace: defaultFont, 
+                            color: themeColors.lightText,
+                            italic: true
+                        } 
+                    }];
+                }
                 
+                // Add the bullet point text objects to the slide
+slide.addText(targetText, {
+    x: currentXPos,
+    y: rowY,
+    w: colWidths[1],
+    h: currentRowHeight,
+    fontSize: 7,
+    fontFace: defaultFont,
+    color: themeColors.text,
+    align: 'left',
+    valign: 'top',
+    bullet: true, // Use PowerPoint's native bullet formatting
+    breakLine: true,
+    wrap: true,
+    lineSpacingPt: 10, // Add spacing between bullet points
+    paraSpaceBefore: 2,
+    paraSpaceAfter: 2
+});
+currentXPos += colWidths[1];
+
                 // Rating and status indicator
                 let ratingColor = themeColors.greenStatus;
                 const rating = (program.rating || '').toLowerCase();
@@ -1369,37 +1424,61 @@ const ReportStyler = (function() {
                     fill: { color: ratingColor },
                     line: { color: ratingColor, width: 0.5 }
                 });
-                currentXPos += colWidths[2];                // Status
-                const statuses = normalizeNewlines(program.status || 'N/A');
+                currentXPos += colWidths[2];
+
+                // ====== STATUS COLUMN - COMPLETE REWRITE ======
+                // Split the status text by newlines to create bullet points
+                const statusText = program.status || 'N/A';
+                let statusTextObjects = [];
                 
-                // Create status text objects for each line with improved text wrapping
-                const statusTextObjects = statuses.map(status => {
-                    // Check if status exceeds the reference of 72 characters per line
-                    const needsWrap = status.length > 72;
+                // Only process if we have valid text and it's not just 'N/A'
+                if (statusText && statusText !== 'N/A') {
+                    // Split by newlines and filter empty lines
+                    const statusLines = normalizeNewlines(statusText);
                     
-                    return {
-                        text: status,
-                        options: { 
-                            bullet: true, 
-                            indentLevel: 0,
-                            breakLine: needsWrap, // Enable line breaking for long text
-                            fit: needsWrap ? 'shrink' : undefined // Apply shrink fitting for long text
+                    // Create text objects with bullet styling for each line
+                    statusTextObjects = statusLines.map(line => ({
+                        text: line,
+                        options: {
+                            bullet: { type: 'bullet' },
+                            fontSize: 7,
+                            fontFace: defaultFont,
+                            color: themeColors.text
                         }
-                    };
-                });                slide.addText(statusTextObjects, {
-                    x: currentXPos,
-                    y: rowY,
-                    w: colWidths[3],
-                    h: currentRowHeight, // Use row-specific height
-                    fontSize: 7,
-                    fontFace: defaultFont,
-                    color: themeColors.text,
-                    align: 'left',
-                    valign: 'top',
-                    wrap: true,
-                    breakLine: true,
-                    fit: program.text_metrics && program.text_metrics.status_max_chars > 72 ? 'shrink' : undefined
-                });
+                    }));
+                    
+                    console.log(`Program "${program.name}" - Created ${statusTextObjects.length} bullet points for status`);
+                } else {
+                    // If there's no status text, just add a placeholder
+                    statusTextObjects = [{ 
+                        text: 'N/A', 
+                        options: { 
+                            fontSize: 7, 
+                            fontFace: defaultFont, 
+                            color: themeColors.lightText,
+                            italic: true
+                        } 
+                    }];
+                }
+                
+                // Add the bullet point text objects to the slide
+slide.addText(statusText, {
+    x: currentXPos,
+    y: rowY,
+    w: colWidths[3],
+    h: currentRowHeight,
+    fontSize: 7,
+    fontFace: defaultFont,
+    color: themeColors.text,
+    align: 'left',
+    valign: 'top',
+    bullet: true, // Use PowerPoint's native bullet formatting
+    breakLine: true,
+    wrap: true,
+    lineSpacingPt: 10, // Add spacing between bullet points
+    paraSpaceBefore: 2,
+    paraSpaceAfter: 2
+});
 
                 // Add separator line (except after last displayed row)
                 if (rowIndex < programsToDisplay.length - 1) {

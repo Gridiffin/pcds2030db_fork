@@ -218,8 +218,7 @@ $programs_count = $programs_result->num_rows;
 error_log("Query returned {$programs_count} programs");
 
 $programs = [];
-while ($program = $programs_result->fetch_assoc()) {
-    // Extract target from content_json
+while ($program = $programs_result->fetch_assoc()) {    // Extract target from content_json
     $content = json_decode($program['content_json'] ?? '{}', true);
     $target = 'No target set';
     $status_text = 'No status update available';
@@ -228,15 +227,40 @@ while ($program = $programs_result->fetch_assoc()) {
     if (isset($content['targets']) && is_array($content['targets']) && !empty($content['targets'])) {
         $target_texts = [];
         $status_texts = [];
+        
+        // Process each target and ensure newline consistency
         foreach ($content['targets'] as $t) {
-            $target_texts[] = $t['target_text'] ?? $t['text'] ?? 'No target set'; // Added fallback for 'text' key consistent with JS
-            $status_texts[] = $t['status_description'] ?? 'No status update available';
+            // Get target text with several fallbacks
+            $target_text = $t['target_text'] ?? $t['text'] ?? 'No target set';
+            // Make sure there are no escaped newlines in the text
+            $target_text = str_replace(['\\n', '\\r', '\\r\\n'], "\n", $target_text);
+            $target_texts[] = $target_text;
+            
+            // Get status with fallbacks
+            $status_desc = $t['status_description'] ?? 'No status update available';
+            // Make sure there are no escaped newlines in the status
+            $status_desc = str_replace(['\\n', '\\r', '\\r\\n'], "\n", $status_desc);
+            $status_texts[] = $status_desc;
         }
+          // Combine targets and statuses with literal newlines for bullet point separation
+        // Use clean newlines to ensure consistent bullet point formatting in the frontend
         $target = implode("\n", $target_texts);
         $status_text = implode("\n", $status_texts);
+        
+        // Extra normalization to ensure no leftover escaped characters
+        $target = preg_replace('/\\\\[rn]/', "\n", $target);
+        $status_text = preg_replace('/\\\\[rn]/', "\n", $status_text);
+        
+        // Debug log the processed targets (can be removed in production)
+        error_log("Program {$program['program_id']}: Processed " . count($target_texts) . " targets");
+        
     } elseif (isset($content['target'])) { // Old format with direct target property
         $target = $content['target'] ?? 'No target set';
         $status_text = $content['status_text'] ?? 'No status update available';
+        
+        // Normalize newlines in the old format as well
+        $target = str_replace(['\\n', '\\r', '\\r\\n'], "\n", $target);
+        $status_text = str_replace(['\\n', '\\r', '\\r\\n'], "\n", $status_text);
     }
     
     // Map status to color (green, yellow, red, grey)
@@ -263,25 +287,53 @@ while ($program = $programs_result->fetch_assoc()) {
                 $status_color = 'grey';
         }
     }
-      // Calculate text complexity metrics to help with frontend layout decisions
-    // Handle different types of newlines that might appear in the data
-    $normalized_target = str_replace(['\n', '\r', '\r\n'], "\n", $target);
-    $normalized_status = str_replace(['\n', '\r', '\r\n'], "\n", $status_text);
+    // Calculate text complexity metrics to help with frontend layout decisions
+    // Handle different types of newlines that might appear in the data 
+    // Note: We do this normalization again to be absolutely sure we have consistent newlines
+    $normalized_target = str_replace(['\n', '\r', '\r\n', '\\n', '\\r', '\\r\\n'], "\n", $target);
+    $normalized_status = str_replace(['\n', '\r', '\r\n', '\\n', '\\r', '\\r\\n'], "\n", $status_text);
     
+    // Split by normalized newlines
     $target_lines = explode("\n", $normalized_target);
     $status_lines = explode("\n", $normalized_status);
+    
+    // Filter out empty lines (which could create phantom bullets)
+    $target_lines = array_filter($target_lines, function($line) {
+        return trim($line) !== '';
+    });
+    
+    $status_lines = array_filter($status_lines, function($line) {
+        return trim($line) !== '';
+    });
     
     // Calculate average and max characters per line to better estimate space needs
     $target_chars = array_map('strlen', $target_lines);
     $status_chars = array_map('strlen', $status_lines);
     
+    // Calculate wrapping metrics based on typical column widths
+    $target_col_chars_per_line = 50; // Typical target column can fit ~50 chars before wrapping
+    $status_col_chars_per_line = 72; // Typical status column can fit ~72 chars before wrapping
+    
+    // Calculate how many wrapped lines would be needed for each bullet
+    $target_wrapped_lines = 0;
+    foreach ($target_chars as $char_count) {
+        $target_wrapped_lines += max(1, ceil($char_count / $target_col_chars_per_line));
+    }
+    
+    $status_wrapped_lines = 0;
+    foreach ($status_chars as $char_count) {
+        $status_wrapped_lines += max(1, ceil($char_count / $status_col_chars_per_line));
+    }
+    
     $text_metrics = [
         'target_bullet_count' => count($target_lines),
         'target_max_chars' => !empty($target_chars) ? max($target_chars) : 0,
         'target_total_chars' => array_sum($target_chars),
+        'target_wrapped_lines' => $target_wrapped_lines, // New metric for more accurate height calculation
         'status_bullet_count' => count($status_lines),
         'status_max_chars' => !empty($status_chars) ? max($status_chars) : 0,
         'status_total_chars' => array_sum($status_chars),
+        'status_wrapped_lines' => $status_wrapped_lines, // New metric for more accurate height calculation
         'name_length' => strlen($program['program_name'])
     ];
     

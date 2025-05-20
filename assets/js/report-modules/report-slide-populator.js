@@ -193,18 +193,29 @@ const ReportPopulator = (function() {
                             : submission.content_json;
                         
                         console.log('Processing content_json for program:', submission.program_name, content);
-                        
-                        // Get the first target or combine multiple targets
+                          // Get the first target or combine multiple targets
                         if (content.targets && content.targets.length > 0) {
-                            // For the table, take just the first target
-                            target = content.targets[0].target_text || content.targets[0].text || 'No target specified';
-                            console.log('Found target:', target);
+                            // Process multiple targets and combine them with newlines
+                            const targetTexts = [];
+                            const statusTexts = [];
                             
-                            // Use status description if available
-                            if (content.targets[0].status_description) {
-                                status = content.targets[0].status_description;
-                                console.log('Found status:', status);
-                            }
+                            content.targets.forEach(t => {
+                                // Get target text with fallbacks
+                                const targetText = t.target_text || t.text || 'No target specified';
+                                targetTexts.push(targetText);
+                                
+                                // Get status with fallbacks
+                                const statusDesc = t.status_description || 'Status not available';
+                                statusTexts.push(statusDesc);
+                            });
+                            
+                            // Join with newlines to create bullet points
+                            target = targetTexts.join('\n');
+                            console.log('Combined targets:', targetTexts.length, target);
+                            
+                            // Join status descriptions with newlines
+                            status = statusTexts.join('\n');
+                            console.log('Combined status descriptions:', statusTexts.length, status);
                         } else if (content.target) {
                             // Old format with direct target property
                             target = content.target;
