@@ -145,6 +145,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_program'])) {
                 (user_id, message, type, reference_id, reference_type, created_at, read_status) 
                 VALUES (?, ?, 'program_assignment', ?, 'program', NOW(), 0)");
                 
+            $notification_stmt->bind_param("isi", 
+                $agency_id, 
+                $notification_message,
+                $program_id
+            );
             
             $notification_stmt->execute();
             
