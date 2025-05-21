@@ -1,29 +1,21 @@
 <?php
 /**
- * Utility script to add updated_at column to reporting_periods table
+ * @deprecated This file has been deprecated on <?= date('Y-m-d') ?>.
+ * A copy of this file exists in the /deprecated folder.
+ * This stub exists to catch any unexpected usage of this file.
+ * If you see this message, please inform the development team.
  */
+ 
+// Log any access to this deprecated file
+$logFile = __DIR__ . '/deprecated_access_log.txt';
+$timestamp = date('Y-m-d H:i:s');
+$file = __FILE__;
+$ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+$uri = $_SERVER['REQUEST_URI'] ?? 'unknown';
+$method = $_SERVER['REQUEST_METHOD'] ?? 'unknown';
+        
+$logMessage = "$timestamp | $file | $ip | $method | $uri\n";
+file_put_contents($logFile, $logMessage, FILE_APPEND);
 
-// Include necessary files
-require_once '../config/config.php';
-require_once '../includes/db_connect.php';
-
-// Check if the column exists
-$check_query = "SHOW COLUMNS FROM `reporting_periods` LIKE 'updated_at'";
-$result = $conn->query($check_query);
-
-if ($result->num_rows === 0) {
-    // Column doesn't exist, add it
-    $alter_query = "ALTER TABLE `reporting_periods` 
-                    ADD COLUMN `updated_at` TIMESTAMP NOT NULL 
-                    DEFAULT CURRENT_TIMESTAMP 
-                    ON UPDATE CURRENT_TIMESTAMP";
-    
-    if ($conn->query($alter_query)) {
-        echo "Column 'updated_at' added successfully to reporting_periods table.";
-    } else {
-        echo "Error adding column: " . $conn->error;
-    }
-} else {
-    echo "Column 'updated_at' already exists.";
-}
-?>
+// Die with error message
+die('This file has been deprecated. Please contact the development team if you\'re seeing this message.');

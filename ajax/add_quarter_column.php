@@ -1,44 +1,21 @@
 <?php
 /**
- * Utility script to add is_standard_dates column to reporting_periods table
+ * @deprecated This file has been deprecated on <?= date('Y-m-d') ?>.
+ * A copy of this file exists in the /deprecated folder.
+ * This stub exists to catch any unexpected usage of this file.
+ * If you see this message, please inform the development team.
  */
-
-// Include necessary files
-require_once '../config/config.php';
-require_once '../includes/db_connect.php';
-
-// Check if the column exists
-$check_query = "SHOW COLUMNS FROM `reporting_periods` LIKE 'is_standard_dates'";
-$result = $conn->query($check_query);
-
-if ($result->num_rows === 0) {
-    // Column doesn't exist, add it
-    $alter_query = "ALTER TABLE `reporting_periods` ADD COLUMN `is_standard_dates` BOOLEAN DEFAULT 1";
-    
-    if ($conn->query($alter_query)) {
-        echo "Column 'is_standard_dates' added successfully to reporting_periods table.";
+ 
+// Log any access to this deprecated file
+$logFile = __DIR__ . '/deprecated_access_log.txt';
+$timestamp = date('Y-m-d H:i:s');
+$file = __FILE__;
+$ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+$uri = $_SERVER['REQUEST_URI'] ?? 'unknown';
+$method = $_SERVER['REQUEST_METHOD'] ?? 'unknown';
         
-        // Update existing periods to mark which ones follow standard quarter dates
-        $update_query = "UPDATE reporting_periods SET is_standard_dates = 
-        (
-            CASE 
-                WHEN (quarter = 1 AND start_date = CONCAT(year, '-01-01') AND end_date = CONCAT(year, '-03-31')) THEN 1
-                WHEN (quarter = 2 AND start_date = CONCAT(year, '-04-01') AND end_date = CONCAT(year, '-06-30')) THEN 1
-                WHEN (quarter = 3 AND start_date = CONCAT(year, '-07-01') AND end_date = CONCAT(year, '-09-30')) THEN 1
-                WHEN (quarter = 4 AND start_date = CONCAT(year, '-10-01') AND end_date = CONCAT(year, '-12-31')) THEN 1
-                ELSE 0
-            END
-        )";
-        
-        if ($conn->query($update_query)) {
-            echo "<br>Existing periods updated successfully.";
-        } else {
-            echo "<br>Error updating existing periods: " . $conn->error;
-        }
-    } else {
-        echo "Error adding column: " . $conn->error;
-    }
-} else {
-    echo "Column 'is_standard_dates' already exists.";
-}
-?>
+$logMessage = "$timestamp | $file | $ip | $method | $uri\n";
+file_put_contents($logFile, $logMessage, FILE_APPEND);
+
+// Die with error message
+die('This file has been deprecated. Please contact the development team if you\'re seeing this message.');
