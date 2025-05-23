@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 23, 2025 at 03:03 AM
+-- Generation Time: May 23, 2025 at 04:29 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -341,7 +341,7 @@ INSERT INTO `users` (`user_id`, `username`, `password`, `agency_name`, `role`, `
 (25, 'sfc', '$2y$10$wkBLipOw1EvgvpfrFTXaRO9/1OuFyCT3enAz3fr4nyOhKFBiG5M7C', 'Sarawak Forestry Corporation', 'agency', 1, 0, '2025-05-05 06:40:10', '2025-05-05 06:40:10', 1),
 (26, 'stidc', '$2y$10$ttWqO8C7DUAxBURRnvhKmu/swpsuLv.iTqsFrPnqRAECtqxsRbsA2', 'Sarawak Timber Industry Development Corporation', 'agency', 1, 0, '2025-05-05 06:40:36', '2025-05-05 06:40:36', 1),
 (27, 'fds', '$2y$10$304gq1GLTQvKOhmBqTp3b.oPyiwLCqlCP5lZkTfTJplVOH3QWXPt6', 'Forestry Department', 'agency', 1, 0, '2025-05-05 06:41:16', '2025-05-22 07:28:23', 1),
-(29, 'SFC1', '$2y$10$8yp6FsjoVK4wagEnt5b1ZuF4Wrybfo/uZ5hUhSR9kc6FYf4PD0KTS', 'SFC', 'agency', 1, 1, '2025-05-23 01:02:10', '2025-05-23 01:02:53', 1);
+(32, 'SFC1', '$2y$10$8e54SufqWyiF0F5qLpZuZO31dfyip2pd7qhWG0VnpaWgxBhI.0xyG', 'SFC1test', 'agency', 1, 1, '2025-05-23 01:15:23', '2025-05-23 01:15:23', 1);
 
 --
 -- Indexes for dumped tables
@@ -517,7 +517,7 @@ ALTER TABLE `sector_outcomes_data`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
 
 --
 -- Constraints for dumped tables
