@@ -1,5 +1,5 @@
 /**
- * Status Indicators
+ * Ratings
  * Forest Theme
  */
 
@@ -93,8 +93,8 @@
   border-color: rgba(108, 117, 125, 0.2);
 }
 
-/* Status indicators */
-.status-indicator {
+/* Ratings */
+.rating-indicator {
   width: 12px;
   height: 12px;
   border-radius: 50%;
@@ -103,7 +103,7 @@
   position: relative;
 }
 
-.status-indicator::after {
+.rating-indicator::after {
   content: '';
   position: absolute;
   top: -3px;
@@ -115,48 +115,48 @@
   z-index: -1;
 }
 
-.status-indicator-success {
+.rating-indicator-success {
   background-color: var(--success-color);
 }
 
-.status-indicator-success::after {
+.rating-indicator-success::after {
   background-color: var(--success-color);
 }
 
-.status-indicator-warning {
+.rating-indicator-warning {
   background-color: var(--warning-color);
 }
 
-.status-indicator-warning::after {
+.rating-indicator-warning::after {
   background-color: var(--warning-color);
 }
 
-.status-indicator-danger {
+.rating-indicator-danger {
   background-color: var(--danger-color);
 }
 
-.status-indicator-danger::after {
+.rating-indicator-danger::after {
   background-color: var(--danger-color);
 }
 
-.status-indicator-info {
+.rating-indicator-info {
   background-color: var(--info-color);
 }
 
-.status-indicator-info::after {
+.rating-indicator-info::after {
   background-color: var(--info-color);
 }
 
-.status-indicator-forest {
+.rating-indicator-forest {
   background-color: var(--forest-deep);
 }
 
-.status-indicator-forest::after {
+.rating-indicator-forest::after {
   background-color: var(--forest-deep);
 }
 
-/* Animated status indicator */
-.status-indicator-pulse::after {
+/* Animated rating indicator */
+.rating-indicator-pulse::after {
   animation: pulse 2s infinite;
 }
 

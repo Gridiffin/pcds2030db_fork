@@ -99,16 +99,16 @@
   align-items: center;
 }
 
-/* Status Indicators */
-.status-indicator {
+/* Ratings */
+.rating-indicator {
   font-weight: var(--font-weight-semibold);
 }
 
-.status-indicator.active {
+.rating-indicator.active {
   color: var(--forest-deep);
 }
 
-.status-indicator.inactive {
+.rating-indicator.inactive {
   color: var(--danger-color);
 }
 

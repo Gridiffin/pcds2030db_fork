@@ -191,20 +191,8 @@
   opacity: 0.9;
 }
 
-/* Status indicator colors */
-.status-on-track {
-  background-color: rgba(var(--forest-light-rgb), 0.2);
-  color: var(--forest-deep);
-  border: 1px solid rgba(var(--forest-deep-rgb), 0.2);
-}
-
-.status-on-track-yearly {
-  background-color: rgba(var(--forest-medium-rgb), 0.15);
-  color: var(--forest-deep);
-  border: 1px solid rgba(var(--forest-medium-rgb), 0.3);
-}
-
-.status-target-achieved {
+/* Rating colors */
+.rating-target-achieved {
   background: linear-gradient(
     135deg,
     rgba(var(--forest-deep-rgb), 0.1),
@@ -214,25 +202,25 @@
   border: 1px solid rgba(var(--forest-deep-rgb), 0.2);
 }
 
-.status-completed {
+.rating-completed {
   background-color: rgba(var(--forest-deep-rgb), 0.15);
   color: var(--forest-deep);
   border: 1px solid rgba(var(--forest-deep-rgb), 0.3);
 }
 
-.status-delayed {
+.rating-delayed {
   background-color: rgba(var(--warning-rgb), 0.15);
   color: var(--warning-color);
   border: 1px solid rgba(var(--warning-rgb), 0.3);
 }
 
-.status-severe-delay {
+.rating-severe-delay {
   background-color: rgba(var(--danger-rgb), 0.15);
   color: var(--danger-color);
   border: 1px solid rgba(var(--danger-rgb), 0.3);
 }
 
-.status-not-started {
+.rating-not-started {
   background-color: rgba(var(--forest-pale-rgb), 0.2);
   color: var(--dark-color);
   border: 1px solid rgba(var(--dark-rgb), 0.1);

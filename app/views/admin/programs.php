@@ -116,10 +116,10 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
         <form method="get" class="row g-3 align-items-end" id="filterForm">
             <!-- Rating/Status Filter -->
             <div class="col-md-3">
-                <label for="rating" class="form-label">Status</label>
+                <label for="rating" class="form-label">Rating</label>
                 <div class="filter-control-wrapper">
                     <select class="form-select" id="rating" name="rating">
-                        <option value="">All Statuses</option>
+                        <option value="">All Ratings</option>
                         <option value="target-achieved" <?php echo ($filters['status'] === 'target-achieved') ? 'selected' : ''; ?>>Target Achieved</option>
                         <option value="on-track-yearly" <?php echo ($filters['status'] === 'on-track-yearly') ? 'selected' : ''; ?>>On Track</option>
                         <option value="severe-delay" <?php echo ($filters['status'] === 'severe-delay') ? 'selected' : ''; ?>>Severe Delay</option>
@@ -193,7 +193,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                         <th>Program</th>
                         <th>Sector</th>
                         <th>Agency</th>
-                        <th class="text-center">Status</th>
+                        <th class="text-center">Rating</th>
                         <th class="text-center">Last Updated</th>
                         <th class="text-center">Actions</th>
                     </tr>
