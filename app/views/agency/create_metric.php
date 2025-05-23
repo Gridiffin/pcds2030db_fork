@@ -164,6 +164,123 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['CONTENT_TYPE']) && 
     }
 }
 
+// After the PHP initialization code, handle the AJAX requests
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $response = ['success' => false, 'error' => ''];
+
+    if (isset($_POST['action'])) {
+        switch ($_POST['action']) {
+            case 'save_metric_value':
+                try {
+                    $metric_id = intval($_POST['metric_id'] ?? 0);
+                    $sector_id = $conn->real_escape_string($_POST['sector_id'] ?? '');
+                    $column_title = $conn->real_escape_string($_POST['column_title'] ?? '');
+                    $month = $conn->real_escape_string($_POST['month'] ?? '');
+                    $value = floatval($_POST['table_content'] ?? 0);
+
+                    // Get existing data_json
+                    $select_query = "SELECT data_json FROM sector_outcomes_data 
+                                   WHERE metric_id = ? AND sector_id = ? LIMIT 1";
+                    $stmt = $conn->prepare($select_query);
+                    $stmt->bind_param("ii", $metric_id, $sector_id);
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+                    
+                    if ($row = $result->fetch_assoc()) {
+                        $metrics_data = json_decode($row['data_json'], true) ?: [
+                            'columns' => [],
+                            'units' => [],
+                            'data' => []
+                        ];
+                        
+                        // Ensure column exists
+                        if (!in_array($column_title, $metrics_data['columns'])) {
+                            $metrics_data['columns'][] = $column_title;
+                        }
+                        
+                        // Update value
+                        if (!isset($metrics_data['data'][$month])) {
+                            $metrics_data['data'][$month] = [];
+                        }
+                        $metrics_data['data'][$month][$column_title] = $value;
+                        
+                        // Save updated data
+                        $update_query = "UPDATE sector_outcomes_data 
+                                       SET data_json = ? 
+                                       WHERE metric_id = ? AND sector_id = ?";
+                        $stmt = $conn->prepare($update_query);
+                        $json_data = json_encode($metrics_data);
+                        $stmt->bind_param("sii", $json_data, $metric_id, $sector_id);
+                        
+                        if ($stmt->execute()) {
+                            $response['success'] = true;
+                        } else {
+                            throw new Exception("Failed to update data");
+                        }
+                    } else {
+                        throw new Exception("Metric data not found");
+                    }
+                } catch (Exception $e) {
+                    $response['error'] = $e->getMessage();
+                }
+                break;
+                
+            case 'update_unit':
+                try {
+                    $data = json_decode(file_get_contents('php://input'), true);
+                    $metric_id = intval($data['metric_id'] ?? 0);
+                    $column_title = $conn->real_escape_string($data['column_title'] ?? '');
+                    $unit = $conn->real_escape_string($data['unit'] ?? '');
+                    
+                    if ($metric_id && $column_title) {
+                        $select_query = "SELECT data_json FROM sector_outcomes_data 
+                                       WHERE metric_id = ? AND sector_id = ? LIMIT 1";
+                        $stmt = $conn->prepare($select_query);
+                        $stmt->bind_param("ii", $metric_id, $sector_id);
+                        $stmt->execute();
+                        $result = $stmt->get_result();
+                        
+                        if ($row = $result->fetch_assoc()) {
+                            $metrics_data = json_decode($row['data_json'], true) ?: [
+                                'columns' => [],
+                                'units' => [],
+                                'data' => []
+                            ];
+                            
+                            // Update unit
+                            $metrics_data['units'][$column_title] = $unit;
+                            
+                            // Save updated data
+                            $update_query = "UPDATE sector_outcomes_data 
+                                           SET data_json = ? 
+                                           WHERE metric_id = ? AND sector_id = ?";
+                            $stmt = $conn->prepare($update_query);
+                            $json_data = json_encode($metrics_data);
+                            $stmt->bind_param("sii", $json_data, $metric_id, $sector_id);
+                            
+                            if ($stmt->execute()) {
+                                $response['success'] = true;
+                            } else {
+                                throw new Exception("Failed to update unit");
+                            }
+                        } else {
+                            throw new Exception("Metric data not found");
+                        }
+                    } else {
+                        throw new Exception("Invalid parameters");
+                    }
+                } catch (Exception $e) {
+                    $response['error'] = $e->getMessage();
+                }
+                break;
+        }
+    }
+    
+    header('Content-Type: application/json');
+    echo json_encode($response);
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     session_start();
 
@@ -573,593 +690,181 @@ $additionalScripts = [
     .metric-unit-display:empty {
         display: none;
     }
+
+    .metric-cell {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .metric-value {
+        flex: 1;
+        padding: 0.375rem;
+        text-align: right;
+    }
+
+    .save-btn {
+        display: none;
+        padding: 0.25rem;
+        margin-left: 0.5rem;
+        border: none;
+        background: none;
+        color: #28a745;
+    }
+
+    .save-btn:disabled {
+        opacity: 0.5;
+    }
+
+    .month-badge {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        background-color: #e9ecef;
+        font-size: 0.875rem;
+    }
+
+    .total-badge {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        background-color: #f8f9fa;
+        font-weight: bold;
+    }
+
+    .metric-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .metric-title {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .metric-actions {
+        display: flex;
+        gap: 0.25rem;
+    }
+
+    .unit-btn {
+        border: none;
+        background: none;
+        color: #6c757d;
+        padding: 0.25rem;
+    }
+
+    .delete-column-btn {
+        border: none;
+        background: none;
+        color: #dc3545;
+        padding: 0.25rem;
+    }
 </style>
 
 <script>
-    // Define variables needed by the metric-editor.js script
     const metricId = <?= json_encode($metric_id) ?>;
     const sectorId = <?= json_encode($sector_id) ?>;
     let tableName = <?= json_encode($table_name) ?>;
-    let showPhpMessages = false; // Flag to prevent duplicate messages
-    let currentMetricForUnit = ''; // Track which metric we're setting units for
-    
-    // Store all metrics and their units
-    const metricUnits = {};
-    
-    // Document ready handler
+    let currentMetricForUnit = '';
+    const metricUnits = <?= json_encode($metrics_data['units'] ?? []) ?>;
+
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize all event handlers
         setupEventHandlers();
+        makeMetricCellsClickable();
     });
-    
-        // Set up all event handlers
-        function setupEventHandlers() {
-            // Set up handlers for metric value cells
-            document.querySelectorAll('.metric-value').forEach(cell => {
-                cell.addEventListener('input', function() {
-                    const btn = this.parentElement.querySelector('.save-btn');
-                    if (btn) btn.style.display = 'inline-block';
-                });
-                
-                cell.addEventListener('blur', function() {
-                    // Format numeric values on blur
-                    if (!isNaN(parseFloat(this.textContent))) {
-                        this.textContent = parseFloat(this.textContent).toFixed(2);
-                    }
-                });
+
+    function setupEventHandlers() {
+        // Set up metric value handlers
+        document.querySelectorAll('.metric-value').forEach(cell => {
+            cell.addEventListener('input', function() {
+                const btn = this.parentElement.querySelector('.save-btn');
+                if (btn) btn.style.display = 'inline-block';
             });
             
-            // Set up handlers for metric name cells
-            document.querySelectorAll('.metric-name').forEach(cell => {
-                cell.addEventListener('input', function() {
-                    const btn = this.closest('.metric-header').querySelector('.save-btn');
-                    if (btn) btn.style.display = 'inline-block';
-                });
-            });
-            
-            // Set up unit buttons
-            document.querySelectorAll('.unit-btn').forEach(button => {
-                button.addEventListener('click', function() {
-                    // Store the metric name for the modal
-                    currentMetricForUnit = this.dataset.metric;
-                    
-                    // Get current unit if any
-                    const currentUnit = this.dataset.currentUnit || '';
-                    
-                    // Set the input value in the modal
-                    document.getElementById('unitInput').value = currentUnit;
-                    
-                    // Show the modal
-                    const unitsModal = new bootstrap.Modal(document.getElementById('unitsModal'));
-                    unitsModal.show();
-                });
-            });
-            
-            // Save unit button in modal
-            document.getElementById('saveUnitBtn').addEventListener('click', function() {
-                const unitInput = document.getElementById('unitInput');
-                const newUnit = unitInput.value.trim();
-                
-                // Save the unit value
-                if (currentMetricForUnit) {
-                    // Save unit to database via AJAX
-                    fetch('', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            action: 'update_unit',
-                            column_title: currentMetricForUnit,
-                            metric_id: metricId,
-                            unit: newUnit
-                        })
-                    })
-                    .then(response => {
-                        if (!response.ok) {
-                            return response.text().then(text => {
-                                throw new Error(`Server responded with status ${response.status}: ${text}`);
-                            });
-                        }
-                        return response.text().then(text => {
-                            if (!text) return {};
-                            try {
-                                return JSON.parse(text);
-                            } catch (e) {
-                                console.error('Failed to parse JSON:', text);
-                                throw new Error('Invalid JSON response from server');
-                            }
-                        });
-                    })
-                    .then(data => {
-                        // Store in our object
-                        metricUnits[currentMetricForUnit] = newUnit;
-                        
-                        // Update the display
-                        updateUnitDisplay(currentMetricForUnit, newUnit);
-                        
-                        // Update the data attribute on the button
-                        const unitBtn = document.querySelector(`.unit-btn[data-metric="${currentMetricForUnit}"]`);
-                        if (unitBtn) {
-                            unitBtn.dataset.currentUnit = newUnit;
-                        }
-                        
-                        // Show confirmation
-                        showToast(`Unit for "${currentMetricForUnit}" set to "${newUnit}"`, 'success');
-                        
-                        // Close the modal
-                        bootstrap.Modal.getInstance(document.getElementById('unitsModal')).hide();
-                    })
-                    .catch(error => {
-                        console.error('Unit update error:', error);
-                        showToast('Error updating unit: ' + error.message, 'danger');
-                    });
+            cell.addEventListener('blur', function() {
+                if (!isNaN(parseFloat(this.textContent))) {
+                    this.textContent = parseFloat(this.textContent).toFixed(2);
                 }
             });
-            
-            // Add click event handler for metric value save buttons
-            document.querySelectorAll('.metric-cell .save-btn').forEach(button => {
-                button.addEventListener('click', function() {
-                    const metric = this.dataset.metric;
-                    const month = this.dataset.month;
-                    const valueSpan = this.parentElement.querySelector('.metric-value');
-                    if (!metric || !month || !valueSpan) return;
-                    
-                    let value = valueSpan.textContent.trim();
-                    if (value === '') value = '0';
-                    if (isNaN(parseFloat(value))) {
-                        showToast('Invalid numeric value', 'warning');
-                        return;
-                    }
-                    value = parseFloat(value).toFixed(2);
-                    
-                    // Disable button during save
-                    this.disabled = true;
-                    
-                    // Prepare data to send
+        });
+
+        // Set up metric name handlers
+        document.querySelectorAll('.metric-name').forEach(cell => {
+            cell.addEventListener('input', function() {
+                const btn = this.closest('.metric-header').querySelector('.save-btn');
+                if (btn) btn.style.display = 'inline-block';
+            });
+        });
+
+        // Set up unit buttons
+        document.querySelectorAll('.unit-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                currentMetricForUnit = this.dataset.metric;
+                document.getElementById('unitInput').value = this.dataset.currentUnit || '';
+                const unitsModal = new bootstrap.Modal(document.getElementById('unitsModal'));
+                unitsModal.show();
+            });
+        });
+
+        // Set up save value buttons
+        document.querySelectorAll('.metric-cell .save-btn').forEach(button => {
+            button.addEventListener('click', async function() {
+                const valueSpan = this.parentElement.querySelector('.metric-value');
+                const metric = valueSpan.dataset.metric;
+                const month = valueSpan.dataset.month;
+                let value = valueSpan.textContent.trim();
+                
+                if (value === '') value = '0';
+                if (isNaN(parseFloat(value))) {
+                    showToast('Invalid numeric value', 'warning');
+                    return;
+                }
+                value = parseFloat(value).toFixed(2);
+                
+                this.disabled = true;
+                
+                try {
                     const formData = new FormData();
+                    formData.append('action', 'save_metric_value');
                     formData.append('metric_id', metricId);
                     formData.append('sector_id', sectorId);
                     formData.append('column_title', metric);
                     formData.append('month', month);
                     formData.append('table_content', value);
-                    formData.append('action', 'save_metric_value');
                     
-                    fetch('', {
+                    const response = await fetch('', {
                         method: 'POST',
                         body: formData
-                    })
-                    .then(response => {
-                        if (!response.ok) throw new Error('Failed to save metric value');
-                        return response.json();
-                    })
-                    .then(data => {
-                        if (data.success) {
-                            showToast('Metric value saved', 'success');
-                            valueSpan.textContent = value;
-                        } else {
-                            showToast(data.error || 'Failed to save metric value', 'danger');
-                        }
-                    })
-                    .catch(error => {
-                        showToast('Error saving metric value: ' + error.message, 'danger');
-                    })
-                    .finally(() => {
-                        this.disabled = false;
-                        this.style.display = 'none';
                     });
-                });
-            });
-            
-            // Function to handle adding a new column
-            document.getElementById('addColumnBtn').addEventListener('click', handleAddColumn);
-            document.getElementById('saveTableNameBtn').addEventListener('click', handleSaveTableName);
-            document.getElementById('doneBtn').addEventListener('click', () => {
-                window.location.href = 'submit_metrics.php';
-            });
-            
-            // Set up handler for the "Set All Units" button
-            document.getElementById('setAllUnitsBtn').addEventListener('click', handleSetAllUnits);
-            
-            // Set up delete column buttons - this will override any conflicts
-            document.querySelectorAll('.delete-column-btn').forEach(button => {
-                // Remove any existing listeners first to avoid duplicates
-                button.replaceWith(button.cloneNode(true));
-            });
-            
-            // Re-add event listeners to the fresh elements
-            document.querySelectorAll('.delete-column-btn').forEach(button => {
-                button.addEventListener('click', handleDeleteColumn);
-            });
-        }
-    
-    // Function to update the unit display for a metric
-    function updateUnitDisplay(metricName, unit) {
-        const unitDisplay = document.querySelector(`.metric-unit-display[data-metric="${metricName}"]`);
-        if (unitDisplay) {
-            unitDisplay.textContent = unit ? `(${unit})` : '';
-        }
-    }
-    
-    // Function to handle adding a new column
-    function handleAddColumn() {
-        const newMetricName = prompt('Enter new metric name:');
-        if (!newMetricName || newMetricName.trim() === '') return;
-
-        // Create a new column in the UI immediately
-        const tableHead = document.querySelector('.metrics-table thead tr');
-        const tableRows = document.querySelectorAll('.metrics-table tbody tr');
-        
-        // Add the column header
-        const newTh = document.createElement('th');
-        newTh.innerHTML = `
-            <div class="metric-header">
-                <div class="metric-title">
-                    <span class="metric-name" contenteditable="true" data-metric="${newMetricName}">
-                        ${newMetricName}
-                    </span>
-                    <span class="metric-unit-display" data-metric="${newMetricName}"></span>
-                </div>
-                <div class="metric-actions">
-                    <button class="unit-btn" data-metric="${newMetricName}" data-current-unit="">
-                        <i class="fas fa-ruler"></i>
-                    </button>
-                    <button class="save-btn" data-metric="${newMetricName}">
-                        <i class="fas fa-check"></i>
-                    </button>
-                    <button class="delete-column-btn" data-metric="${newMetricName}">
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
-                </div>
-            </div>`;
-        
-        // If there was a "No metrics" placeholder column, remove it
-        const noMetricsColumn = tableHead.querySelector('th.text-muted');
-        if (noMetricsColumn) {
-            noMetricsColumn.remove();
-        }
-        
-        tableHead.appendChild(newTh);
-        
-        // Add the column cells for each row
-        tableRows.forEach(row => {
-            const monthName = row.querySelector('.month-badge').textContent;
-            const newTd = document.createElement('td');
-            
-            // If there was a placeholder empty column, remove it
-            if (row.cells.length === 2 && !row.cells[1].querySelector('.metric-cell')) {
-                row.cells[1].remove();
-            }
-            
-            newTd.innerHTML = `
-                <div class="metric-cell">
-                    <span class="metric-value" 
-                        contenteditable="true" 
-                        data-metric="${newMetricName}" 
-                        data-month="${monthName}">
-                        0.00
-                    </span>
-                    <button class="save-btn" data-metric="${newMetricName}" data-month="${monthName}">
-                        <i class="fas fa-check"></i>
-                    </button>
-                </div>`;
-            
-            row.appendChild(newTd);
-        });
-
-        // Reinitialize event listeners
-        setupEventHandlers();
-
-        // Get all existing columns from the UI
-        const allMetricNames = [];
-        document.querySelectorAll('.metric-name').forEach(el => {
-            const metric = el.dataset.metric;
-            if (metric && !allMetricNames.includes(metric)) {
-                allMetricNames.push(metric);
-            }
-        });
-
-        // Check if we need to create or update the data_json structure
-        fetch(`../../api/check_metric.php?metric_id=${metricId}&sector_id=${sectorId}`, {
-            method: 'GET'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.exists) {
-                // Get the existing data first, then update it
-                fetch(`../../api/get_metric_data.php?metric_id=${metricId}&sector_id=${sectorId}`, {
-                    method: 'GET'
-                })
-                .then(response => response.json())
-                .then(metricData => {
-                    if (metricData.success) {
-                        const existingData = metricData.data;
-                        
-                        // Add the new column to existingData.columns if it's not already there
-                        if (!existingData.columns.includes(newMetricName)) {
-                            existingData.columns.push(newMetricName);
-                        }
-                        
-                        // Ensure units object exists
-                        if (!existingData.units) {
-                            existingData.units = {};
-                        }
-                        
-                        // Add empty unit for new column
-                        existingData.units[newMetricName] = "";
-                        
-                        // Add the column to all months
-                        Object.keys(existingData.data).forEach(month => {
-                            if (!existingData.data[month][newMetricName]) {
-                                existingData.data[month][newMetricName] = 0;
-                            }
-                        });
-                        
-                        // Save the updated data
-                        return fetch('../../api/save_metric_json.php', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                metric_id: metricId,
-                                sector_id: sectorId,
-                                table_name: tableName || `Table_${metricId}`,
-                                data_json: existingData
-                            })
-                        });
-                    } else {
-                        throw new Error(metricData.error || 'Failed to get existing metric data');
-                    }
-                })
-                .then(response => response.json())
-                .then(result => {
-                    if (result.success) {
-                        showToast('Column added successfully', 'success');
-                    } else {
-                        throw new Error(result.error || 'Failed to save column data');
-                    }
-                });
-            } else {
-                // Create initial JSON structure with proper format
-                const initialData = {
-                    columns: allMetricNames, // Include ALL column names, not just the new one
-                    data: {},
-                    units: {}
-                };
-                
-                // Initialize units for all columns
-                allMetricNames.forEach(metric => {
-                    initialData.units[metric] = "";
-                });
-                
-                // Add empty data for all months and columns
-                ['January', 'February', 'March', 'April', 'May', 'June', 
-                'July', 'August', 'September', 'October', 'November', 'December']
-                .forEach(month => {
-                    initialData.data[month] = {};
-                    allMetricNames.forEach(metric => {
-                        initialData.data[month][metric] = 0;
-                    });
-                });
-                
-                return fetch('../../api/save_metric_json.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        metric_id: metricId,
-                        sector_id: sectorId,
-                        table_name: tableName || `Table_${metricId}`,
-                        data_json: initialData
-                    })
-                })
-                .then(response => response.json())
-                .then(result => {
-                    if (result.success) {
-                        showToast('New column added successfully', 'success');
-                    } else {
-                        throw new Error(result.error || 'Failed to save column data');
-                    }
-                });
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showToast('Error saving new column: ' + error.message, 'danger');
-        });
-    }
-    
-    // Function to handle saving the table name
-    function handleSaveTableName() {
-        const tableNameInput = document.getElementById('tableNameInput');
-        const newTableName = tableNameInput.value.trim();
-        
-        if (!newTableName) {
-            showToast('Table name cannot be empty', 'warning');
-            return;
-        }
-
-        // Prepare form data
-        const formData = new FormData();
-        formData.append('table_name', newTableName);
-
-        fetch('', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => {
-            if (!response.ok) throw new Error('Failed to update table name');
-            showToast('Table name updated successfully', 'success');
-            // Update the global tableName variable
-            tableName = newTableName;
-        })
-        .catch(error => {
-            showToast('Error updating table name: ' + error.message, 'danger');
-        });
-    }
-    
-    // Function to handle column deletion
-    function handleDeleteColumn() {
-        const metric = this.dataset.metric;
-        
-        if (!metric) return;
-        
-        // Confirm deletion
-        if (!confirm(`Are you sure you want to delete the "${metric}" column? This action cannot be undone.`)) {
-            return;
-        }
-        
-        console.log('Deleting outcome column:', metric); // Debug info
-        
-        // Delete directly from the current page instead of from update_metric.php
-        fetch('', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json' // Explicitly accept JSON response
-            },
-            body: JSON.stringify({
-                action: 'delete_column',
-                column_title: metric,
-                metric_id: metricId,
-                table_name: tableName
-            })
-        })
-        .then(response => {
-            // Check if the response is ok (status 200-299)
-            if (!response.ok) {
-                // If not ok, try to get text response for debugging
-                return response.text().then(text => {
-                    throw new Error(`Server responded with status ${response.status}: ${text}`);
-                });
-            }
-            // Try to parse the response as JSON
-            return response.text().then(text => {
-                if (!text) return {};
-                try {
-                    return JSON.parse(text);
-                } catch (e) {
-                    console.error('Failed to parse JSON:', text);
-                    throw new Error('Invalid JSON response from server');
-                }
-            });
-        })
-        .then(data => {
-            console.log('Delete response:', data); // Debug info
-            
-            if (data.success) {
-                // Remove the column from the UI
-                const columnIndex = findColumnIndex(metric);
-                if (columnIndex !== -1) {
-                    removeColumnFromTable(columnIndex);
-                    showToast(data.message || `Column "${metric}" deleted successfully`, 'success');
                     
-                    // Also remove from units object
-                    delete metricUnits[metric];
-                } else {
-                    showToast(data.message || 'Column deleted, but UI update failed.', 'warning');
-                }
-            } else {
-                // Show specific error from server if available
-                showToast(data.error || 'Failed to delete column.', 'danger');
-            }
-        })
-        .catch(error => {
-            console.error('Delete error:', error); // Log the full error
-            // Display a user-friendly message, potentially including details from the error
-            showToast('Error deleting column: ' + error.message, 'danger');
-        });
-    }
-    
-    // Find column index by metric name
-    function findColumnIndex(metricName) {
-        const headers = document.querySelectorAll('.metrics-table thead th');
-        
-        for (let i = 0; i < headers.length; i++) {
-            const nameEl = headers[i].querySelector('.metric-name[data-metric="' + metricName + '"]');
-            if (nameEl) {
-                return i;
-            }
-        }
-        
-        return -1;
-    }
-    
-    // Remove column from table by index
-    function removeColumnFromTable(columnIndex) {
-        // Account for month column
-        const actualIndex = columnIndex;
-        
-        // Remove header
-        const headerRow = document.querySelector('.metrics-table thead tr');
-        if (headerRow && headerRow.children[actualIndex]) {
-            headerRow.children[actualIndex].remove();
-        }
-        
-        // Remove cells from all rows
-        const rows = document.querySelectorAll('.metrics-table tbody tr');
-        rows.forEach(row => {
-            if (row.children[actualIndex]) {
-                row.children[actualIndex].remove();
-            }
-        });
-        
-        // Add "No metrics" placeholder if we removed the last column
-        const remainingColumns = headerRow.querySelectorAll('th');
-        if (remainingColumns.length === 1) { // Only month column remains
-            const placeholderTh = document.createElement('th');
-            placeholderTh.className = 'text-center text-muted';
-            placeholderTh.innerHTML = '<em>No metrics defined. Click "Add Column" to start.</em>';
-            headerRow.appendChild(placeholderTh);
-            
-            // Add empty cells to data rows
-            rows.forEach(row => {
-                const placeholderTd = document.createElement('td');
-                row.appendChild(placeholderTd);
-            });
-        }
-    }
-    
-    // Function to handle setting units for all columns
-    function handleSetAllUnits() {
-        // Prompt for unit value
-        const newUnit = prompt('Enter unit of measurement for all columns:');
-        
-        // User canceled
-        if (newUnit === null) return;
-        
-        try {
-            // Get all column names
-            const metricNames = [];
-            document.querySelectorAll('.metric-name').forEach(el => {
-                const metric = el.dataset.metric;
-                if (metric && !metricNames.includes(metric)) {
-                    metricNames.push(metric);
+                    const data = await response.json();
+                    if (data.success) {
+                        showToast('Value saved successfully', 'success');
+                        valueSpan.textContent = value;
+                        updateTotal(metric);
+                    } else {
+                        throw new Error(data.error || 'Failed to save value');
+                    }
+                } catch (error) {
+                    showToast('Error: ' + error.message, 'danger');
+                } finally {
+                    this.disabled = false;
+                    this.style.display = 'none';
                 }
             });
+        });
+
+        // Save unit button
+        document.getElementById('saveUnitBtn').addEventListener('click', async function() {
+            const unitInput = document.getElementById('unitInput');
+            const newUnit = unitInput.value.trim();
             
-            if (metricNames.length === 0) {
-                showToast('No metrics found to update', 'warning');
-                return;
-            }
-            
-            // Update all unit displays and store in metricUnits object
-            // Also send AJAX requests to save units to backend
-            const saveUnitPromises = metricNames.map(metric => {
-                updateUnitDisplay(metric, newUnit);
-                metricUnits[metric] = newUnit;
-                
-                // Also update data attributes on buttons
-                const unitBtn = document.querySelector(`.unit-btn[data-metric="${metric}"]`);
-                if (unitBtn) {
-                    unitBtn.dataset.currentUnit = newUnit;
-                }
-                
-                // Send AJAX request to save unit
-                return fetch('', {
+            try {
+                const response = await fetch('', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1167,81 +872,139 @@ $additionalScripts = [
                     },
                     body: JSON.stringify({
                         action: 'update_unit',
-                        column_title: metric,
+                        column_title: currentMetricForUnit,
                         metric_id: metricId,
                         unit: newUnit
                     })
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        return response.text().then(text => {
-                            throw new Error(`Server responded with status ${response.status}: ${text}`);
-                        });
-                    }
-                    return response.text().then(text => {
-                        if (!text) return {};
-                        try {
-                            return JSON.parse(text);
-                        } catch (e) {
-                            console.error('Failed to parse JSON:', text);
-                            throw new Error('Invalid JSON response from server');
-                        }
-                    });
                 });
-            });
+                
+                const data = await response.json();
+                if (data.success) {
+                    updateUnitDisplay(currentMetricForUnit, newUnit);
+                    metricUnits[currentMetricForUnit] = newUnit;
+                    showToast('Unit updated successfully', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('unitsModal')).hide();
+                } else {
+                    throw new Error(data.error || 'Failed to update unit');
+                }
+            } catch (error) {
+                showToast('Error: ' + error.message, 'danger');
+            }
+        });
+
+        // Add Column button
+        document.getElementById('addColumnBtn').addEventListener('click', function() {
+            const headers = document.querySelector('.metrics-table thead tr');
+            const newColumnName = prompt('Enter name for the new column:');
             
-            Promise.all(saveUnitPromises)
-                .then(results => {
-                    showToast(`Units updated and saved for all ${metricNames.length} columns`, 'success');
-                })
-                .catch(error => {
-                    console.error('Error saving units:', error);
-                    showToast('Error saving units: ' + error.message, 'danger');
-                });
-        } catch (error) {
-            showToast('Error updating units: ' + error.message, 'danger');
+            if (!newColumnName?.trim()) return;
+            
+            // Add header
+            const th = document.createElement('th');
+            th.innerHTML = `
+                <div class="metric-header">
+                    <div class="metric-title">
+                        <span class="metric-name" contenteditable="true" data-metric="${newColumnName}">
+                            ${newColumnName}
+                        </span>
+                        <span class="metric-unit-display"></span>
+                    </div>
+                    <div class="metric-actions">
+                        <button class="unit-btn" data-metric="${newColumnName}" data-current-unit="">
+                            <i class="fas fa-ruler"></i>
+                        </button>
+                        <button class="save-btn" data-metric="${newColumnName}">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        <button class="delete-column-btn" data-metric="${newColumnName}">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            headers.appendChild(th);
+
+            // Add cells for all months
+            document.querySelectorAll('.metrics-table tbody tr:not(.table-light)').forEach(row => {
+                const td = document.createElement('td');
+                const month = row.querySelector('.month-badge').textContent;
+                td.innerHTML = `
+                    <div class="metric-cell">
+                        <span class="metric-value" contenteditable="true" 
+                              data-metric="${newColumnName}" 
+                              data-month="${month}">0.00</span>
+                        <button class="save-btn" data-metric="${newColumnName}" data-month="${month}">
+                            <i class="fas fa-check"></i>
+                        </button>
+                    </div>
+                `;
+                row.appendChild(td);
+            });
+
+            // Add total cell
+            const totalRow = document.querySelector('.metrics-table tbody tr.table-light');
+            if (totalRow) {
+                const td = document.createElement('td');
+                td.className = 'fw-bold text-end';
+                td.textContent = '0.00';
+                totalRow.appendChild(td);
+            }
+
+            setupEventHandlers();
+            makeMetricCellsClickable();
+        });
+
+        // Done button
+        document.getElementById('doneBtn').addEventListener('click', () => {
+            window.location.href = 'submit_metrics.php';
+        });
+    }
+
+    function makeMetricCellsClickable() {
+        document.querySelectorAll('.metric-value').forEach(cell => {
+            cell.addEventListener('click', function() {
+                this.focus();
+            });
+        });
+    }
+
+    function updateUnitDisplay(metric, unit) {
+        const unitDisplay = document.querySelector(`.metric-unit-display[data-metric="${metric}"]`);
+        if (unitDisplay) {
+            unitDisplay.textContent = unit ? `(${unit})` : '';
+        }
+        const unitBtn = document.querySelector(`.unit-btn[data-metric="${metric}"]`);
+        if (unitBtn) {
+            unitBtn.dataset.currentUnit = unit;
         }
     }
-    
-    // Function to show toast notifications
-    function showToast(message, type = 'info') {
-        // Create toast container if it doesn't exist
-        let toastContainer = document.querySelector('.toast-container');
-        if (!toastContainer) {
-            toastContainer = document.createElement('div');
-            toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
-            document.body.appendChild(toastContainer);
-        }
-        
-        // Create toast element
-        const toastEl = document.createElement('div');
-        toastEl.className = `toast align-items-center text-white bg-${type} border-0`;
-        toastEl.setAttribute('role', 'alert');
-        toastEl.setAttribute('aria-live', 'assertive');
-        toastEl.setAttribute('aria-atomic', 'true');
-        
-        // Set toast content
-        toastEl.innerHTML = `
-            <div class="d-flex">
-                <div class="toast-body">
-                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
-                    ${message}
-                </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-        `;
-        
-        // Add toast to container
-        toastContainer.appendChild(toastEl);
-        
-        // Initialize and show toast using Bootstrap
-        const bsToast = new bootstrap.Toast(toastEl, { autohide: true, delay: 3000 });
-        bsToast.show();
-        
-        // Remove toast after it's hidden
-        toastEl.addEventListener('hidden.bs.toast', () => {
-            toastEl.remove();
+
+    function updateTotal(metric) {
+        const cells = document.querySelectorAll(`.metric-value[data-metric="${metric}"]`);
+        let total = 0;
+        cells.forEach(cell => {
+            total += parseFloat(cell.textContent) || 0;
         });
+        
+        const totalRow = document.querySelector('.metrics-table tbody tr.table-light');
+        if (totalRow) {
+            const totalCells = totalRow.querySelectorAll('td');
+            const metricIndex = Array.from(document.querySelectorAll('.metric-name')).findIndex(el => el.dataset.metric === metric);
+            if (metricIndex !== -1 && totalCells[metricIndex + 1]) {
+                totalCells[metricIndex + 1].textContent = total.toFixed(2);
+            }
+        }
+    }
+
+    function showToast(message, type = 'info') {
+        const alertContainer = document.getElementById(`${type}Container`);
+        if (alertContainer) {
+            alertContainer.textContent = message;
+            alertContainer.style.display = 'block';
+            setTimeout(() => {
+                alertContainer.style.display = 'none';
+            }, 5000);
+        }
     }
 </script>
 

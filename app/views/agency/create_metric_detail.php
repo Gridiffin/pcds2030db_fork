@@ -336,6 +336,12 @@ if ($result) {
             }
             
             const deleteBtn = document.querySelector(`button[onclick="deleteMetricDetail(${id})"]`);
+            if (!deleteBtn) {
+                console.error('Delete button not found');
+                showAlert('Error finding delete button', 'error');
+                return;
+            }
+
             const originalText = deleteBtn.textContent;
             deleteBtn.textContent = 'Deleting...';
             deleteBtn.disabled = true;
@@ -343,11 +349,20 @@ if ($result) {
             fetch(`delete_metric_detail.php?detail_id=${id}`, {
                 method: 'GET',
                 headers: {
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'Cache-Control': 'no-cache'
                 }
             })
-            .then(response => {
+            .then(async response => {
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error('Invalid response:', text);
+                    throw new TypeError("Expected JSON response but received: " + contentType);
+                }
                 if (!response.ok) {
+                    const text = await response.text();
+                    console.error('Server response:', text);
                     throw new Error('Network response was not ok');
                 }
                 return response.json();
@@ -355,18 +370,23 @@ if ($result) {
             .then(data => {
                 if (data.success) {
                     // Remove the deleted item from the UI
-                    const itemToRemove = document.querySelector(`li button[onclick="deleteMetricDetail(${id})"]`).closest('li');
+                    const itemToRemove = deleteBtn.closest('li');
                     if (itemToRemove) {
                         itemToRemove.remove();
                     }
                     // Show success message
-                    showAlert('Metric detail deleted successfully.', 'success');
-                    // If no items left, show message
+                    showAlert(data.message || 'Metric detail deleted successfully', 'success');
+                    // Update UI if no items left
                     if (document.querySelectorAll('#metricDetailsContainer li').length === 0) {
                         document.getElementById('metricDetailsContainer').innerHTML = '<p>No metric details found.</p>';
                     }
+                    // Also update the metricDetails array
+                    const index = metricDetails.findIndex(d => d.id === id);
+                    if (index !== -1) {
+                        metricDetails.splice(index, 1);
+                    }
                 } else {
-                    showAlert('Error: ' + data.message, 'error');
+                    showAlert(data.message || 'Failed to delete metric detail', 'error');
                 }
             })
             .catch(error => {
@@ -506,11 +526,15 @@ if ($result) {
         // Function to show alert messages
         function showAlert(message, type) {
             const container = document.getElementById(`${type}Container`);
-            container.textContent = message;
-            container.style.display = 'block';
-            setTimeout(() => {
-                container.style.display = 'none';
-            }, 5000);
+            if (container) {
+                container.textContent = message;
+                container.style.display = 'block';
+                setTimeout(() => {
+                    container.style.display = 'none';
+                }, 5000);
+            } else {
+                console.error(`Alert container not found for type: ${type}`);
+            }
         }
 
         // Handle form submission
