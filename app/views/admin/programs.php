@@ -204,11 +204,23 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                             <td colspan="6" class="text-center py-4">
                                 <div class="alert alert-info mb-0">
                                     <i class="fas fa-info-circle me-2"></i>
-                                    <?php if ($period_id && $period_id != ($current_period['period_id'] ?? null)): ?>
-                                        No programs were submitted for this reporting period.
-                                    <?php else: ?>
-                                        No programs found matching your criteria.
-                                    <?php endif; ?>
+                                    <?php 
+                                    // Determine the correct message based on whether a specific period is being viewed
+                                    $active_period_id = $current_period['period_id'] ?? null;
+                                    if ($period_id && $period_id != $active_period_id && !empty(get_reporting_period($period_id))) {
+                                        // Viewing a specific, valid past or future period
+                                        echo "No programs were created within the selected reporting period.";
+                                    } elseif ($period_id && empty(get_reporting_period($period_id))) {
+                                        // Invalid period_id in URL
+                                        echo "The selected reporting period is invalid. Please select a valid period.";
+                                    } elseif (!empty($filters['status']) || !empty($filters['sector_id']) || !empty($filters['agency_id'])) {
+                                        // Filters are applied
+                                        echo "No programs found matching your filter criteria for the current period.";
+                                    } else {
+                                        // No filters, default view for current/active period
+                                        echo "No programs have been created yet for the current period.";
+                                    }
+                                    ?>
                                 </div>
                             </td>
                         </tr>
@@ -217,45 +229,55 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                             <tr>
                                 <td>
                                     <div class="fw-medium">
-                                        <?php echo htmlspecialchars($program['program_name']); ?>
-                                        <?php if (isset($program['is_draft']) && $program['is_draft']): ?>
-                                            <span class="badge bg-secondary ms-1">Draft</span>
+                                        <a href="view_program.php?id=<?php echo $program['program_id']; ?>&period_id=<?php echo $period_id; ?>">
+                                            <?php echo htmlspecialchars($program['program_name']); ?>
+                                        </a>
+                                        <?php if (!empty($program['is_draft']) && $program['is_draft']): ?>
+                                            <span class="badge bg-light text-dark ms-1">Draft</span>
                                         <?php endif; ?>
                                     </div>
                                     <?php if (!empty($program['description'])): ?>
-                                        <div class="text-muted small mt-1">
+                                        <small class="text-muted d-block mt-1">
                                             <?php echo htmlspecialchars(substr($program['description'], 0, 100)) . (strlen($program['description']) > 100 ? '...' : ''); ?>
-                                        </div>
+                                        </small>
                                     <?php endif; ?>
                                 </td>
                                 <td><?php echo htmlspecialchars($program['sector_name']); ?></td>
                                 <td><?php echo htmlspecialchars($program['agency_name']); ?></td>
                                 <td class="text-center">
-                                    <?php if (isset($program['current_submission'])): ?>
-                                        <span class="badge rounded-pill bg-<?php echo get_status_color($program['current_submission']['status']); ?>">
-                                            <?php echo get_status_display_name($program['current_submission']['status']); ?>
-                                        </span>
-                                    <?php else: ?>
-                                        <span class="badge rounded-pill bg-secondary">Not Started</span>
-                                    <?php endif; ?>
+                                    <?php 
+                                    if (!empty($program['status'])) {
+                                        echo get_rating_badge($program['status']);
+                                    } else {
+                                        echo get_rating_badge('not-started'); 
+                                    }
+                                    ?>
                                 </td>
                                 <td class="text-center">
-                                    <?php if (isset($program['current_submission'])): ?>
-                                        <small><?php echo date('M j, Y g:i A', strtotime($program['current_submission']['submission_date'])); ?></small>
+                                    <?php if (!empty($program['updated_at']) && $program['updated_at'] !== '0000-00-00 00:00:00'): ?>
+                                        <small><?php echo date('M j, Y g:i A', strtotime($program['updated_at'])); ?></small>
+                                    <?php elseif (!empty($program['submission_date']) && $program['submission_date'] !== '0000-00-00 00:00:00'): ?>
+                                        <small><?php echo date('M j, Y g:i A', strtotime($program['submission_date'])); ?></small>
                                     <?php else: ?>
                                         <small class="text-muted">--</small>
                                     <?php endif; ?>
                                 </td>
                                 <td class="text-center">
                                     <div class="btn-group btn-group-sm">
-                                        <a href="view_program.php?id=<?php echo $program['program_id']; ?>" 
-                                           class="btn btn-light" title="View Program">
+                                        <a href="view_program.php?id=<?php echo $program['program_id']; ?>&period_id=<?php echo $period_id; ?>" class="btn btn-outline-primary" title="View Program Details">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        <a href="edit_program.php?id=<?php echo $program['program_id']; ?>" 
-                                           class="btn btn-light" title="Edit Program">
+                                        <a href="edit_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-secondary" title="Edit Program">
                                             <i class="fas fa-edit"></i>
                                         </a>
+                                        <?php if (isset($program['status']) && $program['status'] !== null): // Show unsubmit only if there is a submission ?>
+                                            <a href="unsubmit.php?program_id=<?php echo $program['program_id']; ?>&period_id=<?php echo $period_id; ?>" 
+                                               class="btn btn-outline-warning btn-sm" 
+                                               title="Unsubmit Program for this Period"
+                                               onclick="return confirm('Are you sure you want to unsubmit this program for the period? This will revert its status and allow the agency to edit it again.');">
+                                                <i class="fas fa-undo"></i>
+                                            </a>
+                                        <?php endif; ?>
                                     </div>
                                 </td>
                             </tr>
