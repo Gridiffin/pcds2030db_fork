@@ -15,26 +15,29 @@ const ReportAPI = (function() {    /**
      */
     function fetchReportData(periodId, sectorId, selectedKpiIds = [], selectedProgramIds = [], programOrders = {}) {
         return new Promise((resolve, reject) => {
-            let apiUrl = `../../api/report_data.php?period_id=${periodId}&sector_id=${sectorId}`;
+            // Build parameters object
+            const params = {
+                'period_id': periodId,
+                'sector_id': sectorId
+            };
             
             // Add selected program IDs to the API call if provided
             if (selectedProgramIds && selectedProgramIds.length > 0) {
-                apiUrl += `&selected_program_ids=${selectedProgramIds.join(',')}`;
+                params.selected_program_ids = selectedProgramIds.join(',');
                 console.log('Selected Program IDs:', selectedProgramIds);
-                
-                // Add program orders if provided
+                  // Add program orders if provided
                 if (programOrders && Object.keys(programOrders).length > 0) {
-                    const orderParam = JSON.stringify(programOrders);
-                    apiUrl += `&program_orders=${encodeURIComponent(orderParam)}`;
+                    params.program_orders = JSON.stringify(programOrders);
                     console.log('Program Orders:', programOrders);
                 }
             } else {
                 console.log('No Program IDs selected, will include all programs for the sector');
             }
+              // Generate API URL using the helper function
+            const apiEndpointUrl = apiUrl('report_data.php', params);
+            console.log('Fetching from URL:', apiEndpointUrl);
             
-            console.log('Fetching from URL:', apiUrl);
-            
-            fetch(apiUrl)
+            fetch(apiEndpointUrl)
                 .then(response => {
                     console.log('Response status:', response.status);
                     if (!response.ok) {
@@ -118,7 +121,7 @@ const ReportAPI = (function() {    /**
             formData.append('is_public', isPublic);
             
             // Send to server
-            fetch('../../api/save_report.php', {
+            fetch(apiUrl("save_report.php"), {
                 method: 'POST',
                 body: formData
             })
@@ -206,7 +209,7 @@ const ReportAPI = (function() {    /**
             const formData = new FormData();
             formData.append('report_id', reportId);
             
-            fetch('../../api/delete_report.php', {
+            fetch(apiUrl("delete_report.php"), {
                 method: 'POST',
                 body: formData
             })

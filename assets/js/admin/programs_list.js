@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Make the AJAX request
             ajaxRequest = $.ajax({
-                url: 'ajax/get_programs_list.php',
+                url: '../ajax/get_programs_list.php',
                 method: 'GET',
                 data: formData,
                 dataType: 'json',

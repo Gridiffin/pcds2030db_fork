@@ -85,7 +85,7 @@ function deleteUser(userId, username) {
     formData.append('action', 'delete_user');
     formData.append('user_id', userId);
     
-    fetch(`${window.APP_URL}/admin/process_user.php`, {
+    fetch(`${window.APP_URL}/app/handlers/admin/process_user.php`, {
         method: 'POST',
         body: formData
     })

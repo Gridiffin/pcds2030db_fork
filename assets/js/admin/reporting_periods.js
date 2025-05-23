@@ -351,13 +351,12 @@ if (!window.reportingPeriodsInitialized) {
                 const formData = new FormData();
                 formData.append('period_id', periodId);
                 formData.append('status', newStatus);
-                
-                // Get the correct path to the AJAX handler
-                // Fix the path to ensure it's accessible from any directory context
-                const ajaxUrl = window.location.origin + '/pcds2030_dashboard/ajax/toggle_period_status.php';
+                  // Get the correct path to the AJAX handler using APP_URL from global config
+                // Use absolute path instead of relative path to avoid 404 errors
+                const ajaxPath = `${APP_URL}/app/ajax/toggle_period_status.php`;
                 
                 // Send AJAX request
-                fetch(ajaxUrl, {
+                fetch(ajaxPath, {
                     method: 'POST',
                     body: formData
                 })

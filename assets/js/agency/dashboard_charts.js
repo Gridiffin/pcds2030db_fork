@@ -58,9 +58,13 @@ function initProgramStatusChart(newData) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
+            plugins: {                legend: {
+                    display: true,
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true
+                    }
                 },
                 tooltip: {
                     callbacks: {

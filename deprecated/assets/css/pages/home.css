@@ -1,0 +1,35 @@
+/**
+ * Homepage Specific Styles
+ */
+
+/* Feature cards on homepage */
+.feature-card {
+  transition: all 0.3s ease;
+  border-radius: 8px;
+  overflow: hidden;
+  height: 100%;
+}
+
+.feature-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
+}
+
+.feature-card i {
+  transition: transform 0.3s ease;
+}
+
+.feature-card:hover i {
+  transform: scale(1.15);
+}
+
+/* Feature card body */
+.feature-card .card-body {
+  padding: 1.5rem;
+}
+
+/* Feature card title */
+.feature-card .card-title {
+  margin-bottom: 1rem;
+  font-weight: var(--font-weight-semibold);
+}

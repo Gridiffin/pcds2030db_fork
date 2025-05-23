@@ -66,15 +66,14 @@ function UserTableManager(formManagerParam, toastManagerParam) {
         // Mark listeners as attached
         listenersAttached = true;
     }
-    
-    // Toggle user active status
+      // Toggle user active status
     function toggleUserActive(userId, isActive, username) {
         const formData = new FormData();
         formData.append('action', 'toggle_active');
         formData.append('user_id', userId);
         formData.append('is_active', isActive);
         
-        fetch(`${window.APP_URL}/admin/process_user.php`, {
+        fetch(`${window.APP_URL}/app/handlers/admin/process_user.php`, {
             method: 'POST',
             body: formData,
             headers: {

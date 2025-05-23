@@ -5,6 +5,14 @@
  * Destroys the session and redirects to login page.
  */
 
+// Define project root path for consistent file references
+if (!defined('PROJECT_ROOT_PATH')) {
+    define('PROJECT_ROOT_PATH', rtrim(__DIR__, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
+}
+
+// Include config for APP_URL
+require_once PROJECT_ROOT_PATH . 'app/config/config.php';
+
 // Start session if not already started
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
@@ -26,6 +34,6 @@ if (ini_get("session.use_cookies")) {
 session_destroy();
 
 // Redirect to login page
-header("Location: login.php");
+header("Location: " . APP_URL . "/login.php");
 exit;
 ?>

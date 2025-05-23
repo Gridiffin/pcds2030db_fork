@@ -1,0 +1,54 @@
+/**
+ * Agency Dashboard Custom CSS
+ * Contains fixes and overrides specific to the agency dashboard
+ */
+
+/* Updated: Apply dashboard page styling without affecting navbar */
+/* Moved these styles from the body to the content wrapper which is below navbar */
+
+/* Apply dashboard styles specifically to the content area without body flex */
+.content-wrapper.dashboard-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: calc(100vh - 60px); /* Account for navbar height */
+    padding-top: 60px; /* Add padding for fixed navbar */
+}
+
+.dashboard-content main.flex-fill {
+    flex: 1 0 auto;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Fix for the footer position */
+.dashboard-content .footer {
+    margin-top: auto;
+    position: relative;
+    width: 100%;
+}
+
+/* Fix for any container elements in agency dashboard */
+.dashboard-content section {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+/* Ensure dashboard content takes up available space */
+.dashboard-content .container-fluid {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Make sure row and columns expand properly */
+.dashboard-content .row {
+    width: 100%;
+}
+
+/* Remove any unnecessary margins that might push footer down */
+.dashboard-content section:last-child {
+    margin-bottom: 0;
+}

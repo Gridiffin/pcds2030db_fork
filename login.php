@@ -5,12 +5,17 @@
  * Handles user authentication.
  */
 
+// Define project root path for consistent file references
+if (!defined('PROJECT_ROOT_PATH')) {
+    define('PROJECT_ROOT_PATH', rtrim(__DIR__, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
+}
+
 // Include necessary files
-require_once 'config/config.php';
-require_once 'includes/db_connect.php';
-require_once 'includes/functions.php';
-require_once 'includes/session.php';
-require_once 'includes/admin_functions.php'; // Add this line to include admin_functions.php
+require_once PROJECT_ROOT_PATH . 'app/config/config.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/admin_functions.php';
 
 // Initialize variables
 $username = '';
@@ -35,12 +40,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Use the validate_login function which properly checks the is_active status
         $result = validate_login($username, $password);
         
-        if (isset($result['success'])) {
-            // Check user role using session variable (more robust than function)
+        if (isset($result['success'])) {            // Check user role using session variable (more robust than function)
             if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
-                header('Location: ' . APP_URL . '/views/admin/dashboard.php');
+                header('Location: ' . APP_URL . '/app/views/admin/dashboard.php');
             } else {
-                header('Location: ' . APP_URL . '/views/agency/dashboard.php');
+                header('Location: ' . APP_URL . '/app/views/agency/dashboard.php');
             }
             exit;
         } else {
@@ -65,9 +69,8 @@ if (isset($_GET['error']) && $_GET['error'] === 'invalid_session') {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link rel="stylesheet" href="assets/css/main.css">
-    <link rel="stylesheet" href="assets/css/pages/login.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">    <link rel="stylesheet" href="<?php echo APP_URL; ?>/assets/css/main.css">
+    <link rel="stylesheet" href="<?php echo APP_URL; ?>/assets/css/pages/login.css">
 </head>
 <body>
     <div class="container">
@@ -102,9 +105,8 @@ if (isset($_GET['error']) && $_GET['error'] === 'invalid_session') {
                         
                         <!-- Login Section (Right side of card) -->
                         <div class="col-md-6 login-section">
-                            <div class="login-content">
-                                <div class="logo-container">
-                                    <img src="assets/images/logo.png" alt="Logo" class="logo-image">
+                            <div class="login-content">                                <div class="logo-container">
+                                    <img src="<?php echo APP_URL; ?>/assets/images/logo.png" alt="Logo" class="logo-image">
                                 </div>
                                 
                                 <h3 class="login-title">Sign In</h3>

@@ -1,0 +1,222 @@
+# PCDS 2030 Dashboard - System Context and Design Document
+
+## ORGANIZATIONAL CONTEXT
+
+Sarawak's Ministry of Natural Resources and Urban Development oversees several agencies:
+
+State departments:
+- Forestry Department
+- Land and Survey Department
+
+State statutory bodies:
+- Land Custody and Development Authority (LCDA)
+- Natural Resources and Environment Board (NREB)
+- Sarawak Forestry Corporation (SFC)
+- Sarawak Timber Industry Development Corporation
+
+## CURRENT IMPLEMENTATION SCOPE
+
+**Important Note (May 2025):** While the system architecture supports multiple sectors, the current implementation phase is focused exclusively on the Forestry sector with its three key agencies:
+- Forestry Department
+- Sarawak Forestry Corporation (SFC)
+- Sarawak Timber Industry Development Corporation (STIDC)
+
+The multi-sector functionality remains in the codebase but is currently disabled via the `MULTI_SECTOR_ENABLED` configuration flag in config.php.
+
+## PROBLEM STATEMENT
+
+Currently, agencies compile quarterly reports using Excel, generating tables and graphs which are then copied/converted into PowerPoint slides. This process is time-consuming and inefficient.
+
+The goal is to develop a progressive web app (PWA) that replaces Excel-based reporting with a streamlined web-based solution. The system should:
+- Allow agencies to submit their sector-specific data
+- Allow agencies to track programs with targets and achievements
+- Enable the Ministry (admin) to generate consolidated PowerPoint/PDF reports
+
+## SYSTEM ARCHITECTURE
+
+- Frontend: HTML (in PHP), CSS, JavaScript, Bootstrap
+- Backend: PHP
+- Database: MySQL
+- Server Environment: XAMPP (Apache)
+- Libraries: Chart.js (data visualization)
+- Hosting (in the future): cPanel
+
+## Key Components
+1. Authentication System - Handles user login and session management
+2. Agency Module - Program creation, updating, and tracking for agency users
+3. Admin Module - User management, sector administration, and reporting periods
+4. Reporting System - Periodical submissions and historical data visualization
+5. Dashboard - Summary statistics and progress visualization
+
+## Data Model
+### Core Entities:
+- Users - User accounts with roles (admin, agency)
+- Programs - Core entity representing agency initiatives
+- Sectors - Organizational categories (e.g., Health, Education)
+- Program Submissions - Progress reports for programs in specific periods
+- Reporting Periods - Quarterly reporting timeframes
+
+### Schema Evolution:
+The database schema has evolved to use JSON storage for flexible content:
+- `program_submissions.content_json` stores variable program data
+- Core status fields remain as columns for efficient querying
+- This allows adding new fields without schema changes
+
+## User Roles
+- Agency Users: Create/update their own programs, view programs from other sectors
+- Admin Users: Manage users, sectors, reporting periods, generate reports
+
+## Development Environment
+- Local development with XAMPP
+- Debug tools available in `/debug` directory for troubleshooting
+- Version tracking via APP_VERSION constant
+
+## File Structure
+- `/assets` - CSS, JavaScript, and other static resources
+- `/config` - Application configuration
+- `/database` - SQL scripts for schema setup
+- `/debug` - Development debugging tools
+- `/includes` - Shared PHP functions and utilities
+- `/views` - User interface templates organized by role
+  - `/views/admin` - Admin interfaces
+  - `/views/agency` - Agency user interfaces
+  - `/views/layouts` - Shared layout templates
+
+## Reporting Workflow
+1. Admin creates reporting periods (quarters)
+2. Agencies submit program data during open reporting periods
+3. Programs track status (on-track, delayed, completed, not-started)
+4. Historical data is preserved for trend analysis
+5. Dashboards visualize progress across programs and sectors
+
+## JSON Content Structure
+The application uses a flexible JSON storage approach for program data:
+```json
+{
+  "target": "Example target value",
+  "achievement": "Current achievement value",
+  "remarks": "Additional notes",
+  "status_text": "Detailed status description",
+  "custom_metrics": {
+    "metric1": "value1",
+    "metric2": "value2"
+  }
+}
+```
+
+This allows adding new program attributes without database schema changes.
+
+## Development Notes
+- Status values must be one of: 'on-track', 'delayed', 'completed', 'not-started'
+- Target dates have been removed in favor of start/end dates for timeline tracking
+- The system supports both assigned programs (by admins) and agency-created programs
+- Debug tools are available at `/debug/check_program_creation.php` and `/debug/check_status_values.php`
+
+## Forestry Sector Implementation (May 2025)
+- Current focus is exclusively on the Forestry sector
+- Three main agencies are included: Forestry Department, SFC, and STIDC
+- Forestry-specific metrics focus on timber exports, forest conservation, and sustainability
+- Multi-sector UI elements are hidden but code remains intact for future expansion
+- The `MULTI_SECTOR_ENABLED` configuration flag controls visibility of multi-sector features
+
+## To Do List
+- Implement data export functionality for all program reports
+- Add reporting period comparison views in agency dashboard
+- Create program archive feature for completed programs
+- Improve mobile responsiveness for agency submission forms 
+- Add batch program import functionality for administrators
+- Implement notification system for upcoming reporting deadlines
+- Optimize database queries for large program datasets
+- Add data visualization options for sector-specific metrics
+- Future: Re-enable multi-sector support once Forestry sector pilot is successful
+
+PCDS2030 Dashboard System Context
+=================================
+
+Overview:
+---------
+The PCDS2030 Dashboard is a web-based system for agencies to report progress on their programs 
+and sector-specific metrics. The system allows for quarterly reporting and generates consolidated 
+reports for the government.
+
+User Roles:
+-----------
+1. Administrators - Can manage users, sectors, reporting periods, and view all data
+2. Agency Users - Can submit data for their programs and sector metrics, view cross-sector data
+
+Key Features:
+------------
+- Agency submission of program progress data
+- Collaborative sector-specific metrics reporting
+- Dashboard views for performance monitoring
+- Period-based reporting (quarterly)
+- Cross-sector program visibility
+- Report generation (PPTX/PDF)
+
+System Modules:
+--------------
+1. User Management
+2. Program Management
+3. Reporting Period Management
+4. Data Submission
+5. Dashboard Visualization
+6. Report Generation
+7. Sector Metrics Management
+
+Database Structure:
+------------------
+- users: Stores user account information
+- sectors: Different government sectors (e.g., Education, Health)
+- programs: Programs owned by agencies
+- program_submissions: Periodic progress reports for programs
+- reporting_periods: Quarterly reporting periods
+- sector_metrics_definition: Defines metrics specific to sectors
+- sector_metric_values: Values submitted for sector metrics
+- sector_metric_permissions: Controls which agencies can edit which metrics
+- sector_metric_value_history: Tracks all changes to metric values
+
+New Features - Sector Metrics System:
+------------------------------------
+- Collaborative sector metrics where multiple agencies can contribute data
+- Permissions model for metric editing:
+  * creator_only: Only the creator can edit
+  * selected_agencies: Specific agencies can edit
+  * all_sector: Any agency in the sector can edit
+- Version history tracking for all metric values
+- Support for charts/graphs generation for presentations
+- Agency users can create their own sector-specific metrics
+- Admin users can also create sector metrics
+- Metric types: numeric, percentage, text
+
+Cross-Sector Visibility:
+-----------------------
+- All agencies can view programs from other sectors (read-only) [Currently disabled]
+- Unified cross-sector view with filtering capabilities
+- Filter by sector, status, or search terms
+- Visual highlighting of the agency's own sector
+
+Implementation Phase (May 2025):
+-------------------------------
+- Forestry sector pilot implementation with three key agencies
+- Multi-sector functionality temporarily disabled but preserved in codebase
+- Configuration-based feature toggling to enable/disable multi-sector views
+- Each agency can only view programs within the Forestry sector
+- UI simplified to focus on Forestry-specific requirements
+
+Technical Details:
+-----------------
+- PHP 8.x backend
+- MySQL database
+- Bootstrap 5 frontend
+- Chart.js for visualizations
+- AJAX for dynamic data loading
+- Feature-flag based architecture for progressive enhancement
+
+Report Generation:
+-----------------
+- Administrators can export reports in PPTX/PDF formats
+- Agency users can preview reports but cannot export them
+- Reports include program progress and sector metrics
+- Template-based generation for consistent formatting
+- Custom filtering options for targeted reporting
+

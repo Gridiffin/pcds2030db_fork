@@ -80,6 +80,10 @@ function updatePageContent(periodId) {
         endpoint = '../ajax/agency_programs_data.php';
     } else if (pagePath.includes('/admin/manage_programs.php')) {
         endpoint = '../ajax/admin_programs_data.php';
+    } else if (pagePath.includes('/agency/reports.php')) {
+        endpoint = '../ajax/agency_reports_data.php';
+    } else if (pagePath.includes('/admin/reports.php')) {
+        endpoint = '../ajax/admin_reports_data.php';
     }
     
     // If endpoint is defined, fetch data

@@ -80,18 +80,54 @@ function initDashboardAssignedToggle() {
 function fetchDashboardData(includeAssigned) {
     const periodId = document.getElementById('periodSelector')?.value || '';
     
-    fetch('/pcds2030_dashboard/ajax/dashboard_data.php', {
+    // Debug log
+    console.log('Fetching dashboard data:', {
+        periodId,
+        includeAssigned,
+        url: ajaxUrl('agency_dashboard_data.php')
+    });
+    
+    fetch(ajaxUrl('agency_dashboard_data.php'), {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
         },
-        body: `period_id=${periodId}&include_assigned=${includeAssigned}`
+        body: new URLSearchParams({
+            period_id: periodId,
+            include_assigned: includeAssigned.toString()
+        }).toString()
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.text()
+        .then(text => {
+            try {
+                // console.log('Raw response text:', text); // Log the raw response
+                const data = JSON.parse(text);
+                // console.log('Parsed data:', data);
+                return data;
+            } catch (e) {
+                // If parsing fails, log the raw response and throw error
+                console.error('Failed to parse JSON response:', text);
+                throw new Error('Invalid JSON response from server');
+            }
+        });
+    })
     .then(data => {
+        console.log('Received dashboard data:', data);
+        
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        
         // Update UI components with new data
         renderStatCards(data.stats);
-        renderStatusChart(data.chart_data);
+        if (data.chart_data) {
+            renderStatusChart(data.chart_data);
+        }
         
         // Remove loading indicators
         document.querySelectorAll('.stat-card, .card-body.loading').forEach(el => {
@@ -106,7 +142,7 @@ function fetchDashboardData(includeAssigned) {
         });
         
         // Show error message
-        alert('There was an error fetching dashboard data. Please try again.');
+        alert('There was an error fetching dashboard data: ' + error.message);
     });
 }
 
@@ -162,7 +198,10 @@ function updateCardSubtitle(selector, value, total) {
  */
 function renderStatusChart(chartData) {
     const chartCanvas = document.getElementById('programStatusChart');
-    if (!chartCanvas) return;
+    if (!chartCanvas) {
+        console.log('Chart canvas not found');
+        return;
+    }
     
     // Check if Chart.js is available
     if (typeof Chart === 'undefined') {
@@ -170,9 +209,18 @@ function renderStatusChart(chartData) {
         return;
     }
     
+    // Debug log
+    console.log('Rendering chart with data:', chartData);
+    
     // Clear any existing chart - with proper check to ensure it has destroy method
     if (window.programStatusChart && typeof window.programStatusChart.destroy === 'function') {
         window.programStatusChart.destroy();
+    }
+    
+    // Validate chart data
+    if (!chartData || !Array.isArray(chartData.data) || !Array.isArray(chartData.labels)) {
+        console.error('Invalid chart data:', chartData);
+        return;
     }
     
     // Define colors for the chart
@@ -205,7 +253,12 @@ function renderStatusChart(chartData) {
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        display: false
+                        display: true,
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true
+                        }
                     },
                     tooltip: {
                         callbacks: {
@@ -225,6 +278,8 @@ function renderStatusChart(chartData) {
                 cutout: '70%'
             }
         });
+        
+        console.log('Chart successfully rendered');
     } catch (error) {
         console.error('Error creating chart:', error);
     }
@@ -354,3 +409,4 @@ function sortProgramTable(table, sortBy, direction) {
     // Reorder rows in the DOM
     sortedRows.forEach(row => tbody.appendChild(row));
 }
+

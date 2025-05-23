@@ -40,6 +40,9 @@
 @import 'pages/home.css';
 @import 'pages/program.css'; /* Program pages styling */
 
+/* Custom overrides */
+@import 'custom/agency.css'; /* Agency-specific overrides */
+
 /* Shared components (if these exist) */
 /* If these files don't exist yet, comment out these lines */
 /* @import 'shared/components.css'; */

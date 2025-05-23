@@ -1,0 +1,89 @@
+.program-checkbox-container {
+    cursor: grab;
+    padding: 8px;
+    background-color: var(--bs-white);
+    border: 1px solid transparent;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    transition: all 0.2s ease-in-out;
+    display: flex;
+    align-items: center;
+}
+
+.program-checkbox-container:hover {
+    border-color: var(--bs-primary);
+    background-color: var(--bs-light);
+}
+
+.program-checkbox-container.dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+    border: 2px dashed var(--bs-primary);
+}
+
+.program-checkbox-container .drag-handle {
+    cursor: grab;
+    color: #6c757d;
+    padding: 0 8px;
+    margin-right: 8px;
+}
+
+.program-checkbox-container .drag-handle:hover {
+    color: var(--bs-primary);
+}
+
+.program-order-badge {
+    margin-left: auto;
+    min-width: 28px;
+    height: 28px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--bs-primary);
+    color: white;
+    border-radius: 14px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0 8px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    user-select: none;
+}
+
+.program-order-badge:hover {
+    background-color: var(--bs-primary-dark, #0056b3);
+}
+
+.program-order-badge:active {
+    transform: scale(0.95);
+}
+
+.program-order-badge.editing {
+    background-color: white;
+    color: var(--bs-primary);
+    border: 2px solid var(--bs-primary);
+}
+
+.program-order-input {
+    display: none;
+    width: 40px;
+    height: 28px;
+    margin-left: auto;
+    padding: 2px 6px;
+    text-align: center;
+    border: 2px solid var(--bs-primary);
+    border-radius: 14px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--bs-primary);
+    background-color: white;
+    outline: none;
+}
+
+.program-order-input:focus {
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.drop-target {
+    border-top: 2px solid var(--bs-primary);
+}

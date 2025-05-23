@@ -5,15 +5,12 @@
 
 // Wrap everything in an IIFE to avoid global class declaration
 (function() {
-    // Private class not exposed to global scope
     class ChartManager {
-        constructor(chartId, legendId) {
+        constructor(chartId) {
             this.chartId = chartId;
-            this.legendId = legendId;
             this.chart = null;
             this.data = null;
             this.initialAnimation = true;
-            console.log("ChartManager created for", chartId);
         }
 
         /**
@@ -21,7 +18,6 @@
          * @param {Object} data - Chart data containing values and colors
          */
         init(data) {
-            console.log("ChartManager.init called with data:", data);
             this.data = data;
             
             // Verify data integrity
@@ -30,40 +26,18 @@
                 return this;
             }
             
-            // Check if we have data for this period
             const containerElement = document.getElementById(this.chartId).parentElement;
-            const legendElement = document.getElementById(this.legendId);
-            
-            // Handle no-data scenario - display message instead of empty chart
             if (data.hasPeriodData === false) {
-                // Create a message element for no data
                 this.showNoDataMessage(containerElement);
-                
-                // Hide the legend when there's no data
-                if (legendElement) {
-                    legendElement.style.display = 'none';
-                }
-                
                 return this;
-            } else {
-                // Make sure previous no-data message is removed if it exists
-                const noDataMsg = containerElement.querySelector('.no-data-message');
-                if (noDataMsg) {
-                    noDataMsg.remove();
-                }
-                
-                // Show the legend again
-                if (legendElement) {
-                    legendElement.style.display = '';
-                }
-                
-                // Create chart
-                this.createChart();
-                
-                // Set up legend interactivity
-                this.setupLegend();
             }
             
+            const noDataMsg = containerElement.querySelector('.no-data-message');
+            if (noDataMsg) {
+                noDataMsg.remove();
+            }
+            
+            this.createChart();
             return this;
         }
         
@@ -173,13 +147,19 @@
                     animation: animationOptions,
                     plugins: {
                         legend: {
-                            display: false
+                            display: true,
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true,
+                                font: {
+                                    size: 12
+                                }
+                            }
                         },
                         tooltip: {
                             callbacks: {
-                                title: (tooltipItems) => {
-                                    return tooltipItems[0].label;
-                                },
+                                title: (tooltipItems) => tooltipItems[0].label,
                                 label: (tooltipItem) => {
                                     const value = tooltipItem.raw;
                                     const total = tooltipItem.dataset.data.reduce((a, b) => a + b, 0);
@@ -200,12 +180,7 @@
                             boxPadding: 6
                         }
                     },
-                    cutout: '70%',
-                    elements: {
-                        arc: {
-                            borderWidth: 0
-                        }
-                    }
+                    cutout: '70%'
                 }
             });
             
@@ -213,55 +188,6 @@
             
             // After first render, disable initial animation
             this.initialAnimation = false;
-        }
-        
-        /**
-         * Set up interactive legend
-         */
-        setupLegend() {
-            const legendElement = document.getElementById(this.legendId);
-            if (!legendElement) return;
-            
-            // Get all legend items
-            const legendItems = legendElement.querySelectorAll('.chart-legend-item');
-            
-            legendItems.forEach((item, index) => {
-                // Add click event to toggle visibility
-                item.addEventListener('click', () => {
-                    // Toggle visibility in the chart
-                    const meta = this.chart.getDatasetMeta(0);
-                    const dataVisible = meta.data[index].hidden ? true : false;
-                    meta.data[index].hidden = !dataVisible;
-                    
-                    // Update legend item style
-                    if (!dataVisible) {
-                        item.classList.add('disabled');
-                    } else {
-                        item.classList.remove('disabled');
-                    }
-                    
-                    // Update chart
-                    this.chart.update();
-                });
-                
-                // Add hover effect to highlight corresponding chart section
-                item.addEventListener('mouseenter', () => {
-                    // Add active class to current legend item
-                    item.classList.add('active');
-                    
-                    // Set active elements in chart
-                    this.chart.setActiveElements([{datasetIndex: 0, index: index}]);
-                    this.chart.update();
-                });
-                
-                item.addEventListener('mouseleave', () => {
-                    // Remove active class
-                    item.classList.remove('active');
-                    
-                    this.chart.setActiveElements([]);
-                    this.chart.update();
-                });
-            });
         }
         
         /**
@@ -313,9 +239,8 @@
     }
 
     // Expose these functions to global scope
-    window.initializeDashboardChart = function(chartData) {
-        console.log("initializeDashboardChart called with data:", chartData);
-        const chartInstance = new ChartManager('programStatusChart', 'programStatusLegend');
+    window.initializeDashboardChart = function(chartData) {        console.log("initializeDashboardChart called with data:", chartData);
+        const chartInstance = new ChartManager('programStatusChart');
         chartInstance.init(chartData);
         
         // Make chart available globally for updates

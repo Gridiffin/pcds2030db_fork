@@ -125,7 +125,7 @@ function saveOutcomeData() {
     };
     
     // Send the data to the server
-    fetch('/pcds2030_dashboard/api/save_outcome_json.php', {
+    fetch(apiUrl("save_outcome_json.php"), {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -194,3 +194,4 @@ function showSuccessMessage(message) {
 function showErrorMessage(message) {
     // Implementation for showing an error message...
 }
+

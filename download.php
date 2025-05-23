@@ -5,14 +5,19 @@
  * This script handles secure file downloads for reports
  */
 
+// Define project root path for consistent file references
+if (!defined('PROJECT_ROOT_PATH')) {
+    define('PROJECT_ROOT_PATH', rtrim(__DIR__, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
+}
+
 // Include necessary files
-require_once 'config/config.php';
-require_once 'includes/session.php';
-require_once 'includes/functions.php';
+require_once PROJECT_ROOT_PATH . 'app/config/config.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
+    header('Location: ' . APP_URL . '/login.php');
     exit;
 }
 
@@ -25,10 +30,10 @@ $file_path = basename($file_path); // Only get the filename, not the path
 
 // Define allowed file types and their directories
 $allowed_types = [
-    'pptx' => 'reports/pptx/',
-    'pdf' => 'reports/pdf/',
-    'excel' => 'reports/excel/',
-    'report' => 'reports/'  // Add support for 'report' type
+    'pptx' => 'app/reports/pptx/',
+    'pdf' => 'app/reports/pdf/',
+    'excel' => 'app/reports/excel/',
+    'report' => 'app/reports/'  // Add support for 'report' type
 ];
 
 // Validate file type
@@ -48,10 +53,9 @@ if ($type === 'report') {
         'xlsx' => 'excel/',
         'xls' => 'excel/'
     ];
-    
-    // Set default to pptx if extension is not recognized
+      // Set default to pptx if extension is not recognized
     $subfolder = $subfolder_map[$file_extension] ?? 'pptx/';
-    $allowed_types['report'] = 'reports/' . $subfolder;
+    $allowed_types['report'] = 'app/reports/' . $subfolder;
 }
 
 // Construct the full file path

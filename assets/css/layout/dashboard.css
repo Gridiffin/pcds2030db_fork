@@ -2,638 +2,119 @@
  * Dashboard Layout
  */
 
-/* Content wrapper with spacing for fixed navbar */
+/* Main layout structure */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Content wrapper - uses flexbox for sticky footer */
 .content-wrapper {
-  padding-top: 4.5rem;
-  padding-bottom: 2rem;
-  min-height: calc(100vh - 56px);
-  width: 100%;
-  max-width: 100%;
-  overflow-x: visible; /* Allow content to use full width */
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    padding-top: 4.5rem; /* Account for fixed navbar */
 }
 
-/* Ensure container-fluid inside content-wrapper spans full width with proper padding */
-.content-wrapper .container-fluid {
-  width: 100%;
-  max-width: 100%;
-  padding-left: 1rem;
-  padding-right: 1rem;
+/* Main content area */
+main.flex-fill {
+    flex: 1 0 auto;
+    width: 100%;
+    padding: 1.5rem 0;
+    display: flex;
+    flex-direction: column;
 }
 
-/* Make sure cards always take full available width */
-.content-wrapper .card {
-  width: 100%;
-  max-width: 100%;
+/* Container sizing */
+.container-fluid {
+    width: 100%;
+    max-width: 100%;
+    padding-right: 1.5rem;
+    padding-left: 1.5rem;
+    margin-right: auto;
+    margin-left: auto;
 }
 
-/* Responsive padding for smaller screens */
+/* Fix footer positioning */
+.footer {
+    flex-shrink: 0;
+    background-color: #fff;
+    border-top: 1px solid rgba(0,0,0,.1);
+    padding: 0.5rem 0;
+    width: 100%;
+    margin-top: auto; /* Push footer to the bottom */
+    position: relative; /* Ensure it's in the normal flow */
+}
+
+/* Header Styles */
+.simple-header {
+    background-color: transparent;
+    padding: 2rem 0;
+    margin-bottom: 1.5rem;
+    width: 100%;
+    position: relative;
+}
+
+.simple-header.light {
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,.05);
+}
+
+.simple-header.primary {
+    background-color: var(--primary-color);
+    color: #fff;
+}
+
+.simple-header .header-title {
+    margin: 0;
+    font-size: 1.75rem;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.simple-header .header-subtitle {
+    margin-top: 0.5rem;
+    margin-bottom: 0;
+    opacity: 0.85;
+}
+
+/* Card styling */
+.card {
+    margin-bottom: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+}
+
+/* Responsive adjustments */
 @media (max-width: 768px) {
-  .content-wrapper .container-fluid {
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
-  }
+    .container-fluid {
+        padding-right: 1rem;
+        padding-left: 1rem;
+    }
+    
+    .simple-header {
+        padding: 1.5rem 0;
+    }
+    
+    .simple-header .header-title {
+        font-size: 1.5rem;
+    }
 }
 
-/* Enhanced Page header - Full-width adjustments */
-.page-header {
-  background-color: var(--primary-color);
-  background-image: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
-  color: white;
-  padding: 2.5rem 0;
-  margin-bottom: 2.5rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  position: relative;
-  overflow: hidden;
-  width: 100%;
-  max-width: 100%;
-  margin-left: 0;
-  margin-right: 0;
-}
-
-/* Background pattern overlay */
-.page-header::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
-}
-
-.page-header.light-background {
-  background-image: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  color: var(--dark-color);
-  border-bottom: 1px solid #dee2e6;
-}
-
-.page-header .container-fluid {
-  position: relative;
-  z-index: 1;
-}
-
-.page-title {
-  position: relative;
-}
-
-.page-title h3 {
-  margin-bottom: 0.5rem;
-  font-weight: var(--font-weight-semibold);
-  font-size: 2rem;
-  letter-spacing: -0.01em;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  position: relative;
-  display: inline-block;
-}
-
-.page-title h3::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  bottom: -0.5rem;
-  width: 3rem;
-  height: 0.25rem;
-  background-color: rgba(255, 255, 255, 0.5);
-  border-radius: 0.125rem;
-}
-
-.page-title .text-subtitle {
-  margin-top: 1rem;
-  margin-bottom: 0;
-  font-size: 1.1rem;
-  opacity: 0.9;
-  max-width: 600px;
-  line-height: 1.5;
-}
-
-.page-header.light-background .page-title h3 {
-  color: var(--primary-color);
-  text-shadow: none;
-}
-
-.page-header.light-background .page-title h3::after {
-  background-color: var(--primary-color);
-}
-
-.page-header.light-background .page-title .text-subtitle {
-  color: #6c757d;
-}
-
-/* Remove homepage-specific header styles that are no longer needed */
-.page-header.homepage-header,
-.page-header-primary.homepage-header,
-.page-header-light.homepage-header,
-.header-primary.is-homepage {
-  /* Reset to standard header styles */
-  padding: 2rem 0;
-}
-
-.page-header.homepage-header .page-title h3,
-.page-header-primary.homepage-header .page-title h3,
-.page-header-light.homepage-header .page-title h3,
-.header-primary.is-homepage .page-title h3 {
-  font-size: 1.75rem;
-  margin-bottom: 0.75rem;
-}
-
-.page-header.homepage-header .page-title p,
-.page-header-primary.homepage-header .page-title p,
-.page-header-light.homepage-header .page-title p,
-.header-primary.is-homepage .page-title p {
-  font-size: 1rem;
-}
-
-/* Remove animations for homepage header */
-.page-header-primary.homepage-header .page-title h3,
-.page-header-light.homepage-header .page-title h3 {
-  animation: none;
-}
-
-.page-header-primary.homepage-header .page-title p,
-.page-header-light.homepage-header .page-title p {
-  animation: none;
-}
-
-/* Admin dashboard reduced top padding */
-.page-header.pb-10 {
-  padding-bottom: 2.5rem;
-}
-
-/* Enhanced Dashboard Header - Full-width adjustments */
+/* Old style overrides - ensure these come last */
+.page-header,
+.header-primary,
 .page-header-primary,
 .page-header-light {
-  position: relative;
-  padding: 2rem 0;
-  margin-bottom: 2rem;
-  z-index: 1;
-  width: 100%;
-  max-width: 100%;
-  margin-left: 0;
-  margin-right: 0;
-}
-
-.page-header-primary .container-fluid,
-.page-header-light .container-fluid {
-  position: relative;
-  z-index: 2;
-  padding-left: 2rem;
-  padding-right: 2rem;
-  width: 100%;
-  max-width: 100%;
-}
-
-.page-header-primary .page-title h3,
-.page-header-light .page-title h3 {
-  margin-bottom: 0.75rem;
-  font-weight: var(--font-weight-semibold);
-  font-size: 1.75rem;
-  position: relative;
-  display: inline-block;
-}
-
-.page-header-primary .page-title h3 {
-  color: white;
-}
-
-.page-header-light .page-title h3 {
-  color: var(--primary-color);
-}
-
-.page-header-primary .page-title h3::after,
-.page-header-light .page-title h3::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  bottom: -0.5rem;
-  width: 3rem;
-  height: 2px; /* Thinner line */
-  border-radius: 0.125rem;
-}
-
-.page-header-primary .page-title h3::after {
-  background-color: rgba(255, 255, 255, 0.5);
-}
-
-.page-header-light .page-title h3::after {
-  background-color: var(--primary-color);
-}
-
-.page-header-primary .page-title p,
-.page-header-light .page-title p {
-  font-size: 1rem;
-  margin-top: 0.75rem;
-  margin-bottom: 0;
-}
-
-.page-header-primary .page-title p {
-  opacity: 0.9;
-}
-
-.page-header-light .page-title p {
-  color: #6c757d;
-}
-
-/* Button styling within headers - simplified */
-.page-header-primary .btn-light {
-  color: var(--primary-color);
-  background-color: white;
-  border-color: white;
-}
-
-/* Enhanced Header Button Styling */
-.header-primary .btn,
-.page-header-primary .btn,
-.page-header .btn {
-  padding: 0.5rem 1.25rem;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  border-radius: 6px;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-}
-
-.header-primary .btn:active,
-.page-header-primary .btn:active,
-.page-header .btn:active {
-  transform: translateY(1px);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-/* Specific styling for refresh button */
-#refreshPage {
-  position: relative;
-  overflow: hidden;
-}
-
-#refreshPage i {
-  transition: transform 0.5s ease;
-}
-
-#refreshPage:active i {
-  transform: rotate(180deg);
-}
-
-/* Add loading state for refresh button */
-#refreshPage.loading {
-  pointer-events: none;
-  opacity: 0.8;
-}
-
-#refreshPage.loading i {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* Improved text alignment in headers */
-.page-header .page-title,
-.page-header-primary .page-title,
-.header-primary .page-title {
-  max-width: 800px;
-}
-
-.page-header .page-title h3,
-.page-header-primary .page-title h3,
-.header-primary .page-title h3 {
-  line-height: 1.3;
-  margin-bottom: 0.75rem;
-}
-
-.page-header .page-title p,
-.page-header-primary .page-title p,
-.header-primary .page-title p {
-  line-height: 1.6;
-  opacity: 0.85;
-  max-width: 650px;
-  margin-bottom: 0;
-}
-
-/* Better alignment for header row content */
-.page-header .row,
-.page-header-primary .row,
-.header-primary .row {
-  align-items: center;
-}
-
-.page-header .col-auto,
-.page-header-primary .col-auto,
-.header-primary .col-auto {
-  padding-left: 1.5rem;
-}
-
-/* Better header content spacing */
-@media (min-width: 992px) {
-  .page-header .container-fluid,
-  .page-header-primary .container-fluid,
-  .header-primary .container-fluid {
-    padding-left: 2.5rem;
-    padding-right: 2.5rem;
-  }
-}
-
-/* Responsive adjustments - simplified */
-@media (max-width: 768px) {
-  .page-header-primary,
-  .page-header-light {
-    padding: 1.5rem 0;
-  }
-  
-  .page-header-primary .container-fluid,
-  .page-header-light .container-fluid {
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
-  
-  .page-header-primary .page-title h3,
-  .page-header-light .page-title h3 {
-    font-size: 1.5rem;
-  }
-}
-
-/* Header Primary - Full-width adjustments */
-.header-primary {
-  background-color: var(--primary-color);
-  color: white;
-  padding: 2rem 0;
-  margin-bottom: 2rem;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  position: relative;
-  width: 100%;
-  max-width: 100%;
-  margin-left: 0;
-  margin-right: 0;
-}
-
-/* Remove background pattern overlay */
-.header-primary::before {
-  display: none;
-}
-
-/* Container styling within header - Full-width adjustments */
-.header-primary .container-fluid {
-  position: relative;
-  z-index: 1;
-  padding-left: 2rem;
-  padding-right: 2rem;
-  width: 100%;
-  max-width: 100%;
-}
-
-/* Title section styling - simplified */
-.header-primary .page-title {
-  position: relative;
-}
-
-.header-primary .page-title h3 {
-  color: white;
-  margin-bottom: 0.5rem;
-  font-weight: var(--font-weight-semibold);
-  font-size: 1.75rem;
-  position: relative;
-  display: inline-block;
-}
-
-.header-primary .page-title h3::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  bottom: -0.5rem;
-  width: 3rem;
-  height: 2px; /* Thinner line */
-  background-color: rgba(255, 255, 255, 0.5);
-  border-radius: 0.125rem;
-}
-
-.header-primary .page-title p {
-  margin-top: 0.75rem;
-  margin-bottom: 0;
-  font-size: 1rem;
-  opacity: 0.9;
-}
-
-/* Remove animations */
-.header-primary .fade-in-title,
-.header-primary .fade-in-subtitle {
-  animation: none;
-  opacity: 1;
-}
-
-/* Responsive adjustments - simplified */
-@media (max-width: 768px) {
-  .header-primary {
-    padding: 1.5rem 0;
-  }
-  
-  .header-primary .container-fluid {
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
-  
-  .header-primary .page-title h3 {
-    font-size: 1.5rem;
-  }
-}
-
-/* Section layout */
-.section {
-  padding-bottom: 2rem;
-}
-
-/* Dashboard layouts */
-.dashboard-row {
-  display: flex;
-  flex-wrap: wrap;
-  margin-right: -15px;
-  margin-left: -15px;
-  margin-bottom: 2rem;
-}
-
-.dashboard-col {
-  position: relative;
-  width: 100%;
-  padding-right: 15px;
-  padding-left: 15px;
-}
-
-/* Period selector */
-.period-selector-card {
-  border-left: 5px solid var(--primary-color);
-  transition: all 0.2s ease;
-  background: white;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
-  position: relative;
-  margin-bottom: 1.5rem;
-}
-
-.period-selector-card:hover {
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12) !important;
-}
-
-/* Loading state */
-.loading-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.7);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 10;
-}
-
-.spinner-border {
-  width: 3rem;
-  height: 3rem;
-}
-
-/* Dashboard components with improved spacing */
-.dashboard-component {
-  margin-bottom: 2rem;
-}
-
-.dashboard-component-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-
-.dashboard-component-header h4 {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: var(--font-weight-medium);
-}
-
-/* Quick stats row with equal height cards */
-.quick-stats-row {
-  display: flex;
-  flex-wrap: wrap;
-  margin-right: -0.5rem;
-  margin-left: -0.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.quick-stats-col {
-  flex: 0 0 25%;
-  max-width: 25%;
-  padding-right: 0.5rem;
-  padding-left: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-@media (max-width: 1200px) {
-  .quick-stats-col {
-    flex: 0 0 33.333333%;
-    max-width: 33.333333%;
-  }
-}
-
-@media (max-width: 992px) {
-  .quick-stats-col {
-    flex: 0 0 50%;
-    max-width: 50%;
-  }
-}
-
-@media (max-width: 576px) {
-  .quick-stats-col {
-    flex: 0 0 100%;
+    margin-left: 0;
+    margin-right: 0;
+    width: 100%;
     max-width: 100%;
-  }
-}
-
-/* Enhanced stat card for dashboard */
-.dashboard-stat-card {
-  height: 100%;
-  border-radius: 0.75rem;
-  border: none;
-  overflow: hidden;
-  background-color: white;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.1);
-  transition: all 0.3s ease;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-}
-
-.dashboard-stat-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-}
-
-.dashboard-stat-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 4px;
-  height: 100%;
-  background-color: var(--primary-color);
-}
-
-.dashboard-stat-card.success::before {
-  background-color: var(--secondary-color);
-}
-
-.dashboard-stat-card.warning::before {
-  background-color: var(--warning-color);
-}
-
-.dashboard-stat-card.danger::before {
-  background-color: var(--danger-color);
-}
-
-.dashboard-stat-card .card-body {
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-}
-
-.dashboard-stat-card .stat-icon {
-  font-size: 2rem;
-  opacity: 0.15;
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-}
-
-.dashboard-stat-card .stat-title {
-  font-size: 0.9rem;
-  color: #6c757d;
-  margin-bottom: 0.75rem;
-}
-
-.dashboard-stat-card .stat-value {
-  font-size: 2rem;
-  font-weight: 700;
-  margin-bottom: 0.75rem;
-  color: #212529;
-}
-
-.dashboard-stat-card .stat-subtitle {
-  font-size: 0.85rem;
-  color: #6c757d;
-  margin-top: auto;
-}
-
-/* Improved chart containers */
-.chart-container {
-  position: relative;
-  height: 300px;
-  width: 100%;
-}
-
-.chart-container.small {
-  height: 200px;
-}
-
-.chart-container.large {
-  height: 400px;
 }
