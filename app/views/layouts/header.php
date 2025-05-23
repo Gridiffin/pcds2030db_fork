@@ -8,16 +8,15 @@
     <!-- Preconnect to Google Fonts for faster loading -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    
-    <!-- Google Fonts - Nunito with all needed weights -->
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+      <!-- Google Fonts - Poppins with all needed weights -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Favicon -->
     <link rel="shortcut icon" href="<?php echo asset_url('img', 'favicon.ico'); ?>" type="image/x-icon">
     
     <!-- Preload critical fonts to avoid FOUT (Flash of Unstyled Text) -->
-    <link rel="preload" href="<?php echo asset_url('fonts/nunito', 'nunito-v26-latin-regular.woff2'); ?>" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="<?php echo asset_url('fonts/nunito', 'nunito-v26-latin-600.woff2'); ?>" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="<?php echo asset_url('fonts/nunito', 'nunito-v26-latin-700.woff2'); ?>" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="https://fonts.gstatic.com/s/poppins/v20/pxiEyp8kv8JHgFVrJJfecg.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="https://fonts.gstatic.com/s/poppins/v20/pxiByp8kv8JHgFVrLEj6Z1xlFQ.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="https://fonts.gstatic.com/s/poppins/v20/pxiByp8kv8JHgFVrLCz7Z1xlFQ.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="<?php echo asset_url('fonts/fontawesome', 'fa-solid-900.woff2'); ?>" as="font" type="font/woff2" crossorigin>
     
     <!-- CSS Libraries -->

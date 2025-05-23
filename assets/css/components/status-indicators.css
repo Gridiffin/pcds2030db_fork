@@ -1,5 +1,6 @@
 /**
  * Status Indicators
+ * Forest Theme
  */
 
 /* Badges */
@@ -33,9 +34,10 @@
   border: 2px solid transparent;
   text-align: center;
   position: relative;
-  background-color: #f8f9fa;
+  background-color: rgba(var(--forest-light-rgb), 0.1);
   margin: 0.25rem;
   user-select: none;
+  color: var(--forest-deep);
 }
 
 .status-pill i {
@@ -45,138 +47,169 @@
 
 .status-pill:hover:not(.large) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 10px rgba(var(--forest-deep-rgb), 0.1);
 }
 
+/* Large status pills */
 .status-pill.large {
+  font-size: 1rem;
   padding: 0.75rem 1.5rem;
+  letter-spacing: 0.3px;
+}
+
+.status-pill.large i {
   font-size: 1.1rem;
-  cursor: default;
+  margin-right: 0.75rem;
 }
 
-/* Status colors with improved visual identifiers */
-.status-pill.target-achieved, 
-.status-pill.completed,
-.badge.bg-success {
-  background-color: rgba(40, 167, 69, 0.1);
-  color: var(--secondary-color);
-  border-color: rgba(40, 167, 69, 0.3);
+/* Status pill variants */
+.status-completed {
+  background-color: rgba(var(--success-rgb), 0.1);
+  color: var(--success-color);
+  border-color: rgba(var(--success-rgb), 0.2);
 }
 
-.status-pill.on-track, 
-.status-pill.on-track-yearly, 
-.badge.bg-warning {
-  background-color: rgba(255, 193, 7, 0.1);
-  color: #d39e00;
-  border-color: rgba(255, 193, 7, 0.3);
+.status-in-progress {
+  background-color: rgba(var(--forest-medium-rgb), 0.1);
+  color: var(--forest-medium);
+  border-color: rgba(var(--forest-medium-rgb), 0.2);
 }
 
-.status-pill.delayed, 
-.status-pill.severe-delay, 
-.badge.bg-danger {
-  background-color: rgba(220, 53, 69, 0.1);
-  color: #dc3545;
-  border-color: rgba(220, 53, 69, 0.3);
+.status-pending {
+  background-color: rgba(var(--warning-rgb), 0.1);
+  color: var(--warning-color);
+  border-color: rgba(var(--warning-rgb), 0.2);
 }
 
-.status-pill.not-started, 
-.badge.bg-secondary {
+.status-overdue {
+  background-color: rgba(var(--danger-rgb), 0.1);
+  color: var(--danger-color);
+  border-color: rgba(var(--danger-rgb), 0.2);
+}
+
+.status-cancelled {
   background-color: rgba(108, 117, 125, 0.1);
   color: #6c757d;
-  border-color: rgba(108, 117, 125, 0.3);
+  border-color: rgba(108, 117, 125, 0.2);
 }
 
-/* Active and hover states with pulsing animation */
-.status-pill.active {
-  font-weight: var(--font-weight-semibold);
-  box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.25);
-}
-
-.status-pill.target-achieved.active,
-.status-pill.completed.active {
-  background-color: rgba(40, 167, 69, 0.15);
-  box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.4);
-  animation: pulse-success 2s infinite;
-}
-
-.status-pill.on-track.active,
-.status-pill.on-track-yearly.active {
-  background-color: rgba(255, 193, 7, 0.15);
-  box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.4);
-  animation: pulse-warning 2s infinite;
-}
-
-.status-pill.delayed.active,
-.status-pill.severe-delay.active {
-  background-color: rgba(220, 53, 69, 0.15);
-  box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.4);
-  animation: pulse-danger 2s infinite;
-}
-
-.status-pill.not-started.active {
-  background-color: rgba(108, 117, 125, 0.15);
-  box-shadow: 0 0 0 2px rgba(108, 117, 125, 0.4);
-}
-
-/* Pulse animations for active status pills */
-@keyframes pulse-success {
-  0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.4); }
-  70% { box-shadow: 0 0 0 5px rgba(40, 167, 69, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
-}
-
-@keyframes pulse-warning {
-  0% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.4); }
-  70% { box-shadow: 0 0 0 5px rgba(255, 193, 7, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0); }
-}
-
-@keyframes pulse-danger {
-  0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4); }
-  70% { box-shadow: 0 0 0 5px rgba(220, 53, 69, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
-}
-
-/* Draft indicator */
-.draft-indicator {
+/* Status indicators */
+.status-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
   display: inline-block;
-  background-color: #f8d7da;
-  color: #721c24;
-  border: 1px solid #f5c6cb;
-  border-radius: 3px;
-  padding: 0.1rem 0.35rem;
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-left: 5px;
+  margin-right: 0.5rem;
   position: relative;
 }
 
-/* Draft banner */
-.draft-banner {
-  background-color: #fff3cd;
-  border-left: 4px solid #ffc107;
-  padding: 1rem;
-  margin-bottom: 1.5rem;
-  border-radius: var(--radius-md);
-  color: #856404;
+.status-indicator::after {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  right: -3px;
+  bottom: -3px;
+  border-radius: 50%;
+  opacity: 0.3;
+  z-index: -1;
+}
+
+.status-indicator-success {
+  background-color: var(--success-color);
+}
+
+.status-indicator-success::after {
+  background-color: var(--success-color);
+}
+
+.status-indicator-warning {
+  background-color: var(--warning-color);
+}
+
+.status-indicator-warning::after {
+  background-color: var(--warning-color);
+}
+
+.status-indicator-danger {
+  background-color: var(--danger-color);
+}
+
+.status-indicator-danger::after {
+  background-color: var(--danger-color);
+}
+
+.status-indicator-info {
+  background-color: var(--info-color);
+}
+
+.status-indicator-info::after {
+  background-color: var(--info-color);
+}
+
+.status-indicator-forest {
+  background-color: var(--forest-deep);
+}
+
+.status-indicator-forest::after {
+  background-color: var(--forest-deep);
+}
+
+/* Animated status indicator */
+.status-indicator-pulse::after {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.5;
+  }
+  70% {
+    transform: scale(1.1);
+    opacity: 0.25;
+  }
+  100% {
+    transform: scale(0.95);
+    opacity: 0.5;
+  }
+}
+
+/* Status timeline */
+.status-timeline {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  margin: 1.5rem 0;
 }
 
-/* Program mark highlighting */
-.highlight-program-name {
-  background-color: rgba(255, 193, 7, 0.2);
-  padding: 0.1em 0.2em;
-  border-radius: 2px;
+.status-timeline-point {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: var(--forest-light);
+  border: 2px solid var(--forest-medium);
+  position: relative;
+  z-index: 2;
 }
 
-/* Add explicit text-gray class to avoid conflicts with secondary color variable */
-.text-gray {
-  color: #6c757d !important; /* Same as Bootstrap's secondary gray */
+.status-timeline-point.active {
+  background-color: var(--forest-deep);
+  border-color: var(--forest-deep);
+  box-shadow: 0 0 0 4px rgba(var(--forest-deep-rgb), 0.2);
 }
 
-/* Chart.js will handle legend styling */
+.status-timeline-point.completed {
+  background-color: var(--success-color);
+  border-color: var(--success-color);
+}
+
+.status-timeline-connector {
+  flex-grow: 1;
+  height: 3px;
+  background-color: var(--forest-light);
+  margin: 0 0.5rem;
+}
+
+.status-timeline-connector.active {
+  background-color: var(--forest-medium);
+}

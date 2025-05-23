@@ -69,7 +69,8 @@ if (isset($_GET['error']) && $_GET['error'] === 'invalid_session') {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">    <link rel="stylesheet" href="<?php echo APP_URL; ?>/assets/css/main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">    
+    <link rel="stylesheet" href="<?php echo APP_URL; ?>/assets/css/main.css">
     <link rel="stylesheet" href="<?php echo APP_URL; ?>/assets/css/pages/login.css">
 </head>
 <body>
@@ -83,7 +84,7 @@ if (isset($_GET['error']) && $_GET['error'] === 'invalid_session') {
                         <!-- Welcome Section (Left side of card) -->
                         <div class="col-md-6 welcome-section">
                             <div class="welcome-content">
-                                <h1>Welcome to <?php echo APP_NAME; ?></h1>
+                                <h1><?php echo APP_NAME; ?></h1>
                                 <p class="lead">Access your dashboard to monitor and manage program performance</p>
                                 
                                 <div class="features">
@@ -106,7 +107,7 @@ if (isset($_GET['error']) && $_GET['error'] === 'invalid_session') {
                         <!-- Login Section (Right side of card) -->
                         <div class="col-md-6 login-section">
                             <div class="login-content">                                <div class="logo-container">
-                                    <img src="<?php echo APP_URL; ?>/assets/images/logo.png" alt="Logo" class="logo-image">
+                                    <img src="<?php echo APP_URL; ?>/assets/images/sarawak_crest.png" alt="Sarawak Crest" class="logo-image">
                                 </div>
                                 
                                 <h3 class="login-title">Sign In</h3>

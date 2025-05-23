@@ -14,14 +14,15 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 1.5rem;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 15px rgba(var(--forest-deep-rgb), 0.1);
+  border-bottom: 1px solid rgba(var(--forest-deep-rgb), 0.05);
   height: 70px; /* Fixed height for consistency */
 }
 
-/* Apply Nunito font explicitly to all navbar elements */
+/* Apply Poppins font explicitly to all navbar elements */
 .navbar,
 .navbar-brand,
 .navbar .nav-link,
@@ -29,7 +30,7 @@
 .navbar button,
 .navbar .user-info,
 .navbar .logout-btn {
-  font-family: var(--font-family);
+  font-family: var(--font-primary);
 }
 
 /* Navbar brand */
@@ -43,15 +44,17 @@
   line-height: inherit;
   white-space: nowrap;
   font-weight: var(--font-weight-semibold);
-  color: var(--primary-color);
+  color: var(--forest-deep);
   letter-spacing: -0.01em;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Important: Prevent underline on hover for navbar brand */
 .navbar-brand:hover,
 .navbar-brand:focus {
   text-decoration: none !important;
-  color: var(--primary-dark);
+  color: var(--forest-medium);
+  transform: translateY(-1px);
 }
 
 /* Navbar navigation */
@@ -70,8 +73,8 @@
   padding: 0.5rem 1rem;
   margin: 0 0.25rem;
   font-weight: var(--font-weight-medium);
-  color: #495057;
-  transition: color 0.15s ease-in-out, transform 0.2s ease;
+  color: var(--dark-color);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   white-space: nowrap;
 }
@@ -84,13 +87,13 @@
 .navbar a:hover,
 .navbar a:focus {
   text-decoration: none !important;
-  color: var(--primary-color);
+  color: var(--forest-deep);
   transform: translateY(-1px);
 }
 
 /* Active nav link */
 .nav-link.active {
-  color: var(--primary-color) !important;
+  color: var(--forest-deep) !important;
   font-weight: var(--font-weight-medium);
   position: relative;
 }
@@ -102,8 +105,9 @@
   right: 1rem;
   bottom: 0.25rem;
   height: 3px;
-  background-color: var(--primary-color);
+  background: linear-gradient(90deg, var(--forest-deep) 0%, var(--forest-medium) 100%);
   border-radius: 3px;
+  box-shadow: 0 1px 3px rgba(var(--forest-deep-rgb), 0.2);
 }
 
 /* Navbar nav items spacing in horizontal layout */
@@ -118,15 +122,16 @@
   
   .navbar-nav .nav-link {
     padding: 0.675rem 1rem;
-    border-radius: 0.25rem;
+    border-radius: var(--radius-md);
   }
   
   .navbar-nav .nav-link.active {
-    background-color: rgba(var(--primary-rgb), 0.05);
+    background-color: rgba(var(--forest-light-rgb), 0.15);
+    box-shadow: inset 0 0 0 1px rgba(var(--forest-deep-rgb), 0.1);
   }
   
   .navbar-nav .nav-link:hover {
-    background-color: rgba(var(--primary-rgb), 0.03);
+    background-color: rgba(var(--forest-light-rgb), 0.1);
   }
 }
 
@@ -134,25 +139,37 @@
 .user-info {
   display: flex;
   align-items: center;
-  color: var(--dark-color);
-  background-color: rgba(0, 0, 0, 0.03);
+  color: var(--forest-deep);
+  background-color: rgba(var(--forest-light-rgb), 0.15);
   padding: 0.5rem 1rem;
-  border-radius: 50rem;
+  border-radius: var(--radius-pill);
   margin-right: 1rem;
-  border: 1px solid rgba(0, 0, 0, 0.1); /* Added border for better visibility */
+  border: 1px solid rgba(var(--forest-deep-rgb), 0.1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 6px rgba(var(--forest-deep-rgb), 0.05);
+  font-weight: var(--font-weight-medium);
+}
+
+.user-info:hover {
+  background-color: rgba(var(--forest-light-rgb), 0.25);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(var(--forest-deep-rgb), 0.08);
 }
 
 .user-info i {
   margin-right: 0.5rem;
+  color: var(--forest-medium);
 }
 
 /* Logout button in navbar */
 .logout-btn {
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
-  border-radius: 50rem;
+  border-radius: var(--radius-pill);
   white-space: nowrap;
-  border: 1px solid rgba(220, 53, 69, 0.3); /* Added border for better visibility */
+  border: 1px solid rgba(var(--danger-rgb), 0.3);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: var(--font-weight-medium);
 }
 
 .logout-btn:hover {
@@ -160,6 +177,8 @@
   background-color: var(--danger-color);
   border-color: var(--danger-color);
   text-decoration: none;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(var(--danger-rgb), 0.25);
 }
 
 /* Responsive adjustments */

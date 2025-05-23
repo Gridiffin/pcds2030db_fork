@@ -5,6 +5,8 @@
 
 // Include rating helpers
 require_once 'rating_helpers.php';
+// Include status helpers
+require_once 'status_helpers.php';
 
 
 /**

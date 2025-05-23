@@ -151,37 +151,6 @@ $additionalScripts = [
     APP_URL . '/assets/js/agency/all_sectors.js'
 ];
 
-// Add custom CSS
-$additionalStyles = '
-<style>
-    .filter-control-wrapper {
-        position: relative;
-    }
-    
-    /* Highlight current agency sector programs */
-    tr.current-sector-row {
-        background-color: rgba(var(--bs-primary-rgb), 0.05);
-    }
-
-    /* Rating option background colors */
-    select#status option.status-target-achieved {
-        background-color: #28a745;
-        color: white;
-    }
-    select#status option.status-on-track-yearly {
-        background-color: #ffc107;
-        color: white;
-    }
-    select#status option.status-severe-delay {
-        background-color: #dc3545;
-        color: white;
-    }
-    select#status option.status-not-started {
-        background-color: #6c757d;
-        color: white;
-    }
-</style>';
-
 // Include header
 require_once '../layouts/header.php';
 

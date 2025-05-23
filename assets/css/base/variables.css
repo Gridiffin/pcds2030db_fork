@@ -1,40 +1,56 @@
 /**
  * Global CSS Variables
+ * PCDS2030 Forest Theme
  */
 
 :root {
+    /* Forest Theme Colors */
+    --forest-deep: #537D5D;    /* Deep forest green for primary actions/emphasis */
+    --forest-medium: #73946B;  /* Medium forest green for secondary elements */
+    --forest-light: #9EBC8A;   /* Light forest green for backgrounds/accents */
+    --forest-pale: #D2D0A0;    /* Pale sage for subtle highlights/backgrounds */
+    
+    /* RGB Values for opacity variations */
+    --forest-deep-rgb: 83, 125, 93;
+    --forest-medium-rgb: 115, 148, 107;
+    --forest-light-rgb: 158, 188, 138;
+    --forest-pale-rgb: 210, 208, 160;
+    
     /* Primary Colors */
-    --primary-color: #0d6efd;
-    --primary-rgb: 13, 110, 253;
-    --primary-dark: #0a58ca;
-    --primary-light: #6ea8fe;
+    --primary-color: var(--forest-deep);
+    --primary-rgb: var(--forest-deep-rgb);
+    --primary-dark: #3c5c43;
+    --primary-light: var(--forest-light);
     
     /* Secondary Colors */
-    --secondary-color: #28a745;
-    --secondary-rgb: 40, 167, 69;
-    --secondary-dark: #218838;
-    --secondary-light: #71dd8a;
-    
-    /* Neutral Colors */
-    --dark-color: #343a40;
-    --dark-rgb: 52, 58, 64;
-    --light-color: #f8f9fa;
-    --light-rgb: 248, 249, 250;
+    --secondary-color: var(--forest-medium);
+    --secondary-rgb: var(--forest-medium-rgb);
+    --secondary-dark: #5a7554;
+    --secondary-light: var(--forest-pale);
+    --secondary-light: var(--forest-pale);
+      /* Neutral Colors */
+    --dark-color: #2C3E2D;      /* Dark forest shade for text */
+    --dark-rgb: 44, 62, 45;
+    --light-color: #F8FAF5;     /* Light forest tint for backgrounds */
+    --light-rgb: 248, 250, 245;
     
     /* Utility Colors */
-    --warning-color: #ffc107;
-    --warning-rgb: 255, 193, 7;
-    --danger-color: #dc3545;
-    --danger-rgb: 220, 53, 69;
-    --info-color: #17a2b8;
-    --info-rgb: 23, 162, 184;
-    
-    /* Focus states */
-    --focus-outline: rgba(13, 110, 253, 0.5);
+    --success-color: #2E7D32;    /* Forest success */
+    --success-rgb: 46, 125, 50;
+    --warning-color: #ED6C02;    /* Warm orange */
+    --warning-rgb: 237, 108, 2;
+    --danger-color: #C62828;     /* Deep red */
+    --danger-rgb: 198, 40, 40;
+    --info-color: #0288D1;       /* Natural blue */
+    --info-rgb: 2, 136, 209;
+      /* Focus and Interactive States */
+    --focus-outline: rgba(var(--forest-deep-rgb), 0.5);
+    --hover-bg: rgba(var(--forest-deep-rgb), 0.05);
+    --active-bg: rgba(var(--forest-deep-rgb), 0.1);
     
     /* Typography */
-    --font-primary: 'Segoe UI', system-ui, -apple-system, sans-serif;
-    --font-secondary: 'Arial', sans-serif;
+    --font-primary: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-secondary: 'Inter', sans-serif;
     --font-weight-light: 300;
     --font-weight-regular: 400;
     --font-weight-medium: 500;

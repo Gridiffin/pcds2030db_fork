@@ -119,8 +119,9 @@ a.btn:hover {
 /* Form elements */
 .form-control:focus,
 .form-select:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 0.25rem var(--focus-outline);
+    border-color: var(--forest-deep);
+    box-shadow: 0 0 0 0.25rem rgba(var(--forest-deep-rgb), 0.25);
+    background-color: rgba(var(--forest-light-rgb), 0.02);
 }
 
 /* Button styles with enhanced hover effects */
@@ -169,22 +170,22 @@ a.btn:hover {
 }
 
 .btn-outline-primary:hover {
-    background-color: var(--primary-color);
-    color: white;
-    border-color: var(--primary-color);
-    text-decoration: none;
+  background-color: rgba(var(--forest-deep-rgb), 0.1);
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+  text-decoration: none;
 }
 
 .btn-outline-success {
-    color: var(--secondary-color);
-    border-color: var(--secondary-color);
+  color: var(--success-color);
+  border-color: var(--success-color);
 }
 
 .btn-outline-success:hover {
-    background-color: var(--secondary-color);
-    color: white;
-    border-color: var(--secondary-color);
-    text-decoration: none;
+  background-color: rgba(var(--success-rgb), 0.1);
+  color: var(--success-color);
+  border-color: var(--success-color);
+  text-decoration: none;
 }
 
 /* Layout elements */

@@ -15,7 +15,6 @@ require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/agencies/index.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/status_helpers.php';
 
 if (!is_agency()) {
     header('Location: ' . APP_URL . '/login.php');
@@ -30,15 +29,16 @@ $show_form = $current_period && $current_period['status'] === 'open';
 $message = '';
 $message_type = '';
 
-// Initialize variables
-$metrics = [];
-$draft_metrics = [];
-
 // Get outcomes for the sector
 $outcomes = get_agency_sector_outcomes($_SESSION['sector_id']);
+if (!is_array($metrics)) {
+    $metrics = [];
+}
 
-// Get draft outcomes if they exist
-$draft_metrics = get_draft_outcome($_SESSION['sector_id']);
+$draft_metrics = get_draft_metric($_SESSION['sector_id']);
+if (!is_array($draft_metrics)) {
+    $draft_metrics = [];
+}
 
 $additionalScripts = [
     APP_URL . '/assets/js/agency/metric_submission.js'

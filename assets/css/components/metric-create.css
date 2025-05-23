@@ -1,0 +1,137 @@
+/* Metric Create/Edit UI Components */
+
+/* Metric Headers and Controls */
+.metric-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 200px;
+}
+
+.metric-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.metric-name {
+    font-weight: 500;
+    cursor: text;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+}
+
+.metric-name:hover {
+    background-color: rgba(var(--forest-light-rgb), 0.1);
+}
+
+.metric-name:focus {
+    background-color: rgba(var(--forest-light-rgb), 0.15);
+    outline: none;
+}
+
+.metric-unit-display {
+    display: inline-block;
+    margin-left: 4px;
+    color: var(--forest-medium);
+    font-size: 0.85em;
+    font-style: italic;
+}
+
+.metric-unit-display:empty {
+    display: none;
+}
+
+/* Metric Actions */
+.metric-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.metric-cell {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.metric-value {
+    flex-grow: 1;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    min-width: 80px;
+    cursor: text;
+}
+
+.metric-value:hover {
+    background-color: rgba(var(--forest-light-rgb), 0.1);
+}
+
+.metric-value:focus {
+    background-color: rgba(var(--forest-light-rgb), 0.15);
+    outline: none;
+}
+
+/* Buttons & Controls */
+.unit-btn,
+.save-btn,
+.delete-column-btn {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--forest-deep);
+    opacity: 0.7;
+    transition: all 0.2s ease;
+}
+
+.unit-btn:hover,
+.save-btn:hover,
+.delete-column-btn:hover {
+    opacity: 1;
+    background-color: rgba(var(--forest-light-rgb), 0.1);
+}
+
+.save-btn {
+    display: none; /* Hidden by default, shown on content change */
+}
+
+.delete-column-btn {
+    color: var(--bs-danger);
+}
+
+/* Month Badge */
+.month-badge {
+    font-weight: 500;
+    color: var(--forest-deep);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    background-color: rgba(var(--forest-light-rgb), 0.1);
+}
+
+/* Total Row */
+.total-badge {
+    font-weight: 600;
+    color: var(--forest-deep);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.9em;
+}
+
+/* Table Styles */
+.metrics-table th:first-child,
+.metrics-table td:first-child {
+    background-color: rgba(var(--forest-light-rgb), 0.05);
+}
+
+.metrics-table .table-light {
+    background-color: rgba(var(--forest-light-rgb), 0.1);
+}
+
+/* Empty State */
+.empty-value {
+    color: var(--bs-gray);
+    font-style: italic;
+}

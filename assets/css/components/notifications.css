@@ -1,0 +1,119 @@
+/* Notification Components */
+
+/* Notification Container */
+.notifications-list .notification-item {
+    padding: 1rem;
+    border-left: 3px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.notifications-list .notification-item.unread {
+    background-color: rgba(var(--forest-light-rgb), 0.05);
+    border-left-color: var(--forest-deep);
+}
+
+/* Notification Icon */
+.notification-icon-sm {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: rgba(var(--forest-light-rgb), 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--forest-deep);
+}
+
+/* Notification Content */
+.notification-message {
+    font-weight: 500;
+    color: var(--forest-deep);
+}
+
+.notification-time {
+    color: var(--forest-medium);
+}
+
+/* Notification Meta */
+.notification-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Notification Header */
+.notification-header {
+    background-color: rgba(var(--forest-light-rgb), 0.05);
+    border-bottom: 1px solid rgba(var(--forest-deep-rgb), 0.1);
+}
+
+/* Notification Badge Colors */
+.notification-badge {
+    padding: 0.35em 0.65em;
+    font-size: 0.75em;
+    font-weight: 600;
+    border-radius: 10rem;
+}
+
+/* Type-specific Badge Colors */
+.notifications-list .badge-assigned_program {
+    background-color: var(--forest-deep);
+    color: white;
+}
+
+.notifications-list .badge-deadline {
+    background-color: var(--bs-warning);
+    color: var(--bs-dark);
+}
+
+.notifications-list .badge-update {
+    background-color: var(--forest-medium);
+    color: white;
+}
+
+.notifications-list .badge-feedback {
+    background-color: var(--forest-light);
+    color: var(--bs-dark);
+}
+
+/* Navigation & Controls */
+.notification-footer {
+    background-color: rgba(var(--forest-light-rgb), 0.02);
+    padding: 0.75rem;
+}
+
+.notification-dropdown {
+    min-width: 320px;
+    max-width: 400px;
+}
+
+/* Empty State */
+.notifications-empty {
+    text-align: center;
+    padding: 2rem;
+    color: var(--forest-medium);
+}
+
+.notifications-empty i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+/* Pagination */
+.notification-pagination {
+    margin-top: 1.5rem;
+}
+
+.notification-pagination .page-link {
+    color: var(--forest-deep);
+    border-color: rgba(var(--forest-deep-rgb), 0.1);
+}
+
+.notification-pagination .page-link:hover {
+    background-color: rgba(var(--forest-light-rgb), 0.1);
+}
+
+.notification-pagination .page-item.active .page-link {
+    background-color: var(--forest-deep);
+    border-color: var(--forest-deep);
+}

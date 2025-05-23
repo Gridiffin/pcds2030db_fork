@@ -9,7 +9,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(var(--forest-deep-rgb), 0.4);
   z-index: 1040;
 }
 
@@ -43,35 +43,110 @@
   flex-direction: column;
   pointer-events: auto;
   background-color: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(var(--forest-deep-rgb), 0.1);
   border-radius: var(--border-radius-md);
   outline: 0;
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 10px 30px rgba(var(--forest-deep-rgb), 0.15);
 }
 
 /* Modal header */
 .modal-header {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem;
-  border-bottom: 1px solid #dee2e6;
+  padding: 1.25rem;
+  border-bottom: 1px solid rgba(var(--forest-deep-rgb), 0.1);
+  border-top-left-radius: calc(var(--border-radius-md) - 1px);
+  border-top-right-radius: calc(var(--border-radius-md) - 1px);
+  background: linear-gradient(45deg, rgba(var(--forest-deep-rgb), 0.05) 0%, rgba(var(--forest-light-rgb), 0.1) 100%);
+}
+
+.modal-header .modal-title {
+  margin: 0;
+  line-height: 1.5;
+  font-size: 1.25rem;
+  font-weight: var(--font-weight-semibold);
+  color: var(--forest-deep);
+}
+
+.btn-close {
+  box-sizing: content-box;
+  width: 1em;
+  height: 1em;
+  padding: 0.25em;
+  background-color: transparent;
+  border: 0;
+  border-radius: var(--border-radius-sm);
+  opacity: 0.5;
+  transition: all 0.2s ease;
+}
+
+.btn-close:hover {
+  opacity: 0.75;
+  background-color: rgba(var(--forest-deep-rgb), 0.1);
 }
 
 /* Modal body */
 .modal-body {
   position: relative;
   flex: 1 1 auto;
-  padding: 1rem;
+  padding: 1.5rem;
 }
 
 /* Modal footer */
 .modal-footer {
   display: flex;
   flex-wrap: wrap;
+  flex-shrink: 0;
+  align-items: center;
   justify-content: flex-end;
-  padding: 0.75rem;
-  border-top: 1px solid #dee2e6;
+  padding: 1.25rem;
+  border-top: 1px solid rgba(var(--forest-deep-rgb), 0.1);
+  background-color: rgba(var(--forest-light-rgb), 0.05);
+}
+
+/* Modal dialog sizes */
+.modal-dialog-sm {
+  max-width: 400px;
+}
+
+.modal-dialog-lg {
+  max-width: 800px;
+}
+
+.modal-dialog-xl {
+  max-width: 1140px;
+}
+
+/* Full-screen modal */
+.modal-fullscreen {
+  width: 100vw;
+  max-width: none;
+  height: 100%;
+  margin: 0;
+}
+
+.modal-fullscreen .modal-content {
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+}
+
+/* Animations */
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-content {
+  animation: modalFadeIn 0.3s ease forwards;
 }
 
 /* Form overlay as an alternative to modals */

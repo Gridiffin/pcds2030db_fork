@@ -152,13 +152,13 @@ $other_sectors_html = ob_get_clean();
 ob_start();
 ?>
 
-<!-- Metrics HTML -->
-<?php if (!empty($metrics)): ?>
+<!-- Outcomes HTML -->
+<?php if (!empty($outcomes)): ?>
     <ul class="list-group list-group-flush">
         <?php 
         $count = 0;
-        foreach ($metrics as $metric): 
-            if ($count++ >= 5) break; // Show only 5 metrics
+        foreach ($outcomes as $outcome): 
+            if ($count++ >= 5) break; // Show only 5 outcomes
         ?>
             <li class="list-group-item d-flex align-items-center p-2">
                 <span class="metric-icon me-2">

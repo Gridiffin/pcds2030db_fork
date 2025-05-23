@@ -60,24 +60,21 @@ require_once '../layouts/admin_nav.php';
 // Set up the page header variables for dashboard_header.php
 $title = "System Settings";
 $subtitle = "Configure system-wide settings";
-$headerStyle = 'light'; // Use light (white) style for inner pages
+$headerStyle = 'forest-theme'; // Use forest theme
 $actions = [];
 
 // Include the dashboard header component
 require_once ROOT_PATH . 'app/lib/dashboard_header.php';
 ?>
 
-<div class="container-fluid px-4 py-4">
-    <?php if (!empty($message)): ?>
-        <div class="alert alert-<?php echo $messageType; ?> alert-dismissible fade show" role="alert">
-            <i class="fas fa-info-circle me-2"></i>
+<div class="container-fluid px-4 py-4">    <?php if (!empty($message)): ?>
+        <div class="alert alert-forest alert-<?php echo $messageType; ?> alert-dismissible fade show" role="alert">
+            <i class="fas fa-info-circle alert-icon"></i>
             <?php echo $message; ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
-    <?php endif; ?>
-
-    <!-- System Settings Card -->
-    <div class="card shadow-sm mb-4">
+    <?php endif; ?>    <!-- System Settings Card -->
+    <div class="card admin-card mb-4">
         <div class="card-header">
             <h5 class="card-title m-0">General Settings</h5>
         </div>
@@ -91,8 +88,7 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                             Enable or disable multi-sector functionality. When enabled, the dashboard will display all sectors.
                             When disabled, the dashboard will focus exclusively on the Forestry sector.
                         </p>
-                        
-                        <div class="form-check form-switch mt-3">
+                          <div class="form-check form-switch forest-switch mt-3">
                             <!-- Hidden field to ensure the form value is always sent -->
                             <input type="hidden" name="multi_sector" value="0">
                             
@@ -103,14 +99,13 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                             </label>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="card bg-light">
+                    <div class="col-md-4">                        <div class="system-status-card">
                             <div class="card-body">
                                 <h6 class="card-title">Current Status</h6>
-                                <span class="badge bg-<?php echo $multi_sector_enabled ? 'success' : 'secondary'; ?> mb-2">
+                                <span class="status-indicator <?php echo $multi_sector_enabled ? 'status-success' : 'status-info'; ?> mb-2">
                                     <?php echo $multi_sector_enabled ? 'Enabled' : 'Disabled'; ?>
                                 </span>
-                                <p class="small mb-0">
+                                <p class="small text-secondary mb-0">
                                     <?php echo $multi_sector_enabled 
                                         ? 'All sectors are currently visible in the dashboard.' 
                                         : 'Dashboard is focused on the Forestry sector only.'; ?>
@@ -119,39 +114,44 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                         </div>
                     </div>
                 </div>
-                
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>
+                  <div class="alert alert-forest alert-info">
+                    <i class="fas fa-info-circle alert-icon"></i>
                     <strong>Note:</strong> Changing this setting will affect the entire system. All users may need to refresh their browsers to see the changes.
                 </div>
                 
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" class="btn btn-forest">
                     <i class="fas fa-save me-1"></i> Save Settings
                 </button>
             </form>
         </div>
     </div>
-    
-    <!-- Other System Information Card -->
-    <div class="card shadow-sm">
+      <!-- Other System Information Card -->
+    <div class="card admin-card">
         <div class="card-header">
             <h5 class="card-title m-0">System Information</h5>
         </div>
-        <div class="card-body">
-            <div class="row">
+        <div class="card-body">            <div class="row g-4">
                 <div class="col-md-4">
-                    <p><strong>Application Version:</strong> <?php echo APP_VERSION; ?></p>
+                    <div class="p-3 border rounded bg-light">
+                        <h6 class="text-forest mb-2">Application Version</h6>
+                        <p class="h5 mb-0"><?php echo APP_VERSION; ?></p>
+                    </div>
                 </div>
                 <div class="col-md-4">
-                    <p><strong>PHP Version:</strong> <?php echo phpversion(); ?></p>
+                    <div class="p-3 border rounded bg-light">
+                        <h6 class="text-forest mb-2">PHP Version</h6>
+                        <p class="h5 mb-0"><?php echo phpversion(); ?></p>
+                    </div>
                 </div>
                 <div class="col-md-4">
-                    <p><strong>MySQL Version:</strong> <?php echo $conn->server_info; ?></p>
+                    <div class="p-3 border rounded bg-light">
+                        <h6 class="text-forest mb-2">MySQL Version</h6>
+                        <p class="h5 mb-0"><?php echo $conn->server_info; ?></p>
+                    </div>
                 </div>
             </div>
-            
-            <div class="alert alert-secondary mt-3">
-                <h6><i class="fas fa-flag me-2"></i>Implementation Scope</h6>
+              <div class="alert alert-forest alert-info mt-3">
+                <h6 class="text-forest"><i class="fas fa-flag me-2"></i>Implementation Scope</h6>
                 <p class="mb-0">
                     <?php if ($multi_sector_enabled): ?>
                         This system is configured for all government sectors, including Forestry, Health, Education, and more.

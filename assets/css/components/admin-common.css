@@ -1,0 +1,534 @@
+/**
+ * Admin Common Components with Forest Theme
+ * Unified styling for admin interface components
+ */
+
+/* Forest Theme Variables */
+:root {
+  /* Forest theme color palette */
+  --forest-deep: #537D5D;      /* Deep forest green for primary actions */
+  --forest-medium: #73946B;    /* Medium forest green for secondary elements */
+  --forest-light: #9EBC8A;     /* Light forest green for backgrounds */
+  --forest-pale: #D2D0A0;      /* Pale forest gold for accents */
+  
+  /* RGB values for opacity variations */
+  --forest-deep-rgb: 83, 125, 93;
+  --forest-medium-rgb: 115, 148, 107;
+  --forest-light-rgb: 158, 188, 138;
+  
+  /* Status colors */
+  --status-success: #2E7D32;
+  --status-warning: #ED6C02;
+  --status-error: #D32F2F;
+  --status-info: #0288D1;
+  
+  /* Semantic colors */
+  --text-primary: #2C3E2E;
+  --text-secondary: #5C735F;
+  --border-color: rgba(83, 125, 93, 0.15);
+  --hover-bg: rgba(83, 125, 93, 0.05);
+}
+
+/* Header Styling */
+.simple-header.forest-theme {
+  background: linear-gradient(135deg, var(--forest-deep) 0%, var(--forest-medium) 100%);
+  color: white;
+  padding: 2rem 0;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.simple-header.forest-theme .header-title {
+  color: white;
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.simple-header.forest-theme .header-subtitle {
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 400;
+  font-size: 1rem;
+}
+
+/* Tables */
+.table-custom {
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.table-custom th {
+  background-color: rgba(var(--forest-light-rgb), 0.05);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--forest-deep);
+  font-weight: var(--font-weight-semibold);
+  padding: 1rem;
+}
+
+.table-custom td {
+  padding: 1rem;
+  vertical-align: middle;
+}
+
+.table-custom tr {
+  transition: all 0.2s ease;
+}
+
+.table-custom tr:hover {
+  background-color: rgba(var(--forest-deep-rgb), 0.02) !important;
+  transform: translateX(3px);
+}
+
+/* Filter Controls */
+.filter-control-wrapper {
+  position: relative;
+}
+
+.filter-control-wrapper .loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.7);
+  z-index: 100;
+  display: none;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Status Indicators */
+.status-indicator {
+  font-weight: var(--font-weight-semibold);
+}
+
+.status-indicator.active {
+  color: var(--forest-deep);
+}
+
+.status-indicator.inactive {
+  color: var(--danger-color);
+}
+
+/* User Status */
+tr.inactive-user {
+  background-color: rgba(var(--forest-light-rgb), 0.05);
+  opacity: 0.7;
+}
+
+tr.inactive-user td {
+  color: var(--forest-medium);
+}
+
+tr.inactive-user:hover {
+  opacity: 0.9;
+}
+
+/* Change Indicators */
+.changed-indicator {
+  position: absolute;
+  transform: translateY(-50%);
+  top: 50%;
+  font-size: 0.7rem;
+  animation: fadeIn 0.3s;
+}
+
+.unsaved-changes-notification {
+  animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Program Row States */
+.draft-program {
+  background-color: rgba(var(--forest-light-rgb), 0.05);
+}
+
+.program-row:hover {
+  background-color: rgba(var(--forest-light-rgb), 0.03);
+}
+
+/* Custom Alerts */
+.custom-alert {
+  border-left: 4px solid var(--forest-deep);
+  background-color: rgba(var(--forest-light-rgb), 0.1);
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* Period Controls */
+.period-selector {
+  background-color: white;
+  border: 1px solid rgba(var(--forest-deep-rgb), 0.1);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+}
+
+.period-badge .badge {
+  font-weight: normal;
+  padding: 0.4em 0.8em;
+  background-color: rgba(var(--forest-light-rgb), 0.1);
+  color: var(--forest-deep);
+  border: 1px solid rgba(var(--forest-deep-rgb), 0.2);
+}
+
+/* Improved Badge Styling */
+.badge.rounded-pill {
+  font-weight: normal;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+}
+
+/* Form Controls */
+.form-control:focus, 
+.form-select:focus {
+  border-color: rgba(var(--forest-deep-rgb), 0.5);
+  box-shadow: 0 0 0 0.2rem rgba(var(--forest-deep-rgb), 0.15);
+}
+
+/* Toast Notifications */
+.toast-container {
+  z-index: 1050;
+}
+
+.toast {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.toast.show {
+  opacity: 1;
+}
+
+/* Year Groups / Accordion */
+.year-group {
+  border: 1px solid rgba(var(--forest-deep-rgb), 0.1);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.year-toggle {
+  width: 100%;
+  text-align: left;
+  padding: 1rem 1.25rem;
+  background-color: rgba(var(--forest-light-rgb), 0.05);
+  border: 1px solid rgba(var(--forest-deep-rgb), 0.1);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.year-toggle.expanded {
+  color: var(--forest-deep);
+  background-color: rgba(var(--forest-light-rgb), 0.1);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.year-content {
+  border: 1px solid rgba(var(--forest-deep-rgb), 0.1);
+  border-top: none;
+  border-bottom-left-radius: var(--radius-md);
+  border-bottom-right-radius: var(--radius-md);
+  background-color: white;
+}
+
+.year-content.hide {
+  display: none;
+}
+
+.year-content.show {
+  display: block;
+}
+
+/* Button Groups */
+.btn-group-sm .btn {
+  padding: 0.375rem 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+/* Filter Actions */
+.filter-actions {
+  padding-top: 1rem;
+  margin-top: 1rem;
+  border-top: 1px solid rgba(var(--forest-deep-rgb), 0.1);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+/* Card Headers */
+.card-header {
+  background-color: var(--forest-deep) !important;
+  color: #ffffff !important;
+  padding: 1rem 1.25rem;
+}
+
+.card-header .card-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Tips Section */
+.user-management-tips {
+  background-color: rgba(var(--forest-light-rgb), 0.05);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  margin-top: 2rem;
+  border: 1px solid rgba(var(--forest-deep-rgb), 0.1);
+}
+
+.user-management-tips h5 {
+  color: var(--forest-deep);
+  margin-bottom: 1rem;
+}
+
+/* Alert styling */
+.alert-forest {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  border: none;
+  border-radius: var(--radius-md);
+  background-color: rgba(var(--forest-light-rgb), 0.1);
+}
+
+.alert-forest.alert-success {
+  background-color: rgba(46, 125, 50, 0.1);
+  color: var(--status-success);
+}
+
+.alert-forest.alert-danger {
+  background-color: rgba(211, 47, 47, 0.1);
+  color: var(--status-error);
+}
+
+.alert-forest.alert-warning {
+  background-color: rgba(237, 108, 2, 0.1);
+  color: var(--status-warning);
+}
+
+.alert-forest.alert-info {
+  background-color: rgba(2, 136, 209, 0.1);
+  color: var(--status-info);
+}
+
+.alert-forest .alert-icon {
+  margin-right: 0.75rem;
+  font-size: 1.25rem;
+}
+
+/* User management page specific styles */
+.user-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.user-status.active {
+  background-color: rgba(46, 125, 50, 0.1);
+  color: var(--status-success);
+}
+
+.user-status.inactive {
+  background-color: rgba(211, 47, 47, 0.1);
+  color: var(--status-error);
+}
+
+tr.user-inactive {
+  background-color: rgba(var(--forest-light-rgb), 0.05);
+}
+
+tr.user-inactive td {
+  color: var(--text-secondary);
+}
+
+tr.user-inactive:hover {
+  background-color: rgba(var(--forest-light-rgb), 0.1);
+}
+
+/* Button variants */
+.btn-forest {
+  background-color: var(--forest-deep);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  border-radius: 0.375rem;
+  transition: all 0.3s ease;
+}
+
+.btn-forest:hover {
+  background-color: var(--forest-medium);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn-forest-light {
+  background-color: white;
+  color: var(--forest-deep);
+  border: 2px solid var(--forest-deep);
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  border-radius: 0.375rem;
+  transition: all 0.3s ease;
+}
+
+.btn-forest-light:hover {
+  background-color: var(--hover-bg);
+  color: var(--forest-deep);
+}
+
+/* Breadcrumb styling */
+.breadcrumb-forest {
+  padding: 0.75rem 1rem;
+  background-color: rgba(var(--forest-light-rgb), 0.05);
+  border-radius: var(--radius-md);
+  margin-bottom: 1.5rem;
+}
+
+.breadcrumb-forest .breadcrumb-item {
+  color: var(--text-secondary);
+}
+
+.breadcrumb-forest .breadcrumb-item.active {
+  color: var(--forest-deep);
+  font-weight: var(--font-weight-semibold);
+}
+
+.breadcrumb-forest .breadcrumb-item + .breadcrumb-item::before {
+  color: var(--forest-medium);
+}
+
+/* Search bar styling */
+.search-forest {
+  position: relative;
+}
+
+.search-forest .form-control {
+  padding-left: 2.5rem;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(var(--forest-deep-rgb), 0.2);
+  transition: all 0.3s ease;
+}
+
+.search-forest .search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--forest-medium);
+  pointer-events: none;
+}
+
+.search-forest .form-control:focus {
+  border-color: var(--forest-deep);
+  box-shadow: 0 0 0 0.2rem rgba(var(--forest-deep-rgb), 0.15);
+}
+
+/* Loading states */
+.loading-forest {
+  display: inline-block;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 2px solid rgba(var(--forest-deep-rgb), 0.1);
+  border-left-color: var(--forest-deep);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Forest theme form switch */
+.form-switch.forest-switch {
+  padding-left: 3em;
+  margin-bottom: 1.5rem;
+  border-radius: 8px;
+  padding: 1rem;
+  background-color: rgba(var(--forest-light-rgb), 0.05);
+  border: 1px solid rgba(var(--forest-deep-rgb), 0.1);
+}
+
+.form-switch.forest-switch .form-check-input {
+  width: 3em;
+  height: 1.5em;
+  margin-left: -3em;
+  background-color: rgba(var(--forest-deep-rgb), 0.2);
+  border-color: rgba(var(--forest-deep-rgb), 0.3);
+}
+
+.form-switch.forest-switch .form-check-input:checked {
+  background-color: var(--forest-deep);
+  border-color: var(--forest-deep);
+}
+
+.form-switch.forest-switch .form-check-label {
+  color: var(--text-primary);
+  font-weight: 500;
+  padding-left: 1rem;
+}
+
+/* System status card */
+.system-status-card {
+  background-color: rgba(var(--forest-light-rgb), 0.05);
+  border: 1px solid rgba(var(--forest-deep-rgb), 0.1);
+  border-radius: var(--radius-md);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.system-status-card .card-title {
+  color: var(--forest-deep);
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.system-status-card .status-indicator {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .simple-header.forest-theme {
+    padding: 1.5rem 0;
+  }
+  
+  .simple-header.forest-theme .header-title {
+    font-size: 1.5rem;
+  }
+  
+  .filter-controls {
+    padding: 1rem;
+  }
+  
+  .table-custom td,
+  .table-custom th {
+    padding: 0.75rem;
+  }
+  
+  .btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+  }
+}

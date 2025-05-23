@@ -16,8 +16,8 @@ require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/admins/index.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/rating_helpers.php'; // For rating badge display
-require_once PROJECT_ROOT_PATH . 'app/lib/admins/statistics.php'; // For get_admin_program_details function
+require_once PROJECT_ROOT_PATH . 'app/lib/rating_helpers.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/admins/statistics.php';
 
 // Verify user is admin
 if (!is_admin()) {
@@ -30,23 +30,15 @@ $pageTitle = 'Programs Overview';
 
 // Get current reporting period
 $current_period = get_current_reporting_period();
+$period_id = $current_period ? $current_period['period_id'] : null;
 
 // Process filters
-$filters = [];
-if (isset($_GET['rating'])) $filters['status'] = $_GET['rating']; // Still maps to status in DB but uses "rating" in UI
-if (isset($_GET['sector_id'])) $filters['sector_id'] = intval($_GET['sector_id']);
-if (isset($_GET['agency_id'])) $filters['agency_id'] = intval($_GET['agency_id']);
-if (isset($_GET['search'])) $filters['search'] = trim($_GET['search']);
-if (isset($_GET['program_type'])) {
-    if ($_GET['program_type'] === 'assigned') {
-        $filters['is_assigned'] = true;
-    } elseif ($_GET['program_type'] === 'agency') {
-        $filters['is_assigned'] = false;
-    }
-}
+$filters = [
+    'status' => $_GET['rating'] ?? null,
+    'sector_id' => isset($_GET['sector_id']) ? intval($_GET['sector_id']) : null,
+    'agency_id' => isset($_GET['agency_id']) ? intval($_GET['agency_id']) : null
+];
 
-// Add period_id handling for historical views
-$period_id = isset($_GET['period_id']) ? intval($_GET['period_id']) : ($current_period['period_id'] ?? null);
 $viewing_period = $period_id ? get_reporting_period($period_id) : $current_period;
 
 // Get all programs with filters
@@ -68,63 +60,6 @@ $additionalScripts = [
     APP_URL . '/assets/js/period_selector.js',
     APP_URL . '/assets/js/admin/programs_list.js'
 ];
-
-// Add custom CSS
-$additionalStyles = '
-<style>
-    .changed-indicator {
-        position: absolute;
-        transform: translateY(-50%);
-        top: 50%;
-        font-size: 0.7rem;
-        animation: fadeIn 0.3s;
-    }
-    
-    .unsaved-changes-notification {
-        animation: fadeIn 0.3s;
-    }
-    
-    @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-    }
-    
-    .form-control, .form-select {
-        position: relative;
-    }
-    
-    .filter-control-wrapper {
-        position: relative;
-    }
-    
-    /* Loading overlay for table */
-    .loading-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(255, 255, 255, 0.7);
-        z-index: 100;
-        display: none;
-        justify-content: center;
-        align-items: center;
-    }
-    
-    /* Toast styling */
-    .toast-container {
-        z-index: 1050;
-    }
-    
-    .toast {
-        opacity: 0;
-        transition: opacity 0.3s ease;
-    }
-    
-    .toast.show {
-        opacity: 1;
-    }
-</style>';
 
 // Include header
 require_once '../layouts/header.php';
@@ -154,126 +89,101 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
 
 <!-- Filter Card -->
 <div class="card shadow-sm mb-4">
-    <div class="card-header bg-primary text-white">
+    <div class="card-header">
         <h5 class="card-title m-0">
             <i class="fas fa-filter me-2"></i>Filter Programs
         </h5>
     </div>
     <div class="card-body">
-        <form method="get" id="filterForm">
-            <!-- Preserve period_id when filtering -->
-            <?php if ($period_id): ?>
-            <input type="hidden" name="period_id" value="<?php echo $period_id; ?>">
-            <?php endif; ?>
-            
-            <div class="row g-3">
-                <div class="col-md-3 filter-control-wrapper">
-                    <label for="search" class="form-label">Search</label>
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="fas fa-search"></i></span>
-                        <input type="text" class="form-control" id="search" name="search" 
-                               placeholder="Program name or description" 
-                               value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
-                    </div>
-                </div>
-                
-                <div class="col-md-2 filter-control-wrapper">
-                    <label for="program_type" class="form-label">Program Type</label>
-                    <select class="form-select" id="program_type" name="program_type">
-                        <option value="">All Programs</option>
-                        <option value="assigned" <?php if(isset($_GET['program_type']) && $_GET['program_type'] === 'assigned') echo 'selected'; ?>>Assigned Programs</option>
-                        <option value="agency" <?php if(isset($_GET['program_type']) && $_GET['program_type'] === 'agency') echo 'selected'; ?>>Agency Created</option>
-                    </select>
-                </div>
-                  <div class="col-md-2 filter-control-wrapper">
-                    <label for="rating" class="form-label">Rating</label>
+        <form method="get" class="row g-3 align-items-end" id="filterForm">
+            <!-- Rating/Status Filter -->
+            <div class="col-md-3">
+                <label for="rating" class="form-label">Status</label>
+                <div class="filter-control-wrapper">
                     <select class="form-select" id="rating" name="rating">
-                        <option value="">All Ratings</option>
-                        <option value="target-achieved" <?php if(isset($_GET['rating']) && $_GET['rating'] === 'target-achieved') echo 'selected'; ?>>Target Achieved</option>
-                        <option value="on-track-yearly" <?php if(isset($_GET['rating']) && $_GET['rating'] === 'on-track-yearly') echo 'selected'; ?>>On Track</option>
-                        <option value="severe-delay" <?php if(isset($_GET['rating']) && $_GET['rating'] === 'severe-delay') echo 'selected'; ?>>Delayed</option>
-                        <option value="not-started" <?php if(isset($_GET['rating']) && $_GET['rating'] === 'not-started') echo 'selected'; ?>>Not Started</option>
+                        <option value="">All Statuses</option>
+                        <option value="target-achieved" <?php echo ($filters['status'] === 'target-achieved') ? 'selected' : ''; ?>>Target Achieved</option>
+                        <option value="on-track-yearly" <?php echo ($filters['status'] === 'on-track-yearly') ? 'selected' : ''; ?>>On Track</option>
+                        <option value="severe-delay" <?php echo ($filters['status'] === 'severe-delay') ? 'selected' : ''; ?>>Severe Delay</option>
+                        <option value="not-started" <?php echo ($filters['status'] === 'not-started') ? 'selected' : ''; ?>>Not Started</option>
                     </select>
                 </div>
-                
-                <div class="col-md-2 filter-control-wrapper">
-                    <label for="sector_id" class="form-label">Sector</label>
+            </div>
+            
+            <!-- Sector Filter -->
+            <div class="col-md-3">
+                <label for="sector_id" class="form-label">Sector</label>
+                <div class="filter-control-wrapper">
                     <select class="form-select" id="sector_id" name="sector_id">
                         <option value="">All Sectors</option>
                         <?php foreach ($sectors as $sector): ?>
                             <option value="<?php echo $sector['sector_id']; ?>" 
-                                <?php if(isset($_GET['sector_id']) && $_GET['sector_id'] == $sector['sector_id']) echo 'selected'; ?>>
+                                    <?php echo ($filters['sector_id'] === $sector['sector_id']) ? 'selected' : ''; ?>>
                                 <?php echo htmlspecialchars($sector['sector_name']); ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
-                
-                <div class="col-md-2 filter-control-wrapper">
-                    <label for="agency_id" class="form-label">Agency</label>
+            </div>
+            
+            <!-- Agency Filter -->
+            <div class="col-md-3">
+                <label for="agency_id" class="form-label">Agency</label>
+                <div class="filter-control-wrapper">
                     <select class="form-select" id="agency_id" name="agency_id">
                         <option value="">All Agencies</option>
                         <?php foreach ($agencies as $agency): ?>
                             <option value="<?php echo $agency['user_id']; ?>" 
-                                <?php if(isset($_GET['agency_id']) && $_GET['agency_id'] == $agency['user_id']) echo 'selected'; ?>>
+                                    <?php echo ($filters['agency_id'] === $agency['user_id']) ? 'selected' : ''; ?>>
                                 <?php echo htmlspecialchars($agency['agency_name']); ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
-                
-                <div class="col-md-1 d-flex align-items-end">
-                    <div class="btn-group w-100">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-filter me-1"></i> Apply
-                        </button>
-                        <a href="programs.php<?php echo $period_id ? '?period_id=' . $period_id : ''; ?>" class="btn btn-outline-secondary">
-                            <i class="fas fa-undo me-1"></i> Reset
-                        </a>
-                    </div>
+            </div>
+            
+            <!-- Filter Actions -->
+            <div class="col-md-3">
+                <div class="filter-actions">
+                    <button type="reset" class="btn btn-light" id="resetFilters">
+                        <i class="fas fa-undo me-1"></i>Reset
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search me-1"></i>Apply
+                    </button>
                 </div>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Active filters display -->
-<?php if (!empty($filters)): ?>
-<div class="alert alert-info mb-4">
-    <div class="d-flex align-items-center">
-        <i class="fas fa-filter me-2"></i>
-        <span>Filtered results: <strong><?php echo count($programs); ?></strong> programs found</span>
-        <a href="programs.php<?php echo $period_id ? '?period_id=' . $period_id : ''; ?>" class="btn btn-sm btn-outline-secondary ms-auto">
-            <i class="fas fa-times me-1"></i> Clear All Filters
-        </a>
-    </div>
-</div>
-<?php endif; ?>
-
-<!-- Programs List -->
+<!-- Programs Table -->
 <div class="card shadow-sm">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="card-title m-0">All Programs</h5>
-        <span class="badge bg-primary"><?php echo count($programs); ?> Programs</span>
+        <h5 class="card-title m-0">Programs List</h5>
+        <div class="btn-group">
+            <button class="btn btn-sm btn-light border" id="refreshTable">
+                <i class="fas fa-sync-alt me-1"></i>Refresh
+            </button>
+        </div>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover" id="programsTable">
-                <thead class="table-light">
-                    <tr>                        <th>Program Name</th>
-                        <th>Agency</th>
+            <table class="table table-hover table-custom mb-0">
+                <thead>
+                    <tr>
+                        <th>Program</th>
                         <th>Sector</th>
-                        <th>Type</th>
-                        <th>Rating</th>
-                        <th>Timeline</th>
-                        <th>Last Updated</th>
-                        <th>Actions</th>
+                        <th>Agency</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-center">Last Updated</th>
+                        <th class="text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (empty($programs)): ?>
                         <tr>
-                            <td colspan="8" class="text-center py-4">
+                            <td colspan="6" class="text-center py-4">
                                 <div class="alert alert-info mb-0">
                                     <i class="fas fa-info-circle me-2"></i>
                                     <?php if ($period_id && $period_id != ($current_period['period_id'] ?? null)): ?>
@@ -295,84 +205,38 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                                         <?php endif; ?>
                                     </div>
                                     <?php if (!empty($program['description'])): ?>
-                                        <div class="small text-muted"><?php echo substr(htmlspecialchars($program['description']), 0, 50); ?><?php echo strlen($program['description']) > 50 ? '...' : ''; ?></div>
+                                        <div class="text-muted small mt-1">
+                                            <?php echo htmlspecialchars(substr($program['description'], 0, 100)) . (strlen($program['description']) > 100 ? '...' : ''); ?>
+                                        </div>
                                     <?php endif; ?>
                                 </td>
-                                <td><?php echo htmlspecialchars($program['agency_name']); ?></td>
                                 <td><?php echo htmlspecialchars($program['sector_name']); ?></td>
-                                <td>
-                                    <?php if (isset($program['is_assigned']) && $program['is_assigned']): ?>
-                                        <span class="badge bg-success">Assigned</span>
+                                <td><?php echo htmlspecialchars($program['agency_name']); ?></td>
+                                <td class="text-center">
+                                    <?php if (isset($program['current_submission'])): ?>
+                                        <span class="badge rounded-pill bg-<?php echo get_status_color($program['current_submission']['status']); ?>">
+                                            <?php echo get_status_display_name($program['current_submission']['status']); ?>
+                                        </span>
                                     <?php else: ?>
-                                        <span class="badge bg-info">Agency Created</span>
-                                    <?php endif; ?>
-                                </td>                                <td>
-                                    <?php if (isset($program['status'])): ?>
-                                        <?php 
-                                        $rating = $program['status']; // Column still named 'status' in DB
-                                        $rating_class = 'secondary'; // Default
-                                        $rating_label = 'Not Started';
-                                        
-                                        switch($rating) {
-                                            case 'on-track':
-                                            case 'on-track-yearly':
-                                                $rating_class = 'warning';
-                                                $rating_label = 'On Track';
-                                                break;                                            case 'delayed':
-                                            case 'severe-delay':
-                                                $rating_class = 'danger';
-                                                $rating_label = 'Delayed';
-                                                break;
-                                            case 'completed':
-                                            case 'target-achieved':
-                                                $rating_class = 'success';
-                                                $rating_label = 'Target Achieved';
-                                                break;
-                                            case 'not-started':
-                                                $rating_class = 'secondary';
-                                                $rating_label = 'Not Started';
-                                                break;
-                                        }
-                                        ?>
-                                        <span class="badge bg-<?php echo $rating_class; ?>"><?php echo $rating_label; ?></span>
-                                    <?php else: ?>
-                                        <span class="badge bg-secondary">Not Reported</span>
+                                        <span class="badge rounded-pill bg-secondary">Not Started</span>
                                     <?php endif; ?>
                                 </td>
-                                <td>
-                                    <?php if (isset($program['start_date']) && $program['start_date']): ?>
-                                        <?php echo date('M j, Y', strtotime($program['start_date'])); ?>
-                                        <?php if (isset($program['end_date']) && $program['end_date']): ?>
-                                            <span class="text-muted">to</span> <?php echo date('M j, Y', strtotime($program['end_date'])); ?>
-                                        <?php endif; ?>
+                                <td class="text-center">
+                                    <?php if (isset($program['current_submission'])): ?>
+                                        <small><?php echo date('M j, Y g:i A', strtotime($program['current_submission']['submission_date'])); ?></small>
                                     <?php else: ?>
-                                        <span class="text-muted">Not specified</span>
+                                        <small class="text-muted">--</small>
                                     <?php endif; ?>
                                 </td>
-                                <td>
-                                    <?php if (!empty($program['updated_at'])): ?>
-                                        <?php echo date('M j, Y', strtotime($program['updated_at'])); ?>
-                                    <?php else: ?>
-                                        <span class="text-muted">Not available</span>
-                                    <?php endif; ?>
-                                </td>                                <td>
-                                    <div class="btn-group btn-group-sm d-flex flex-wrap justify-content-start">
-                                        <?php
-                                        $program_details = get_admin_program_details($program['program_id']);
-                                        $current_submission = $program_details['current_submission'] ?? null;
-                                        ?>
-                                        <a href="view_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="View Details">
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="view_program.php?id=<?php echo $program['program_id']; ?>" 
+                                           class="btn btn-light" title="View Program">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        <a href="<?php echo APP_URL; ?>/app/views/admin/edit_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-secondary" title="Edit Program">
+                                        <a href="edit_program.php?id=<?php echo $program['program_id']; ?>" 
+                                           class="btn btn-light" title="Edit Program">
                                             <i class="fas fa-edit"></i>
-                                        </a>                                        <?php if ($current_submission && isset($current_submission['submission_id']) && $current_submission['is_draft'] == 0): ?>
-                                            <a href="reopen_program.php?program_id=<?php echo $program['program_id']; ?>&submission_id=<?php echo $current_submission['submission_id']; ?>" class="btn btn-warning btn-sm" title="Reopen for editing" onclick="return confirm('Are you sure you want to reopen this program submission for editing?');">
-                                                <i class="fas fa-lock-open"></i> Reopen
-                                            </a>
-                                        <?php endif; ?>
-                                        <a href="<?php echo APP_URL; ?>/app/views/admin/delete_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-danger" title="Delete Program">
-                                            <i class="fas fa-trash-alt"></i>
                                         </a>
                                     </div>
                                 </td>
@@ -389,7 +253,6 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
 // Include footer
 require_once '../layouts/footer.php';
 ?>
-``` 
 
 
 

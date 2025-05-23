@@ -1,0 +1,11 @@
+/* Forest Theme Variables */
+:root {
+    --forest-deep: #537D5D;
+    --forest-deep-rgb: 83, 125, 93;
+    --forest-medium: #73946B;
+    --forest-medium-rgb: 115, 148, 107;
+    --forest-light: #9EBC8A;
+    --forest-light-rgb: 158, 188, 138;
+    --forest-pale: #D2D0A0;
+    --forest-pale-rgb: 210, 208, 160;
+}

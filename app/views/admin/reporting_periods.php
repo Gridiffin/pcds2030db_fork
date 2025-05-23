@@ -29,7 +29,6 @@ $fix_result = @file_get_contents($fix_url);
 if ($fix_result) {
     $fix_data = json_decode($fix_result, true);
     if (isset($fix_data['success']) && $fix_data['success'] && $fix_data['fix_count'] > 0) {
-        // Store a message about the fixes
         $_SESSION['period_message'] = 'Database structure was automatically updated.';
         $_SESSION['period_message_type'] = 'info';
     }
@@ -105,44 +104,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 if (isset($_SESSION['period_message'])) {
     $message = $_SESSION['period_message'];
     $messageType = $_SESSION['period_message_type'];
-    
-    // Clear the session variables
-    unset($_SESSION['period_message']);
-    unset($_SESSION['period_message_type']);
+    unset($_SESSION['period_message'], $_SESSION['period_message_type']);
 }
 
-// Get all reporting periods
+// Get all reporting periods grouped by year
 $reporting_periods = get_all_reporting_periods();
+$periods_by_year = [];
+foreach ($reporting_periods as $period) {
+    $year = $period['year'];
+    if (!isset($periods_by_year[$year])) {
+        $periods_by_year[$year] = [];
+    }
+    $periods_by_year[$year][] = $period;
+}
+krsort($periods_by_year);
 
-// Set page title
+// Set page title and scripts
 $pageTitle = 'Manage Periods';
+$additionalScripts = [APP_URL . '/assets/js/admin/reporting_periods.js'];
 
-// Additional scripts
-$additionalScripts = [
-    APP_URL . '/assets/js/admin/reporting_periods.js'
-];
-
-// Setup header variables for common dashboard header
+// Setup header variables
 $title = "Reporting Periods";
 $subtitle = "Manage system reporting periods for quarterly submissions";
-$headerStyle = 'light'; // Use light style to match other admin pages
+$headerStyle = 'light';
 $actions = [
     [
         'url' => '#',
         'id' => 'addPeriodBtn',
         'text' => 'Add Period',
         'icon' => 'fas fa-plus-circle',
-        'class' => 'btn-light border border-primary text-primary' // Changed to white background with primary border and text
+        'class' => 'btn-light border border-primary text-primary'
     ]
 ];
 
-// Include header
 require_once '../layouts/header.php';
-
-// Include admin navigation
 require_once '../layouts/admin_nav.php';
-
-// Include the dashboard header component
 require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
 
 // Function to get display name for quarter in admin table
@@ -174,124 +170,102 @@ function get_admin_quarter_display_name($quarter_val) {
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="card-title m-0">Periods</h5>
         <div class="ms-auto d-flex align-items-center">
-            <input type="text" id="periodSearch" class="form-control form-control-sm me-2" placeholder="Search periods..." style="width: 200px;">
-            <button class="btn btn-light border border-primary text-primary" id="refreshPage"> <!-- Changed to white background with primary border and text -->
-                <i class="fas fa-sync-alt me-1"></i> Refresh
+            <input type="text" id="periodSearch" class="form-control form-control-sm me-2 w-auto" placeholder="Search periods...">
+            <button class="btn btn-light border border-primary text-primary" id="refreshPage">
+                <i class="fas fa-sync-alt me-1"></i>
+                Refresh
             </button>
         </div>
     </div>
-    <div class="card-body">
-        <?php 
-        // Group reporting periods by year
-        $periods_by_year = [];
-        foreach ($reporting_periods as $period) {
-            $periods_by_year[$period['year']][] = $period;
-        }
-        
-        // Sort years in descending order (newest first)
-        krsort($periods_by_year);
-        ?>
-        
-        <div class="year-accordion" id="yearGroups">
-            <?php foreach ($periods_by_year as $year => $year_periods): ?>
-                <div class="year-group mb-3">
-                    <div class="year-header" id="heading<?php echo $year; ?>">
-                        <button class="year-toggle <?php echo ($year === array_key_first($periods_by_year)) ? 'expanded' : 'collapsed'; ?>" 
+    
+    <div class="card-body p-0">
+        <?php if (empty($periods_by_year)): ?>
+            <div class="text-center py-4">
+                <div class="alert alert-info mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    No reporting periods found.
+                </div>
+            </div>
+        <?php else: ?>
+            <div class="accordion" id="periodsAccordion">
+                <?php foreach ($periods_by_year as $year => $year_periods): ?>
+                    <div class="year-group">
+                        <button class="year-toggle <?php echo ($year === array_key_first($periods_by_year)) ? 'expanded' : ''; ?>" 
                                 type="button" 
                                 data-year="<?php echo $year; ?>"
                                 aria-expanded="<?php echo ($year === array_key_first($periods_by_year)) ? 'true' : 'false'; ?>">
-                            <div class="d-flex align-items-center justify-content-between w-100">
-                                <div>
-                                    <strong class="fs-5 me-2"><?php echo $year; ?></strong>
-                                    <span class="badge bg-secondary"><?php echo count($year_periods); ?> quarters</span>
-                                </div>
+                            <div class="d-flex align-items-center justify-content-between">
+                                <strong><?php echo $year; ?></strong>
                                 <div class="toggle-indicator">
                                     <i class="fas fa-chevron-down"></i>
                                 </div>
                             </div>
                         </button>
-                    </div>
-                    <div id="collapse<?php echo $year; ?>" 
-                        class="year-content <?php echo ($year === array_key_first($periods_by_year)) ? 'show' : 'hide'; ?>">
-                        <div class="year-body p-0">
-                            <div class="table-responsive">
-                                <table class="table table-hover table-custom period-table mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th scope="col" class="text-center" style="width: 5%;">#</th>
-                                            <th scope="col" style="width: 15%;">Period</th>
-                                            <th scope="col" style="width: 20%;">Dates</th>
-                                            <th scope="col" class="text-center" style="width: 10%;">Status</th>
-                                            <th scope="col" class="text-center" style="width: 15%;">Last Updated</th>
-                                            <th scope="col" class="text-center" style="width: 15%;">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php foreach ($year_periods as $index => $period): ?>
-                                            <tr data-period-id="<?php echo $period['period_id']; ?>">
-                                                <td class="text-center"><?php echo $index + 1; ?></td>
-                                                <td>
-                                                    <strong><?php echo get_admin_quarter_display_name($period['quarter']); ?></strong> 
-                                                    <small class="text-muted">(<?php echo $period['year']; ?>)</small>
-                                                </td>
-                                                <td>
-                                                    <?php echo date('M j, Y', strtotime($period['start_date'])) . ' - ' . date('M j, Y', strtotime($period['end_date'])); ?>
-                                                </td>
-                                                <td class="text-center">
-                                                    <span class="badge bg-<?php echo $period['status'] === 'open' ? 'success' : 'secondary'; ?> rounded-pill px-3">
-                                                        <?php echo ucfirst($period['status']); ?>
-                                                    </span>
-                                                </td>
-                                                <td class="text-center">
-                                                    <?php 
-                                                        if (!empty($period['updated_at'])) {
-                                                            echo date('M j, Y g:i A', strtotime($period['updated_at'])); 
-                                                        } else {
-                                                            echo 'N/A'; // Or some other placeholder
-                                                        }
-                                                    ?>
-                                                </td>
-                                                <td class="text-center">
-                                                    <div class="btn-group btn-group-sm">
-                                                        <button type="button" class="btn btn-outline-<?php echo $period['status'] === 'open' ? 'danger' : 'success'; ?> toggle-period-status"
-                                                                data-period-id="<?php echo $period['period_id']; ?>"
-                                                                data-current-status="<?php echo $period['status']; ?>"
-                                                                title="<?php echo $period['status'] === 'open' ? 'Close' : 'Open'; ?> this period">
-                                                            <i class="fas fa-<?php echo $period['status'] === 'open' ? 'lock' : 'lock-open'; ?> me-2"></i>
-                                                            <span class="button-text"><?php echo $period['status'] === 'open' ? 'Close' : 'Open'; ?></span>
-                                                        </button>
-                                                        
-                                                        <button type="button" class="btn btn-outline-secondary edit-period-btn" 
-                                                                data-id="<?php echo $period['period_id']; ?>"
-                                                                data-year="<?php echo $period['year']; ?>"
-                                                                data-quarter="<?php echo $period['quarter']; ?>"
-                                                                data-start-date="<?php echo $period['start_date']; ?>"
-                                                                data-end-date="<?php echo $period['end_date']; ?>"
-                                                                data-status="<?php echo $period['status']; ?>">
-                                                            <i class="fas fa-edit"></i>
-                                                        </button>
-                                                        <button type="button" class="btn btn-outline-danger delete-period-btn" 
-                                                                data-id="<?php echo $period['period_id']; ?>"
-                                                                data-year="<?php echo $period['year']; ?>"
-                                                                data-quarter="<?php echo $period['quarter']; ?>">
-                                                            <i class="fas fa-trash"></i>
-                                                        </button>
-                                                    </div>
-                                                </td>
+                        
+                        <div class="year-content <?php echo ($year === array_key_first($periods_by_year)) ? 'show' : 'hide'; ?>">
+                            <div class="year-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-custom period-table mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th scope="col" class="text-center w-5">#</th>
+                                                <th scope="col" class="w-15">Period</th>
+                                                <th scope="col" class="w-20">Dates</th>
+                                                <th scope="col" class="text-center w-10">Status</th>
+                                                <th scope="col" class="text-center w-15">Last Updated</th>
+                                                <th scope="col" class="text-center w-15">Actions</th>
                                             </tr>
-                                        <?php endforeach; ?>
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody>
+                                            <?php foreach ($year_periods as $index => $period): ?>
+                                                <tr data-period-id="<?php echo $period['period_id']; ?>">
+                                                    <td class="text-center"><?php echo $index + 1; ?></td>
+                                                    <td>
+                                                        <strong>Q<?php echo $period['quarter']; ?></strong>
+                                                        <small class="text-muted">(<?php echo $period['year']; ?>)</small>
+                                                    </td>
+                                                    <td>
+                                                        <?php 
+                                                        $start_date = date('M j, Y', strtotime($period['start_date']));
+                                                        $end_date = date('M j, Y', strtotime($period['end_date']));
+                                                        echo "$start_date - $end_date";
+                                                        ?>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <span class="badge rounded-pill bg-<?php echo get_status_color($period['status']); ?>">
+                                                            <?php echo ucfirst($period['status']); ?>
+                                                        </span>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <?php echo date('M j, Y g:i A', strtotime($period['last_updated'])); ?>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <div class="btn-group btn-group-sm">
+                                                            <button class="btn btn-light toggle-period-status" 
+                                                                    data-period-id="<?php echo $period['period_id']; ?>"
+                                                                    data-current-status="<?php echo $period['status']; ?>">
+                                                                <i class="fas fa-toggle-<?php echo $period['status'] === 'open' ? 'on' : 'off'; ?>"></i>
+                                                                <?php echo $period['status'] === 'open' ? 'Open' : 'Closed'; ?>
+                                                            </button>
+                                                            <button class="btn btn-light edit-period" title="Edit Period">
+                                                                <i class="fas fa-edit"></i>
+                                                            </button>
+                                                            <button class="btn btn-light delete-period" title="Delete Period">
+                                                                <i class="fas fa-trash-alt"></i>
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            <?php endforeach; ?>
-        </div>
-        
-        <div id="noPeriodsFound" class="alert alert-info text-center d-none">
-            <i class="fas fa-info-circle me-2"></i> No periods found matching your search.
-        </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -399,126 +373,6 @@ function get_admin_quarter_display_name($quarter_val) {
         </div>
     </div>
 </div>
-
-<!-- Add style for accordion arrows -->
-<style>
-    /* Improved accordion styling */
-    .year-header {
-        margin-bottom: 0;
-    }
-    
-    .year-toggle {
-        width: 100%;
-        text-align: left;
-        padding: 1rem 1.25rem;
-        background-color: #f8f9fa;
-        border: 1px solid rgba(0, 0, 0, 0.1);
-        border-radius: 0.375rem;
-        cursor: pointer;
-    }
-    
-    .year-toggle.expanded {
-        color: #212529;
-        background-color: #f1f3f5;
-        border-bottom-left-radius: 0;
-        border-bottom-right-radius: 0;
-    }
-    
-    .year-toggle:focus {
-        outline: none;
-        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
-    }
-    
-    .toggle-indicator i {
-        transition: transform 0.3s ease;
-    }
-    
-    .year-toggle.expanded .toggle-indicator i {
-        transform: rotate(180deg);
-    }
-    
-    .year-content {
-        border: 1px solid rgba(0, 0, 0, 0.1);
-        border-top: none;
-        border-bottom-left-radius: 0.375rem;
-        border-bottom-right-radius: 0.375rem;
-    }
-    
-    .year-content.hide {
-        display: none;
-    }
-    
-    .year-content.show {
-        display: block;
-    }
-    
-    /* Improved styling for period status badge */
-    .badge.rounded-pill {
-        font-weight: normal;
-        padding: 0.4rem 0.8rem;
-        font-size: 0.8rem;
-    }
-    
-    /* Improve button spacing and hover effects */
-    .toggle-period-status {
-        min-width: 90px;
-        transition: all 0.2s;
-        border: 1px solid;
-    }
-    
-    /* Button group styling with borders and consistent spacing */
-    .btn-group-sm .btn {
-        padding: 0.375rem 0.75rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: 1px solid #dee2e6;
-        margin-right: -1px;
-    }
-    
-    /* Make all icon buttons square for consistency */
-    .btn-group-sm .btn:not(.toggle-period-status) {
-        width: 38px;
-        height: 38px;
-        padding: 0;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    /* Remove right margin from icons in action buttons */
-    .btn-group-sm .btn:not(.toggle-period-status) i {
-        margin-right: 0;
-    }
-    
-    /* Keep spacing between icon and text for the toggle button */
-    .btn-group-sm .toggle-period-status i {
-        margin-right: 0.5rem;
-    }
-    
-    /* Improve table styling */
-    .table-custom thead th {
-        background-color: #f3f5f7;
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    
-    .period-row {
-        transition: background-color 0.2s;
-    }
-    
-    .period-row:hover {
-        background-color: rgba(0, 123, 255, 0.03);
-    }
-    
-    /* Improve accordion item spacing */
-    .year-group {
-        border: 1px solid rgba(0, 0, 0, 0.1);
-        border-radius: 0.375rem;
-        overflow: hidden;
-    }
-</style>
 
 <?php
 // Include footer

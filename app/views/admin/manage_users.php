@@ -136,13 +136,13 @@ require_once '../layouts/admin_nav.php';
 // Set up the page header variables
 $title = "User Management";
 $subtitle = "Create and manage user accounts for the system";
-$headerStyle = 'light'; // Use light style
+$headerStyle = 'forest-theme'; // Using our forest theme
 $actions = [
     [
         'url' => APP_URL . '/app/views/admin/add_user.php',
         'text' => 'Add New User',
         'icon' => 'fas fa-user-plus',
-        'class' => 'btn-light border border-primary text-primary'
+        'class' => 'btn-forest'
     ]
 ];
 
@@ -167,38 +167,10 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
     };
 </script>
 
-<!-- Custom styles for inactive users -->
-<style>
-    tr.inactive-user {
-        background-color: #f8f9fa;
-        opacity: 0.7;
-    }
-    
-    tr.inactive-user td {
-        color: #6c757d;
-    }
-    
-    tr.inactive-user:hover {
-        opacity: 0.9;
-    }
-    
-    .status-indicator {
-        font-weight: bold;
-    }
-    
-    .status-indicator.active {
-        color: #28a745;
-    }
-    
-    .status-indicator.inactive {
-        color: #dc3545;
-    }
-</style>
-
 <?php if (!empty($message) && empty($show_toast_only)): ?>
-    <div class="alert alert-<?php echo $message_type; ?> alert-dismissible fade show" role="alert">
+    <div class="alert alert-forest alert-<?php echo $message_type; ?> alert-dismissible fade show" role="alert">
         <div class="d-flex align-items-center">
-            <i class="fas fa-<?php echo $message_type === 'success' ? 'check-circle' : 'exclamation-circle'; ?> me-2"></i>
+            <i class="fas fa-<?php echo $message_type === 'success' ? 'check-circle' : 'exclamation-circle'; ?> alert-icon"></i>
             <div><?php echo $message; ?></div>
             <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
@@ -230,12 +202,11 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                                     <small class="text-muted">(You)</small>
                                 <?php endif; ?>
                             </td>
-                            <td><?php echo date('M d, Y', strtotime($user['created_at'])); ?></td>
-                            <td>
+                            <td><?php echo date('M d, Y', strtotime($user['created_at'])); ?></td>                            <td>
                                 <?php if ($user['is_active']): ?>
-                                    <span class="badge bg-success">Active</span>
+                                    <span class="user-status active">Active</span>
                                 <?php else: ?>
-                                    <span class="badge bg-danger">Inactive</span>
+                                    <span class="user-status inactive">Inactive</span>
                                 <?php endif; ?>
                                 
                                 <?php if ($user['user_id'] != $_SESSION['user_id']): ?>
@@ -247,14 +218,13 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                                         <i class="fas fa-toggle-<?php echo $user['is_active'] ? 'on text-success' : 'off text-secondary'; ?>"></i>
                                     </button>
                                 <?php endif; ?>
-                            </td>
-                            <td class="text-center">
+                            </td>                            <td class="text-center">
                                 <div class="btn-group btn-group-sm d-inline-flex align-items-center justify-content-center">
-                                    <a href="<?php echo APP_URL; ?>/app/views/admin/edit_user.php?id=<?php echo $user['user_id']; ?>" class="btn btn-outline-primary" title="Edit User">
+                                    <a href="<?php echo APP_URL; ?>/app/views/admin/edit_user.php?id=<?php echo $user['user_id']; ?>" class="btn btn-forest-light" title="Edit User">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     <?php if ($user['user_id'] != $_SESSION['user_id']): ?>
-                                        <a href="#" class="btn btn-outline-danger delete-user-btn" 
+                                        <a href="#" class="btn btn-forest-light text-danger delete-user-btn" 
                                             title="Delete User"
                                             data-user-id="<?php echo $user['user_id']; ?>"
                                             data-username="<?php echo $user['username']; ?>">
@@ -272,13 +242,13 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
 </div>
 
 <!-- Agency Users Table Card -->
-<div class="card shadow-sm mb-4">
+<div class="card admin-card mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="card-title m-0">Agency Users</h5>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive w-100">
-            <table class="table table-hover table-custom user-table mb-0">
+            <table class="table table-forest mb-0">
                 <thead>
                     <tr>
                         <th>Username</th>
@@ -288,12 +258,11 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                         <th>Status</th>
                         <th class="text-center" style="width: 100px;">Actions</th>
                     </tr>
-                </thead>
-                <tbody>
+                </thead>                <tbody>
                     <?php foreach($agency_users as $user): ?>
-                        <tr class="<?php echo !$user['is_active'] ? 'inactive-user' : ''; ?>">
+                        <tr class="<?php echo !$user['is_active'] ? 'user-inactive' : ''; ?>">
                             <td>
-                                <div class="fw-medium"><?php echo $user['username']; ?></div>
+                                <div class="fw-medium text-forest"><?php echo $user['username']; ?></div>
                             </td>
                             <td><?php echo $user['agency_name'] ?? '-'; ?></td>
                             <td><?php echo $user['sector_name'] ?? '-'; ?></td>
@@ -335,14 +304,16 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
 </div>
 
 <!-- User Management Tips -->
-<div class="user-management-tips">
-    <h5><i class="fas fa-info-circle me-2 text-primary"></i>User Management Tips</h5>
-    <ul class="mb-0">
-        <li>Admin users can access all features of the dashboard</li>
-        <li>Agency users can only submit data for their assigned sector</li>
-        <li>Deactivated users cannot log in to the system</li>
-        <li>You cannot deactivate your own account</li>
-    </ul>
+<div class="card admin-card mb-4">
+    <div class="card-body p-4">
+        <h5 class="text-forest mb-3"><i class="fas fa-info-circle me-2"></i>User Management Tips</h5>
+        <ul class="mb-0">
+            <li>Admin users can access all features of the dashboard</li>
+            <li>Agency users can only submit data for their assigned sector</li>
+            <li>Deactivated users cannot log in to the system</li>
+            <li>You cannot deactivate your own account</li>
+        </ul>
+    </div>
 </div>
 
 <!-- Form container for dynamic forms -->

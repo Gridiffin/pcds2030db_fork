@@ -192,44 +192,7 @@ if ($result) {
     <link href="<?php echo APP_URL; ?>/assets/css/components/buttons.css" rel="stylesheet">
     <link href="<?php echo APP_URL; ?>/assets/css/layout/navigation.css" rel="stylesheet">
     <link href="<?php echo APP_URL; ?>/assets/css/layout/dashboard.css" rel="stylesheet">
-    <link href="<?php echo APP_URL; ?>/assets/css/custom/agency.css" rel="stylesheet">
-    <style>
-        .delete-btn[disabled] {
-            opacity: 0.7;
-            cursor: not-allowed;
-        }
-        .item-container {
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            padding: 15px;
-            margin-bottom: 15px;
-            background-color: #f9f9f9;
-            position: relative;
-        }
-        .remove-item {
-            position: absolute;
-            top: 5px;
-            right: 10px;
-            color: #dc3545;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
-        .add-item-btn {
-            margin-bottom: auto;
-        }
-        #metricDetailsContainer ul {
-            list-style-type: none;
-            padding: 0;
-        }
-        #metricDetailsContainer li {
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-    </style>
-</head>
+    <link href="<?php echo APP_URL; ?>/assets/css/custom/agency.css" rel="stylesheet"></head>
 <body>    <div class="container mt-5">
         <h1>Create Outcome Detail</h1>
         <div id="errorContainer" class="alert alert-danger" style="display: none;"></div>
@@ -279,34 +242,33 @@ if ($result) {
                     <p>No outcome details found.</p>
                 <?php else: ?>
                     <ul>
-                        <?php foreach ($detailsArray as $detail): ?>
-                            <li>
-                                <div style="display: flex; gap: 15px; align-items: center;">
-                                    <div style="flex: 1;">
-                                        <h3 style="font-weight: bold; margin: 0;"><?= htmlspecialchars($detail['title']) ?></h3>
+                        <?php foreach ($detailsArray as $detail): ?>                            <li>
+                                <div class="details-list">
+                                    <div class="title">
+                                        <h3><?= htmlspecialchars($detail['title']) ?></h3>
                                     </div>
-                                    <div style="flex: 3;">
+                                    <div class="content">
                                         <?php
                                         $values = explode(';', $detail['value']);
                                         $descriptions = explode(';', $detail['description']);
                                         
                                         if (count($values) === 1): ?>
-                                            <div style="display: flex; align-items: center; gap: 15px;">
-                                                <div style="color: #007bff; font-weight: bold; font-size: 2rem;"><?= htmlspecialchars($values[0]) ?></div>
-                                                <div style="color: #000; font-size: 1rem;"><?= htmlspecialchars($descriptions[0] ?? '') ?></div>
+                                            <div class="value-display">
+                                                <div class="value"><?= htmlspecialchars($values[0]) ?></div>
+                                                <div class="description"><?= htmlspecialchars($descriptions[0] ?? '') ?></div>
                                             </div>
                                         <?php else: ?>
-                                            <div style="display: grid; grid-template-columns: repeat(<?= count($values) ?>, 1fr); grid-template-rows: auto auto; gap: 10px;">
+                                            <div class="values-grid" style="grid-template-columns: repeat(<?= count($values) ?>, 1fr);">
                                                 <?php foreach ($values as $val): ?>
-                                                    <div style="color: #007bff; font-weight: bold; font-size: 2rem;"><?= htmlspecialchars($val) ?></div>
+                                                    <div class="value"><?= htmlspecialchars($val) ?></div>
                                                 <?php endforeach; ?>
                                                 <?php foreach ($descriptions as $desc): ?>
-                                                    <div style="color: #000; font-size: 1rem;"><?= htmlspecialchars($desc) ?></div>
+                                                    <div class="description"><?= htmlspecialchars($desc) ?></div>
                                                 <?php endforeach; ?>
                                             </div>
                                         <?php endif; ?>
                                     </div>
-                                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                                    <div class="action-buttons">
                                         <button class="btn btn-sm btn-outline-primary" onclick="editMetricDetail(<?= $detail['id'] ?>)">Edit</button>
                                         <button class="btn btn-sm btn-outline-danger delete-btn" onclick="deleteMetricDetail(<?= $detail['id'] ?>)">Delete</button>
                                     </div>

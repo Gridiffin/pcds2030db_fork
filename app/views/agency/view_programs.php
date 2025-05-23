@@ -449,35 +449,6 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
 </div>
 
 <!-- Add program data for JavaScript pagination -->
-<style>
-    /* Custom styles for program rating indicators */
-    .badge.bg-info {
-        font-size: 0.75rem;
-        padding: 0.25rem 0.5rem;
-        font-weight: 500;
-    }
-    
-    /* Rating badge adjustments */
-    .rating-pill, .badge {
-        font-size: 0.75rem;
-        padding: 0.25rem 0.5rem;
-        font-weight: 500;
-    }
-    
-    span.text-info {
-        font-style: italic;
-    }
-    
-    .fa-lock {
-        color: #0dcaf0;
-    }
-    
-    /* Add a subtle background to finalized rows */
-    tr:has(.badge.bg-info[title="Finalized submission for current period"]) {
-        background-color: rgba(13, 202, 240, 0.05);
-    }
-</style>
-
 <script>
     // Make program data available to JavaScript for client-side pagination
     const allPrograms = <?php echo json_encode($programs); ?>;
