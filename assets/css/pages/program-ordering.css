@@ -26,10 +26,15 @@
     color: #6c757d;
     padding: 0 8px;
     margin-right: 8px;
+    display: none;
 }
 
 .program-checkbox-container .drag-handle:hover {
     color: var(--bs-primary);
+}
+
+.program-checkbox-container input[type="checkbox"]:checked ~ .drag-handle {
+    display: block;
 }
 
 .program-order-badge {
@@ -39,42 +44,26 @@
     display: none;
     align-items: center;
     justify-content: center;
-    background-color: var(--bs-primary);
-    color: white;
-    border-radius: 14px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    padding: 0 8px;
+    background-color: var(--bs-light);
+    border-radius: 50%;
+    font-size: 0.875rem;
+    color: var(--bs-primary);
     cursor: pointer;
-    transition: all 0.2s ease-in-out;
-    user-select: none;
 }
 
 .program-order-badge:hover {
-    background-color: var(--bs-primary-dark, #0056b3);
-}
-
-.program-order-badge:active {
-    transform: scale(0.95);
-}
-
-.program-order-badge.editing {
-    background-color: white;
-    color: var(--bs-primary);
-    border: 2px solid var(--bs-primary);
+    background-color: var(--bs-primary);
+    color: white;
 }
 
 .program-order-input {
     display: none;
-    width: 40px;
-    height: 28px;
+    width: 50px;
+    padding: 2px 4px;
     margin-left: auto;
-    padding: 2px 6px;
-    text-align: center;
-    border: 2px solid var(--bs-primary);
-    border-radius: 14px;
-    font-size: 0.85rem;
-    font-weight: 600;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 0.875rem;
     color: var(--bs-primary);
     background-color: white;
     outline: none;

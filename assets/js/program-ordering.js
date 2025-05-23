@@ -52,19 +52,17 @@ class ProgramOrderManager {
         }
     }
 
-    initOrderInputs() {
-        // Update order numbers when input values change
-        document.querySelectorAll('.program-order-input').forEach(input => {
-            input.addEventListener('change', () => this.updateOrderNumbers());
-        });
-    }    toggleOrderElements(checkbox) {
+    toggleOrderElements(checkbox) {
         const container = checkbox.closest('.program-checkbox-container');
         if (container) {
             const orderBadge = container.querySelector('.program-order-badge');
             const orderInput = container.querySelector('.program-order-input');
+            const dragHandle = container.querySelector('.drag-handle');
             
             if (checkbox.checked) {
+                container.draggable = true;
                 if (orderBadge) orderBadge.style.display = 'flex';
+                if (dragHandle) dragHandle.style.display = 'block';
                 if (orderInput) {
                     orderInput.style.display = 'none';
                     if (!orderInput.value) {
@@ -74,7 +72,9 @@ class ProgramOrderManager {
                     }
                 }
             } else {
+                container.draggable = false;
                 if (orderBadge) orderBadge.style.display = 'none';
+                if (dragHandle) dragHandle.style.display = 'none';
                 if (orderInput) {
                     orderInput.style.display = 'none';
                     orderInput.value = '';
@@ -172,7 +172,9 @@ class ProgramOrderManager {
         document.querySelectorAll('.program-checkbox-container').forEach(container => {
             container.classList.remove('dragging', 'drop-target');
         });
-    }    initOrderInputs() {
+    }
+
+    initOrderInputs() {
         // Update order numbers when input values change
         document.querySelectorAll('.program-order-input').forEach(input => {
             input.addEventListener('change', () => {
@@ -190,7 +192,7 @@ class ProgramOrderManager {
                 const badge = input.previousElementSibling;
                 if (badge) {
                     badge.style.display = 'flex';
-                    badge.textContent = input.value;
+                    badge.textContent = input.value || '#';
                 }
             });
 
