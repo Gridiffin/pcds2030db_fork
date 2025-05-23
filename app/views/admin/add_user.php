@@ -165,6 +165,26 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                         </select>
                         <div class="form-text">Select which sector this agency belongs to.</div>
                     </div>
+
+                    <div class="col-md-6">
+                        <label for="agency_group_id" class="form-label">Agency Group *</label>
+                        <?php
+                        // Get agency groups from database
+                        $agency_groups_query = "SELECT id, group_name FROM agency_group ORDER BY group_name";
+                        $agency_groups_result = $conn->query($agency_groups_query);
+                        $agency_groups = [];
+                        while ($group = $agency_groups_result->fetch_assoc()) {
+                            $agency_groups[] = $group;
+                        }
+                        ?>
+                        <select class="form-select" id="agency_group_id" name="agency_group_id">
+                            <option value="">Select Agency Group</option>
+                            <?php foreach($agency_groups as $group): ?>
+                                <option value="<?php echo $group['id']; ?>"><?php echo $group['group_name']; ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <div class="form-text">Select which group this agency belongs to.</div>
+                    </div>
                 </div>
                 <div class="alert alert-info mt-3">
                     <i class="fas fa-info-circle me-2"></i>
@@ -196,6 +216,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const agencyFields = document.getElementById('agencyFields');
     const agencyName = document.getElementById('agency_name');
     const sectorId = document.getElementById('sector_id');
+    const agencyGroupId = document.getElementById('agency_group_id');
     
     // Set initial state - hide by default, show only for agency role
     if (roleSelect && agencyFields) {
@@ -207,10 +228,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 agencyFields.style.display = 'block';
                 agencyName.setAttribute('required', '');
                 sectorId.setAttribute('required', '');
+                agencyGroupId.setAttribute('required', '');
             } else {
                 agencyFields.style.display = 'none';
                 agencyName.removeAttribute('required');
                 sectorId.removeAttribute('required');
+                agencyGroupId.removeAttribute('required');
             }
         };
         
@@ -219,6 +242,38 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Listen for changes
         roleSelect.addEventListener('change', updateRequiredFields);
+
+        // Listen for sector changes to filter agency groups
+        sectorId.addEventListener('change', function() {
+            const selectedSectorId = this.value;
+            
+            // Get all agency groups from PHP
+            const agencyGroups = <?php echo json_encode($agency_groups); ?>;
+            const sectorGroups = <?php 
+                $sector_groups = [];
+                foreach ($agency_groups as $group) {
+                    $query = "SELECT sector_id FROM agency_group WHERE id = " . $group['id'];
+                    $result = $conn->query($query);
+                    if ($row = $result->fetch_assoc()) {
+                        $sector_groups[$group['id']] = $row['sector_id'];
+                    }
+                }
+                echo json_encode($sector_groups);
+            ?>;
+
+            // Clear current options except first one
+            while (agencyGroupId.options.length > 1) {
+                agencyGroupId.remove(1);
+            }
+
+            // Add filtered options
+            agencyGroups.forEach(group => {
+                if (sectorGroups[group.id] == selectedSectorId) {
+                    const option = new Option(group.group_name, group.id);
+                    agencyGroupId.add(option);
+                }
+            });
+        });
     }
     
     // Password toggle functionality
@@ -332,6 +387,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     setInputFeedback(sectorId, false, 'Please select a sector');
                 } else {
                     setInputFeedback(sectorId, true);
+                }
+
+                if (!agencyGroupId.value) {
+                    isValid = false;
+                    setInputFeedback(agencyGroupId, false, 'Please select an agency group');
+                } else {
+                    setInputFeedback(agencyGroupId, true);
                 }
             }
             

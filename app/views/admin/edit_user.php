@@ -174,7 +174,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
             </div>
             
             <!-- Agency Information (shown only for agency role) -->
-            <div id="agencyFields" class="mb-4" style="display: <?php echo $user['role'] === 'agency' ? 'block' : 'none'; ?>;">
+            <div id="agencyFields" class="mb-4">
                 <h6 class="fw-bold mb-3">Agency Information <span class="text-danger">(Required for Agency Users)</span></h6>
                 <div class="row g-3">
                     <div class="col-md-6">
@@ -187,8 +187,29 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                         <select class="form-select" id="sector_id" name="sector_id">
                             <option value="">Select Sector</option>
                             <?php foreach($sectors as $sector): ?>
-                                <option value="<?php echo $sector['sector_id']; ?>" <?php echo ($user['sector_id'] == $sector['sector_id']) ? 'selected' : ''; ?>>
+                                <option value="<?php echo $sector['sector_id']; ?>" <?php echo isset($user['sector_id']) && $user['sector_id'] == $sector['sector_id'] ? 'selected' : ''; ?>>
                                     <?php echo $sector['sector_name']; ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="agency_group_id" class="form-label">Agency Group *</label>
+                        <?php
+                        // Get agency groups from database
+                        $agency_groups_query = "SELECT id, group_name FROM agency_group ORDER BY group_name";
+                        $agency_groups_result = $conn->query($agency_groups_query);
+                        $agency_groups = [];
+                        while ($group = $agency_groups_result->fetch_assoc()) {
+                            $agency_groups[] = $group;
+                        }
+                        ?>
+                        <select class="form-select" id="agency_group_id" name="agency_group_id">
+                            <option value="">Select Agency Group</option>
+                            <?php foreach($agency_groups as $group): ?>
+                                <option value="<?php echo $group['id']; ?>" <?php echo isset($user['agency_id']) && $user['agency_id'] == $group['id'] ? 'selected' : ''; ?>>
+                                    <?php echo $group['group_name']; ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 23, 2025 at 02:34 AM
+-- Generation Time: May 23, 2025 at 04:29 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -29,9 +29,18 @@ SET time_zone = "+00:00";
 
 CREATE TABLE `agency_group` (
   `id` int(11) NOT NULL,
-  `group_name` int(11) NOT NULL,
+  `group_name` varchar(255) NOT NULL,
   `sector_id` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `agency_group`
+--
+
+INSERT INTO `agency_group` (`id`, `group_name`, `sector_id`) VALUES
+(0, 'STIDC', 1),
+(1, 'SFC', 1),
+(2, 'FDS', 1);
 
 -- --------------------------------------------------------
 
@@ -316,6 +325,7 @@ CREATE TABLE `users` (
   `agency_name` varchar(100) DEFAULT NULL,
   `role` enum('admin','agency') NOT NULL,
   `sector_id` int(11) DEFAULT NULL,
+  `agency_id` int(255) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `is_active` tinyint(1) DEFAULT 1
@@ -325,16 +335,24 @@ CREATE TABLE `users` (
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`user_id`, `username`, `password`, `agency_name`, `role`, `sector_id`, `created_at`, `updated_at`, `is_active`) VALUES
-(1, 'admin', '$2y$10$bPQQFeR4PbcueCgmV7/2Au.HWCjWH8v8ox.R.MxMfk4qXXHi3uPw6', 'Ministry of Natural Resources and Urban Development', 'admin', NULL, '2025-03-25 01:31:15', '2025-03-25 01:31:15', 1),
-(12, 'user', '$2y$10$/Z6xCsE7OknP.4HBT5CdBuWDZK5VNMf7MqwmGusJ0SM8xxaGQKdq2', 'testagency', 'agency', 1, '2025-03-25 07:42:27', '2025-05-05 06:41:55', 1),
-(25, 'sfc', '$2y$10$wkBLipOw1EvgvpfrFTXaRO9/1OuFyCT3enAz3fr4nyOhKFBiG5M7C', 'Sarawak Forestry Corporation', 'agency', 1, '2025-05-05 06:40:10', '2025-05-05 06:40:10', 1),
-(26, 'stidc', '$2y$10$ttWqO8C7DUAxBURRnvhKmu/swpsuLv.iTqsFrPnqRAECtqxsRbsA2', 'Sarawak Timber Industry Development Corporation', 'agency', 1, '2025-05-05 06:40:36', '2025-05-05 06:40:36', 1),
-(27, 'fds', '$2y$10$304gq1GLTQvKOhmBqTp3b.oPyiwLCqlCP5lZkTfTJplVOH3QWXPt6', 'Forestry Department', 'agency', 1, '2025-05-05 06:41:16', '2025-05-22 07:28:23', 1);
+INSERT INTO `users` (`user_id`, `username`, `password`, `agency_name`, `role`, `sector_id`, `agency_id`, `created_at`, `updated_at`, `is_active`) VALUES
+(1, 'admin', '$2y$10$bPQQFeR4PbcueCgmV7/2Au.HWCjWH8v8ox.R.MxMfk4qXXHi3uPw6', 'Ministry of Natural Resources and Urban Development', 'admin', NULL, 0, '2025-03-25 01:31:15', '2025-03-25 01:31:15', 1),
+(12, 'user', '$2y$10$/Z6xCsE7OknP.4HBT5CdBuWDZK5VNMf7MqwmGusJ0SM8xxaGQKdq2', 'testagency', 'agency', 1, 0, '2025-03-25 07:42:27', '2025-05-05 06:41:55', 1),
+(25, 'sfc', '$2y$10$wkBLipOw1EvgvpfrFTXaRO9/1OuFyCT3enAz3fr4nyOhKFBiG5M7C', 'Sarawak Forestry Corporation', 'agency', 1, 0, '2025-05-05 06:40:10', '2025-05-05 06:40:10', 1),
+(26, 'stidc', '$2y$10$ttWqO8C7DUAxBURRnvhKmu/swpsuLv.iTqsFrPnqRAECtqxsRbsA2', 'Sarawak Timber Industry Development Corporation', 'agency', 1, 0, '2025-05-05 06:40:36', '2025-05-05 06:40:36', 1),
+(27, 'fds', '$2y$10$304gq1GLTQvKOhmBqTp3b.oPyiwLCqlCP5lZkTfTJplVOH3QWXPt6', 'Forestry Department', 'agency', 1, 0, '2025-05-05 06:41:16', '2025-05-22 07:28:23', 1),
+(32, 'SFC1', '$2y$10$8e54SufqWyiF0F5qLpZuZO31dfyip2pd7qhWG0VnpaWgxBhI.0xyG', 'SFC1test', 'agency', 1, 1, '2025-05-23 01:15:23', '2025-05-23 01:15:23', 1);
 
 --
 -- Indexes for dumped tables
 --
+
+--
+-- Indexes for table `agency_group`
+--
+ALTER TABLE `agency_group`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `sector_id` (`sector_id`);
 
 --
 -- Indexes for table `metrics_details`
@@ -422,11 +440,18 @@ ALTER TABLE `sector_outcomes_data`
 ALTER TABLE `users`
   ADD PRIMARY KEY (`user_id`),
   ADD UNIQUE KEY `agency_name` (`agency_name`),
-  ADD KEY `sector_id` (`sector_id`);
+  ADD KEY `sector_id` (`sector_id`),
+  ADD KEY `agency_id` (`agency_id`);
 
 --
 -- AUTO_INCREMENT for dumped tables
 --
+
+--
+-- AUTO_INCREMENT for table `agency_group`
+--
+ALTER TABLE `agency_group`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `metrics_details`
@@ -492,11 +517,17 @@ ALTER TABLE `sector_outcomes_data`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
 
 --
 -- Constraints for dumped tables
 --
+
+--
+-- Constraints for table `agency_group`
+--
+ALTER TABLE `agency_group`
+  ADD CONSTRAINT `agency_group_ibfk_2` FOREIGN KEY (`sector_id`) REFERENCES `sectors` (`sector_id`);
 
 --
 -- Constraints for table `notifications`
@@ -536,7 +567,8 @@ ALTER TABLE `sector_metrics_data`
 -- Constraints for table `users`
 --
 ALTER TABLE `users`
-  ADD CONSTRAINT `users_ibfk_1` FOREIGN KEY (`sector_id`) REFERENCES `sectors` (`sector_id`);
+  ADD CONSTRAINT `users_ibfk_1` FOREIGN KEY (`sector_id`) REFERENCES `sectors` (`sector_id`),
+  ADD CONSTRAINT `users_ibfk_2` FOREIGN KEY (`agency_id`) REFERENCES `agency_group` (`id`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

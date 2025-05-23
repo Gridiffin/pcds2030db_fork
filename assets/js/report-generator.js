@@ -94,118 +94,68 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Render programs in the UI
     function renderPrograms(programs, selectedSectorId) {
-        if (!programContainerElement) return;
+        let html = '';
         
-    // If there are no programs
-        if (Object.keys(programs).length === 0) {
-            programContainerElement.innerHTML = `
-                <div class="alert alert-warning">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    No programs available for the selected period${selectedSectorId ? ' and sector' : ''}.
-                </div>
-            `;
-            return;
-        }
-        
-        // If we're filtering by sector and there are programs but none for this sector
-        if (selectedSectorId && !programs[selectedSectorId]) {
-            programContainerElement.innerHTML = `
-                <div class="alert alert-warning">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    No programs available for the selected sector in this reporting period. 
-                    <button type="button" class="btn btn-sm btn-outline-secondary ms-2" id="clearSectorFilterBtn">
-                        <i class="fas fa-times me-1"></i> Clear Sector Filter
-                    </button>
-                </div>
-            `;
-            // Add event listener to the clear filter button
-            const clearSectorFilterBtn = document.getElementById('clearSectorFilterBtn');
-            if (clearSectorFilterBtn) {
-                clearSectorFilterBtn.addEventListener('click', function() {
-                    if (sectorSelect) {
-                        sectorSelect.value = '';
-                        loadPrograms(); // Reload without sector filter
-                    }
-                });
-            }
-            return;
-        }
-        
-        // Build HTML for programs
-        let html = `
-            <div class="pb-2 mb-2 border-bottom">
-                <div class="row align-items-center">
-                    <div class="col">
-                        <h6 class="m-0 program-selection-title">Programs <span id="programCount" class="badge bg-primary">0</span></h6>
-                    </div>
-                    <div class="col-auto">
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="selectAllPrograms">
-                            <i class="fas fa-check-square me-1"></i> Select All
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" id="deselectAllPrograms">
-                            <i class="fas fa-square me-1"></i> Deselect All
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        // Add each sector's programs
-        for (const sectorId in programs) {
-            const sectorData = programs[sectorId];
-            const isVisible = !selectedSectorId || sectorId === selectedSectorId;
+        for (const sector in programs) {
+            if (selectedSectorId && sector !== selectedSectorId) continue;
             
             html += `
-                <div class="sector-programs mb-2" data-sector-id="${sectorId}" style="display: ${isVisible ? 'block' : 'none'}">
-                    <h6 class="sector-name fw-bold ms-2 mb-1">${sectorData.sector_name}</h6>
-                    <div class="ms-3">
-            `;                // Add each program
-                if (sectorData.programs && sectorData.programs.length > 0) {
-                    sectorData.programs.forEach(program => {
-                        html += `                            <div class="form-check program-checkbox-container">
-                                <input class="form-check-input program-checkbox" type="checkbox" name="selected_program_ids[]" value="${program.program_id}" id="program_${program.program_id}">
-                                <label class="form-check-label" for="program_${program.program_id}" title="${program.program_name}">
+            <div class="sector-programs mb-3" data-sector-id="${sector}">
+                <h6 class="sector-name fw-bold ms-2 mb-2">${programs[sector].sector_name}</h6>
+            `;
+            
+            if (programs[sector].programs.length > 0) {
+                programs[sector].programs.forEach(program => {
+                    html += `
+                        <div class="program-checkbox-container" draggable="true" data-program-id="${program.program_id}">
+                            <i class="fas fa-grip-vertical drag-handle" title="Drag to reorder"></i>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input program-checkbox" 
+                                    id="program_${program.program_id}" 
+                                    name="selected_program_ids[]" 
+                                    value="${program.program_id}">
+                                <label class="form-check-label" for="program_${program.program_id}">
                                     ${program.program_name}
                                 </label>
-                                <div class="program-order-badge" id="badge_${program.program_id}" style="display: none;" title="Click to edit order">#</div>
-                                <input type="number" min="1" class="program-order-input" name="program_order_${program.program_id}" id="order_${program.program_id}" aria-label="Program display order" style="display: none;" placeholder="#">
                             </div>
-                        `;
-                    });
-                } else {
-                    html += `<p class="text-muted">No programs available for this sector.</p>`;
-                }
+                            <div class="program-order-badge" title="Click to edit order">#</div>
+                            <input type="number" min="1" class="program-order-input" 
+                                name="program_order_${program.program_id}" 
+                                id="order_${program.program_id}" 
+                                aria-label="Program display order">
+                        </div>
+                    `;
+                });
+            } else {
+                html += `<p class="text-muted">No programs available for this sector.</p>`;
+            }
             
-            html += `
-                    </div>
-                </div>
-            `;
+            html += `</div>`;
         }
-          // Update the UI
-        programContainerElement.innerHTML = html;
         
-        // Re-initialize the buttons
-        initializeSelectButtons();
-        
-        // Update the count
-        updateProgramCount();
-        
-        // Initialize program ordering
-        if (typeof ProgramOrderManager !== 'undefined') {
-            // Wait for DOM to be updated
-            setTimeout(() => {
-                const programOrderManager = new ProgramOrderManager();
-                
-                // Listen for changes in program order
-                programOrderManager.onOrderChange = function() {
-                    updateProgramCount();
-                    if (typeof updateOrderNumbers === 'function') {
-                        updateOrderNumbers();
-                    }
-                };
-            }, 0);
+        if (programSelector) {
+            programSelector.innerHTML = html;
+            
+            // Initialize drag and drop after rendering
+            if (typeof ProgramOrderManager !== 'undefined') {
+                if (window.programOrderManager) {
+                    window.programOrderManager.destroy();
+                }
+                window.programOrderManager = new ProgramOrderManager();
+                window.programOrderManager.onOrderChange = updateProgramOrder;
+            }
+            
+            // Initialize select buttons and update count
+            initializeSelectButtons();
+            updateProgramCount();
         }
-    }    // Filter programs by sector
+    }
+    
+    function updateProgramOrder() {
+        // This function will be called when program order changes
+        updateOrderNumbers();
+    }
+    // Filter programs by sector
     function filterProgramsBySector(selectedSectorId) {
         const sectorPrograms = programSelector.querySelectorAll('.sector-programs');
         
