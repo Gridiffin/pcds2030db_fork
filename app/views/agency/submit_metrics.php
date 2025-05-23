@@ -57,10 +57,40 @@ $headerStyle = 'light'; // Use light (white) style for inner pages
 
 // Get next metric ID for the Create New Metric button
 $next_metric_id = 0;
-$result = $conn->query("SELECT MAX(metric_id) AS max_id FROM sector_metrics_data");
-if ($result && $row = $result->fetch_assoc()) {
-    $next_metric_id = $row['max_id'] + 1;
+
+// First check sector_outcomes_data (new system)
+$max_query = "SELECT MAX(metric_id) AS max_id FROM sector_outcomes_data";
+$max_stmt = $conn->prepare($max_query);
+if ($max_stmt) {
+    $max_stmt->execute();
+    $max_result = $max_stmt->get_result();
+    if ($max_result && $max_result->num_rows > 0) {
+        $row = $max_result->fetch_assoc();
+        if ($row['max_id'] !== null) {
+            $next_metric_id = intval($row['max_id']);
+        }
+    }
+    $max_stmt->close();
 }
+
+// Then check sector_metrics_data (legacy system) as well
+$max_query = "SELECT MAX(metric_id) AS max_id FROM sector_metrics_data";
+$max_stmt = $conn->prepare($max_query);
+if ($max_stmt) {
+    $max_stmt->execute();
+    $max_result = $max_stmt->get_result();
+    if ($max_result && $max_result->num_rows > 0) {
+        $row = $max_result->fetch_assoc();
+        if ($row['max_id'] !== null) {
+            // Take the larger of the two max IDs
+            $next_metric_id = max($next_metric_id, intval($row['max_id']));
+        }
+    }
+    $max_stmt->close();
+}
+
+// Add 1 to get the next available ID
+$next_metric_id++;
 
 // Set up period badge for actions array if period exists
 $actions = [];
