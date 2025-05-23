@@ -28,18 +28,36 @@ if (!is_admin()) {
 // Set page title
 $pageTitle = 'Programs Overview';
 
-// Get current reporting period
-$current_period = get_current_reporting_period();
-$period_id = $current_period ? $current_period['period_id'] : null;
+// Determine the period_id to use
+$url_period_id = isset($_GET['period_id']) ? intval($_GET['period_id']) : null;
+
+if ($url_period_id) {
+    $current_period = get_reporting_period($url_period_id); // Fetch the period selected via URL
+    // Ensure $current_period is not null and contains period_id, otherwise, it might indicate an invalid period_id in URL
+    if ($current_period && isset($current_period['period_id'])) {
+        $period_id = $current_period['period_id'];
+    } else {
+        // Fallback or error handling if URL period_id is invalid
+        $current_period = get_current_reporting_period(); // Fallback to default
+        $period_id = $current_period ? $current_period['period_id'] : null;
+        // Optionally, redirect or show an error if an invalid period_id was in the URL
+    }
+} else {
+    // Get current reporting period if no period_id in URL
+    $current_period = get_current_reporting_period();
+    $period_id = $current_period ? $current_period['period_id'] : null;
+}
 
 // Process filters
 $filters = [
     'status' => $_GET['rating'] ?? null,
     'sector_id' => isset($_GET['sector_id']) ? intval($_GET['sector_id']) : null,
     'agency_id' => isset($_GET['agency_id']) ? intval($_GET['agency_id']) : null
+    // Note: 'period_id' for filtering within get_admin_programs_list is handled by passing $period_id directly
 ];
 
-$viewing_period = $period_id ? get_reporting_period($period_id) : $current_period;
+// This $viewing_period is used by the period_selector.php component to show the correct selection in the dropdown
+$viewing_period = $current_period; // $current_period is now correctly set based on URL or default
 
 // Get all programs with filters
 $programs = get_admin_programs_list($period_id, $filters);
