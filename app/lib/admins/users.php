@@ -49,6 +49,7 @@ function add_user($data) {
     if (isset($data['role']) && $data['role'] === 'agency') {
         $required_fields[] = 'agency_name';
         $required_fields[] = 'sector_id';
+        $required_fields[] = 'agency_group_id';
     }
     
     // Check for missing required fields
@@ -96,43 +97,51 @@ function add_user($data) {
         // Set agency-specific fields
         $agency_name = null;
         $sector_id = null;
+        $agency_group_id = null;
         
         if ($role === 'agency') {
             $agency_name = trim($data['agency_name']);
             $sector_id = intval($data['sector_id']);
+            $agency_group_id = intval($data['agency_group_id']);
             
             // Verify sector exists
             $sector_check = "SELECT sector_id FROM sectors WHERE sector_id = ?";
             $stmt = $conn->prepare($sector_check);
             $stmt->bind_param("i", $sector_id);
             $stmt->execute();
-            $sector_result = $stmt->get_result();
-            
-            if ($sector_result->num_rows === 0) {
+            if ($stmt->get_result()->num_rows === 0) {
                 $conn->rollback();
                 return ['error' => 'Invalid sector selected'];
             }
+            
+            // Verify agency group exists and belongs to the selected sector
+            $group_check = "SELECT id FROM agency_group WHERE id = ? AND sector_id = ?";
+            $stmt = $conn->prepare($group_check);
+            $stmt->bind_param("ii", $agency_group_id, $sector_id);
+            $stmt->execute();
+            if ($stmt->get_result()->num_rows === 0) {
+                $conn->rollback();
+                return ['error' => 'Invalid agency group selected for this sector'];
+            }
         }
         
-        // Insert user record
-        $insert_query = "INSERT INTO users (username, password, agency_name, role, sector_id, is_active) 
-                         VALUES (?, ?, ?, ?, ?, ?)";
-        $stmt = $conn->prepare($insert_query);
-        $stmt->bind_param("ssssii", $username, $hashed_password, $agency_name, $role, $sector_id, $is_active);
+        // Insert user
+        $query = "INSERT INTO users (username, password, role, agency_name, sector_id, agency_id, is_active, created_at) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, NOW())";
+        
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("ssssiis", $username, $hashed_password, $role, $agency_name, $sector_id, $agency_group_id, $is_active);
         
         if (!$stmt->execute()) {
             throw new Exception($stmt->error);
         }
-        
-        $user_id = $conn->insert_id;
         
         // Commit transaction
         $conn->commit();
         
         return [
             'success' => true,
-            'user_id' => $user_id,
-            'message' => "User '$username' successfully added"
+            'user_id' => $stmt->insert_id
         ];
         
     } catch (Exception $e) {
@@ -167,6 +176,7 @@ function update_user($data) {
         if (isset($data['role']) && $data['role'] === 'agency') {
             $required_fields[] = 'agency_name';
             $required_fields[] = 'sector_id';
+            $required_fields[] = 'agency_group_id';
         }
         
         // Check for missing required fields
@@ -230,6 +240,23 @@ function update_user($data) {
             $param_types .= "s";
         }
         
+        // Handle password if provided
+        if (isset($data['password']) && !empty($data['password'])) {
+            if (strlen($data['password']) < 8) {
+                $conn->rollback();
+                return ['error' => 'Password must be at least 8 characters long'];
+            }
+            
+            if (!isset($data['confirm_password']) || $data['password'] !== $data['confirm_password']) {
+                $conn->rollback();
+                return ['error' => 'Passwords do not match'];
+            }
+            
+            $update_fields[] = "password = ?";
+            $bind_params[] = password_hash($data['password'], PASSWORD_DEFAULT);
+            $param_types .= "s";
+        }
+        
         // Handle agency_name if provided
         if (isset($data['agency_name'])) {
             $agency_name = trim($data['agency_name']);
@@ -256,85 +283,70 @@ function update_user($data) {
                 $stmt = $conn->prepare($sector_check);
                 $stmt->bind_param("i", $sector_id);
                 $stmt->execute();
-                $sector_result = $stmt->get_result();
-                
-                if ($sector_result->num_rows === 0) {
+                if ($stmt->get_result()->num_rows === 0) {
                     $conn->rollback();
                     return ['error' => 'Invalid sector selected'];
                 }
             }
+        }
+        
+        // Handle agency_group_id if provided
+        if (isset($data['agency_group_id'])) {
+            $agency_group_id = !empty($data['agency_group_id']) ? intval($data['agency_group_id']) : null;
+            $update_fields[] = "agency_id = ?";
+            $bind_params[] = $agency_group_id;
+            $param_types .= "i";
+            
+            // Verify agency group exists and belongs to the selected sector if both are provided
+            if ($agency_group_id && isset($data['sector_id'])) {
+                $sector_id = intval($data['sector_id']);
+                $group_check = "SELECT id FROM agency_group WHERE id = ? AND sector_id = ?";
+                $stmt = $conn->prepare($group_check);
+                $stmt->bind_param("ii", $agency_group_id, $sector_id);
+                $stmt->execute();
+                if ($stmt->get_result()->num_rows === 0) {
+                    $conn->rollback();
+                    return ['error' => 'Invalid agency group selected for this sector'];
+                }
+            }
         } else {
-            // Reset sector_id if role is not agency
+            // Reset agency_group_id if role is not agency
             if (isset($data['role']) && $data['role'] !== 'agency') {
-                $update_fields[] = "sector_id = NULL";
+                $update_fields[] = "agency_id = NULL";
             }
         }
         
-        // Handle password if provided
-        $password_updated = false;
-        if (!empty($data['password']) || !empty($data['confirm_password'])) {
-            // Both fields must be provided
-            if (empty($data['password']) || empty($data['confirm_password'])) {
-                $conn->rollback();
-                return ['error' => 'Both password and confirm password are required to change password'];
-            }
-            
-            $password = $data['password'];
-            $confirm_password = $data['confirm_password'];
-            
-            if (strlen($password) < 8) {
-                $conn->rollback();
-                return ['error' => 'Password must be at least 8 characters long'];
-            }
-            
-            if ($password !== $confirm_password) {
-                $conn->rollback();
-                return ['error' => 'Passwords do not match'];
-            }
-            
-            // Hash the password
-            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-            $update_fields[] = "password = ?";
-            $bind_params[] = $hashed_password;
-            $param_types .= "s";
-            $password_updated = true;
-        }
-        
-        // Handle is_active - checkboxes aren't sent when unchecked, so we need special handling
-        if (array_key_exists('is_active', $data)) {
-            // Convert to integer (1 for active, 0 for inactive)
-            $is_active = isset($data['is_active']) && ($data['is_active'] === '1' || $data['is_active'] === 1 || $data['is_active'] === true) ? 1 : 0;
+        // Handle is_active if provided
+        if (isset($data['is_active'])) {
             $update_fields[] = "is_active = ?";
-            $bind_params[] = $is_active;
+            $bind_params[] = intval($data['is_active']);
             $param_types .= "i";
         }
         
-        // If no fields to update, return success without doing anything
-        if (empty($update_fields)) {
-            $conn->rollback();
-            return ['success' => true, 'message' => 'No changes made'];
-        }
+        // Add updated_at timestamp
+        $update_fields[] = "updated_at = NOW()";
         
-        // Update user record
-        $update_query = "UPDATE users SET " . implode(", ", $update_fields) . " WHERE user_id = ?";
-        $bind_params[] = $user_id;
-        $param_types .= "i";
-        
-        $stmt = $conn->prepare($update_query);
-        $stmt->bind_param($param_types, ...$bind_params);
-        
-        if (!$stmt->execute()) {
-            throw new Exception($stmt->error);
+        // If there are fields to update
+        if (!empty($update_fields)) {
+            $query = "UPDATE users SET " . implode(", ", $update_fields) . " WHERE user_id = ?";
+            $stmt = $conn->prepare($query);
+            
+            // Add user_id to parameters
+            $bind_params[] = $user_id;
+            $param_types .= "i";
+            
+            // Bind parameters
+            $stmt->bind_param($param_types, ...$bind_params);
+            
+            if (!$stmt->execute()) {
+                throw new Exception($stmt->error);
+            }
         }
         
         // Commit transaction
         $conn->commit();
         
-        return [
-            'success' => true,
-            'user_id' => $user_id,
-            'message' => "User successfully updated"
-        ];
+        return ['success' => true];
         
     } catch (Exception $e) {
         // Rollback on error
