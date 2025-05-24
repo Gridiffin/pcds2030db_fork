@@ -146,9 +146,9 @@ function get_admin_quarter_display_name($quarter_val) {
     if ($quarter_val >= 1 && $quarter_val <= 4) {
         return "Q" . $quarter_val;
     } elseif ($quarter_val == 5) {
-        return "Half Year 1";
+        return "Half Yearly 1";
     } elseif ($quarter_val == 6) {
-        return "Half Year 2";
+        return "Half Yearly 2";
     } else {
         return "Unknown";
     }
@@ -223,7 +223,7 @@ function get_admin_quarter_display_name($quarter_val) {
                                                 <tr data-period-id="<?php echo $period['period_id']; ?>">
                                                     <td class="text-center"><?php echo $index + 1; ?></td>
                                                     <td>
-                                                        <strong>Q<?php echo $period['quarter']; ?></strong>
+                                                        <strong><?php echo get_admin_quarter_display_name($period['quarter']); ?></strong>
                                                         <small class="text-muted">(<?php echo $period['year']; ?>)</small>
                                                     </td>
                                                     <td>
@@ -300,6 +300,8 @@ function get_admin_quarter_display_name($quarter_val) {
                                 <option value="2">Q2</option>
                                 <option value="3">Q3</option>
                                 <option value="4">Q4</option>
+                                <option value="5">Half Yearly 1</option>
+                                <option value="6">Half Yearly 2</option>
                             </select>
                         </div>
                     </div>

@@ -168,8 +168,9 @@ if (!window.reportingPeriodsInitialized) {
         // Function to get standard quarter dates
         function getStandardQuarterDates(year, quarter) {
             let startDate, endDate;
-            
-            switch (parseInt(quarter)) {
+            const intQuarter = parseInt(quarter);
+
+            switch (intQuarter) {
                 case 1:
                     startDate = `${year}-01-01`;
                     endDate = `${year}-03-31`;
@@ -183,7 +184,19 @@ if (!window.reportingPeriodsInitialized) {
                     endDate = `${year}-09-30`;
                     break;
                 case 4:
+                    startDate = `${year}-10-01`;
+                    endDate = `${year}-12-31`;
+                    break;
+                case 5: // Half Yearly 1 (Q1-Q2)
+                    startDate = `${year}-01-01`;
+                    endDate = `${year}-06-30`;
+                    break;
+                case 6: // Half Yearly 2 (Q3-Q4)
+                    startDate = `${year}-07-01`;
+                    endDate = `${year}-12-31`;
+                    break;
                 default:
+                    // Default to Q4 if quarter is somehow invalid, or handle error
                     startDate = `${year}-10-01`;
                     endDate = `${year}-12-31`;
                     break;
@@ -271,14 +284,28 @@ if (!window.reportingPeriodsInitialized) {
         }
         
         // Initialize edit period buttons
-        document.querySelectorAll('.edit-period-btn').forEach(button => {
+        document.querySelectorAll('.edit-period').forEach(button => {
             button.addEventListener('click', function() {
-                const id = this.getAttribute('data-id');
-                const year = this.getAttribute('data-year');
-                const quarter = this.getAttribute('data-quarter');
-                const startDate = this.getAttribute('data-start-date');
-                const endDate = this.getAttribute('data-end-date');
-                const status = this.getAttribute('data-status');
+                const row = this.closest('tr'); // Get the parent table row
+                if (!row) return;
+
+                const id = row.getAttribute('data-period-id');
+                const year = row.querySelector('td:nth-child(2) small').textContent.match(/\((\d{4})\)/)[1];
+                const quarter = row.querySelector('td:nth-child(2) strong').textContent;
+                let quarterValue;
+                if (quarter.startsWith('Q')) {
+                    quarterValue = quarter.replace('Q', '');
+                } else if (quarter === 'Half Yearly 1') {
+                    quarterValue = '5';
+                } else if (quarter === 'Half Yearly 2') {
+                    quarterValue = '6';
+                }
+
+                const dates = row.querySelector('td:nth-child(3)').textContent.split(' - ');
+                // Convert date from 'M j, Y' to 'Y-m-d'
+                const startDate = new Date(dates[0]).toISOString().split('T')[0];
+                const endDate = new Date(dates[1]).toISOString().split('T')[0];
+                const status = row.querySelector('td:nth-child(4) .badge').textContent.trim().toLowerCase();
                 
                 const periodModal = document.getElementById('periodModal');
                 const modalTitle = document.getElementById('periodModalLabel');
@@ -297,13 +324,13 @@ if (!window.reportingPeriodsInitialized) {
                     // Set form values
                     periodIdField.value = id;
                     yearField.value = year;
-                    quarterField.value = quarter;
+                    quarterField.value = quarterValue;
                     startDateField.value = startDate;
                     endDateField.value = endDate;
                     statusField.value = status;
                     
                     // Check if using standard dates
-                    const { startDate: standardStart, endDate: standardEnd } = getStandardQuarterDates(year, quarter);
+                    const { startDate: standardStart, endDate: standardEnd } = getStandardQuarterDates(year, quarterValue);
                     const isStandard = (startDate === standardStart && endDate === standardEnd);
                     useStandardDatesField.checked = isStandard;
                     
@@ -326,18 +353,21 @@ if (!window.reportingPeriodsInitialized) {
         });
         
         // Initialize delete period buttons
-        document.querySelectorAll('.delete-period-btn').forEach(button => {
+        document.querySelectorAll('.delete-period').forEach(button => {
             button.addEventListener('click', function() {
-                const id = this.getAttribute('data-id');
-                const year = this.getAttribute('data-year');
-                const quarter = this.getAttribute('data-quarter');
+                const row = this.closest('tr'); // Get the parent table row
+                if (!row) return;
+
+                const id = row.getAttribute('data-period-id');
+                const year = row.querySelector('td:nth-child(2) small').textContent.match(/\((\d{4})\)/)[1];
+                const quarter = row.querySelector('td:nth-child(2) strong').textContent.replace('Q', '');
                 
                 const deleteModal = document.getElementById('deleteModal');
                 const periodDisplay = document.getElementById('period-display');
                 const periodIdField = document.getElementById('delete-period-id');
                 
                 if (deleteModal && periodDisplay && periodIdField) {
-                    periodDisplay.textContent = `Q${quarter}-${year}`;
+                    periodDisplay.textContent = `${quarter}-${year}`;
                     periodIdField.value = id;
                     
                     const bsModal = new bootstrap.Modal(deleteModal);
@@ -355,9 +385,8 @@ if (!window.reportingPeriodsInitialized) {
                 
                 // Disable button while processing
                 this.disabled = true;
-                const buttonText = this.querySelector('.button-text');
-                const originalText = buttonText.textContent;
-                buttonText.textContent = 'Processing...';
+                const originalButtonContent = this.innerHTML; // Store original HTML content
+                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...'; // Update with spinner
                 
                 // Create form data
                 const formData = new FormData();
@@ -400,7 +429,7 @@ if (!window.reportingPeriodsInitialized) {
                         
                         // Restore button
                         this.disabled = false;
-                        buttonText.textContent = originalText;
+                        this.innerHTML = originalButtonContent; // Restore original HTML
                         
                         // Auto dismiss after 5 seconds
                         setTimeout(() => {
@@ -434,7 +463,7 @@ if (!window.reportingPeriodsInitialized) {
                     
                     // Restore button
                     this.disabled = false;
-                    buttonText.textContent = originalText;
+                    this.innerHTML = originalButtonContent; // Restore original HTML
                     
                     // Auto dismiss after 5 seconds
                     setTimeout(() => {
@@ -511,7 +540,7 @@ if (!window.reportingPeriodsInitialized) {
             });
             
             // Re-attach edit button handlers
-            document.querySelectorAll('.edit-period-btn').forEach(button => {
+            document.querySelectorAll('.edit-period').forEach(button => {
                 if (!button.hasAttribute('data-initialized')) {
                     button.setAttribute('data-initialized', 'true');
                     button.addEventListener('click', handleEditClick);
@@ -519,7 +548,7 @@ if (!window.reportingPeriodsInitialized) {
             });
             
             // Re-attach delete button handlers
-            document.querySelectorAll('.delete-period-btn').forEach(button => {
+            document.querySelectorAll('.delete-period').forEach(button => {
                 if (!button.hasAttribute('data-initialized')) {
                     button.setAttribute('data-initialized', 'true');
                     button.addEventListener('click', handleDeleteClick);
