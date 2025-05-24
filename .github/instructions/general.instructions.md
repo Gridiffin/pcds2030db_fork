@@ -16,6 +16,7 @@ Coding standards, domain knowledge, and preferences that AI should follow.
 - for any database operations please use DBCode extension to help you.
 - Ensure that all database queries are properly parameterized to prevent SQL injection attacks.
 - make sure that you understand how the files are referenced across the project. For example: in layouts/headers.php, there are base.css (or main.css) file that is referenced so you need to use these files as a centralized referencer file for all the css styles that is being used in the project. So if you are going to add a new css file, make sure to import them in base.css. (or main.css)
+- whenever "continue" is used, you have to summarize the preivous converstaion history and then continue from there. So for example, if the previous conversation was about fixing a bug in the login functionality, you should summarize that conversation and then continue from there.
 
 ## Project Structure
 - Follow the project structure and organization as outlined in the project documentation.
@@ -34,3 +35,5 @@ Coding standards, domain knowledge, and preferences that AI should follow.
 - So, for example, if you are going to add a new feature, create a file called ".github/implementations/feature_name.md" and describe the feature in detail.
 - Format the file like how you would for a TODO list.
 - Mark complete the tasks in the .md file as you complete them.
+- always choose for the best simplest way to solve problems.
+- if the user's way of coding is not a good practice, give suggestions for improvements before coding anything.

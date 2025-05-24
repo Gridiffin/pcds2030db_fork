@@ -100,59 +100,57 @@ function UserTableManager(formManagerParam, toastManagerParam) {
     
     // Refresh the users table without reloading the page
     function refreshTable() {
-        // Show a loading spinner in the table area
-        const mainContent = document.querySelector('.card-body');
-        if (mainContent) {
-            const originalContent = mainContent.innerHTML;
-            mainContent.innerHTML = `
-                <div class="text-center py-5">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p class="mt-2 text-muted">Refreshing user list...</p>
-                </div>
-            `;
-            
-            // Fetch updated content from the server
-            fetch(window.location.href + '?ajax_table=1')  // Add a parameter to avoid POST processing
-                .then(response => response.text())
-                .then(html => {
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(html, 'text/html');
-                    
-                    // Extract the users table
-                    const newTable = doc.querySelector('.table-responsive');
-                    const currentTable = document.querySelector('.table-responsive');
-                    
-                    if (newTable && currentTable) {
-                        currentTable.parentNode.replaceChild(newTable, currentTable);
-                    } else {
-                        window.location.reload();
-                        return;
-                    }
-                    
-                    // Update the user count badge
-                    const userCountBadge = doc.querySelector('.card-header .badge');
-                    const currentBadge = document.querySelector('.card-header .badge');
-                    if (userCountBadge && currentBadge) {
-                        currentBadge.textContent = userCountBadge.textContent;
-                    }
-                    
-                    // Re-attach event listeners to new elements
-                    attachEventListeners();
-                    
-                    // Apply highlight effect to indicate fresh content
-                    highlightTableRows();
-                })
-                .catch(error => {
-                    // Restore original content on error
-                    mainContent.innerHTML = originalContent;
-                    toastManager.show('Error', 'Failed to refresh content. Please try again.', 'danger');
-                    console.error('Table refresh error:', error);
-                });
-        } else {
+        const tableWrapper = document.getElementById('userTablesWrapper');
+        if (!tableWrapper) {
+            console.error('User tables wrapper (#userTablesWrapper) not found. Reloading page.');
             window.location.reload();
+            return;
         }
+
+        const originalContent = tableWrapper.innerHTML;
+        tableWrapper.innerHTML = `
+            <div class="d-flex justify-content-center align-items-center" style="min-height: 200px;">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="ms-2 mb-0 text-muted">Refreshing user list...</p>
+            </div>
+        `;
+
+        fetch(window.APP_URL + '/app/views/admin/manage_users.php?ajax_table=1')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}, statusText: ${response.statusText}`);
+                }
+                return response.text();
+            })
+            .then(html => {
+                if (html.trim() === '') {
+                    console.warn('Empty response from server for table refresh. This might indicate an issue if tables were expected.');
+                    // Potentially display a 'No users found' message or handle as appropriate
+                    // For now, we'll still replace the content, which might clear the tables if the response is truly empty.
+                }
+                tableWrapper.innerHTML = html;
+                
+                listenersAttached = false; // Reset flag to allow re-attachment
+                attachEventListeners(); 
+                
+                // highlightTableRows(); // Optional: uncomment if you want this visual effect
+            })
+            .catch(error => {
+                console.error('Table refresh error:', error);
+                tableWrapper.innerHTML = originalContent; // Restore original content on error
+                
+                // Re-attach listeners to the restored content
+                listenersAttached = false; 
+                attachEventListeners();
+
+                if (toastManager && typeof toastManager.show === 'function') {
+                    toastManager.show('Error', `Failed to refresh user list: ${error.message}. Please try again.`, 'danger');
+                } else {
+                    alert(`Failed to refresh user list: ${error.message}. Please try again.`);
+                }
+            });
     }
     
     // Visual effect for newly loaded content

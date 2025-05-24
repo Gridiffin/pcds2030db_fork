@@ -24,6 +24,158 @@ if (!is_admin()) {
     exit;
 }
 
+// AJAX Table Request Handler
+if (isset($_GET['ajax_table']) && $_GET['ajax_table'] == '1') {
+    // Get all users and separate them by role
+    $all_users = get_all_users(); // Ensure this function is accessible or defined
+    $admin_users = array_filter($all_users, function($user) {
+        return $user['role'] === 'admin';
+    });
+    $agency_users = array_filter($all_users, function($user) {
+        return $user['role'] === 'agency';
+    });
+
+    // Output only the table HTML and exit
+    // Admin Users Table Card (Simplified for AJAX)
+    ?>
+    <div class="card shadow-sm mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title m-0">Admin Users</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive w-100">
+                <table class="table table-hover table-custom user-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Created</th>
+                            <th>Status</th>
+                            <th class="text-center" style="width: 100px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach($admin_users as $user): ?>
+                            <tr class="<?php echo !$user['is_active'] ? 'inactive-user' : ''; ?>">
+                                <td>
+                                    <div class="fw-medium"><?php echo htmlspecialchars($user['username']); ?></div>
+                                    <?php if ($user['user_id'] == $_SESSION['user_id']): ?>
+                                        <small class="text-muted">(You)</small>
+                                    <?php endif; ?>
+                                </td>
+                                <td><?php echo date('M d, Y', strtotime($user['created_at'])); ?></td>
+                                <td>
+                                    <?php if ($user['is_active']): ?>
+                                        <span class="user-status active">Active</span>
+                                    <?php else: ?>
+                                        <span class="user-status inactive">Inactive</span>
+                                    <?php endif; ?>
+                                    
+                                    <?php if ($user['user_id'] != $_SESSION['user_id']): ?>
+                                        <button class="btn btn-sm ms-2 toggle-active-btn" 
+                                            data-user-id="<?php echo $user['user_id']; ?>"
+                                            data-username="<?php echo htmlspecialchars($user['username']); ?>"
+                                            data-status="<?php echo $user['is_active']; ?>"
+                                            title="<?php echo $user['is_active'] ? 'Deactivate User' : 'Activate User'; ?>">
+                                            <i class="fas fa-toggle-<?php echo $user['is_active'] ? 'on text-success' : 'off text-secondary'; ?>"></i>
+                                        </button>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm d-inline-flex align-items-center justify-content-center">
+                                        <a href="<?php echo APP_URL; ?>/app/views/admin/edit_user.php?id=<?php echo $user['user_id']; ?>" class="btn btn-forest-light" title="Edit User">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <?php if ($user['user_id'] != $_SESSION['user_id']): ?>
+                                            <a href="#" class="btn btn-forest-light text-danger delete-user-btn" 
+                                                title="Delete User"
+                                                data-user-id="<?php echo $user['user_id']; ?>"
+                                                data-username="<?php echo htmlspecialchars($user['username']); ?>">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        <?php endif; ?>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                        <?php if (empty($admin_users)): ?>
+                            <tr><td colspan="4" class="text-center text-muted">No admin users found.</td></tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agency Users Table Card (Simplified for AJAX) -->
+    <div class="card admin-card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title m-0">Agency Users</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive w-100">
+                <table class="table table-forest mb-0">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Agency</th>
+                            <th>Sector</th>
+                            <th>Created</th>
+                            <th>Status</th>
+                            <th class="text-center" style="width: 100px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach($agency_users as $user): ?>
+                            <tr class="<?php echo !$user['is_active'] ? 'user-inactive' : ''; ?>">
+                                <td>
+                                    <div class="fw-medium text-forest"><?php echo htmlspecialchars($user['username']); ?></div>
+                                </td>
+                                <td><?php echo htmlspecialchars($user['agency_name'] ?? '-'); ?></td>
+                                <td><?php echo htmlspecialchars($user['sector_name'] ?? '-'); ?></td>
+                                <td><?php echo date('M d, Y', strtotime($user['created_at'])); ?></td>
+                                <td>
+                                    <?php if ($user['is_active']): ?>
+                                        <span class="badge bg-success">Active</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-danger">Inactive</span>
+                                    <?php endif; ?>
+                                    
+                                    <button class="btn btn-sm ms-2 toggle-active-btn" 
+                                        data-user-id="<?php echo $user['user_id']; ?>"
+                                        data-username="<?php echo htmlspecialchars($user['username']); ?>"
+                                        data-status="<?php echo $user['is_active']; ?>"
+                                        title="<?php echo $user['is_active'] ? 'Deactivate User' : 'Activate User'; ?>">
+                                        <i class="fas fa-toggle-<?php echo $user['is_active'] ? 'on text-success' : 'off text-secondary'; ?>"></i>
+                                    </button>
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm d-inline-flex align-items-center justify-content-center">
+                                        <a href="<?php echo APP_URL; ?>/app/views/admin/edit_user.php?id=<?php echo $user['user_id']; ?>" class="btn btn-outline-primary" title="Edit User">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="#" class="btn btn-outline-danger delete-user-btn" 
+                                            title="Delete User"
+                                            data-user-id="<?php echo $user['user_id']; ?>"
+                                            data-username="<?php echo htmlspecialchars($user['username']); ?>">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                        <?php if (empty($agency_users)): ?>
+                            <tr><td colspan="6" class="text-center text-muted">No agency users found.</td></tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <?php
+    exit; // IMPORTANT: Stop script execution after sending table HTML
+}
+// END AJAX Table Request Handler
+
 // Set page title
 $pageTitle = 'Manage Users';
 
@@ -177,32 +329,33 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
     </div>
 <?php endif; ?>
 
-<!-- Admin Users Table Card -->
-<div class="card shadow-sm mb-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="card-title m-0">Admin Users</h5>
-    </div>
-    <div class="card-body p-0">
-        <div class="table-responsive w-100">
-            <table class="table table-hover table-custom user-table mb-0">
-                <thead>
-                    <tr>
-                        <th>Username</th>
-                        <th>Created</th>
-                        <th>Status</th>
-                        <th class="text-center" style="width: 100px;">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach($admin_users as $user): ?>
-                        <tr class="<?php echo !$user['is_active'] ? 'inactive-user' : ''; ?>">
-                            <td>
-                                <div class="fw-medium"><?php echo $user['username']; ?></div>
-                                <?php if ($user['user_id'] == $_SESSION['user_id']): ?>
-                                    <small class="text-muted">(You)</small>
-                                <?php endif; ?>
-                            </td>
-                            <td><?php echo date('M d, Y', strtotime($user['created_at'])); ?></td>                            <td>
+<div id="userTablesWrapper">
+    <!-- Admin Users Table Card -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title m-0">Admin Users</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive w-100">
+                <table class="table table-hover table-custom user-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Created</th>
+                            <th>Status</th>
+                            <th class="text-center" style="width: 100px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach($admin_users as $user): ?>
+                            <tr class="<?php echo !$user['is_active'] ? 'inactive-user' : ''; ?>">
+                                <td>
+                                    <div class="fw-medium"><?php echo $user['username']; ?></div>
+                                    <?php if ($user['user_id'] == $_SESSION['user_id']): ?>
+                                        <small class="text-muted">(You)</small>
+                                    <?php endif; ?>
+                                </td>
+                                <td><?php echo date('M d, Y', strtotime($user['created_at'])); ?></td>                            <td>
                                 <?php if ($user['is_active']): ?>
                                     <span class="user-status active">Active</span>
                                 <?php else: ?>
@@ -302,22 +455,10 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
         </div>
     </div>
 </div>
+</div> <!-- End of userTablesWrapper -->
 
-<!-- User Management Tips -->
-<div class="card admin-card mb-4">
-    <div class="card-body p-4">
-        <h5 class="text-forest mb-3"><i class="fas fa-info-circle me-2"></i>User Management Tips</h5>
-        <ul class="mb-0">
-            <li>Admin users can access all features of the dashboard</li>
-            <li>Agency users can only submit data for their assigned sector</li>
-            <li>Deactivated users cannot log in to the system</li>
-            <li>You cannot deactivate your own account</li>
-        </ul>
-    </div>
-</div>
-
-<!-- Form container for dynamic forms -->
-<div id="formContainer"></div>
+<!-- Modals for Add/Edit/Delete Users -->
+<?php include PROJECT_ROOT_PATH . 'app/views/admin/modals/user_modals.php'; ?>
 
 <?php
 // Include footer
