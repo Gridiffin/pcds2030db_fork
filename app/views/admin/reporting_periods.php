@@ -220,7 +220,7 @@ function get_admin_quarter_display_name($quarter_val) {
                                         </thead>
                                         <tbody>
                                             <?php foreach ($year_periods as $index => $period): ?>
-                                                <tr data-period-id="<?php echo $period['period_id']; ?>">
+                                                <tr data-period-id="<?php echo $period['period_id']; ?>" class="period-row" data-year="<?php echo $period['year']; ?>" data-quarter="<?php echo $period['quarter']; ?>">
                                                     <td class="text-center"><?php echo $index + 1; ?></td>
                                                     <td>
                                                         <strong><?php echo get_admin_quarter_display_name($period['quarter']); ?></strong>

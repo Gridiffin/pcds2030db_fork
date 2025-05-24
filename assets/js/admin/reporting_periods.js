@@ -66,23 +66,34 @@ if (!window.reportingPeriodsInitialized) {
             const searchInput = document.getElementById('periodSearch');
             if (searchInput) {
                 searchInput.addEventListener('input', function() {
-                    const searchTerm = this.value.toLowerCase();
+                    const searchTerm = this.value.toLowerCase().trim();
                     const yearGroups = document.querySelectorAll('.year-group');
                     let hasResults = false;
-                    
+
                     yearGroups.forEach(yearGroup => {
-                        const periodRows = yearGroup.querySelectorAll('.period-row');
+                        const periodRows = yearGroup.querySelectorAll('tr.period-row'); // Use the added class
                         let yearHasMatches = false;
-                        
+
                         periodRows.forEach(row => {
-                            const yearText = row.getAttribute('data-year');
-                            const quarterText = `Q${row.getAttribute('data-quarter')}`;
-                            const statusText = row.querySelector('.badge').textContent.trim().toLowerCase();
-                            
-                            const matches = yearText.includes(searchTerm) || 
-                                         quarterText.toLowerCase().includes(searchTerm) ||
-                                         statusText.includes(searchTerm);
-                                         
+                            const yearText = row.getAttribute('data-year').toLowerCase();
+                            const quarterValue = row.getAttribute('data-quarter');
+                            let quarterText = '';
+                            if (quarterValue >= 1 && quarterValue <= 4) {
+                                quarterText = `q${quarterValue}`;
+                            } else if (quarterValue == 5) {
+                                quarterText = 'half yearly 1';
+                            } else if (quarterValue == 6) {
+                                quarterText = 'half yearly 2';
+                            }
+
+                            const statusText = row.querySelector('td:nth-child(4) .badge').textContent.trim().toLowerCase();
+                            const fullPeriodText = `${quarterText} ${yearText}`;
+
+                            const matches = yearText.includes(searchTerm) ||
+                                          quarterText.includes(searchTerm) ||
+                                          statusText.includes(searchTerm) ||
+                                          fullPeriodText.includes(searchTerm);
+
                             if (matches) {
                                 row.style.display = '';
                                 yearHasMatches = true;
@@ -110,9 +121,31 @@ if (!window.reportingPeriodsInitialized) {
                     });
                     
                     // Show/hide no results message
-                    const noResultsMessage = document.getElementById('noPeriodsFound');
+                    const noResultsMessage = document.getElementById('noPeriodsFound'); // Ensure this element exists or is created
+                    const periodsAccordion = document.getElementById('periodsAccordion');
+
                     if (noResultsMessage) {
-                        noResultsMessage.classList.toggle('d-none', hasResults || !searchTerm);
+                        noResultsMessage.classList.toggle('d-none', hasResults);
+                        noResultsMessage.textContent = hasResults ? '' : 'No periods found matching your search.';
+                    }
+
+                    // Hide or show the entire accordion based on search results
+                    if (periodsAccordion) {
+                        periodsAccordion.style.display = hasResults || !searchTerm ? '' : 'none';
+                        // If no results and search term exists, show a message if noResultsMessage is not available
+                        if (!hasResults && searchTerm && !noResultsMessage) {
+                            let existingMsg = document.getElementById('dynamicNoResultsMsg');
+                            if (!existingMsg) {
+                                existingMsg = document.createElement('div');
+                                existingMsg.id = 'dynamicNoResultsMsg';
+                                existingMsg.className = 'alert alert-info text-center py-3';
+                                periodsAccordion.parentNode.insertBefore(existingMsg, periodsAccordion.nextSibling);
+                            }
+                            existingMsg.textContent = 'No periods found matching your search.';
+                            existingMsg.style.display = '';
+                        } else if (document.getElementById('dynamicNoResultsMsg')){
+                            document.getElementById('dynamicNoResultsMsg').style.display = 'none';
+                        }
                     }
                 });
             }
