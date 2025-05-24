@@ -294,7 +294,7 @@ function get_admin_quarter_display_name($quarter_val) {
                             <input type="number" class="form-control" id="year" name="year" required>
                         </div>
                         <div class="col-md-6">
-                            <label for="quarter" class="form-label">Quarter</label>
+                            <label for="quarter" class="form-label">Reporting Period</label>
                             <select class="form-select" id="quarter" name="quarter" required>
                                 <option value="1">Q1</option>
                                 <option value="2">Q2</option>
