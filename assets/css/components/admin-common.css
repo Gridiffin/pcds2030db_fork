@@ -457,12 +457,18 @@ tr.user-inactive:hover {
 
 /* Forest theme form switch */
 .form-switch.forest-switch {
-  padding-left: 3em;
   margin-bottom: 1.5rem;
   border-radius: 8px;
-  padding: 1rem;
+  
+  /* Set paddings specifically: */
+  padding-top: 1rem;
+  padding-right: 1rem;    /* Space on the right of the component */
+  padding-bottom: 1rem;
+  padding-left: 3em;     /* Crucial: 3em space for the switch input */
+
   background-color: rgba(var(--forest-light-rgb), 0.05);
   border: 1px solid rgba(var(--forest-deep-rgb), 0.1);
+  display: block; /* Ensure it takes available width and behaves as a block container */
 }
 
 .form-switch.forest-switch .form-check-input {
@@ -481,7 +487,9 @@ tr.user-inactive:hover {
 .form-switch.forest-switch .form-check-label {
   color: var(--text-primary);
   font-weight: 500;
-  padding-left: 1rem;
+  padding-left: 1rem; /* Space between the right edge of the switch and the start of label text */
+  white-space: normal; /* Ensure text wraps if it's too long */
+  vertical-align: middle; /* Helps align label text with the switch */
 }
 
 /* System status card */
@@ -490,6 +498,12 @@ tr.user-inactive:hover {
   border: 1px solid rgba(var(--forest-deep-rgb), 0.1);
   border-radius: var(--radius-md);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  overflow: visible; /* Ensure content isn't unnecessarily clipped */
+}
+
+/* Targeting the .card-body specifically within .system-status-card */
+.system-status-card .card-body {
+  padding-bottom: 1.5rem; /* Increase bottom padding to prevent text cutoff */
 }
 
 .system-status-card .card-title {

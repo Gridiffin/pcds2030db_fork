@@ -80,41 +80,41 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
         </div>
         <div class="card-body">
             <form method="post">
-                <!-- Multi-Sector Toggle -->
-                <div class="row mb-4">
-                    <div class="col-md-8">
-                        <h6 class="mb-1">Multi-Sector Mode</h6>
-                        <p class="text-muted mb-2">
-                            Enable or disable multi-sector functionality. When enabled, the dashboard will display all sectors.
-                            When disabled, the dashboard will focus exclusively on the Forestry sector.
-                        </p>
-                          <div class="form-check form-switch forest-switch mt-3">
-                            <!-- Hidden field to ensure the form value is always sent -->
-                            <input type="hidden" name="multi_sector" value="0">
-                            
-                            <input type="checkbox" class="form-check-input" id="multiSectorToggle" name="multi_sector" value="1"
-                                <?php echo $multi_sector_enabled ? 'checked' : ''; ?>>
-                            <label class="form-check-label" for="multiSectorToggle">
-                                <?php echo $multi_sector_enabled ? 'Enabled - All Sectors Visible' : 'Disabled - Forestry Sector Only'; ?>
-                            </label>
-                        </div>
+                <!-- Multi-Sector Mode Section -->
+                <div class="mb-4">
+                    <h6 class="mb-1">Multi-Sector Mode</h6>
+                    <p class="text-muted mb-2">
+                        Enable or disable multi-sector functionality. When enabled, the dashboard will display all sectors.
+                        When disabled, the dashboard will focus exclusively on the Forestry sector.
+                    </p>
+                    <div class="form-check form-switch forest-switch mt-3">
+                        <!-- Hidden field to ensure the form value is always sent -->
+                        <input type="hidden" name="multi_sector" value="0">
+                        
+                        <input type="checkbox" class="form-check-input" id="multiSectorToggle" name="multi_sector" value="1"
+                            <?php echo $multi_sector_enabled ? 'checked' : ''; ?>>
+                        <label class="form-check-label" for="multiSectorToggle">
+                            <?php echo $multi_sector_enabled ? 'Enabled - All Sectors Visible' : 'Disabled - Forestry Sector Only'; ?>
+                        </label>
                     </div>
-                    <div class="col-md-4">                        <div class="system-status-card">
-                            <div class="card-body">
-                                <h6 class="card-title">Current Status</h6>
-                                <span class="status-indicator <?php echo $multi_sector_enabled ? 'status-success' : 'status-info'; ?> mb-2">
-                                    <?php echo $multi_sector_enabled ? 'Enabled' : 'Disabled'; ?>
-                                </span>
-                                <p class="small text-secondary mb-0">
-                                    <?php echo $multi_sector_enabled 
-                                        ? 'All sectors are currently visible in the dashboard.' 
-                                        : 'Dashboard is focused on the Forestry sector only.'; ?>
-                                </p>
-                            </div>
+                </div>
+
+                <!-- Current Status Section -->
+                <div class="mb-4">
+                    <div class="system-status-card">
+                        <div class="card-body">
+                            <h6 class="card-title">Current Status</h6>
+                            <span class="status-indicator <?php echo $multi_sector_enabled ? 'status-success' : 'status-info'; ?> mb-2">
+                                <?php echo $multi_sector_enabled ? 'Enabled' : 'Disabled'; ?>
+                            </span>
+                            <p class="small text-secondary mb-0">
+                                <?php echo $multi_sector_enabled ? 'Dashboard will display all sectors.' : 'Dashboard is focused on the Forestry sector only.'; ?>
+                            </p>
                         </div>
                     </div>
                 </div>
-                  <div class="alert alert-forest alert-info">
+                
+                <div class="alert alert-forest alert-info">
                     <i class="fas fa-info-circle alert-icon"></i>
                     <strong>Note:</strong> Changing this setting will affect the entire system. All users may need to refresh their browsers to see the changes.
                 </div>
