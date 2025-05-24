@@ -49,7 +49,6 @@ function add_user($data) {
     if (isset($data['role']) && $data['role'] === 'agency') {
         $required_fields[] = 'agency_name';
         $required_fields[] = 'sector_id';
-        $required_fields[] = 'agency_group_id';
     }
     
     // Check for missing required fields
@@ -97,12 +96,10 @@ function add_user($data) {
         // Set agency-specific fields
         $agency_name = null;
         $sector_id = null;
-        $agency_group_id = null;
         
         if ($role === 'agency') {
             $agency_name = trim($data['agency_name']);
             $sector_id = intval($data['sector_id']);
-            $agency_group_id = intval($data['agency_group_id']);
             
             // Verify sector exists
             $sector_check = "SELECT sector_id FROM sectors WHERE sector_id = ?";
@@ -113,24 +110,14 @@ function add_user($data) {
                 $conn->rollback();
                 return ['error' => 'Invalid sector selected'];
             }
-            
-            // Verify agency group exists and belongs to the selected sector
-            $group_check = "SELECT id FROM agency_group WHERE id = ? AND sector_id = ?";
-            $stmt = $conn->prepare($group_check);
-            $stmt->bind_param("ii", $agency_group_id, $sector_id);
-            $stmt->execute();
-            if ($stmt->get_result()->num_rows === 0) {
-                $conn->rollback();
-                return ['error' => 'Invalid agency group selected for this sector'];
-            }
         }
         
         // Insert user
-        $query = "INSERT INTO users (username, password, role, agency_name, sector_id, agency_id, is_active, created_at) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, NOW())";
+        $query = "INSERT INTO users (username, password, role, agency_name, sector_id, is_active, created_at) 
+                 VALUES (?, ?, ?, ?, ?, ?, NOW())";
         
         $stmt = $conn->prepare($query);
-        $stmt->bind_param("ssssiis", $username, $hashed_password, $role, $agency_name, $sector_id, $agency_group_id, $is_active);
+        $stmt->bind_param("ssssiis", $username, $hashed_password, $role, $agency_name, $sector_id, $is_active);
         
         if (!$stmt->execute()) {
             throw new Exception($stmt->error);
@@ -176,7 +163,6 @@ function update_user($data) {
         if (isset($data['role']) && $data['role'] === 'agency') {
             $required_fields[] = 'agency_name';
             $required_fields[] = 'sector_id';
-            $required_fields[] = 'agency_group_id';
         }
         
         // Check for missing required fields
@@ -287,32 +273,6 @@ function update_user($data) {
                     $conn->rollback();
                     return ['error' => 'Invalid sector selected'];
                 }
-            }
-        }
-        
-        // Handle agency_group_id if provided
-        if (isset($data['agency_group_id'])) {
-            $agency_group_id = !empty($data['agency_group_id']) ? intval($data['agency_group_id']) : null;
-            $update_fields[] = "agency_id = ?";
-            $bind_params[] = $agency_group_id;
-            $param_types .= "i";
-            
-            // Verify agency group exists and belongs to the selected sector if both are provided
-            if ($agency_group_id && isset($data['sector_id'])) {
-                $sector_id = intval($data['sector_id']);
-                $group_check = "SELECT id FROM agency_group WHERE id = ? AND sector_id = ?";
-                $stmt = $conn->prepare($group_check);
-                $stmt->bind_param("ii", $agency_group_id, $sector_id);
-                $stmt->execute();
-                if ($stmt->get_result()->num_rows === 0) {
-                    $conn->rollback();
-                    return ['error' => 'Invalid agency group selected for this sector'];
-                }
-            }
-        } else {
-            // Reset agency_group_id if role is not agency
-            if (isset($data['role']) && $data['role'] !== 'agency') {
-                $update_fields[] = "agency_id = NULL";
             }
         }
         

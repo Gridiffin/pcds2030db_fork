@@ -82,9 +82,7 @@ $sectors = get_all_sectors();
 $pageTitle = 'Edit User';
 
 // Additional scripts
-$additionalScripts = [
-    APP_URL . '/assets/js/admin/user_form.js'
-];
+$additionalScripts = []; // Set to empty array if no other scripts are needed here
 
 // Include header
 require_once '../layouts/header.php';
@@ -193,27 +191,6 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                             <?php endforeach; ?>
                         </select>
                     </div>
-
-                    <div class="col-md-6">
-                        <label for="agency_group_id" class="form-label">Agency Group *</label>
-                        <?php
-                        // Get agency groups from database
-                        $agency_groups_query = "SELECT id, group_name FROM agency_group ORDER BY group_name";
-                        $agency_groups_result = $conn->query($agency_groups_query);
-                        $agency_groups = [];
-                        while ($group = $agency_groups_result->fetch_assoc()) {
-                            $agency_groups[] = $group;
-                        }
-                        ?>
-                        <select class="form-select" id="agency_group_id" name="agency_group_id">
-                            <option value="">Select Agency Group</option>
-                            <?php foreach($agency_groups as $group): ?>
-                                <option value="<?php echo $group['id']; ?>" <?php echo isset($user['agency_id']) && $user['agency_id'] == $group['id'] ? 'selected' : ''; ?>>
-                                    <?php echo $group['group_name']; ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
                 </div>
                 <div class="alert alert-info mt-3">
                     <i class="fas fa-info-circle me-2"></i>
@@ -268,7 +245,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const agencyFields = document.getElementById('agencyFields');
     const agencyName = document.getElementById('agency_name');
     const sectorId = document.getElementById('sector_id');
-    
+
     if (roleSelect && agencyFields) {
         // Function to update required status based on role
         const updateRequiredFields = function() {
@@ -374,7 +351,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         setInputFeedback(sectorId, true);
                     }
                 }
-                
+
                 if (!isValid) {
                     e.preventDefault();
                 }
