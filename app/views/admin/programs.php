@@ -288,6 +288,13 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                                                 </a>
                                             <?php endif; ?>
                                         <?php endif; ?>
+                                        <!-- Delete button -->
+                                        <a href="#" 
+                                           class="btn btn-outline-danger btn-sm" 
+                                           title="Delete Program"
+                                           onclick="confirmDeleteProgram(<?php echo $program['program_id']; ?>, <?php echo $period_id ?? 'null'; ?>); return false;">
+                                            <i class="fas fa-trash"></i> Delete
+                                        </a>
                                     </div>
                                 </td>
                             </tr>
@@ -298,6 +305,39 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
         </div>
     </div>
 </div>
+
+<script>
+function confirmDeleteProgram(programId, periodId) {
+    if (confirm('Are you sure you want to delete this program? This action cannot be undone.')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = 'delete_program.php?id=' + programId + (periodId ? '&period_id=' + periodId : '');
+
+        const programIdInput = document.createElement('input');
+        programIdInput.type = 'hidden';
+        programIdInput.name = 'program_id';
+        programIdInput.value = programId;
+        form.appendChild(programIdInput);
+
+        const confirmInput = document.createElement('input');
+        confirmInput.type = 'hidden';
+        confirmInput.name = 'confirm_delete';
+        confirmInput.value = '1';
+        form.appendChild(confirmInput);
+        
+        if (periodId) {
+            const periodIdInput = document.createElement('input');
+            periodIdInput.type = 'hidden';
+            periodIdInput.name = 'period_id';
+            periodIdInput.value = periodId;
+            form.appendChild(periodIdInput);
+        }
+
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
 
 <?php
 // Include footer

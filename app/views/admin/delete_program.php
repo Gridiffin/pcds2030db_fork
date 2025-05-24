@@ -24,14 +24,22 @@ if (!is_admin()) {
 }
 
 // Check if program ID is provided
-if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
+$program_id = intval($_GET['id'] ?? $_POST['program_id'] ?? 0);
+$current_period_id = intval($_GET['period_id'] ?? $_POST['period_id'] ?? 0);
+
+if (!isset($_GET['id']) && !isset($_POST['program_id'])) {
     $_SESSION['message'] = "Invalid program ID.";
     $_SESSION['message_type'] = "danger";
-    header('Location: programs.php');
+    header('Location: programs.php' . ($current_period_id ? '?period_id=' . $current_period_id : ''));
     exit;
 }
 
-$program_id = intval($_GET['id']);
+if ($program_id === 0) {
+    $_SESSION['message'] = "Invalid program ID provided.";
+    $_SESSION['message_type'] = "danger";
+    header('Location: programs.php' . ($current_period_id ? '?period_id=' . $current_period_id : ''));
+    exit;
+}
 
 // Get program details
 $query = "SELECT p.*, u.agency_name, s.sector_name 
@@ -55,142 +63,105 @@ $program = $result->fetch_assoc();
 
 // Process deletion
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    try {
-        // Begin transaction
-        $conn->begin_transaction();
-        
-        // First delete any associated submissions
-        $delete_submissions = "DELETE FROM program_submissions WHERE program_id = ?";
-        $stmt = $conn->prepare($delete_submissions);
-        $stmt->bind_param("i", $program_id);
-        $stmt->execute();
-        
-        // Next delete the program
-        $delete_program = "DELETE FROM programs WHERE program_id = ?";
-        $stmt = $conn->prepare($delete_program);
-        $stmt->bind_param("i", $program_id);
-        $result = $stmt->execute();
-        
-        // Check if deletion was successful
-        if (!$result || $conn->affected_rows == 0) {
-            throw new Exception("Failed to delete program. No rows affected.");
+    // Check for confirmation
+    if (isset($_POST['confirm_delete'])) {
+        try {
+            // Begin transaction
+            $conn->begin_transaction();
+            
+            // First delete any associated submissions
+            $delete_submissions = "DELETE FROM program_submissions WHERE program_id = ?";
+            $stmt = $conn->prepare($delete_submissions);
+            $stmt->bind_param("i", $program_id);
+            $stmt->execute();
+            
+            // Next delete the program
+            $delete_program = "DELETE FROM programs WHERE program_id = ?";
+            $stmt = $conn->prepare($delete_program);
+            $stmt->bind_param("i", $program_id);
+            $result = $stmt->execute();
+            
+            // Check if deletion was successful
+            if (!$result || $conn->affected_rows == 0) {
+                // It's possible the program had no submissions, so don't error if only program is deleted.
+                // We should check if the program itself was deleted.
+                $check_program_exists_query = "SELECT program_id FROM programs WHERE program_id = ?";
+                $check_stmt = $conn->prepare($check_program_exists_query);
+                $check_stmt->bind_param("i", $program_id);
+                $check_stmt->execute();
+                $check_result = $check_stmt->get_result();
+                if ($check_result->num_rows > 0) {
+                    throw new Exception("Failed to delete program. The program still exists.");
+                }
+            }
+            
+            // Commit transaction
+            $conn->commit();
+            
+            // Success message
+            $_SESSION['message'] = "Program '{$program['program_name']}' successfully deleted.";
+            $_SESSION['message_type'] = "success";
+            
+            // Ensure session data is written before redirecting
+            session_write_close();
+            
+            // Redirect to the programs page, maintaining the period_id if present
+            $redirect_url = 'programs.php';
+            if ($current_period_id) {
+                $redirect_url .= '?period_id=' . $current_period_id;
+            }
+            header('Location: ' . $redirect_url);
+            exit;
+            
+        } catch (Exception $e) {
+            // Roll back transaction on error
+            $conn->rollback();
+            $_SESSION['message'] = 'Error: ' . $e->getMessage() . '<br>Failed to delete the program. Please try again or contact support.';
+            $_SESSION['message_type'] = "danger";
+            // Redirect back to programs page or show error on current page
+            $redirect_url = 'programs.php';
+            if ($current_period_id) {
+                $redirect_url .= '?period_id=' . $current_period_id;
+            }
+             header('Location: ' . $redirect_url);
+            exit;
         }
-        
-        // Commit transaction
-        $conn->commit();
-        
-        // Success message
-        $_SESSION['message'] = "Program successfully deleted.";
-        $_SESSION['message_type'] = "success";
-        
-        // Immediate redirect to the programs page
-        echo "<script>window.location.href = 'programs.php';</script>";
+    } else {
+        // If not confirmed, redirect back or show error
+        $_SESSION['message'] = "Deletion not confirmed.";
+        $_SESSION['message_type'] = "warning";
+        $redirect_url = 'programs.php';
+        if ($current_period_id) {
+            $redirect_url .= '?period_id=' . $current_period_id;
+        }
+        header('Location: ' . $redirect_url);
         exit;
-        
-    } catch (Exception $e) {
-        // Roll back transaction on error
-        $conn->rollback();
-        echo '<div class="alert alert-danger mt-3">';
-        echo '<strong>Error:</strong> ' . $e->getMessage();
-        echo '<br>Failed to delete the program. Please try again or contact support.';
-        echo '</div>';
     }
+} else {
+    // If GET request, it means direct access to delete_program.php without POST, which is not the new flow.
+    // Redirect to programs page as the confirmation is now handled by JS.
+    $_SESSION['message'] = "Invalid access method for deletion.";
+    $_SESSION['message_type'] = "warning";
+    $redirect_url = 'programs.php';
+    if ($current_period_id) {
+        $redirect_url .= '?period_id=' . $current_period_id;
+    }
+    header('Location: ' . $redirect_url);
+    exit;
 }
 
-// Set page title
-$pageTitle = 'Delete Program';
+// Set page title - This part is no longer reached if POSTing directly.
+// $pageTitle = 'Delete Program: ' . htmlspecialchars($program['program_name']);
 
-// Include header
-require_once '../layouts/header.php';
-
-// Include admin navigation
-require_once '../layouts/admin_nav.php';
-
-// Set up the dashboard header variables
-$title = "Delete Program";
-$subtitle = "Remove program from system";
-$headerStyle = 'danger';
-$actions = [
-    [
-        'url' => 'programs.php',
-        'text' => 'Cancel',
-        'icon' => 'fas fa-times',
-        'class' => 'btn-outline-light'
-    ]
-];
-
-// Include the dashboard header component
-require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
+// Include header - This part is no longer reached.
+// include PROJECT_ROOT_PATH . 'app/views/layouts/header.php';
 ?>
 
-<div class="row">
-    <div class="col-lg-8 mx-auto">
-        <div class="card shadow-sm border-danger">
-            <div class="card-header bg-danger text-white">
-                <h5 class="card-title m-0">
-                    <i class="fas fa-exclamation-triangle me-2"></i>Delete Program
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="alert alert-warning">
-                    <i class="fas fa-exclamation-circle me-2"></i>
-                    <strong>Warning:</strong> This action cannot be undone. Deleting this program will remove all associated data including submissions and reports.
-                </div>
-                
-                <h5 class="mb-3">Program Details:</h5>
-                <div class="table-responsive">
-                    <table class="table table-bordered">
-                        <tr>
-                            <th style="width: 30%;">Program Name</th>
-                            <td><?php echo htmlspecialchars($program['program_name']); ?></td>
-                        </tr>
-                        <tr>
-                            <th>Description</th>
-                            <td><?php echo !empty($program['description']) ? htmlspecialchars($program['description']) : '<em>No description</em>'; ?></td>
-                        </tr>
-                        <tr>
-                            <th>Agency</th>
-                            <td><?php echo htmlspecialchars($program['agency_name']); ?></td>
-                        </tr>
-                        <tr>
-                            <th>Sector</th>
-                            <td><?php echo htmlspecialchars($program['sector_name']); ?></td>
-                        </tr>
-                        <tr>
-                            <th>Type</th>
-                            <td>
-                                <?php if (isset($program['is_assigned']) && $program['is_assigned']): ?>
-                                    <span class="badge bg-success">Admin Assigned</span>
-                                <?php else: ?>
-                                    <span class="badge bg-info">Agency Created</span>
-                                <?php endif; ?>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>Created</th>
-                            <td><?php echo date('F j, Y', strtotime($program['created_at'])); ?></td>
-                        </tr>
-                    </table>
-                </div>
-                
-                <form method="POST" action="<?php echo view_url('$ViewType', '$currentFileName'); ?>" class="mt-4">
-                    <div class="d-flex justify-content-center">
-                        <a href="programs.php" class="btn btn-outline-secondary me-3">
-                            <i class="fas fa-arrow-left me-1"></i> Cancel
-                        </a>
-                        <button type="submit" name="delete_program" value="1" class="btn btn-danger" onclick="return confirm('Are you sure you want to permanently delete this program?');">
-                            <i class="fas fa-trash-alt me-1"></i> Delete Program
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
+<!-- HTML for confirmation page is no longer needed here as it's handled by JS confirm dialog -->
 
 <?php
-// Include footer
-require_once '../layouts/footer.php';
+// Include footer - This part is no longer reached.
+// include PROJECT_ROOT_PATH . 'app/views/layouts/footer.php';
 ?>
 
 
