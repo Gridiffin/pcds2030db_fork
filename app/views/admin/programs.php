@@ -270,13 +270,23 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                                         <a href="edit_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-secondary" title="Edit Program">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <?php if (isset($program['status']) && $program['status'] !== null): // Show unsubmit only if there is a submission ?>
-                                            <a href="unsubmit.php?program_id=<?php echo $program['program_id']; ?>&period_id=<?php echo $period_id; ?>" 
-                                               class="btn btn-outline-warning btn-sm" 
-                                               title="Unsubmit Program for this Period"
-                                               onclick="return confirm('Are you sure you want to unsubmit this program for the period? This will revert its status and allow the agency to edit it again.');">
-                                                <i class="fas fa-undo"></i>
-                                            </a>
+                                        <?php // Unsubmit/Resubmit Logic based on is_draft ?>
+                                        <?php if (isset($program['submission_id'])): // Ensure there is a submission record ?>
+                                            <?php if (!empty($program['is_draft'])): ?>
+                                                <a href="resubmit.php?program_id=<?php echo $program['program_id']; ?>&period_id=<?php echo $period_id; ?>" 
+                                                   class="btn btn-outline-success btn-sm" 
+                                                   title="Resubmit Program for this Period"
+                                                   onclick="return confirm('Are you sure you want to resubmit this program for the period? This will mark it as officially submitted.');">
+                                                    <i class="fas fa-check-circle"></i> Resubmit
+                                                </a>
+                                            <?php elseif (isset($program['status']) && $program['status'] !== null): // Submitted, so show Unsubmit ?>
+                                                <a href="unsubmit.php?program_id=<?php echo $program['program_id']; ?>&period_id=<?php echo $period_id; ?>" 
+                                                   class="btn btn-outline-warning btn-sm" 
+                                                   title="Unsubmit Program for this Period"
+                                                   onclick="return confirm('Are you sure you want to unsubmit this program for the period? This will revert its status and allow the agency to edit it again.');">
+                                                    <i class="fas fa-undo"></i> Unsubmit
+                                                </a>
+                                            <?php endif; ?>
                                         <?php endif; ?>
                                     </div>
                                 </td>

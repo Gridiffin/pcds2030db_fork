@@ -1,8 +1,9 @@
 <?php
 /**
- * Unsubmit Program Submission
+ * Resubmit Program Submission
  * 
- * Sets the is_draft flag to 1 for a specific program submission within a reporting period.
+ * Sets the is_draft flag to 0 for a specific program submission within a reporting period,
+ * updates its status to 'submitted', and records the current timestamp as submission_date.
  */
 
 // Define project root path for consistent file references
@@ -16,7 +17,6 @@ require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/functions.php'; // General functions
 require_once PROJECT_ROOT_PATH . 'app/lib/admin_functions.php'; // Admin-specific functions
-// require_once PROJECT_ROOT_PATH . 'app/lib/admin_functions.php'; // May not be needed if only basic DB ops
 
 // Verify user is an admin
 if (!is_admin()) {
@@ -45,52 +45,47 @@ if (!isset($_GET['program_id']) || !is_numeric($_GET['program_id']) ||
 $program_id = intval($_GET['program_id']);
 $period_id = intval($_GET['period_id']);
 
-// Prepare and execute update query to set is_draft = 1 for the specific program submission
-// Optionally, you might also want to reset the status, e.g., status = 'not-started' or 'draft'
-$sql = "UPDATE program_submissions SET is_draft = 1, status = 'not-started' WHERE program_id = ? AND period_id = ?";
+// Prepare and execute update query to set is_draft = 0, status = 'submitted', and submission_date = NOW()
+$sql = "UPDATE program_submissions 
+        SET is_draft = 0, status = 'submitted', submission_date = NOW(), updated_at = NOW() 
+        WHERE program_id = ? AND period_id = ?";
 $stmt = $conn->prepare($sql);
 
-$success = false;
 if ($stmt) {
     $stmt->bind_param('ii', $program_id, $period_id);
     if ($stmt->execute()) {
         if ($stmt->affected_rows > 0) {
-            $_SESSION['success_message'] = "Program submission has been successfully un-submitted and marked as draft.";
-            $success = true;
+            $_SESSION['success_message'] = "Program has been successfully re-submitted.";
         } else {
-            // This can happen if the submission didn't exist or was already a draft with status 'not-started'
             // Check if a submission record actually exists for this program_id and period_id
-            $check_sql = "SELECT submission_id FROM program_submissions WHERE program_id = ? AND period_id = ?";
+            $check_sql = "SELECT submission_id, is_draft, status FROM program_submissions WHERE program_id = ? AND period_id = ?";
             $check_stmt = $conn->prepare($check_sql);
             $check_stmt->bind_param('ii', $program_id, $period_id);
             $check_stmt->execute();
             $check_result = $check_stmt->get_result();
             if ($check_result->num_rows === 0) {
-                $_SESSION['error_message'] = "No submission found for this program in the specified period. Nothing to un-submit.";
+                $_SESSION['error_message'] = "No submission found for this program in the specified period. Nothing to resubmit.";
             } else {
-                 // Record existed, but maybe no change was needed (e.g., already draft and not-started)
-                $_SESSION['info_message'] = "Program submission was already in the desired state or no changes were made.";
+                $submission_data = $check_result->fetch_assoc();
+                if ($submission_data['is_draft'] == 0 && $submission_data['status'] == 'submitted') {
+                     $_SESSION['info_message'] = "Program submission was already in the re-submitted state.";
+                } else {
+                    $_SESSION['error_message'] = "Failed to resubmit the program. No rows were updated, though a record exists. Current state: is_draft=" . $submission_data['is_draft'] . ", status=" . $submission_data['status'];
+                }
             }
             $check_stmt->close();
         }
     } else {
-        $_SESSION['error_message'] = "Failed to un-submit the program. Database error: " . $stmt->error;
+        $_SESSION['error_message'] = "Failed to resubmit the program. Database error: " . $stmt->error;
     }
     $stmt->close();
 } else {
-    $_SESSION['error_message'] = "Failed to prepare the database statement for un-submitting.";
+    $_SESSION['error_message'] = "Failed to prepare the database statement for resubmitting.";
 }
 
-// Construct redirect URL to go back to the programs page, maintaining the period context
-// And potentially other filters if they were passed or stored in session
+// Construct redirect URL
 $redirect_url = 'programs.php?period_id=' . $period_id;
-
-// You could enhance this by re-adding other filters if your programs.php supports them in GET
-// For example: if (isset($_GET['rating'])) $redirect_url .= '&rating='.urlencode($_GET['rating']);
-// For simplicity, just redirecting with period_id for now.
 
 header('Location: ' . $redirect_url);
 exit;
 ?>
-
-

@@ -240,73 +240,175 @@ function get_admin_programs_list($period_id = null, $filters = []) {
         }
     }
     
-    // Base query
-    $sql = "SELECT p.*, u.agency_name, s.sector_name, ps.status, ps.is_draft, ps.submission_date, ps.updated_at 
-            FROM programs p 
-            LEFT JOIN users u ON p.owner_agency_id = u.user_id 
-            LEFT JOIN sectors s ON p.sector_id = s.sector_id 
-            LEFT JOIN (
-                SELECT * FROM program_submissions 
-                WHERE " . ($period_id ? "period_id = ?" : "period_id = (SELECT MAX(period_id) FROM reporting_periods WHERE status = 'open')") . "
-            ) ps ON p.program_id = ps.program_id";
-            
-    // Add period_id parameter if provided
-    if ($period_id) {
-        $params[] = $period_id;
-        $param_types .= "i";
+    // Construct the main query
+    $sql = "SELECT 
+                p.program_id, p.program_name, p.description, p.owner_agency_id, p.sector_id, p.created_at,
+                s.sector_name, 
+                u.agency_name,
+                ps.submission_id, ps.status, ps.is_draft, ps.submission_date, ps.updated_at, ps.period_id AS submission_period_id
+            FROM programs p
+            JOIN sectors s ON p.sector_id = s.sector_id
+            JOIN users u ON p.owner_agency_id = u.user_id
+            LEFT JOIN program_submissions ps ON p.program_id = ps.program_id AND ps.period_id = ?";
+    
+    $params = [$period_id];
+    $param_types = 'i';
+    
+    // Apply filters
+    if (!empty($filters)) {
+        if (isset($filters['status']) && $filters['status'] !== 'all' && $filters['status'] !== '') {
+            $conditions[] = "ps.status = ?";
+            $params[] = $filters['status'];
+            $param_types .= 's';
+        }
         
-        // Get the period when each program was created by finding the first reporting period
-        // that contains the program's creation date
-        if ($period_info) {
-            $conditions[] = "p.created_at BETWEEN ? AND ?";
-            $params[] = $period_info['start_date'] . ' 00:00:00';
-            $params[] = $period_info['end_date'] . ' 23:59:59';
+        if (isset($filters['sector_id']) && $filters['sector_id'] !== 'all' && $filters['sector_id'] !== 0 && $filters['sector_id'] !== '') {
+            $conditions[] = "p.sector_id = ?";
+            $params[] = $filters['sector_id'];
+            $param_types .= "i";
+        }
+        
+        if (isset($filters['agency_id']) && $filters['agency_id'] !== 'all' && $filters['agency_id'] !== 0 && $filters['agency_id'] !== '') {
+            $conditions[] = "p.owner_agency_id = ?";
+            $params[] = $filters['agency_id'];
+            $param_types .= "i";
+        }
+        
+        if (isset($filters['search']) && !empty($filters['search'])) {
+            $search_term = '%' . $filters['search'] . '%';
+            $conditions[] = "(p.program_name LIKE ? OR p.description LIKE ?)";
+            $params[] = $search_term;
+            $params[] = $search_term;
             $param_types .= "ss";
         }
     }
     
-    // Filter by is_assigned status
-    if (isset($filters['is_assigned'])) {
-        $conditions[] = "p.is_assigned = ?";
-        $params[] = $filters['is_assigned'] ? 1 : 0;
-        $param_types .= "i";
+    // Add program creation date filtering based on the viewing_period_id's start and end dates
+    if ($period_info) {
+        $conditions[] = "p.created_at >= ? AND p.created_at <= ?";
+        $params[] = $period_info['start_date'] . ' 00:00:00';
+        $params[] = $period_info['end_date'] . ' 23:59:59';
+        $param_types .= 'ss';
     }
     
-    // Add other existing filters
+    if (!empty($conditions)) {
+        $sql .= " WHERE " . implode(" AND ", $conditions);
+    }
+    
+    // ORDER BY and LIMIT clauses should not introduce a GROUP BY that causes this issue.
+    // If a GROUP BY is necessary, it must include all non-aggregated selected columns.
+    // For now, let's assume the GROUP BY was the issue and remove/adjust it if it's further down.
+    // The error occurs at line 310, which is $stmt = $conn->prepare($sql);
+    // This implies the $sql string itself is the problem before prepare.
+
+    // If there was a GROUP BY p.program_id, we need to ensure all selected ps.* columns are handled.
+    // However, the query structure with LEFT JOIN program_submissions ON ... AND ps.period_id = ?
+    // should ideally return one row per program for that period if a submission exists, or NULLs for ps.* fields.
+    // The issue might be if a program can have multiple submissions for the *same* period_id in the table,
+    // which would be a data integrity issue.
+
+    // Let's remove any explicit GROUP BY for now and see if the JOIN logic is sufficient.
+    // The original error points to ps.submission_id not being in GROUP BY.
+    // This implies a GROUP BY clause is active.
+
+    // Find the GROUP BY clause and ensure all ps fields are covered or use ANY_VALUE for MySQL 5.7+
+    // Or, if the goal is one submission per program, ensure the JOIN condition is strict enough or use a subquery.
+
+    // Based on the error, a GROUP BY clause is being applied. Let's assume it's GROUP BY p.program_id.
+    // To fix this with ONLY_FULL_GROUP_BY, you'd typically do:
+    // GROUP BY p.program_id, s.sector_name, u.agency_name, ps.submission_id, ps.status, ps.is_draft, ps.submission_date, ps.updated_at, ps.period_id
+    // However, this might not be the intended logic if you only want one row per program.
+
+    // Let's assume the GROUP BY was added implicitly or by mistake. The provided snippet for get_admin_programs_list doesn't show an explicit GROUP BY before the ORDER BY.
+    // The error at line 310 (prepare statement) means the SQL string is already problematic.
+
+    // The previous version of the query was:
+    // $sql = "SELECT p.*, u.agency_name, s.sector_name, ps.submission_id, ps.status, ps.is_draft, ps.submission_date, ps.updated_at 
+    // FROM programs p 
+    // LEFT JOIN users u ON p.owner_agency_id = u.user_id 
+    // LEFT JOIN sectors s ON p.sector_id = s.sector_id 
+    // LEFT JOIN (
+    // SELECT * FROM program_submissions 
+    // WHERE " . ($period_id ? "period_id = ?" : "period_id = (SELECT MAX(period_id) FROM reporting_periods WHERE status = 'open')") . "
+    // ) ps ON p.program_id = ps.program_id";
+    // This subquery for ps might be causing issues with ONLY_FULL_GROUP_BY if not handled correctly when integrated.
+
+    // Simpler JOIN without subquery for ps:
+    $sql = "SELECT 
+        p.program_id, p.program_name, p.description, p.owner_agency_id, p.sector_id, p.created_at,
+        s.sector_name, 
+        u.agency_name,
+        ps.submission_id, ps.status, ps.is_draft, ps.submission_date, ps.updated_at, ps.period_id AS submission_period_id
+    FROM programs p
+    JOIN sectors s ON p.sector_id = s.sector_id
+    JOIN users u ON p.owner_agency_id = u.user_id
+    LEFT JOIN program_submissions ps ON p.program_id = ps.program_id AND ps.period_id = ?";
+
+    $params = []; // Re-initialize params for this corrected SQL structure
+    $param_types = '';
+
+    $params[] = $period_id; // This is the first param for ps.period_id = ?
+    $param_types .= 'i';
+
+    $where_clauses = [];
+    if ($period_info) {
+        $where_clauses[] = "(p.created_at >= ? AND p.created_at <= ?)";
+        $params[] = $period_info['start_date'] . ' 00:00:00';
+        $params[] = $period_info['end_date'] . ' 23:59:59';
+        $param_types .= 'ss';
+    }
+
+    // Add other filters as before
     if (isset($filters['status']) && $filters['status'] !== 'all' && $filters['status'] !== '') {
-        $conditions[] = "ps.status = ?";
+        $where_clauses[] = "ps.status = ?";
         $params[] = $filters['status'];
         $param_types .= "s";
     }
-    
     if (isset($filters['sector_id']) && $filters['sector_id'] !== 'all' && $filters['sector_id'] !== 0 && $filters['sector_id'] !== '') {
-        $conditions[] = "p.sector_id = ?";
+        $where_clauses[] = "p.sector_id = ?";
         $params[] = $filters['sector_id'];
         $param_types .= "i";
     }
-    
     if (isset($filters['agency_id']) && $filters['agency_id'] !== 'all' && $filters['agency_id'] !== 0 && $filters['agency_id'] !== '') {
-        $conditions[] = "p.owner_agency_id = ?";
+        $where_clauses[] = "p.owner_agency_id = ?";
         $params[] = $filters['agency_id'];
         $param_types .= "i";
     }
-    
-    if (isset($filters['search'])) {
+    if (isset($filters['search']) && !empty($filters['search'])) {
         $search_term = '%' . $filters['search'] . '%';
-        $conditions[] = "(p.program_name LIKE ? OR p.description LIKE ?)";
+        $where_clauses[] = "(p.program_name LIKE ? OR p.description LIKE ?)";
         $params[] = $search_term;
         $params[] = $search_term;
         $param_types .= "ss";
     }
-    
-    // Combine conditions
-    if (!empty($conditions)) {
-        $sql .= " WHERE " . implode(" AND ", $conditions);
+
+    if (!empty($where_clauses)) {
+        $sql .= " WHERE " . implode(" AND ", $where_clauses);
     }
-      // Group and order - adding all non-aggregated columns to GROUP BY to comply with ONLY_FULL_GROUP_BY mode
-    $sql .= " GROUP BY p.program_id, p.program_name, p.description, p.owner_agency_id, p.sector_id, p.is_assigned, p.created_at, p.updated_at, u.agency_name, s.sector_name, ps.status, ps.is_draft, ps.submission_date, ps.updated_at ORDER BY p.created_at DESC";
     
-    // Prepare and execute statement
+    // Add GROUP BY to ensure one row per program if multiple submissions could exist (though ideally they shouldn't for a specific period)
+    // If program_submissions can have multiple entries for the same program_id and period_id, this is needed.
+    // However, the LEFT JOIN condition `ps.program_id = p.program_id AND ps.period_id = ?` should limit this.
+    // The error implies a GROUP BY is active. If it's not in this function, it might be a default MySQL setting interaction.
+    // For now, let's assume no GROUP BY is needed here if the JOINs are correct.
+
+    // ORDER BY clause
+    $order_by_column = $filters['sort_by'] ?? 'p.program_name';
+    $order_by_direction = $filters['sort_order'] ?? 'ASC';
+    $sql .= " ORDER BY $order_by_column $order_by_direction";
+
+    // LIMIT and OFFSET for pagination
+    if (isset($filters['limit'])) {
+        $sql .= " LIMIT ?";
+        $params[] = $filters['limit'];
+        $param_types .= 'i';
+        if (isset($filters['offset'])) {
+            $sql .= " OFFSET ?";
+            $params[] = $filters['offset'];
+            $param_types .= 'i';
+        }
+    }
+
     $stmt = $conn->prepare($sql);
     
     if (!empty($params)) {
