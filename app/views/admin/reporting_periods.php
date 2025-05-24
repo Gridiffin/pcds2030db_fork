@@ -188,21 +188,23 @@ function get_admin_quarter_display_name($quarter_val) {
             </div>
         <?php else: ?>
             <div class="accordion" id="periodsAccordion">
-                <?php foreach ($periods_by_year as $year => $year_periods): ?>
+                <?php foreach ($periods_by_year as $year => $year_periods): 
+                    $is_first_year = ($year === array_key_first($periods_by_year));
+                ?>
                     <div class="year-group">
-                        <button class="year-toggle <?php echo ($year === array_key_first($periods_by_year)) ? 'expanded' : ''; ?>" 
+                        <button class="year-toggle <?php echo $is_first_year ? 'expanded' : 'collapsed'; ?>" 
                                 type="button" 
                                 data-year="<?php echo $year; ?>"
-                                aria-expanded="<?php echo ($year === array_key_first($periods_by_year)) ? 'true' : 'false'; ?>">
+                                aria-expanded="<?php echo $is_first_year ? 'true' : 'false'; ?>">
                             <div class="d-flex align-items-center justify-content-between">
                                 <strong><?php echo $year; ?></strong>
                                 <div class="toggle-indicator">
-                                    <i class="fas fa-chevron-down"></i>
+                                    <i class="fas <?php echo $is_first_year ? 'fa-chevron-up' : 'fa-chevron-down'; ?>"></i>
                                 </div>
                             </div>
                         </button>
                         
-                        <div class="year-content <?php echo ($year === array_key_first($periods_by_year)) ? 'show' : 'hide'; ?>">
+                        <div class="year-content <?php echo $is_first_year ? 'show' : 'hide'; ?>">
                             <div class="year-body p-0">
                                 <div class="table-responsive">
                                     <table class="table table-hover table-custom period-table mb-0">
@@ -232,12 +234,18 @@ function get_admin_quarter_display_name($quarter_val) {
                                                         ?>
                                                     </td>
                                                     <td class="text-center">
-                                                        <span class="badge rounded-pill bg-<?php echo get_status_color($period['status']); ?>">
+                                                        <span class="badge rounded-pill bg-<?php echo get_reporting_period_status_color($period['status']); ?>">
                                                             <?php echo ucfirst($period['status']); ?>
                                                         </span>
                                                     </td>
                                                     <td class="text-center">
-                                                        <?php echo date('M j, Y g:i A', strtotime($period['last_updated'])); ?>
+                                                        <?php 
+                                                        if (isset($period['updated_at']) && $period['updated_at'] !== null) {
+                                                            echo date('M j, Y g:i A', strtotime($period['updated_at'])); 
+                                                        } else {
+                                                            echo 'N/A'; // Or any placeholder for missing date
+                                                        }
+                                                        ?>
                                                     </td>
                                                     <td class="text-center">
                                                         <div class="btn-group btn-group-sm">

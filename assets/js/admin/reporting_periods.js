@@ -27,23 +27,35 @@ if (!window.reportingPeriodsInitialized) {
         function initializeYearToggle() {
             document.querySelectorAll('.year-toggle').forEach(button => {
                 button.addEventListener('click', function() {
-                    const year = this.getAttribute('data-year');
-                    const content = document.getElementById(`collapse${year}`);
+                    // const year = this.getAttribute('data-year'); // Not strictly needed if we target relatively
+                    const content = this.nextElementSibling; // Assumes .year-content is the immediate next sibling
+                    const icon = this.querySelector('.toggle-indicator i'); // Find the icon element
                     const isExpanded = this.classList.contains('expanded');
                     
-                    // Toggle current year's expansion state
                     if (isExpanded) {
                         this.classList.remove('expanded');
                         this.classList.add('collapsed');
                         this.setAttribute('aria-expanded', 'false');
-                        content.classList.remove('show');
-                        content.classList.add('hide');
+                        if (content) {
+                            content.classList.remove('show');
+                            content.classList.add('hide');
+                        }
+                        if (icon) {
+                            icon.classList.remove('fa-chevron-up');
+                            icon.classList.add('fa-chevron-down');
+                        }
                     } else {
                         this.classList.add('expanded');
                         this.classList.remove('collapsed');
                         this.setAttribute('aria-expanded', 'true');
-                        content.classList.add('show');
-                        content.classList.remove('hide');
+                        if (content) {
+                            content.classList.add('show');
+                            content.classList.remove('hide');
+                        }
+                        if (icon) {
+                            icon.classList.remove('fa-chevron-down');
+                            icon.classList.add('fa-chevron-up');
+                        }
                     }
                 });
             });

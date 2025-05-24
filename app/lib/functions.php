@@ -411,4 +411,20 @@ function getCurrentPeriodId($conn) {
     
     return null;
 }
+
+/**
+ * Get reporting period status color
+ * @param string $status The status of the reporting period (e.g., 'open', 'closed')
+ * @return string CSS class or color code representing the status
+ */
+function get_reporting_period_status_color($status) {
+    switch ($status) {
+        case 'open':
+            return 'success'; // Or any color you prefer for open status
+        case 'closed':
+            return 'danger'; // Or any color you prefer for closed status
+        default:
+            return 'secondary'; // Default color
+    }
+}
 ?>
