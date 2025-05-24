@@ -263,38 +263,39 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                                     <?php endif; ?>
                                 </td>
                                 <td class="text-center">
-                                    <div class="btn-group btn-group-sm">
+                                    <div class="btn-group btn-group-sm" role="group" aria-label="Primary program actions">
                                         <a href="view_program.php?id=<?php echo $program['program_id']; ?>&period_id=<?php echo $period_id; ?>" class="btn btn-outline-primary" title="View Program Details">
                                             <i class="fas fa-eye"></i>
                                         </a>
                                         <a href="edit_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-secondary" title="Edit Program">
                                             <i class="fas fa-edit"></i>
                                         </a>
+                                        <a href="#" 
+                                           class="btn btn-outline-danger" 
+                                           title="Delete Program"
+                                           onclick="confirmDeleteProgram(<?php echo $program['program_id']; ?>, <?php echo $period_id ?? 'null'; ?>); return false;">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                    <div class="mt-1 d-grid"> 
                                         <?php // Unsubmit/Resubmit Logic based on is_draft ?>
                                         <?php if (isset($program['submission_id'])): // Ensure there is a submission record ?>
                                             <?php if (!empty($program['is_draft'])): ?>
                                                 <a href="resubmit.php?program_id=<?php echo $program['program_id']; ?>&period_id=<?php echo $period_id; ?>" 
-                                                   class="btn btn-outline-success btn-sm" 
+                                                   class="btn btn-outline-success btn-sm w-100" 
                                                    title="Resubmit Program for this Period"
                                                    onclick="return confirm('Are you sure you want to resubmit this program for the period? This will mark it as officially submitted.');">
                                                     <i class="fas fa-check-circle"></i> Resubmit
                                                 </a>
                                             <?php elseif (isset($program['status']) && $program['status'] !== null): // Submitted, so show Unsubmit ?>
                                                 <a href="unsubmit.php?program_id=<?php echo $program['program_id']; ?>&period_id=<?php echo $period_id; ?>" 
-                                                   class="btn btn-outline-warning btn-sm" 
+                                                   class="btn btn-outline-warning btn-sm btn-unsubmit w-100" 
                                                    title="Unsubmit Program for this Period"
                                                    onclick="return confirm('Are you sure you want to unsubmit this program for the period? This will revert its status and allow the agency to edit it again.');">
                                                     <i class="fas fa-undo"></i> Unsubmit
                                                 </a>
                                             <?php endif; ?>
                                         <?php endif; ?>
-                                        <!-- Delete button -->
-                                        <a href="#" 
-                                           class="btn btn-outline-danger btn-sm" 
-                                           title="Delete Program"
-                                           onclick="confirmDeleteProgram(<?php echo $program['program_id']; ?>, <?php echo $period_id ?? 'null'; ?>); return false;">
-                                            <i class="fas fa-trash"></i> Delete
-                                        </a>
                                     </div>
                                 </td>
                             </tr>

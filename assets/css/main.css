@@ -59,7 +59,7 @@
 @import 'components/mobile-targets-display.css'; /* Mobile-friendly div-based display */
 @import 'components/notifications.css'; /* Notifications component styling */
 @import 'components/metric-create.css'; /* Metric create/edit component styling */
-@import 'components/admin-common.css'; /* Common admin interface components */
+@import 'components/admin-common.css'; /* Common admin interface components ionbuttons */
 
 /* Layout */
 @import 'layout/navigation.css';

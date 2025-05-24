@@ -532,3 +532,16 @@ tr.user-inactive:hover {
     padding: 0.25rem 0.5rem;
   }
 }
+
+/* Styles for admin action buttons */
+
+.btn-outline-warning.btn-unsubmit {
+    color: #212529; /* Black text for better contrast */
+    border-color: #ffc107; /* Keep yellow border */
+}
+
+.btn-outline-warning.btn-unsubmit:hover {
+    color: #fff; /* White text on hover */
+    background-color: #ffc107;
+    border-color: #ffc107;
+}
