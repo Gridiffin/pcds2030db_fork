@@ -52,7 +52,7 @@ function get_all_outcomes_data($period_id = null) {
 function get_outcome_data($metric_id) {
     global $conn;
     
-    // First try the new outcomes table
+    // First try the new outcomes table (which is sector_outcomes_data but uses metric_id column)
     $query = "SELECT sod.*, s.sector_name, rp.year, rp.quarter 
               FROM sector_outcomes_data sod
               LEFT JOIN sectors s ON sod.sector_id = s.sector_id
@@ -68,7 +68,7 @@ function get_outcome_data($metric_id) {
         return $result->fetch_assoc();
     }
     
-    // If not found, try the legacy metrics table
+    // If not found, try the legacy metrics table (sector_metrics_data)
     $query = "SELECT smd.*, s.sector_name, rp.year, rp.quarter 
               FROM sector_metrics_data smd
               LEFT JOIN sectors s ON smd.sector_id = s.sector_id

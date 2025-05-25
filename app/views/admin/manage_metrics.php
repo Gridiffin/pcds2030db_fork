@@ -14,8 +14,8 @@ if (!defined('PROJECT_ROOT_PATH')) {
 require_once PROJECT_ROOT_PATH . 'app/config/config.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/admins/index.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/functions.php'; // Contains get_all_outcomes_data, get_current_reporting_period, get_all_reporting_periods, get_all_sectors
+require_once PROJECT_ROOT_PATH . 'app/lib/admins/index.php'; // Contains is_admin
 
 // Verify user is an admin
 if (!is_admin()) {
@@ -26,11 +26,10 @@ if (!is_admin()) {
 // Set page title
 $pageTitle = 'Manage Outcomes';
 
-require_once PROJECT_ROOT_PATH . 'app/lib/admins/index.php';
-
 // Get all outcomes using the JSON-based storage function
 $period_id = isset($_GET['period_id']) ? intval($_GET['period_id']) : 0;
-$outcomes = get_all_outcomes_data($period_id);
+// Ensure get_all_outcomes_data is used and the variable is $outcomes
+$outcomes = get_all_outcomes_data($period_id); 
 
 // Get current and all reporting periods for filtering
 $current_period = get_current_reporting_period();
@@ -43,11 +42,16 @@ $sectors = get_all_sectors();
 $selected_sector = isset($_GET['sector_id']) ? intval($_GET['sector_id']) : 0;
 $selected_period = $period_id ?: ($current_period ? $current_period['period_id'] : 0);
 
-// Filter metrics by sector if a sector filter is applied
+// Filter outcomes by sector if a sector filter is applied
 if ($selected_sector > 0) {
-    $metrics = array_filter($metrics, function($metric) use ($selected_sector) {
-        return $metric['sector_id'] == $selected_sector;
-    });
+    // Ensure $outcomes is an array before filtering
+    if (is_array($outcomes)) {
+        $outcomes = array_filter($outcomes, function($outcome) use ($selected_sector) {
+            return isset($outcome['sector_id']) && $outcome['sector_id'] == $selected_sector;
+        });
+    } else {
+        $outcomes = []; // Initialize as empty array if not an array
+    }
 }
 
 // Include header
@@ -57,19 +61,23 @@ require_once '../layouts/header.php';
 require_once '../layouts/admin_nav.php';
 ?>
 
-<div class="container-fluid px-4 py-4">    <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="container-fluid px-4 py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h1 class="h2 mb-0">Manage Outcomes</h1>
             <p class="text-muted">Admin interface to manage outcomes</p>
         </div>
-        <div>            <a href="javascript:void(0)" class="btn btn-forest me-2" id="createMetricBtn">
+        <div>
+            <a href="javascript:void(0)" class="btn btn-forest me-2" id="createOutcomeBtn">
                 <i class="fas fa-plus-circle me-1"></i> Create New Outcome
             </a>
             <button class="btn btn-forest-light" id="refreshPage">
                 <i class="fas fa-sync-alt me-1"></i> Refresh
             </button>
         </div>
-    </div>    <!-- Sector Filter -->
+    </div>
+
+    <!-- Sector Filter -->
     <div class="card admin-card mb-4">
         <div class="card-header">
             <h5 class="card-title m-0">Filter Outcomes</h5>
@@ -98,20 +106,23 @@ require_once '../layouts/admin_nav.php';
                             </option>
                         <?php endforeach; ?>
                     </select>
-                </div>                <div class="col-md-4 d-flex align-items-end">
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
                     <button type="submit" class="btn btn-forest me-2">Apply Filter</button>
                     <?php if ($selected_sector > 0 || $selected_period > 0): ?>
-                        <a href="<?php echo APP_URL; ?>/app/views/admin/manage_metrics.php" class="btn btn-forest-light">Clear Filters</a>
+                        <a href="<?php echo APP_URL; ?>/app/views/admin/manage_outcomes.php" class="btn btn-forest-light">Clear Filters</a>
                     <?php endif; ?>
                 </div>
             </form>
         </div>
-    </div>    <div class="card admin-card mb-4">
+    </div>
+
+    <div class="card admin-card mb-4">
         <div class="card-header">
             <h5 class="card-title m-0">Outcomes</h5>
         </div>
         <div class="card-body p-0">
-            <table id="metricsTable" class="table table-forest">
+            <table id="outcomesTable" class="table table-forest">
                 <thead>
                     <tr>
                         <th>Outcome ID</th>
@@ -125,12 +136,13 @@ require_once '../layouts/admin_nav.php';
                 </thead>
                 <tbody>
                     <?php 
-                    // Apply array_values to reindex after filtering
-                    $display_metrics = array_values($metrics);
-                    if (empty($display_metrics)): 
+                    // Ensure $outcomes is an array before using array_values
+                    $display_outcomes = array_values(is_array($outcomes) ? $outcomes : []);
+                    if (empty($display_outcomes)): 
                     ?>
                         <tr>
-                            <td colspan="7" class="text-center py-4">                                <div class="alert alert-forest alert-info mb-0">
+                            <td colspan="7" class="text-center py-4">
+                                <div class="alert alert-forest alert-info mb-0">
                                     <i class="fas fa-info-circle alert-icon"></i><?php
                                     if ($selected_sector > 0 && $selected_period > 0) {
                                         echo 'No outcomes found for the selected sector and reporting period.';
@@ -146,33 +158,36 @@ require_once '../layouts/admin_nav.php';
                             </td>
                         </tr>
                     <?php else: ?>
-                        <?php foreach ($display_metrics as $metric): ?>
-                            <tr data-metric-id="<?php echo $metric['metric_id']; ?>">
-                                <td><?php echo $metric['metric_id']; ?></td>
-                                <td><?php echo htmlspecialchars($metric['sector_name'] ?? 'No Sector'); ?></td>
-                                <td><?php echo htmlspecialchars($metric['table_name']); ?></td>                                <td>
-                                    <?php if (isset($metric['quarter']) && isset($metric['year'])): ?>
-                                        <span class="status-indicator <?= ($current_period && $metric['period_id'] == $current_period['period_id']) ? 'status-success' : 'status-info' ?>">
-                                            Q<?= $metric['quarter'] ?>-<?= $metric['year'] ?>
+                        <?php foreach ($display_outcomes as $outcome): ?>                            <tr data-outcome-id="<?php echo $outcome['metric_id']; ?>">
+                                <td><?php echo $outcome['metric_id']; ?></td>
+                                <td><?php echo htmlspecialchars($outcome['sector_name'] ?? 'No Sector'); ?></td>
+                                <td><?php echo htmlspecialchars($outcome['table_name']); ?></td>
+                                <td>
+                                    <?php if (isset($outcome['quarter']) && isset($outcome['year'])): ?>
+                                        <span class="status-indicator <?= ($current_period && $outcome['period_id'] == $current_period['period_id']) ? 'status-success' : 'status-info' ?>">
+                                            Q<?= $outcome['quarter'] ?>-<?= $outcome['year'] ?>
                                         </span>
                                     <?php else: ?>
                                         <span class="status-indicator status-warning">Not Specified</span>
                                     <?php endif; ?>
                                 </td>
-                                <td><?php echo date('M j, Y', strtotime($metric['created_at'])); ?></td>
-                                <td><?php echo date('M j, Y', strtotime($metric['updated_at'])); ?></td>                                <td>
-                                    <a href="<?php echo APP_URL; ?>/app/views/admin/unsubmit.php?metric_id=<?php echo $metric['metric_id']; ?>" class="btn btn-forest-light me-1" role="button" onclick="return confirm('Are you sure you want to unsubmit?');">
-                                        <i class="fas fa-undo me-1"></i> Unsubmit
-                                    </a>                 
-                                    <a href="view_metric.php?metric_id=<?php echo $metric['metric_id']; ?>" class="btn btn-forest-light me-1" role="button">
-                                        <i class="fas fa-eye me-1"></i> View
-                                    </a>
-                                    <a href="<?php echo APP_URL; ?>/app/views/admin/edit_metric.php?metric_id=<?php echo $metric['metric_id']; ?>" class="btn btn-forest me-1" role="button">
-                                        <i class="fas fa-edit me-1"></i> Edit
-                                    </a>                                    
-                                    <a href="<?php echo APP_URL; ?>/app/views/admin/delete_metric.php?metric_id=<?php echo $metric['metric_id']; ?>" class="btn btn-forest-light text-danger" role="button" onclick="return confirm('Are you sure you want to delete this outcome?');">
-                                        <i class="fas fa-trash-alt me-1"></i> Delete
-                                    </a>
+                                <td><?php echo date('M j, Y', strtotime($outcome['created_at'])); ?></td>
+                                <td><?php echo date('M j, Y', strtotime($outcome['updated_at'])); ?></td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="<?php echo APP_URL; ?>/app/views/admin/unsubmit_outcome.php?outcome_id=<?php echo $outcome['metric_id']; ?>" class="btn btn-forest-light btn-sm me-1" role="button" onclick="return confirm('Are you sure you want to unsubmit this outcome?');">
+                                            <i class="fas fa-undo me-1"></i> Unsubmit
+                                        </a>
+                                        <a href="view_outcome.php?outcome_id=<?php echo $outcome['metric_id']; ?>" class="btn btn-forest-light btn-sm me-1" role="button">
+                                            <i class="fas fa-eye me-1"></i> View
+                                        </a>
+                                        <a href="<?php echo APP_URL; ?>/app/views/admin/edit_outcome.php?outcome_id=<?php echo $outcome['metric_id']; ?>" class="btn btn-forest btn-sm me-1" role="button">
+                                            <i class="fas fa-edit me-1"></i> Edit
+                                        </a>
+                                        <a href="<?php echo APP_URL; ?>/app/views/admin/delete_outcome.php?outcome_id=<?php echo $outcome['metric_id']; ?>" class="btn btn-forest-light btn-sm text-danger" role="button" onclick="return confirm('Are you sure you want to delete this outcome?');">
+                                            <i class="fas fa-trash-alt me-1"></i> Delete
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -190,13 +205,13 @@ require_once '../layouts/admin_nav.php';
             window.location.reload();
         });
         
-        // Create Metric button - redirect to create page
-        document.getElementById('createMetricBtn').addEventListener('click', function() {
+        // Create Outcome button - redirect to create page
+        document.getElementById('createOutcomeBtn').addEventListener('click', function() {
             // Get selected sector and period from filters, if any
             const sectorId = document.getElementById('sector_id').value;
             const periodId = document.getElementById('period_id').value;
             
-            let url = 'edit_metric.php';
+            let url = 'edit_outcome.php'; // Changed from edit_metric.php
             let params = [];
             
             if (sectorId > 0) {
@@ -224,31 +239,30 @@ require_once '../layouts/admin_nav.php';
             this.form.submit();
         });
         
-        // Fix dropdown menu functionality
+        // Fix dropdown menu functionality (if any dropdowns are used, this is a generic fix)
         document.querySelectorAll('.dropdown-toggle').forEach(function(dropdownToggle) {
             dropdownToggle.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
                 
-                // Find the closest dropdown parent
                 const dropdown = this.closest('.dropdown');
-                
-                // Toggle 'show' class on dropdown and menu
-                dropdown.classList.toggle('show');
-                
-                // Find and toggle dropdown menu
-                const dropdownMenu = dropdown.querySelector('.dropdown-menu');
-                if (dropdownMenu) {
-                    dropdownMenu.classList.toggle('show');
+                if (dropdown) {
+                    dropdown.classList.toggle('show');
+                    const dropdownMenu = dropdown.querySelector('.dropdown-menu');
+                    if (dropdownMenu) {
+                        dropdownMenu.classList.toggle('show');
+                    }
+                    this.setAttribute('aria-expanded', 
+                        this.getAttribute('aria-expanded') === 'true' ? 'false' : 'true');
                 }
-                
-                // Update aria-expanded attribute
-                this.setAttribute('aria-expanded', 
-                    this.getAttribute('aria-expanded') === 'true' ? 'false' : 'true');
             });
         });
     });
 </script>
+<?php 
+// Include footer
+require_once '../layouts/footer.php'; 
+?>
 
 
 

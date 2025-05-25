@@ -15,7 +15,8 @@ define('DB_NAME', 'pcds2030_dashboard'); // Updated to correct database name
 // Application settings
 define('APP_NAME', 'PCDS2030 Dashboard Forestry Sector'); 
 define('APP_URL', 'http://localhost/pcds2030_dashboard');
-define('APP_VERSION', '1.0.0');
+define('APP_VERSION', '1.0.0'); // Example version
+define('ASSET_VERSION', APP_VERSION); // Use APP_VERSION for asset versioning
 
 // Path definitions
 if (!defined('ROOT_PATH')) {
