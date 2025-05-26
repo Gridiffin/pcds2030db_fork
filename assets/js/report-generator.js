@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', function() {
         showProgramsLoading();
         
         // Fetch programs for this period
-        const url = `../../api/get_period_programs.php?period_id=${periodId}${sectorId ? '&sector_id=' + sectorId : ''}`;
+        const url = `${APP_URL}/app/api/get_period_programs.php?period_id=${periodId}${sectorId ? '&sector_id=' + sectorId : ''}`;
         
         fetch(url)
             .then(response => {

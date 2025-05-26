@@ -13,12 +13,12 @@
 ob_start();
 
 // Include necessary files
-require_once '../config/config.php';
-require_once '../lib/db_connect.php';
-require_once '../lib/session.php';
-require_once '../lib/functions.php';
-require_once '../lib/admins/index.php';
-require_once '../lib/rating_helpers.php';
+require_once dirname(__DIR__) . '/config/config.php';
+require_once ROOT_PATH . 'app/lib/db_connect.php';
+require_once ROOT_PATH . 'app/lib/session.php';
+require_once ROOT_PATH . 'app/lib/functions.php';
+require_once ROOT_PATH . 'app/lib/admins/index.php';
+require_once ROOT_PATH . 'app/lib/rating_helpers.php';
 
 // Verify user is admin
 if (!is_admin()) {

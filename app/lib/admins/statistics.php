@@ -595,4 +595,33 @@ function get_admin_program_details($program_id) {
     
     return $program;
 }
+
+/**
+ * Get sector info by ID
+ *
+ * @param int $sector_id The sector ID
+ * @return array|null Associative array of sector data or null if not found
+ */
+function get_sector_by_id($sector_id) {
+    global $conn;
+    $sector_id = intval($sector_id);
+    if (!$sector_id) {
+        return null;
+    }
+    try {
+        $query = "SELECT * FROM sectors WHERE sector_id = ?";
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("i", $sector_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($result->num_rows > 0) {
+            return $result->fetch_assoc();
+        } else {
+            return null;
+        }
+    } catch (Exception $e) {
+        error_log("Error in get_sector_by_id: " . $e->getMessage());
+        return null;
+    }
+}
 ?>

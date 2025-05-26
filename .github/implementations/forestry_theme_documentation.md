@@ -162,4 +162,4 @@ Potential future enhancements for the forestry theme:
 
 ## Reference
 
-For a complete visual reference of all theme components, see the [Style Guide](../../app/views/admin/style-guide.php) page in the dashboard.
+For a complete visual reference of all theme components, see the [Style Guide](../../app/views/admin/style_guide/style-guide.php) page in the dashboard.
