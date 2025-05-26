@@ -1,0 +1,136 @@
+/**
+ * Rating Colors
+ * Centralized color scheme for all rating-related elements
+ */
+
+/* Rating colors with improved visual identifiers */
+.rating-target-achieved, 
+.rating-completed,
+.status-pill.target-achieved, 
+.status-pill.completed,
+.rating-pill.target-achieved, 
+.rating-pill.completed,
+select option[value="target-achieved"],
+select option[value="completed"] {
+    background-color: #d1e7dd !important;
+    color: #0f5132 !important;
+}
+
+.rating-on-track,
+.rating-on-track-yearly,
+.status-pill.on-track, 
+.status-pill.on-track-yearly,
+.rating-pill.on-track, 
+.rating-pill.on-track-yearly,
+select option[value="on-track"],
+select option[value="on-track-yearly"] {
+    background-color: #fff3cd !important;
+    color: #664d03 !important;
+}
+
+.rating-delayed,
+.rating-severe-delay,
+.status-pill.delayed, 
+.status-pill.severe-delay,
+.rating-pill.delayed, 
+.rating-pill.severe-delay,
+select option[value="delayed"],
+select option[value="severe-delay"] {
+    background-color: #f8d7da !important;
+    color: #842029 !important;
+}
+
+.rating-not-started,
+.status-pill.not-started,
+.rating-pill.not-started,
+select option[value="not-started"] {
+    background-color: #e2e3e5 !important;
+    color: #41464b !important;
+}
+
+/* Active states */
+.rating-target-achieved.active, 
+.rating-completed.active,
+.status-pill.target-achieved.active, 
+.status-pill.completed.active,
+.rating-pill.target-achieved.active, 
+.rating-pill.completed.active {
+    background-color: #c3e3d2 !important;
+    box-shadow: 0 3px 6px rgba(15, 81, 50, 0.3) !important;
+}
+
+.rating-on-track.active,
+.rating-on-track-yearly.active,
+.status-pill.on-track.active, 
+.status-pill.on-track-yearly.active,
+.rating-pill.on-track.active, 
+.rating-pill.on-track-yearly.active {
+    background-color: #ffecb5 !important;
+    box-shadow: 0 3px 6px rgba(102, 77, 3, 0.3) !important;
+}
+
+.rating-delayed.active,
+.rating-severe-delay.active,
+.status-pill.delayed.active, 
+.status-pill.severe-delay.active,
+.rating-pill.delayed.active, 
+.rating-pill.severe-delay.active {
+    background-color: #f5c2c7 !important;
+    box-shadow: 0 3px 6px rgba(132, 32, 41, 0.3) !important;
+}
+
+.rating-not-started.active,
+.status-pill.not-started.active,
+.rating-pill.not-started.active {
+    background-color: #d5d7da !important;
+    box-shadow: 0 3px 6px rgba(65, 70, 75, 0.3) !important;
+}
+
+/* Hover states */
+select option:hover,
+select option:focus {
+    cursor: pointer;
+}
+
+select.rating-select {
+    padding: 0.5rem;
+    border-radius: 4px;
+    border: 1px solid #ced4da;
+    cursor: pointer;
+}
+
+/* Add color indicator before select */
+.rating-select-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.rating-select-wrapper::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.rating-select-wrapper.target-achieved::before,
+.rating-select-wrapper.completed::before {
+    background-color: #28a745;
+}
+
+.rating-select-wrapper.on-track::before,
+.rating-select-wrapper.on-track-yearly::before {
+    background-color: #ffc107;
+}
+
+.rating-select-wrapper.delayed::before,
+.rating-select-wrapper.severe-delay::before {
+    background-color: #dc3545;
+}
+
+.rating-select-wrapper.not-started::before {
+    background-color: #6c757d;
+}
