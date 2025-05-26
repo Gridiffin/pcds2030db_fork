@@ -130,8 +130,55 @@ function renderOutcomesChart() {
  * @return {Array} Array of dataset objects for Chart.js
  */
 function prepareChartDatasets() {
-    // Implementation to extract and format data for chart.js
-    return [];
+    // Get dynamic color function
+    const getColor = function(index) {
+        const colors = [
+            'rgba(54, 162, 235, 0.8)', // blue
+            'rgba(255, 99, 132, 0.8)', // red
+            'rgba(75, 192, 192, 0.8)', // green
+            'rgba(255, 206, 86, 0.8)', // yellow
+            'rgba(153, 102, 255, 0.8)', // purple
+            'rgba(255, 159, 64, 0.8)', // orange
+            'rgba(199, 199, 199, 0.8)' // gray
+        ];
+        return colors[index % colors.length];
+    };
+    
+    // Array to hold datasets
+    const datasets = [];
+    
+    // Check if data exists
+    if (!chartData || !chartData.data) {
+        return datasets;
+    }
+    
+    // For each selected outcome, create a dataset
+    chartOptions.outcomes.forEach((outcome, index) => {
+        const dataset = {
+            label: outcome,
+            backgroundColor: chartOptions.type === 'line' ? 'transparent' : getColor(index),
+            borderColor: getColor(index),
+            pointBackgroundColor: getColor(index),
+            pointBorderColor: '#fff',
+            pointHoverBackgroundColor: '#fff',
+            pointHoverBorderColor: getColor(index),
+            data: []
+        };
+        
+        // Add data for each month
+        chartMonths.forEach(month => {
+            let value = 0;
+            if (chartData.data[month] && chartData.data[month][outcome] !== undefined) {
+                value = parseFloat(chartData.data[month][outcome]) || 0;
+            }
+            dataset.data.push(value);
+        });
+        
+        // Add dataset to array
+        datasets.push(dataset);
+    });
+    
+    return datasets;
 }
 
 /**
@@ -139,8 +186,88 @@ function prepareChartDatasets() {
  * @return {Object} Chart.js options object
  */
 function getChartOptions() {
-    // Implementation to configure chart options
-    return {};
+    // Base options common to all chart types
+    const options = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'top',
+            },
+            tooltip: {
+                mode: 'index',
+                intersect: false,
+                callbacks: {
+                    label: function(context) {
+                        let label = context.dataset.label || '';
+                        if (label) {
+                            label += ': ';
+                        }
+                        if (context.parsed.y !== null) {
+                            label += new Intl.NumberFormat('en-US', { 
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2 
+                            }).format(context.parsed.y);
+                        }
+                        
+                        // Add unit if available
+                        if (chartData.units && chartData.units[context.dataset.label]) {
+                            label += ' ' + chartData.units[context.dataset.label];
+                        }
+                        
+                        return label;
+                    }
+                }
+            },
+            title: {
+                display: true,
+                text: 'Outcome Metrics by Month'
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    // Use a callback to format the tick values
+                    callback: function(value) {
+                        return value.toFixed(2);
+                    }
+                }
+            }
+        }
+    };
+    
+    // Custom options for specific chart types
+    if (chartOptions.type === 'radar') {
+        // Radar chart specific options
+        options.scales = {}; // Remove normal scales
+        options.elements = {
+            line: {
+                tension: 0.1 // Smoother lines
+            }
+        };
+    } else if (chartOptions.type === 'bar') {
+        // Bar chart specific options
+        options.scales.x = {
+            grid: {
+                display: false
+            }
+        };
+    } else if (chartOptions.type === 'line') {
+        // Line chart specific options
+        options.elements = {
+            line: {
+                tension: 0.4 // Smoother lines
+            },
+            point: {
+                radius: 4,
+                hitRadius: 10,
+                hoverRadius: 6
+            }
+        };
+    }
+    
+    return options;
 }
 
 // Export functions for use in other modules if needed

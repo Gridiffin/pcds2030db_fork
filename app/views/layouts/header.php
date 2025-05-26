@@ -164,6 +164,10 @@
             font-display: swap;
         }
     </style>
+
+    <!-- Main JS - Restored inclusion -->
+    <script src="<?php echo asset_url('js', 'main.js'); ?>"></script>
+
 </head>
 <body class="<?php echo isset($bodyClass) ? htmlspecialchars($bodyClass) : ''; ?>">
     <!-- Preloader -->

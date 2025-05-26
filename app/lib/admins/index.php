@@ -11,5 +11,6 @@ require_once 'periods.php';
 require_once 'statistics.php';
 require_once 'users.php';
 require_once 'metrics.php';
+require_once 'outcomes.php';
 require_once 'settings.php';
 ?>

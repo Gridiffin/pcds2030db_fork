@@ -1,0 +1,294 @@
+/**
+ * Forest Theme Custom Styles
+ * Custom theme implementation for PCDS2030 Dashboard
+ * Based on Forest Theme color palette
+ */
+
+/* Forest Theme Color Variables */
+:root {
+    /* Forest Theme Colors */
+    --forest-deep: #537D5D;
+    --forest-deep-rgb: 83, 125, 93;
+    --forest-medium: #73946B;
+    --forest-medium-rgb: 115, 148, 107;
+    --forest-light: #9EBC8A;
+    --forest-light-rgb: 158, 188, 138;
+    --forest-pale: #D2D0A0;
+    --forest-pale-rgb: 210, 208, 160;
+    
+    /* Forest Theme Gradients */
+    --forest-gradient-primary: linear-gradient(135deg, var(--forest-deep), var(--forest-medium));
+    --forest-gradient-secondary: linear-gradient(135deg, var(--forest-medium), var(--forest-light));
+    --forest-gradient-subtle: linear-gradient(135deg, var(--forest-light), var(--forest-pale));
+}
+
+/* Theme Overrides for Primary Elements */
+.theme-forest {
+    --primary-color: var(--forest-deep);
+    --primary-rgb: var(--forest-deep-rgb);
+    --primary-dark: #3d5c47;
+    --primary-light: var(--forest-medium);
+    
+    --secondary-color: var(--forest-medium);
+    --secondary-rgb: var(--forest-medium-rgb);
+    --secondary-dark: #5d7a55;
+    --secondary-light: var(--forest-light);
+    
+    --success-color: var(--forest-light);
+    --info-color: var(--forest-pale);
+}
+
+/* Apply Forest Theme to Body */
+body.forest-theme {
+    background: linear-gradient(135deg, 
+        rgba(var(--forest-pale-rgb), 0.1) 0%, 
+        rgba(var(--forest-light-rgb), 0.05) 100%);
+    color: var(--dark-color, #343a40);
+}
+
+/* Primary Buttons Forest Theme */
+.btn-primary,
+.btn-forest-primary {
+    background: var(--forest-gradient-primary);
+    border: none;
+    color: white;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(var(--forest-deep-rgb), 0.2);
+}
+
+.btn-primary:hover,
+.btn-forest-primary:hover {
+    background: var(--forest-deep);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(var(--forest-deep-rgb), 0.3);
+}
+
+/* Secondary Buttons Forest Theme */
+.btn-secondary,
+.btn-forest-secondary {
+    background: var(--forest-gradient-secondary);
+    border: none;
+    color: white;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary:hover,
+.btn-forest-secondary:hover {
+    background: var(--forest-medium);
+    transform: translateY(-1px);
+}
+
+/* Outline Buttons Forest Theme */
+.btn-outline-primary,
+.btn-forest-outline {
+    border: 2px solid var(--forest-deep);
+    color: var(--forest-deep);
+    background: transparent;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-primary:hover,
+.btn-forest-outline:hover {
+    background: var(--forest-deep);
+    color: white;
+    transform: translateY(-1px);
+}
+
+/* Cards Forest Theme */
+.card.forest-card {
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 8px 25px rgba(var(--forest-deep-rgb), 0.1);
+    background: white;
+    transition: all 0.3s ease;
+}
+
+.card.forest-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(var(--forest-deep-rgb), 0.15);
+}
+
+.card.forest-card .card-header {
+    background: var(--forest-gradient-subtle);
+    border-bottom: none;
+    border-radius: 1rem 1rem 0 0;
+    color: var(--forest-deep);
+    font-weight: 600;
+}
+
+/* Navigation Forest Theme */
+.navbar.forest-nav {
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 2px 15px rgba(var(--forest-deep-rgb), 0.1);
+    border-bottom: 1px solid rgba(var(--forest-deep-rgb), 0.05);
+}
+
+.navbar.forest-nav .nav-link {
+    color: var(--forest-deep);
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.navbar.forest-nav .nav-link:hover,
+.navbar.forest-nav .nav-link.active {
+    color: var(--forest-medium);
+    background: rgba(var(--forest-light-rgb), 0.1);
+    border-radius: 0.5rem;
+}
+
+/* Tables Forest Theme */
+.table.forest-table {
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(var(--forest-deep-rgb), 0.1);
+}
+
+.table.forest-table thead th {
+    background: var(--forest-gradient-primary);
+    color: white;
+    border: none;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.table.forest-table tbody tr:hover {
+    background: rgba(var(--forest-light-rgb), 0.1);
+}
+
+/* Forms Forest Theme */
+.form-control.forest-input {
+    border: 2px solid rgba(var(--forest-light-rgb), 0.3);
+    border-radius: 0.75rem;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-control.forest-input:focus {
+    border-color: var(--forest-medium);
+    box-shadow: 0 0 0 0.2rem rgba(var(--forest-medium-rgb), 0.25);
+}
+
+/* Alerts Forest Theme */
+.alert.forest-alert {
+    border: none;
+    border-radius: 1rem;
+    border-left: 4px solid var(--forest-deep);
+    background: rgba(var(--forest-pale-rgb), 0.1);
+    color: var(--forest-deep);
+}
+
+.alert.forest-alert.alert-success {
+    border-left-color: var(--forest-light);
+    background: rgba(var(--forest-light-rgb), 0.1);
+}
+
+/* Badges Forest Theme */
+.badge.forest-badge {
+    background: var(--forest-gradient-primary);
+    color: white;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+}
+
+.badge.forest-badge.badge-secondary {
+    background: var(--forest-gradient-secondary);
+}
+
+.badge.forest-badge.badge-light {
+    background: var(--forest-pale);
+    color: var(--forest-deep);
+}
+
+/* Progress Bars Forest Theme */
+.progress.forest-progress {
+    background: rgba(var(--forest-pale-rgb), 0.3);
+    border-radius: 1rem;
+    height: 1rem;
+}
+
+.progress.forest-progress .progress-bar {
+    background: var(--forest-gradient-primary);
+    border-radius: 1rem;
+}
+
+/* Modals Forest Theme */
+.modal.forest-modal .modal-content {
+    border: none;
+    border-radius: 1.5rem;
+    box-shadow: 0 20px 50px rgba(var(--forest-deep-rgb), 0.2);
+}
+
+.modal.forest-modal .modal-header {
+    background: var(--forest-gradient-subtle);
+    border-bottom: none;
+    border-radius: 1.5rem 1.5rem 0 0;
+    color: var(--forest-deep);
+}
+
+/* Custom Forest Elements */
+.forest-divider {
+    height: 2px;
+    background: var(--forest-gradient-primary);
+    border: none;
+    border-radius: 1px;
+    margin: 2rem 0;
+}
+
+.forest-accent {
+    color: var(--forest-deep);
+    font-weight: 600;
+}
+
+.forest-bg-primary {
+    background: var(--forest-gradient-primary);
+    color: white;
+}
+
+.forest-bg-secondary {
+    background: var(--forest-gradient-secondary);
+    color: white;
+}
+
+.forest-bg-light {
+    background: rgba(var(--forest-light-rgb), 0.1);
+    color: var(--forest-deep);
+}
+
+.forest-bg-pale {
+    background: rgba(var(--forest-pale-rgb), 0.3);
+    color: var(--forest-deep);
+}
+
+/* Text Colors */
+.text-forest-deep { color: var(--forest-deep); }
+.text-forest-medium { color: var(--forest-medium); }
+.text-forest-light { color: var(--forest-light); }
+
+/* Border Colors */
+.border-forest-deep { border-color: var(--forest-deep); }
+.border-forest-medium { border-color: var(--forest-medium); }
+.border-forest-light { border-color: var(--forest-light); }
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    body.forest-theme {
+        background: linear-gradient(135deg, 
+            rgba(53, 73, 57, 0.1) 0%, 
+            rgba(45, 65, 49, 0.05) 100%);
+        color: #e8f5e8;
+    }
+    
+    .card.forest-card {
+        background: rgba(255, 255, 255, 0.05);
+        color: #e8f5e8;
+    }
+    
+    .navbar.forest-nav {
+        background: rgba(0, 0, 0, 0.8);
+    }
+}

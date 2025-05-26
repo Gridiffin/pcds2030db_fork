@@ -5,19 +5,16 @@
  * Allows admin users to view the details of submitted outcomes from any sector.
  */
 
-// Define project root path for consistent file references
-if (!defined('PROJECT_ROOT_PATH')) {
-    define('PROJECT_ROOT_PATH', rtrim(dirname(dirname(dirname(__DIR__))), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
-}
-
 // Include necessary files
-require_once PROJECT_ROOT_PATH . 'app/config/config.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/functions.php'; // Contains get_outcome_data
-require_once PROJECT_ROOT_PATH . 'app/lib/admins/index.php'; // Contains is_admin
-require_once PROJECT_ROOT_PATH . 'app/lib/status_helpers.php'; // For display_submission_status_badge
-require_once PROJECT_ROOT_PATH . 'app/lib/rating_helpers.php'; // For display_overall_rating_badge
+require_once '../../../config/config.php';
+require_once ROOT_PATH . 'app/lib/db_connect.php';
+require_once ROOT_PATH . 'app/lib/session.php';
+require_once ROOT_PATH . 'app/lib/functions.php'; // Contains legacy functions
+require_once ROOT_PATH . 'app/lib/admins/outcomes.php'; // Contains updated outcome functions
+require_once ROOT_PATH . 'app/lib/admins/index.php'; // Contains is_admin
+require_once ROOT_PATH . 'app/lib/admins/users.php'; // Contains user information functions
+require_once ROOT_PATH . 'app/lib/status_helpers.php'; // For display_submission_status_badge
+require_once ROOT_PATH . 'app/lib/rating_helpers.php'; // For display_overall_rating_badge
 
 // Verify user is an admin
 if (!is_admin()) {
@@ -25,17 +22,17 @@ if (!is_admin()) {
     exit;
 }
 
-// Check if outcome_id is provided
-if (!isset($_GET['outcome_id']) || !is_numeric($_GET['outcome_id'])) {
+// Check if metric_id is provided (the system uses metric_id as primary identifier)
+if (!isset($_GET['metric_id']) || !is_numeric($_GET['metric_id'])) {
     $_SESSION['error_message'] = 'Invalid outcome ID.';
     header('Location: manage_outcomes.php');
     exit;
 }
 
-$outcome_id = (int) $_GET['outcome_id'];
+$metric_id = (int) $_GET['metric_id'];
 
-// Get outcome data using the dedicated function
-$outcome_details = get_outcome_data($outcome_id);
+// Get outcome data using the updated function with improved error handling
+$outcome_details = get_outcome_data_for_display($metric_id);
 
 if (!$outcome_details) {
     $_SESSION['error_message'] = 'Outcome not found.';
@@ -47,13 +44,20 @@ $table_name = $outcome_details['table_name'];
 $sector_id = $outcome_details['sector_id'];
 $sector_name = $outcome_details['sector_name'] ?? 'Unknown Sector';
 $period_id = $outcome_details['period_id'];
-$reporting_period_name = $outcome_details['reporting_period_name'] ?? 'N/A'; // Assuming get_outcome_data provides this
+$year = $outcome_details['year'] ?? 'N/A';
+$quarter = $outcome_details['quarter'] ?? 'N/A';
+$reporting_period_name = "Q{$quarter} {$year}"; // Construct proper period name
 $status = $outcome_details['status'] ?? 'submitted'; // Default to submitted if not present
 $overall_rating = $outcome_details['overall_rating'] ?? null;
 
 $created_at = new DateTime($outcome_details['created_at']);
 $updated_at = new DateTime($outcome_details['updated_at']);
-$outcome_metrics_data = json_decode($outcome_details['data_json'], true);
+
+// Use parsed data if available, otherwise parse manually
+$outcome_metrics_data = $outcome_details['parsed_data'] ?? [];
+if (empty($outcome_metrics_data) && !empty($outcome_details['data_json'])) {
+    $outcome_metrics_data = json_decode($outcome_details['data_json'], true) ?? [];
+}
 
 // Get column names (metric names within the outcome)
 $metric_names = $outcome_metrics_data['columns'] ?? [];
@@ -78,9 +82,9 @@ $additionalStyles = [
 ];
 
 // Include header
-require_once PROJECT_ROOT_PATH . 'app/views/layouts/header.php';
+require_once ROOT_PATH . 'app/views/layouts/header.php';
 // Include admin navigation
-require_once PROJECT_ROOT_PATH . 'app/views/layouts/admin_nav.php';
+require_once ROOT_PATH . 'app/views/layouts/admin_nav.php';
 
 // Set up the page header variables for dashboard_header.php
 $title = "View Outcome Details";
@@ -92,9 +96,8 @@ $actions = [
         'text' => 'Back to Manage Outcomes',
         'icon' => 'fa-arrow-left',
         'class' => 'btn-outline-primary'
-    ],
-    [
-        'url' => 'edit_outcome.php?outcome_id=' . $outcome_id,
+    ],    [
+        'url' => 'edit_outcome.php?metric_id=' . $metric_id, // Use consistent parameter naming
         'text' => 'Edit Outcome',
         'icon' => 'fa-edit',
         'class' => 'btn-primary'
@@ -102,7 +105,7 @@ $actions = [
 ];
 
 // Include the dashboard header component
-require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
+require_once ROOT_PATH . 'app/lib/dashboard_header.php';
 ?>
 
 <div class="container-fluid px-4 py-4">
@@ -152,15 +155,17 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                 <div class="card-body">
                     <div class="row mb-4">
                         <div class="col-md-6">
-                            <p><strong>Outcome ID:</strong> <?= $outcome_id ?></p>
+                            <p><strong>Outcome ID:</strong> <?= $metric_id ?></p>
                             <p><strong>Sector:</strong> <?= htmlspecialchars($sector_name) ?></p>
                             <p><strong>Reporting Period:</strong> <?= htmlspecialchars($reporting_period_name) ?></p>
                         </div>
-                        <div class="col-md-6">
-                            <p><strong>Created:</strong> <?= $created_at->format('F j, Y, g:i A') ?></p>
-                            <p><strong>Last Updated:</strong> <?= $updated_at->format('F j, Y, g:i A') ?></p>
-                            <?php if ($outcome_details['submitted_by_username']): ?>
-                                <p><strong>Submitted By:</strong> <?= htmlspecialchars($outcome_details['submitted_by_username']) ?></p>
+                        <div class="col-md-6">                            <p><strong>Created:</strong> <?= $created_at->format('F j, Y, g:i A') ?></p>
+                            <p><strong>Last Updated:</strong> <?= $updated_at->format('F j, Y, g:i A') ?></p>                            <?php 
+                            // Only show submitted by if available
+                            $submitted_by = $outcome_details['submitted_by_username'] ?? null;
+                            if (!empty($submitted_by)): 
+                            ?>
+                                <p><strong>Submitted By:</strong> <?= htmlspecialchars($submitted_by) ?></p>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -281,10 +286,74 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
 <?php 
 // Include JS specific to this page (e.g., for charts if implemented)
 $additionalScripts = [
-    // APP_URL . '/assets/js/charts/Chart.min.js', // Example for Chart.js
-    // APP_URL . '/assets/js/custom/outcome-charts.js' // Example custom chart script
+    // Chart.js is already included in footer.php via CDN
+    APP_URL . '/assets/js/charts/outcomes-chart.js'
 ];
 
+// Add inline JavaScript to initialize chart with the data from PHP
+$inlineScripts = "
+// Parse PHP data for use in chart
+const outcomeData = " . json_encode($outcome_metrics_data) . ";
+const tableData = " . json_encode($table_data) . ";
+const monthNames = " . json_encode(array_column($table_data, 'month_name')) . ";
+const tableName = " . json_encode($table_name) . ";
+
+// Wait for document to be fully loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize chart when the chart tab is shown
+    document.getElementById('chart-tab').addEventListener('shown.bs.tab', function (e) {
+        if (typeof initOutcomesChart === 'function') {
+            initOutcomesChart(outcomeData, tableData, monthNames, tableName);
+        }
+    });
+    
+    // Set up download buttons
+    if (document.getElementById('downloadChartImage')) {
+        document.getElementById('downloadChartImage').addEventListener('click', function() {
+            if (window.outcomesChart) {
+                const link = document.createElement('a');
+                link.download = 'outcome-chart-" . $metric_id . ".png';
+                link.href = document.getElementById('outcomesChart').toDataURL('image/png');
+                link.click();
+            }
+        });
+    }
+    
+    if (document.getElementById('downloadDataCSV')) {
+        document.getElementById('downloadDataCSV').addEventListener('click', function() {
+            // Create CSV content from the data
+            let csvContent = 'data:text/csv;charset=utf-8,Month';
+            const metrics = " . json_encode($metric_names) . ";
+            
+            // Add headers
+            metrics.forEach(metric => {
+                csvContent += ',' + metric;
+            });
+            csvContent += '\\n';
+            
+            // Add data rows
+            tableData.forEach(row => {
+                csvContent += row.month_name;
+                metrics.forEach(metric => {
+                    const value = row.metrics && row.metrics[metric] !== undefined ? row.metrics[metric] : '';
+                    csvContent += ',' + value;
+                });
+                csvContent += '\\n';
+            });
+            
+            // Create download link
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', 'outcome-data-" . $metric_id . ".csv');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+    }
+});
+";
+
 // Include footer
-require_once PROJECT_ROOT_PATH . 'app/views/layouts/footer.php'; 
+require_once ROOT_PATH . 'app/views/layouts/footer.php';
 ?>

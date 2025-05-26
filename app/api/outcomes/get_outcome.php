@@ -14,7 +14,8 @@ if (!defined('PROJECT_ROOT_PATH')) {
 require_once PROJECT_ROOT_PATH . 'app/config/config.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/functions.php'; // Contains get_outcome_data
+require_once PROJECT_ROOT_PATH . 'app/lib/functions.php'; // Contains legacy functions
+require_once PROJECT_ROOT_PATH . 'app/lib/admins/outcomes.php'; // Contains updated outcome functions
 require_once PROJECT_ROOT_PATH . 'app/lib/admins/index.php'; // Contains is_admin
 
 // Validate user is authenticated

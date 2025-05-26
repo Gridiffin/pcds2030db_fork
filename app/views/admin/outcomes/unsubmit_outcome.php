@@ -5,17 +5,12 @@
  * Sets the status of a specific sector outcome to 'draft' or marks it as unsubmitted.
  */
 
-// Define project root path for consistent file references
-if (!defined('PROJECT_ROOT_PATH')) {
-    define('PROJECT_ROOT_PATH', rtrim(dirname(dirname(dirname(__DIR__))), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
-}
-
 // Include necessary files
-require_once PROJECT_ROOT_PATH . 'app/config/config.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php'; // Assumes db_connect.php handles $conn
-require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/functions.php'; // General functions, potentially outcome-related
-require_once PROJECT_ROOT_PATH . 'app/lib/admin_functions.php'; // Admin-specific functions
+require_once '../../../config/config.php';
+require_once ROOT_PATH . 'app/lib/db_connect.php'; // Assumes db_connect.php handles $conn
+require_once ROOT_PATH . 'app/lib/session.php';
+require_once ROOT_PATH . 'app/lib/functions.php'; // General functions, potentially outcome-related
+require_once ROOT_PATH . 'app/lib/admin_functions.php'; // Admin-specific functions
 
 // Verify user is an admin
 if (!is_admin()) {
@@ -24,15 +19,16 @@ if (!is_admin()) {
     exit;
 }
 
-// Check if outcome_id is provided and valid
-if (!isset($_GET['outcome_id']) || !is_numeric($_GET['outcome_id'])) {
-    $_SESSION['error_message'] = "Invalid request. Outcome ID is missing or invalid.";
+// Check if metric_id is provided and valid (renamed from outcome_id to match table schema)
+if (!isset($_GET['metric_id']) && !isset($_GET['outcome_id'])) {
+    $_SESSION['error_message'] = "Invalid request. ID is missing or invalid.";
     // Redirect back to the outcomes management page
-    header('Location: ../metrics/manage_metrics.php'); // This page now manages outcomes
+    header('Location: manage_outcomes.php');
     exit;
 }
 
-$outcome_id = intval($_GET['outcome_id']);
+// Support both metric_id (new) and outcome_id (legacy) parameters
+$metric_id = isset($_GET['metric_id']) ? intval($_GET['metric_id']) : intval($_GET['outcome_id']);
 
 // Database connection should be established by db_connect.php, available as $conn
 if (!$conn) {
@@ -92,38 +88,35 @@ if (function_exists('unsubmit_outcome_data')) {
 */
 
 // Using direct SQL as a placeholder until helper functions are confirmed/implemented
-// Adjust 'sector_outcomes' and 'status' / 'is_draft' as necessary.
-// Assuming 'status' field and setting it to 'Draft'.
-// If you use 'is_draft' (boolean/tinyint), it would be 'SET is_draft = 1'
-$sql = "UPDATE sector_outcomes SET status = 'Draft' WHERE outcome_id = ?";
+// Using the correct table name sector_outcomes_data and the is_draft field
+// Note: The table uses metric_id as the primary identifier, not outcome_id
+$sql = "UPDATE sector_outcomes_data SET is_draft = 1 WHERE metric_id = ?";
 $stmt = $conn->prepare($sql);
 
 if ($stmt) {
-    $stmt->bind_param('i', $outcome_id);
+    $stmt->bind_param('i', $metric_id);
     if ($stmt->execute()) {
         if ($stmt->affected_rows > 0) {
-            $_SESSION['success_message'] = "Outcome (ID: {$outcome_id}) has been successfully un-submitted and marked as Draft.";
-        } else {
+            $_SESSION['success_message'] = "Outcome (ID: {$metric_id}) has been successfully un-submitted and marked as Draft.";        } else {
             // Check if the outcome record actually exists to provide a more accurate message
-            $check_sql = "SELECT outcome_id FROM sector_outcomes WHERE outcome_id = ?";
+            $check_sql = "SELECT metric_id FROM sector_outcomes_data WHERE metric_id = ?";
             $check_stmt = $conn->prepare($check_sql);
             if ($check_stmt) {
-                $check_stmt->bind_param('i', $outcome_id);
+                $check_stmt->bind_param('i', $metric_id);
                 $check_stmt->execute();
                 $check_result = $check_stmt->get_result();
                 if ($check_result->num_rows === 0) {
-                    $_SESSION['error_message'] = "No outcome found with ID {$outcome_id}. Nothing to un-submit.";
+                    $_SESSION['error_message'] = "No outcome found with ID {$metric_id}. Nothing to un-submit.";
                 } else {
                     // Outcome exists, but was already 'Draft' or no change was made
-                    $_SESSION['info_message'] = "Outcome (ID: {$outcome_id}) was already in a draft state or no changes were necessary.";
+                    $_SESSION['info_message'] = "Outcome (ID: {$metric_id}) was already in a draft state or no changes were necessary.";
                 }
                 $check_stmt->close();
             } else {
                  $_SESSION['error_message'] = "Could not verify outcome status. Please check manually.";
             }
-        }
-    } else {
-        $_SESSION['error_message'] = "Failed to un-submit outcome (ID: {$outcome_id}). Database error: " . $stmt->error;
+        }    } else {
+        $_SESSION['error_message'] = "Failed to un-submit outcome (ID: {$metric_id}). Database error: " . $stmt->error;
     }
     $stmt->close();
 } else {
@@ -131,7 +124,7 @@ if ($stmt) {
 }
 
 // Redirect back to the outcomes management page
-header('Location: ../metrics/manage_metrics.php'); // This page now manages outcomes
+header('Location: manage_outcomes.php'); // Correctly redirect to the outcomes management page
 exit;
 
 ?>

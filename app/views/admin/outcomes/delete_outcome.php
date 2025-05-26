@@ -5,16 +5,13 @@
  * Admin page to delete an outcome.
  */
 
-// Define project root path for consistent file references
-if (!defined('PROJECT_ROOT_PATH')) {
-    define('PROJECT_ROOT_PATH', rtrim(dirname(dirname(dirname(__DIR__))), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
-}
 
-require_once PROJECT_ROOT_PATH . 'app/config/config.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/functions.php'; // Contains get_outcome_data and potentially a delete_outcome_data function
-require_once PROJECT_ROOT_PATH . 'app/lib/admins/index.php'; // Contains is_admin
+require_once '../../../config/config.php';
+require_once ROOT_PATH . 'app/lib/db_connect.php';
+require_once ROOT_PATH . 'app/lib/session.php';
+require_once ROOT_PATH . 'app/lib/functions.php'; // Contains legacy functions
+require_once ROOT_PATH . 'app/lib/admins/outcomes.php'; // Contains updated outcome functions
+require_once ROOT_PATH . 'app/lib/admins/index.php'; // Contains is_admin
 
 // Verify user is an admin
 if (!is_admin()) {
@@ -31,8 +28,8 @@ if (!isset($_GET['outcome_id']) || !is_numeric($_GET['outcome_id'])) {
 
 $outcome_id = (int) $_GET['outcome_id'];
 
-// Verify that the outcome exists
-$outcome_data = get_outcome_data($outcome_id); // Using the new function for outcomes
+// Verify that the outcome exists using the updated function
+$outcome_data = get_outcome_data($outcome_id); // Using the updated function for outcomes
 
 if (!$outcome_data) {
     $_SESSION['error_message'] = 'Outcome not found or already deleted.';
