@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 23, 2025 at 04:29 AM
+-- Generation Time: May 26, 2025 at 08:51 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -125,7 +125,7 @@ CREATE TABLE `programs` (
   `is_assigned` tinyint(1) NOT NULL DEFAULT 1,
   `edit_permissions` text DEFAULT NULL,
   `created_by` int(11) NOT NULL DEFAULT 1,
-  `agency_owner` varchar(255) NOT NULL
+  `agency_owner` int(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
@@ -133,16 +133,7 @@ CREATE TABLE `programs` (
 --
 
 INSERT INTO `programs` (`program_id`, `program_name`, `description`, `owner_agency_id`, `sector_id`, `start_date`, `end_date`, `created_at`, `updated_at`, `is_assigned`, `edit_permissions`, `created_by`, `agency_owner`) VALUES
-(60, 'Implementation of Forest Landscape Restoration Throughout Sarawak', 'Description', 12, 1, '2025-05-15', '2026-06-19', '2025-05-14 17:54:04', '2025-05-14 17:54:04', 0, NULL, 12, ''),
-(61, 'Conservation & Protection of Wetlands & Watershed Whitin Heart of Borneo Sarawak (HoB)', 'Description 2', 12, 1, '2025-05-15', '2027-05-28', '2025-05-14 18:02:01', '2025-05-14 18:02:01', 0, NULL, 12, ''),
-(68, 'Quantifying Forest Carbon Stock in Sarawak', 'Description here', 12, 1, '2025-05-01', '2029-05-01', '2025-05-14 22:14:20', '2025-05-14 22:14:20', 0, NULL, 12, ''),
-(69, 'Bamkboo Industry Development', 'Desc', 12, 1, '2025-05-15', '2025-06-05', '2025-05-14 22:28:42', '2025-05-14 22:28:42', 0, NULL, 12, ''),
-(70, 'Furniture Park', 'Desc', 12, 1, '2025-05-15', '2025-05-15', '2025-05-14 22:29:44', '2025-05-14 22:29:44', 0, NULL, 12, ''),
-(71, 'Sarawak Delta Geopark (SDGp) UNESCO Global Geopark', '', 12, 1, '2025-05-15', '2025-05-15', '2025-05-14 22:32:46', '2025-05-14 22:32:46', 0, NULL, 12, ''),
-(72, 'Stengthenining protection for selected Totally Protected Areas(TPA)', 'Desc', 12, 1, '2025-05-15', '2025-05-15', '2025-05-14 22:36:12', '2025-05-14 22:36:12', 0, NULL, 12, ''),
-(73, 'Development and upgrading of integrated facilities of 20 TPA', 'Desc', 12, 1, '2025-05-15', '2025-05-15', '2025-05-14 22:38:36', '2025-05-14 22:38:36', 0, NULL, 12, ''),
-(74, 'Strengthening Forest Enforcement', 'Desc', 12, 1, '2025-05-15', '2025-05-15', '2025-05-14 22:40:13', '2025-05-14 22:40:13', 0, NULL, 12, ''),
-(75, 'Niah NP UNESCO World Heritage Site (WHS)', 'Desc', 12, 1, '2025-05-15', '2025-05-15', '2025-05-14 22:41:05', '2025-05-18 09:55:12', 0, NULL, 12, '');
+(98, 'qwe', 'qwe', 12, 1, NULL, NULL, '2025-05-26 01:38:51', '2025-05-26 01:38:51', 0, NULL, 1, 0);
 
 -- --------------------------------------------------------
 
@@ -168,16 +159,7 @@ CREATE TABLE `program_submissions` (
 --
 
 INSERT INTO `program_submissions` (`submission_id`, `program_id`, `period_id`, `submitted_by`, `status`, `content_json`, `submission_date`, `updated_at`, `is_draft`, `agency_owner`) VALUES
-(51, 60, 2, 12, 'target-achieved', '{\"rating\":\"target-achieved\",\"targets\":[{\"target_text\":\"Cumulative 7 million trees planted (20,00ha area) in 2024\",\"status_description\":\"2 Seed production Area Established Pueh Forest Reserve @ 51 mother trees and Sabal Forest Reserve @ 90 mother trees (geronggang)\"},{\"target_text\":\"5 planting program\\/collaboration\",\"status_description\":\"Asia-Pacific Regional Conference on Forest Landscape Resotration 2024 in collaboration with ITTO was held in Kuching, Sarawak on 27-28 August 2024.\"},{\"target_text\":\"Cumulative of 120 jobs created through community engagement in 2024\",\"status_description\":\"Achieved 35 million tree planting target on a 8 June 2024. Premier of Sarawak has planted tree number 35 million at Sabar FR in conjunction with the Satet-Level IDF 2024\"},{\"target_text\":\"100% planting data updated in Penghijauan Malaysia\",\"status_description\":\"21 planting program\\/collaboration organized in Q3\"}]}', '2025-05-14 17:54:04', '2025-05-14 17:54:04', 0, ''),
-(52, 61, 2, 12, 'target-achieved', '{\"rating\":\"target-achieved\",\"targets\":[{\"target_text\":\"Workshop to prepare Proposal of Ramsar site\",\"status_description\":\"Appointment of consultant to conduct Multi-disciplinary assessment and feasibility study of Kuala Rajang in process of preparing document Community Development Program (study tours to Ramsar site - Kuching Wetland National Park) was conducted in 10-12 September 2024\"},{\"target_text\":\"Annual Workshop of Wetland and Watershed involving stakeholders and communities\",\"status_description\":\"Karnival Pembangunan Komunity Perhutanan Tahun 2024 bersama komuniti Tadahan Air, Baleh pada 14-22 September 2024 Program Communication, Education & Public Awareness in Waterland Area (Program Penghasilan Kraftandan Tempatan bersama Komunity Kawasan Tadahan Air, Baleh, Kapit pada 24-26 September 2024\"}]}', '2025-05-14 18:02:01', '2025-05-22 06:59:03', 0, ''),
-(59, 68, 2, 12, 'on-track-yearly', '{\"rating\":\"on-track-yearly\",\"targets\":[{\"target_text\":\"Organize seminar for knowledge sharing\",\"status_description\":\"Training and MOU signing ceremony successfully held at Fukuoka, Japan on 23-27 July 2024\"},{\"target_text\":\"Prelimary report on biomass findings.\",\"status_description\":\"Received CN analyser instrument on 4\\/9\\/2024. Currently installing the gas piping and setting up facilities\"},{\"target_text\":\"Forest biomass assessment at various forest in sarawak\",\"status_description\":\"Currently pending a letter to EPU on consulation work and also company profile from UPN serdang, Assesment of biomass was conducted in AUG at mangrove plot at Samunsam, Sebut harga for transport was completed and awarded in Sept 2024.\"}]}', '2025-05-14 22:14:20', '2025-05-14 22:14:20', 0, ''),
-(60, 69, 2, 12, 'severe-delay', '{\"rating\":\"severe-delay\",\"targets\":[{\"target_text\":\"To produce 650,000 seedlings\",\"status_description\":\"45,856 seedlings produced cumulative\"},{\"target_text\":\"To plant 1,500 ha of bamboo\",\"status_description\":\"262.11 ha area planted cumulative, 1 engagement with ANFA Renewables on Oct 8, 2024 and Dec 19, 2024\"}]}', '2025-05-14 22:28:42', '2025-05-14 22:28:42', 0, ''),
-(61, 70, 2, 12, 'target-achieved', '{\"rating\":\"target-achieved\",\"targets\":[{\"target_text\":\"Completion of design, survey, soil investigation\",\"status_description\":\"Pending updates from land and survey on survey status of the lot\"}]}', '2025-05-14 22:29:44', '2025-05-14 22:29:44', 0, ''),
-(62, 71, 2, 12, 'target-achieved', '{\"rating\":\"target-achieved\",\"targets\":[{\"target_text\":\"Submission of Application Dossier to Suruhanjaya Kebangsaan UNESCO Malaysia (SKUM) - FDS\",\"status_description\":\"Seminar on Sarawak Delta Geopark Expedition held on 17-18 July 2024\"},{\"target_text\":\"Inter-Agency Workshop - FDS, Readiness assessment by JK Pelaksana Geopark Kebangsaan (MUDeNR\\/JHS)\",\"status_description\":\"Final Draft Report (Application Dossier) submitted on 30 September 2024\"}]}', '2025-05-14 22:32:46', '2025-05-14 22:32:46', 0, ''),
-(63, 72, 2, 12, 'target-achieved', '{\"rating\":\"target-achieved\",\"targets\":[{\"target_text\":\"CADASTRAL SURVEY\",\"status_description\":\"SFS in principle approved the additional ceiling on 15.8.2924 during budget examination Pending receipt of official approval in order to proceed with consultant appointment\"},{\"target_text\":\"Completion of Loagan Bunut NP cadastral survey\",\"status_description\":\"Sabal NP : 95.5% completed, Consultant applied for EOT for field work for 8 weeks from 1st July until 30th August 2024. Consultant finalizing the data before submission to Land & Survey\"}]}', '2025-05-14 22:36:12', '2025-05-14 22:36:12', 0, ''),
-(64, 73, 2, 12, 'on-track-yearly', '{\"rating\":\"on-track-yearly\",\"targets\":[{\"target_text\":\"Call for Tender: Kubah NP\",\"status_description\":\"Matang Wildlife Centre (Staff accommodation & facilities): Management Tender Committee decided to award the tender to the successful tenderer during the meeting on 24 September 2024. Plan Tender stage and award in  Q4 2024.\"},{\"target_text\":\"Loagan Bunut NP, Gunung Gading NP & Piasau NR: -MP Final Draft -Approved by Controller -Published\",\"status_description\":\"Gunung Apeng NP (Ranger station): Pending reply on land acquisition enquiry to Land & Survey. Proposal to be refined to suit and consideration of optional site upon finalization of boundary demarcation exercise for scope of work submission under 13M Management Plan Loagan Bunut NP \\u2013 59% completion. Data collection and compilation stage.Gunung Gading NP (46% completion) Data collection and compilation stage.Piasau NR: (46% completion) Data collection and compilation stage.\"}]}', '2025-05-14 22:38:36', '2025-05-22 06:59:03', 0, ''),
-(65, 74, 2, 12, 'target-achieved', '{\"rating\":\"target-achieved\",\"targets\":[{\"target_text\":\"Implementation of forest enforcement activities \\u2013 2 Operasi Rengas Bersepadu (combating Illegal logging)\",\"status_description\":\"4 series of Operasi Rengas Bersepadu (combating Illegal logging) conducted in Kuching\\/Sri Aman, Kapit, Bintulu and Miri Region\"},{\"target_text\":\"Awareness Program (Forest Enforcement) \\u2013 2 programmes\",\"status_description\":\"2 Awareness Program on Forest Enforcement conducted at Long Busang Kapit, Long lama Miri\"},{\"target_text\":\"Technical training for forest enforcement officers \\u2013 1 programmes\",\"status_description\":\"Latihan Pengukuhan Penguatkuasaan Hutan (Technical training for forest enforcement officers) conducted at Central Region (Sibu\\/Kapit\\/Sarikei) and Northern Region (Bintulu\\/Miri\\/Limbang)\"}]}', '2025-05-14 22:40:13', '2025-05-14 22:40:13', 0, ''),
-(66, 75, 2, 12, 'target-achieved', '{\"rating\":\"target-achieved\",\"targets\":[{\"target_text\":\"Draft of Niah for UNESCO book 1\",\"status_description\":\"Archaeological Heritage of Niah National Park\\u2019s Caves Complex has been inscribed as a UNESCO WHS on 28.07.2024.Technical committee for the utilization of the federal fund was formed on 27 July 2024. Request for the Steering Committee meeting had been sent out on 27 Sept 2024 and now pending for confirmation. lorenm ipsum\"}],\"remarks\":\"\"}', '2025-05-14 22:41:05', '2025-05-22 06:59:03', 1, '');
+(77, 98, 2, 12, 'target-achieved', '{\"target\":\"\",\"achievement\":\"\",\"status_text\":\"\",\"rating\":\"target-achieved\",\"remarks\":\"\",\"targets\":[],\"content\":{\"targets\":[{\"target_text\":\"\",\"status_description\":\"\",\"target_value\":null,\"achievement_value\":null}],\"achievement\":\"\",\"status\":\"target-achieved\",\"status_text\":\"\"}}', '2025-05-26 01:38:51', '2025-05-26 01:38:51', 1, '');
 
 -- --------------------------------------------------------
 
@@ -233,13 +215,7 @@ CREATE TABLE `reports` (
 --
 
 INSERT INTO `reports` (`report_id`, `period_id`, `report_name`, `description`, `pdf_path`, `pptx_path`, `generated_by`, `generated_at`, `is_public`) VALUES
-(301, 2, 'Forestry Report - Q2 2025', '', '', 'pptx/Forestry_Q2-2025_20250521030906.pptx', 1, '2025-05-21 01:09:06', 0),
-(302, 2, 'Forestry Report - Q2 2025', '', '', 'pptx/Forestry_Q2-2025_20250521031402.pptx', 1, '2025-05-21 01:14:02', 0),
-(303, 2, 'Forestry Report - Q2 2025', 'Hi', '', 'pptx/Forestry_Q2-2025_20250522084244.pptx', 1, '2025-05-22 06:42:44', 0),
-(304, 2, 'Forestry Report - Q2 2025', '2', '', 'pptx/Forestry_Q2-2025_20250522084640.pptx', 1, '2025-05-22 06:46:40', 0),
-(305, 2, 'Forestry Report - Q2 2025', '2', '', 'pptx/Forestry_Q2-2025_20250522084650.pptx', 1, '2025-05-22 06:46:50', 0),
-(306, 2, 'Forestry Report - Q2 2025', '', '', 'pptx/Forestry_Q2-2025_20250522085938.pptx', 1, '2025-05-22 06:59:38', 0),
-(307, 2, 'Forestry Report - Q2 2025', '', '', 'pptx/Forestry_Q2-2025_20250522092243.pptx', 1, '2025-05-22 07:22:43', 0);
+(301, 2, 'Forestry Report - Q2 2025', '', '', 'pptx/Forestry_Q2-2025_20250521030906.pptx', 1, '2025-05-21 01:09:06', 0);
 
 -- --------------------------------------------------------
 
@@ -259,32 +235,6 @@ CREATE TABLE `sectors` (
 
 INSERT INTO `sectors` (`sector_id`, `sector_name`, `description`) VALUES
 (1, 'Forestry', 'Forestry sector including timber and forest resources');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `sector_metrics_data`
---
-
-CREATE TABLE `sector_metrics_data` (
-  `id` int(11) NOT NULL,
-  `metric_id` int(11) NOT NULL,
-  `sector_id` int(11) NOT NULL,
-  `period_id` int(11) DEFAULT NULL,
-  `table_name` varchar(255) NOT NULL,
-  `data_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`data_json`)),
-  `is_draft` tinyint(1) NOT NULL DEFAULT 1,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `sector_metrics_data`
---
-
-INSERT INTO `sector_metrics_data` (`id`, `metric_id`, `sector_id`, `period_id`, `table_name`, `data_json`, `is_draft`, `created_at`, `updated_at`) VALUES
-(20, 7, 1, 2, 'TIMBER EXPORT VALUE (RM)', '{\"columns\":[\"2022\",\"2023\",\"2024\",\"2025\",\"2026\"],\"units\":{\"2022\":\"RM\",\"2023\":\"RM\",\"2024\":\"RM\",\"2025\":\"RM\"},\"data\":{\"January\":{\"2022\":408531176.77,\"2023\":263569916.63,\"2024\":276004972.69,\"2025\":null,\"2026\":0},\"February\":{\"2022\":239761718.38,\"2023\":226356164.3,\"2024\":191530929.47,\"2025\":null,\"2026\":0},\"March\":{\"2022\":394935606.46,\"2023\":261778295.29,\"2024\":214907671.7,\"2025\":null,\"2026\":0},\"April\":{\"2022\":400891037.27,\"2023\":215771835.07,\"2024\":232014272.14,\"2025\":null,\"2026\":0},\"May\":{\"2022\":345725679.36,\"2023\":324280067.64,\"2024\":324627750.87,\"2025\":null,\"2026\":0},\"June\":{\"2022\":268966198.26,\"2023\":235560482.89,\"2024\":212303812.34,\"2025\":null,\"2026\":0},\"July\":{\"2022\":359792973.34,\"2023\":244689028.37,\"2024\":274788036.68,\"2025\":null,\"2026\":0},\"August\":{\"2022\":310830376.16,\"2023\":344761866.36,\"2024\":210420404.31,\"2025\":null,\"2026\":0},\"September\":{\"2022\":318990291.52,\"2023\":210214202.2,\"2024\":191837139,\"2025\":null,\"2026\":0},\"October\":{\"2022\":304693148.3,\"2023\":266639022.25,\"2024\":null,\"2025\":null,\"2026\":0},\"November\":{\"2022\":303936172.09,\"2023\":296062485.55,\"2024\":null,\"2025\":null,\"2026\":0},\"December\":{\"2022\":289911760.38,\"2023\":251155864.77,\"2024\":null,\"2025\":null,\"2026\":0}}}', 0, '2025-04-27 11:45:15', '2025-05-05 06:42:42'),
-(21, 8, 1, 2, 'TOTAL DEGRADED AREA', '{\r\n  \"columns\": [\"2022\", \"2023\", \"2024\", \"2025\", \"2026\"],\r\n  \"units\": {\r\n    \"2022\": \"Ha\",\r\n    \"2023\": \"Ha\",\r\n    \"2024\": \"Ha\",\r\n    \"2025\": \"Ha\"\r\n  },\r\n  \"data\": {\r\n    \"January\": {\r\n      \"2022\": 787.01,\r\n      \"2023\": 1856.37,\r\n      \"2024\": 3146.60,\r\n      \"2025\": null,\r\n      \"2026\": 0\r\n    },\r\n    \"February\": {\r\n      \"2022\": 912.41,\r\n      \"2023\": 3449.94,\r\n      \"2024\": 6660.50,\r\n      \"2025\": null,\r\n      \"2026\": 0\r\n    },\r\n    \"March\": {\r\n      \"2022\": 513.04,\r\n      \"2023\": 2284.69,\r\n      \"2024\": 3203.80,\r\n      \"2025\": null,\r\n      \"2026\": 0\r\n    },\r\n    \"April\": {\r\n      \"2022\": 428.18,\r\n      \"2023\": 1807.69,\r\n      \"2024\": 1871.50,\r\n      \"2025\": null,\r\n      \"2026\": 0\r\n    },\r\n    \"May\": {\r\n      \"2022\": 485.08,\r\n      \"2023\": 3255.80,\r\n      \"2024\": 2750.20,\r\n      \"2025\": null,\r\n      \"2026\": 0\r\n    },\r\n    \"June\": {\r\n      \"2022\": 1277.90,\r\n      \"2023\": 3120.66,\r\n      \"2024\": 3396.30,\r\n      \"2025\": null,\r\n      \"2026\": 0\r\n    },\r\n    \"July\": {\r\n      \"2022\": 745.15,\r\n      \"2023\": 2562.38,\r\n      \"2024\": null,\r\n      \"2025\": null,\r\n      \"2026\": 0\r\n    },\r\n    \"August\": {\r\n      \"2022\": 762.69,\r\n      \"2023\": 2474.93,\r\n      \"2024\": null,\r\n      \"2025\": null,\r\n      \"2026\": 0\r\n    },\r\n    \"September\": {\r\n      \"2022\": 579.09,\r\n      \"2023\": 3251.93,\r\n      \"2024\": null,\r\n      \"2025\": null,\r\n      \"2026\": 0\r\n    },\r\n    \"October\": {\r\n      \"2022\": 676.27,\r\n      \"2023\": 3086.64,\r\n      \"2024\": null,\r\n      \"2025\": null,\r\n      \"2026\": 0\r\n    },\r\n    \"November\": {\r\n      \"2022\": 2012.35,\r\n      \"2023\": 3081.63,\r\n      \"2024\": null,\r\n      \"2025\": null,\r\n      \"2026\": 0\r\n    },\r\n    \"December\": {\r\n      \"2022\": 1114.64,\r\n      \"2023\": 3240.14,\r\n      \"2024\": null,\r\n      \"2025\": null,\r\n      \"2026\": 0\r\n    }\r\n  }\r\n}', 1, '2025-05-14 07:25:38', '2025-05-22 07:52:10');
 
 -- --------------------------------------------------------
 
@@ -309,8 +259,7 @@ CREATE TABLE `sector_outcomes_data` (
 --
 
 INSERT INTO `sector_outcomes_data` (`id`, `metric_id`, `sector_id`, `period_id`, `table_name`, `data_json`, `is_draft`, `created_at`, `updated_at`) VALUES
-(20, 7, 1, 2, 'TIMBER EXPORT VALUE (RM)', '{\"columns\":[\"2022\",\"2023\",\"2024\",\"2025\",\"2026\"],\"units\":{\"2022\":\"RM\",\"2023\":\"RM\",\"2024\":\"RM\",\"2025\":\"RM\"},\"data\":{\"January\":{\"2022\":408531176.77,\"2023\":263569916.63,\"2024\":276004972.69,\"2025\":null,\"2026\":0},\"February\":{\"2022\":239761718.38,\"2023\":226356164.3,\"2024\":191530929.47,\"2025\":null,\"2026\":0},\"March\":{\"2022\":394935606.46,\"2023\":261778295.29,\"2024\":214907671.7,\"2025\":null,\"2026\":0},\"April\":{\"2022\":400891037.27,\"2023\":215771835.07,\"2024\":232014272.14,\"2025\":null,\"2026\":0},\"May\":{\"2022\":345725679.36,\"2023\":324280067.64,\"2024\":324627750.87,\"2025\":null,\"2026\":0},\"June\":{\"2022\":268966198.26,\"2023\":235560482.89,\"2024\":212303812.34,\"2025\":null,\"2026\":0},\"July\":{\"2022\":359792973.34,\"2023\":244689028.37,\"2024\":274788036.68,\"2025\":null,\"2026\":0},\"August\":{\"2022\":310830376.16,\"2023\":344761866.36,\"2024\":210420404.31,\"2025\":null,\"2026\":0},\"September\":{\"2022\":318990291.52,\"2023\":210214202.2,\"2024\":191837139,\"2025\":null,\"2026\":0},\"October\":{\"2022\":304693148.3,\"2023\":266639022.25,\"2024\":null,\"2025\":null,\"2026\":0},\"November\":{\"2022\":303936172.09,\"2023\":296062485.55,\"2024\":null,\"2025\":null,\"2026\":0},\"December\":{\"2022\":289911760.38,\"2023\":251155864.77,\"2024\":null,\"2025\":null,\"2026\":0}}}', 0, '2025-04-27 11:45:15', '2025-05-05 06:42:42'),
-(21, 8, 1, 2, 'TOTAL DEGRADED AREA', '{\r\n  \"columns\": [\"2022\", \"2023\", \"2024\", \"2025\", \"2026\"],\r\n  \"units\": {\r\n    \"2022\": \"Ha\",\r\n    \"2023\": \"Ha\",\r\n    \"2024\": \"Ha\",\r\n    \"2025\": \"Ha\"\r\n  },\r\n  \"data\": {\r\n    \"January\": {\r\n      \"2022\": 787.01,\r\n      \"2023\": 1856.37,\r\n      \"2024\": 3146.60,\r\n      \"2025\": null,\r\n      \"2026\": 0\r\n    },\r\n    \"February\": {\r\n      \"2022\": 912.41,\r\n      \"2023\": 3449.94,\r\n      \"2024\": 6660.50,\r\n      \"2025\": null,\r\n      \"2026\": 0\r\n    },\r\n    \"March\": {\r\n      \"2022\": 513.04,\r\n      \"2023\": 2284.69,\r\n      \"2024\": 3203.80,\r\n      \"2025\": null,\r\n      \"2026\": 0\r\n    },\r\n    \"April\": {\r\n      \"2022\": 428.18,\r\n      \"2023\": 1807.69,\r\n      \"2024\": 1871.50,\r\n      \"2025\": null,\r\n      \"2026\": 0\r\n    },\r\n    \"May\": {\r\n      \"2022\": 485.08,\r\n      \"2023\": 3255.80,\r\n      \"2024\": 2750.20,\r\n      \"2025\": null,\r\n      \"2026\": 0\r\n    },\r\n    \"June\": {\r\n      \"2022\": 1277.90,\r\n      \"2023\": 3120.66,\r\n      \"2024\": 3396.30,\r\n      \"2025\": null,\r\n      \"2026\": 0\r\n    },\r\n    \"July\": {\r\n      \"2022\": 745.15,\r\n      \"2023\": 2562.38,\r\n      \"2024\": null,\r\n      \"2025\": null,\r\n      \"2026\": 0\r\n    },\r\n    \"August\": {\r\n      \"2022\": 762.69,\r\n      \"2023\": 2474.93,\r\n      \"2024\": null,\r\n      \"2025\": null,\r\n      \"2026\": 0\r\n    },\r\n    \"September\": {\r\n      \"2022\": 579.09,\r\n      \"2023\": 3251.93,\r\n      \"2024\": null,\r\n      \"2025\": null,\r\n      \"2026\": 0\r\n    },\r\n    \"October\": {\r\n      \"2022\": 676.27,\r\n      \"2023\": 3086.64,\r\n      \"2024\": null,\r\n      \"2025\": null,\r\n      \"2026\": 0\r\n    },\r\n    \"November\": {\r\n      \"2022\": 2012.35,\r\n      \"2023\": 3081.63,\r\n      \"2024\": null,\r\n      \"2025\": null,\r\n      \"2026\": 0\r\n    },\r\n    \"December\": {\r\n      \"2022\": 1114.64,\r\n      \"2023\": 3240.14,\r\n      \"2024\": null,\r\n      \"2025\": null,\r\n      \"2026\": 0\r\n    }\r\n  }\r\n}', 0, '2025-05-14 07:25:38', '2025-05-14 07:26:04');
+(57, 1, 1, NULL, '123', '{\"columns\":[\"123\"],\"units\":[],\"data\":{\"January\":{\"123\":123123}}}', 1, '2025-05-26 03:35:26', '2025-05-26 03:35:26');
 
 -- --------------------------------------------------------
 
@@ -325,7 +274,7 @@ CREATE TABLE `users` (
   `agency_name` varchar(100) DEFAULT NULL,
   `role` enum('admin','agency') NOT NULL,
   `sector_id` int(11) DEFAULT NULL,
-  `agency_id` int(255) NOT NULL,
+  `agency_id` int(255) NOT NULL COMMENT '0-STIDC\r\n1-SFC\r\n2-FDS',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `is_active` tinyint(1) DEFAULT 1
@@ -338,10 +287,15 @@ CREATE TABLE `users` (
 INSERT INTO `users` (`user_id`, `username`, `password`, `agency_name`, `role`, `sector_id`, `agency_id`, `created_at`, `updated_at`, `is_active`) VALUES
 (1, 'admin', '$2y$10$bPQQFeR4PbcueCgmV7/2Au.HWCjWH8v8ox.R.MxMfk4qXXHi3uPw6', 'Ministry of Natural Resources and Urban Development', 'admin', NULL, 0, '2025-03-25 01:31:15', '2025-03-25 01:31:15', 1),
 (12, 'user', '$2y$10$/Z6xCsE7OknP.4HBT5CdBuWDZK5VNMf7MqwmGusJ0SM8xxaGQKdq2', 'testagency', 'agency', 1, 0, '2025-03-25 07:42:27', '2025-05-05 06:41:55', 1),
-(25, 'sfc', '$2y$10$wkBLipOw1EvgvpfrFTXaRO9/1OuFyCT3enAz3fr4nyOhKFBiG5M7C', 'Sarawak Forestry Corporation', 'agency', 1, 0, '2025-05-05 06:40:10', '2025-05-05 06:40:10', 1),
-(26, 'stidc', '$2y$10$ttWqO8C7DUAxBURRnvhKmu/swpsuLv.iTqsFrPnqRAECtqxsRbsA2', 'Sarawak Timber Industry Development Corporation', 'agency', 1, 0, '2025-05-05 06:40:36', '2025-05-05 06:40:36', 1),
-(27, 'fds', '$2y$10$304gq1GLTQvKOhmBqTp3b.oPyiwLCqlCP5lZkTfTJplVOH3QWXPt6', 'Forestry Department', 'agency', 1, 0, '2025-05-05 06:41:16', '2025-05-22 07:28:23', 1),
-(32, 'SFC1', '$2y$10$8e54SufqWyiF0F5qLpZuZO31dfyip2pd7qhWG0VnpaWgxBhI.0xyG', 'SFC1test', 'agency', 1, 1, '2025-05-23 01:15:23', '2025-05-23 01:15:23', 1);
+(35, 'stidc1', '$2y$10$nQCMzJPe8xSV0F0uxFebeeNtFJnsCegdRJE7GEjpBmONWn/msBfI6', 'stidc1', 'agency', 1, 0, '2025-05-23 06:27:42', '2025-05-23 06:27:42', 1),
+(36, 'stidc2', '$2y$10$CNwb1EyKtXTU5GUlUg2Gx.7LVzWfCx822.REFoZzJYGTpvvfn2Xl.', 'stidc2', 'agency', 1, 0, '2025-05-23 06:28:07', '2025-05-23 06:28:07', 1),
+(37, 'stidc3', '$2y$10$GVVGb8qjco0WLrRLP7fSfONnblHVLyn8iidYe9Lvjrmwnaek.ycQG', 'stidc3', 'agency', 1, 0, '2025-05-23 06:28:38', '2025-05-23 06:28:38', 1),
+(38, 'sfc1', '$2y$10$SAn3DrSjO44o3jmamV56oOEIzNn2.ZZW.nrqhW.gqVGsCCwNqgxvi', 'sfc1', 'agency', 1, 1, '2025-05-23 06:30:05', '2025-05-23 06:30:05', 1),
+(39, 'sfc2', '$2y$10$OpqdjpMR8/VPFT7FrVJTzuWpMRx5dtefXxXmPmTm5xQTRjYFnvr2m', 'sfc2', 'agency', 1, 1, '2025-05-23 06:30:25', '2025-05-23 06:30:25', 1),
+(40, 'sfc3', '$2y$10$60AL8k9k5iAR6SlAWBooBOctJzbl2XBV6fVLw6ZhsfyhEfIIr7UkW', 'sfc3', 'agency', 1, 1, '2025-05-23 06:30:51', '2025-05-23 06:30:51', 1),
+(41, 'fds1', '$2y$10$bua8hVx2q0f3cWjXr/2TVefQnh.51LMX4Fyfz3.zWDJGMyuUxEBpq', 'fds1', 'agency', 1, 2, '2025-05-23 06:31:31', '2025-05-23 06:31:31', 1),
+(42, 'fds2', '$2y$10$WWnKHgaCDo14MVBDogRpUOhu2sIHWkSfRC4NWuih9R3Uda/BrzSz.', 'fds2', 'agency', 1, 2, '2025-05-23 06:31:48', '2025-05-23 06:31:48', 1),
+(43, 'fds3', '$2y$10$3NE/RJmmL/98cmD4nffKJOcZxtl7Pu4q71P8QNgGVQMBeo.mAmTzG', 'fds3', 'agency', 1, 2, '2025-05-23 06:32:05', '2025-05-23 06:32:05', 1);
 
 --
 -- Indexes for dumped tables
@@ -380,7 +334,9 @@ ALTER TABLE `programs`
   ADD PRIMARY KEY (`program_id`),
   ADD KEY `owner_agency_id` (`owner_agency_id`),
   ADD KEY `sector_id` (`sector_id`),
-  ADD KEY `agency_owner` (`agency_owner`);
+  ADD KEY `agency_owner` (`agency_owner`),
+  ADD KEY `agency_owner_2` (`agency_owner`),
+  ADD KEY `agency_owner_3` (`agency_owner`);
 
 --
 -- Indexes for table `program_submissions`
@@ -419,14 +375,6 @@ ALTER TABLE `sectors`
   ADD PRIMARY KEY (`sector_id`);
 
 --
--- Indexes for table `sector_metrics_data`
---
-ALTER TABLE `sector_metrics_data`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `metric_sector_draft` (`metric_id`,`sector_id`,`is_draft`),
-  ADD KEY `fk_period_id` (`period_id`);
-
---
 -- Indexes for table `sector_outcomes_data`
 --
 ALTER TABLE `sector_outcomes_data`
@@ -457,7 +405,7 @@ ALTER TABLE `agency_group`
 -- AUTO_INCREMENT for table `metrics_details`
 --
 ALTER TABLE `metrics_details`
-  MODIFY `detail_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=69;
+  MODIFY `detail_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=72;
 
 --
 -- AUTO_INCREMENT for table `notifications`
@@ -475,13 +423,13 @@ ALTER TABLE `outcomes_details`
 -- AUTO_INCREMENT for table `programs`
 --
 ALTER TABLE `programs`
-  MODIFY `program_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=83;
+  MODIFY `program_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=99;
 
 --
 -- AUTO_INCREMENT for table `program_submissions`
 --
 ALTER TABLE `program_submissions`
-  MODIFY `submission_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=72;
+  MODIFY `submission_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=78;
 
 --
 -- AUTO_INCREMENT for table `reporting_periods`
@@ -493,7 +441,7 @@ ALTER TABLE `reporting_periods`
 -- AUTO_INCREMENT for table `reports`
 --
 ALTER TABLE `reports`
-  MODIFY `report_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=308;
+  MODIFY `report_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=312;
 
 --
 -- AUTO_INCREMENT for table `sectors`
@@ -502,22 +450,16 @@ ALTER TABLE `sectors`
   MODIFY `sector_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
--- AUTO_INCREMENT for table `sector_metrics_data`
---
-ALTER TABLE `sector_metrics_data`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
-
---
 -- AUTO_INCREMENT for table `sector_outcomes_data`
 --
 ALTER TABLE `sector_outcomes_data`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=58;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=44;
 
 --
 -- Constraints for dumped tables
@@ -540,7 +482,8 @@ ALTER TABLE `notifications`
 --
 ALTER TABLE `programs`
   ADD CONSTRAINT `programs_ibfk_1` FOREIGN KEY (`owner_agency_id`) REFERENCES `users` (`user_id`),
-  ADD CONSTRAINT `programs_ibfk_2` FOREIGN KEY (`sector_id`) REFERENCES `sectors` (`sector_id`);
+  ADD CONSTRAINT `programs_ibfk_2` FOREIGN KEY (`sector_id`) REFERENCES `sectors` (`sector_id`),
+  ADD CONSTRAINT `programs_ibfk_3` FOREIGN KEY (`agency_owner`) REFERENCES `users` (`agency_id`);
 
 --
 -- Constraints for table `program_submissions`
@@ -556,12 +499,6 @@ ALTER TABLE `program_submissions`
 ALTER TABLE `reports`
   ADD CONSTRAINT `reports_ibfk_1` FOREIGN KEY (`period_id`) REFERENCES `reporting_periods` (`period_id`),
   ADD CONSTRAINT `reports_ibfk_2` FOREIGN KEY (`generated_by`) REFERENCES `users` (`user_id`);
-
---
--- Constraints for table `sector_metrics_data`
---
-ALTER TABLE `sector_metrics_data`
-  ADD CONSTRAINT `fk_period_id` FOREIGN KEY (`period_id`) REFERENCES `reporting_periods` (`period_id`);
 
 --
 -- Constraints for table `users`

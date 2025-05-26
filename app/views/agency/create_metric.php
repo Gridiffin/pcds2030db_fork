@@ -229,7 +229,10 @@ if (isset($_POST['action'])) {
                         ]
                     ];
                     $json_data = json_encode($metrics_data);
-                    $table_name_post = "Table_" . $metric_id;
+                    $table_name_post = $conn->real_escape_string($_POST['table_name'] ?? '');
+                    if (empty($table_name_post)) {
+                        throw new Exception("Table name cannot be empty");
+                    }
                     $insert_query = "INSERT INTO sector_outcomes_data (metric_id, sector_id, table_name, data_json, is_draft) VALUES (?, ?, ?, ?, 1)";
                     $insert_stmt = $conn->prepare($insert_query);
                     $insert_stmt->bind_param("iiss", $metric_id, $sector_id, $table_name_post, $json_data);
@@ -374,7 +377,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $json_data = json_encode($metrics_data);
                     $table_name_post = $conn->real_escape_string($_POST['table_name'] ?? '');
                     if (empty($table_name_post)) {
-                        $table_name_post = "Table_" . $metric_id;
+                        ob_clean();
+                        echo json_encode(['success' => false, 'error' => 'Table name cannot be empty']);
+                        exit;
                     }
                     $insert_query = "INSERT INTO sector_outcomes_data (metric_id, sector_id, table_name, data_json, is_draft) VALUES (?, ?, ?, ?, 1)";
                     $insert_stmt = $conn->prepare($insert_query);
@@ -486,7 +491,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // If table_name is empty, generate a new table_name
         if (empty($table_name_post)) {
-            $table_name_post = "Table_" . $metric_id;
+            throw new Exception("Table name cannot be empty");
         }
 
         // Insert new metric with table_name and metric_id
@@ -925,6 +930,14 @@ $additionalScripts = [
                 const metric = valueSpan.dataset.metric;
                 const month = valueSpan.dataset.month;
                 let value = valueSpan.textContent.trim();
+
+                // Validate table name before saving metric value
+                const tableNameInput = document.getElementById('tableNameInput');
+                const currentTableName = tableNameInput ? tableNameInput.value.trim() : '';
+                if (!currentTableName) {
+                    showToast('Please enter a table name before saving values.', 'warning');
+                    return;
+                }
                 
                 if (value === '') value = '0';
                 if (isNaN(parseFloat(value))) {
@@ -943,6 +956,7 @@ $additionalScripts = [
                     formData.append('column_title', metric);
                     formData.append('month', month);
                     formData.append('table_content', value);
+                    formData.append('table_name', currentTableName);
                     
                     const response = await fetch('', {
                         method: 'POST',
