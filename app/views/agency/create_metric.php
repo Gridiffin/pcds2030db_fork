@@ -373,31 +373,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 echo json_encode(['success' => false, 'error' => 'Missing required parameters']);
             }
             exit;
-        }
-
-    if (isset($_POST['table_name']) && trim($_POST['table_name']) !== '') {
+        }    if (isset($_POST['table_name']) && trim($_POST['table_name']) !== '') {
         $new_table_name = $conn->real_escape_string($_POST['table_name']);
+        $metric_id = intval($_POST['metric_id'] ?? 0);
+        $sector_id = intval($_POST['sector_id'] ?? 0);
+
+        // For AJAX requests, we'll return JSON
+        $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
+        
         // Check if a row exists for this metric_id and sector_id
-        $check_query = "SELECT 1 FROM sector_outcomes_data WHERE metric_id = $metric_id AND sector_id = '$sector_id' LIMIT 1";
-        $check_result = $conn->query($check_query);
+        $check_query = "SELECT 1 FROM sector_outcomes_data WHERE metric_id = ? AND sector_id = ? LIMIT 1";
+        $stmt = $conn->prepare($check_query);
+        $stmt->bind_param("ii", $metric_id, $sector_id);
+        $stmt->execute();
+        $check_result = $stmt->get_result();
+        
         if ($check_result && $check_result->num_rows > 0) {
             // Update existing row
-            $update_query = "UPDATE sector_outcomes_data SET table_name = '$new_table_name' WHERE sector_id = '$sector_id' AND metric_id = $metric_id";
-            if ($conn->query($update_query) === TRUE) {
+            $update_query = "UPDATE sector_outcomes_data SET table_name = ? WHERE sector_id = ? AND metric_id = ?";
+            $stmt = $conn->prepare($update_query);
+            $stmt->bind_param("sii", $new_table_name, $sector_id, $metric_id);
+            
+            if ($stmt->execute()) {
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => true, 'message' => 'Table name updated successfully']);
+                    exit;
+                }
                 $message = "Table name updated successfully.";
                 $message_type = "success";
             } else {
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'error' => 'Error updating table name: ' . $conn->error]);
+                    exit;
+                }
                 $message = "Error updating table name: " . $conn->error;
                 $message_type = "danger";
             }
-        } else {
-            // Insert new row with table_name
-            $insert_table_name_query = "INSERT INTO sector_outcomes_data (metric_id, table_name, column_title, table_content, month, sector_id) 
-                VALUES ($metric_id, '$new_table_name', '', 0, 'January', '$sector_id')";
-            if ($conn->query($insert_table_name_query) === TRUE) {
+        } else {            // Insert new row with table_name
+            $insert_query = "INSERT INTO sector_outcomes_data (metric_id, table_name, column_title, table_content, month, sector_id) 
+                VALUES (?, ?, '', 0, 'January', ?)";
+            $stmt = $conn->prepare($insert_query);
+            $stmt->bind_param("isi", $metric_id, $new_table_name, $sector_id);
+            
+            if ($stmt->execute()) {
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => true, 'message' => 'Table name saved successfully']);
+                    exit;
+                }
                 $message = "Table name saved successfully.";
                 $message_type = "success";
             } else {
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'error' => 'Error saving table name: ' . $conn->error]);
+                    exit;
+                }
                 $message = "Error saving table name: " . $conn->error;
                 $message_type = "danger";
             }
@@ -537,13 +570,13 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                 <i class="fas fa-table me-2"></i>Outcome Table Definition
             </h5>
         </div>
-        <div class="card-body">
-            <form id="tableNameForm" class="mb-4">
+        <div class="card-body">            <form id="tableNameForm" class="mb-4">
                 <div class="row align-items-end">
                     <div class="col-md-6">
                         <label for="tableNameInput" class="form-label">Table Name</label>
                         <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-signature"></i></span>                            <input type="text" class="form-control" id="tableNameInput" 
+                            <span class="input-group-text"><i class="fas fa-signature"></i></span>
+                            <input type="text" class="form-control" id="tableNameInput" 
                                    placeholder="Enter a descriptive name for this outcome table" 
                                    value="<?= htmlspecialchars($table_name) ?>" required />
                             <button type="button" class="btn btn-primary" id="saveTableNameBtn">
@@ -775,6 +808,39 @@ $additionalScripts = [
     document.addEventListener('DOMContentLoaded', function() {
         setupEventHandlers();
         makeMetricCellsClickable();
+
+        // Save table name button handler
+        document.getElementById('saveTableNameBtn').addEventListener('click', async function() {
+            const tableNameInput = document.getElementById('tableNameInput');
+            const newTableName = tableNameInput.value.trim();
+            
+            if (!newTableName) {
+                showToast('Table name cannot be empty', 'warning');
+                return;
+            }
+
+            // Prepare form data
+            const formData = new FormData();
+            formData.append('table_name', newTableName);
+            formData.append('metric_id', '<?= $metric_id ?>');
+            formData.append('sector_id', '<?= $sector_id ?>');
+
+            try {
+                const response = await fetch('<?= $_SERVER['PHP_SELF'] ?>?next_metric_id=<?= $metric_id ?>', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.text();
+                if (response.ok) {
+                    showToast('Table name saved successfully', 'success');
+                } else {
+                    throw new Error('Failed to save table name');
+                }
+            } catch (error) {
+                showToast('Error saving table name: ' + error.message, 'danger');
+            }
+        });
     });
 
     function setupEventHandlers() {
