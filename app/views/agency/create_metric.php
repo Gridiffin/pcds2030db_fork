@@ -168,62 +168,82 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['CONTENT_TYPE']) && 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $response = ['success' => false, 'error' => ''];
 
-    if (isset($_POST['action'])) {
-        switch ($_POST['action']) {
-            case 'save_metric_value':
-                try {
-                    $metric_id = intval($_POST['metric_id'] ?? 0);
-                    $sector_id = $conn->real_escape_string($_POST['sector_id'] ?? '');
-                    $column_title = $conn->real_escape_string($_POST['column_title'] ?? '');
-                    $month = $conn->real_escape_string($_POST['month'] ?? '');
-                    $value = floatval($_POST['table_content'] ?? 0);
+if (isset($_POST['action'])) {
+    switch ($_POST['action']) {
+        case 'save_metric_value':
+            try {
+                $metric_id = intval($_POST['metric_id'] ?? 0);
+                $sector_id = $conn->real_escape_string($_POST['sector_id'] ?? '');
+                $column_title = $conn->real_escape_string($_POST['column_title'] ?? '');
+                $month = $conn->real_escape_string($_POST['month'] ?? '');
+                $value = floatval($_POST['table_content'] ?? 0);
 
-                    // Get existing data_json
-                    $select_query = "SELECT data_json FROM sector_outcomes_data 
-                                   WHERE metric_id = ? AND sector_id = ? LIMIT 1";
-                    $stmt = $conn->prepare($select_query);
-                    $stmt->bind_param("ii", $metric_id, $sector_id);
-                    $stmt->execute();
-                    $result = $stmt->get_result();
+                // Get existing data_json
+                $select_query = "SELECT data_json FROM sector_outcomes_data 
+                               WHERE metric_id = ? AND sector_id = ? LIMIT 1";
+                $stmt = $conn->prepare($select_query);
+                $stmt->bind_param("ii", $metric_id, $sector_id);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                
+                if ($row = $result->fetch_assoc()) {
+                    $metrics_data = json_decode($row['data_json'], true) ?: [
+                        'columns' => [],
+                        'units' => [],
+                        'data' => []
+                    ];
                     
-                    if ($row = $result->fetch_assoc()) {
-                        $metrics_data = json_decode($row['data_json'], true) ?: [
-                            'columns' => [],
-                            'units' => [],
-                            'data' => []
-                        ];
-                        
-                        // Ensure column exists
-                        if (!in_array($column_title, $metrics_data['columns'])) {
-                            $metrics_data['columns'][] = $column_title;
-                        }
-                        
-                        // Update value
-                        if (!isset($metrics_data['data'][$month])) {
-                            $metrics_data['data'][$month] = [];
-                        }
-                        $metrics_data['data'][$month][$column_title] = $value;
-                        
-                        // Save updated data
-                        $update_query = "UPDATE sector_outcomes_data 
-                                       SET data_json = ? 
-                                       WHERE metric_id = ? AND sector_id = ?";
-                        $stmt = $conn->prepare($update_query);
-                        $json_data = json_encode($metrics_data);
-                        $stmt->bind_param("sii", $json_data, $metric_id, $sector_id);
-                        
-                        if ($stmt->execute()) {
-                            $response['success'] = true;
-                        } else {
-                            throw new Exception("Failed to update data");
-                        }
-                    } else {
-                        throw new Exception("Metric data not found");
+                    // Ensure column exists
+                    if (!in_array($column_title, $metrics_data['columns'])) {
+                        $metrics_data['columns'][] = $column_title;
                     }
-                } catch (Exception $e) {
-                    $response['error'] = $e->getMessage();
+                    
+                    // Update value
+                    if (!isset($metrics_data['data'][$month])) {
+                        $metrics_data['data'][$month] = [];
+                    }
+                    $metrics_data['data'][$month][$column_title] = $value;
+                    
+                    // Save updated data
+                    $update_query = "UPDATE sector_outcomes_data 
+                                   SET data_json = ? 
+                                   WHERE metric_id = ? AND sector_id = ?";
+                    $stmt = $conn->prepare($update_query);
+                    $json_data = json_encode($metrics_data);
+                    $stmt->bind_param("sii", $json_data, $metric_id, $sector_id);
+                    
+                    if ($stmt->execute()) {
+                        $response['success'] = true;
+                    } else {
+                        throw new Exception("Failed to update data");
+                    }
+                } else {
+                    // No existing row, insert new with initial JSON structure
+                    $metrics_data = [
+                        'columns' => [$column_title],
+                        'units' => [],
+                        'data' => [
+                            $month => [
+                                $column_title => $value
+                            ]
+                        ]
+                    ];
+                    $json_data = json_encode($metrics_data);
+                    $table_name_post = "Table_" . $metric_id;
+                    $insert_query = "INSERT INTO sector_outcomes_data (metric_id, sector_id, table_name, data_json, is_draft) VALUES (?, ?, ?, ?, 1)";
+                    $insert_stmt = $conn->prepare($insert_query);
+                    $insert_stmt->bind_param("iiss", $metric_id, $sector_id, $table_name_post, $json_data);
+
+                    if ($insert_stmt->execute()) {
+                        $response['success'] = true;
+                    } else {
+                        throw new Exception("Failed to insert data: " . $conn->error);
+                    }
                 }
-                break;
+            } catch (Exception $e) {
+                $response['error'] = $e->getMessage();
+            }
+            break;
                 
             case 'update_unit':
                 try {
@@ -373,31 +393,86 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 echo json_encode(['success' => false, 'error' => 'Missing required parameters']);
             }
             exit;
-        }
-
-    if (isset($_POST['table_name']) && trim($_POST['table_name']) !== '') {
+        }    if (isset($_POST['table_name']) && trim($_POST['table_name']) !== '') {
         $new_table_name = $conn->real_escape_string($_POST['table_name']);
+        $metric_id = intval($_POST['metric_id'] ?? 0);
+        $sector_id = intval($_POST['sector_id'] ?? 0);
+
+        // For AJAX requests, we'll return JSON
+        $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
+        
+        // Initialize empty data structure for new metrics
+        $metrics_data = [
+            'columns' => [],
+            'units' => [],
+            'data' => []
+        ];
+        
+        // Initialize all months
+        $months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                  'July', 'August', 'September', 'October', 'November', 'December'];
+        foreach ($months as $month) {
+            $metrics_data['data'][$month] = [];
+        }
+        
+        // Convert to JSON
+        $json_data = json_encode($metrics_data);
+        
         // Check if a row exists for this metric_id and sector_id
-        $check_query = "SELECT 1 FROM sector_outcomes_data WHERE metric_id = $metric_id AND sector_id = '$sector_id' LIMIT 1";
-        $check_result = $conn->query($check_query);
+        $check_query = "SELECT data_json FROM sector_outcomes_data WHERE metric_id = ? AND sector_id = ? LIMIT 1";
+        $stmt = $conn->prepare($check_query);
+        $stmt->bind_param("ii", $metric_id, $sector_id);
+        $stmt->execute();
+        $check_result = $stmt->get_result();
+        
         if ($check_result && $check_result->num_rows > 0) {
             // Update existing row
-            $update_query = "UPDATE sector_outcomes_data SET table_name = '$new_table_name' WHERE sector_id = '$sector_id' AND metric_id = $metric_id";
-            if ($conn->query($update_query) === TRUE) {
+            $update_query = "UPDATE sector_outcomes_data SET table_name = ? WHERE sector_id = ? AND metric_id = ?";
+            $stmt = $conn->prepare($update_query);
+            $stmt->bind_param("sii", $new_table_name, $sector_id, $metric_id);
+            
+            if ($stmt->execute()) {
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => true, 'message' => 'Table name updated successfully']);
+                    exit;
+                }
                 $message = "Table name updated successfully.";
                 $message_type = "success";
             } else {
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'error' => 'Error updating table name: ' . $conn->error]);
+                    exit;
+                }
                 $message = "Error updating table name: " . $conn->error;
                 $message_type = "danger";
             }
-        } else {
-            // Insert new row with table_name
-            $insert_table_name_query = "INSERT INTO sector_outcomes_data (metric_id, table_name, column_title, table_content, month, sector_id) 
-                VALUES ($metric_id, '$new_table_name', '', 0, 'January', '$sector_id')";
-            if ($conn->query($insert_table_name_query) === TRUE) {
+        } else {            // Insert new row with table_name and empty data_json
+            $empty_data_json = json_encode([
+                'columns' => [],
+                'units' => [],
+                'data' => []
+            ]);
+            $insert_query = "INSERT INTO sector_outcomes_data (metric_id, sector_id, table_name, data_json, is_draft) 
+                VALUES (?, ?, ?, ?, 1)";
+            $stmt = $conn->prepare($insert_query);
+            $stmt->bind_param("iiss", $metric_id, $sector_id, $new_table_name, $empty_data_json);
+            
+            if ($stmt->execute()) {
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => true, 'message' => 'Table name saved successfully']);
+                    exit;
+                }
                 $message = "Table name saved successfully.";
                 $message_type = "success";
             } else {
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'error' => 'Error saving table name: ' . $conn->error]);
+                    exit;
+                }
                 $message = "Error saving table name: " . $conn->error;
                 $message_type = "danger";
             }
@@ -537,13 +612,13 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                 <i class="fas fa-table me-2"></i>Outcome Table Definition
             </h5>
         </div>
-        <div class="card-body">
-            <form id="tableNameForm" class="mb-4">
+        <div class="card-body">            <form id="tableNameForm" class="mb-4">
                 <div class="row align-items-end">
                     <div class="col-md-6">
                         <label for="tableNameInput" class="form-label">Table Name</label>
                         <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-signature"></i></span>                            <input type="text" class="form-control" id="tableNameInput" 
+                            <span class="input-group-text"><i class="fas fa-signature"></i></span>
+                            <input type="text" class="form-control" id="tableNameInput" 
                                    placeholder="Enter a descriptive name for this outcome table" 
                                    value="<?= htmlspecialchars($table_name) ?>" required />
                             <button type="button" class="btn btn-primary" id="saveTableNameBtn">
@@ -775,6 +850,39 @@ $additionalScripts = [
     document.addEventListener('DOMContentLoaded', function() {
         setupEventHandlers();
         makeMetricCellsClickable();
+
+        // Save table name button handler
+        document.getElementById('saveTableNameBtn').addEventListener('click', async function() {
+            const tableNameInput = document.getElementById('tableNameInput');
+            const newTableName = tableNameInput.value.trim();
+            
+            if (!newTableName) {
+                showToast('Table name cannot be empty', 'warning');
+                return;
+            }
+
+            // Prepare form data
+            const formData = new FormData();
+            formData.append('table_name', newTableName);
+            formData.append('metric_id', '<?= $metric_id ?>');
+            formData.append('sector_id', '<?= $sector_id ?>');
+
+            try {
+                const response = await fetch('<?= $_SERVER['PHP_SELF'] ?>?next_metric_id=<?= $metric_id ?>', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.text();
+                if (response.ok) {
+                    showToast('Table name saved successfully', 'success');
+                } else {
+                    throw new Error('Failed to save table name');
+                }
+            } catch (error) {
+                showToast('Error saving table name: ' + error.message, 'danger');
+            }
+        });
     });
 
     function setupEventHandlers() {

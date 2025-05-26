@@ -5,11 +5,16 @@
  * Allows agency users to delete a sector outcome draft by metric_id.
  */
 
-require_once ROOT_PATH . 'app/config/config.php';
-require_once ROOT_PATH . 'app/lib/db_connect.php';
-require_once ROOT_PATH . 'app/lib/session.php';
-require_once ROOT_PATH . 'app/lib/functions.php';
-require_once ROOT_PATH . 'app/lib/agencies/index.php';
+// Define project root path for consistent file references
+if (!defined('PROJECT_ROOT_PATH')) {
+    define('PROJECT_ROOT_PATH', rtrim(dirname(dirname(dirname(__DIR__))), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
+}
+
+require_once PROJECT_ROOT_PATH . 'app/config/config.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/agencies/index.php';
 
 // Verify user is an agency
 if (!is_agency()) {
@@ -27,7 +32,7 @@ $metric_id = (int) $_GET['metric_id'];
 $sector_id = $_SESSION['sector_id'];
 
 // Verify that the metric draft belongs to the user's sector using the new JSON-based table
-$stmt = $conn->prepare("SELECT metric_id FROM sector_metrics_data WHERE metric_id = ? AND sector_id = ? AND is_draft = 1");
+$stmt = $conn->prepare("SELECT metric_id FROM sector_outcomes_data WHERE metric_id = ? AND sector_id = ? AND is_draft = 1");
 $stmt->bind_param("ii", $metric_id, $sector_id);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -41,7 +46,7 @@ if ($result->num_rows === 0) {
 $stmt->close();
 
 // Delete the metric draft from the new JSON-based table
-$delete_stmt = $conn->prepare("DELETE FROM sector_metrics_data WHERE metric_id = ? AND sector_id = ? AND is_draft = 1");
+$delete_stmt = $conn->prepare("DELETE FROM sector_outcomes_data WHERE metric_id = ? AND sector_id = ? AND is_draft = 1");
 $delete_stmt->bind_param("ii", $metric_id, $sector_id);
 if ($delete_stmt->execute()) {
     $delete_stmt->close();
