@@ -5,7 +5,10 @@
 
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize outcome editor functionality
-    initializeOutcomeEditor();
+    // Ensure the specific container for this editor exists before initializing
+    if (document.getElementById('metricEditorContainer')) {
+        initializeOutcomeEditor();
+    }
     
     // Event delegation for delete column buttons
     const editorContainer = document.getElementById('metricEditorContainer');

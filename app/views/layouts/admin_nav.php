@@ -5,20 +5,23 @@
  * Main navigation menu for admin users.
  */
 
-// Get current page
+// Get current page and URI
 $current_page = basename($_SERVER['PHP_SELF']);
+$current_uri = $_SERVER['REQUEST_URI'];
 
-// Check if current page is program-related
-$is_program_page = in_array($current_page, ['programs/programs.php', 'programs/view_program.php', 'programs/assign_programs.php', 'programs/delete_program.php']);
+// Improved section detection for highlighting nav tabs
+$is_program_page = (strpos($current_uri, '/programs/') !== false);
+$is_user_page = (strpos($current_uri, '/users/') !== false);
+$is_outcome_page = (strpos($current_uri, '/outcomes/') !== false);
+
+// Fix: Only one nav item should have 'active' at a time
+// Remove 'active' from dropdown-toggle if a child is active
+$is_programs_active = $is_program_page;
+$is_users_active = $is_user_page;
+$is_outcomes_active = $is_outcome_page;
 
 // Check if current page is report-related
 $is_report_page = $current_page == 'generate_reports.php';
-
-// Check if current page is user management related
-$is_user_page = in_array($current_page, ['users/manage_users.php', 'users/add_user.php', 'users/edit_user.php']);
-
-// Check if current page is metric related
-$is_outcome_page = in_array($current_page, ['metrics/manage_metrics.php', 'metrics/edit_metric.php', 'metrics/view_metric.php']);
 
 // Check if current page is settings related
 $is_settings_page = in_array($current_page, ['reporting_periods.php', 'audit_log.php', 'manage_periods.php', 'system_settings.php']);
@@ -49,7 +52,7 @@ $audit_log = $current_page == 'audit_log.php';
                 
                 <!-- Programs Dropdown -->
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle <?php if ($is_program_page) echo 'active'; ?>" href="javascript:void(0)" id="programsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="<?php echo $is_program_page ? 'true' : 'false'; ?>">
+                    <a class="nav-link dropdown-toggle <?php if ($is_programs_active) echo 'active'; ?>" href="javascript:void(0)" id="programsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="<?php echo $is_programs_active ? 'true' : 'false'; ?>">
                         <i class="fas fa-project-diagram me-1"></i> Programs <i class="fas fa-caret-down nav-dropdown-icon"></i>
                     </a>
                     <ul class="dropdown-menu" aria-labelledby="programsDropdown">
@@ -67,7 +70,7 @@ $audit_log = $current_page == 'audit_log.php';
                 
                 <!-- Users Dropdown -->
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle <?php if ($is_user_page) echo 'active'; ?>" href="javascript:void(0)" id="usersDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="<?php echo $is_user_page ? 'true' : 'false'; ?>">
+                    <a class="nav-link dropdown-toggle <?php if ($is_users_active) echo 'active'; ?>" href="javascript:void(0)" id="usersDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="<?php echo $is_users_active ? 'true' : 'false'; ?>">
                         <i class="fas fa-users me-1"></i> Users <i class="fas fa-caret-down nav-dropdown-icon"></i>
                     </a>
                     <ul class="dropdown-menu" aria-labelledby="usersDropdown">
@@ -82,8 +85,9 @@ $audit_log = $current_page == 'audit_log.php';
                         </li>
                     </ul>
                 </li>
-                  <!-- Outcomes (Direct Link) -->
-                <li class="nav-item">                    <a class="nav-link <?php if ($is_outcome_page) echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/admin/outcomes/manage_outcomes.php">
+                <!-- Outcomes Link -->
+                <li class="nav-item">
+                    <a class="nav-link<?php if ($is_outcomes_active) echo ' active'; ?>" href="<?php echo APP_URL; ?>/app/views/admin/outcomes/manage_outcomes.php">
                         <i class="fas fa-chart-line me-1"></i> Outcomes
                     </a>
                 </li>
@@ -135,3 +139,7 @@ $audit_log = $current_page == 'audit_log.php';
 <div class="content-wrapper">
     <div class="container-fluid">
         <!-- Page content will be inserted here -->
+
+<style>
+    .navbar-nav .dropdown-menu { pointer-events: auto !important; }
+</style>

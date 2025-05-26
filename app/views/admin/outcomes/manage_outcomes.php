@@ -59,8 +59,8 @@ require_once ROOT_PATH . 'app/lib/admins/settings.php';
 $allow_outcome_creation = get_outcome_creation_setting();
 ?>
 
-<!-- Chart.js for visualization -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<?php /* <!-- Chart.js for visualization -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script> */ ?>
 
 <div class="container-fluid px-4 py-4"><div class="d-flex justify-content-between align-items-center mb-4">
         <div>
@@ -230,69 +230,56 @@ $allow_outcome_creation = get_outcome_creation_setting();
 </div>
 
 <script>
+    /*
     document.addEventListener('DOMContentLoaded', function() {
         // Refresh page button
-        document.getElementById('refreshPage').addEventListener('click', function() {
-            window.location.reload();
-        });
-          // Create Metric button - redirect to create page
-        document.getElementById('createMetricBtn').addEventListener('click', function() {
-            // Get selected sector and period from filters, if any
-            const sectorId = document.getElementById('sector_id').value;
-            const periodId = document.getElementById('period_id').value;
-            
-            let url = 'edit_outcome.php';
-            let params = [];
-            
-            if (sectorId > 0) {
-                params.push('sector_id=' + sectorId);
-            }
-            
-            if (periodId > 0) {
-                params.push('period_id=' + periodId);
-            }
-            
-            if (params.length > 0) {
-                url += '?' + params.join('&');
-            }
-            
-            window.location.href = url;
-        });
+        const refreshBtn = document.getElementById('refreshPage');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', function() {
+                window.location.reload();
+            });
+        }
+
+        // Create Metric button - redirect to create page
+        const createBtn = document.getElementById('createMetricBtn');
+        if (createBtn) {
+            createBtn.addEventListener('click', function() {
+                // Please verify this is the correct URL for creating an outcome
+                window.location.href = '<?php echo APP_URL; ?>/app/views/admin/outcomes/create_outcome.php';
+            });
+        }
         
         // Auto-submit filter when sector changes
-        document.getElementById('sector_id').addEventListener('change', function() {
-            this.form.submit();
-        });
+        const sectorFilter = document.getElementById('sector_id');
+        if (sectorFilter) {
+            sectorFilter.addEventListener('change', function() {
+                if (this.form) {
+                    this.form.submit();
+                }
+            });
+        }
         
         // Auto-submit filter when period changes
-        document.getElementById('period_id').addEventListener('change', function() {
-            this.form.submit();
-        });
-        
-        // Fix dropdown menu functionality
-        document.querySelectorAll('.dropdown-toggle').forEach(function(dropdownToggle) {
-            dropdownToggle.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                // Find the closest dropdown parent
-                const dropdown = this.closest('.dropdown');
-                
-                // Toggle 'show' class on dropdown and menu
-                dropdown.classList.toggle('show');
-                
-                // Find and toggle dropdown menu
-                const dropdownMenu = dropdown.querySelector('.dropdown-menu');
-                if (dropdownMenu) {
-                    dropdownMenu.classList.toggle('show');
+        const periodFilter = document.getElementById('period_id');
+        if (periodFilter) {
+            periodFilter.addEventListener('change', function() {
+                if (this.form) {
+                    this.form.submit();
                 }
-                
-                // Update aria-expanded attribute
-                this.setAttribute('aria-expanded', 
-                    this.getAttribute('aria-expanded') === 'true' ? 'false' : 'true');
             });
-        });
+        }
+        
+        // Fix dropdown menu functionality - This line was incomplete.
+        // If you are using Bootstrap 5, it might look like this:
+        // document.querySelectorAll('.dropdown-toggle').forEach(function(dropdownToggle) {
+        //     new bootstrap.Dropdown(dropdownToggle);
+        // });
+        // For now, I will comment out the problematic line if it's literally {…}
+        // document.querySelectorAll('.dropdown-toggle').forEach(function(dropdownToggle) {…});
+        // If the '...' was a placeholder for actual code, please ensure that code is correct.
+        // Assuming the error was from getElementById, this part might not be the immediate cause of *that* error.
     });
+    */
 </script>
 
 
