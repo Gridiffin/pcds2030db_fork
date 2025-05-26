@@ -124,9 +124,7 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                 <?php echo get_status_display_name($status); // Replaced display_submission_status_badge ?>
                 <?php if ($overall_rating !== null) { echo get_rating_badge($overall_rating); } // Replaced display_overall_rating_badge ?>
             </div>
-        </div>
-
-        <!-- Tab Navigation -->
+        </div>        <!-- Tab Navigation -->
         <ul class="nav nav-tabs" id="outcomeDetailTabs" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="table-tab" data-bs-toggle="tab" data-bs-target="#table-view" 
@@ -138,12 +136,6 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                 <button class="nav-link" id="chart-tab" data-bs-toggle="tab" data-bs-target="#chart-view" 
                     type="button" role="tab" aria-controls="chart-view" aria-selected="false">
                     <i class="fas fa-chart-line me-1"></i> Chart View
-                </button>
-            </li>
-             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="raw-data-tab" data-bs-toggle="tab" data-bs-target="#raw-data-view"
-                    type="button" role="tab" aria-controls="raw-data-view" aria-selected="false">
-                    <i class="fas fa-code me-1"></i> Raw JSON Data
                 </button>
             </li>
         </ul>
@@ -221,9 +213,7 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                         <div class="alert alert-info">No metrics defined for this outcome structure.</div>
                     <?php endif; ?>
                 </div>
-            </div>
-
-            <!-- Chart View Tab -->
+            </div>            <!-- Chart View Tab -->
             <div class="tab-pane fade" id="chart-view" role="tabpanel" aria-labelledby="chart-tab">
                 <div class="card-body">
                     <!-- Chart options -->
@@ -269,14 +259,6 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                             </button>
                         </div>
                     </div>
-                </div>
-            </div>
-            
-            <!-- Raw Data View Tab -->
-            <div class="tab-pane fade" id="raw-data-view" role="tabpanel" aria-labelledby="raw-data-tab">
-                <div class="card-body">
-                    <h5>Raw JSON Data:</h5>
-                    <pre class="bg-light p-3 rounded"><code><?= htmlspecialchars(json_encode($outcome_metrics_data, JSON_PRETTY_PRINT)) ?></code></pre>
                 </div>
             </div>
         </div>

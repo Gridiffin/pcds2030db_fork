@@ -130,10 +130,8 @@ require_once '../../layouts/admin_nav.php';
         <!-- Tab Content -->
         <div class="tab-content" id="outcomesTabsContent">
             <!-- Table View Tab -->
-            <div class="tab-pane fade show active" id="table-view" role="tabpanel" aria-labelledby="table-tab">
-                <div class="card-body p-0">
-                    <table id="metricsTable" class="table table-forest">
-                        <thead>
+            <div class="tab-pane fade show active" id="table-view" role="tabpanel" aria-labelledby="table-tab">                <div class="card-body p-0">
+                    <table id="metricsTable" class="table table-hover table-custom mb-0"><thead>
                             <tr>
                                 <th>Outcome ID</th>
                                 <th>Sector</th>
@@ -141,7 +139,7 @@ require_once '../../layouts/admin_nav.php';
                                 <th>Reporting Period</th>
                                 <th>Created</th>
                                 <th>Last Updated</th>
-                                <th>Actions</th>
+                                <th class="text-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody>                            <?php 
@@ -180,20 +178,35 @@ require_once '../../layouts/admin_nav.php';
                                             <?php else: ?>
                                                 <span class="status-indicator status-warning">Not Specified</span>
                                             <?php endif; ?>
-                                        </td>
-                                        <td><?php echo date('M j, Y', strtotime($outcome['created_at'])); ?></td>
-                                        <td><?php echo date('M j, Y', strtotime($outcome['updated_at'])); ?></td>                                <td>                                            <a href="<?php echo APP_URL; ?>/app/views/admin/outcomes/unsubmit_outcome.php?metric_id=<?php echo $outcome['metric_id']; ?>" class="btn btn-forest-light me-1" role="button" onclick="return confirm('Are you sure you want to unsubmit?');">
-                                                <i class="fas fa-undo me-1"></i> Unsubmit
-                                            </a>                 
-                                            <a href="<?php echo APP_URL; ?>/app/views/admin/outcomes/view_outcome.php?metric_id=<?php echo $outcome['metric_id']; ?>" class="btn btn-forest-light me-1" role="button">
-                                                <i class="fas fa-eye me-1"></i> View
-                                            </a>
-                                            <a href="<?php echo APP_URL; ?>/app/views/admin/outcomes/edit_outcome.php?metric_id=<?php echo $outcome['metric_id']; ?>" class="btn btn-forest me-1" role="button">
-                                                <i class="fas fa-edit me-1"></i> Edit
-                                            </a>                                    
-                                            <a href="<?php echo APP_URL; ?>/app/views/admin/outcomes/delete_outcome.php?metric_id=<?php echo $outcome['metric_id']; ?>" class="btn btn-forest-light text-danger" role="button" onclick="return confirm('Are you sure you want to delete this outcome?');">
-                                                <i class="fas fa-trash-alt me-1"></i> Delete
-                                            </a>
+                                        </td>                                        <td><?php echo date('M j, Y', strtotime($outcome['created_at'])); ?></td>
+                                        <td><?php echo date('M j, Y', strtotime($outcome['updated_at'])); ?></td>                                
+                                        <td class="text-center">
+                                            <div class="btn-group btn-group-sm" role="group" aria-label="Primary outcome actions">
+                                                <a href="<?php echo APP_URL; ?>/app/views/admin/outcomes/view_outcome.php?metric_id=<?php echo $outcome['metric_id']; ?>" 
+                                                   class="btn btn-outline-primary" 
+                                                   title="View Outcome Details">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="<?php echo APP_URL; ?>/app/views/admin/outcomes/edit_outcome.php?metric_id=<?php echo $outcome['metric_id']; ?>" 
+                                                   class="btn btn-outline-secondary" 
+                                                   title="Edit Outcome">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <a href="<?php echo APP_URL; ?>/app/views/admin/outcomes/delete_outcome.php?metric_id=<?php echo $outcome['metric_id']; ?>" 
+                                                   class="btn btn-outline-danger" 
+                                                   title="Delete Outcome"
+                                                   onclick="return confirm('Are you sure you want to delete this outcome?');">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </a>
+                                            </div>
+                                            <div class="mt-1 d-grid">
+                                                <a href="<?php echo APP_URL; ?>/app/views/admin/outcomes/unsubmit_outcome.php?metric_id=<?php echo $outcome['metric_id']; ?>" 
+                                                   class="btn btn-outline-warning btn-sm w-100" 
+                                                   title="Unsubmit Outcome"
+                                                   onclick="return confirm('Are you sure you want to unsubmit this outcome?');">
+                                                    <i class="fas fa-undo"></i> Unsubmit
+                                                </a>
+                                            </div>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
