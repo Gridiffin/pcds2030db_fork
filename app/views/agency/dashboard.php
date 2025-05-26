@@ -127,9 +127,8 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                     <div class="card-body">
                         <div class="icon-container">
                             <i class="fas fa-clipboard-list stat-icon"></i>
-                        </div>
-                        <div class="stat-card-content">
-                            <div class="stat-title">Total Programs</div>
+                        </div>                        <div class="stat-card-content text-dark">
+                            <div class="stat-title fw-bold">Total Programs</div>
                             <div class="stat-value"><?php echo $stats['total']; ?></div>
                             <div class="stat-subtitle">
                                 <i class="fas fa-check me-1"></i>
@@ -146,9 +145,8 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                     <div class="card-body">
                         <div class="icon-container">
                             <i class="fas fa-calendar-check stat-icon"></i>
-                        </div>
-                        <div class="stat-card-content">
-                            <div class="stat-title">On Track Programs</div>
+                        </div>                        <div class="stat-card-content text-dark">
+                            <div class="stat-title fw-bold">On Track Programs</div>
                             <div class="stat-value"><?php echo $stats['on-track']; ?></div>
                             <div class="stat-subtitle">
                                 <i class="fas fa-chart-line me-1"></i>
@@ -165,9 +163,8 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                     <div class="card-body">
                         <div class="icon-container">
                             <i class="fas fa-exclamation-triangle stat-icon"></i>
-                        </div>
-                        <div class="stat-card-content">
-                            <div class="stat-title">Delayed Programs</div>
+                        </div>                        <div class="stat-card-content text-dark">
+                            <div class="stat-title fw-bold">Delayed Programs</div>
                             <div class="stat-value"><?php echo $stats['delayed']; ?></div>
                             <div class="stat-subtitle">
                                 <i class="fas fa-chart-line me-1"></i>
@@ -184,9 +181,8 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                     <div class="card-body">
                         <div class="icon-container">
                             <i class="fas fa-trophy stat-icon"></i>
-                        </div>
-                        <div class="stat-card-content">
-                            <div class="stat-title">Completed Programs</div>
+                        </div>                        <div class="stat-card-content text-dark">
+                            <div class="stat-title fw-bold">Completed Programs</div>
                             <div class="stat-value"><?php echo $stats['completed']; ?></div>
                             <div class="stat-subtitle">
                                 <i class="fas fa-chart-line me-1"></i>
