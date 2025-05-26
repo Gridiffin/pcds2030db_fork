@@ -39,7 +39,10 @@ if (isset($_SESSION['error_message'])) {
 unset($_SESSION['success_message']);
 unset($_SESSION['error_message']);
 
-$outcome_id = isset($_GET['outcome_id']) ? intval($_GET['outcome_id']) : (isset($_POST['outcome_id']) ? intval($_POST['outcome_id']) : 0);
+// Support both metric_id and outcome_id parameters for backward compatibility
+$outcome_id = isset($_GET['metric_id']) ? intval($_GET['metric_id']) : 
+             (isset($_GET['outcome_id']) ? intval($_GET['outcome_id']) : 
+             (isset($_POST['outcome_id']) ? intval($_POST['outcome_id']) : 0));
 $sector_id = isset($_GET['sector_id']) ? intval($_GET['sector_id']) : (isset($_POST['sector_id']) ? intval($_POST['sector_id']) : 0);
 $period_id = isset($_GET['period_id']) ? intval($_GET['period_id']) : (isset($_POST['period_id']) ? intval($_POST['period_id']) : 0);
 
@@ -95,13 +98,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_outcome_metadata
     } elseif ($new_period_id <= 0) {
         $message = "Please select a valid Reporting Period.";
         $message_type = "danger";
-    } else {
-        if ($outcome_id > 0) { // Update existing outcome metadata
-            $update_query = "UPDATE sector_outcomes_data SET table_name = ?, sector_id = ?, period_id = ?, updated_at = NOW() WHERE outcome_id = ?";
+    } else {        if ($outcome_id > 0) { // Update existing outcome metadata
+            // Get the record ID from sector_outcomes_data for history tracking
+            $record_query = "SELECT id, data_json, is_draft FROM sector_outcomes_data WHERE metric_id = ? LIMIT 1";
+            $record_stmt = $conn->prepare($record_query);
+            $record_stmt->bind_param("i", $outcome_id);
+            $record_stmt->execute();
+            $record_result = $record_stmt->get_result();
+            $record_row = $record_result->fetch_assoc();
+            $outcome_record_id = $record_row['id'] ?? 0;
+            $current_data_json = $record_row['data_json'] ?? '{}';
+            $is_draft = $record_row['is_draft'] ?? 1;
+            $record_stmt->close();
+            
+            $update_query = "UPDATE sector_outcomes_data SET table_name = ?, sector_id = ?, period_id = ?, updated_at = NOW() WHERE metric_id = ?";
             $stmt = $conn->prepare($update_query);
             $stmt->bind_param("siii", $new_table_name, $new_sector_id, $new_period_id, $outcome_id);
             if ($stmt->execute()) {
                 $_SESSION['success_message'] = "Outcome metadata updated successfully.";
+                
+                // Record history for metadata change
+                $user_id = $_SESSION['user_id'];
+                $action_type = 'edit';
+                $status = $is_draft ? 'draft' : 'submitted';
+                $description = "Updated outcome metadata: table name, sector, or reporting period";
+                record_outcome_history($outcome_record_id, $outcome_id, $current_data_json, $action_type, $status, $user_id, $description);
+                
                 // Refresh data
                 $table_name = $new_table_name;
                 $sector_id = $new_sector_id;
@@ -113,9 +135,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_outcome_metadata
                 $message_type = "danger";
             }
             $stmt->close();
-        } else { // Create new outcome
-            // Initialize empty data_json structure
-            $initial_data_json = json_encode(['columns' => [], 'units' => [], 'data' => []]); 
+        } else { // Create new outcome            // Check if structure data was provided
+            $structure_data = isset($_POST['structure_data']) ? $_POST['structure_data'] : null;
+            $data_json = null;
+            
+            if ($structure_data) {
+                // Use the structure data provided from the form
+                $data_json = $structure_data;
+                console_log("Using structure data from form");
+            } else {
+                // Initialize empty data_json structure
+                $data_json = json_encode(['columns' => [], 'units' => [], 'data' => []]);
+                console_log("Using default empty structure");
+            }
+            
             // Get next available outcome_id (formerly metric_id)
             $max_query = "SELECT MAX(metric_id) AS max_id FROM sector_outcomes_data";
             $max_stmt = $conn->prepare($max_query);
@@ -127,14 +160,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_outcome_metadata
                     $next_outcome_id = intval($row['max_id']) + 1;
                 }
             }
-            $max_stmt->close();
-            $insert_query = "INSERT INTO sector_outcomes_data (metric_id, table_name, sector_id, period_id, data_json, created_at, updated_at, is_draft) VALUES (?, ?, ?, ?, ?, NOW(), NOW(), 0)";
+            $max_stmt->close();            $insert_query = "INSERT INTO sector_outcomes_data (metric_id, table_name, sector_id, period_id, data_json, created_at, updated_at, is_draft) VALUES (?, ?, ?, ?, ?, NOW(), NOW(), 1)";
             $stmt = $conn->prepare($insert_query);
-            $stmt->bind_param("isiss", $next_outcome_id, $new_table_name, $new_sector_id, $new_period_id, $initial_data_json);
+            $stmt->bind_param("isiss", $next_outcome_id, $new_table_name, $new_sector_id, $new_period_id, $data_json);
             if ($stmt->execute()) {
-                $new_outcome_id = $conn->insert_id;
+                $outcome_record_id = $conn->insert_id;
+                
+                // Record history for outcome creation
+                $user_id = $_SESSION['user_id'];
+                $action_type = 'create';
+                $status = 'draft'; // New outcomes start as drafts
+                $description = "Created new outcome: " . $new_table_name;
+                record_outcome_history($outcome_record_id, $next_outcome_id, $data_json, $action_type, $status, $user_id, $description);
+                
                 $_SESSION['success_message'] = "New outcome created successfully. You can now define its structure.";
-                header("Location: edit_outcome.php?outcome_id=" . $next_outcome_id);
+                header("Location: edit_outcome.php?metric_id=" . $next_outcome_id);
                 exit;
             } else {
                 $message = "Error creating new outcome: " . $stmt->error;
@@ -152,10 +192,9 @@ require_once ROOT_PATH . 'app/views/layouts/header.php';
 require_once ROOT_PATH . 'app/views/layouts/admin_nav.php';
 ?>
 
-<div class="container-fluid px-4 py-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
+<div class="container-fluid px-4 py-4">    <div class="d-flex justify-content-between align-items-center mb-3">
         <h1 class="h2 mb-0"><?php echo $pageTitle; ?></h1>
-        <a href="../metrics/manage_metrics.php" class="btn btn-sm btn-outline-secondary">
+        <a href="manage_outcomes.php" class="btn btn-sm btn-outline-secondary">
             <i class="fas fa-arrow-left me-1"></i> Back to Manage Outcomes
         </a>
     </div>
@@ -217,9 +256,7 @@ require_once ROOT_PATH . 'app/views/layouts/admin_nav.php';
                 </button>
             </div>
         </div>
-    </form>
-
-    <?php if ($outcome_id > 0 && $outcome_data): // Show structure editor only if outcome exists ?>
+    </form>    <?php if ($outcome_id > 0 && $outcome_data): // Show structure editor for existing outcome ?>
     <div class="card admin-card mt-4">
         <div class="card-header">
             <h5 class="card-title m-0">Outcome Structure Editor</h5>
@@ -227,7 +264,12 @@ require_once ROOT_PATH . 'app/views/layouts/admin_nav.php';
         <div class="card-body">
             <p class="text-muted">Define the columns (indicators/metrics) for this outcome. Agencies will fill data based on this structure.</p>
             <div id="metricEditorContainer">
-                <!-- Metric editor will be initialized here by metric-editor.js -->
+                <!-- Metric editor will be initialized here by outcome-editor.js -->
+            </div>
+            <div class="mt-3 text-end">
+                <button id="addColumnBtn" class="btn btn-outline-primary">
+                    <i class="fas fa-plus-circle me-1"></i> Add Column
+                </button>
             </div>
         </div>
         <div class="card-footer text-end">
@@ -236,10 +278,75 @@ require_once ROOT_PATH . 'app/views/layouts/admin_nav.php';
             </button>
         </div>
     </div>
-    <?php elseif (!$outcome_id && $sector_id > 0 && $period_id > 0): ?>
-        <div class="alert alert-info">Please save the outcome details first to define its structure.</div>
-    <?php elseif (!$outcome_id && ($sector_id == 0 || $period_id == 0)) : ?>
-         <div class="alert alert-warning">Please select a Sector and Reporting Period, then click "Create Outcome & Proceed" to define the outcome structure.</div>
+    <?php else: // Show table preview for new outcome ?>
+    <div class="card admin-card mt-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title m-0">Outcome Structure Preview</h5>
+            <div>
+                <span class="badge bg-info">New Outcome</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <p class="text-muted">Define the column structure for your new outcome. This will be the format for data collection.</p>
+            
+            <?php if ($sector_id > 0 && $period_id > 0): ?>
+                <div class="table-responsive mb-3">
+                    <table id="outcomeStructureTable" class="table table-bordered table-hover">
+                        <thead>
+                            <tr>
+                                <th colspan="12" class="text-center bg-light">
+                                    <div class="py-2">
+                                        <div class="mb-2">Sample Monthly Data Structure</div>
+                                        <small class="text-muted">Add columns (metrics) to collect specific outcome data</small>
+                                    </div>
+                                </th>
+                            </tr>
+                            <tr>
+                                <th>Month</th>
+                                <!-- Preview columns will be added by JS -->
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>January</td>
+                                <!-- Preview cells will be added by JS -->
+                            </tr>
+                            <tr>
+                                <td>February</td>
+                                <!-- Preview cells will be added by JS -->
+                            </tr>
+                            <tr class="bg-light text-muted">
+                                <td colspan="12" class="text-center py-2">
+                                    <i class="fas fa-ellipsis-h"></i> Remaining months omitted in preview
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div id="metricEditorContainer">
+                    <!-- Will contain the structure editor -->
+                </div>
+                
+                <div class="mt-3 text-end">
+                    <button id="addColumnBtn" class="btn btn-outline-primary">
+                        <i class="fas fa-plus-circle me-1"></i> Add Column
+                    </button>
+                </div>
+                
+                <div class="alert alert-warning mt-4">
+                    <i class="fas fa-info-circle me-1"></i>
+                    <strong>Important:</strong> After creating your outcome with the desired structure, click "Create Outcome & Proceed". 
+                    The structure will be saved with the outcome.
+                </div>
+            <?php elseif (!$outcome_id && ($sector_id == 0 || $period_id == 0)) : ?>
+                <div class="alert alert-warning">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Please select a Sector and Reporting Period above, then you can define the outcome structure.
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
     <?php endif; ?>
 
 </div>

@@ -96,7 +96,14 @@ $actions = [
         'text' => 'Back to Manage Outcomes',
         'icon' => 'fa-arrow-left',
         'class' => 'btn-outline-primary'
-    ],    [
+    ],
+    [
+        'url' => 'outcome_history.php?metric_id=' . $metric_id,
+        'text' => 'View History',
+        'icon' => 'fa-history',
+        'class' => 'btn-outline-info'
+    ],
+    [
         'url' => 'edit_outcome.php?metric_id=' . $metric_id, // Use consistent parameter naming
         'text' => 'Edit Outcome',
         'icon' => 'fa-edit',

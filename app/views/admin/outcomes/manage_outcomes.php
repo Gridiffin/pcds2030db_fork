@@ -53,6 +53,10 @@ require_once '../../layouts/header.php';
 
 // Include admin navigation
 require_once '../../layouts/admin_nav.php';
+
+// Get outcome creation setting
+require_once ROOT_PATH . 'app/lib/admins/settings.php';
+$allow_outcome_creation = get_outcome_creation_setting();
 ?>
 
 <!-- Chart.js for visualization -->
@@ -63,9 +67,11 @@ require_once '../../layouts/admin_nav.php';
             <h1 class="h2 mb-0">Manage Outcomes</h1>
             <p class="text-muted">Admin interface to manage outcomes</p>
         </div>
-        <div>            <a href="javascript:void(0)" class="btn btn-forest me-2" id="createMetricBtn">
+        <div>            <?php if ($allow_outcome_creation): ?>
+            <a href="javascript:void(0)" class="btn btn-forest me-2" id="createMetricBtn">
                 <i class="fas fa-plus-circle me-1"></i> Create New Outcome
             </a>
+            <?php endif; ?>
             <button class="btn btn-forest-light" id="refreshPage">
                 <i class="fas fa-sync-alt me-1"></i> Refresh
             </button>
@@ -108,8 +114,21 @@ require_once '../../layouts/admin_nav.php';
         </div>
     </div>    <div class="card admin-card mb-4">
         <div class="card-header">
-            <h5 class="card-title m-0">Outcomes</h5>
+            <h5 class="card-title m-0">Outcomes</h5>        </div>
+        
+        <?php if (!$allow_outcome_creation): ?>
+        <div class="card-body border-bottom">
+            <div class="alert alert-info mb-0">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Important:</strong> 
+                Creation of new outcomes has been disabled by the administrator. This ensures outcomes remain consistent across reporting periods.
+                Outcome history is now tracked, and existing outcomes cannot be deleted to maintain data integrity.
+                <a href="<?php echo APP_URL; ?>/app/views/admin/settings/system_settings.php" class="alert-link">
+                    <i class="fas fa-cog ms-1"></i> Manage settings
+                </a>
+            </div>
         </div>
+        <?php endif; ?>
         
         <!-- Tab Navigation -->
         <ul class="nav nav-tabs" id="outcomesTabs" role="tablist">
@@ -179,24 +198,21 @@ require_once '../../layouts/admin_nav.php';
                                                 <span class="status-indicator status-warning">Not Specified</span>
                                             <?php endif; ?>
                                         </td>                                        <td><?php echo date('M j, Y', strtotime($outcome['created_at'])); ?></td>
-                                        <td><?php echo date('M j, Y', strtotime($outcome['updated_at'])); ?></td>                                
-                                        <td class="text-center">
+                                        <td><?php echo date('M j, Y', strtotime($outcome['updated_at'])); ?></td>                                        <td class="text-center">
                                             <div class="btn-group btn-group-sm" role="group" aria-label="Primary outcome actions">
                                                 <a href="<?php echo APP_URL; ?>/app/views/admin/outcomes/view_outcome.php?metric_id=<?php echo $outcome['metric_id']; ?>" 
                                                    class="btn btn-outline-primary" 
                                                    title="View Outcome Details">
                                                     <i class="fas fa-eye"></i>
-                                                </a>
-                                                <a href="<?php echo APP_URL; ?>/app/views/admin/outcomes/edit_outcome.php?metric_id=<?php echo $outcome['metric_id']; ?>" 
+                                                </a>                                                <a href="<?php echo APP_URL; ?>/app/views/admin/outcomes/edit_outcome.php?metric_id=<?php echo $outcome['metric_id']; ?>" 
                                                    class="btn btn-outline-secondary" 
                                                    title="Edit Outcome">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
-                                                <a href="<?php echo APP_URL; ?>/app/views/admin/outcomes/delete_outcome.php?metric_id=<?php echo $outcome['metric_id']; ?>" 
-                                                   class="btn btn-outline-danger" 
-                                                   title="Delete Outcome"
-                                                   onclick="return confirm('Are you sure you want to delete this outcome?');">
-                                                    <i class="fas fa-trash-alt"></i>
+                                                <a href="<?php echo APP_URL; ?>/app/views/admin/outcomes/outcome_history.php?metric_id=<?php echo $outcome['metric_id']; ?>" 
+                                                   class="btn btn-outline-info" 
+                                                   title="View Change History">
+                                                    <i class="fas fa-history"></i>
                                                 </a>
                                             </div>
                                             <div class="mt-1 d-grid">

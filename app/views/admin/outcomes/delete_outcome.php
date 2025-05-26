@@ -19,14 +19,16 @@ if (!is_admin()) {
     exit;
 }
 
-// Check if outcome_id is provided
-if (!isset($_GET['outcome_id']) || !is_numeric($_GET['outcome_id'])) {
+// Support both metric_id (new) and outcome_id (legacy) parameters
+if (isset($_GET['metric_id']) && is_numeric($_GET['metric_id'])) {
+    $outcome_id = (int) $_GET['metric_id'];
+} else if (isset($_GET['outcome_id']) && is_numeric($_GET['outcome_id'])) {
+    $outcome_id = (int) $_GET['outcome_id'];
+} else {
     $_SESSION['error_message'] = 'Invalid outcome ID.';
     header('Location: ' . APP_URL . '/app/views/admin/outcomes/manage_outcomes.php');
     exit;
 }
-
-$outcome_id = (int) $_GET['outcome_id'];
 
 // Verify that the outcome exists using the updated function
 $outcome_data = get_outcome_data($outcome_id); // Using the updated function for outcomes
@@ -48,10 +50,9 @@ $table_name = $outcome_data['table_name']; // This might be needed if data is in
 $conn->begin_transaction();
 
 try {
-    // 1. Delete from the main sector_outcomes_data table (or equivalent)
-    // IMPORTANT: Adjust the table name and conditions as per your actual database schema for outcomes.
-    // This is a placeholder query.
-    $query_main = "DELETE FROM sector_outcomes_data WHERE outcome_id = ?"; // Assuming 'sector_outcomes_data' and 'outcome_id'
+    // 1. Delete from the main sector_outcomes_data table
+    // The table uses metric_id column, not outcome_id
+    $query_main = "DELETE FROM sector_outcomes_data WHERE metric_id = ?";
     $stmt_main = $conn->prepare($query_main);
     if (!$stmt_main) {
         throw new Exception("Prepare failed (main): (" . $conn->errno . ") " . $conn->error);

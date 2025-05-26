@@ -9,6 +9,79 @@ require_once dirname(__DIR__) . '/utilities.php';
 require_once 'core.php';
 
 /**
+ * Record outcome history
+ *
+ * @param int $outcome_record_id The ID of the outcome record in sector_outcomes_data table
+ * @param int $metric_id The metric ID of the outcome
+ * @param string $data_json The JSON data for the outcome
+ * @param string $action_type The action performed ('create', 'edit', 'submit', 'unsubmit')
+ * @param string $status The status after the action ('draft', 'submitted')
+ * @param int $user_id The ID of the user who made the change
+ * @param string $description Optional description of the change
+ * @return bool True on success, false on failure
+ */
+function record_outcome_history($outcome_record_id, $metric_id, $data_json, $action_type, $status, $user_id, $description = '') {
+    global $conn;
+    
+    $query = "INSERT INTO outcome_history 
+              (outcome_record_id, metric_id, data_json, action_type, status, changed_by, change_description) 
+              VALUES (?, ?, ?, ?, ?, ?, ?)";
+              
+    $stmt = $conn->prepare($query);
+    if (!$stmt) {
+        error_log("Error preparing outcome history query: " . $conn->error);
+        return false;
+    }
+    
+    $stmt->bind_param("iisssss", $outcome_record_id, $metric_id, $data_json, $action_type, $status, $user_id, $description);
+    $success = $stmt->execute();
+    
+    if (!$success) {
+        error_log("Error recording outcome history: " . $stmt->error);
+    }
+    
+    $stmt->close();
+    return $success;
+}
+
+/**
+ * Get outcome history for a specific metric
+ *
+ * @param int $metric_id The metric ID to retrieve history for
+ * @return array Array of history records
+ */
+function get_outcome_history($metric_id) {
+    global $conn;
+    
+    $query = "SELECT oh.*, u.username 
+              FROM outcome_history oh 
+              LEFT JOIN users u ON oh.changed_by = u.user_id 
+              WHERE oh.metric_id = ? 
+              ORDER BY oh.created_at DESC";
+              
+    $stmt = $conn->prepare($query);
+    if (!$stmt) {
+        error_log("Error preparing get outcome history query: " . $conn->error);
+        return [];
+    }
+    
+    $stmt->bind_param("i", $metric_id);
+    $stmt->execute();
+    
+    $result = $stmt->get_result();
+    $history = [];
+    
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $history[] = $row;
+        }
+    }
+    
+    $stmt->close();
+    return $history;
+}
+
+/**
  * Get all outcomes with JSON-based storage
  *
  * @param int|null $period_id Optional period ID to filter outcomes by
