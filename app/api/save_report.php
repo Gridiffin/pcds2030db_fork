@@ -9,11 +9,11 @@
  */
 
 // Include necessary files
-require_once '../config/config.php';
-require_once '../lib/db_connect.php';
-require_once '../lib/session.php';
-require_once '../lib/functions.php';
-require_once '../lib/admins/index.php';
+require_once dirname(__DIR__) . '/config/config.php';
+require_once ROOT_PATH . 'app/lib/db_connect.php';
+require_once ROOT_PATH . 'app/lib/session.php';
+require_once ROOT_PATH . 'app/lib/functions.php';
+require_once ROOT_PATH . 'app/lib/admins/index.php';
 
 // Verify user is admin
 if (!is_admin()) {
@@ -23,7 +23,7 @@ if (!is_admin()) {
 }
 
 // Define upload directory - create if it doesn't exist
-$upload_dir = '../reports/';
+$upload_dir = ROOT_PATH . 'app/reports/';
 if (!is_dir($upload_dir)) {
     mkdir($upload_dir, 0755, true);
 }
@@ -110,7 +110,7 @@ if (!move_uploaded_file($uploaded_file['tmp_name'], $filepath)) {
 
 // Record in database
 $user_id = $_SESSION['user_id'] ?? 0;
-$pptx_path = 'pptx/' . $filename; // Relative path for database storage
+$pptx_path = 'app/reports/pptx/' . $filename; // Relative path from project root for database storage
 
 // Prepare SQL to insert record
 $insert_query = "INSERT INTO reports (period_id, report_name, description, pptx_path, generated_by, is_public) 

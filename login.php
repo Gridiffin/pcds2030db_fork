@@ -42,7 +42,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         
         if (isset($result['success'])) {            // Check user role using session variable (more robust than function)
             if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
-                header('Location: ' . APP_URL . '/app/views/admin/dashboard.php');
+                header('Location: ' . APP_URL . '/app/views/admin/dashboard/dashboard.php');
             } else {
                 header('Location: ' . APP_URL . '/app/views/agency/dashboard.php');
             }

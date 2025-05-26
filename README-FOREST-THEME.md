@@ -73,7 +73,7 @@ Before deployment, optimize CSS files:
 ```
 
 ## Style Guide
-A comprehensive style guide is available at `/app/views/admin/style-guide.php` showing all components and their usage.
+A comprehensive style guide is available at `/app/views/admin/style_guide/style-guide.php` showing all components and their usage.
 
 ## Implementation Status
 See full implementation details in:
