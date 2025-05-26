@@ -185,6 +185,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_outcome_metadata
     }
 }
 
+// Handle form submission for saving the editable table data
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_outcome_table']) && $outcome_id > 0) {
+    $table_data = $_POST['table_data'] ?? [];
+    $units = $_POST['units'] ?? [];
+    // Rebuild data_json_structure
+    if (isset($data_json_structure['columns'])) {
+        $years = $data_json_structure['columns'];
+        $months = array_keys($table_data);
+        $data = [];
+        foreach ($months as $month) {
+            $row = [];
+            foreach ($years as $year) {
+                $cell = isset($table_data[$month][$year]) ? $table_data[$month][$year] : null;
+                $row[$year] = ($cell === '' ? null : $cell);
+            }
+            $data[$month] = $row;
+        }
+        $data_json_structure['data'] = $data;
+        // Save units for each year
+        $units_clean = [];
+        foreach ($years as $year) {
+            $units_clean[$year] = isset($units[$year]) ? $units[$year] : '';
+        }
+        $data_json_structure['units'] = $units_clean;
+        $new_data_json = json_encode($data_json_structure);
+        // Save to DB
+        $update_query = "UPDATE sector_outcomes_data SET data_json = ?, updated_at = NOW() WHERE metric_id = ?";
+        $stmt = $conn->prepare($update_query);
+        $stmt->bind_param("si", $new_data_json, $outcome_id);
+        if ($stmt->execute()) {
+            $_SESSION['success_message'] = "Outcome table data updated successfully.";
+            // Optionally record history here
+        } else {
+            $_SESSION['error_message'] = "Error updating outcome table data: " . $stmt->error;
+        }
+        $stmt->close();
+        header("Location: edit_outcome.php?outcome_id=" . $outcome_id);
+        exit;
+    }
+}
+
 $sectors = get_all_sectors();
 
 // Include header
@@ -259,23 +300,65 @@ require_once ROOT_PATH . 'app/views/layouts/admin_nav.php';
     </form>    <?php if ($outcome_id > 0 && $outcome_data): // Show structure editor for existing outcome ?>
     <div class="card admin-card mt-4">
         <div class="card-header">
-            <h5 class="card-title m-0">Outcome Structure Editor</h5>
+            <h5 class="card-title m-0">Edit Outcome Data</h5>
         </div>
         <div class="card-body">
-            <p class="text-muted">Define the columns (indicators/metrics) for this outcome. Agencies will fill data based on this structure.</p>
-            <div id="metricEditorContainer">
-                <!-- Metric editor will be initialized here by outcome-editor.js -->
-            </div>
-            <div class="mt-3 text-end">
-                <button id="addColumnBtn" class="btn btn-outline-primary">
-                    <i class="fas fa-plus-circle me-1"></i> Add Column
-                </button>
-            </div>
-        </div>
-        <div class="card-footer text-end">
-            <button id="saveMetricStructureBtn" class="btn btn-forest">
-                <i class="fas fa-save me-1"></i> Save Outcome Structure
-            </button>
+            <?php
+            // Render editable table if data_json_structure is available and valid
+            $years = isset($data_json_structure['columns']) ? $data_json_structure['columns'] : [];
+            $months = isset($data_json_structure['data']) ? array_keys($data_json_structure['data']) : [];
+            $data = isset($data_json_structure['data']) ? $data_json_structure['data'] : [];
+            $units = isset($data_json_structure['units']) ? $data_json_structure['units'] : [];
+            if ($years && $months): ?>
+                <form method="POST" action="edit_outcome.php?outcome_id=<?php echo $outcome_id; ?>">
+                    <input type="hidden" name="outcome_id" value="<?php echo $outcome_id; ?>">
+                    <table class="table table-bordered table-striped">
+                        <thead>
+                            <tr>
+                                <th style="vertical-align: middle;">Month/Units</th>
+                                <?php foreach ($years as $year): ?>
+                                    <th>
+                                        <div style="display: flex; flex-direction: column; align-items: center;">
+                                            <span><?php echo htmlspecialchars($year); ?></span>
+                                            <input type="text" name="units[<?php echo htmlspecialchars($year); ?>]" value="<?php echo isset($units[$year]) ? htmlspecialchars($units[$year]) : ''; ?>" class="form-control form-control-sm text-center" placeholder="Unit" style="width: 60px; font-size: 0.85em; margin-top: 2px; padding: 0.1rem 0.2rem; background: #e9f5ee; border: 1px solid #b7e4c7; display: inline-block;" title="Unit for <?php echo htmlspecialchars($year); ?>" />
+                                        </div>
+                                    </th>
+                                <?php endforeach; ?>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($months as $month): ?>
+                                <tr>
+                                    <td><?php echo htmlspecialchars($month); ?></td>
+                                    <?php foreach ($years as $year): ?>
+                                        <td>
+                                            <input type="text" name="table_data[<?php echo htmlspecialchars($month); ?>][<?php echo htmlspecialchars($year); ?>]" value="<?php echo isset($data[$month][$year]) && $data[$month][$year] !== null ? htmlspecialchars((string)$data[$month][$year]) : ''; ?>" class="form-control form-control-sm" />
+                                        </td>
+                                    <?php endforeach; ?>
+                                </tr>
+                            <?php endforeach; ?>
+                            <tr class="table-success fw-bold">
+                                <td>Total</td>
+                                <?php foreach ($years as $year): ?>
+                                    <?php
+                                    $total = 0;
+                                    foreach ($months as $month) {
+                                        $val = isset($data[$month][$year]) && is_numeric($data[$month][$year]) ? (float)$data[$month][$year] : 0;
+                                        $total += $val;
+                                    }
+                                    ?>
+                                    <td class="text-end">
+                                        <?php echo number_format($total, 2); ?>
+                                    </td>
+                                <?php endforeach; ?>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <button type="submit" name="save_outcome_table" class="btn btn-forest">Save Table Data</button>
+                </form>
+            <?php else: ?>
+                <div class="alert alert-warning">No outcome data available to display.</div>
+            <?php endif; ?>
         </div>
     </div>
     <?php else: // Show table preview for new outcome ?>
