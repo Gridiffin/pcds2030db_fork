@@ -150,13 +150,13 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
         </div>
     </div>
 
-    <?php if (!empty($draft_metrics)): ?>
+    <?php if (!empty($draft_outcomes)): ?>
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                 <h5 class="card-title m-0">
                     <i class="fas fa-edit me-2"></i>Outcomes Drafts
                 </h5>
-                <span class="badge bg-light text-primary"><?= count(array_unique(array_column($draft_metrics, 'metric_id'))) ?> Drafts</span>
+                <span class="badge bg-light text-primary"><?= count(array_unique(array_column($draft_outcomes, 'metric_id'))) ?> Drafts</span>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -170,7 +170,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                         <tbody>
                             <?php
                             $unique_metrics = [];
-                            foreach ($draft_metrics as $metric) {
+                            foreach ($draft_outcomes as $metric) {
                                 if (!in_array($metric['metric_id'], $unique_metrics)) {
                                     $unique_metrics[] = $metric['metric_id'];
                             ?>
@@ -178,7 +178,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                                     <td><strong><?= htmlspecialchars($metric['table_name']) ?></strong></td>
                                     <td>
                                         <div class="d-flex justify-content-center gap-2">
-                                            <a href="<?php echo APP_URL; ?>/app/views/agency/edit_metric.php?metric_id=<?= $metric['metric_id'] ?>" class="btn btn-sm btn-outline-primary">
+                                            <a href="<?php echo APP_URL; ?>/app/views/agency/edit_outcomes.php?metric_id=<?= $metric['metric_id'] ?>" class="btn btn-sm btn-outline-primary">
                                                 <i class="fas fa-edit me-1"></i> Edit
                                             </a>
                                             <a href="submit_draft_metric.php?metric_id=<?= $metric['metric_id'] ?>" class="btn btn-sm btn-outline-success" onclick="return confirm('Are you sure you want to submit this metric draft?');">

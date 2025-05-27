@@ -183,7 +183,7 @@ $metric_id = isset($_GET['metric_id']) ? intval($_GET['metric_id']) : 0;
 if ($metric_id === 0) {
     // Handle invalid metric ID
     $_SESSION['error_message'] = 'Invalid metric ID.';
-    header('Location: submit_metrics.php');
+    header('Location: submit_outcomes.php');
     exit;
 }
 
@@ -249,7 +249,7 @@ $subtitle = "Update your sector-specific metrics data";
 $headerStyle = 'light'; // Use light (white) style for inner pages
 $actions = [
     [
-        'url' => 'submit_metrics.php',
+        'url' => 'submit_outcomes.php',
         'text' => 'Back to Metrics',
         'icon' => 'fa-arrow-left',
         'class' => 'btn-outline-primary'
@@ -553,7 +553,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
 
     // Override the done button handler
     document.getElementById('doneBtn').addEventListener('click', function() {
-        window.location.href = 'submit_metrics.php';
+        window.location.href = 'submit_outcomes.php';
     });
 
     // Override the add column button handler
