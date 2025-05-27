@@ -87,19 +87,19 @@ if (!function_exists('format_time_ago')) {
                         <i class="fas fa-project-diagram me-1"></i> My Programs
                     </a>
                 </li>
-                <?php $is_placeholder_page = ($current_page == 'submit_metrics.php'); ?>
+                <?php $is_placeholder_page = ($current_page == 'submit_outcomes.php'); ?>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle <?php if ($is_placeholder_page) echo 'active'; ?>" href="javascript:void(0)" id="placeholderDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="<?php echo $is_placeholder_page ? 'true' : 'false'; ?>">
                         <i class="fas fa-chart-line me-1"></i> Outcomes<i class="fas fa-caret-down nav-dropdown-icon"></i>
                     </a>
                     <ul class="dropdown-menu" aria-labelledby="-">
                         <li>
-                            <a class="dropdown-item <?php if ($current_page == 'submit_metrics.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/agency/submit_metrics.php">
+                            <a class="dropdown-item <?php if ($current_page == 'submit_outcomes.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/agency/submit_outcomes.php">
                                 <i class="fas fa-chart-line me-1"></i> Outcomes
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item <?php if ($current_page == 'create_metric_detail.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/agency/create_metric_detail.php">
+                            <a class="dropdown-item <?php if ($current_page == 'create_outcomes_detail.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/agency/create_outcomes_detail.php">
                                 <i class="fas fa-chart-line me-1"></i> Create Outcome Details
                             </a>
                         </li>

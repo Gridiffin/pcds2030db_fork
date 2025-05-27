@@ -31,13 +31,13 @@ $message_type = '';
 
 // Get outcomes for the sector
 $outcomes = get_agency_sector_outcomes($_SESSION['sector_id']);
-if (!is_array($metrics)) {
-    $metrics = [];
+if (!is_array($outcomes)) {
+    $outcomes = [];
 }
 
-$draft_metrics = get_draft_metric($_SESSION['sector_id']);
-if (!is_array($draft_metrics)) {
-    $draft_metrics = [];
+$draft_outcomes = get_draft_outcome($_SESSION['sector_id']);
+if (!is_array($draft_outcomes)) {
+    $draft_outcomes = [];
 }
 
 $additionalScripts = [
@@ -55,13 +55,6 @@ $title = "Submit Sector Outcomes";
 $subtitle = "Update your sector-specific outcomes for this reporting period";
 $headerStyle = 'light'; // Use light (white) style for inner pages
 
-// Get next metric ID for the Create New Metric button
-$next_metric_id = 0;
-$result = $conn->query("SELECT MAX(metric_id) AS max_id FROM sector_metrics_data");
-if ($result && $row = $result->fetch_assoc()) {
-    $next_metric_id = $row['max_id'] + 1;
-}
-
 // Set up period badge for actions array if period exists
 $actions = [];
 
@@ -78,14 +71,6 @@ if ($current_period) {
         'html' => '<span class="badge bg-warning"><i class="fas fa-exclamation-triangle me-1"></i> No Active Reporting Period</span>'
     ];
 }
-
-// Add Create New Outcome button after the period badges
-$actions[] = [
-    'url' => "create_metric.php?sector_id={$_SESSION['sector_id']}&next_metric_id={$next_metric_id}",
-    'text' => 'Create New Outcome',
-    'icon' => 'fa-plus-circle',
-    'class' => 'btn-primary ms-3' // Added margin-start for spacing from badges
-];
 
 // Include the dashboard header component
 require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
@@ -118,18 +103,16 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                 <?= date('d M Y', strtotime($current_period['end_date'])) ?>)
             </div>
         </div>
-    </div>
-
-    <div class="card shadow-sm mb-4">        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+    </div>    <div class="card shadow-sm mb-4">        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h5 class="card-title m-0">
                 <i class="fas fa-chart-bar me-2"></i>Submitted Outcomes
             </h5>
-            <span class="badge bg-light text-primary"><?= count(array_unique(array_column($metrics, 'metric_id'))) ?> Outcomes</span>
+            <span class="badge bg-light text-primary"><?= count(array_unique(array_column($outcomes, 'metric_id'))) ?> Outcomes</span>
         </div>
         <div class="card-body">
-            <?php if (empty($metrics)): ?>                <div class="alert alert-info mt-3">
+            <?php if (empty($outcomes)): ?>                <div class="alert alert-info mt-3">
                     <i class="fas fa-info-circle me-2"></i>
-                    No outcomes have been submitted for your sector yet. Click the "Create New Outcome" button to get started.
+                    No outcomes have been submitted for your sector yet.
                 </div>
             <?php else: ?>
                 <p class="mb-3">These outcomes have been submitted for the current reporting period (Q<?= $current_period['quarter'] ?>-<?= $current_period['year'] ?>).</p>
@@ -144,7 +127,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                         <tbody>
                             <?php
                             $unique_metrics = [];
-                            foreach ($metrics as $metric):
+                            foreach ($outcomes as $metric):
                                 if (!in_array($metric['metric_id'], $unique_metrics)):
                                     $unique_metrics[] = $metric['metric_id'];
                             ?>
@@ -167,13 +150,13 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
         </div>
     </div>
 
-    <?php if (!empty($draft_metrics)): ?>
+    <?php if (!empty($draft_outcomes)): ?>
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                 <h5 class="card-title m-0">
                     <i class="fas fa-edit me-2"></i>Outcomes Drafts
                 </h5>
-                <span class="badge bg-light text-primary"><?= count(array_unique(array_column($draft_metrics, 'metric_id'))) ?> Drafts</span>
+                <span class="badge bg-light text-primary"><?= count(array_unique(array_column($draft_outcomes, 'metric_id'))) ?> Drafts</span>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -187,7 +170,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                         <tbody>
                             <?php
                             $unique_metrics = [];
-                            foreach ($draft_metrics as $metric) {
+                            foreach ($draft_outcomes as $metric) {
                                 if (!in_array($metric['metric_id'], $unique_metrics)) {
                                     $unique_metrics[] = $metric['metric_id'];
                             ?>
@@ -195,7 +178,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                                     <td><strong><?= htmlspecialchars($metric['table_name']) ?></strong></td>
                                     <td>
                                         <div class="d-flex justify-content-center gap-2">
-                                            <a href="<?php echo APP_URL; ?>/app/views/agency/edit_metric.php?metric_id=<?= $metric['metric_id'] ?>" class="btn btn-sm btn-outline-primary">
+                                            <a href="<?php echo APP_URL; ?>/app/views/agency/edit_outcomes.php?metric_id=<?= $metric['metric_id'] ?>" class="btn btn-sm btn-outline-primary">
                                                 <i class="fas fa-edit me-1"></i> Edit
                                             </a>
                                             <a href="submit_draft_metric.php?metric_id=<?= $metric['metric_id'] ?>" class="btn btn-sm btn-outline-success" onclick="return confirm('Are you sure you want to submit this metric draft?');">
@@ -228,7 +211,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                 <div class="col-md-3">
                     <div class="h-100 p-3 border rounded bg-light-subtle">
                         <h6><i class="fas fa-table me-2 text-primary"></i>Outcomes Tables</h6>
-                        <p class="small mb-1">Create a table for each related set of outcomes that share the same reporting frequency.</p>
+                        <p class="small mb-1"> a table for each related set of outcomes that share the same reporting frequency.</p>
                         <div class="alert alert-light py-2 px-3 mb-0 small">Example: "Timber Production Volume"</div>
                     </div>
                 </div>
