@@ -427,4 +427,59 @@ function get_reporting_period_status_color($status) {
             return 'secondary'; // Default color
     }
 }
+
+/**
+ * Log activity to audit log
+ * 
+ * @param int $user_id The ID of the user performing the action
+ * @param string $action Description of the action performed
+ * @return bool True on success, false on failure
+ */
+function log_activity($user_id, $action) {
+    // TODO: Implement audit logging when audit_log table is created
+    // For now, just log to error log for debugging
+    error_log("Activity Log: User $user_id - $action");
+    return true;
+    
+    /* 
+    // Commented out until audit_log table is created
+    global $conn;
+    
+    // Get username from session or database
+    $username = $_SESSION['username'] ?? 'Unknown';
+    
+    // If username not in session, try to get it from database
+    if ($username === 'Unknown' && $user_id > 0) {
+        $stmt = $conn->prepare("SELECT username FROM users WHERE user_id = ?");
+        if ($stmt) {
+            $stmt->bind_param("i", $user_id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            if ($row = $result->fetch_assoc()) {
+                $username = $row['username'];
+            }
+            $stmt->close();
+        }
+    }
+    
+    // Insert into audit log
+    $log_query = "INSERT INTO audit_log (user_id, username, action, action_date) VALUES (?, ?, ?, NOW())";
+    $stmt = $conn->prepare($log_query);
+    
+    if (!$stmt) {
+        error_log("Failed to prepare audit log statement: " . $conn->error);
+        return false;
+    }
+    
+    $stmt->bind_param("iss", $user_id, $username, $action);
+    $success = $stmt->execute();
+    
+    if (!$success) {
+        error_log("Failed to log activity: " . $stmt->error);
+    }
+    
+    $stmt->close();
+    return $success;
+    */
+}
 ?>

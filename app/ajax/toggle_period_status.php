@@ -5,69 +5,105 @@
  * Allows admins to quickly toggle a reporting period's status between open/closed.
  */
 
+// Start session
+session_start();
+
+header('Content-Type: application/json');
+
 // Include necessary files
 require_once '../config/config.php';
-require_once '../lib/db_connect.php';
-require_once '../lib/session.php';
-require_once '../lib/functions.php';
-require_once '../lib/admin_functions.php';
+require_once ROOT_PATH . 'app/lib/db_connect.php';
+require_once ROOT_PATH . 'app/lib/session.php';
+require_once ROOT_PATH . 'app/lib/functions.php';
+require_once ROOT_PATH . 'app/lib/admin_functions.php';
 
 // Ensure user is admin
 if (!is_admin()) {
-    http_response_code(403);
-    echo json_encode(['error' => 'Permission denied']);
+    echo json_encode(['success' => false, 'message' => 'Access denied']);
     exit;
 }
 
 // Check if request is POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    http_response_code(405);
-    echo json_encode(['error' => 'Method not allowed']);
-    exit;
-}
-
-// Get period ID and requested status from POST data
-$period_id = isset($_POST['period_id']) ? intval($_POST['period_id']) : 0;
-$status = isset($_POST['status']) ? $_POST['status'] : '';
-
-if (!$period_id) {
-    http_response_code(400);
-    echo json_encode(['error' => 'Missing period ID']);
+    echo json_encode(['success' => false, 'message' => 'Invalid request method']);
     exit;
 }
 
 try {
-    // First check if updated_at column exists, if not add it
-    $check_column = "SHOW COLUMNS FROM reporting_periods LIKE 'updated_at'";
-    $column_result = $conn->query($check_column);
-
-    if ($column_result->num_rows === 0) {
-        // Column doesn't exist, add it
-        $alter_query = "ALTER TABLE reporting_periods 
-                        ADD COLUMN updated_at TIMESTAMP NOT NULL 
-                        DEFAULT CURRENT_TIMESTAMP 
-                        ON UPDATE CURRENT_TIMESTAMP";
-        $conn->query($alter_query);
-    }
-
-    // Call function to update period status
-    $result = update_reporting_period_status($period_id, $status);
+    // Database connection is already available via db_connect.php as $conn (MySQLi)
     
-    // Save message to session for page refresh notifications
-    if (isset($result['success']) && $result['success']) {
-        $_SESSION['period_message'] = $result['message'];
-        $_SESSION['period_message_type'] = 'success';
-    } elseif (isset($result['error'])) {
-        $_SESSION['period_message'] = $result['error'];
-        $_SESSION['period_message_type'] = 'danger';
+    if (!$conn) {
+        throw new Exception("Database connection failed");
     }
     
-    // Return result as JSON
-    header('Content-Type: application/json');
-    echo json_encode($result);
+    // Get period ID and requested status from POST data
+    $period_id = isset($_POST['period_id']) ? intval($_POST['period_id']) : 0;
+    $status = isset($_POST['status']) ? trim($_POST['status']) : '';
+    
+    // Validate inputs
+    if ($period_id <= 0) {
+        throw new Exception('Invalid period ID');
+    }
+    
+    if (!in_array($status, ['open', 'closed'])) {
+        throw new Exception('Invalid status. Must be "open" or "closed"');
+    }
+      // Begin transaction
+    $conn->begin_transaction();
+    
+    try {
+        // Check if period exists
+        $check_query = "SELECT period_id, year, quarter, status FROM reporting_periods WHERE period_id = ?";
+        $check_stmt = $conn->prepare($check_query);
+        $check_stmt->bind_param("i", $period_id);
+        $check_stmt->execute();
+        $result = $check_stmt->get_result();
+        $period = $result->fetch_assoc();
+        
+        if (!$period) {
+            throw new Exception('Period not found');
+        }
+        
+        // If setting to open, close all other periods first
+        if ($status === 'open') {
+            $close_query = "UPDATE reporting_periods SET status = 'closed', updated_at = NOW()";
+            $conn->query($close_query);
+        }
+        
+        // Update the specific period
+        $update_query = "UPDATE reporting_periods SET status = ?, updated_at = NOW() WHERE period_id = ?";
+        $update_stmt = $conn->prepare($update_query);
+        $update_stmt->bind_param("si", $status, $period_id);
+        $update_stmt->execute();
+        
+        // Commit transaction
+        $conn->commit();
+        
+        // Log the action
+        if (function_exists('log_activity') && isset($_SESSION['user_id'])) {
+            $period_name = "Q" . $period['quarter'] . " " . $period['year'];
+            log_activity($_SESSION['user_id'], "Changed status of period {$period_name} to {$status}");
+        }
+        
+        echo json_encode([
+            'success' => true,
+            'message' => 'Status updated successfully',
+            'data' => [
+                'period_id' => $period_id,
+                'status' => $status,
+                'period_name' => "Q" . $period['quarter'] . " " . $period['year']
+            ]
+        ]);
+          } catch (Exception $e) {
+        $conn->rollback();
+        throw $e;
+    }
+
 } catch (Exception $e) {
-    // Handle any exceptions that might occur
-    http_response_code(500);
-    echo json_encode(['error' => 'Server error: ' . $e->getMessage()]);
+    error_log("Error in toggle_period_status.php: " . $e->getMessage());
+    echo json_encode([
+        'success' => false,
+        'message' => $e->getMessage()
+    ]);
 }
-exit;
+?>

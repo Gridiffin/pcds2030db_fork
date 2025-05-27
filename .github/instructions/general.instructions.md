@@ -37,3 +37,4 @@ Coding standards, domain knowledge, and preferences that AI should follow.
 - Mark complete the tasks in the .md file as you complete them.
 - always choose for the best simplest way to solve problems.
 - if the user's way of coding is not a good practice, give suggestions for improvements before coding anything.
+- delete all test files after the implementation is complete.
