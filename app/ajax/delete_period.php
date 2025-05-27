@@ -5,147 +5,148 @@
  * AJAX endpoint to delete a reporting period by ID
  */
 
-// Prevent any output before our JSON response
+// Start output buffering immediately to catch any stray output
 if (ob_get_level() > 0) {
-    ob_end_clean(); // Clean any existing buffer
+    ob_end_clean();
 }
-ob_start(); // Start a new output buffer
+ob_start();
 
-// Include necessary files
-require_once '../../config/config.php';
-require_once ROOT_PATH . 'app/lib/db_connect.php';
-require_once ROOT_PATH . 'app/lib/session.php';
-require_once ROOT_PATH . 'app/lib/functions.php';
-
-// Set JSON content type header IMMEDIATELY
+// Set content type to JSON as the very first header
 header('Content-Type: application/json');
 
-// Custom error handler to catch any PHP errors and prevent them from corrupting JSON output
-function delete_period_json_error_handler($errno, $errstr, $errfile, $errline) {
-    // Log the error
-    error_log("PHP Error in delete_period.php: [$errno] $errstr in $errfile on line $errline");
-    
-    // Clean any output buffer if not already cleaned
-    if (ob_get_level() > 0) {
-        ob_clean();
+// Function to send JSON response and exit
+function send_json_response($success, $message, $data = null) {
+    ob_clean(); // Clean the buffer before sending the response
+    $response = ['success' => $success, 'message' => $message];
+    if ($data !== null) {
+        $response['data'] = $data;
     }
-    
-    // Ensure header is set again in case it was overwritten
-    if (!headers_sent()) {
-        header('Content-Type: application/json');
-    }
-    
-    // Return JSON error
-    echo json_encode([
-        'success' => false,
-        'message' => 'Server error occurred during period deletion.'
-    ]);
+    echo json_encode($response);
+    ob_end_flush(); // Flush the output buffer
     exit;
 }
 
-// Set custom error handler
-set_error_handler('delete_period_json_error_handler');
+// Global error handler to catch any uncaught errors/warnings and send JSON response
+function global_json_error_handler($errno, $errstr, $errfile, $errline) {
+    error_log("PHP Error in delete_period.php: [$errno] $errstr in $errfile on line $errline");
+    // Do not send header here again as it's already sent
+    // Ensure buffer is clean before sending error
+    if (ob_get_level() > 0) {
+        ob_clean();
+    }
+    echo json_encode([
+        'success' => false,
+        'message' => 'A server error occurred. Please check logs.' // Generic message for client
+    ]);
+    if (ob_get_level() > 0) {
+        ob_end_flush();
+    }
+    exit;
+}
+set_error_handler('global_json_error_handler');
+
+// Load configuration first to ensure ROOT_PATH is defined
+if (!file_exists('../config/config.php')) {
+    send_json_response(false, 'Configuration file missing.');
+}
+require_once '../config/config.php';
+
+// Include essential libraries
+$required_libs = [
+    ROOT_PATH . 'app/lib/session.php',       // For session management (is_logged_in)
+    ROOT_PATH . 'app/lib/functions.php',     // For general functions (is_logged_in, potentially is_admin if not in admin_functions)
+    ROOT_PATH . 'app/lib/admin_functions.php', // For admin-specific functions (is_admin)
+    ROOT_PATH . 'app/lib/db_connect.php'     // For database connection ($conn)
+];
+
+foreach ($required_libs as $lib_path) {
+    if (!file_exists($lib_path)) {
+        error_log("Missing required library: " . $lib_path);
+        send_json_response(false, 'A critical server file is missing.');
+    }
+    require_once $lib_path;
+}
+
+// db_connect.php creates $conn. Make it available.
+global $conn;
+
+if (!$conn) {
+    error_log("MySQLi connection object (\$conn) not available in delete_period.php after includes.");
+    send_json_response(false, 'Database connection failed. Check server logs.');
+}
 
 try {
-    // Verify user is logged in and is admin
-    if (!is_logged_in() || !is_admin()) {
-        echo json_encode([
-            'success' => false,
-            'message' => 'Unauthorized access'
-        ]);
-        exit;
+    // Verify user is logged in and is admin (functions from session.php and admin_functions.php)
+    if (!is_logged_in()) {
+        send_json_response(false, 'Unauthorized access: Not logged in.');
+    }
+    if (!is_admin()) {
+        send_json_response(false, 'Unauthorized access: Admin privileges required.');
     }
 
     // Check if required parameter is provided
     if (!isset($_POST['period_id']) || !is_numeric($_POST['period_id'])) {
-        echo json_encode([
-            'success' => false,
-            'message' => 'Invalid or missing period ID'
-        ]);
-        exit;
+        send_json_response(false, 'Invalid or missing period ID.');
     }
 
-    // Get parameter
     $periodId = intval($_POST['period_id']);
 
-    // Connect to database
-    global $pdo;
-    
-    // First check if the period exists
-    $checkStmt = $pdo->prepare("SELECT period_id FROM reporting_periods WHERE period_id = :period_id");
-    $checkStmt->execute([':period_id' => $periodId]);
-    
-    if ($checkStmt->rowCount() === 0) {
-        echo json_encode([
-            'success' => false,
-            'message' => 'Period not found'
-        ]);
-        exit;
+    // Check if the period exists using mysqli
+    $stmt = $conn->prepare("SELECT period_id FROM reporting_periods WHERE period_id = ?");
+    if (!$stmt) {
+        error_log("MySQLi prepare error (check period): " . $conn->error);
+        send_json_response(false, 'Database query error (check period).');
     }
+    $stmt->bind_param("i", $periodId);
+    $stmt->execute();
+    $result = $stmt->get_result();
     
-    // TODO: Consider adding a check for dependencies (e.g., submissions linked to this period)
-    // before allowing deletion. If dependencies exist, you might want to prevent deletion
-    // or provide a warning. For example:
-    // $dependencyStmt = $pdo->prepare("SELECT COUNT(*) FROM submissions WHERE period_id = :period_id");
-    // $dependencyStmt->execute([':period_id' => $periodId]);
-    // if ($dependencyStmt->fetchColumn() > 0) {
-    //     echo json_encode(['success' => false, 'message' => 'Cannot delete period. It has associated submissions.']);
-    //     exit;
-    // }
-    
-    // Delete the period
-    $deleteStmt = $pdo->prepare("DELETE FROM reporting_periods WHERE period_id = :period_id");
-    $deleteSuccess = $deleteStmt->execute([':period_id' => $periodId]);
-    
-    if ($deleteSuccess && $deleteStmt->rowCount() > 0) {
-        // Successfully deleted
-        echo json_encode([
-            'success' => true,
-            'message' => 'Period deleted successfully'
-        ]);
-    } else {
-        // Failed to delete or period was already gone
-        error_log("Failed to delete period ID: {$periodId}. Row count: " . $deleteStmt->rowCount());
-        echo json_encode([
-            'success' => false,
-            'message' => 'Failed to delete period. It might have been already deleted or an error occurred.'
-        ]);
+    if ($result->num_rows === 0) {
+        $stmt->close();
+        send_json_response(false, 'Period not found.');
     }
-    
-} catch (PDOException $e) {
-    // Log database error
-    error_log('Database error in delete_period.php: ' . $e->getMessage());
-    
-    // Clean buffer before outputting error
-    if (ob_get_level() > 0) {
-        ob_clean();
-    }
-    if (!headers_sent()) {
-        header('Content-Type: application/json');
-    }
-    echo json_encode([
-        'success' => false,
-        'message' => 'Database error occurred during period deletion.'
-    ]);
-} catch (Exception $e) {
-    // Log general error
-    error_log('General error in delete_period.php: ' . $e->getMessage());
+    $stmt->close();
 
-    if (ob_get_level() > 0) {
-        ob_clean();
+    // TODO: Add dependency check here if necessary (e.g., check for submissions linked to this period)
+    // Example for mysqli:
+    // $depStmt = $conn->prepare("SELECT COUNT(*) as count FROM submissions WHERE period_id = ?");
+    // $depStmt->bind_param("i", $periodId);
+    // $depStmt->execute();
+    // $depResult = $depStmt->get_result()->fetch_assoc();
+    // $depStmt->close();
+    // if ($depResult['count'] > 0) {
+    //     send_json_response(false, 'Cannot delete period. It has associated submissions.');
+    // }
+
+    // Delete the period using mysqli
+    $deleteStmt = $conn->prepare("DELETE FROM reporting_periods WHERE period_id = ?");
+    if (!$deleteStmt) {
+        error_log("MySQLi prepare error (delete period): " . $conn->error);
+        send_json_response(false, 'Database query error (delete period).');
     }
-    if (!headers_sent()) {
-        header('Content-Type: application/json');
+    $deleteStmt->bind_param("i", $periodId);
+    $deleteSuccess = $deleteStmt->execute();
+    $affected_rows = $deleteStmt->affected_rows;
+    $deleteStmt->close();
+
+    if ($deleteSuccess && $affected_rows > 0) {
+        send_json_response(true, 'Period deleted successfully.');
+    } else if ($deleteSuccess && $affected_rows === 0) {
+        // This means the query ran but didn't delete anything (e.g., already deleted)
+        send_json_response(false, 'Period not found or already deleted.');
+    } else {
+        error_log("Failed to delete period ID: {$periodId}. MySQLi execute status: " . ($deleteSuccess ? 'true' : 'false') . ". Affected rows: " . $affected_rows . " Error: " . $conn->error);
+        send_json_response(false, 'Failed to delete period. An error occurred.');
     }
-    echo json_encode([
-        'success' => false,
-        'message' => 'An unexpected error occurred during period deletion.'
-    ]);
+
+} catch (Exception $e) { // Catch any other exceptions
+    error_log("General Error in delete_period.php: " . $e->getMessage() . "\nStack trace:\n" . $e->getTraceAsString());
+    send_json_response(false, 'An unexpected error occurred: ' . $e->getMessage());
 }
 
-// Restore previous error handler
+// Restore default error handler and flush buffer if anything remains (should be empty due to send_json_response)
 restore_error_handler();
-
-// Clean output buffer and send response
-ob_end_flush();
-exit;
+if (ob_get_level() > 0) {
+    ob_end_flush();
+}
+?>
