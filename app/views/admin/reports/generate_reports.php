@@ -330,11 +330,10 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
-                                        <?php foreach ($reports as $report): ?>
+                                    <tbody>                                        <?php foreach ($reports as $report): ?>
                                             <tr>
                                                 <td><?php echo htmlspecialchars($report['report_name']); ?></td>
-                                                <td>Q<?php echo $report['quarter']; ?> <?php echo $report['year']; ?></td>
+                                                <td><?php echo get_period_display_name($report); ?></td>
                                                 <td><?php echo date('M j, Y', strtotime($report['generated_at'])); ?></td>
                                                 <td>
                                                     <div class="btn-group">

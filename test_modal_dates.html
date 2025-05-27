@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Modal Date Functionality</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test Modal Date Functionality</h1>
+        <p>This test replicates the exact modal structure from the reporting periods page.</p>
+        
+        <div class="test-section">
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPeriodModal">
+                <i class="fas fa-plus me-1"></i> Test Modal
+            </button>
+        </div>
+    </div>
+
+    <!-- Add Period Modal (copied from reporting_periods.php) -->
+    <div class="modal fade" id="addPeriodModal" tabindex="-1" aria-labelledby="addPeriodModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addPeriodModalLabel">Add New Reporting Period</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addPeriodForm">
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label for="quarter" class="form-label">Period Type <span class="text-danger">*</span></label>
+                                <select class="form-select" id="quarter" name="quarter" required>
+                                    <option value="" disabled selected>Select Period Type</option>
+                                    <option value="1">Q1</option>
+                                    <option value="2">Q2</option>
+                                    <option value="3">Q3</option>
+                                    <option value="4">Q4</option>
+                                    <option value="5">Half Yearly 1 (Jan-Jun)</option>
+                                    <option value="6">Half Yearly 2 (Jul-Dec)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="year" class="form-label">Year <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="year" name="year" required 
+                                       placeholder="YYYY" min="2000" max="2099" value="2025">
+                            </div>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="startDate" class="form-label">Start Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="startDate" name="start_date" required readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="endDate" class="form-label">End Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="endDate" name="end_date" required readonly>
+                            </div>
+                        </div>
+                        <div class="mb-3 mt-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status" required>
+                                <option value="active">Active</option>
+                                <option value="inactive" selected>Inactive</option> 
+                            </select>
+                            <div class="form-text">Set the initial status for this period. Defaults to Inactive.</div>
+                        </div>
+                        
+                        <!-- Test display area -->
+                        <div class="alert alert-info" id="testResult" style="display: none;">
+                            <strong>Date Calculation Test Result:</strong><br>
+                            <span id="testResultText"></span>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i> Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary" id="savePeriod">
+                        <i class="fas fa-save me-1"></i> Save Period
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+
+    <script>
+        // Initialize APP_URL for JavaScript
+        const APP_URL = 'http://localhost:8000';
+
+        $(document).ready(function() {
+            console.log('Document ready');
+            
+            // Handle form reset when modal is hidden
+            $('#addPeriodModal').on('hidden.bs.modal', function() {
+                $('#addPeriodForm')[0].reset();
+                $('#addPeriodForm .is-invalid').removeClass('is-invalid');
+                $('#addPeriodForm .invalid-feedback').remove();
+                // Clear the date fields
+                $('#startDate').val('');
+                $('#endDate').val('');
+                $('#testResult').hide();
+            });
+            
+            // Handle quarter and year changes to auto-calculate dates
+            $('#quarter, #year').on('change', function() {
+                console.log('Quarter or year changed');
+                updateDateFields();
+            });
+        });
+
+        /**
+         * Calculate and update date fields based on selected quarter and year
+         */
+        function updateDateFields() {
+            const quarter = $('#quarter').val();
+            const year = $('#year').val();
+            
+            console.log('updateDateFields called with quarter:', quarter, 'year:', year);
+            
+            if (!quarter || !year) {
+                $('#startDate').val('');
+                $('#endDate').val('');
+                $('#testResult').hide();
+                return;
+            }
+            
+            const dates = calculatePeriodDates(parseInt(quarter), parseInt(year));
+            if (dates) {
+                $('#startDate').val(dates.startDate);
+                $('#endDate').val(dates.endDate);
+                
+                // Show test result
+                const quarterNames = {
+                    1: 'Q1',
+                    2: 'Q2', 
+                    3: 'Q3',
+                    4: 'Q4',
+                    5: 'Half Yearly 1',
+                    6: 'Half Yearly 2'
+                };
+                
+                $('#testResultText').html(`
+                    <strong>${quarterNames[quarter]} ${year}:</strong><br>
+                    Start Date: ${dates.startDate}<br>
+                    End Date: ${dates.endDate}
+                `);
+                $('#testResult').show();
+            }
+        }
+
+        /**
+         * Calculate start and end dates based on quarter/period type and year
+         */
+        function calculatePeriodDates(quarter, year) {
+            const dateRanges = {
+                1: { start: [0, 1], end: [2, 31] },     // Q1: Jan 1 - Mar 31
+                2: { start: [3, 1], end: [5, 30] },     // Q2: Apr 1 - Jun 30
+                3: { start: [6, 1], end: [8, 30] },     // Q3: Jul 1 - Sep 30
+                4: { start: [9, 1], end: [11, 31] },    // Q4: Oct 1 - Dec 31
+                5: { start: [0, 1], end: [5, 30] },     // Half Yearly 1: Jan 1 - Jun 30
+                6: { start: [6, 1], end: [11, 31] }     // Half Yearly 2: Jul 1 - Dec 31
+            };
+            
+            if (!dateRanges[quarter]) {
+                return null;
+            }
+            
+            const range = dateRanges[quarter];
+            
+            // Create start date
+            const startDate = new Date(year, range.start[0], range.start[1]);
+            
+            // Create end date
+            const endDate = new Date(year, range.end[0], range.end[1]);
+            
+            // Format dates as YYYY-MM-DD for input fields
+            const formatDate = (date) => {
+                const y = date.getFullYear();
+                const m = String(date.getMonth() + 1).padStart(2, '0');
+                const d = String(date.getDate()).padStart(2, '0');
+                return `${y}-${m}-${d}`;
+            };
+            
+            return {
+                startDate: formatDate(startDate),
+                endDate: formatDate(endDate)
+            };
+        }
+
+        // Test save functionality
+        $('#savePeriod').on('click', function() {
+            const formData = {
+                quarter: $('#quarter').val(),
+                year: $('#year').val(),
+                start_date: $('#startDate').val(),
+                end_date: $('#endDate').val(),
+                status: $('#status').val()
+            };
+            
+            console.log('Form data that would be submitted:', formData);
+            alert('Form data logged to console. Check browser console for details.');
+        });
+    </script>
+</body>
+</html>

@@ -139,11 +139,10 @@ require_once '../layouts/agency_nav.php';
         <p class="text-muted">Update your program's targets and achievements</p>
     </div>
     
-    <?php if ($current_period): ?>
-        <div class="period-badge">
+    <?php if ($current_period): ?>            <div class="period-badge">
             <span class="badge bg-success">
                 <i class="fas fa-calendar-alt me-1"></i>
-                Q<?php echo $current_period['quarter']; ?>-<?php echo $current_period['year']; ?>
+                <?php echo get_period_display_name($current_period); ?>
             </span>
             <span class="badge bg-success">
                 <i class="fas fa-clock me-1"></i>
@@ -528,10 +527,9 @@ require_once '../layouts/agency_nav.php';
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($selected_program['submissions'] as $submission): ?>
-                                    <?php if ($submission['period_id'] != $current_period['period_id']): ?>
+                                <?php foreach ($selected_program['submissions'] as $submission): ?>                                    <?php if ($submission['period_id'] != $current_period['period_id']): ?>
                                         <tr>
-                                            <td>Q<?php echo $submission['quarter']; ?>-<?php echo $submission['year']; ?></td>
+                                            <td><?php echo get_period_display_name($submission); ?></td>
                                             <td><?php echo $submission['target']; ?></td>
                                             <td><?php echo $submission['achievement']; ?></td>
                                             <td>

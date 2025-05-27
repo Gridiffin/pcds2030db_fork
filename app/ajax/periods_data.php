@@ -46,10 +46,17 @@ try {
     $periods = $result->fetch_all(MYSQLI_ASSOC);
     
     // Format the data
-    $formattedPeriods = [];
-    foreach ($periods as $period) {
-        // Create period name from year and quarter
-        $periodName = "Q" . $period['quarter'] . " " . $period['year'];
+    $formattedPeriods = [];    foreach ($periods as $period) {
+        // Create period name from year and quarter with proper terminology
+        if ($period['quarter'] >= 1 && $period['quarter'] <= 4) {
+            $periodName = "Q" . $period['quarter'] . " " . $period['year'];
+        } elseif ($period['quarter'] == 5) {
+            $periodName = "Half Yearly 1 " . $period['year'];
+        } elseif ($period['quarter'] == 6) {
+            $periodName = "Half Yearly 2 " . $period['year'];
+        } else {
+            $periodName = "Period " . $period['quarter'] . " " . $period['year'];
+        }
         
         $formattedPeriods[] = [
             'period_id' => (int)$period['period_id'],

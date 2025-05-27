@@ -145,11 +145,10 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                     <dt class="col-sm-4">Program Name</dt>
                     <dd class="col-sm-8"><?php echo htmlspecialchars($submission['program_name']); ?></dd>
                     
-                    <dt class="col-sm-4">Agency</dt>
-                    <dd class="col-sm-8"><?php echo htmlspecialchars($submission['agency_name']); ?></dd>
+                    <dt class="col-sm-4">Agency</dt>                    <dd class="col-sm-8"><?php echo htmlspecialchars($submission['agency_name']); ?></dd>
                     
                     <dt class="col-sm-4">Reporting Period</dt>
-                    <dd class="col-sm-8">Q<?php echo $submission['quarter']; ?>-<?php echo $submission['year']; ?></dd>
+                    <dd class="col-sm-8"><?php echo get_period_display_name($submission); ?></dd>
                     
                     <dt class="col-sm-4">Status</dt>
                     <dd class="col-sm-8">

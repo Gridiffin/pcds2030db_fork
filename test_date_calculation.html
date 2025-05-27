@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Date Calculation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        .result {
+            background: #e9f7ef;
+            padding: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #27ae60;
+        }
+        .error {
+            background: #ffeaa7;
+            border-left-color: #e17055;
+        }
+        input, select {
+            margin: 5px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Automatic Date Calculation</h1>
+    
+    <div class="test-section">
+        <h3>Manual Test</h3>
+        <label>Period Type:</label>
+        <select id="testQuarter">
+            <option value="">Select Period Type</option>
+            <option value="1">Q1</option>
+            <option value="2">Q2</option>
+            <option value="3">Q3</option>
+            <option value="4">Q4</option>
+            <option value="5">Half Yearly 1 (Jan-Jun)</option>
+            <option value="6">Half Yearly 2 (Jul-Dec)</option>
+        </select>
+        
+        <label>Year:</label>
+        <input type="number" id="testYear" value="2025" min="2000" max="2099" placeholder="YYYY">
+        
+        <button onclick="testCalculation()">Calculate Dates</button>
+        
+        <div id="testResult" class="result" style="display: none;">
+            <strong>Result:</strong><br>
+            <span id="resultText"></span>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Automated Tests</h3>
+        <button onclick="runAllTests()">Run All Tests</button>
+        <div id="testResults"></div>
+    </div>
+
+    <script>
+        /**
+         * Calculate start and end dates based on quarter/period type and year
+         */
+        function calculatePeriodDates(quarter, year) {
+            const dateRanges = {
+                1: { start: [0, 1], end: [2, 31] },     // Q1: Jan 1 - Mar 31
+                2: { start: [3, 1], end: [5, 30] },     // Q2: Apr 1 - Jun 30
+                3: { start: [6, 1], end: [8, 30] },     // Q3: Jul 1 - Sep 30
+                4: { start: [9, 1], end: [11, 31] },    // Q4: Oct 1 - Dec 31
+                5: { start: [0, 1], end: [5, 30] },     // Half Yearly 1: Jan 1 - Jun 30
+                6: { start: [6, 1], end: [11, 31] }     // Half Yearly 2: Jul 1 - Dec 31
+            };
+            
+            if (!dateRanges[quarter]) {
+                return null;
+            }
+            
+            const range = dateRanges[quarter];
+            
+            // Create start date
+            const startDate = new Date(year, range.start[0], range.start[1]);
+            
+            // Create end date
+            const endDate = new Date(year, range.end[0], range.end[1]);
+            
+            // Format dates as YYYY-MM-DD for input fields
+            const formatDate = (date) => {
+                const y = date.getFullYear();
+                const m = String(date.getMonth() + 1).padStart(2, '0');
+                const d = String(date.getDate()).padStart(2, '0');
+                return `${y}-${m}-${d}`;
+            };
+            
+            return {
+                startDate: formatDate(startDate),
+                endDate: formatDate(endDate)
+            };
+        }
+
+        function testCalculation() {
+            const quarter = parseInt(document.getElementById('testQuarter').value);
+            const year = parseInt(document.getElementById('testYear').value);
+            
+            const result = calculatePeriodDates(quarter, year);
+            const resultDiv = document.getElementById('testResult');
+            const resultText = document.getElementById('resultText');
+            
+            if (result) {
+                resultText.innerHTML = `
+                    Quarter: ${quarter}<br>
+                    Year: ${year}<br>
+                    Start Date: ${result.startDate}<br>
+                    End Date: ${result.endDate}
+                `;
+                resultDiv.className = 'result';
+                resultDiv.style.display = 'block';
+            } else {
+                resultText.innerHTML = 'Invalid quarter or year';
+                resultDiv.className = 'result error';
+                resultDiv.style.display = 'block';
+            }
+        }
+
+        function runAllTests() {
+            const testCases = [
+                { quarter: 1, year: 2025, expectedStart: '2025-01-01', expectedEnd: '2025-03-31', name: 'Q1 2025' },
+                { quarter: 2, year: 2025, expectedStart: '2025-04-01', expectedEnd: '2025-06-30', name: 'Q2 2025' },
+                { quarter: 3, year: 2025, expectedStart: '2025-07-01', expectedEnd: '2025-09-30', name: 'Q3 2025' },
+                { quarter: 4, year: 2025, expectedStart: '2025-10-01', expectedEnd: '2025-12-31', name: 'Q4 2025' },
+                { quarter: 5, year: 2025, expectedStart: '2025-01-01', expectedEnd: '2025-06-30', name: 'Half Yearly 1 2025' },
+                { quarter: 6, year: 2025, expectedStart: '2025-07-01', expectedEnd: '2025-12-31', name: 'Half Yearly 2 2025' },
+                { quarter: 1, year: 2024, expectedStart: '2024-01-01', expectedEnd: '2024-03-31', name: 'Q1 2024' },
+                { quarter: 2, year: 2026, expectedStart: '2026-04-01', expectedEnd: '2026-06-30', name: 'Q2 2026' }
+            ];
+
+            let resultsHtml = '<h4>Test Results:</h4>';
+            let passCount = 0;
+            let totalTests = testCases.length;
+
+            testCases.forEach(testCase => {
+                const result = calculatePeriodDates(testCase.quarter, testCase.year);
+                const passed = result && 
+                              result.startDate === testCase.expectedStart && 
+                              result.endDate === testCase.expectedEnd;
+                
+                if (passed) passCount++;
+                
+                resultsHtml += `
+                    <div class="result ${passed ? '' : 'error'}">
+                        <strong>${testCase.name}:</strong> ${passed ? 'PASS' : 'FAIL'}<br>
+                        Expected: ${testCase.expectedStart} to ${testCase.expectedEnd}<br>
+                        ${result ? `Actual: ${result.startDate} to ${result.endDate}` : 'No result returned'}
+                    </div>
+                `;
+            });
+
+            resultsHtml += `<div class="result"><strong>Summary: ${passCount}/${totalTests} tests passed</strong></div>`;
+            document.getElementById('testResults').innerHTML = resultsHtml;
+        }
+
+        // Auto-calculate when fields change
+        document.getElementById('testQuarter').addEventListener('change', testCalculation);
+        document.getElementById('testYear').addEventListener('input', testCalculation);
+    </script>
+</body>
+</html>

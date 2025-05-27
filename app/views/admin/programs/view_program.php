@@ -368,11 +368,10 @@ require_once '../layouts/dashboard_header.php';
                         <div class="info-item d-flex align-items-center">
                             <div class="info-icon me-3">
                                 <i class="fas fa-calendar-alt text-primary"></i>
-                            </div>
-                            <div>
+                            </div>                            <div>
                                 <div class="info-label text-muted">Reporting Period</div>
                                 <div class="info-value d-flex align-items-center">
-                                    <strong class="me-2">Q<?php echo $program['current_submission']['quarter']; ?>-<?php echo $program['current_submission']['year']; ?></strong>
+                                    <strong class="me-2"><?php echo get_period_display_name($program['current_submission']); ?></strong>
                                     <?php if (isset($program['current_submission']['is_draft']) && $program['current_submission']['is_draft'] == 1): ?>
                                         <span class="badge bg-secondary">Draft</span>
                                     <?php else: ?>

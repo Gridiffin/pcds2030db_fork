@@ -55,11 +55,10 @@ require_once '../layouts/agency_nav.php';
         <form method="get" class="row g-3 align-items-end">
             <div class="col-md-6">
                 <label for="period_id" class="form-label">Reporting Period</label>
-                <select class="form-select" id="period_id" name="period_id" required>
-                    <option value="">-- Select Period --</option>
+                <select class="form-select" id="period_id" name="period_id" required>                <option value="">-- Select Period --</option>
                     <?php foreach ($reporting_periods as $period): ?>
                         <option value="<?php echo $period['period_id']; ?>" <?php echo $selected_period == $period['period_id'] ? 'selected' : ''; ?>>
-                            Q<?php echo $period['quarter']; ?>-<?php echo $period['year']; ?> 
+                            <?php echo get_period_display_name($period); ?> 
                             (<?php echo date('M j, Y', strtotime($period['start_date'])); ?> - 
                             <?php echo date('M j, Y', strtotime($period['end_date'])); ?>)
                             <?php echo $period['status'] === 'open' ? ' - OPEN' : ''; ?>

@@ -80,14 +80,13 @@ function update_reporting_period_status($period_id, $status) {
  */
 function add_reporting_period($year, $quarter, $start_date, $end_date, $status = 'open') {
     global $conn;
-    
-    // Validate inputs
+      // Validate inputs
     if (!$year || !$quarter || !$start_date || !$end_date) {
         return ['error' => 'All fields are required'];
     }
     
-    if ($quarter < 1 || $quarter > 4) {
-        return ['error' => 'Quarter must be between 1 and 4'];
+    if ($quarter < 1 || $quarter > 6) {
+        return ['error' => 'Quarter must be between 1 and 6 (1-4 for quarterly, 5-6 for half-yearly)'];
     }
     
     if (strtotime($start_date) > strtotime($end_date)) {
@@ -153,14 +152,13 @@ function add_reporting_period($year, $quarter, $start_date, $end_date, $status =
  */
 function update_reporting_period($period_id, $year, $quarter, $start_date, $end_date, $status) {
     global $conn;
-    
-    // Validate inputs
+      // Validate inputs
     if (!$period_id || !$year || !$quarter || !$start_date || !$end_date) {
         return ['error' => 'All fields are required'];
     }
     
-    if ($quarter < 1 || $quarter > 4) {
-        return ['error' => 'Quarter must be between 1 and 4'];
+    if ($quarter < 1 || $quarter > 6) {
+        return ['error' => 'Quarter must be between 1 and 6 (1-4 for quarterly, 5-6 for half-yearly)'];
     }
     
     if (strtotime($start_date) > strtotime($end_date)) {
@@ -301,6 +299,14 @@ function is_standard_quarter_date($year, $quarter, $start_date, $end_date) {
         ],
         4 => [
             'start' => "$year-10-01",
+            'end' => "$year-12-31"
+        ],
+        5 => [ // Half Yearly 1 (H1)
+            'start' => "$year-01-01",
+            'end' => "$year-06-30"
+        ],
+        6 => [ // Half Yearly 2 (H2)
+            'start' => "$year-07-01",
             'end' => "$year-12-31"
         ]
     ];

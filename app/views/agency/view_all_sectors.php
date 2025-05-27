@@ -491,11 +491,10 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                                                             <td>
                                                                 <div class="fw-medium">
                                                                     <?php echo htmlspecialchars($metric['table_name']); ?>
-                                                                </div>
-                                                            </td>
+                                                                </div>                                                        </td>
                                                             <td>
                                                                 <?php if (isset($metric['quarter']) && isset($metric['year'])): ?>
-                                                                    Q<?php echo $metric['quarter']; ?>-<?php echo $metric['year']; ?>
+                                                                    <?php echo get_period_display_name($metric); ?>
                                                                 <?php else: ?>
                                                                     <span class="text-muted">Not available</span>
                                                                 <?php endif; ?>

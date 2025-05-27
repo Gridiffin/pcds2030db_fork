@@ -93,10 +93,9 @@ require_once ROOT_PATH . 'app/views/layouts/admin_nav.php';
                 <div class="col-md-3 mb-3">
                     <p class="mb-1 text-muted">Sector:</p>
                     <h6><?php echo htmlspecialchars($outcome_data['sector_name'] ?? 'N/A'); ?></h6>
-                </div>
-                <div class="col-md-3 mb-3">
+                </div>                <div class="col-md-3 mb-3">
                     <p class="mb-1 text-muted">Reporting Period:</p>
-                    <h6>Q<?php echo $outcome_data['quarter']; ?>-<?php echo $outcome_data['year']; ?></h6>
+                    <h6><?php echo get_period_display_name($outcome_data); ?></h6>
                 </div>
             </div>
             

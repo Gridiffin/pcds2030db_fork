@@ -73,11 +73,10 @@ ob_start();
                 </div>
             </div>
         </div>
-    </div>
-    <div class="text-center pb-3">
+    </div>        <div class="text-center pb-3">
         <?php if ($program_percent == 100 && $metrics_percent == 100): ?>
             <div class="alert alert-success">
-                <i class="fas fa-check-circle me-2"></i>All submissions complete for Q<?php echo $period['quarter']; ?>-<?php echo $period['year']; ?>
+                <i class="fas fa-check-circle me-2"></i>All submissions complete for <?php echo get_period_display_name($period); ?>
             </div>
         <?php else: ?>
             <div class="alert alert-warning">

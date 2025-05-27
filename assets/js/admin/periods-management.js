@@ -17,6 +17,14 @@ $(document).ready(function() {
         $('#addPeriodForm')[0].reset();
         $('#addPeriodForm .is-invalid').removeClass('is-invalid');
         $('#addPeriodForm .invalid-feedback').remove();
+        // Clear the date fields
+        $('#startDate').val('');
+        $('#endDate').val('');
+    });
+    
+    // Handle quarter and year changes to auto-calculate dates
+    $('#quarter, #year').on('change', function() {
+        updateDateFields();
     });
 });
 
@@ -86,17 +94,28 @@ function displayPeriods(periods) {
                     </thead>
                     <tbody>
         `;
-        
-        periods.forEach(function(period) {
+          periods.forEach(function(period) {
             const statusClass = period.status === 'open' ? 'success' : 'secondary';
             const statusIcon = period.status === 'open' ? 'unlock' : 'lock';
             const toggleText = period.status === 'open' ? 'Close' : 'Open';
             const toggleClass = period.status === 'open' ? 'warning' : 'success';
             
+            // Get proper display name for period
+            let periodDisplay;
+            if (period.quarter >= 1 && period.quarter <= 4) {
+                periodDisplay = `Q${period.quarter} ${period.year}`;
+            } else if (period.quarter == 5) {
+                periodDisplay = `Half Yearly 1 ${period.year}`;
+            } else if (period.quarter == 6) {
+                periodDisplay = `Half Yearly 2 ${period.year}`;
+            } else {
+                periodDisplay = `Period ${period.quarter} ${period.year}`;
+            }
+            
             html += `
                 <tr>
                     <td>
-                        <strong>Q${period.quarter} ${period.year}</strong>
+                        <strong>${periodDisplay}</strong>
                     </td>
                     <td>${formatDate(period.start_date)}</td>
                     <td>${formatDate(period.end_date)}</td>
@@ -137,14 +156,15 @@ function displayPeriods(periods) {
  */
 function savePeriod() {
     const formData = {
-        period_name: $('#periodName').val(),
+        quarter: $('#quarter').val(),
+        year: $('#year').val(),
         start_date: $('#startDate').val(),
         end_date: $('#endDate').val(),
         status: $('#status').val()
     };
     
     // Basic validation
-    if (!formData.period_name || !formData.start_date || !formData.end_date) {
+    if (!formData.quarter || !formData.year || !formData.start_date || !formData.end_date) {
         showError('Please fill in all required fields.');
         return;
     }
@@ -179,6 +199,65 @@ function savePeriod() {
             $('#savePeriod').prop('disabled', false).html('<i class="fas fa-save me-1"></i> Save Period');
         }
     });
+}
+
+/**
+ * Calculate and update date fields based on selected quarter and year
+ */
+function updateDateFields() {
+    const quarter = $('#quarter').val();
+    const year = $('#year').val();
+    
+    if (!quarter || !year) {
+        $('#startDate').val('');
+        $('#endDate').val('');
+        return;
+    }
+    
+    const dates = calculatePeriodDates(parseInt(quarter), parseInt(year));
+    if (dates) {
+        $('#startDate').val(dates.startDate);
+        $('#endDate').val(dates.endDate);
+    }
+}
+
+/**
+ * Calculate start and end dates based on quarter/period type and year
+ */
+function calculatePeriodDates(quarter, year) {
+    const dateRanges = {
+        1: { start: [0, 1], end: [2, 31] },     // Q1: Jan 1 - Mar 31
+        2: { start: [3, 1], end: [5, 30] },     // Q2: Apr 1 - Jun 30
+        3: { start: [6, 1], end: [8, 30] },     // Q3: Jul 1 - Sep 30
+        4: { start: [9, 1], end: [11, 31] },    // Q4: Oct 1 - Dec 31
+        5: { start: [0, 1], end: [5, 30] },     // Half Yearly 1: Jan 1 - Jun 30
+        6: { start: [6, 1], end: [11, 31] }     // Half Yearly 2: Jul 1 - Dec 31
+    };
+    
+    if (!dateRanges[quarter]) {
+        return null;
+    }
+    
+    const range = dateRanges[quarter];
+    
+    // Create start date
+    const startDate = new Date(year, range.start[0], range.start[1]);
+    
+    // Create end date
+    const endDate = new Date(year, range.end[0], range.end[1]);
+    
+    // Format dates as YYYY-MM-DD for input fields
+    const formatDate = (date) => {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    };
+    
+    return {
+        startDate: formatDate(startDate),
+        endDate: formatDate(endDate)
+    };
 }
 
 /**

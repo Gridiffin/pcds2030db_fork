@@ -277,11 +277,10 @@ require_once ROOT_PATH . 'app/views/layouts/admin_nav.php';
                     </div>
                     <div class="col-md-3 mb-3">
                         <label for="period_id" class="form-label">Reporting Period <span class="text-danger">*</span></label>
-                        <select class="form-select" id="period_id" name="period_id" required <?php echo $outcome_id > 0 && isset($outcome_data['is_submitted']) && $outcome_data['is_submitted'] ? 'disabled' : '' ?>>
-                            <option value="">Select Period</option>
+                        <select class="form-select" id="period_id" name="period_id" required <?php echo $outcome_id > 0 && isset($outcome_data['is_submitted']) && $outcome_data['is_submitted'] ? 'disabled' : '' ?>>                        <option value="">Select Period</option>
                             <?php foreach ($reporting_periods as $rp): ?>
                                 <option value="<?php echo $rp['period_id']; ?>" <?php echo ($period_id == $rp['period_id']) ? 'selected' : ''; ?>>
-                                    Q<?php echo $rp['quarter']; ?>-<?php echo $rp['year']; ?> (<?php echo $rp['status']; ?>)
+                                    <?php echo get_period_display_name($rp); ?> (<?php echo $rp['status']; ?>)
                                 </option>
                             <?php endforeach; ?>
                         </select>

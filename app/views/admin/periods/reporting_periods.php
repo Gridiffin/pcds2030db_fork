@@ -87,29 +87,42 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
             </div>
             <div class="modal-body">
                 <form id="addPeriodForm">
-                    <div class="mb-3">
-                        <label for="periodName" class="form-label">Period Name <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="periodName" name="period_name" required 
-                               placeholder="e.g., Q1 2025">
-                        <div class="form-text">Enter a descriptive name for this reporting period.</div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label for="quarter" class="form-label">Period Type <span class="text-danger">*</span></label>
+                            <select class="form-select" id="quarter" name="quarter" required>
+                                <option value="" disabled selected>Select Period Type</option>
+                                <option value="1">Q1</option>
+                                <option value="2">Q2</option>
+                                <option value="3">Q3</option>
+                                <option value="4">Q4</option>
+                                <option value="5">Half Yearly 1 (Jan-Jun)</option>
+                                <option value="6">Half Yearly 2 (Jul-Dec)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="year" class="form-label">Year <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="year" name="year" required 
+                                   placeholder="YYYY" min="2000" max="2099">
+                        </div>
                     </div>
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label for="startDate" class="form-label">Start Date <span class="text-danger">*</span></label>
-                            <input type="date" class="form-control" id="startDate" name="start_date" required>
+                            <input type="date" class="form-control" id="startDate" name="start_date" required readonly>
                         </div>
                         <div class="col-md-6">
                             <label for="endDate" class="form-label">End Date <span class="text-danger">*</span></label>
-                            <input type="date" class="form-control" id="endDate" name="end_date" required>
+                            <input type="date" class="form-control" id="endDate" name="end_date" required readonly>
                         </div>
                     </div>
                     <div class="mb-3 mt-3">
                         <label for="status" class="form-label">Status</label>
                         <select class="form-select" id="status" name="status" required>
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
+                            <option value="open">Open</option>
+                            <option value="closed" selected>Closed</option> 
                         </select>
-                        <div class="form-text">Set the initial status for this period.</div>
+                        <div class="form-text">Set the initial status for this period. Defaults to Closed.</div>
                     </div>
                 </form>
             </div>
