@@ -55,13 +55,6 @@ $title = "Submit Sector Outcomes";
 $subtitle = "Update your sector-specific outcomes for this reporting period";
 $headerStyle = 'light'; // Use light (white) style for inner pages
 
-// Get next metric ID for the Create New Metric button
-$next_metric_id = 0;
-$result = $conn->query("SELECT MAX(metric_id) AS max_id FROM sector_metrics_data");
-if ($result && $row = $result->fetch_assoc()) {
-    $next_metric_id = $row['max_id'] + 1;
-}
-
 // Set up period badge for actions array if period exists
 $actions = [];
 
@@ -78,14 +71,6 @@ if ($current_period) {
         'html' => '<span class="badge bg-warning"><i class="fas fa-exclamation-triangle me-1"></i> No Active Reporting Period</span>'
     ];
 }
-
-// Add Create New Outcome button after the period badges
-$actions[] = [
-    'url' => "create_metric.php?sector_id={$_SESSION['sector_id']}&next_metric_id={$next_metric_id}",
-    'text' => 'Create New Outcome',
-    'icon' => 'fa-plus-circle',
-    'class' => 'btn-primary ms-3' // Added margin-start for spacing from badges
-];
 
 // Include the dashboard header component
 require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
@@ -127,7 +112,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
         <div class="card-body">
             <?php if (empty($outcomes)): ?>                <div class="alert alert-info mt-3">
                     <i class="fas fa-info-circle me-2"></i>
-                    No outcomes have been submitted for your sector yet. Click the "Create New Outcome" button to get started.
+                    No outcomes have been submitted for your sector yet.
                 </div>
             <?php else: ?>
                 <p class="mb-3">These outcomes have been submitted for the current reporting period (Q<?= $current_period['quarter'] ?>-<?= $current_period['year'] ?>).</p>
@@ -226,7 +211,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                 <div class="col-md-3">
                     <div class="h-100 p-3 border rounded bg-light-subtle">
                         <h6><i class="fas fa-table me-2 text-primary"></i>Outcomes Tables</h6>
-                        <p class="small mb-1">Create a table for each related set of outcomes that share the same reporting frequency.</p>
+                        <p class="small mb-1"> a table for each related set of outcomes that share the same reporting frequency.</p>
                         <div class="alert alert-light py-2 px-3 mb-0 small">Example: "Timber Production Volume"</div>
                     </div>
                 </div>
