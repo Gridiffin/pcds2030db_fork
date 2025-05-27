@@ -16,17 +16,17 @@ $(document).ready(function() {
     // This ID comes from the $actions array in reporting_periods.php
     $(document).on('click', '#addPeriodBtn', function(e) {
         e.preventDefault(); // Prevent default action if it's an anchor tag
+        
+        // Reset the form for a new period (not edit)
+        resetPeriodForm();
+        
+        // Show the modal
         $('#addPeriodModal').modal('show');
     });
     
     // Handle form reset when modal is hidden
     $('#addPeriodModal').on('hidden.bs.modal', function() {
-        $('#addPeriodForm')[0].reset();
-        $('#addPeriodForm .is-invalid').removeClass('is-invalid');
-        $('#addPeriodForm .invalid-feedback').remove();
-        // Clear the date fields
-        $('#startDate').val('');
-        $('#endDate').val('');
+        resetPeriodForm();
     });
     
     // Handle quarter and year changes to auto-calculate dates
@@ -265,16 +265,20 @@ function setupActionButtons() {
 }
 
 /**
- * Save new period
+ * Save new period or update existing one
  */
 function savePeriod() {
     const formData = {
+        period_id: $('#periodId').val(), // Will be empty for new periods
         quarter: $('#quarter').val(),
         year: $('#year').val(),
         start_date: $('#startDate').val(),
         end_date: $('#endDate').val(),
         status: $('#status').val()
     };
+    
+    // Determine if this is an update or a new period
+    const isUpdate = formData.period_id ? true : false;
     
     // Reset validation state
     $('#addPeriodForm .is-invalid').removeClass('is-invalid');
@@ -347,9 +351,15 @@ function savePeriod() {
     }
     
     // Show loading state
-    $('#savePeriod').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Saving...');
+    $('#savePeriod').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> ' + (isUpdate ? 'Updating...' : 'Saving...'));
     
-    // All basic validation passed, now check for duplicate period
+    // For updates, we can skip the duplicate check and proceed directly
+    if (isUpdate) {
+        submitPeriodData(formData, isUpdate);
+        return;
+    }
+    
+    // For new periods, check for duplicates
     $.ajax({
         url: APP_URL + '/app/ajax/check_period_exists.php',
         type: 'POST',
@@ -387,29 +397,46 @@ function savePeriod() {
 /**
  * Submit period data to the server after validation
  */
-function submitPeriodData(formData) {
+function submitPeriodData(formData, isUpdate = false) {
+    // Determine which endpoint to use
+    const endpoint = isUpdate ? 'update_period.php' : 'save_period.php';
+    
     $.ajax({
-        url: APP_URL + '/app/ajax/save_period.php',
+        url: APP_URL + '/app/ajax/' + endpoint,
         type: 'POST',
         data: formData,
         dataType: 'json',
         success: function(response) {
             if (response.success) {
                 $('#addPeriodModal').modal('hide');
-                showSuccess('Period created successfully!');
+                showSuccess(isUpdate ? 'Period updated successfully!' : 'Period created successfully!');
                 loadPeriods(); // Reload the periods table
+                
+                // Reset the form after successful submission
+                resetPeriodForm();
             } else {
-                showError('Failed to create period: ' + (response.message || 'Unknown error'));
+                showError(response.message || 'An error occurred while saving the period.');
+                $('#savePeriod').prop('disabled', false).html('<i class="fas fa-save me-1"></i> ' + (isUpdate ? 'Update Period' : 'Save Period'));
             }
         },
         error: function(xhr, status, error) {
             console.error('Error saving period:', error);
-            showError('Failed to save period. Please try again.');
-        },
-        complete: function() {
-            $('#savePeriod').prop('disabled', false).html('<i class="fas fa-save me-1"></i> Save Period');
+            showError('An error occurred while saving the period. Please try again.');
+            $('#savePeriod').prop('disabled', false).html('<i class="fas fa-save me-1"></i> ' + (isUpdate ? 'Update Period' : 'Save Period'));
         }
     });
+}
+
+/**
+ * Reset the period form to its initial state
+ */
+function resetPeriodForm() {
+    $('#addPeriodForm')[0].reset();
+    $('#periodId').val(''); // Clear the hidden period ID field
+    $('#addPeriodForm .is-invalid').removeClass('is-invalid');
+    $('#addPeriodForm .invalid-feedback').remove();
+    $('#savePeriod').prop('disabled', false).html('<i class="fas fa-save me-1"></i> Save Period');
+    $('#addPeriodModalLabel').text('Add Reporting Period'); // Reset modal title
 }
 
 /**
@@ -593,18 +620,59 @@ function showInfo(message) {
 }
 
 /**
- * Edit period
+ * Edit period - show modal with period data for editing
  */
 function editPeriod(periodId) {
-    // TODO: Implement period editing functionality
-    // For now, just show a message
-    showInfo('Period editing functionality will be implemented soon.');
+    // Show loading state
+    const editButton = document.querySelector(`.edit-period-btn[data-period-id="${periodId}"]`);
+    if (editButton) {
+        editButton.disabled = true;
+        editButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    }
     
-    // Future implementation should:
-    // 1. Fetch period details from server
-    // 2. Populate edit form with current values
-    // 3. Show edit modal
-    // 4. Handle form submission to update period
+    // Fetch period details from server
+    fetch(`${APP_URL}/app/ajax/periods_data.php?period_id=${periodId}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data.success || !data.data) {
+                throw new Error(data.message || 'Failed to load period details');
+            }
+            
+            const period = data.data;
+            
+            // Update modal title to indicate editing
+            $('#addPeriodModalLabel').text('Edit Reporting Period');
+            
+            // Populate form fields
+            $('#periodId').val(period.period_id);
+            $('#quarter').val(period.quarter);
+            $('#year').val(period.year);
+            $('#startDate').val(period.start_date.split(' ')[0]); // Just get the date part
+            $('#endDate').val(period.end_date.split(' ')[0]); // Just get the date part
+            $('#status').val(period.status);
+            
+            // Change the save button text
+            $('#savePeriod').text('Update Period');
+            
+            // Show the modal
+            $('#addPeriodModal').modal('show');
+        })
+        .catch(error => {
+            console.error('Error fetching period details:', error);
+            alert(`Error: ${error.message}`);
+        })
+        .finally(() => {
+            // Restore button state
+            if (editButton) {
+                editButton.disabled = false;
+                editButton.innerHTML = '<i class="fas fa-edit"></i>';
+            }
+        });
 }
 
 /**

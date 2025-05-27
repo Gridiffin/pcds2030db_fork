@@ -89,6 +89,9 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
             </div>
             <div class="modal-body">
                 <form id="addPeriodForm">
+                    <!-- Hidden field for period ID (used when editing) -->
+                    <input type="hidden" id="periodId" name="period_id" value="">
+                    
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
                             <label for="quarter" class="form-label">Period Type <span class="text-danger">*</span></label>
