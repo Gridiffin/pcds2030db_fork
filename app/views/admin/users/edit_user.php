@@ -80,7 +80,7 @@ $pageTitle = 'Edit User';
 $additionalScripts = []; // Set to empty array if no other scripts are needed here
 
 // Include header
-require_once '../layouts/header.php';
+require_once '../../layouts/header.php';
 
 // Include admin navigation
 require_once '../../layouts/admin_nav.php';

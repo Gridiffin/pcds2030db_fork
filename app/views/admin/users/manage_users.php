@@ -77,7 +77,7 @@ if (isset($_GET['ajax_table']) && $_GET['ajax_table'] == '1') {
                                 </td>
                                 <td class="text-center">
                                     <div class="btn-group btn-group-sm d-inline-flex align-items-center justify-content-center">
-                                        <a href="<?php echo APP_URL; ?>/app/views/admin/edit_user.php?id=<?php echo $user['user_id']; ?>" class="btn btn-forest-light" title="Edit User">
+                                        <a href="<?php echo APP_URL; ?>/app/views/admin/users/edit_user.php?id=<?php echo $user['user_id']; ?>" class="btn btn-forest-light" title="Edit User">
                                             <i class="fas fa-edit"></i>
                                         </a>
                                         <?php if ($user['user_id'] != $_SESSION['user_id']): ?>
@@ -145,7 +145,7 @@ if (isset($_GET['ajax_table']) && $_GET['ajax_table'] == '1') {
                                 </td>
                                 <td class="text-center">
                                     <div class="btn-group btn-group-sm d-inline-flex align-items-center justify-content-center">
-                                        <a href="<?php echo APP_URL; ?>/app/views/admin/edit_user.php?id=<?php echo $user['user_id']; ?>" class="btn btn-outline-primary" title="Edit User">
+                                        <a href="<?php echo APP_URL; ?>/app/views/admin/users/edit_user.php?id=<?php echo $user['user_id']; ?>" class="btn btn-outline-primary" title="Edit User">
                                             <i class="fas fa-edit"></i>
                                         </a>
                                         <a href="#" class="btn btn-outline-danger delete-user-btn" 
@@ -169,7 +169,7 @@ if (isset($_GET['ajax_table']) && $_GET['ajax_table'] == '1') {
     <?php
     exit; // IMPORTANT: Stop script execution after sending table HTML
 }
-// END AJAX Table Request Handler
+// END AJAX Table Request HANDLER
 
 // Set page title
 $pageTitle = 'Manage Users';
@@ -368,7 +368,7 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                                 <?php endif; ?>
                             </td>                            <td class="text-center">
                                 <div class="btn-group btn-group-sm d-inline-flex align-items-center justify-content-center">
-                                    <a href="<?php echo APP_URL; ?>/app/views/admin/edit_user.php?id=<?php echo $user['user_id']; ?>" class="btn btn-forest-light" title="Edit User">
+                                    <a href="<?php echo APP_URL; ?>/app/views/admin/users/edit_user.php?id=<?php echo $user['user_id']; ?>" class="btn btn-forest-light" title="Edit User">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     <?php if ($user['user_id'] != $_SESSION['user_id']): ?>
@@ -432,7 +432,7 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                             </td>
                             <td class="text-center">
                                 <div class="btn-group btn-group-sm d-inline-flex align-items-center justify-content-center">
-                                    <a href="<?php echo APP_URL; ?>/app/views/admin/edit_user.php?id=<?php echo $user['user_id']; ?>" class="btn btn-outline-primary" title="Edit User">
+                                    <a href="<?php echo APP_URL; ?>/app/views/admin/users/edit_user.php?id=<?php echo $user['user_id']; ?>" class="btn btn-outline-primary" title="Edit User">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     <a href="#" class="btn btn-outline-danger delete-user-btn" 
@@ -451,9 +451,6 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
     </div>
 </div>
 </div> <!-- End of userTablesWrapper -->
-
-<!-- Modals for Add/Edit/Delete Users -->
-<?php include ROOT_PATH . 'app/views/admin/modals/user_modals.php'; ?>
 
 <?php
 // Include footer
