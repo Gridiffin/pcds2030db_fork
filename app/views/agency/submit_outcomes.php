@@ -31,13 +31,13 @@ $message_type = '';
 
 // Get outcomes for the sector
 $outcomes = get_agency_sector_outcomes($_SESSION['sector_id']);
-if (!is_array($metrics)) {
-    $metrics = [];
+if (!is_array($outcomes)) {
+    $outcomes = [];
 }
 
-$draft_metrics = get_draft_metric($_SESSION['sector_id']);
-if (!is_array($draft_metrics)) {
-    $draft_metrics = [];
+$draft_outcomes = get_draft_outcome($_SESSION['sector_id']);
+if (!is_array($draft_outcomes)) {
+    $draft_outcomes = [];
 }
 
 $additionalScripts = [
@@ -118,16 +118,14 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                 <?= date('d M Y', strtotime($current_period['end_date'])) ?>)
             </div>
         </div>
-    </div>
-
-    <div class="card shadow-sm mb-4">        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+    </div>    <div class="card shadow-sm mb-4">        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h5 class="card-title m-0">
                 <i class="fas fa-chart-bar me-2"></i>Submitted Outcomes
             </h5>
-            <span class="badge bg-light text-primary"><?= count(array_unique(array_column($metrics, 'metric_id'))) ?> Outcomes</span>
+            <span class="badge bg-light text-primary"><?= count(array_unique(array_column($outcomes, 'metric_id'))) ?> Outcomes</span>
         </div>
         <div class="card-body">
-            <?php if (empty($metrics)): ?>                <div class="alert alert-info mt-3">
+            <?php if (empty($outcomes)): ?>                <div class="alert alert-info mt-3">
                     <i class="fas fa-info-circle me-2"></i>
                     No outcomes have been submitted for your sector yet. Click the "Create New Outcome" button to get started.
                 </div>
@@ -144,7 +142,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                         <tbody>
                             <?php
                             $unique_metrics = [];
-                            foreach ($metrics as $metric):
+                            foreach ($outcomes as $metric):
                                 if (!in_array($metric['metric_id'], $unique_metrics)):
                                     $unique_metrics[] = $metric['metric_id'];
                             ?>
