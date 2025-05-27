@@ -306,7 +306,7 @@ $subtitle = "Modify program details";
 $headerStyle = 'light';
 $actions = [
     [
-        'url' => APP_URL . '/app/views/admin/programs.php',
+        'url' => APP_URL . '/app/views/admin/programs/programs.php',
         'text' => 'Back to Programs',
         'icon' => 'fas fa-arrow-left',
         'class' => 'btn-secondary'
@@ -332,17 +332,18 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
     </div>
     
     <div class="card-body">
-        <?php if (isset($program_history['submissions']) && count($program_history['submissions']) > 1): ?>
-        <!-- Program History Panel -->
-        <div class="mb-4">
-            <div class="history-panel-title">
-                <h6 class="fw-bold"><i class="fas fa-history me-2"></i> Program Edit History</h6>
-                <button type="button" class="history-toggle-btn" data-target="programHistoryPanel">
-                    <i class="fas fa-history"></i> Show History
-                </button>
-            </div>
-            
-            <div id="programHistoryPanel" class="history-panel" style="display: none;">                        <?php foreach($program_history['submissions'] as $idx => $submission): ?>
+        <form method="post" action="<?php echo view_url('admin/programs', 'edit_program.php?id=' . $program_id); ?>" id="editProgramForm">
+            <?php if (isset($program_history['submissions']) && count($program_history['submissions']) > 1): ?>
+            <!-- Program History Panel -->
+            <div class="mb-4">
+                <div class="history-panel-title">
+                    <h6 class="fw-bold"><i class="fas fa-history me-2"></i> Program Edit History</h6>
+                    <button type="button" class="history-toggle-btn" data-target="programHistoryPanel">
+                        <i class="fas fa-history"></i> Show History
+                    </button>
+                </div>
+                
+                <div id="programHistoryPanel" class="history-panel" style="display: none;">                        <?php foreach($program_history['submissions'] as $idx => $submission): ?>
                         <div class="history-version">
                             <div class="history-version-info">
                                 <strong><?php echo $submission['formatted_date']; ?></strong>
@@ -372,10 +373,6 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
         </div>
         <?php endif; ?>
         
-        <form method="post" action="<?php echo view_url('$ViewType', 'edit_program.php?id=<?php echo $program_id; ?>'); ?>" id="editProgramForm">
-            <!-- Hidden rating field -->
-            <?php echo $hidden_rating_input; ?>
-            
             <div class="row g-3">
                 <!-- Basic Information -->
                 <div class="col-md-12 mb-4">
