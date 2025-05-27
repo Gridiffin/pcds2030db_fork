@@ -7,8 +7,11 @@
 
 // Include necessary files
 require_once '../../../config/config.php';
-require_once ROOT_PATH . 'app/models/Program.php';
-require_once ROOT_PATH . 'app/models/AuditLog.php';
+require_once ROOT_PATH . 'app/lib/db_connect.php';
+require_once ROOT_PATH . 'app/lib/session.php';
+require_once ROOT_PATH . 'app/lib/functions.php';
+require_once ROOT_PATH . 'app/lib/admins/index.php';
+require_once ROOT_PATH . 'app/lib/admins/statistics.php'; // Contains program functions
 
 // Verify user is an admin
 if (!is_admin()) {
@@ -37,40 +40,26 @@ if (!isset($_GET['program_id']) || !is_numeric($_GET['program_id']) ||
 $program_id = intval($_GET['program_id']);
 $period_id = intval($_GET['period_id']);
 
-// Prepare and execute update query to set is_draft = 1 for the specific program submission
-// Optionally, you might also want to reset the status, e.g., status = 'not-started' or 'draft'
-$sql = "UPDATE program_submissions SET is_draft = 1, status = 'not-started' WHERE program_id = ? AND period_id = ?";
-$stmt = $conn->prepare($sql);
+// Use the model function instead of direct SQL
+$success = unsubmit_program($program_id, $period_id);
 
-$success = false;
-if ($stmt) {
-    $stmt->bind_param('ii', $program_id, $period_id);
-    if ($stmt->execute()) {
-        if ($stmt->affected_rows > 0) {
-            $_SESSION['success_message'] = "Program submission has been successfully un-submitted and marked as draft.";
-            $success = true;
-        } else {
-            // This can happen if the submission didn't exist or was already a draft with status 'not-started'
-            // Check if a submission record actually exists for this program_id and period_id
-            $check_sql = "SELECT submission_id FROM program_submissions WHERE program_id = ? AND period_id = ?";
-            $check_stmt = $conn->prepare($check_sql);
-            $check_stmt->bind_param('ii', $program_id, $period_id);
-            $check_stmt->execute();
-            $check_result = $check_stmt->get_result();
-            if ($check_result->num_rows === 0) {
-                $_SESSION['error_message'] = "No submission found for this program in the specified period. Nothing to un-submit.";
-            } else {
-                 // Record existed, but maybe no change was needed (e.g., already draft and not-started)
-                $_SESSION['info_message'] = "Program submission was already in the desired state or no changes were made.";
-            }
-            $check_stmt->close();
-        }
-    } else {
-        $_SESSION['error_message'] = "Failed to un-submit the program. Database error: " . $stmt->error;
-    }
-    $stmt->close();
+if ($success) {
+    $_SESSION['success_message'] = "Program submission has been successfully un-submitted and marked as draft.";
 } else {
-    $_SESSION['error_message'] = "Failed to prepare the database statement for un-submitting.";
+    // Check if a submission record actually exists for this program_id and period_id
+    $submission = get_program_submission($program_id, $period_id);
+    
+    if (!$submission) {
+        $_SESSION['error_message'] = "No submission found for this program in the specified period. Nothing to un-submit.";
+    } else {
+        // Record existed, but maybe no change was needed (e.g., already draft and not-started)
+        $_SESSION['info_message'] = "Program submission was already in the desired state or no changes were made.";
+    }
+}
+
+// Log the action
+if (function_exists('log_action')) {
+    log_action('unsubmit_program', "Program ID: $program_id, Period ID: $period_id", $success);
 }
 
 // Construct redirect URL to go back to the programs page, maintaining the period context

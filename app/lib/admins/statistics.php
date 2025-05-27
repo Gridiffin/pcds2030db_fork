@@ -624,4 +624,126 @@ function get_sector_by_id($sector_id) {
         return null;
     }
 }
+
+/**
+ * Get a specific program submission by program ID and period ID
+ * 
+ * @param int $program_id The ID of the program
+ * @param int $period_id The ID of the reporting period
+ * @return array|false The submission data or false if not found
+ */
+function get_program_submission($program_id, $period_id) {
+    global $conn;
+    
+    $program_id = intval($program_id);
+    $period_id = intval($period_id);
+    
+    $sql = "SELECT * FROM program_submissions 
+            WHERE program_id = ? AND period_id = ? 
+            ORDER BY submission_id DESC LIMIT 1";
+            
+    $stmt = $conn->prepare($sql);
+    
+    if (!$stmt) {
+        error_log("Database error in get_program_submission: " . $conn->error);
+        return false;
+    }
+    
+    $stmt->bind_param('ii', $program_id, $period_id);
+    
+    if (!$stmt->execute()) {
+        error_log("Execution error in get_program_submission: " . $stmt->error);
+        $stmt->close();
+        return false;
+    }
+    
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 0) {
+        $stmt->close();
+        return false;
+    }
+    
+    $submission = $result->fetch_assoc();
+    $stmt->close();
+    
+    return $submission;
+}
+
+/**
+ * Mark a program submission as draft (unsubmit)
+ * 
+ * @param int $program_id The ID of the program
+ * @param int $period_id The ID of the reporting period
+ * @return bool True on success, false on failure
+ */
+function unsubmit_program($program_id, $period_id) {
+    global $conn;
+    
+    $program_id = intval($program_id);
+    $period_id = intval($period_id);
+    
+    $sql = "UPDATE program_submissions 
+            SET is_draft = 1, status = 'not-started' 
+            WHERE program_id = ? AND period_id = ?";
+            
+    $stmt = $conn->prepare($sql);
+    
+    if (!$stmt) {
+        error_log("Database error in unsubmit_program: " . $conn->error);
+        return false;
+    }
+    
+    $stmt->bind_param('ii', $program_id, $period_id);
+    
+    if (!$stmt->execute()) {
+        error_log("Execution error in unsubmit_program: " . $stmt->error);
+        $stmt->close();
+        return false;
+    }
+    
+    $affected = $stmt->affected_rows;
+    $stmt->close();
+    
+    return $affected > 0;
+}
+
+/**
+ * Log an admin action in the system
+ * 
+ * @param string $action The action being performed
+ * @param string $details Additional details about the action
+ * @param bool $success Whether the action was successful
+ * @return bool True if log was created, false otherwise
+ */
+function log_action($action, $details, $success = true) {
+    global $conn;
+    
+    // Only proceed if audit_logs table exists
+    $table_check = $conn->query("SHOW TABLES LIKE 'audit_logs'");
+    if ($table_check->num_rows === 0) {
+        return false;
+    }
+    
+    $user_id = $_SESSION['user_id'] ?? 0;
+    $ip_address = $_SERVER['REMOTE_ADDR'] ?? '';
+    $status = $success ? 'success' : 'failure';
+    
+    $sql = "INSERT INTO audit_logs (user_id, action, details, ip_address, status, created_at) 
+            VALUES (?, ?, ?, ?, ?, NOW())";
+            
+    $stmt = $conn->prepare($sql);
+    
+    if (!$stmt) {
+        error_log("Database error in log_action: " . $conn->error);
+        return false;
+    }
+    
+    $stmt->bind_param('issss', $user_id, $action, $details, $ip_address, $status);
+    
+    $result = $stmt->execute();
+    $stmt->close();
+    
+    return $result;
+}
 ?>
