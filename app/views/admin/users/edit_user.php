@@ -29,24 +29,14 @@ if (!$user_id) {
 }
 
 // Get user data
-$user = null;
-$query = "SELECT u.*, s.sector_name 
-          FROM users u 
-          LEFT JOIN sectors s ON u.sector_id = s.sector_id 
-          WHERE u.user_id = ?";
-$stmt = $conn->prepare($query);
-$stmt->bind_param("i", $user_id);
-$stmt->execute();
-$result = $stmt->get_result();
+$user = get_user_by_id($conn, $user_id); // Use the updated function
 
-if ($result->num_rows === 0) {
+if (!$user) {
     $_SESSION['message'] = 'User not found.';
     $_SESSION['message_type'] = 'danger';
     header('Location: manage_users.php');
     exit;
 }
-
-$user = $result->fetch_assoc();
 
 // Process form submission
 $message = '';
@@ -72,6 +62,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Get all sectors for dropdown
 $sectors = get_all_sectors();
+
+// Get all agency groups for dropdown
+$agency_groups = get_all_agency_groups($conn);
 
 // Set page title
 $pageTitle = 'Edit User';
@@ -167,7 +160,7 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
             </div>
             
             <!-- Agency Information (shown only for agency role) -->
-            <div id="agencyFields" class="mb-4">
+            <div id="agencyFields" class="mb-4" style="display: <?php echo ($user['role'] === 'agency') ? 'block' : 'none'; ?>;">
                 <h6 class="fw-bold mb-3">Agency Information <span class="text-danger">(Required for Agency Users)</span></h6>
                 <div class="row g-3">
                     <div class="col-md-6">
@@ -181,10 +174,23 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                             <option value="">Select Sector</option>
                             <?php foreach($sectors as $sector): ?>
                                 <option value="<?php echo $sector['sector_id']; ?>" <?php echo isset($user['sector_id']) && $user['sector_id'] == $sector['sector_id'] ? 'selected' : ''; ?>>
-                                    <?php echo $sector['sector_name']; ?>
+                                    <?php echo htmlspecialchars($sector['sector_name']); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="agency_group_id" class="form-label">Agency Group</label>
+                        <select class="form-select" id="agency_group_id" name="agency_group_id">
+                            <option value="">Select Agency Group (Optional)</option>
+                            <?php foreach($agency_groups as $group): ?>
+                                <option value="<?php echo $group['agency_group_id']; ?>" <?php echo isset($user['agency_group_id']) && $user['agency_group_id'] == $group['agency_group_id'] ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($group['group_name']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <div class="form-text">Select which group this agency belongs to. This is optional.</div>
                     </div>
                 </div>
                 <div class="alert alert-info mt-3">
@@ -240,6 +246,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const agencyFields = document.getElementById('agencyFields');
     const agencyName = document.getElementById('agency_name');
     const sectorId = document.getElementById('sector_id');
+    const agencyGroupId = document.getElementById('agency_group_id'); // Add agency_group_id
 
     if (roleSelect && agencyFields) {
         // Function to update required status based on role
@@ -248,12 +255,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 agencyFields.style.display = 'block';
                 agencyName.setAttribute('required', '');
                 sectorId.setAttribute('required', '');
+                // agency_group_id is optional, so no required attribute here
             } else {
                 agencyFields.style.display = 'none';
                 agencyName.removeAttribute('required');
                 sectorId.removeAttribute('required');
+                // agency_group_id remains optional
             }
         };
+        
+        // Initial check
+        updateRequiredFields();
         
         // Listen for changes
         roleSelect.addEventListener('change', updateRequiredFields);
@@ -358,7 +370,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <?php
 // Include footer
-require_once '../layouts/footer.php';
+require_once '../../layouts/footer.php';
 ?>
 
 

@@ -9,6 +9,29 @@ require_once dirname(__DIR__) . '/utilities.php';
 require_once 'core.php';
 
 /**
+ * Get all agency groups.
+ *
+ * @param mysqli $conn The database connection.
+ * @return array An array of agency groups with sector_id included.
+ */
+function get_all_agency_groups(mysqli $conn): array {
+    $agency_groups = [];
+    // Include sector_id for proper filtering by sector
+    $sql = "SELECT `agency_group_id`, `group_name`, `sector_id` FROM `agency_group` ORDER BY `group_name` ASC";
+    $result = $conn->query($sql);
+    if ($result === false) {
+        error_log("Error fetching agency groups: " . $conn->error);
+        return [];
+    }
+    if ($result->num_rows > 0) {
+        while ($row = $result->fetch_assoc()) {
+            $agency_groups[] = $row;
+        }
+    }
+    return $agency_groups;
+}
+
+/**
  * Get all users in the system
  * 
  * @return array List of all users with their details
@@ -16,10 +39,11 @@ require_once 'core.php';
 function get_all_users() {
     global $conn;
     
-    $query = "SELECT u.*, s.sector_name 
+    $query = "SELECT u.*, s.sector_name, ag.group_name 
               FROM users u 
-              LEFT JOIN sectors s ON u.sector_id = s.sector_id 
-              ORDER BY u.role = 'admin' DESC, u.username ASC";
+              LEFT JOIN sectors s ON u.sector_id = s.sector_id
+              LEFT JOIN agency_group ag ON u.agency_group_id = ag.agency_group_id
+              ORDER BY u.username ASC";
               
     $result = $conn->query($query);
     
@@ -49,6 +73,7 @@ function add_user($data) {
     if (isset($data['role']) && $data['role'] === 'agency') {
         $required_fields[] = 'agency_name';
         $required_fields[] = 'sector_id';
+        $required_fields[] = 'agency_group_id';
     }
     
     // Check for missing required fields
@@ -96,10 +121,12 @@ function add_user($data) {
         // Set agency-specific fields
         $agency_name = null;
         $sector_id = null;
+        $agency_group_id = null;
         
         if ($role === 'agency') {
             $agency_name = trim($data['agency_name']);
             $sector_id = intval($data['sector_id']);
+            $agency_group_id = intval($data['agency_group_id']);
             
             // Verify sector exists
             $sector_check = "SELECT sector_id FROM sectors WHERE sector_id = ?";
@@ -110,14 +137,23 @@ function add_user($data) {
                 $conn->rollback();
                 return ['error' => 'Invalid sector selected'];
             }
+              // Verify agency group exists
+            $group_check = "SELECT agency_group_id FROM agency_group WHERE agency_group_id = ?";
+            $stmt = $conn->prepare($group_check);
+            $stmt->bind_param("i", $agency_group_id);
+            $stmt->execute();
+            if ($stmt->get_result()->num_rows === 0) {
+                $conn->rollback();
+                return ['error' => 'Invalid agency group selected'];
+            }
         }
         
         // Insert user
-        $query = "INSERT INTO users (username, password, role, agency_name, sector_id, is_active, created_at) 
-                 VALUES (?, ?, ?, ?, ?, ?, NOW())";
+        $query = "INSERT INTO users (username, password, agency_name, role, sector_id, agency_group_id, is_active, created_at) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, NOW())";
         
         $stmt = $conn->prepare($query);
-        $stmt->bind_param("ssssiis", $username, $hashed_password, $role, $agency_name, $sector_id, $is_active);
+        $stmt->bind_param("ssssiis", $username, $hashed_password, $agency_name, $role, $sector_id, $agency_group_id, $is_active);
         
         if (!$stmt->execute()) {
             throw new Exception($stmt->error);
@@ -163,6 +199,7 @@ function update_user($data) {
         if (isset($data['role']) && $data['role'] === 'agency') {
             $required_fields[] = 'agency_name';
             $required_fields[] = 'sector_id';
+            $required_fields[] = 'agency_group_id';
         }
         
         // Check for missing required fields
@@ -276,6 +313,25 @@ function update_user($data) {
             }
         }
         
+        // Handle agency_group_id if provided
+        if (isset($data['agency_group_id'])) {
+            $agency_group_id = !empty($data['agency_group_id']) ? intval($data['agency_group_id']) : null;
+            $update_fields[] = "agency_group_id = ?";
+            $bind_params[] = $agency_group_id;
+            $param_types .= "i";
+              // Verify agency group exists if provided
+            if ($agency_group_id) {
+                $group_check = "SELECT agency_group_id FROM agency_group WHERE agency_group_id = ?";
+                $stmt = $conn->prepare($group_check);
+                $stmt->bind_param("i", $agency_group_id);
+                $stmt->execute();
+                if ($stmt->get_result()->num_rows === 0) {
+                    $conn->rollback();
+                    return ['error' => 'Invalid agency group selected'];
+                }
+            }
+        }
+        
         // Handle is_active if provided
         if (isset($data['is_active'])) {
             $update_fields[] = "is_active = ?";
@@ -379,5 +435,32 @@ function delete_user($user_id) {
         $conn->rollback();
         return ['error' => 'Database error: ' . $e->getMessage()];
     }
+}
+
+/**
+ * Get a single user by ID.
+ *
+ * @param mysqli $conn
+ * @param integer $user_id
+ * @return array|null
+ */
+function get_user_by_id(mysqli $conn, int $user_id): ?array {
+    $sql = "SELECT u.*, s.sector_name, ag.group_name 
+            FROM users u 
+            LEFT JOIN sectors s ON u.sector_id = s.sector_id
+            LEFT JOIN agency_group ag ON u.agency_group_id = ag.agency_group_id
+            WHERE u.user_id = ?";
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+        error_log("Prepare failed: (" . $conn->errno . ") " . $conn->error);
+        return null;
+    }
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($result && $result->num_rows > 0) {
+        return $result->fetch_assoc();
+    }
+    return null;
 }
 ?>

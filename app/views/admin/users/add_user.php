@@ -44,6 +44,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Get all sectors for dropdown
 $sectors = get_all_sectors();
 
+// Get all agency groups for dropdown
+$agency_groups = get_all_agency_groups($conn);
+
 // Additional scripts
 $additionalScripts = [
     APP_URL . '/assets/js/admin/user_form.js'
@@ -93,7 +96,7 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
         <h5 class="card-title m-0">User Information</h5>
     </div>
     <div class="card-body">
-        <form action="<?php echo view_url('admin', 'add_user.php'); ?>" method="post" id="addUserForm">
+        <form action="<?php echo view_url('admin', 'users/add_user.php'); ?>" method="post" id="addUserForm">
             <input type="hidden" name="action" value="add_user">
             
             <!-- Basic Information -->
@@ -141,7 +144,7 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
             </div>
             
             <!-- Agency Information (shown only for agency role) -->
-            <div id="agencyFields" class="mb-4">
+            <div id="agencyFields" class="mb-4" style="display: none;">
                 <h6 class="fw-bold mb-3">Agency Information <span class="text-danger">(Required for Agency Users)</span></h6>
                 <div class="row g-3">
                     <div class="col-md-6">
@@ -155,30 +158,21 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                         <select class="form-select" id="sector_id" name="sector_id">
                             <option value="">Select Sector</option>
                             <?php foreach($sectors as $sector): ?>
-                                <option value="<?php echo $sector['sector_id']; ?>"><?php echo $sector['sector_name']; ?></option>
+                                <option value="<?php echo $sector['sector_id']; ?>"><?php echo htmlspecialchars($sector['sector_name']); ?></option>
                             <?php endforeach; ?>
                         </select>
                         <div class="form-text">Select which sector this agency belongs to.</div>
                     </div>
 
-                    <div class="col-md-6">
-                        <label for="agency_group_id" class="form-label">Agency Group *</label>
-                        <?php
-                        // Get agency groups from database
-                        $agency_groups_query = "SELECT id, group_name FROM agency_group ORDER BY group_name";
-                        $agency_groups_result = $conn->query($agency_groups_query);
-                        $agency_groups = [];
-                        while ($group = $agency_groups_result->fetch_assoc()) {
-                            $agency_groups[] = $group;
-                        }
-                        ?>
+                    <div class="col-md-6" id="agencyGroupField">
+                        <label for="agency_group_id" class="form-label">Agency Group</label>
                         <select class="form-select" id="agency_group_id" name="agency_group_id">
-                            <option value="">Select Agency Group</option>
+                            <option value="">Select Agency Group (Optional)</option>
                             <?php foreach($agency_groups as $group): ?>
-                                <option value="<?php echo $group['id']; ?>"><?php echo $group['group_name']; ?></option>
+                                <option value="<?php echo $group['agency_group_id']; ?>"><?php echo htmlspecialchars($group['group_name']); ?></option>
                             <?php endforeach; ?>
                         </select>
-                        <div class="form-text">Select which group this agency belongs to.</div>
+                        <div class="form-text">Select which group this agency belongs to. You can always edit this in the edit users page.</div>
                     </div>
                 </div>
                 <div class="alert alert-info mt-3">
@@ -209,6 +203,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Toggle agency fields visibility based on role selection
     const roleSelect = document.getElementById('role');
     const agencyFields = document.getElementById('agencyFields');
+    const agencyGroupField = document.getElementById('agencyGroupField');
     const agencyName = document.getElementById('agency_name');
     const sectorId = document.getElementById('sector_id');
     const agencyGroupId = document.getElementById('agency_group_id');
@@ -216,19 +211,44 @@ document.addEventListener('DOMContentLoaded', function() {
     // Set initial state - hide by default, show only for agency role
     if (roleSelect && agencyFields) {
         agencyFields.style.display = 'none';
-        
-        // Function to update required status based on role
+          // Function to update agency group options based on sector
+        function updateAgencyGroupOptions() {
+            const selectedSectorId = sectorId.value;
+            const agencyGroups = <?php echo json_encode($agency_groups); ?>;
+            
+            // Clear current options except first one
+            while (agencyGroupId.options.length > 1) {
+                agencyGroupId.remove(1);
+            }
+            
+            // Add filtered options
+            agencyGroups.forEach(group => {
+                // If no sector is selected, show all groups
+                // If sector is selected, only show groups that belong to that sector
+                if (!selectedSectorId || parseInt(group.sector_id) === parseInt(selectedSectorId)) {
+                    const option = new Option(group.group_name, group.agency_group_id);
+                    agencyGroupId.add(option);
+                }
+            });
+            
+            // Enable the dropdown
+            agencyGroupId.disabled = false;
+        }
+
+        // Function to update required status and show/hide fields based on role
         const updateRequiredFields = function() {
             if (roleSelect.value === 'agency') {
                 agencyFields.style.display = 'block';
                 agencyName.setAttribute('required', '');
                 sectorId.setAttribute('required', '');
                 agencyGroupId.setAttribute('required', '');
+                updateAgencyGroupOptions(); // Always update options when switching to agency
             } else {
                 agencyFields.style.display = 'none';
                 agencyName.removeAttribute('required');
                 sectorId.removeAttribute('required');
                 agencyGroupId.removeAttribute('required');
+                agencyGroupId.value = '';
             }
         };
         
@@ -237,37 +257,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Listen for changes
         roleSelect.addEventListener('change', updateRequiredFields);
-
-        // Listen for sector changes to filter agency groups
         sectorId.addEventListener('change', function() {
-            const selectedSectorId = this.value;
-            
-            // Get all agency groups from PHP
-            const agencyGroups = <?php echo json_encode($agency_groups); ?>;
-            const sectorGroups = <?php 
-                $sector_groups = [];
-                foreach ($agency_groups as $group) {
-                    $query = "SELECT sector_id FROM agency_group WHERE id = " . $group['id'];
-                    $result = $conn->query($query);
-                    if ($row = $result->fetch_assoc()) {
-                        $sector_groups[$group['id']] = $row['sector_id'];
-                    }
-                }
-                echo json_encode($sector_groups);
-            ?>;
-
-            // Clear current options except first one
-            while (agencyGroupId.options.length > 1) {
-                agencyGroupId.remove(1);
+            if (roleSelect.value === 'agency') {
+                updateAgencyGroupOptions();
             }
-
-            // Add filtered options
-            agencyGroups.forEach(group => {
-                if (sectorGroups[group.id] == selectedSectorId) {
-                    const option = new Option(group.group_name, group.id);
-                    agencyGroupId.add(option);
-                }
-            });
         });
     }
     

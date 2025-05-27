@@ -97,9 +97,8 @@ if ($is_ajax) {
         $_SESSION['message_type'] = 'danger';
         $_SESSION['show_toast_only'] = true;
     }
-    
-    // Redirect back to the manage users page
-    header('Location: ' . APP_URL . '/app/views/admin/manage_users.php');
+      // Redirect back to the manage users page
+    header('Location: ' . APP_URL . '/app/views/admin/users/manage_users.php');
 }
 exit;
 

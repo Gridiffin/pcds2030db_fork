@@ -234,7 +234,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 break;            case 'delete_user':
                 // Redirect to process_user.php which handles the actual deletion
                 $_SESSION['user_id_to_delete'] = $_POST['user_id'];
-                header('Location: ../../handlers/admin/process_user.php?action=delete_user&user_id=' . $_POST['user_id']);
+                header('Location: ../../../handlers/admin/process_user.php?action=delete_user&user_id=' . $_POST['user_id']);
                 exit;
         }
         
@@ -286,7 +286,7 @@ $subtitle = "Create and manage user accounts for the system";
 $headerStyle = 'forest-theme'; // Using our forest theme
 $actions = [
     [
-        'url' => APP_URL . '/app/views/admin/add_user.php',
+        'url' => APP_URL . '/app/views/admin/users/add_user.php',
         'text' => 'Add New User',
         'icon' => 'fas fa-user-plus',
         'class' => 'btn-forest'
