@@ -94,7 +94,7 @@ if (!function_exists('format_time_ago')) {
                     </a>
                     <ul class="dropdown-menu" aria-labelledby="-">
                         <li>
-                            <a class="dropdown-item <?php if ($current_page == 'submit_metrics.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/agency/submit_metrics.php">
+                            <a class="dropdown-item <?php if ($current_page == 'submit_outcomes.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/agency/submit_outcomes.php">
                                 <i class="fas fa-chart-line me-1"></i> Outcomes
                             </a>
                         </li>
