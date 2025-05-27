@@ -163,14 +163,56 @@
     font-size: 0.875rem;
 }
 
+/* Accordion styling for year grouping */
+.accordion-item.year-group {
+    border-radius: 0.25rem;
+    overflow: hidden;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.accordion-item.year-group:last-child {
+    margin-bottom: 0;
+}
+
+.year-toggle {
+    font-weight: 500;
+    background-color: #f8f9fa;
+}
+
+.year-toggle:not(.collapsed) {
+    background-color: #e9ecef;
+}
+
+.year-toggle .badge {
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.year-toggle:focus {
+    box-shadow: none;
+    border-color: rgba(0, 0, 0, 0.125);
+}
+
+/* Table styling within accordion */
+.accordion-body .table {
+    margin-bottom: 0;
+}
+
+.accordion-body .table th {
+    background-color: #f8f9fa;
+    border-top: none;
+}
+
+/* Action buttons */
+.toggle-period-status {
+    min-width: 70px;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .periods-table {
         font-size: 0.875rem;
-    }
-    
-    .periods-table .table-responsive {
-        border: none;
     }
     
     .period-actions {
@@ -180,7 +222,6 @@
     }
     
     .period-actions .btn {
-        margin-right: 0;
         font-size: 0.75rem;
         padding: 0.25rem 0.5rem;
     }
@@ -193,6 +234,23 @@
     .modal-body,
     .modal-footer {
         padding: 1rem;
+    }
+    
+    .accordion-body {
+        padding: 0;
+    }
+    
+    .table td, .table th {
+        padding: 0.5rem;
+    }
+    
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+    
+    .toggle-period-status {
+        min-width: 60px;
     }
 }
 

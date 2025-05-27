@@ -60,9 +60,11 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
         <div class="card shadow-sm">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title m-0">Reporting Periods Management</h5>
+                <?php /* Remove redundant button, dashboard_header.php provides this
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPeriodModal">
                     <i class="fas fa-plus me-1"></i> Add New Period
                 </button>
+                */ ?>
             </div>
             <div class="card-body">
                 <!-- Periods table will be loaded here -->
