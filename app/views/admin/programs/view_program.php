@@ -186,7 +186,7 @@ $additionalScripts = [
 ];
 
 // Include header
-require_once '../layouts/header.php';
+require_once '../../layouts/header.php';
 
 // Include admin navigation
 require_once '../../layouts/admin_nav.php';
@@ -205,7 +205,7 @@ $actions = [
 ];
 
 // Include the dashboard header component
-require_once '../layouts/dashboard_header.php';
+require_once ROOT_PATH . 'app/lib/dashboard_header.php';
 ?>
 
 <?php if (isset($program['current_submission']['is_draft']) && $program['current_submission']['is_draft']): ?>
@@ -487,7 +487,7 @@ require_once '../layouts/dashboard_header.php';
 
 <?php
 // Include footer
-require_once '../layouts/footer.php';
+require_once '../../layouts/footer.php';
 ?>
 
 

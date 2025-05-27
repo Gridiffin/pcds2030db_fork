@@ -611,28 +611,86 @@ function editPeriod(periodId) {
  * Delete period
  */
 function deletePeriod(periodId) {
-    if (!confirm('Are you sure you want to delete this reporting period? This action cannot be undone.')) {
+    if (!confirm('Are you sure you want to delete this period? This action cannot be undone.')) {
         return;
     }
-    
-    $.ajax({
-        url: APP_URL + '/app/ajax/delete_period.php',
-        type: 'POST',
-        data: {
-            period_id: periodId
+
+    // Show loading state (optional, but good for UX)
+    // You might need to adapt this to your specific UI for showing loading
+    const deleteButton = document.querySelector(`.delete-period-btn[data-period-id="${periodId}"]`);
+    if (deleteButton) {
+        deleteButton.disabled = true;
+        deleteButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    }
+
+    fetch(`${APP_URL}/app/ajax/delete_period.php`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded', // Standard for form data
+            'X-Requested-With': 'XMLHttpRequest' // Often used to identify AJAX requests
         },
-        dataType: 'json',
-        success: function(response) {
-            if (response.success) {
-                showSuccess('Period deleted successfully!');
-                loadPeriods(); // Reload the periods table
-            } else {
-                showError('Failed to delete period: ' + (response.message || 'Unknown error'));
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('Error deleting period:', error);
-            showError('Failed to delete period. Please try again.');
+        body: `period_id=${periodId}`
+    })
+    .then(response => {
+        const contentType = response.headers.get("content-type");
+        if (response.ok && contentType && contentType.includes("application/json")) {
+            return response.json();
+        } else if (response.ok && (!contentType || !contentType.includes("application/json"))) {
+            // It's a 2xx response, but not JSON. Read as text.
+            return response.text().then(text => {
+                // This might be an HTML error page or some other non-JSON string
+                console.warn('Received non-JSON response:', text);
+                throw new Error(`Server returned unexpected response (not JSON). Status: ${response.status}. Response: ${text.substring(0, 100)}...`);
+            });
+        } else {
+            // Handle HTTP errors (4xx, 5xx)
+            return response.text().then(text => {
+                console.error(`HTTP error! Status: ${response.status}. Response: ${text}`);
+                let errorMsg = `Failed to delete period. Status: ${response.status}.`;
+                if (text) {
+                    // Attempt to parse as JSON if it's an error, as the PHP might still send JSON errors
+                    try {
+                        const errorJson = JSON.parse(text);
+                        if (errorJson && errorJson.message) {
+                            errorMsg = errorJson.message;
+                        } else {
+                             errorMsg += ` Server response: ${text.substring(0, 200)}...`;
+                        }
+                    } catch (e) {
+                        // If parsing fails, just use the raw text (or a snippet)
+                        errorMsg += ` Server response: ${text.substring(0, 200)}...`;
+                    }
+                }
+                throw new Error(errorMsg);
+            });
+        }
+    })
+    .then(data => {
+        if (data.success) {
+            // Show success message (e.g., using a toast notification library)
+            // For now, just log and reload
+            console.log('Period deleted successfully');
+            alert('Period deleted successfully!'); // Simple alert
+            loadPeriods(); // Reload the periods list
+        } else {
+            // Show error message from server
+            console.error('Error deleting period:', data.message);
+            alert(`Error deleting period: ${data.message}`);
+        }
+    })
+    .catch(error => {
+        console.error('Error in deletePeriod fetch:', error);
+        alert(`An error occurred: ${error.message}`);
+    })
+    .finally(() => {
+        // Restore button state
+        if (deleteButton) {
+            deleteButton.disabled = false;
+            deleteButton.innerHTML = '<i class="fas fa-trash"></i>'; // Restore original icon
         }
     });
 }
+
+/**
+ * Edit period (placeholder - implement as needed)
+ */
