@@ -227,7 +227,7 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                     </div>
                 <?php endif; ?>
                 
-                <form method="POST" action="<?php echo view_url('admin', 'assign_programs.php'); ?>" id="assignProgramForm">
+                <form method="POST" action="<?php echo view_url('admin', 'programs/assign_programs.php'); ?>" id="assignProgramForm">
                     <div class="row g-3">
                         <!-- Basic Information -->
                         <div class="col-md-12 mb-4">
