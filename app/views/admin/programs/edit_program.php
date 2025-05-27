@@ -297,7 +297,7 @@ $additionalStyles = '
 // Set page title
 $pageTitle = 'Edit Program';
 
-require_once '../layouts/header.php';
+require_once '../../layouts/header.php';
 require_once '../../layouts/admin_nav.php';
 
 // Set up header variables
@@ -313,7 +313,7 @@ $actions = [
     ]
 ];
 
-require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
+require_once ROOT_PATH . 'app/lib/dashboard_header.php';
 ?>
 
 <?php if (!empty($message)): ?>
@@ -851,7 +851,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <?php
-require_once '../layouts/footer.php';
+require_once '../../layouts/footer.php';
 ?>
 
 

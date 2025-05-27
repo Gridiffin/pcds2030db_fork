@@ -236,7 +236,7 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                         <?php echo $rating_map[$rating_value]['label']; ?>
                     </span>
                     <?php endif; ?>
-                    <a href="<?php echo APP_URL; ?>/app/views/admin/edit_program.php?id=<?php echo $program_id; ?>" class="btn btn-sm btn-primary ms-2">
+                    <a href="edit_program.php?id=<?php echo $program_id; ?>" class="btn btn-sm btn-primary ms-2">
                         <i class="fas fa-edit me-1"></i> Edit Program
                     </a>
                 </div>
