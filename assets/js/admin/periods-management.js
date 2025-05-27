@@ -28,10 +28,33 @@ $(document).ready(function() {
     $('#addPeriodModal').on('hidden.bs.modal', function() {
         resetPeriodForm();
     });
-    
-    // Handle quarter and year changes to auto-calculate dates
+      // Handle quarter and year changes to auto-calculate dates
     $('#quarter, #year').on('change', function() {
+        // Mark that period type/year changed, which may affect standard dates
+        $('#period-dates-changed').val('true');
         updateDateFields();
+    });
+    
+    // Track when date fields are manually edited
+    $('#startDate, #endDate').on('change', function() {
+        const quarter = $('#quarter').val();
+        const year = $('#year').val();
+        
+        if (!quarter || !year) return;
+        
+        // Check if dates match standard dates for this quarter/year
+        const standardDates = calculatePeriodDates(parseInt(quarter), parseInt(year));
+        if (!standardDates) return;
+        
+        const currentStartDate = $('#startDate').val();
+        const currentEndDate = $('#endDate').val();
+        
+        // If either date doesn't match standard, mark as using custom dates
+        if (currentStartDate !== standardDates.startDate || currentEndDate !== standardDates.endDate) {
+            $('#useCustomDates').prop('checked', true);
+        } else {
+            $('#useCustomDates').prop('checked', false);
+        }
     });
 });
 
@@ -343,8 +366,7 @@ function savePeriod() {
         $('<div class="invalid-feedback">Please select a valid status.</div>').insertAfter('#status');
         isValid = false;
     }
-    
-    // Exit if validation failed
+      // Exit if validation failed
     if (!isValid) {
         showError('Please correct the errors in the form.');
         return;
@@ -353,46 +375,68 @@ function savePeriod() {
     // Show loading state
     $('#savePeriod').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> ' + (isUpdate ? 'Updating...' : 'Saving...'));
     
-    // For updates, we can skip the duplicate check and proceed directly
-    if (isUpdate) {
-        submitPeriodData(formData, isUpdate);
-        return;
-    }
+    // Check for date overlaps
+    const excludePeriodId = isUpdate ? formData.period_id : null;
     
-    // For new periods, check for duplicates
-    $.ajax({
-        url: APP_URL + '/app/ajax/check_period_exists.php',
-        type: 'POST',
-        data: {
-            quarter: formData.quarter,
-            year: formData.year
-        },
-        dataType: 'json',
-        success: function(response) {
-            if (response.success) {
-                if (response.exists) {
-                    // Period already exists
-                    showError(`A period for ${getPeriodName(formData.quarter)} ${formData.year} already exists.`);
-                    $('#quarter, #year').addClass('is-invalid');
-                    $('<div class="invalid-feedback">This period already exists.</div>').insertAfter('#year');
-                    $('#savePeriod').prop('disabled', false).html('<i class="fas fa-save me-1"></i> Save Period');
-                } else {
-                    // Proceed with saving the period
-                    submitPeriodData(formData);
+    checkDateOverlap(formData.start_date, formData.end_date, excludePeriodId)
+        .then(result => {
+            if (result.overlaps) {
+                // Format overlapping periods for display
+                const periodList = result.periods.map(p => {
+                    const startDate = new Date(p.start_date).toLocaleDateString();
+                    const endDate = new Date(p.end_date).toLocaleDateString();
+                    return `- ${getPeriodName(p.quarter)} ${p.year} (${startDate} - ${endDate})`;
+                }).join('\n');
+                
+                if (!confirm(`Warning: This period overlaps with the following existing periods:\n\n${periodList}\n\nDo you want to continue anyway?`)) {
+                    $('#savePeriod').prop('disabled', false).html('<i class="fas fa-save me-1"></i> ' + (isUpdate ? 'Update Period' : 'Save Period'));
+                    return;
                 }
-            } else {
-                // Error checking for duplicate
-                showError('Error checking for duplicate periods: ' + (response.message || 'Unknown error'));
-                $('#savePeriod').prop('disabled', false).html('<i class="fas fa-save me-1"></i> Save Period');
             }
-        },
-        error: function(xhr, status, error) {
-            console.error('Error checking for duplicate period:', error);
-            showError('Error checking for duplicate periods. Please try again.');
-            $('#savePeriod').prop('disabled', false).html('<i class="fas fa-save me-1"></i> Save Period');
-        }
-    });
-}
+            
+            // Add custom dates flag
+            formData.use_custom_dates = $('#useCustomDates').prop('checked') ? 1 : 0;
+            
+            // For updates, we can skip the duplicate check and proceed directly
+            if (isUpdate) {
+                submitPeriodData(formData, isUpdate);
+                return;
+            }
+              // For new periods, check for duplicates
+            $.ajax({
+                url: APP_URL + '/app/ajax/check_period_exists.php',
+                type: 'POST',
+                data: {
+                    quarter: formData.quarter,
+                    year: formData.year
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        if (response.exists) {
+                            // Period already exists
+                            showError(`A period for ${getPeriodName(formData.quarter)} ${formData.year} already exists.`);
+                            $('#quarter, #year').addClass('is-invalid');
+                            $('<div class="invalid-feedback">This period already exists.</div>').insertAfter('#year');
+                            $('#savePeriod').prop('disabled', false).html('<i class="fas fa-save me-1"></i> Save Period');
+                        } else {
+                            // Proceed with saving the period
+                            submitPeriodData(formData);
+                        }
+                    } else {
+                        // Error checking for duplicate
+                        showError('Error checking for duplicate periods: ' + (response.message || 'Unknown error'));
+                        $('#savePeriod').prop('disabled', false).html('<i class="fas fa-save me-1"></i> Save Period');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error checking for duplicate period:', error);
+                    showError('Error checking for duplicate periods. Please try again.');
+                    $('#savePeriod').prop('disabled', false).html('<i class="fas fa-save me-1"></i> Save Period');
+                }
+            });
+        }); // Closes the arrow function body for .then(result => { ... })
+} // Closing brace for the savePeriod function
 
 /**
  * Submit period data to the server after validation
@@ -433,6 +477,8 @@ function submitPeriodData(formData, isUpdate = false) {
 function resetPeriodForm() {
     $('#addPeriodForm')[0].reset();
     $('#periodId').val(''); // Clear the hidden period ID field
+    $('#period-dates-changed').val('false');
+    $('#useCustomDates').prop('checked', false);
     $('#addPeriodForm .is-invalid').removeClass('is-invalid');
     $('#addPeriodForm .invalid-feedback').remove();
     $('#savePeriod').prop('disabled', false).html('<i class="fas fa-save me-1"></i> Save Period');
@@ -457,6 +503,7 @@ function getPeriodName(quarter) {
 
 /**
  * Calculate and update date fields based on selected quarter and year
+ * If dates have been manually edited, ask for confirmation before overwriting
  */
 function updateDateFields() {
     const quarter = $('#quarter').val();
@@ -468,11 +515,44 @@ function updateDateFields() {
         return;
     }
     
-    const dates = calculatePeriodDates(parseInt(quarter), parseInt(year));
-    if (dates) {
-        $('#startDate').val(dates.startDate);
-        $('#endDate').val(dates.endDate);
+    // Check if dates are already set (might be custom)
+    const currentStartDate = $('#startDate').val();
+    const currentEndDate = $('#endDate').val();
+    const datesAlreadySet = currentStartDate && currentEndDate;
+    
+    // Get the standard dates for this quarter/year
+    const standardDates = calculatePeriodDates(parseInt(quarter), parseInt(year));
+    if (!standardDates) return;
+    
+    // If dates are already set and different from standard dates, they might be custom
+    if (datesAlreadySet && 
+        (currentStartDate !== standardDates.startDate || currentEndDate !== standardDates.endDate)) {
+        
+        // Store the current custom flag state
+        const wasUsingCustomDates = $('#useCustomDates').prop('checked') || false;
+        
+        // Mark as using custom dates (this will be reset if the user chooses to use standard dates)
+        $('#useCustomDates').prop('checked', true);
+        
+        // Only ask for confirmation if this is a change from standard to custom or if quarter/year changed
+        // but custom dates were already in use
+        if (!wasUsingCustomDates || $('#period-dates-changed').val() === 'true') {
+            if (confirm('You have custom dates set. Do you want to reset to standard dates for this period?')) {
+                // User wants standard dates
+                $('#startDate').val(standardDates.startDate);
+                $('#endDate').val(standardDates.endDate);
+                $('#useCustomDates').prop('checked', false);
+            }
+        }
+    } else {
+        // Either no dates set yet, or they match standard - update without asking
+        $('#startDate').val(standardDates.startDate);
+        $('#endDate').val(standardDates.endDate);
+        $('#useCustomDates').prop('checked', false);
     }
+    
+    // Reset the change tracker
+    $('#period-dates-changed').val('false');
 }
 
 /**
@@ -647,14 +727,25 @@ function editPeriod(periodId) {
             
             // Update modal title to indicate editing
             $('#addPeriodModalLabel').text('Edit Reporting Period');
-            
-            // Populate form fields
+              // Populate form fields
             $('#periodId').val(period.period_id);
             $('#quarter').val(period.quarter);
             $('#year').val(period.year);
-            $('#startDate').val(period.start_date.split(' ')[0]); // Just get the date part
-            $('#endDate').val(period.end_date.split(' ')[0]); // Just get the date part
+            
+            // Get just the date part without time
+            const startDate = period.start_date.split(' ')[0];
+            const endDate = period.end_date.split(' ')[0];
+            
+            $('#startDate').val(startDate);
+            $('#endDate').val(endDate);
             $('#status').val(period.status);
+            
+            // Check if using custom dates
+            const isCustomDates = period.is_standard_dates == 0; // Using loose equality as it might be string "0"
+            $('#useCustomDates').prop('checked', isCustomDates);
+            
+            // Reset the period dates changed flag
+            $('#period-dates-changed').val('false');
             
             // Change the save button text
             $('#savePeriod').text('Update Period');
@@ -760,5 +851,37 @@ function deletePeriod(periodId) {
 }
 
 /**
- * Edit period (placeholder - implement as needed)
+ * Check if the current period dates overlap with another period
+ * @param {string} startDate - Start date in YYYY-MM-DD format
+ * @param {string} endDate - End date in YYYY-MM-DD format
+ * @param {number|null} excludePeriodId - Period ID to exclude from the check (for updates)
+ * @returns {Promise} Promise that resolves with an object indicating overlap status
  */
+function checkDateOverlap(startDate, endDate, excludePeriodId = null) {
+    return new Promise((resolve, reject) => {
+        $.ajax({
+            url: APP_URL + '/app/ajax/check_period_overlap.php',
+            type: 'POST',
+            data: {
+                start_date: startDate,
+                end_date: endDate,
+                exclude_period_id: excludePeriodId
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    resolve({
+                        overlaps: response.overlaps,
+                        periods: response.periods || []
+                    });
+                } else {
+                    reject(new Error(response.message || 'Error checking date overlap'));
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error checking date overlap:', error);
+                reject(new Error('Failed to check for overlapping periods'));
+            }
+        });
+    });
+}

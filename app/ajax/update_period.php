@@ -39,6 +39,7 @@ try {
     $start_date = trim($_POST['start_date'] ?? '');
     $end_date = trim($_POST['end_date'] ?? '');
     $status = trim($_POST['status'] ?? 'closed'); // Default to closed
+    $use_custom_dates = isset($_POST['use_custom_dates']) ? (bool)$_POST['use_custom_dates'] : false;
     
     // Validation
     if (empty($periodId) || $periodId <= 0) {
@@ -109,6 +110,8 @@ try {
     // Format dates to MySQL format
     $start_date_db = $start_date;
     $end_date_db = $end_date;
+      // Set is_standard_dates based on the use_custom_dates flag (inverse)
+    $is_standard_dates = $use_custom_dates ? 0 : 1;
     
     // Update the period
     $updateStmt = $conn->prepare(
@@ -117,11 +120,12 @@ try {
              year = ?, 
              start_date = ?, 
              end_date = ?, 
-             status = ?, 
+             status = ?,
+             is_standard_dates = ?,
              updated_at = NOW()
          WHERE period_id = ?"
     );
-    $updateStmt->bind_param("sisssi", $quarter, $year, $start_date_db, $end_date_db, $status, $periodId);
+    $updateStmt->bind_param("sisssii", $quarter, $year, $start_date_db, $end_date_db, $status, $is_standard_dates, $periodId);
     $updateSuccess = $updateStmt->execute();
     
     if (!$updateSuccess) {

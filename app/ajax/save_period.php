@@ -39,6 +39,7 @@ try {
     $start_date = trim($_POST['start_date'] ?? '');
     $end_date = trim($_POST['end_date'] ?? '');
     $status = trim($_POST['status'] ?? 'closed'); // Default to closed to match ENUM and new modal
+    $use_custom_dates = isset($_POST['use_custom_dates']) ? (bool)$_POST['use_custom_dates'] : false;
     
     // Validation
     if (empty($quarter)) {
@@ -127,15 +128,18 @@ try {
             if (!$conn->query($close_query)) {
                 throw new Exception('Failed to close existing periods: ' . $conn->error);
             }
-        }
-        // Insert new period (remove period_name)
-        $insert_query = "INSERT INTO reporting_periods (year, quarter, start_date, end_date, status, is_standard_dates, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 1, NOW(), NOW())";
+        }        // Insert new period (remove period_name)
+        $insert_query = "INSERT INTO reporting_periods (year, quarter, start_date, end_date, status, is_standard_dates, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())";
         $insert_stmt = $conn->prepare($insert_query);
         if (!$insert_stmt) {
             throw new Exception('Failed to prepare insert statement: ' . $conn->error);
         }
-        // Bind parameters: year, quarter, start_date, end_date, status
-        $insert_stmt->bind_param("iisss", $year_int, $quarter_int, $start_date, $end_date, $status);
+        
+        // Set is_standard_dates based on the use_custom_dates flag (inverse)
+        $is_standard_dates = $use_custom_dates ? 0 : 1;
+        
+        // Bind parameters: year, quarter, start_date, end_date, status, is_standard_dates
+        $insert_stmt->bind_param("iisssi", $year_int, $quarter_int, $start_date, $end_date, $status, $is_standard_dates);
         if (!$insert_stmt->execute()) {
             throw new Exception('Failed to save period: ' . $insert_stmt->error);
         }

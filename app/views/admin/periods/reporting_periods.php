@@ -87,10 +87,11 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                 <h5 class="modal-title" id="addPeriodModalLabel">Add New Reporting Period</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <form id="addPeriodForm">
-                    <!-- Hidden field for period ID (used when editing) -->
+            <div class="modal-body">                <form id="addPeriodForm">
+                    <!-- Hidden fields -->
                     <input type="hidden" id="periodId" name="period_id" value="">
+                    <input type="hidden" id="period-dates-changed" value="false">
+                    <input type="hidden" id="useCustomDates" name="use_custom_dates" value="0">
                     
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
@@ -110,15 +111,16 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                             <input type="number" class="form-control" id="year" name="year" required 
                                    placeholder="YYYY" min="2000" max="2099">
                         </div>
-                    </div>
-                    <div class="row g-3">
+                    </div>                    <div class="row g-3">
                         <div class="col-md-6">
                             <label for="startDate" class="form-label">Start Date <span class="text-danger">*</span></label>
-                            <input type="date" class="form-control" id="startDate" name="start_date" required readonly>
+                            <input type="date" class="form-control" id="startDate" name="start_date" required>
+                            <small class="form-text text-muted">Auto-calculated based on period type, but can be customized</small>
                         </div>
                         <div class="col-md-6">
                             <label for="endDate" class="form-label">End Date <span class="text-danger">*</span></label>
-                            <input type="date" class="form-control" id="endDate" name="end_date" required readonly>
+                            <input type="date" class="form-control" id="endDate" name="end_date" required>
+                            <small class="form-text text-muted">Auto-calculated based on period type, but can be customized</small>
                         </div>
                     </div>
                     <div class="mb-3 mt-3">
