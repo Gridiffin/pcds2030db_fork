@@ -24,9 +24,9 @@ if (!defined('ROOT_PATH')) {
 }
 
 // Feature flags
-define('MULTI_SECTOR_ENABLED', false); // Set to false to focus only on Forestry sector
+define('MULTI_SECTOR_ENABLED', true); // Set to false to focus only on Forestry sector
 define('FORESTRY_SECTOR_ID', 1);      // The ID of the Forestry sector in the database
-define('ALLOW_OUTCOME_CREATION', false); // Set to false to disable creating new outcomes
+define('ALLOW_OUTCOME_CREATION', true); // Set to false to disable creating new outcomes
 
 // File paths
 if (!defined('ROOT_PATH')) {

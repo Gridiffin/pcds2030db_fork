@@ -230,7 +230,6 @@ $allow_outcome_creation = get_outcome_creation_setting();
 </div>
 
 <script>
-    /*
     document.addEventListener('DOMContentLoaded', function() {
         // Refresh page button
         const refreshBtn = document.getElementById('refreshPage');
@@ -279,7 +278,6 @@ $allow_outcome_creation = get_outcome_creation_setting();
         // If the '...' was a placeholder for actual code, please ensure that code is correct.
         // Assuming the error was from getElementById, this part might not be the immediate cause of *that* error.
     });
-    */
 </script>
 
 

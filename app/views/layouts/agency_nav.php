@@ -103,6 +103,13 @@ if (!function_exists('format_time_ago')) {
                                 <i class="fas fa-chart-line me-1"></i> Create Outcome Details
                             </a>
                         </li>
+                        <?php if (!empty($settings['allow_create_outcome']) && $settings['allow_create_outcome']): ?>
+                        <li>
+                            <a class="dropdown-item <?php if ($current_page == 'create_outcome.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/agency/create_outcome.php">
+                                <i class="fas fa-plus me-1"></i> Create Outcome
+                            </a>
+                        </li>
+                        <?php endif; ?>
                         <!-- Add more dropdown items here if needed -->
                     </ul>
                 </li>

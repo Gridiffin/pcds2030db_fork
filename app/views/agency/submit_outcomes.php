@@ -23,6 +23,10 @@ if (!is_agency()) {
 
 $pageTitle = 'Submit Sector Outcomes';
 
+$settings = [
+    'allow_create_outcome' => true
+];
+
 $current_period = get_current_reporting_period();
 $show_form = $current_period && $current_period['status'] === 'open';
 
@@ -103,7 +107,16 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                 <?= date('d M Y', strtotime($current_period['end_date'])) ?>)
             </div>
         </div>
-    </div>    <div class="card shadow-sm mb-4">        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+    </div>    
+
+    <?php if (!empty($settings['allow_create_outcome']) && $settings['allow_create_outcome']): ?>
+    <div class="mb-3">
+        <a href="<?php echo APP_URL; ?>/app/views/agency/create_outcome.php" class="btn btn-success">
+            <i class="fas fa-plus me-1"></i> Create Outcome
+        </a>
+    </div>
+
+    <div class="card shadow-sm mb-4">        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h5 class="card-title m-0">
                 <i class="fas fa-chart-bar me-2"></i>Submitted Outcomes
             </h5>
@@ -149,6 +162,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
             <?php endif; ?>
         </div>
     </div>
+    <?php endif; ?>
 
     <?php if (!empty($draft_outcomes)): ?>
         <div class="card shadow-sm mb-4">
@@ -264,6 +278,3 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
 <?php
 require_once '../layouts/footer.php';
 ?>
-
-
-
