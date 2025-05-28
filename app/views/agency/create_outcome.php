@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $message = 'Outcome created successfully.';
                 $message_type = 'success';
                 // Redirect to manage outcomes or edit page
-                header('Location: manage_outcomes.php');
+                header('Location: submit_outcomes.php');
                 exit;
             } else {
                 $message = 'Error saving outcome: ' . $conn->error;
@@ -74,14 +74,9 @@ require_once '../layouts/agency_nav.php';
 
 // Include dashboard header
 require_once ROOT_PATH . 'app/lib/dashboard_header.php';
-
-/* Move footer include to after main content div */
 ?>
-</div> <!-- container-fluid -->
 
 <?php
-// require_once '../layouts/footer.php';
-
 // Set page header variables
 $title = "Create Outcome";
 $subtitle = "Create a new outcome with monthly data";

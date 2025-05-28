@@ -63,8 +63,7 @@ require_once '../layouts/header.php';
 // Include agency navigation
 require_once '../layouts/agency_nav.php';
 
-// Set up the dashboard header variables
-$title = "Agency Dashboard";
+$title = "";
 $subtitle = "Program tracking and reporting";
 $headerStyle = 'standard-blue'; // Updated to use standardized blue variant
 $headerClass = ''; // Removed homepage-header class as it's no longer needed
