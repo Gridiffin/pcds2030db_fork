@@ -25,6 +25,7 @@ $message_type = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $table_name = trim($_POST['table_name'] ?? '');
     $data_json = $_POST['data_json'] ?? '';
+    $is_draft = isset($_POST['is_draft']) ? intval($_POST['is_draft']) : 0;
 
     if ($table_name === '' || $data_json === '') {
         $message = 'Table name and data are required.';
@@ -40,13 +41,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $message_type = 'danger';
         } else {
             // Insert new record into sector_outcomes_data
-            $insert_query = "INSERT INTO sector_outcomes_data (metric_id, sector_id, table_name, data_json, is_draft) VALUES (?, ?, ?, ?, 0)";
+            $insert_query = "INSERT INTO sector_outcomes_data (metric_id, sector_id, table_name, data_json, is_draft) VALUES (?, ?, ?, ?, ?)";
             $stmt = $conn->prepare($insert_query);
             // metric_id is auto-increment or generated, so set to NULL or 0
             $metric_id = 0;
             $sector_id = intval($sector_id);
             $data_json_str = json_encode($data_array);
-            $stmt->bind_param("iiss", $metric_id, $sector_id, $table_name, $data_json_str);
+            $stmt->bind_param("iissi", $metric_id, $sector_id, $table_name, $data_json_str, $is_draft);
             if ($stmt->execute()) {
                 $message = 'Outcome created successfully.';
                 $message_type = 'success';
@@ -140,7 +141,9 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                 <input type="hidden" name="data_json" id="dataJsonInput" />
 
                 <div class="mt-3">
-                    <button type="submit" class="btn btn-success" id="saveBtn">Save Outcome</button>
+                    <input type="hidden" name="is_draft" id="isDraftInput" value="0" />
+                    <button type="submit" class="btn btn-success" id="saveBtn" onclick="document.getElementById('isDraftInput').value='0';">Save Outcome</button>
+                    <button type="submit" class="btn btn-warning ms-2" id="saveDraftBtn" onclick="document.getElementById('isDraftInput').value='1';">Save as Draft</button>
                     <a href="manage_outcomes.php" class="btn btn-secondary ms-2">Cancel</a>
                 </div>
             </form>
