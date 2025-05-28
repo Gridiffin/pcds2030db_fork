@@ -76,11 +76,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $data_json_str = json_encode($post_data_array);
             $stmt_update->bind_param("ssiii", $post_table_name, $data_json_str, $is_draft, $metric_id, $sector_id);
             if ($stmt_update->execute()) {
-                $message = 'Outcome updated successfully.';
-                $message_type = 'success';
-                // Reload updated data for display
-                $table_name = $post_table_name;
-                $data_array = $post_data_array;
+                // Redirect to submit_outcomes.php after successful save or save draft
+                header('Location: submit_outcomes.php');
+                exit;
             } else {
                 $message = 'Error updating outcome: ' . $conn->error;
                 $message_type = 'danger';
