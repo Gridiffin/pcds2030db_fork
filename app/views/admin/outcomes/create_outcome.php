@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $message = 'Outcome created successfully.';
                 $message_type = 'success';
                 // Redirect to manage outcomes or edit page
-                header('Location: manage_outcomes.php');
+                header('Location: submit_outcomes.php');
                 exit;
             } else {
                 $message = 'Error saving outcome: ' . $conn->error;

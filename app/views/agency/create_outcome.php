@@ -31,8 +31,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $message = 'Table name and data are required.';
         $message_type = 'danger';
     } else {
-        $metric_id = 0; // New metric id will be generated
         $sector_id = $_SESSION['sector_id'] ?? 0; // Use agency user's sector_id
+
+        // Get max metric_id for this sector
+        $max_metric_id = 0;
+        $query = "SELECT MAX(metric_id) AS max_metric_id FROM sector_outcomes_data WHERE sector_id = ?";
+        $stmt_max = $conn->prepare($query);
+        $stmt_max->bind_param("i", $sector_id);
+        $stmt_max->execute();
+        $result_max = $stmt_max->get_result();
+        if ($row = $result_max->fetch_assoc()) {
+            $max_metric_id = intval($row['max_metric_id']);
+        }
+        $metric_id = $max_metric_id + 1;
 
         // Decode JSON data
         $data_array = json_decode($data_json, true);
@@ -43,7 +54,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Insert new record into sector_outcomes_data
             $insert_query = "INSERT INTO sector_outcomes_data (metric_id, sector_id, table_name, data_json, is_draft) VALUES (?, ?, ?, ?, ?)";
             $stmt = $conn->prepare($insert_query);
-            $metric_id = 0;
             $sector_id = intval($sector_id);
             $data_json_str = json_encode($data_array);
             $stmt->bind_param("iissi", $metric_id, $sector_id, $table_name, $data_json_str, $is_draft);
