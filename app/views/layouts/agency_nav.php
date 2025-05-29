@@ -113,7 +113,7 @@ if (!function_exists('format_time_ago')) {
                     </ul>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <?php if ($current_page == 'view_all_sectors.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/agency/view_all_sectors.php">
+                    <a class="nav-link <?php if ($current_page == 'view_all_sectors.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/agency/sectors/view_all_sectors.php">
                         <i class="fas fa-globe me-1"></i> All Sectors
                     </a>
                 </li>

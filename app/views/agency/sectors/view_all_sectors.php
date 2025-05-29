@@ -8,7 +8,7 @@
 
 // Define project root path for consistent file references
 if (!defined('PROJECT_ROOT_PATH')) {
-    define('PROJECT_ROOT_PATH', rtrim(dirname(dirname(dirname(__DIR__))), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
+    define('PROJECT_ROOT_PATH', rtrim(dirname(dirname(dirname(dirname(__DIR__)))), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
 }
 
 // Include necessary files
@@ -152,10 +152,10 @@ $additionalScripts = [
 ];
 
 // Include header
-require_once '../layouts/header.php';
+require_once '../../layouts/header.php';
 
 // Include agency navigation
-require_once '../layouts/agency_nav.php';
+require_once '../../layouts/agency_nav.php';
 
 // Set up the page header variables
 $title = MULTI_SECTOR_ENABLED ? "Cross-Sector Programs" : "Forestry Sector Programs";
@@ -532,7 +532,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
 
 <?php
 // Include footer
-require_once '../layouts/footer.php';
+require_once '../../layouts/footer.php';
 ?>
 
 

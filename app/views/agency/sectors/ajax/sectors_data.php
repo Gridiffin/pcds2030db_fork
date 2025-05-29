@@ -6,12 +6,12 @@
  */
 
 // Include necessary files
-require_once '../../../config/config.php';
-require_once '../../../includes/db_connect.php';
-require_once '../../../includes/session.php';
-require_once '../../../includes/functions.php';
-require_once '../../../includes/agency_functions.php';
-require_once '../../../includes/rating_helpers.php';
+require_once __DIR__ . '/../../../../config/config.php';
+require_once __DIR__ . '/../../../../lib/db_connect.php';
+require_once __DIR__ . '/../../../../lib/session.php';
+require_once __DIR__ . '/../../../../lib/functions.php';
+require_once __DIR__ . '/../../../../lib/agencies/index.php';
+require_once __DIR__ . '/../../../../lib/rating_helpers.php';
 
 // Verify user is an agency
 if (!is_agency()) {
