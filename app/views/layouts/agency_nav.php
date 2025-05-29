@@ -67,8 +67,7 @@ if (!function_exists('format_time_ago')) {
 
 <!-- Main Navigation -->
 <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
-    <div class="container-fluid px-4">
-        <a class="navbar-brand" href="<?php echo APP_URL; ?>/app/views/agency/dashboard.php">
+    <div class="container-fluid px-4">        <a class="navbar-brand" href="<?php echo APP_URL; ?>/app/views/agency/dashboard/dashboard.php">
             <?php echo APP_NAME; ?>
             
         </a>
@@ -78,7 +77,7 @@ if (!function_exists('format_time_ago')) {
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav mx-auto">
                 <li class="nav-item">
-                    <a class="nav-link <?php if ($current_page == 'dashboard.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/agency/dashboard.php">
+                    <a class="nav-link <?php if ($current_page == 'dashboard.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/agency/dashboard/dashboard.php">
                         <i class="fas fa-tachometer-alt me-1"></i> Dashboard
                     </a>
                 </li>

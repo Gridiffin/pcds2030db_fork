@@ -39,12 +39,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     } else {
         // Use the validate_login function which properly checks the is_active status
         $result = validate_login($username, $password);
-        
-        if (isset($result['success'])) {            // Check user role using session variable (more robust than function)
+          if (isset($result['success'])) {            // Check user role using session variable (more robust than function)
             if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
                 header('Location: ' . APP_URL . '/app/views/admin/dashboard/dashboard.php');
             } else {
-                header('Location: ' . APP_URL . '/app/views/agency/dashboard.php');
+                header('Location: ' . APP_URL . '/app/views/agency/dashboard/dashboard.php');
             }
             exit;
         } else {

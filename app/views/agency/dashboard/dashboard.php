@@ -7,7 +7,7 @@
 
 // Define project root path for consistent file references
 if (!defined('PROJECT_ROOT_PATH')) {
-    define('PROJECT_ROOT_PATH', rtrim(dirname(dirname(dirname(__DIR__))), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
+    define('PROJECT_ROOT_PATH', rtrim(dirname(dirname(dirname(dirname(__DIR__)))), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
 }
 
 // Include necessary files
@@ -58,12 +58,12 @@ $additionalScripts = [
 ];
 
 // Include header - removed dashboard-specific body class to fix navbar appearance
-require_once '../layouts/header.php';
+require_once PROJECT_ROOT_PATH . 'app/views/layouts/header.php';
 
 // Include agency navigation
-require_once '../layouts/agency_nav.php';
+require_once PROJECT_ROOT_PATH . 'app/views/layouts/agency_nav.php';
 
-$title = "";
+$title = "Agency Dashboard";
 $subtitle = "Program tracking and reporting";
 $headerStyle = 'standard-blue'; // Updated to use standardized blue variant
 $headerClass = ''; // Removed homepage-header class as it's no longer needed
@@ -315,6 +315,6 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
 
 <?php
 // Include footer
-require_once '../layouts/footer.php';
+require_once PROJECT_ROOT_PATH . 'app/views/layouts/footer.php';
 ?>
 

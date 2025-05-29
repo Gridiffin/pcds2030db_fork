@@ -17,10 +17,9 @@ require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/admin_functions.php';
 
 // Check if user is already logged in
-if (is_logged_in()) {
-    // Define default landing page URLs
+if (is_logged_in()) {    // Define default landing page URLs
     $admin_dashboard = APP_URL . '/app/views/admin/dashboard/dashboard.php';
-    $agency_dashboard = APP_URL . '/app/views/agency/dashboard.php';
+    $agency_dashboard = APP_URL . '/app/views/agency/dashboard/dashboard.php';
     
     // Redirect to appropriate dashboard based on user type
     if (is_admin()) {

@@ -70,10 +70,8 @@ function updatePageContent(periodId) {
     const pagePath = window.location.pathname;
     
     // Define the endpoint based on page path
-    let endpoint = '';
-    
-    if (pagePath.includes('/agency/dashboard.php')) {
-        endpoint = '../ajax/agency_dashboard_data.php';
+    let endpoint = '';    if (pagePath.includes('/agency/dashboard/dashboard.php')) {
+        endpoint = 'ajax/agency_dashboard_data.php';
     } else if (pagePath.includes('/admin/dashboard/dashboard.php')) {
         endpoint = '../ajax/admin_dashboard_data.php';
     } else if (pagePath.includes('/agency/view_programs.php')) {
