@@ -224,6 +224,153 @@ function create_agency_program_draft($program_data) {
 }
 
 /**
+ * Create a comprehensive program draft with all wizard fields
+ * @param array $data All program data from wizard
+ * @return array Result with success/error and program_id
+ */
+function create_wizard_program_draft($data) {
+    global $conn;
+
+    if (!is_agency()) {
+        return ['error' => 'Permission denied'];
+    }
+
+    // Validate required fields
+    if (empty($data['program_name']) || trim($data['program_name']) === '') {
+        return ['error' => 'Program name is required'];
+    }
+
+    // Prepare targets and statuses
+    $targets = $data['targets'] ?? [];
+    $content_json = json_encode(['targets' => $targets]);
+
+    // Ensure sector_id is provided or defaults to FORESTRY_SECTOR_ID
+    $sector_id = $data['sector_id'] ?? FORESTRY_SECTOR_ID;
+
+    // Insert program draft
+    $stmt = $conn->prepare("INSERT INTO programs (program_name, sector_id, owner_agency_id, created_at) VALUES (?, ?, ?, NOW())");
+    $stmt->bind_param("sii", $data['program_name'], $sector_id, $_SESSION['user_id']);
+
+    if ($stmt->execute()) {
+        $program_id = $stmt->insert_id;
+
+        // Dynamically fetch the current reporting period ID
+        $period_id = $data['period_id'] ?? get_current_reporting_period()['period_id'] ?? null;
+
+        if ($period_id === null) {
+            return ['error' => 'No valid reporting period found.'];
+        }
+
+        // Include submitted_by field in the INSERT query
+        $stmt = $conn->prepare("INSERT INTO program_submissions (program_id, period_id, submitted_by, content_json, is_draft, submission_date) VALUES (?, ?, ?, ?, 1, NOW())");
+        $stmt->bind_param("iiis", $program_id, $period_id, $_SESSION['user_id'], $content_json);
+        $stmt->execute();
+
+        return ['success' => true, 'program_id' => $program_id];
+    } else {
+        return ['error' => 'Failed to create program draft: ' . $stmt->error];
+    }
+}
+
+/**
+ * Auto-save program draft with minimal validation
+ * @param array $data Form data for auto-saving
+ * @return array JSON response for AJAX
+ */
+function auto_save_program_draft($data) {
+    global $conn;
+
+    if (!is_agency()) {
+        return ['success' => false, 'error' => 'Permission denied'];
+    }
+
+    // Only proceed if program name exists and is long enough
+    if (empty($data['program_name']) || trim($data['program_name']) === '' || strlen(trim($data['program_name'])) < 3) {
+        return ['success' => false, 'error' => 'Program name must be at least 3 characters for auto-save'];
+    }
+
+    // Check if this is an update to existing draft
+    $program_id = isset($data['program_id']) ? intval($data['program_id']) : 0;
+    
+    if ($program_id > 0) {
+        // Update existing draft
+        return update_wizard_program_draft($program_id, $data);
+    } else {
+        // Dynamically fetch the current reporting period ID or default to 1
+        $data['period_id'] = $data['period_id'] ?? get_current_reporting_period()['period_id'] ?? 1;
+
+        // Create new draft
+        return create_wizard_program_draft($data);
+    }
+}
+
+/**
+ * Update existing program draft with wizard data
+ * @param int $program_id Program ID to update
+ * @param array $data Updated program data
+ * @return array Result with success/error
+ */
+function update_wizard_program_draft($program_id, $data) {
+    global $conn;
+
+    if (!is_agency()) {
+        return ['error' => 'Permission denied'];
+    }
+
+    // Verify ownership
+    $user_id = $_SESSION['user_id'];
+    $check_stmt = $conn->prepare("SELECT program_id FROM programs WHERE program_id = ? AND owner_agency_id = ? AND is_draft = 1");
+    $check_stmt->bind_param("ii", $program_id, $user_id);
+    $check_stmt->execute();
+    $result = $check_stmt->get_result();
+    
+    if ($result->num_rows === 0) {
+        return ['error' => 'Program not found or access denied'];
+    }
+
+    $program_name = trim($data['program_name']);
+    $description = isset($data['description']) ? trim($data['description']) : '';
+    $brief_description = isset($data['brief_description']) ? trim($data['brief_description']) : '';
+    $program_type = isset($data['program_type']) ? trim($data['program_type']) : '';
+    $start_date = isset($data['start_date']) && !empty($data['start_date']) ? $data['start_date'] : null;
+    $end_date = isset($data['end_date']) && !empty($data['end_date']) ? $data['end_date'] : null;
+    $estimated_budget = isset($data['estimated_budget']) && !empty($data['estimated_budget']) ? floatval($data['estimated_budget']) : null;
+    $target_beneficiaries = isset($data['target_beneficiaries']) && !empty($data['target_beneficiaries']) ? intval($data['target_beneficiaries']) : null;
+    $success_indicators = isset($data['success_indicators']) ? trim($data['success_indicators']) : '';
+    $implementation_strategy = isset($data['implementation_strategy']) ? trim($data['implementation_strategy']) : '';
+
+    try {
+        // Prepare extended program data structure
+        $extended_data = [
+            'program_type' => $program_type,
+            'brief_description' => $brief_description,
+            'estimated_budget' => $estimated_budget,
+            'target_beneficiaries' => $target_beneficiaries,
+            'success_indicators' => $success_indicators,
+            'implementation_strategy' => $implementation_strategy
+        ];
+        
+        $extended_json = json_encode($extended_data);
+
+        // Update program draft
+        $stmt = $conn->prepare("UPDATE programs SET program_name = ?, description = ?, start_date = ?, end_date = ?, extended_data = ?, updated_at = NOW() WHERE program_id = ? AND owner_agency_id = ?");
+        $stmt->bind_param("ssssii", $program_name, $description, $start_date, $end_date, $extended_json, $program_id, $user_id);
+
+        if ($stmt->execute()) {
+            return [
+                'success' => true,
+                'message' => 'Program draft updated successfully',
+                'program_id' => $program_id
+            ];
+        } else {
+            return ['error' => 'Failed to update program draft: ' . $stmt->error];
+        }
+    } catch (Exception $e) {
+        return ['error' => 'Database error: ' . $e->getMessage()];
+    }
+}
+
+/**
  * Create a simple program draft with basic information only
  * @param array $data Basic program data (name, description, start_date, end_date)
  * @return array Result with success/error and program_id
