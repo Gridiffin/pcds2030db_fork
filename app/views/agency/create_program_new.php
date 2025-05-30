@@ -82,94 +82,105 @@ require_once '../layouts/agency_nav.php';
                 <div class="alert alert-<?php echo $messageType; ?> alert-dismissible fade show" role="alert">
                     <i class="fas fa-<?php echo $messageType === 'success' ? 'check-circle' : 'exclamation-triangle'; ?> me-2"></i>
                     <?php echo htmlspecialchars($message); ?>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>                </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
             <?php endif; ?>
 
             <!-- Create Program Form -->
-            <div class="card shadow-sm mb-4 w-100">                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-plus-circle me-2"></i>
-                        Create New Program
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <form id="createProgramForm" method="post">
-                        <!-- Program Name -->
-                        <div class="mb-4">
-                            <label for="program_name" class="form-label">
-                                Program Name <span class="text-danger">*</span>
-                            </label>
-                            <input type="text" 
-                                   class="form-control" 
-                                   id="program_name" 
-                                   name="program_name" 
-                                   required
-                                   placeholder="Enter the program name"
-                                   value="<?php echo htmlspecialchars($_POST['program_name'] ?? ''); ?>">
-                            <div class="form-text">
-                                <i class="fas fa-info-circle me-1"></i>
-                                This will be the main identifier for your program
-                            </div>
+            <div class="row justify-content-center">
+                <div class="col-lg-8 col-xl-6">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-light">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-plus-circle me-2 text-primary"></i>
+                                Program Information
+                            </h5>
                         </div>
-
-                        <!-- Program Description -->
-                        <div class="mb-4">
-                            <label for="description" class="form-label">Description</label>
-                            <textarea class="form-control" 
-                                      id="description" 
-                                      name="description"
-                                                                                    rows="4"
-                                      placeholder="Briefly describe the program's purpose and objectives (optional)"><?php echo htmlspecialchars($_POST['description'] ?? ''); ?></textarea>
-                            <div class="form-text">
-                                <i class="fas fa-info-circle me-1"></i>
-                                Optional: Provide a brief overview of what this program aims to achieve
-                            </div>
-                        </div>
-
-                        <!-- Timeline -->
-                        <div class="mb-4">
-                            <h6 class="fw-bold mb-3">
-                                <i class="fas fa-calendar me-2"></i>
-                                Program Timeline (Optional)
-                            </h6>
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label for="start_date" class="form-label">Start Date</label>
-                                    <input type="date" 
+                        <div class="card-body">
+                            <form id="createProgramForm" method="post">
+                                <!-- Program Name -->
+                                <div class="mb-4">
+                                    <label for="program_name" class="form-label">
+                                        Program Name <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" 
                                            class="form-control" 
-                                           id="start_date" 
-                                           name="start_date"
-                                           value="<?php echo htmlspecialchars($_POST['start_date'] ?? ''); ?>">
-                                    <div class="form-text">When did/will the program start?</div>
+                                           id="program_name" 
+                                           name="program_name" 
+                                           required
+                                           placeholder="Enter the program name"
+                                           value="<?php echo htmlspecialchars($_POST['program_name'] ?? ''); ?>">
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        This will be the main identifier for your program
+                                    </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <label for="end_date" class="form-label">End Date</label>                                    <input type="date" 
-                                           class="form-control" 
-                                           id="end_date" 
-                                           name="end_date"
-                                           value="<?php echo htmlspecialchars($_POST['end_date'] ?? ''); ?>">
-                                    <div class="form-text">When is the program expected to end?</div>
+
+                                <!-- Program Description -->
+                                <div class="mb-4">
+                                    <label for="description" class="form-label">Description</label>
+                                    <textarea class="form-control" 
+                                              id="description" 
+                                              name="description" 
+                                              rows="4"
+                                              placeholder="Briefly describe the program's purpose and objectives (optional)"><?php echo htmlspecialchars($_POST['description'] ?? ''); ?></textarea>
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Optional: Provide a brief overview of what this program aims to achieve
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
 
-                        <!-- Submit Button -->
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary btn-lg" id="saveDraftBtn">
-                                <i class="fas fa-save me-2"></i>
-                                Save Draft
-                            </button>
-                        </div>
+                                <!-- Timeline -->
+                                <div class="mb-4">
+                                    <h6 class="fw-bold mb-3">
+                                        <i class="fas fa-calendar me-2"></i>
+                                        Program Timeline (Optional)
+                                    </h6>
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label for="start_date" class="form-label">Start Date</label>
+                                            <input type="date" 
+                                                   class="form-control" 
+                                                   id="start_date" 
+                                                   name="start_date"
+                                                   value="<?php echo htmlspecialchars($_POST['start_date'] ?? ''); ?>">
+                                            <div class="form-text">When did/will the program start?</div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="end_date" class="form-label">End Date</label>
+                                            <input type="date" 
+                                                   class="form-control" 
+                                                   id="end_date" 
+                                                   name="end_date"
+                                                   value="<?php echo htmlspecialchars($_POST['end_date'] ?? ''); ?>">
+                                            <div class="form-text">When is the program expected to end?</div>
+                                        </div>
+                                    </div>
+                                </div>
 
-                        <!-- Info Note -->                        <div class="mt-3 p-3 bg-light rounded">
-                            <small class="text-muted">
-                                <i class="fas fa-info-circle me-1"></i>
-                                <strong>Note:</strong> This will save your program as a draft. You can add more details and submit it for review later from the programs list.
-                            </small>
+                                <!-- Submit Button -->
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary btn-lg" id="saveDraftBtn">
+                                        <i class="fas fa-save me-2"></i>
+                                        Save Draft
+                                    </button>
+                                </div>
+
+                                <!-- Info Note -->
+                                <div class="mt-3 p-3 bg-light rounded">
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        <strong>Note:</strong> This will save your program as a draft. You can add more details and submit it for review later from the programs list.
+                                    </small>
+                                </div>
+                            </form>
                         </div>
-                    </form>
+                    </div>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
 
 <!-- Simple JavaScript for client-side validation -->
 <script>

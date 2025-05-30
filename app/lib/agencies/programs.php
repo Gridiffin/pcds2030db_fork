@@ -192,6 +192,81 @@ function create_agency_program($data) {
 }
 
 /**
+ * Create a draft program for an agency.
+ * @param array $program_data Data for the program to be created.
+ * @return array|string Result of the operation or error message.
+ */
+function create_agency_program_draft($program_data) {
+    global $conn;
+
+    if (!is_agency()) {
+        return ['error' => 'Permission denied'];
+    }
+
+    // Validate required fields
+    if (empty($program_data['name'])) {
+        return ['error' => 'Program name is required.'];
+    }
+
+    try {
+        // Prepare SQL query
+        $stmt = $conn->prepare("INSERT INTO programs (program_name, description, owner_agency_id, is_draft, created_at) VALUES (?, ?, ?, 1, NOW())");
+        $stmt->bind_param("ssi", $program_data['name'], $program_data['description'], $_SESSION['user_id']);
+
+        if ($stmt->execute()) {
+            return ['success' => 'Program draft created successfully.', 'program_id' => $stmt->insert_id];
+        } else {
+            return ['error' => 'Failed to create program draft.'];
+        }
+    } catch (Exception $e) {
+        return ['error' => 'Database error: ' . $e->getMessage()];
+    }
+}
+
+/**
+ * Create a simple program draft with basic information only
+ * @param array $data Basic program data (name, description, start_date, end_date)
+ * @return array Result with success/error and program_id
+ */
+function create_simple_program_draft($data) {
+    global $conn;
+
+    if (!is_agency()) {
+        return ['error' => 'Permission denied'];
+    }
+
+    // Validate required fields - only program name is required
+    if (empty($data['program_name']) || trim($data['program_name']) === '') {
+        return ['error' => 'Program name is required'];
+    }
+
+    $program_name = trim($data['program_name']);
+    $description = isset($data['description']) ? trim($data['description']) : '';
+    $start_date = isset($data['start_date']) && !empty($data['start_date']) ? $data['start_date'] : null;
+    $end_date = isset($data['end_date']) && !empty($data['end_date']) ? $data['end_date'] : null;
+    $user_id = $_SESSION['user_id'];
+
+    try {
+        // Insert basic program draft
+        $stmt = $conn->prepare("INSERT INTO programs (program_name, description, start_date, end_date, owner_agency_id, is_draft, created_at) VALUES (?, ?, ?, ?, ?, 1, NOW())");
+        $stmt->bind_param("ssssi", $program_name, $description, $start_date, $end_date, $user_id);
+
+        if ($stmt->execute()) {
+            $program_id = $conn->insert_id;
+            return [
+                'success' => true,
+                'message' => 'Program draft saved successfully',
+                'program_id' => $program_id
+            ];
+        } else {
+            return ['error' => 'Failed to save program draft: ' . $stmt->error];
+        }
+    } catch (Exception $e) {
+        return ['error' => 'Database error: ' . $e->getMessage()];
+    }
+}
+
+/**
  * Get a program's submissions history
  * @param int $program_id Program ID
  * @return array List of submissions with period info
