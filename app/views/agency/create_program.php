@@ -33,34 +33,99 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Handle auto-save via AJAX
         header('Content-Type: application/json');
         
+        // Handle targets array data - collect all targets into single strings
+        $targets_combined = '';
+        $status_descriptions_combined = '';
+        
+        if (isset($_POST['targets']) && is_array($_POST['targets'])) {
+            $target_parts = [];
+            $status_parts = [];
+            
+            foreach ($_POST['targets'] as $target_data) {
+                if (isset($target_data['target']) && !empty(trim($target_data['target']))) {
+                    $target_parts[] = trim($target_data['target']);
+                }
+                if (isset($target_data['status_description']) && !empty(trim($target_data['status_description']))) {
+                    $status_parts[] = trim($target_data['status_description']);
+                }
+            }
+            
+            $targets_combined = implode('; ', $target_parts);
+            $status_descriptions_combined = implode('; ', $status_parts);
+        }
+        
+        // Fall back to simple fields if no array data
+        if (empty($targets_combined) && isset($_POST['target'])) {
+            $targets_combined = $_POST['target'];
+        }
+        if (empty($status_descriptions_combined) && isset($_POST['status_description'])) {
+            $status_descriptions_combined = $_POST['status_description'];
+        }
+        
         $program_data = [
+            'program_id' => $_POST['program_id'] ?? 0,
             'program_name' => $_POST['program_name'] ?? '',
             'brief_description' => $_POST['brief_description'] ?? '',
             'description' => $_POST['description'] ?? '',
             'start_date' => $_POST['start_date'] ?? '',
             'end_date' => $_POST['end_date'] ?? '',
-            'target' => $_POST['target'] ?? '',
-            'status_description' => $_POST['status_description'] ?? ''
+            'target' => $targets_combined,
+            'status_description' => $status_descriptions_combined
         ];
         
         $result = auto_save_program_draft($program_data);
         echo json_encode($result);
         exit;
     }
+      // Handle full form submission
+    // Handle targets array data - collect all targets into single strings
+    $targets_combined = '';
+    $status_descriptions_combined = '';
     
-    // Handle full form submission
-    $program_data = [
+    if (isset($_POST['targets']) && is_array($_POST['targets'])) {
+        $target_parts = [];
+        $status_parts = [];
+        
+        foreach ($_POST['targets'] as $target_data) {
+            if (isset($target_data['target']) && !empty(trim($target_data['target']))) {
+                $target_parts[] = trim($target_data['target']);
+            }
+            if (isset($target_data['status_description']) && !empty(trim($target_data['status_description']))) {
+                $status_parts[] = trim($target_data['status_description']);
+            }
+        }
+        
+        $targets_combined = implode('; ', $target_parts);
+        $status_descriptions_combined = implode('; ', $status_parts);
+    }
+    
+    // Fall back to simple fields if no array data
+    if (empty($targets_combined) && isset($_POST['target'])) {
+        $targets_combined = $_POST['target'];
+    }
+    if (empty($status_descriptions_combined) && isset($_POST['status_description'])) {
+        $status_descriptions_combined = $_POST['status_description'];
+    }
+      $program_data = [
         'program_name' => $_POST['program_name'] ?? '',
         'brief_description' => $_POST['brief_description'] ?? '',
         'description' => $_POST['description'] ?? '',
         'start_date' => $_POST['start_date'] ?? '',
         'end_date' => $_POST['end_date'] ?? '',
-        'target' => $_POST['target'] ?? '',
-        'status_description' => $_POST['status_description'] ?? ''
+        'target' => $targets_combined,
+        'status_description' => $status_descriptions_combined
     ];
     
-    // Create comprehensive program draft using wizard function
-    $result = create_wizard_program_draft($program_data);
+    // Check if this is an update to existing program or new creation
+    $program_id = isset($_POST['program_id']) ? intval($_POST['program_id']) : 0;
+    
+    if ($program_id > 0) {
+        // Update existing program draft
+        $result = update_wizard_program_draft($program_id, $program_data);
+    } else {
+        // Create new comprehensive program draft using wizard function
+        $result = create_wizard_program_draft($program_data);
+    }
     
     if (isset($result['success']) && $result['success']) {
         // Set success message and redirect
@@ -136,10 +201,10 @@ require_once '../layouts/agency_nav.php';
                         <div class="progress" style="height: 4px;">
                             <div class="progress-bar bg-primary" id="wizard-progress-bar" style="width: 25%"></div>
                         </div>
-                    </div>
-
-                    <!-- Wizard Form -->
+                    </div>                    <!-- Wizard Form -->
                     <form id="createProgramWizard" method="post">
+                        <!-- Hidden field to track program_id for auto-save -->
+                        <input type="hidden" id="program_id" name="program_id" value="0">
                         <!-- Step 1: Basic Information -->
                         <div class="wizard-step active" id="step-1">
                             <div class="step-content">
@@ -507,12 +572,33 @@ document.addEventListener('DOMContentLoaded', function() {
             day: 'numeric' 
         });
     }
-    
-    function collectFormData() {
+      function collectFormData() {
         const data = {};
+        
+        // Collect basic form inputs
         formInputs.forEach(input => {
-            data[input.name] = input.value;
+            if (input.name && input.name !== 'targets' && !input.name.startsWith('targets[')) {
+                data[input.name] = input.value;
+            }
         });
+        
+        // Collect targets data specifically
+        const targetGroups = document.querySelectorAll('.target-group');
+        if (targetGroups.length > 0) {
+            data.targets = [];
+            targetGroups.forEach(group => {
+                const targetInput = group.querySelector('input[name*="[target]"]');
+                const statusInput = group.querySelector('input[name*="[status_description]"]');
+                
+                if (targetInput || statusInput) {
+                    data.targets.push({
+                        target: targetInput ? targetInput.value : '',
+                        status_description: statusInput ? statusInput.value : ''
+                    });
+                }
+            });
+        }
+        
         return data;
     }
     
@@ -552,21 +638,41 @@ document.addEventListener('DOMContentLoaded', function() {
         
         return isValid;
     }
-    
-    function setupAutoSave() {
+      function setupAutoSave() {
         let autoSaveTimeout;
         
-        formInputs.forEach(input => {
-            input.addEventListener('input', function() {
-                clearTimeout(autoSaveTimeout);
-                autoSaveTimeout = setTimeout(() => {
-                    autoSaveFormData();
-                }, 2000); // Auto-save after 2 seconds of inactivity
+        // Setup auto-save for existing form inputs
+        function addAutoSaveToInputs() {
+            const currentInputs = wizard.querySelectorAll('input, select, textarea');
+            currentInputs.forEach(input => {
+                // Remove existing listeners to avoid duplicates
+                input.removeEventListener('input', handleInputChange);
+                input.addEventListener('input', handleInputChange);
             });
-        });
+        }
+        
+        function handleInputChange() {
+            clearTimeout(autoSaveTimeout);
+            autoSaveTimeout = setTimeout(() => {
+                autoSaveFormData();
+            }, 2000); // Auto-save after 2 seconds of inactivity
+        }
+        
+        // Initial setup
+        addAutoSaveToInputs();
+        
+        // Re-setup auto-save when new targets are added
+        const addTargetButton = document.getElementById('add-target-button');
+        if (addTargetButton) {
+            const originalClick = addTargetButton.onclick;
+            addTargetButton.onclick = function() {
+                if (originalClick) originalClick.call(this);
+                // Re-setup auto-save for new inputs after a short delay
+                setTimeout(addAutoSaveToInputs, 100);
+            };
+        }
     }
-    
-    function autoSaveFormData() {
+      function autoSaveFormData() {
         const data = collectFormData();
         
         // Only auto-save if program name is provided
@@ -579,11 +685,26 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Prepare data for auto-save
         const formData = new FormData();
+        
+        // Add basic form fields
         Object.keys(data).forEach(key => {
-            if (data[key]) {
+            if (key !== 'targets' && data[key]) {
                 formData.append(key, data[key]);
             }
         });
+        
+        // Add targets array data
+        if (data.targets && data.targets.length > 0) {
+            data.targets.forEach((target, index) => {
+                if (target.target) {
+                    formData.append(`targets[${index}][target]`, target.target);
+                }
+                if (target.status_description) {
+                    formData.append(`targets[${index}][status_description]`, target.status_description);
+                }
+            });
+        }
+        
         formData.append('auto_save', '1');
         
         // Send AJAX request
@@ -594,9 +715,14 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(result => {
             if (result.success) {
+                // Store program_id for subsequent auto-saves
+                if (result.program_id) {
+                    document.getElementById('program_id').value = result.program_id;
+                }
                 showAutoSaveStatus('Saved', 'success');
             } else {
                 showAutoSaveStatus('Save failed', 'error');
+                console.error('Auto-save failed:', result.error);
             }
         })
         .catch(error => {
@@ -709,13 +835,23 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
-    // JavaScript to dynamically add and remove targets with numbering
+      // JavaScript to dynamically add and remove targets with numbering
     function updateTargetNumbers() {
         const targetGroups = document.querySelectorAll('.target-group');
         targetGroups.forEach((group, index) => {
             const label = group.querySelector('.target-label');
             label.textContent = `Target ${index + 1}`;
+            
+            // Update input names to maintain proper indexing
+            const targetInput = group.querySelector('input[name*="[target]"]');
+            const statusInput = group.querySelector('input[name*="[status_description]"]');
+            
+            if (targetInput) {
+                targetInput.name = `targets[${index}][target]`;
+            }
+            if (statusInput) {
+                statusInput.name = `targets[${index}][status_description]`;
+            }
         });
     }
 
@@ -724,16 +860,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const index = container.querySelectorAll('.target-group').length;
 
         const targetGroup = document.createElement('div');
-        targetGroup.className = 'form-group target-group';
+        targetGroup.className = 'form-group target-group mb-3';
 
         targetGroup.innerHTML = `
-            <label class="target-label">Target ${index + 1}</label>
-            <input type="text" name="targets[${index}][target]" class="form-control" placeholder="Enter target" required>
+            <label class="target-label fw-bold">Target ${index + 1}</label>
+            <input type="text" name="targets[${index}][target]" class="form-control mb-2" placeholder="Enter target" required>
 
-            <label for="status_description">Status Description</label>
-            <input type="text" name="targets[${index}][status_description]" class="form-control" placeholder="Enter status description" required>
+            <label class="fw-bold">Status Description</label>
+            <input type="text" name="targets[${index}][status_description]" class="form-control mb-2" placeholder="Enter status description" required>
 
-            <button type="button" class="btn btn-danger remove-target-button">Remove</button>
+            <button type="button" class="btn btn-danger btn-sm remove-target-button">Remove Target</button>
         `;
 
         container.appendChild(targetGroup);
@@ -743,25 +879,50 @@ document.addEventListener('DOMContentLoaded', function() {
         targetGroup.querySelector('.remove-target-button').addEventListener('click', function() {
             targetGroup.remove();
             updateTargetNumbers();
+            // Trigger auto-save after removal
+            setTimeout(() => {
+                autoSaveFormData();
+            }, 500);
+        });
+        
+        // Setup auto-save for new inputs
+        const newInputs = targetGroup.querySelectorAll('input');
+        newInputs.forEach(input => {
+            input.addEventListener('input', function() {
+                clearTimeout(window.autoSaveTimeout);
+                window.autoSaveTimeout = setTimeout(() => {
+                    autoSaveFormData();
+                }, 2000);
+            });
         });
     });
-    
-    // Removed duplicate `target` and `status description` fields
+      // Initialize the first target group
     const container = document.getElementById('targets-container');
     container.innerHTML = '';
 
     const targetGroup = document.createElement('div');
-    targetGroup.className = 'form-group target-group';
+    targetGroup.className = 'form-group target-group mb-3';
 
     targetGroup.innerHTML = `
-        <label class="target-label">Target 1</label>
-        <input type="text" name="targets[0][target]" class="form-control" placeholder="Enter target" required>
+        <label class="target-label fw-bold">Target 1</label>
+        <input type="text" name="targets[0][target]" class="form-control mb-2" placeholder="Enter target" required>
 
-        <label for="status_description">Status Description <small>(e.g., "In progress")</small></label>
-        <input type="text" name="targets[0][status_description]" class="form-control" placeholder="Enter status description" required>
+        <label class="fw-bold">Status Description <small class="text-muted">(e.g., "In progress")</small></label>
+        <input type="text" name="targets[0][status_description]" class="form-control mb-2" placeholder="Enter status description" required>
     `;
 
     container.appendChild(targetGroup);
+    
+    // Setup auto-save for initial target inputs
+    const initialInputs = targetGroup.querySelectorAll('input');
+    initialInputs.forEach(input => {
+        input.addEventListener('input', function() {
+            clearTimeout(window.autoSaveTimeout);
+            window.autoSaveTimeout = setTimeout(() => {
+                autoSaveFormData();
+            }, 2000);
+        });
+    });
     
     // Utility functions for showing/clearing field errors
     function showFieldError(field, message) {

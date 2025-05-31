@@ -224,7 +224,7 @@ function create_agency_program_draft($program_data) {
 }
 
 /**
- * Create a comprehensive program draft with all wizard fields
+ * Create a comprehensive program draft with correct data architecture
  * @param array $data All program data from wizard
  * @return array Result with success/error and program_id
  */
@@ -240,35 +240,68 @@ function create_wizard_program_draft($data) {
         return ['error' => 'Program name is required'];
     }
 
-    // Prepare targets and statuses
-    $targets = $data['targets'] ?? [];
-    $content_json = json_encode(['targets' => $targets]);
+    $program_name = trim($data['program_name']);
+    $description = isset($data['description']) ? trim($data['description']) : '';
+    $brief_description = isset($data['brief_description']) ? trim($data['brief_description']) : '';
+    $start_date = isset($data['start_date']) && !empty($data['start_date']) ? $data['start_date'] : null;
+    $end_date = isset($data['end_date']) && !empty($data['end_date']) ? $data['end_date'] : null;
+    $target = isset($data['target']) ? trim($data['target']) : '';
+    $status_description = isset($data['status_description']) ? trim($data['status_description']) : '';
+    $user_id = $_SESSION['user_id'];
 
-    // Ensure sector_id is provided or defaults to FORESTRY_SECTOR_ID
-    $sector_id = $data['sector_id'] ?? FORESTRY_SECTOR_ID;
+    try {
+        $conn->begin_transaction();
 
-    // Insert program draft
-    $stmt = $conn->prepare("INSERT INTO programs (program_name, sector_id, owner_agency_id, created_at) VALUES (?, ?, ?, NOW())");
-    $stmt->bind_param("sii", $data['program_name'], $sector_id, $_SESSION['user_id']);
+        // Step 1: Insert basic program info into programs table (NO extended_data)
+        $stmt = $conn->prepare("INSERT INTO programs (program_name, description, start_date, end_date, owner_agency_id, sector_id, is_assigned, created_at) VALUES (?, ?, ?, ?, ?, 1, 0, NOW())");
+        $stmt->bind_param("ssssi", $program_name, $description, $start_date, $end_date, $user_id);
 
-    if ($stmt->execute()) {
-        $program_id = $stmt->insert_id;
-
-        // Dynamically fetch the current reporting period ID
-        $period_id = $data['period_id'] ?? get_current_reporting_period()['period_id'] ?? null;
-
-        if ($period_id === null) {
-            return ['error' => 'No valid reporting period found.'];
+        if (!$stmt->execute()) {
+            throw new Exception('Failed to create program: ' . $stmt->error);
         }
 
-        // Include submitted_by field in the INSERT query
-        $stmt = $conn->prepare("INSERT INTO program_submissions (program_id, period_id, submitted_by, content_json, is_draft, submission_date) VALUES (?, ?, ?, ?, 1, NOW())");
-        $stmt->bind_param("iiis", $program_id, $period_id, $_SESSION['user_id'], $content_json);
-        $stmt->execute();
+        $program_id = $conn->insert_id;
 
-        return ['success' => true, 'program_id' => $program_id];
-    } else {
-        return ['error' => 'Failed to create program draft: ' . $stmt->error];
+        // Step 2: Create submission record in program_submissions table with targets/status data
+        if (!empty($target) || !empty($status_description) || !empty($brief_description)) {
+            // Get current reporting period
+            $period_query = "SELECT period_id FROM reporting_periods WHERE status = 'open' ORDER BY year DESC, quarter DESC LIMIT 1";
+            $period_result = $conn->query($period_query);
+            $current_period_id = $period_result && $period_result->num_rows > 0 ? $period_result->fetch_assoc()['period_id'] : 1;
+
+            // Prepare submission content JSON
+            $content_json = [];
+            if (!empty($target)) {
+                $content_json['target'] = $target;
+            }
+            if (!empty($status_description)) {
+                $content_json['status_description'] = $status_description;
+            }
+            if (!empty($brief_description)) {
+                $content_json['brief_description'] = $brief_description;
+            }
+
+            $content_json_string = json_encode($content_json);
+
+            // Insert submission record
+            $submission_stmt = $conn->prepare("INSERT INTO program_submissions (program_id, period_id, submitted_by, status, content_json, is_draft, submission_date, updated_at) VALUES (?, ?, ?, 'not-started', ?, 1, NOW(), NOW())");
+            $submission_stmt->bind_param("iiis", $program_id, $current_period_id, $user_id, $content_json_string);
+
+            if (!$submission_stmt->execute()) {
+                throw new Exception('Failed to create program submission: ' . $submission_stmt->error);
+            }
+        }
+
+        $conn->commit();
+        
+        return [
+            'success' => true, 
+            'message' => 'Program draft created successfully',
+            'program_id' => $program_id
+        ];
+    } catch (Exception $e) {
+        $conn->rollback();
+        return ['error' => 'Database error: ' . $e->getMessage()];
     }
 }
 
@@ -293,19 +326,124 @@ function auto_save_program_draft($data) {
     $program_id = isset($data['program_id']) ? intval($data['program_id']) : 0;
     
     if ($program_id > 0) {
-        // Update existing draft
-        return update_wizard_program_draft($program_id, $data);
+        // Update existing draft - only update programs table
+        return update_program_draft_only($program_id, $data);
     } else {
-        // Dynamically fetch the current reporting period ID or default to 1
-        $data['period_id'] = $data['period_id'] ?? get_current_reporting_period()['period_id'] ?? 1;
-
-        // Create new draft
+        // Create new draft - only save to programs table
         return create_wizard_program_draft($data);
     }
 }
 
 /**
- * Update existing program draft with wizard data
+ * Update existing program draft with correct data architecture - used for auto-save
+ * @param int $program_id Program ID to update
+ * @param array $data Updated program data
+ * @return array Result with success/error
+ */
+function update_program_draft_only($program_id, $data) {
+    global $conn;
+
+    if (!is_agency()) {
+        return ['success' => false, 'error' => 'Permission denied'];
+    }
+
+    // Verify ownership
+    $user_id = $_SESSION['user_id'];
+    $check_stmt = $conn->prepare("SELECT program_id FROM programs WHERE program_id = ? AND owner_agency_id = ?");
+    $check_stmt->bind_param("ii", $program_id, $user_id);
+    $check_stmt->execute();
+    $result = $check_stmt->get_result();
+    
+    if ($result->num_rows === 0) {
+        return ['success' => false, 'error' => 'Program not found or access denied'];
+    }
+
+    $program_name = trim($data['program_name']);
+    $description = isset($data['description']) ? trim($data['description']) : '';
+    $brief_description = isset($data['brief_description']) ? trim($data['brief_description']) : '';
+    $start_date = isset($data['start_date']) && !empty($data['start_date']) ? $data['start_date'] : null;
+    $end_date = isset($data['end_date']) && !empty($data['end_date']) ? $data['end_date'] : null;
+    $target = isset($data['target']) ? trim($data['target']) : '';
+    $status_description = isset($data['status_description']) ? trim($data['status_description']) : '';
+
+    try {
+        $conn->begin_transaction();
+
+        // Step 1: Update basic program info in programs table (NO extended_data)
+        $stmt = $conn->prepare("UPDATE programs SET program_name = ?, description = ?, start_date = ?, end_date = ?, updated_at = NOW() WHERE program_id = ? AND owner_agency_id = ?");
+        $stmt->bind_param("ssssii", $program_name, $description, $start_date, $end_date, $program_id, $user_id);
+
+        if (!$stmt->execute()) {
+            throw new Exception('Failed to update program: ' . $stmt->error);
+        }
+
+        // Step 2: Update or create submission record with targets/status data
+        if (!empty($target) || !empty($status_description) || !empty($brief_description)) {
+            // Get current reporting period
+            $period_query = "SELECT period_id FROM reporting_periods WHERE status = 'open' ORDER BY year DESC, quarter DESC LIMIT 1";
+            $period_result = $conn->query($period_query);
+            $current_period_id = $period_result && $period_result->num_rows > 0 ? $period_result->fetch_assoc()['period_id'] : 1;
+
+            // Check if submission exists for this program and period
+            $submission_check = $conn->prepare("SELECT submission_id, content_json FROM program_submissions WHERE program_id = ? AND period_id = ? AND is_draft = 1");
+            $submission_check->bind_param("ii", $program_id, $current_period_id);
+            $submission_check->execute();
+            $submission_result = $submission_check->get_result();
+
+            // Prepare content JSON
+            $content_json = [];
+            if (!empty($target)) {
+                $content_json['target'] = $target;
+            }
+            if (!empty($status_description)) {
+                $content_json['status_description'] = $status_description;
+            }
+            if (!empty($brief_description)) {
+                $content_json['brief_description'] = $brief_description;
+            }
+
+            if ($submission_result->num_rows > 0) {
+                // Update existing submission
+                $existing_submission = $submission_result->fetch_assoc();
+                $existing_content = json_decode($existing_submission['content_json'] ?? '{}', true) ?: [];
+                
+                // Merge new content with existing
+                $merged_content = array_merge($existing_content, $content_json);
+                $content_json_string = json_encode($merged_content);
+
+                $update_submission = $conn->prepare("UPDATE program_submissions SET content_json = ?, updated_at = NOW() WHERE submission_id = ?");
+                $update_submission->bind_param("si", $content_json_string, $existing_submission['submission_id']);
+                
+                if (!$update_submission->execute()) {
+                    throw new Exception('Failed to update submission: ' . $update_submission->error);
+                }
+            } else {
+                // Create new submission
+                $content_json_string = json_encode($content_json);
+                $create_submission = $conn->prepare("INSERT INTO program_submissions (program_id, period_id, submitted_by, status, content_json, is_draft, submission_date, updated_at) VALUES (?, ?, ?, 'not-started', ?, 1, NOW(), NOW())");
+                $create_submission->bind_param("iiis", $program_id, $current_period_id, $user_id, $content_json_string);
+                
+                if (!$create_submission->execute()) {
+                    throw new Exception('Failed to create submission: ' . $create_submission->error);
+                }
+            }
+        }
+
+        $conn->commit();
+
+        return [
+            'success' => true,
+            'message' => 'Program auto-saved successfully',
+            'program_id' => $program_id
+        ];
+    } catch (Exception $e) {
+        $conn->rollback();
+        return ['success' => false, 'error' => 'Database error: ' . $e->getMessage()];
+    }
+}
+
+/**
+ * Update existing program draft with wizard data (for manual saves/edits)
  * @param int $program_id Program ID to update
  * @param array $data Updated program data
  * @return array Result with success/error
@@ -319,7 +457,7 @@ function update_wizard_program_draft($program_id, $data) {
 
     // Verify ownership
     $user_id = $_SESSION['user_id'];
-    $check_stmt = $conn->prepare("SELECT program_id FROM programs WHERE program_id = ? AND owner_agency_id = ? AND is_draft = 1");
+    $check_stmt = $conn->prepare("SELECT program_id FROM programs WHERE program_id = ? AND owner_agency_id = ?");
     $check_stmt->bind_param("ii", $program_id, $user_id);
     $check_stmt->execute();
     $result = $check_stmt->get_result();
@@ -329,43 +467,79 @@ function update_wizard_program_draft($program_id, $data) {
     }
 
     $program_name = trim($data['program_name']);
-    $description = isset($data['description']) ? trim($data['description']) : '';
-    $brief_description = isset($data['brief_description']) ? trim($data['brief_description']) : '';
-    $program_type = isset($data['program_type']) ? trim($data['program_type']) : '';
+    $description = isset($data['description']) ? trim($data['description']) : '';    $brief_description = isset($data['brief_description']) ? trim($data['brief_description']) : '';
     $start_date = isset($data['start_date']) && !empty($data['start_date']) ? $data['start_date'] : null;
     $end_date = isset($data['end_date']) && !empty($data['end_date']) ? $data['end_date'] : null;
-    $estimated_budget = isset($data['estimated_budget']) && !empty($data['estimated_budget']) ? floatval($data['estimated_budget']) : null;
-    $target_beneficiaries = isset($data['target_beneficiaries']) && !empty($data['target_beneficiaries']) ? intval($data['target_beneficiaries']) : null;
-    $success_indicators = isset($data['success_indicators']) ? trim($data['success_indicators']) : '';
-    $implementation_strategy = isset($data['implementation_strategy']) ? trim($data['implementation_strategy']) : '';
+    $target = isset($data['target']) ? trim($data['target']) : '';
+    $status_description = isset($data['status_description']) ? trim($data['status_description']) : '';
 
     try {
-        // Prepare extended program data structure
-        $extended_data = [
-            'program_type' => $program_type,
-            'brief_description' => $brief_description,
-            'estimated_budget' => $estimated_budget,
-            'target_beneficiaries' => $target_beneficiaries,
-            'success_indicators' => $success_indicators,
-            'implementation_strategy' => $implementation_strategy
-        ];
-        
-        $extended_json = json_encode($extended_data);
+        $conn->begin_transaction();
 
-        // Update program draft
-        $stmt = $conn->prepare("UPDATE programs SET program_name = ?, description = ?, start_date = ?, end_date = ?, extended_data = ?, updated_at = NOW() WHERE program_id = ? AND owner_agency_id = ?");
-        $stmt->bind_param("ssssii", $program_name, $description, $start_date, $end_date, $extended_json, $program_id, $user_id);
+        // Step 1: Update basic program info in programs table
+        $stmt = $conn->prepare("UPDATE programs SET program_name = ?, description = ?, start_date = ?, end_date = ?, updated_at = NOW() WHERE program_id = ? AND owner_agency_id = ?");
+        $stmt->bind_param("ssssii", $program_name, $description, $start_date, $end_date, $program_id, $user_id);
 
-        if ($stmt->execute()) {
-            return [
-                'success' => true,
-                'message' => 'Program draft updated successfully',
-                'program_id' => $program_id
-            ];
-        } else {
-            return ['error' => 'Failed to update program draft: ' . $stmt->error];
+        if (!$stmt->execute()) {
+            throw new Exception('Failed to update program: ' . $stmt->error);
         }
+
+        // Step 2: Handle submission data (targets/status) in program_submissions table
+        if (!empty($target) || !empty($status_description) || !empty($brief_description)) {
+            // Check if submission record exists
+            $check_stmt = $conn->prepare("SELECT submission_id FROM program_submissions WHERE program_id = ?");
+            $check_stmt->bind_param("i", $program_id);
+            $check_stmt->execute();
+            $submission_result = $check_stmt->get_result();
+
+            // Prepare submission content JSON
+            $content_json = [];
+            if (!empty($target)) {
+                $content_json['target'] = $target;
+            }
+            if (!empty($status_description)) {
+                $content_json['status_description'] = $status_description;
+            }
+            if (!empty($brief_description)) {
+                $content_json['brief_description'] = $brief_description;
+            }
+            $content_json_string = json_encode($content_json);
+
+            if ($submission_result->num_rows > 0) {
+                // Update existing submission
+                $submission = $submission_result->fetch_assoc();
+                $submission_id = $submission['submission_id'];
+                
+                $update_stmt = $conn->prepare("UPDATE program_submissions SET content_json = ?, updated_at = NOW() WHERE submission_id = ?");
+                $update_stmt->bind_param("si", $content_json_string, $submission_id);
+                
+                if (!$update_stmt->execute()) {
+                    throw new Exception('Failed to update program submission: ' . $update_stmt->error);
+                }
+            } else {
+                // Create new submission record
+                $period_query = "SELECT period_id FROM reporting_periods WHERE status = 'open' ORDER BY year DESC, quarter DESC LIMIT 1";
+                $period_result = $conn->query($period_query);
+                $current_period_id = $period_result && $period_result->num_rows > 0 ? $period_result->fetch_assoc()['period_id'] : 1;
+
+                $insert_stmt = $conn->prepare("INSERT INTO program_submissions (program_id, period_id, submitted_by, status, content_json, is_draft, submission_date, updated_at) VALUES (?, ?, ?, 'not-started', ?, 1, NOW(), NOW())");
+                $insert_stmt->bind_param("iiis", $program_id, $current_period_id, $user_id, $content_json_string);
+                
+                if (!$insert_stmt->execute()) {
+                    throw new Exception('Failed to create program submission: ' . $insert_stmt->error);
+                }
+            }
+        }
+
+        $conn->commit();
+        
+        return [
+            'success' => true,
+            'message' => 'Program draft updated successfully',
+            'program_id' => $program_id
+        ];
     } catch (Exception $e) {
+        $conn->rollback();
         return ['error' => 'Database error: ' . $e->getMessage()];
     }
 }
@@ -543,8 +717,7 @@ function get_program_edit_history($program_id) {
         return ['error' => 'Program not found'];
     }
     $program_details_current = $result_program->fetch_assoc();
-    $stmt_program->close();
-        // Get all submissions for this program, ordered by date (newest first)
+    $stmt_program->close();        // Get all submissions for this program, ordered by latest submission ID first (newest first)
     $stmt_submissions = $conn->prepare("SELECT ps.*, 
                            CONCAT('Q', rp.quarter, '-', rp.year) as period_name, 
                            rp.start_date as period_start, rp.end_date as period_end,
@@ -553,7 +726,7 @@ function get_program_edit_history($program_id) {
                            LEFT JOIN reporting_periods rp ON ps.period_id = rp.period_id
                            LEFT JOIN users u ON ps.submitted_by = u.user_id
                            WHERE ps.program_id = ?
-                           ORDER BY ps.submission_date DESC, ps.submission_id DESC");
+                           ORDER BY ps.submission_id DESC, ps.submission_date DESC");
     
     $stmt_submissions->bind_param("i", $program_id);
     $stmt_submissions->execute();

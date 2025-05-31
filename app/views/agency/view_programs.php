@@ -51,22 +51,22 @@ if (!function_exists('get_agency_programs')) {
     function get_agency_programs($agency_id) {
         global $conn;
         
-        // Modified query to filter by owner_agency_id
-        $query = "SELECT p.*, 
-                  (SELECT ps.status FROM program_submissions ps 
-                   WHERE ps.program_id = p.program_id 
-                   ORDER BY ps.submission_date DESC LIMIT 1) as status,
-                  (SELECT ps.is_draft FROM program_submissions ps 
-                   WHERE ps.program_id = p.program_id 
-                   ORDER BY ps.submission_date DESC LIMIT 1) as is_draft,
-                  (SELECT ps.period_id FROM program_submissions ps 
-                   WHERE ps.program_id = p.program_id 
-                   ORDER BY ps.submission_date DESC LIMIT 1) as period_id,
-                  (SELECT ps.submission_date FROM program_submissions ps 
-                   WHERE ps.program_id = p.program_id 
-                   ORDER BY ps.submission_date DESC LIMIT 1) as updated_at
+        // Optimized query using JOIN instead of subqueries for better performance
+        // This gets the latest submission for each program by using a self-join
+        // Also handles programs that might not have any submissions yet
+        $query = "SELECT DISTINCT p.*, 
+                         COALESCE(ps.status, 'not-started') as status,
+                         COALESCE(ps.is_draft, 1) as is_draft,
+                         ps.period_id,
+                         COALESCE(ps.submission_date, p.created_at) as updated_at,
+                         ps.submission_id as latest_submission_id
                   FROM programs p 
+                  LEFT JOIN program_submissions ps ON p.program_id = ps.program_id
+                  LEFT JOIN program_submissions ps2 ON p.program_id = ps2.program_id 
+                      AND (ps2.submission_id > ps.submission_id 
+                           OR (ps2.submission_id = ps.submission_id AND ps2.updated_at > ps.updated_at))
                   WHERE p.owner_agency_id = ? 
+                      AND (ps.submission_id IS NULL OR ps2.submission_id IS NULL)  -- Get latest submission or programs without submissions
                   ORDER BY p.program_name";
                   
         $stmt = $conn->prepare($query);
