@@ -66,7 +66,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'program_id' => $_POST['program_id'] ?? 0,
             'program_name' => $_POST['program_name'] ?? '',
             'brief_description' => $_POST['brief_description'] ?? '',
-            'description' => $_POST['description'] ?? '',
             'start_date' => $_POST['start_date'] ?? '',
             'end_date' => $_POST['end_date'] ?? '',
             'target' => $targets_combined,
@@ -109,7 +108,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $program_data = [
         'program_name' => $_POST['program_name'] ?? '',
         'brief_description' => $_POST['brief_description'] ?? '',
-        'description' => $_POST['description'] ?? '',
         'start_date' => $_POST['start_date'] ?? '',
         'end_date' => $_POST['end_date'] ?? '',
         'target' => $targets_combined,
