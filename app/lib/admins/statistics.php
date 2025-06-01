@@ -178,21 +178,21 @@ function get_period_submission_stats($period_id) {
     }
     
     // Get program status counts
-    $query = "SELECT status, COUNT(*) as count 
+    $query = "SELECT is_draft, COUNT(*) as count 
               FROM program_submissions 
               WHERE period_id = ? 
-              GROUP BY status";
+              GROUP BY is_draft";
     $stmt = $conn->prepare($query);
     $stmt->bind_param("i", $period_id);
     $stmt->execute();
     $result = $stmt->get_result();
     
     while ($result && $row = $result->fetch_assoc()) {
-        $status = $row['status'];
-        
-        if (in_array($status, ['on-track', 'on-track-yearly', 'completed', 'target-achieved'])) {
+        if ($row['is_draft'] == 0) {
+            // final submissions
             $stats['on_track_programs'] += $row['count'];
-        } elseif (in_array($status, ['delayed', 'severe-delay'])) {
+        } else {
+            // draft submissions
             $stats['delayed_programs'] += $row['count'];
         }
     }

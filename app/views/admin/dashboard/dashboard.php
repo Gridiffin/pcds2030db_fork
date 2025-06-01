@@ -180,7 +180,7 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                             </div>
                             <div class="stat-card-content">
                                 <div class="stat-title">Programs Delayed</div>
-                                <div class="stat-value>
+                                <div class="stat-value">
                                     <?php echo $submission_stats['delayed_programs'] ?? 0; ?>
                                 </div>
                                 <?php if (isset($submission_stats['total_programs']) && $submission_stats['total_programs'] > 0): ?>
