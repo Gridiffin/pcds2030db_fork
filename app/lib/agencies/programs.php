@@ -110,7 +110,7 @@ function create_agency_program($data) {
     }
     
     $program_name = $validated['program_name'];
-    $description = $validated['description'] ?? '';
+    // Removed description since the column no longer exists
     $start_date = $validated['start_date'] ?? null;
     $end_date = $validated['end_date'] ?? null;
     $rating = $validated['rating'];
@@ -122,7 +122,7 @@ function create_agency_program($data) {
     if ($has_content_json) {
         // New structure using content_json
         $content = [
-            'description' => $description,
+            // 'description' => $description, // removed
             'start_date' => $start_date,
             'end_date' => $end_date,
             'rating' => $rating,
@@ -152,13 +152,12 @@ function create_agency_program($data) {
         $stmt->bind_param("siis", $program_name, $sector_id, $user_id, $content_json);
     } else {
         // Old structure using separate columns
-        $query = "INSERT INTO programs (program_name, description, sector_id, owner_agency_id, is_assigned, created_at)
-                 VALUES (?, ?, ?, ?, 0, NOW())";
-        
+        $query = "INSERT INTO programs (program_name, sector_id, owner_agency_id, is_assigned, created_at)
+                 VALUES (?, ?, ?, 0, NOW())";
         $stmt = $conn->prepare($query);
         $sector_id = FORESTRY_SECTOR_ID; // Default to forestry sector
         $user_id = $_SESSION['user_id'];
-        $stmt->bind_param("sssii", $program_name, $description, $sector_id, $user_id);
+        $stmt->bind_param("siii", $program_name, $sector_id, $user_id);
     }
     
     if ($stmt->execute()) {
@@ -170,14 +169,13 @@ function create_agency_program($data) {
             $target = $validated['target'] ?? '';
             $achievement = $validated['achievement'] ?? '';
             $status_text = $validated['status_text'] ?? '';
-            
+            // Removed status from insert
             $sub_query = "INSERT INTO program_submissions 
-                        (program_id, period_id, target, achievement, status, status_text, is_draft, submitted_at)
-                        VALUES (?, ?, ?, ?, ?, ?, 1, NOW())";
-            
+                        (program_id, period_id, target, achievement, status_text, is_draft, submitted_at)
+                        VALUES (?, ?, ?, ?, ?, 1, NOW())";
             $period_id = get_current_reporting_period()['period_id'] ?? 1;
             $sub_stmt = $conn->prepare($sub_query);
-            $sub_stmt->bind_param("iissss", $program_id, $period_id, $target, $achievement, $rating, $status_text);
+            $sub_stmt->bind_param("iisss", $program_id, $period_id, $target, $achievement, $status_text);
             $sub_stmt->execute();
         }
         

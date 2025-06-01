@@ -50,10 +50,7 @@ class DashboardController {
                     p.program_name,
                     p.is_assigned,
                     p.created_at,
-                    CASE 
-                        WHEN ps.status IS NOT NULL THEN ps.status
-                        ELSE 'not-started' 
-                    END as status,
+                    'not-started' as status, -- status column removed, default to 'not-started'
                     CASE 
                         WHEN ps.submission_id IS NULL THEN 1
                         ELSE ps.is_draft 
@@ -164,7 +161,7 @@ class DashboardController {
                     p.is_assigned,
                     p.created_at,
                     p.updated_at as program_updated_at,
-                    ps.status,
+                    'not-started' as status, -- status column removed
                     ps.is_draft,
                     ps.submission_date as updated_at
                   FROM programs p

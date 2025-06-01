@@ -55,7 +55,6 @@ if (!function_exists('get_agency_programs')) {
         // This gets the latest submission for each program by using a self-join
         // Also handles programs that might not have any submissions yet
         $query = "SELECT DISTINCT p.*, 
-                         COALESCE(ps.status, 'not-started') as status,
                          COALESCE(ps.is_draft, 1) as is_draft,
                          ps.period_id,
                          COALESCE(ps.submission_date, p.created_at) as updated_at,

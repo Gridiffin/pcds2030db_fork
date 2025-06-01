@@ -284,13 +284,13 @@ function get_agency_submission_status($agency_id, $period_id = null) {
 
         // Get submission status counts
         $status_query = "SELECT 
-            ps.status,
+            'not-started' as status, -- status column removed
             COUNT(*) as count,
             SUM(CASE WHEN ps.is_draft = 1 THEN 1 ELSE 0 END) as draft_count,
             SUM(CASE WHEN ps.is_draft = 0 THEN 1 ELSE 0 END) as submitted_count
             FROM programs p 
             LEFT JOIN (
-                SELECT program_id, status, is_draft
+                SELECT program_id, is_draft
                 FROM program_submissions ps1
                 WHERE (period_id = ? OR ? IS NULL)
                 AND NOT EXISTS (
@@ -299,8 +299,7 @@ function get_agency_submission_status($agency_id, $period_id = null) {
                     AND ps2.submission_id > ps1.submission_id
                 )
             ) ps ON p.program_id = ps.program_id
-            WHERE p.owner_agency_id = ?
-            GROUP BY ps.status";
+            WHERE p.owner_agency_id = ?";
 
         $stmt = $conn->prepare($status_query);
         $stmt->bind_param("iii", $period_id, $period_id, $agency_id);
