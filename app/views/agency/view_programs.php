@@ -270,20 +270,19 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                                     ?>
                                 </td>
                                 <td>
-                                    <div class="btn-group btn-group-sm float-end">
-                                        <a href="<?php echo APP_URL; ?>/app/views/agency/update_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="Edit Program">
+                                    <div class="btn-group btn-group-sm" role="group" aria-label="Program actions">
+                                        <a href="update_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-secondary" title="Edit Program">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        
-                                        <!-- Delete button only shows for custom programs (not assigned ones) -->
-                                        <?php if (!$is_assigned): ?>
                                         <button type="button" class="btn btn-outline-danger delete-program-btn" 
-                                            data-id="<?php echo $program['program_id']; ?>"
-                                            data-name="<?php echo htmlspecialchars($program['program_name']); ?>"
-                                            title="Delete Program">
+                                                data-id="<?php echo $program['program_id']; ?>" 
+                                                data-name="<?php echo htmlspecialchars($program['program_name']); ?>" 
+                                                title="Delete Program">
                                             <i class="fas fa-trash"></i>
                                         </button>
-                                        <?php endif; ?>
+                                        <button class="btn btn-outline-success btn-sm submit-program" data-program-id="<?php echo $program['program_id']; ?>" title="Submit Program">
+                                            <i class="fas fa-check"></i>
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -410,7 +409,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                                     ?>
                                 </td>
                                 <td>
-                                    <div class="btn-group btn-group-sm float-end">
+                                    <div class="btn-group btn-group-sm" role="group" aria-label="Program actions">
                                         <a href="program_details.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="View Program Details">
                                             <i class="fas fa-eye"></i>
                                         </a>

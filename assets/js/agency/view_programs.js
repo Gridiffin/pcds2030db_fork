@@ -76,6 +76,34 @@ document.addEventListener('DOMContentLoaded', function() {
             applyFilters('finalized');
         });
     }
+    
+    // Initialize program submission buttons
+    document.querySelectorAll('.submit-program').forEach(button => {
+        button.addEventListener('click', function() {
+            const programId = this.getAttribute('data-program-id');
+
+            fetch('ajax/submit_program.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `program_id=${programId}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while submitting the program.');
+            });
+        });
+    });
 });
 
 // Handle filtering for specific table
