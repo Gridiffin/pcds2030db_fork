@@ -239,13 +239,13 @@ function get_admin_programs_list($period_id = null, $filters = []) {
             $period_info = $period_result->fetch_assoc();
         }
     }
-    
-    // Construct the main query
+      // Construct the main query
     $sql = "SELECT 
-                p.program_id, p.program_name, p.description, p.owner_agency_id, p.sector_id, p.created_at,
+                p.program_id, p.program_name, p.owner_agency_id, p.sector_id, p.created_at,
                 s.sector_name, 
                 u.agency_name,
-                ps.submission_id, ps.status, ps.is_draft, ps.submission_date, ps.updated_at, ps.period_id AS submission_period_id
+                ps.submission_id, ps.is_draft, ps.submission_date, ps.updated_at, ps.period_id AS submission_period_id,
+                JSON_EXTRACT(ps.content_json, '$.status') as status
             FROM programs p
             JOIN sectors s ON p.sector_id = s.sector_id
             JOIN users u ON p.owner_agency_id = u.user_id
@@ -331,14 +331,12 @@ function get_admin_programs_list($period_id = null, $filters = []) {
     // SELECT * FROM program_submissions 
     // WHERE " . ($period_id ? "period_id = ?" : "period_id = (SELECT MAX(period_id) FROM reporting_periods WHERE status = 'open')") . "
     // ) ps ON p.program_id = ps.program_id";
-    // This subquery for ps might be causing issues with ONLY_FULL_GROUP_BY if not handled correctly when integrated.
-
-    // Simpler JOIN without subquery for ps:
+    // This subquery for ps might be causing issues with ONLY_FULL_GROUP_BY if not handled correctly when integrated.    // Simpler JOIN without subquery for ps:
     $sql = "SELECT 
-        p.program_id, p.program_name, p.description, p.owner_agency_id, p.sector_id, p.created_at,
+        p.program_id, p.program_name, p.owner_agency_id, p.sector_id, p.created_at,
         s.sector_name, 
         u.agency_name,
-        ps.submission_id, ps.status, ps.is_draft, ps.submission_date, ps.updated_at, ps.period_id AS submission_period_id
+        ps.submission_id, JSON_EXTRACT(ps.content_json, '$.status') as status, ps.is_draft, ps.submission_date, ps.updated_at, ps.period_id AS submission_period_id
     FROM programs p
     JOIN sectors s ON p.sector_id = s.sector_id
     JOIN users u ON p.owner_agency_id = u.user_id
@@ -373,11 +371,9 @@ function get_admin_programs_list($period_id = null, $filters = []) {
         $where_clauses[] = "p.owner_agency_id = ?";
         $params[] = $filters['agency_id'];
         $param_types .= "i";
-    }
-    if (isset($filters['search']) && !empty($filters['search'])) {
+    }    if (isset($filters['search']) && !empty($filters['search'])) {
         $search_term = '%' . $filters['search'] . '%';
-        $where_clauses[] = "(p.program_name LIKE ? OR p.description LIKE ?)";
-        $params[] = $search_term;
+        $where_clauses[] = "(p.program_name LIKE ?)";
         $params[] = $search_term;
         $param_types .= "ss";
     }
