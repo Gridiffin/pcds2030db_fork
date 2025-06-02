@@ -295,9 +295,7 @@ require_once '../layouts/agency_nav.php';
                                 <div class="alert alert-info">
                                     <i class="fas fa-info-circle me-2"></i>
                                     Please review your program information below. You can go back to previous steps to make changes.
-                                </div>
-
-                                <!-- Review Summary -->
+                                </div>                                <!-- Review Summary -->
                                 <div class="review-summary">
                                     <div class="row">
                                         <div class="col-md-6">
@@ -312,9 +310,17 @@ require_once '../layouts/agency_nav.php';
                                         </div>
                                         <div class="col-md-6">
                                             <div class="review-section mb-3">
-                                                <h6 class="text-muted mb-2">Target Beneficiaries</h6>
-                                                <p class="mb-0" id="review-beneficiaries">-</p>
+                                                <h6 class="text-muted mb-2">Brief Description</h6>
+                                                <p class="mb-0" id="review-description">-</p>
                                             </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Targets Section -->
+                                    <div class="review-section mt-4">
+                                        <h6 class="text-muted mb-2">Targets</h6>
+                                        <div id="review-targets" class="targets-list">
+                                            <p class="text-muted mb-0">No targets added yet</p>
                                         </div>
                                     </div>
                                 </div>
@@ -454,6 +460,25 @@ require_once '../layouts/agency_nav.php';
     right: 20px;
     z-index: 1050;
 }
+
+.targets-list .target-item {
+    border-left: 3px solid #0d6efd;
+    transition: all 0.2s ease;
+}
+
+.targets-list .target-item:hover {
+    background-color: #f8f9fa !important;
+    border-left-color: #198754;
+}
+
+.target-text {
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+.status-text small {
+    font-style: italic;
+}
 </style>
 
 <!-- Wizard JavaScript -->
@@ -541,12 +566,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const progressPercentage = (currentStep / totalSteps) * 100;
         progressBar.style.width = progressPercentage + '%';
     }
-    
-    function updateReviewSummary() {
+      function updateReviewSummary() {
         const data = collectFormData();
         
+        // Program Name
         document.getElementById('review-program-name').textContent = data.program_name || '-';
         
+        // Timeline
         let timeline = '-';
         if (data.start_date && data.end_date) {
             timeline = `${formatDate(data.start_date)} - ${formatDate(data.end_date)}`;
@@ -557,11 +583,35 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         document.getElementById('review-timeline').textContent = timeline;
         
-        document.getElementById('review-beneficiaries').textContent = 
-            data.target_beneficiaries ? Number(data.target_beneficiaries).toLocaleString() : 'Not specified';
+        // Brief Description
+        document.getElementById('review-description').textContent = 
+            data.brief_description || 'No description provided';
+        
+        // Targets
+        const targetsContainer = document.getElementById('review-targets');
+        if (data.targets && data.targets.length > 0) {
+            let targetsHTML = '';
+            data.targets.forEach((target, index) => {
+                if (target.target && target.target.trim()) {
+                    targetsHTML += `
+                        <div class="target-item mb-2 p-2 bg-light rounded">
+                            <div class="fw-medium text-primary">Target ${index + 1}</div>
+                            <div class="target-text">${escapeHtml(target.target)}</div>
+                            ${target.status_description ? 
+                                `<div class="status-text mt-1"><small class="text-muted">${escapeHtml(target.status_description)}</small></div>` 
+                                : ''
+                            }
+                        </div>
+                    `;
+                }
+            });
+            
+            targetsContainer.innerHTML = targetsHTML || '<p class="text-muted mb-0">No targets added yet</p>';
+        } else {
+            targetsContainer.innerHTML = '<p class="text-muted mb-0">No targets added yet</p>';
+        }
     }
-    
-    function formatDate(dateStr) {
+      function formatDate(dateStr) {
         if (!dateStr) return '';
         const date = new Date(dateStr);
         return date.toLocaleDateString('en-US', { 
@@ -569,6 +619,17 @@ document.addEventListener('DOMContentLoaded', function() {
             month: 'long', 
             day: 'numeric' 
         });
+    }
+    
+    function escapeHtml(text) {
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, function(m) { return map[m]; });
     }
       function collectFormData() {
         const data = {};
