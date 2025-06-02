@@ -319,8 +319,18 @@ require_once '../layouts/agency_nav.php';
                                     <!-- Targets Section -->
                                     <div class="review-section mt-4">
                                         <h6 class="text-muted mb-2">Targets</h6>
-                                        <div id="review-targets" class="targets-list">
-                                            <p class="text-muted mb-0">No targets added yet</p>
+                                        <div id="review-targets">
+                                            <table class="review-target-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Target</th>
+                                                        <th>Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <!-- rows injected by JS -->
+                                                </tbody>
+                                            </table>
                                         </div>
                                     </div>
                                 </div>
@@ -566,12 +576,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const progressPercentage = (currentStep / totalSteps) * 100;
         progressBar.style.width = progressPercentage + '%';
     }
-      function updateReviewSummary() {
+    function updateReviewSummary() {
         const data = collectFormData();
-        
+
         // Program Name
         document.getElementById('review-program-name').textContent = data.program_name || '-';
-        
+
         // Timeline
         let timeline = '-';
         if (data.start_date && data.end_date) {
@@ -582,85 +592,85 @@ document.addEventListener('DOMContentLoaded', function() {
             timeline = `Ends: ${formatDate(data.end_date)}`;
         }
         document.getElementById('review-timeline').textContent = timeline;
-        
+
         // Brief Description
-        document.getElementById('review-description').textContent = 
+        document.getElementById('review-description').textContent =
             data.brief_description || 'No description provided';
-        
         // Targets
-        const targetsContainer = document.getElementById('review-targets');
-        if (data.targets && data.targets.length > 0) {
-            let targetsHTML = '';
-            data.targets.forEach((target, index) => {
-                if (target.target && target.target.trim()) {
-                    targetsHTML += `
-                        <div class="target-item mb-2 p-2 bg-light rounded">
-                            <div class="fw-medium text-primary">Target ${index + 1}</div>
-                            <div class="target-text">${escapeHtml(target.target)}</div>
-                            ${target.status_description ? 
-                                `<div class="status-text mt-1"><small class="text-muted">${escapeHtml(target.status_description)}</small></div>` 
-                                : ''
-                            }
-                        </div>
-                    `;
+        const tbody = [];
+        if (data.targets && data.targets.length) {
+            data.targets.forEach(t => {
+                const tgt = escapeHtml(t.target || '');
+                const st  = escapeHtml(t.status_description || '');
+                if (tgt || st) {
+                    tbody.push(`
+                        <tr>
+                        <td>${tgt || '-'}</td>
+                        <td>${st  || '-'}</td>
+                        </tr>
+                    `);
+                }
+            });
+        }
+        const tableBody = tbody.length
+            ? tbody.join('')
+            : `<tr><td colspan="2" class="text-muted">No targets added yet</td></tr>`;
+
+        document
+        .querySelector('#review-targets tbody')
+        .innerHTML = tableBody;
+    }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+        }
+        
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+        function collectFormData() {
+            const data = {};
+            
+            // Collect basic form inputs
+            formInputs.forEach(input => {
+                if (input.name && input.name !== 'targets' && !input.name.startsWith('targets[')) {
+                    data[input.name] = input.value;
                 }
             });
             
-            targetsContainer.innerHTML = targetsHTML || '<p class="text-muted mb-0">No targets added yet</p>';
-        } else {
-            targetsContainer.innerHTML = '<p class="text-muted mb-0">No targets added yet</p>';
-        }
-    }
-      function formatDate(dateStr) {
-        if (!dateStr) return '';
-        const date = new Date(dateStr);
-        return date.toLocaleDateString('en-US', { 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-        });
-    }
-    
-    function escapeHtml(text) {
-        const map = {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#039;'
-        };
-        return text.replace(/[&<>"']/g, function(m) { return map[m]; });
-    }
-      function collectFormData() {
-        const data = {};
-        
-        // Collect basic form inputs
-        formInputs.forEach(input => {
-            if (input.name && input.name !== 'targets' && !input.name.startsWith('targets[')) {
-                data[input.name] = input.value;
+            // Collect targets data specifically
+            const targetGroups = document.querySelectorAll('.target-group');
+            if (targetGroups.length > 0) {
+                data.targets = [];
+                targetGroups.forEach(group => {
+                    const targetInput = group.querySelector('input[name*="[target]"]');
+                    const statusInput = group.querySelector('input[name*="[status_description]"]');
+                    
+                    if (targetInput || statusInput) {
+                        data.targets.push({
+                            target: targetInput ? targetInput.value : '',
+                            status_description: statusInput ? statusInput.value : ''
+                        });
+                    }
+                });
             }
-        });
-        
-        // Collect targets data specifically
-        const targetGroups = document.querySelectorAll('.target-group');
-        if (targetGroups.length > 0) {
-            data.targets = [];
-            targetGroups.forEach(group => {
-                const targetInput = group.querySelector('input[name*="[target]"]');
-                const statusInput = group.querySelector('input[name*="[status_description]"]');
-                
-                if (targetInput || statusInput) {
-                    data.targets.push({
-                        target: targetInput ? targetInput.value : '',
-                        status_description: statusInput ? statusInput.value : ''
-                    });
-                }
-            });
+            
+            return data;
         }
         
-        return data;
-    }
-    
     function validateStep(step) {
         const stepElement = document.getElementById(`step-${step}`);
         const requiredFields = stepElement.querySelectorAll('[required]');
