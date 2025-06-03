@@ -93,15 +93,36 @@ if (isset($current_submission['content_json']) && !empty($current_submission['co
             }
         }
         $rating = $content['rating'] ?? $current_submission['status'] ?? 'not-started';
-        $remarks = $content['remarks'] ?? '';
-    } else {
-        // Legacy data format - create a single target
-        $targets = [
-            [
-                'text' => $content['target'] ?? $current_submission['target'] ?? '',
-                'status_description' => $content['status_text'] ?? $current_submission['status_text'] ?? ''
-            ]
-        ];
+        $remarks = $content['remarks'] ?? '';    } else {
+        // Legacy data format - handle semicolon-separated targets
+        $target_text = $content['target'] ?? $current_submission['target'] ?? '';
+        $status_description = $content['status_text'] ?? $current_submission['status_text'] ?? '';
+        
+        // Check if targets are semicolon-separated
+        if (strpos($target_text, ';') !== false) {
+            // Split semicolon-separated targets and status descriptions
+            $target_parts = array_map('trim', explode(';', $target_text));
+            $status_parts = array_map('trim', explode(';', $status_description));
+            
+            $targets = [];
+            foreach ($target_parts as $index => $target_part) {
+                if (!empty($target_part)) {
+                    $targets[] = [
+                        'text' => $target_part,
+                        'status_description' => isset($status_parts[$index]) ? $status_parts[$index] : ''
+                    ];
+                }
+            }
+        } else {
+            // Single target
+            $targets = [
+                [
+                    'text' => $target_text,
+                    'status_description' => $status_description
+                ]
+            ];
+        }
+        
         $rating = $current_submission['status'] ?? 'not-started';
         $remarks = $current_submission['remarks'] ?? '';
     }

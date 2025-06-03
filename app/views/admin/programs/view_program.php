@@ -70,15 +70,36 @@ if (isset($program['current_submission']['content_json']) && !empty($program['cu
             }
         }
         $rating = $content['rating'] ?? $program['current_submission']['status'] ?? 'not-started';
-        $remarks = $content['remarks'] ?? '';
-    } else {
-        // Legacy data format - create a single target
-        $targets = [
-            [
-                'text' => $content['target'] ?? $program['current_submission']['target'] ?? '',
-                'status_description' => $content['status_text'] ?? $program['current_submission']['status_text'] ?? ''
-            ]
-        ];
+        $remarks = $content['remarks'] ?? '';    } else {
+        // Legacy data format - handle semicolon-separated targets
+        $target_text = $content['target'] ?? $program['current_submission']['target'] ?? '';
+        $status_description = $content['status_text'] ?? $program['current_submission']['status_text'] ?? '';
+        
+        // Check if targets are semicolon-separated
+        if (strpos($target_text, ';') !== false) {
+            // Split semicolon-separated targets and status descriptions
+            $target_parts = array_map('trim', explode(';', $target_text));
+            $status_parts = array_map('trim', explode(';', $status_description));
+            
+            $targets = [];
+            foreach ($target_parts as $index => $target_part) {
+                if (!empty($target_part)) {
+                    $targets[] = [
+                        'text' => $target_part,
+                        'status_description' => isset($status_parts[$index]) ? $status_parts[$index] : ''
+                    ];
+                }
+            }
+        } else {
+            // Single target
+            $targets = [
+                [
+                    'text' => $target_text,
+                    'status_description' => $status_description
+                ]
+            ];
+        }
+        
         $rating = $program['current_submission']['status'] ?? 'not-started';
         $remarks = $program['current_submission']['remarks'] ?? '';
     }

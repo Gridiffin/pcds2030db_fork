@@ -47,26 +47,27 @@ $additionalScripts = [
 $agency_id = $_SESSION['user_id'];
 
 // Define the function if it doesn't exist
-if (!function_exists('get_agency_programs')) {
-    function get_agency_programs($agency_id) {
+if (!function_exists('get_agency_programs')) {    function get_agency_programs($agency_id) {
         global $conn;
         
-        // Modified query to filter by owner_agency_id
+        // Fixed query to properly get the latest submission for each program
+        // Uses a subquery to find the latest submission_id for each program, then joins back to get the full data
         $query = "SELECT p.*, 
-                  (SELECT ps.status FROM program_submissions ps 
-                   WHERE ps.program_id = p.program_id 
-                   ORDER BY ps.submission_date DESC LIMIT 1) as status,
-                  (SELECT ps.is_draft FROM program_submissions ps 
-                   WHERE ps.program_id = p.program_id 
-                   ORDER BY ps.submission_date DESC LIMIT 1) as is_draft,
-                  (SELECT ps.period_id FROM program_submissions ps 
-                   WHERE ps.program_id = p.program_id 
-                   ORDER BY ps.submission_date DESC LIMIT 1) as period_id,
-                  (SELECT ps.submission_date FROM program_submissions ps 
-                   WHERE ps.program_id = p.program_id 
-                   ORDER BY ps.submission_date DESC LIMIT 1) as updated_at
+                         COALESCE(latest_sub.is_draft, 1) as is_draft,
+                         latest_sub.period_id,
+                         COALESCE(latest_sub.submission_date, p.created_at) as updated_at,
+                         latest_sub.submission_id as latest_submission_id
                   FROM programs p 
-                  WHERE p.owner_agency_id = ? 
+                  LEFT JOIN (
+                      SELECT ps1.*
+                      FROM program_submissions ps1
+                      INNER JOIN (
+                          SELECT program_id, MAX(submission_id) as max_submission_id
+                          FROM program_submissions
+                          GROUP BY program_id
+                      ) ps2 ON ps1.program_id = ps2.program_id AND ps1.submission_id = ps2.max_submission_id
+                  ) latest_sub ON p.program_id = latest_sub.program_id
+                  WHERE p.owner_agency_id = ?
                   ORDER BY p.program_name";
                   
         $stmt = $conn->prepare($query);
@@ -271,20 +272,19 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                                     ?>
                                 </td>
                                 <td>
-                                    <div class="btn-group btn-group-sm float-end">
-                                        <a href="<?php echo APP_URL; ?>/app/views/agency/update_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="Edit Program">
+                                    <div class="btn-group btn-group-sm" role="group" aria-label="Program actions">
+                                        <a href="update_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-secondary" title="Edit Program">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        
-                                        <!-- Delete button only shows for custom programs (not assigned ones) -->
-                                        <?php if (!$is_assigned): ?>
                                         <button type="button" class="btn btn-outline-danger delete-program-btn" 
-                                            data-id="<?php echo $program['program_id']; ?>"
-                                            data-name="<?php echo htmlspecialchars($program['program_name']); ?>"
-                                            title="Delete Program">
+                                                data-id="<?php echo $program['program_id']; ?>" 
+                                                data-name="<?php echo htmlspecialchars($program['program_name']); ?>" 
+                                                title="Delete Program">
                                             <i class="fas fa-trash"></i>
                                         </button>
-                                        <?php endif; ?>
+                                        <button class="btn btn-outline-success btn-sm submit-program" data-program-id="<?php echo $program['program_id']; ?>" title="Submit Program">
+                                            <i class="fas fa-check"></i>
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -411,7 +411,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                                     ?>
                                 </td>
                                 <td>
-                                    <div class="btn-group btn-group-sm float-end">
+                                    <div class="btn-group btn-group-sm" role="group" aria-label="Program actions">
                                         <a href="program_details.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="View Program Details">
                                             <i class="fas fa-eye"></i>
                                         </a>

@@ -2,6 +2,7 @@
 @import 'pages/report-generator.css';
 @import 'components/ratings.css';
 @import 'components/rating-colors.css';
+@import 'agency/program-review.css';
 
 /**
  * Base Styles
@@ -154,15 +155,20 @@ a.btn:hover {
     border-color: #0a58ca; /* Even darker for border */
 }
 
+/* Reverting btn-success styles to original */
 .btn-success {
-    background-color: var(--secondary-color);
-    border-color: var(--secondary-color);
+    background-color: #28a745;
+    color: #fff;
+    border: 1px solid #28a745;
 }
 
-.btn-success:hover,
-.btn-success:focus {
+.btn-success:hover {
     background-color: #218838;
     border-color: #1e7e34;
+}
+
+.btn-success:focus {
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.5);
 }
 
 /* Enhanced outline button hover effects */

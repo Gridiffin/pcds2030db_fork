@@ -106,12 +106,10 @@ function get_all_sectors_programs($period_id = null, $filters = []) {
     $filterConditions = [];
     $filterParams = [];
     $filterTypes = "";
-    
-    // Base query
+      // Base query
     $query = "SELECT 
                 p.program_id, 
                 p.program_name, 
-                p.description, 
                 p.start_date, 
                 p.end_date,
                 p.created_at,
@@ -130,17 +128,16 @@ function get_all_sectors_programs($period_id = null, $filters = []) {
                   "JSON_EXTRACT(ps.content_json, '$.status_text') as status_text";
     }
     
-    // Always add status
-    $query .= ", ps.status, ps.is_draft
+    // Only add is_draft since status has been removed
+    $query .= ", ps.is_draft
               FROM programs p
               JOIN sectors s ON p.sector_id = s.sector_id
               JOIN users u ON p.owner_agency_id = u.user_id
               LEFT JOIN (";
     
     // Changed to LEFT JOIN to include programs with no submissions
-    
-    // Subquery to get latest submission for each program 
-    $subquery = "SELECT ps1.program_id, ps1.status, ps1.is_draft";
+      // Subquery to get latest submission for each program 
+    $subquery = "SELECT ps1.program_id, ps1.is_draft";
     
     if ($has_content_json) {
         $subquery .= ", ps1.content_json";
@@ -179,21 +176,18 @@ function get_all_sectors_programs($period_id = null, $filters = []) {
             $filterParams[] = $filters['agency_id'];
             $filterTypes .= "i";
         }
-        
-        // Filter by status
+          // Filter by status - using JSON content instead since status column has been removed
         if (isset($filters['status']) && $filters['status']) {
-            $filterConditions[] = "ps.status = ?";
+            $filterConditions[] = "JSON_EXTRACT(ps.content_json, '$.status') = ?";
             $filterParams[] = $filters['status'];
             $filterTypes .= "s";
         }
-        
-        // Filter by search term
+          // Filter by search term
         if (isset($filters['search']) && $filters['search']) {
             $searchTerm = '%' . $filters['search'] . '%';
-            $filterConditions[] = "(p.program_name LIKE ? OR p.description LIKE ?)";
+            $filterConditions[] = "(p.program_name LIKE ?)";
             $filterParams[] = $searchTerm;
-            $filterParams[] = $searchTerm;
-            $filterTypes .= "ss";
+            $filterTypes .= "s";
         }
     }
     
@@ -201,9 +195,8 @@ function get_all_sectors_programs($period_id = null, $filters = []) {
     if (!empty($filterConditions)) {
         $query .= " WHERE " . implode(" AND ", $filterConditions);
     }
-    
-    // Finalize query
-    $query .= " GROUP BY p.program_id, p.program_name, p.description, p.start_date, p.end_date, 
+      // Finalize query
+    $query .= " GROUP BY p.program_id, p.program_name, p.start_date, p.end_date, 
                 p.created_at, p.updated_at, p.sector_id, s.sector_name, u.agency_name";
     
     // Add additional GROUP BY fields based on schema
@@ -213,7 +206,7 @@ function get_all_sectors_programs($period_id = null, $filters = []) {
         $query .= ", ps.target, ps.achievement, ps.status_date, ps.status_text";
     }
     
-    $query .= ", ps.status, ps.is_draft ORDER BY (p.sector_id = ?) DESC, p.created_at DESC";
+    $query .= ", ps.is_draft ORDER BY (p.sector_id = ?) DESC, p.created_at DESC";
     $filterParams[] = $current_sector_id;
     $filterTypes .= "i";
     
@@ -284,13 +277,13 @@ function get_agency_submission_status($agency_id, $period_id = null) {
 
         // Get submission status counts
         $status_query = "SELECT 
-            ps.status,
+            'not-started' as status, -- status column removed
             COUNT(*) as count,
             SUM(CASE WHEN ps.is_draft = 1 THEN 1 ELSE 0 END) as draft_count,
             SUM(CASE WHEN ps.is_draft = 0 THEN 1 ELSE 0 END) as submitted_count
             FROM programs p 
             LEFT JOIN (
-                SELECT program_id, status, is_draft
+                SELECT program_id, is_draft
                 FROM program_submissions ps1
                 WHERE (period_id = ? OR ? IS NULL)
                 AND NOT EXISTS (
@@ -299,8 +292,7 @@ function get_agency_submission_status($agency_id, $period_id = null) {
                     AND ps2.submission_id > ps1.submission_id
                 )
             ) ps ON p.program_id = ps.program_id
-            WHERE p.owner_agency_id = ?
-            GROUP BY ps.status";
+            WHERE p.owner_agency_id = ?";
 
         $stmt = $conn->prepare($status_query);
         $stmt->bind_param("iii", $period_id, $period_id, $agency_id);
