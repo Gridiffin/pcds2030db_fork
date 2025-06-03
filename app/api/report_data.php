@@ -263,10 +263,34 @@ while ($program = $programs_result->fetch_assoc()) {    // Extract target from c
         
         // Debug log the processed targets (can be removed in production)
         error_log("Program {$program['program_id']}: Processed " . count($target_texts) . " targets");
+          } elseif (isset($content['target'])) { // Old format with direct target property
+        $target_text = $content['target'] ?? 'No target set';
+        $status_description = $content['status_text'] ?? 'No status update available';
         
-    } elseif (isset($content['target'])) { // Old format with direct target property
-        $target = $content['target'] ?? 'No target set';
-        $status_text = $content['status_text'] ?? 'No status update available';
+        // Check if targets are semicolon-separated
+        if (strpos($target_text, ';') !== false) {
+            // Split semicolon-separated targets and status descriptions
+            $target_parts = array_map('trim', explode(';', $target_text));
+            $status_parts = array_map('trim', explode(';', $status_description));
+            
+            $target_texts = [];
+            $status_texts = [];
+            
+            foreach ($target_parts as $index => $target_part) {
+                if (!empty($target_part)) {
+                    $target_texts[] = $target_part;
+                    $status_texts[] = isset($status_parts[$index]) ? $status_parts[$index] : 'No status update available';
+                }
+            }
+            
+            // Combine targets and statuses with newlines for bullet point separation
+            $target = implode("\n", $target_texts);
+            $status_text = implode("\n", $status_texts);
+        } else {
+            // Single target
+            $target = $target_text;
+            $status_text = $status_description;
+        }
         
         // Normalize newlines in the old format as well
         $target = str_replace(['\\n', '\\r', '\\r\\n'], "\n", $target);

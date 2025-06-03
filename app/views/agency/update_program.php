@@ -179,26 +179,78 @@ if (isset($program['current_submission'])) {
         if (isset($content['targets']) && is_array($content['targets'])) {
             $targets = $content['targets'];
             $rating = $content['rating'] ?? 'not-started';
-            $remarks = $content['remarks'] ?? '';
-        } else {
-            // Legacy data - create a single target from old structure
-            $targets = [
-                [
-                    'target_text' => $content['target'] ?? $current_submission['target'] ?? '',
-                    'status_description' => $content['status_text'] ?? $current_submission['status_text'] ?? ''
-                ]
-            ];
+            $remarks = $content['remarks'] ?? '';        } else {
+            // Legacy data - handle semicolon-separated targets
+            $target_text = $content['target'] ?? $current_submission['target'] ?? '';
+            $status_description = $content['status_description'] ?? $content['status_text'] ?? $current_submission['status_text'] ?? '';
+            
+            // Check if targets are semicolon-separated
+            if (strpos($target_text, ';') !== false) {
+                // Split semicolon-separated targets and status descriptions
+                $target_parts = array_map('trim', explode(';', $target_text));
+                $status_parts = array_map('trim', explode(';', $status_description));
+                
+                $targets = [];
+                foreach ($target_parts as $index => $target_part) {
+                    if (!empty($target_part)) {
+                        $targets[] = [
+                            'target_text' => $target_part,
+                            'status_description' => isset($status_parts[$index]) ? $status_parts[$index] : ''
+                        ];
+                    }
+                }
+                
+                // Ensure we have at least one target
+                if (empty($targets)) {
+                    $targets = [['target_text' => '', 'status_description' => '']];
+                }
+            } else {
+                // Single target - create a single target from old structure
+                $targets = [
+                    [
+                        'target_text' => $target_text,
+                        'status_description' => $status_description
+                    ]
+                ];
+            }
+            
             $rating = $current_submission['status'] ?? 'not-started';
             $remarks = $content['remarks'] ?? '';
+        }    } else {
+        // Old structure without content_json - handle semicolon-separated targets
+        $target_text = $current_submission['target'] ?? '';
+        $status_description = $current_submission['status_text'] ?? '';
+        
+        // Check if targets are semicolon-separated
+        if (strpos($target_text, ';') !== false) {
+            // Split semicolon-separated targets and status descriptions
+            $target_parts = array_map('trim', explode(';', $target_text));
+            $status_parts = array_map('trim', explode(';', $status_description));
+            
+            $targets = [];
+            foreach ($target_parts as $index => $target_part) {
+                if (!empty($target_part)) {
+                    $targets[] = [
+                        'target_text' => $target_part,
+                        'status_description' => isset($status_parts[$index]) ? $status_parts[$index] : ''
+                    ];
+                }
+            }
+            
+            // Ensure we have at least one target
+            if (empty($targets)) {
+                $targets = [['target_text' => '', 'status_description' => '']];
+            }
+        } else {
+            // Single target
+            $targets = [
+                [
+                    'target_text' => $target_text,
+                    'status_description' => $status_description
+                ]
+            ];
         }
-    } else {
-        // Old structure without content_json
-        $targets = [
-            [
-                'target_text' => $current_submission['target'] ?? '',
-                'status_description' => $current_submission['status_text'] ?? ''
-            ]
-        ];
+        
         $rating = $current_submission['status'] ?? 'not-started';
         $remarks = $current_submission['remarks'] ?? '';
     }
