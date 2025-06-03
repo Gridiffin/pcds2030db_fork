@@ -116,9 +116,11 @@ function get_field_value($field, $default = '') {
 
 // Process form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    error_log('DEBUG: POST received in update_program.php');
     // Determine submission type
     $is_draft = isset($_POST['save_draft']);
     $finalize_draft = isset($_POST['finalize_draft']);
+    error_log('DEBUG: $is_draft = ' . var_export($is_draft, true) . ', $finalize_draft = ' . var_export($finalize_draft, true));
       if ($finalize_draft) {
         $submission_id = $_POST['submission_id'] ?? 0;
         // Get current reporting period to ensure we're finalizing the correct submission
@@ -133,14 +135,140 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $result = ['success' => true, 'message' => 'Draft finalized successfully.'];
             } else {
                 $result = ['error' => 'Failed to finalize draft. Submission may not exist for current period.'];
-            }
-        } else {
+            }        } else {
             $result = ['error' => 'Invalid submission ID or no active reporting period.'];
         }
     } else {
-        // Use direct SQL to update program data since submit_program_data() is undefined
-        // (You may want to refactor this to use a shared function in the future)
-        $result = ['success' => true, 'message' => 'Program updated successfully.'];
+        error_log('DEBUG: Entering save draft branch');
+        // Handle save draft functionality - update both program basic info and submission content
+        global $conn;
+        try {
+            error_log('DEBUG: In save draft try block, about to start transaction');
+            $conn->begin_transaction();
+            
+            // Get form data
+            $program_name = trim($_POST['program_name'] ?? '');
+            $start_date = !empty($_POST['start_date']) ? $_POST['start_date'] : null;
+            $end_date = !empty($_POST['end_date']) ? $_POST['end_date'] : null;
+            $rating = $_POST['rating'] ?? 'not-started';
+            $remarks = trim($_POST['remarks'] ?? '');
+            $period_id = intval($_POST['period_id'] ?? 0);
+            $submission_id = intval($_POST['submission_id'] ?? 0);
+            $current_user_id = $_SESSION['user_id'];
+            
+            // Process targets array
+            $targets = [];
+            if (isset($_POST['target_text']) && is_array($_POST['target_text'])) {
+                $target_texts = $_POST['target_text'];
+                $target_status_descriptions = $_POST['target_status_description'] ?? [];
+                
+                for ($i = 0; $i < count($target_texts); $i++) {
+                    $target_text = trim($target_texts[$i]);
+                    if (!empty($target_text)) {
+                        $targets[] = [
+                            'target_text' => $target_text,
+                            'status_description' => trim($target_status_descriptions[$i] ?? '')
+                        ];
+                    }
+                }
+            }
+            
+            // 1. Update program basic information (if allowed)
+            if (is_editable('program_name') || is_editable('start_date') || is_editable('end_date')) {
+                $update_fields = [];
+                $update_params = [];
+                $param_types = '';
+                
+                if (is_editable('program_name') && !empty($program_name)) {
+                    $update_fields[] = "program_name = ?";
+                    $update_params[] = $program_name;
+                    $param_types .= 's';
+                }
+                
+                if (is_editable('start_date')) {
+                    $update_fields[] = "start_date = ?";
+                    $update_params[] = $start_date;
+                    $param_types .= 's';
+                }
+                
+                if (is_editable('end_date')) {
+                    $update_fields[] = "end_date = ?";
+                    $update_params[] = $end_date;
+                    $param_types .= 's';
+                }
+                
+                if (!empty($update_fields)) {
+                    $update_fields[] = "updated_at = NOW()";
+                    $update_params[] = $program_id;
+                    $param_types .= 'i';
+                    
+                    $program_query = "UPDATE programs SET " . implode(', ', $update_fields) . " WHERE program_id = ?";
+                    $program_stmt = $conn->prepare($program_query);
+                    $program_stmt->bind_param($param_types, ...$update_params);
+                    
+                    if (!$program_stmt->execute()) {
+                        throw new Exception('Failed to update program: ' . $program_stmt->error);
+                    }
+                }
+            }
+            
+            // 2. Handle program submission data
+            $content_data = [
+                'rating' => $rating,
+                'targets' => $targets,
+                'remarks' => $remarks,
+                'program_name' => $program_name
+            ];
+            $content_json = json_encode($content_data);
+            
+            if ($submission_id > 0) {
+                // Update existing submission
+                $submission_query = "UPDATE program_submissions 
+                                   SET content_json = ?, 
+                                       updated_at = NOW() 
+                                   WHERE submission_id = ? 
+                                   AND program_id = ? 
+                                   AND period_id = ?";
+                $submission_stmt = $conn->prepare($submission_query);
+                $submission_stmt->bind_param("siii", $content_json, $submission_id, $program_id, $period_id);
+                
+                if (!$submission_stmt->execute()) {
+                    throw new Exception('Failed to update submission: ' . $submission_stmt->error);
+                }
+                
+                if ($submission_stmt->affected_rows === 0) {
+                    // No submission found to update, so insert a new one
+                    error_log('DEBUG: No submission found to update, inserting new submission instead');
+                    $submission_query = "INSERT INTO program_submissions 
+                                       (program_id, period_id, submitted_by, content_json, is_draft, submission_date, updated_at) 
+                                       VALUES (?, ?, ?, ?, 1, NOW(), NOW())";
+                    $submission_stmt = $conn->prepare($submission_query);
+                    $submission_stmt->bind_param("iiis", $program_id, $period_id, $current_user_id, $content_json);
+                    if (!$submission_stmt->execute()) {
+                        throw new Exception('Failed to create submission: ' . $submission_stmt->error);
+                    }
+                }
+            } else {
+                // Create new submission
+                $submission_query = "INSERT INTO program_submissions 
+                                   (program_id, period_id, submitted_by, content_json, is_draft, submission_date, updated_at) 
+                                   VALUES (?, ?, ?, ?, 1, NOW(), NOW())";
+                $submission_stmt = $conn->prepare($submission_query);
+                $submission_stmt->bind_param("iiis", $program_id, $period_id, $current_user_id, $content_json);
+                
+                if (!$submission_stmt->execute()) {
+                    throw new Exception('Failed to create submission: ' . $submission_stmt->error);
+                }
+            }
+            
+            $conn->commit();
+            error_log('DEBUG: Save draft DB commit successful');
+            $result = ['success' => true, 'message' => 'Program saved as draft successfully.'];
+        } catch (Exception $e) {
+            error_log('DEBUG: Exception in save draft: ' . $e->getMessage());
+            $conn->rollback();
+            $result = ['error' => 'Failed to save draft: ' . $e->getMessage()];
+        }
     }
     
     if (isset($result['success'])) {

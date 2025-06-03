@@ -52,11 +52,13 @@ if (!function_exists('get_agency_programs')) {    function get_agency_programs($
         
         // Fixed query to properly get the latest submission for each program
         // Uses a subquery to find the latest submission_id for each program, then joins back to get the full data
+        // Extract rating from JSON content
         $query = "SELECT p.*, 
                          COALESCE(latest_sub.is_draft, 1) as is_draft,
                          latest_sub.period_id,
                          COALESCE(latest_sub.submission_date, p.created_at) as updated_at,
-                         latest_sub.submission_id as latest_submission_id
+                         latest_sub.submission_id as latest_submission_id,
+                         COALESCE(JSON_UNQUOTE(JSON_EXTRACT(latest_sub.content_json, '$.rating')), 'not-started') as rating
                   FROM programs p 
                   LEFT JOIN (
                       SELECT ps1.*
