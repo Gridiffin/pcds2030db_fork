@@ -331,3 +331,249 @@ function validate_agency_program_input($data, $required = []) {
     }
     return $validated;
 }
+
+/**
+ * Get detailed information about a specific program for agency view
+ * Based on get_admin_program_details but with agency-specific access controls
+ * 
+ * @param int $program_id The ID of the program to retrieve
+ * @param bool $allow_cross_agency Whether to allow viewing programs from other agencies (default: false)
+ * @return array|false Program details array or false if not found/unauthorized
+ */
+function get_program_details($program_id, $allow_cross_agency = false) {
+    global $conn;
+    
+    // Validate input
+    $program_id = intval($program_id);
+    if ($program_id <= 0) {
+        return false;
+    }
+    
+    // Check if user is agency
+    if (!is_agency()) {
+        return false;
+    }
+    
+    $current_user_id = $_SESSION['user_id'];
+    
+    // Base query to get program details
+    $stmt = $conn->prepare("SELECT p.*, s.sector_name, u.agency_name, u.user_id as owner_agency_id
+                          FROM programs p
+                          LEFT JOIN sectors s ON p.sector_id = s.sector_id
+                          LEFT JOIN users u ON p.owner_agency_id = u.user_id
+                          WHERE p.program_id = ?");
+    $stmt->bind_param("i", $program_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 0) {
+        return false;
+    }
+    
+    $program = $result->fetch_assoc();
+    
+    // Access control: Check if user can view this program
+    if (!$allow_cross_agency && $program['owner_agency_id'] != $current_user_id) {
+        return false;
+    }
+    
+    // Get submissions for this program with reporting period details
+    $stmt = $conn->prepare("SELECT ps.*, rp.year, rp.quarter
+                          FROM program_submissions ps 
+                          JOIN reporting_periods rp ON ps.period_id = rp.period_id
+                          WHERE ps.program_id = ? 
+                          ORDER BY ps.submission_id DESC");
+    $stmt->bind_param("i", $program_id);
+    $stmt->execute();
+    $submissions_result = $stmt->get_result();
+    
+    $program['submissions'] = [];
+    
+    if ($submissions_result->num_rows > 0) {
+        while ($submission = $submissions_result->fetch_assoc()) {
+            // Process content_json if applicable
+            if (isset($submission['content_json']) && is_string($submission['content_json'])) {
+                $content = json_decode($submission['content_json'], true);
+                if ($content) {
+                    // Extract fields from content JSON
+                    $submission['target'] = $content['target'] ?? '';
+                    $submission['achievement'] = $content['achievement'] ?? '';
+                    $submission['remarks'] = $content['remarks'] ?? '';
+                    $submission['status_date'] = $content['status_date'] ?? '';
+                    $submission['status_text'] = $content['status_text'] ?? '';
+                    $submission['targets'] = $content['targets'] ?? [];
+                    $submission['status'] = $content['status'] ?? 'not-started';
+                }
+            }
+            $program['submissions'][] = $submission;
+        }
+        
+        // Set current submission (most recent)
+        $program['current_submission'] = $program['submissions'][0];
+    }
+    
+    return $program;
+}
+
+/**
+ * Get program edit history for display in UI
+ * Returns formatted submission history with dates and draft/final status
+ */
+function get_program_edit_history($program_id) {
+    global $conn;    // Get all submissions for this program with period information
+    $stmt = $conn->prepare("
+        SELECT ps.*, rp.year, rp.quarter,
+               CONCAT('Q', rp.quarter, ' ', rp.year) as period_name,
+               ps.submission_date as effective_date
+        FROM program_submissions ps 
+        LEFT JOIN reporting_periods rp ON ps.period_id = rp.period_id
+        WHERE ps.program_id = ? 
+        ORDER BY ps.submission_id DESC, ps.submission_date DESC
+    ");
+    
+    if (!$stmt) {
+        error_log("Database error in get_program_edit_history: " . $conn->error);
+        return ['submissions' => []];
+    }
+    
+    $stmt->bind_param("i", $program_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    $submissions = [];
+    
+    while ($row = $result->fetch_assoc()) {
+        // Process content_json if it exists
+        if (isset($row['content_json']) && is_string($row['content_json'])) {
+            $content = json_decode($row['content_json'], true);
+            if ($content) {
+                // Extract fields from content JSON
+                foreach ($content as $key => $value) {
+                    if (!isset($row[$key])) {
+                        $row[$key] = $value;
+                    }
+                }
+            }
+        }
+        
+        // Format the date for display
+        if ($row['effective_date']) {
+            $row['formatted_date'] = date('M j, Y', strtotime($row['effective_date']));
+        } else {
+            $row['formatted_date'] = 'Unknown date';
+        }
+        
+        // Set draft/final label
+        $row['is_draft_label'] = ($row['is_draft'] ?? 0) ? 'Draft' : 'Final';
+        
+        // Format period name if available
+        if (isset($row['year']) && isset($row['quarter'])) {
+            $row['period_display'] = "Q{$row['quarter']}-{$row['year']}";
+        } elseif (isset($row['period_name'])) {
+            $row['period_display'] = $row['period_name'];
+        } else {
+            $row['period_display'] = 'Unknown period';
+        }
+        
+        $submissions[] = $row;
+    }
+    
+    $stmt->close();
+    
+    return ['submissions' => $submissions];
+}
+
+/**
+ * Get field edit history for a specific field from program submissions
+ * Used to show how specific fields have changed over time
+ */
+function get_field_edit_history($submissions, $field_name) {
+    $history = [];
+    $seen_values = [];
+    
+    if (!is_array($submissions)) {
+        return $history;
+    }
+    
+    foreach ($submissions as $submission) {
+        $value = null;
+        
+        // Extract the field value based on field name
+        switch ($field_name) {
+            case 'targets':
+                if (isset($submission['targets']) && is_array($submission['targets'])) {
+                    $value = $submission['targets'];
+                } elseif (isset($submission['target']) && !empty($submission['target'])) {
+                    // Convert legacy single target to array format
+                    $value = [['text' => $submission['target'], 'target_text' => $submission['target']]];
+                }
+                break;
+                
+            case 'program_name':
+                $value = $submission['program_name'] ?? null;
+                break;
+                
+            case 'description':
+                $value = $submission['description'] ?? null;
+                break;
+                
+            case 'target':
+                $value = $submission['target'] ?? null;
+                break;
+                
+            case 'achievement':
+                $value = $submission['achievement'] ?? null;
+                break;
+                
+            case 'remarks':
+                $value = $submission['remarks'] ?? null;
+                break;
+                
+            case 'status':
+                $value = $submission['status'] ?? null;
+                break;
+                
+            default:
+                // Try to get the field directly
+                $value = $submission[$field_name] ?? null;
+                break;
+        }
+        
+        // Skip if no value or empty value
+        if ($value === null || $value === '' || (is_array($value) && empty($value))) {
+            continue;
+        }
+        
+        // Create a hash of the value to detect duplicates
+        $value_hash = is_array($value) ? md5(json_encode($value)) : md5((string)$value);
+        
+        // Skip duplicate values
+        if (in_array($value_hash, $seen_values)) {
+            continue;
+        }
+        
+        $seen_values[] = $value_hash;
+        
+        // Format timestamp
+        $timestamp = 'Unknown date';
+        if (isset($submission['formatted_date'])) {
+            $timestamp = $submission['formatted_date'];
+        } elseif (isset($submission['effective_date'])) {
+            $timestamp = date('M j, Y', strtotime($submission['effective_date']));
+        } elseif (isset($submission['submission_date'])) {
+            $timestamp = date('M j, Y', strtotime($submission['submission_date']));
+        } elseif (isset($submission['created_at'])) {
+            $timestamp = date('M j, Y', strtotime($submission['created_at']));
+        }
+        
+        $history[] = [
+            'value' => $value,
+            'timestamp' => $timestamp,
+            'is_draft' => $submission['is_draft'] ?? 0,
+            'submission_id' => $submission['submission_id'] ?? 0,
+            'period_name' => $submission['period_display'] ?? ''
+        ];
+    }
+    
+    return $history;
+}
