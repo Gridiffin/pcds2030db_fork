@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function initializeFiltering() {
     // Fix: Changed element IDs to match what's in the HTML
     const searchInput = document.getElementById('search');
-    const statusFilter = document.getElementById('status');
+    const ratingFilter = document.getElementById('rating') || document.getElementById('status'); // Support both for backward compatibility
     const sectorFilter = document.getElementById('sector_id');
     const resetButton = document.getElementById('resetFilters');
     const filterIndicators = document.getElementById('activeFilters');
@@ -23,7 +23,7 @@ function initializeFiltering() {
     const programCount = document.getElementById('programCount');
     
     // Skip initialization if elements don't exist on this page
-    if (!searchInput && !statusFilter && !sectorFilter) {
+    if (!searchInput && !ratingFilter && !sectorFilter) {
         console.log('Filtering elements not found - might be on a different view');
         return;
     }
@@ -31,11 +31,11 @@ function initializeFiltering() {
     // Function to apply all filters
     function applyFilters() {
         const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
-        const statusValue = statusFilter ? statusFilter.value.toLowerCase() : '';
+        const ratingValue = ratingFilter ? ratingFilter.value.toLowerCase() : '';
         const sectorValue = sectorFilter ? sectorFilter.value : '';
         
         // Check if any filters are active
-        const hasActiveFilters = searchTerm || statusValue || sectorValue;
+        const hasActiveFilters = searchTerm || ratingValue || sectorValue;
         
         // Update filter indicators visibility
         if (filterIndicators) {
@@ -53,10 +53,10 @@ function initializeFiltering() {
                 });
             }
             
-            if (statusValue) {
-                const statusText = statusFilter.options[statusFilter.selectedIndex].text;
-                addFilterBadge('Status', statusText, () => {
-                    statusFilter.value = '';
+            if (ratingValue) {
+                const ratingText = ratingFilter.options[ratingFilter.selectedIndex].text;
+                addFilterBadge('Rating', ratingText, () => {
+                    ratingFilter.value = '';
                     applyFilters();
                 });
             }
@@ -91,7 +91,7 @@ function initializeFiltering() {
             
             const programName = row.querySelector('td:first-child .fw-medium')?.textContent.toLowerCase() || '';
             const programDesc = row.querySelector('td:first-child .small')?.textContent.toLowerCase() || '';
-            const status = row.querySelector('td:nth-child(4) .badge')?.textContent.toLowerCase() || '';
+            const rating = row.querySelector('td:nth-child(4) .badge')?.textContent.toLowerCase() || '';
             const sectorText = row.querySelector('td:nth-child(3) .badge')?.textContent.toLowerCase() || '';
             
             // Check if row matches all filters
@@ -99,12 +99,12 @@ function initializeFiltering() {
                 programName.includes(searchTerm) || 
                 programDesc.includes(searchTerm);
                 
-            const matchesStatus = !statusValue || status.toLowerCase().includes(statusValue.toLowerCase());
+            const matchesRating = !ratingValue || rating.toLowerCase().includes(ratingValue.toLowerCase());
             
             const matchesSector = !sectorValue || row.classList.contains(`sector-${sectorValue}`);
             
             // Show/hide row based on filters
-            if (matchesSearch && matchesStatus && matchesSector) {
+            if (matchesSearch && matchesRating && matchesSector) {
                 row.style.display = '';
                 visibleCount++;
             } else {
@@ -168,14 +168,14 @@ function initializeFiltering() {
     
     // Add event listeners for filters
     if (searchInput) searchInput.addEventListener('input', applyFilters);
-    if (statusFilter) statusFilter.addEventListener('change', applyFilters);
+    if (ratingFilter) ratingFilter.addEventListener('change', applyFilters);
     if (sectorFilter) sectorFilter.addEventListener('change', applyFilters);
     
     // Reset all filters
     if (resetButton) {
         resetButton.addEventListener('click', () => {
             if (searchInput) searchInput.value = '';
-            if (statusFilter) statusFilter.value = '';
+            if (ratingFilter) ratingFilter.value = '';
             if (sectorFilter) sectorFilter.value = '';
             applyFilters();
         });
@@ -184,7 +184,7 @@ function initializeFiltering() {
     // Only apply initial filters if explicit selections have been made
     // This prevents auto-filtering to current sector on page load
     if ((searchInput && searchInput.value) || 
-        (statusFilter && statusFilter.value) || 
+        (ratingFilter && ratingFilter.value) || 
         (sectorFilter && sectorFilter.value !== '')) {
         applyFilters();
     } else {

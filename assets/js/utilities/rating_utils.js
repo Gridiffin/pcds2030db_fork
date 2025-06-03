@@ -104,12 +104,36 @@ function createRichRatingBadge(rating) {
     return badge;
 }
 
-// For backward compatibility
-const initStatusPills = initRatingPills;
-const getStatusColorClass = getRatingColorClass;
-const getStatusIconClass = getRatingIconClass;
-const createStatusBadge = createRatingBadge;
-const createRichStatusBadge = createRichRatingBadge;
+// For backward compatibility - use function declarations to avoid redeclaration errors
+if (typeof initStatusPills === 'undefined') {
+    function initStatusPills() {
+        return initRatingPills();
+    }
+}
+
+if (typeof getStatusColorClass === 'undefined') {
+    function getStatusColorClass(status) {
+        return getRatingColorClass(status);
+    }
+}
+
+if (typeof getStatusIconClass === 'undefined') {
+    function getStatusIconClass(status) {
+        return getRatingIconClass(status);
+    }
+}
+
+if (typeof createStatusBadge === 'undefined') {
+    function createStatusBadge(status) {
+        return createRatingBadge(status);
+    }
+}
+
+if (typeof createRichStatusBadge === 'undefined') {
+    function createRichStatusBadge(status) {
+        return createRichRatingBadge(status);
+    }
+}
 
 // Initialize on document load if auto-init is needed
 document.addEventListener('DOMContentLoaded', function() {

@@ -117,8 +117,8 @@ foreach ($programs as $program) {
 }
 
 // Additional scripts - Make sure view_programs.js is loaded
+// Note: rating_utils.js is already loaded in footer.php, so we don't need to include it again
 $additionalScripts = [
-    APP_URL . '/assets/js/utilities/rating_utils.js',
     APP_URL . '/assets/js/agency/view_programs.js', // Ensure this script is included
     APP_URL . '/assets/js/utilities/table_sorting.js' // Add table sorting script
 ];
@@ -220,7 +220,7 @@ require_once PROJECT_ROOT_PATH . 'lib/dashboard_header.php';
                             // Determine program type (assigned or custom)
                             $is_assigned = isset($program['is_assigned']) && $program['is_assigned'] ? true : false;
                               // Convert rating for display
-                            $current_rating = isset($program['status']) ? convert_legacy_rating($program['status']) : 'not-started';
+                            $current_rating = isset($program['rating']) ? convert_legacy_rating($program['rating']) : 'not-started';
                             
                             // Map database rating values to display labels and classes
                             $rating_map = [
@@ -366,7 +366,7 @@ require_once PROJECT_ROOT_PATH . 'lib/dashboard_header.php';
                             $is_assigned = isset($program['is_assigned']) && $program['is_assigned'] ? true : false;
                             
                             // Convert rating for display
-                            $current_rating = isset($program['status']) ? convert_legacy_rating($program['status']) : 'not-started';
+                            $current_rating = isset($program['rating']) ? convert_legacy_rating($program['rating']) : 'not-started';
                             
                             // Map database rating values to display labels and classes
                             $rating_map = [

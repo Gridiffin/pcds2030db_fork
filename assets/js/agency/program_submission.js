@@ -3,22 +3,22 @@
  * Handles program data submission form interactions
  */
 document.addEventListener('DOMContentLoaded', function() {
-    // Status pill selection
-    const statusPills = document.querySelectorAll('.status-pill');
-    const statusInput = document.getElementById('status');
+    // Rating pill selection (updated from status to rating terminology)
+    const ratingPills = document.querySelectorAll('.rating-pill, .status-pill'); // Support both for backward compatibility
+    const ratingInput = document.getElementById('rating') || document.getElementById('status'); // Support both field names
     
-    if (statusPills.length && statusInput) {
+    if (ratingPills.length && ratingInput) {
         // Set up click handler for each pill
-        statusPills.forEach(pill => {
+        ratingPills.forEach(pill => {
             pill.addEventListener('click', function() {
                 // Remove active class from all pills
-                statusPills.forEach(p => p.classList.remove('active'));
+                ratingPills.forEach(p => p.classList.remove('active'));
                 
                 // Add active class to clicked pill
                 this.classList.add('active');
                 
-                // Update hidden input value
-                statusInput.value = this.getAttribute('data-status');
+                // Update hidden input value (support both data attributes)
+                ratingInput.value = this.getAttribute('data-rating') || this.getAttribute('data-status');
             });
         });
     }

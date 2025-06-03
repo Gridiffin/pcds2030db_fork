@@ -4,7 +4,7 @@
  * Initialize charts for the agency dashboard.
  */
 
-let programStatusChart = null;
+let programRatingChart = null; // Updated from programStatusChart to programRatingChart
 
 // Initialize charts when document is ready
 document.addEventListener('DOMContentLoaded', function() {
@@ -20,32 +20,32 @@ document.addEventListener('DOMContentLoaded', function() {
  * Initialize or update all dashboard charts
  */
 function initCharts() {
-    // Program Status Doughnut Chart
-    initProgramStatusChart();
+    // Program Rating Doughnut Chart (updated from Program Status)
+    initProgramRatingChart();
 }
 
 /**
- * Initialize or update the program status chart
+ * Initialize or update the program rating chart
  * 
  * @param {Object} newData Optional new data to update the chart
  */
-function initProgramStatusChart(newData) {
-    const chartCanvas = document.getElementById('programStatusChart');
+function initProgramRatingChart(newData) {
+    const chartCanvas = document.getElementById('programRatingChart') || document.getElementById('programStatusChart'); // Support both for backward compatibility
     
     if (!chartCanvas) return;
     
     // Use the provided data or fall back to the data from PHP
-    const data = newData || window.programStatusData;
+    const data = newData || window.programRatingData || window.programStatusData; // Support both data sources
     
     if (!data) return;
     
     // If chart already exists, destroy it before recreating
-    if (programStatusChart) {
-        programStatusChart.destroy();
+    if (programRatingChart) {
+        programRatingChart.destroy();
     }
     
     // Create the chart
-    programStatusChart = new Chart(chartCanvas, {
+    programRatingChart = new Chart(chartCanvas, {
         type: 'doughnut',
         data: {
             labels: data.labels,
@@ -58,7 +58,8 @@ function initProgramStatusChart(newData) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {                legend: {
+            plugins: {
+                legend: {
                     display: true,
                     position: 'bottom',
                     labels: {
@@ -91,9 +92,20 @@ function initProgramStatusChart(newData) {
 function updateChartData(chartData) {
     if (!chartData) return;
     
-    // Update the global program status data
-    window.programStatusData = chartData;
+    // Update the global program rating data (support both variable names)
+    window.programRatingData = chartData;
+    window.programStatusData = chartData; // Maintain backward compatibility
     
     // Update the chart
-    initProgramStatusChart(chartData);
+    initProgramRatingChart(chartData);
 }
+
+// Backward compatibility functions
+function initProgramStatusChart(newData) {
+    return initProgramRatingChart(newData);
+}
+
+// Export for global access
+window.initProgramRatingChart = initProgramRatingChart;
+window.initProgramStatusChart = initProgramStatusChart; // Backward compatibility
+window.updateChartData = updateChartData;

@@ -46,19 +46,19 @@ function initProgramViewing() {
         searchInput.addEventListener('keyup', filterPrograms);
     }
     
-    // Initialize status filter
-    const statusFilter = document.getElementById('statusFilter');
-    if (statusFilter) {
-        statusFilter.addEventListener('change', filterPrograms);
+    // Initialize rating filter (updated from status to rating terminology)
+    const ratingFilter = document.getElementById('ratingFilter') || document.getElementById('statusFilter'); // Support both for backward compatibility
+    if (ratingFilter) {
+        ratingFilter.addEventListener('change', filterPrograms);
     }
 }
 
 /**
- * Filter programs based on search input and status filter
+ * Filter programs based on search input and rating filter
  */
 function filterPrograms() {
     const searchValue = document.getElementById('programSearch')?.value.toLowerCase() || '';
-    const statusValue = document.getElementById('statusFilter')?.value.toLowerCase() || '';
+    const ratingValue = (document.getElementById('ratingFilter') || document.getElementById('statusFilter'))?.value.toLowerCase() || '';
     const table = document.getElementById('programsTable');
     
     if (!table) return;
@@ -67,17 +67,17 @@ function filterPrograms() {
     
     for (let i = 0; i < rows.length; i++) {
         const programNameCell = rows[i].getElementsByTagName('td')[0];
-        const statusCell = rows[i].getElementsByTagName('td')[2];
+        const ratingCell = rows[i].getElementsByTagName('td')[2];
         
-        if (!programNameCell || !statusCell) continue;
+        if (!programNameCell || !ratingCell) continue;
         
         const programName = programNameCell.textContent || programNameCell.innerText;
-        const status = statusCell.textContent || statusCell.innerText;
+        const rating = ratingCell.textContent || ratingCell.innerText;
         
         const matchesSearch = programName.toLowerCase().indexOf(searchValue) > -1;
-        const matchesStatus = statusValue === '' || status.toLowerCase().indexOf(statusValue) > -1;
+        const matchesRating = ratingValue === '' || rating.toLowerCase().indexOf(ratingValue) > -1;
         
-        rows[i].style.display = (matchesSearch && matchesStatus) ? '' : 'none';
+        rows[i].style.display = (matchesSearch && matchesRating) ? '' : 'none';
     }
 }
 
@@ -135,12 +135,14 @@ function initProgramCreation() {
 /**
  * Initialize program submission functionality
  */
-function initProgramSubmission() {    // Use shared rating pill selection from rating_utils.js
+function initProgramSubmission() {
+    // Use shared rating pill selection from rating_utils.js
     if (typeof initRatingPills === 'function') {
         initRatingPills();
     } else {
-        // Fallback implementation        const ratingPills = document.querySelectorAll('.rating-pill');
-        const ratingInput = document.getElementById('rating');
+        // Fallback implementation
+        const ratingPills = document.querySelectorAll('.rating-pill, .status-pill'); // Support both for backward compatibility
+        const ratingInput = document.getElementById('rating') || document.getElementById('status'); // Support both field names
         
         if (ratingPills.length && ratingInput) {
             ratingPills.forEach(pill => {
@@ -150,8 +152,9 @@ function initProgramSubmission() {    // Use shared rating pill selection from r
                     
                     // Add active class to clicked pill
                     this.classList.add('active');
-                      // Update hidden input
-                    ratingInput.value = this.getAttribute('data-rating');
+                    
+                    // Update hidden input (support both data attributes)
+                    ratingInput.value = this.getAttribute('data-rating') || this.getAttribute('data-status');
                 });
             });
         }
@@ -238,7 +241,7 @@ function validateProgramForm(e) {
 function validateProgramSubmission(e) {
     const form = e.target.closest('form');
     const target = form.querySelector('#target').value.trim();
-    const status = form.querySelector('#status').value.trim();
+    const rating = form.querySelector('#rating, #status').value.trim(); // Support both field names
     
     let isValid = true;
     let errorMessage = '';
@@ -249,10 +252,11 @@ function validateProgramSubmission(e) {
         showValidationError('target', 'Target is required');
     }
     
-    if (status === '') {
+    if (rating === '') {
         isValid = false;
-        errorMessage += 'Status is required for final submission.<br>';
-        showValidationError('status', 'Status is required');
+        errorMessage += 'Rating is required for final submission.<br>';
+        showValidationError('rating', 'Rating is required');
+        showValidationError('status', 'Rating is required'); // Support both field names
     }
     
     if (!isValid) {

@@ -173,11 +173,14 @@ function applyFilters(tableType) {
         const ratingText = row.querySelector('td:nth-child(2) .badge')?.textContent.toLowerCase() || '';
         const programType = row.getAttribute('data-program-type') || '';
         
-        // Map display text back to status values for comparison
+        // Map display text back to rating values for comparison
         const ratingMap = {
             'monthly target achieved': 'target-achieved',
             'on track for year': 'on-track-yearly',
+            'on track': 'on-track',
             'severe delays': 'severe-delay',
+            'delayed': 'delayed',
+            'completed': 'completed',
             'not started': 'not-started'
         };
         
