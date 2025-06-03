@@ -39,7 +39,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $program_name_form = trim($_POST['program_name'] ?? '');
     $owner_agency_id = intval($_POST['owner_agency_id'] ?? 0);
     $sector_id = intval($_POST['sector_id'] ?? 0);
-    $description_form = trim($_POST['description'] ?? '');
     $start_date_form = !empty($_POST['start_date']) ? $_POST['start_date'] : null;
     $end_date_form = !empty($_POST['end_date']) ? $_POST['end_date'] : null;
     $is_assigned = isset($_POST['is_assigned']) ? 1 : 0;
@@ -81,7 +80,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                       program_name = ?, 
                       owner_agency_id = ?, 
                       sector_id = ?,
-                      description = ?, 
                       start_date = ?, 
                       end_date = ?, 
                       is_assigned = ?,
@@ -90,11 +88,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                       WHERE program_id = ?";
                       
             $stmt_update_program = $conn->prepare($query_update_program);
-            $stmt_update_program->bind_param('siisssisi', 
+            $stmt_update_program->bind_param('siissisi', 
                 $program_name_form, 
                 $owner_agency_id, 
                 $sector_id, 
-                $description_form, 
                 $start_date_form, 
                 $end_date_form, 
                 $is_assigned, 
@@ -140,7 +137,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // This snapshot includes the program name and description AS THEY ARE NOW in the \'programs\' table (just updated)
             $content_for_history = [
                 'program_name' => $program_name_form, // Name as submitted in this form
-                'description'  => $description_form,  // Description as submitted in this form
                 'rating'       => $rating_form,       // Rating/status from the form
                 'targets'      => $targets_form,      // Targets from the form
                 'remarks'      => $remarks_form       // Remarks from the form
@@ -471,47 +467,7 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                                    value="<?php echo isset($program['end_date']) ? date('Y-m-d', strtotime($program['end_date'])) : ''; ?>">
                         </div>
                     </div>
-                      <div class="mb-3">
-                        <label for="description" class="form-label">Description</label>
-                        <textarea class="form-control" id="description" name="description" rows="4"><?php echo htmlspecialchars($program['description']); ?></textarea>
-                          <?php if (isset($program_history['submissions']) && count($program_history['submissions']) > 1): ?>
-                            <?php
-                            // Get complete description history
-                            $desc_history = get_field_edit_history($program_history['submissions'], 'description');
-                            
-                            if (!empty($desc_history)):
-                            ?>
-                                <div class="d-flex align-items-center mt-2">
-                                    <button type="button" class="btn btn-sm btn-outline-secondary field-history-toggle" 
-                                            data-history-target="descriptionHistory">
-                                        <i class="fas fa-history"></i> Show Description History
-                                    </button>
-                                </div>
-                                
-                                <div id="descriptionHistory" class="history-complete" style="display: none;">
-                                    <h6 class="small text-muted mb-2">Description History</h6>
-                                    <ul class="history-list">
-                                        <?php foreach($desc_history as $idx => $item): ?>
-                                        <li class="history-list-item">
-                                            <div class="history-list-value">
-                                                <?php echo htmlspecialchars($item['value']); ?>
-                                            </div>
-                                            <div class="history-list-meta">
-                                                <?php echo $item['timestamp']; ?>
-                                                <?php if (isset($item['submission_id']) && $item['submission_id'] > 0): ?>
-                                                    <span class="<?php echo ($item['is_draft'] ?? 0) ? 'history-draft-badge' : 'history-final-badge'; ?>">
-                                                        <?php echo ($item['is_draft'] ?? 0) ? 'Draft' : 'Final'; ?>
-                                                    </span>
-                                                <?php endif; ?>
-                                            </div>
-                                        </li>
-                                        <?php endforeach; ?>
-                                    </ul>
-                                </div>
-                            <?php endif; ?>
-                        <?php endif; ?>
-                    </div>
-                    
+                                          
                     <h6 class="fw-bold mb-3 mt-4">Program Status</h6>
                     <div class="rating-pills">
                         <div class="rating-pill target-achieved <?php echo ($current_status == 'target-achieved') ? 'active' : ''; ?>" data-rating="target-achieved">
@@ -668,12 +624,7 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                             <label class="form-check-label" for="edit_program_name">Agency can edit Program Name</label>
                         </div>
                         
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" id="edit_description" name="edit_permissions[]" value="description" 
-                                   <?php echo in_array('description', $edit_permissions) ? 'checked' : ''; ?>>
-                            <label class="form-check-label" for="edit_description">Agency can edit Description</label>
-                        </div>
-                        
+                                                
                         <div class="form-check form-switch mb-2">
                             <input class="form-check-input" type="checkbox" id="edit_targets" name="edit_permissions[]" value="targets" 
                                    <?php echo in_array('targets', $edit_permissions) ? 'checked' : ''; ?>>

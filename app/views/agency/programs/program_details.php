@@ -11,12 +11,12 @@ if (!defined('PROJECT_ROOT_PATH')) {
 }
 
 // Include necessary files
-require_once PROJECT_ROOT_PATH . 'app/config/config.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/agencies/index.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/rating_helpers.php';
+require_once PROJECT_ROOT_PATH . 'config/config.php';
+require_once PROJECT_ROOT_PATH . 'lib/db_connect.php';
+require_once PROJECT_ROOT_PATH . 'lib/session.php';
+require_once PROJECT_ROOT_PATH . 'lib/functions.php';
+require_once PROJECT_ROOT_PATH . 'lib/agencies/index.php';
+require_once PROJECT_ROOT_PATH . 'lib/rating_helpers.php';
 
 // Verify user is an agency
 if (!is_agency()) {
@@ -147,10 +147,10 @@ $additionalScripts = [
 ];
 
 // Include header
-require_once '../layouts/header.php';
+require_once '../../layouts/header.php';
 
 // Include agency navigation
-require_once '../layouts/agency_nav.php';
+require_once '../../layouts/agency_nav.php';
 
 // Set up the page header variables
 $title = "Program Details";
@@ -200,7 +200,7 @@ if (!isset($status_map[$status])) {
         <div>
             <h5 class="alert-heading">Draft Submission</h5>
             <p class="mb-0">This program has a draft submission that needs to be finalized. 
-            <a href="<?php echo APP_URL; ?>/app/views/agency/update_program.php?id=<?php echo $program_id; ?>" class="alert-link">Click here to edit and submit the final version</a>.</p>
+            <a href="<?php echo APP_URL; ?>/app/views/agency/programs/update_program.php?id=<?php echo $program_id; ?>" class="alert-link">Click here to edit and submit the final version</a>.</p>
         </div>
     </div>
     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
@@ -217,9 +217,8 @@ if (!isset($status_map[$status])) {
             <span class="badge bg-<?php echo $status_map[$status]['class']; ?> py-2 px-3">
                 <i class="<?php echo $status_map[$status]['icon']; ?> me-1"></i> 
                 <?php echo $status_map[$status]['label']; ?>
-            </span>
-            <?php if ($is_owner && $is_draft): ?>
-            <a href="<?php echo APP_URL; ?>/app/views/agency/update_program.php?id=<?php echo $program_id; ?>" class="btn btn-warning btn-sm ms-2">
+            </span>            <?php if ($is_owner && $is_draft): ?>
+            <a href="<?php echo APP_URL; ?>/app/views/agency/programs/update_program.php?id=<?php echo $program_id; ?>" class="btn btn-warning btn-sm ms-2">
                 <i class="fas fa-edit me-1"></i> Edit Draft
             </a>
             <?php endif; ?>
@@ -371,9 +370,8 @@ if (!isset($status_map[$status])) {
         <?php else: ?>
             <div class="alert alert-info">
                 <i class="fas fa-info-circle me-2"></i>
-                No targets have been specified for this program.
-                <?php if ($is_owner): ?>
-                    <a href="<?php echo APP_URL; ?>/app/views/agency/update_program.php?id=<?php echo $program_id; ?>" class="alert-link">Add targets</a>
+                No targets have been specified for this program.                <?php if ($is_owner): ?>
+                    <a href="<?php echo APP_URL; ?>/app/views/agency/programs/update_program.php?id=<?php echo $program_id; ?>" class="alert-link">Add targets</a>
                 <?php endif; ?>
             </div>
         <?php endif; ?>
@@ -389,7 +387,7 @@ if (!isset($status_map[$status])) {
 
 <?php
 // Include footer
-require_once '../layouts/footer.php';
+require_once '../../layouts/footer.php';
 ?>
 
 

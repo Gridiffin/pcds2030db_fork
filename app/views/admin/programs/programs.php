@@ -231,21 +231,20 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                                             <span class="badge bg-light text-dark ms-1">Draft</span>
                                         <?php endif; ?>
                                     </div>
-                                    <?php if (!empty($program['description'])): ?>
-                                        <small class="text-muted d-block mt-1">
-                                            <?php echo htmlspecialchars(substr($program['description'], 0, 100)) . (strlen($program['description']) > 100 ? '...' : ''); ?>
-                                        </small>
-                                    <?php endif; ?>
-                                </td>
+                                                                    </td>
                                 <td><?php echo htmlspecialchars($program['sector_name']); ?></td>
                                 <td><?php echo htmlspecialchars($program['agency_name']); ?></td>
                                 <td class="text-center">
                                     <?php 
-                                    if (!empty($program['status'])) {
-                                        echo get_rating_badge($program['status']);
-                                    } else {
-                                        echo get_rating_badge('not-started'); 
+                                    // Get rating from content_json if available, otherwise default to not-started
+                                    $rating = 'not-started';
+                                    if (!empty($program['content_json'])) {
+                                        $content = json_decode($program['content_json'], true);
+                                        if (isset($content['rating'])) {
+                                            $rating = $content['rating'];
+                                        }
                                     }
+                                    echo get_rating_badge($rating);
                                     ?>
                                 </td>
                                 <td class="text-center">
@@ -273,16 +272,18 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                                         </a>
                                     </div>
                                     <div class="mt-1 d-grid"> 
-                                        <?php // Unsubmit/Resubmit Logic based on is_draft ?>
-                                        <?php if (isset($program['submission_id'])): // Ensure there is a submission record ?>
-                                            <?php if (!empty($program['is_draft'])): ?>
+                                        <?php // Button Logic: Only show buttons if there are submissions ?>
+                                        <?php if (isset($program['submission_id']) && !empty($program['submission_id'])): ?>
+                                            <?php if (!empty($program['is_draft']) && $program['is_draft'] == 1): ?>
+                                                <!-- Draft submission - show Resubmit button -->
                                                 <a href="resubmit.php?program_id=<?php echo $program['program_id']; ?>&period_id=<?php echo $period_id; ?>" 
                                                    class="btn btn-outline-success btn-sm w-100" 
                                                    title="Resubmit Program for this Period"
                                                    onclick="return confirm('Are you sure you want to resubmit this program for the period? This will mark it as officially submitted.');">
                                                     <i class="fas fa-check-circle"></i> Resubmit
                                                 </a>
-                                            <?php elseif (isset($program['status']) && $program['status'] !== null): // Submitted, so show Unsubmit ?>
+                                            <?php elseif (empty($program['is_draft']) || $program['is_draft'] == 0): ?>
+                                                <!-- Submitted program - show Unsubmit button -->
                                                 <a href="unsubmit.php?program_id=<?php echo $program['program_id']; ?>&period_id=<?php echo $period_id; ?>" 
                                                    class="btn btn-outline-warning btn-sm btn-unsubmit w-100" 
                                                    title="Unsubmit Program for this Period"
@@ -290,6 +291,9 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                                                     <i class="fas fa-undo"></i> Unsubmit
                                                 </a>
                                             <?php endif; ?>
+                                        <?php else: ?>
+                                            <!-- No submissions - don't show any buttons -->
+                                            <small class="text-muted">No submissions</small>
                                         <?php endif; ?>
                                     </div>
                                 </td>

@@ -11,12 +11,12 @@ if (!defined('PROJECT_ROOT_PATH')) {
 }
 
 // Include necessary files
-require_once PROJECT_ROOT_PATH . 'app/config/config.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/agencies/index.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/rating_helpers.php';
+require_once PROJECT_ROOT_PATH . 'config/config.php';
+require_once PROJECT_ROOT_PATH . 'lib/db_connect.php';
+require_once PROJECT_ROOT_PATH . 'lib/session.php';
+require_once PROJECT_ROOT_PATH . 'lib/functions.php';
+require_once PROJECT_ROOT_PATH . 'lib/agencies/index.php';
+require_once PROJECT_ROOT_PATH . 'lib/rating_helpers.php';
 
 // Verify user is an agency
 if (!is_agency()) {
@@ -279,8 +279,8 @@ $additionalStyles = '
 ';
 
 // Include header (which contains the DOCTYPE declaration)
-require_once '../layouts/header.php';
-require_once '../layouts/agency_nav.php';
+require_once dirname(__DIR__, 2) . '/layouts/header.php';
+require_once dirname(__DIR__, 2) . '/layouts/agency_nav.php';
 
 // Set up header variables
 $title = "Update Program";
@@ -709,6 +709,6 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
     </div>
 </section>
 
-<?php require_once '../layouts/footer.php'; ?>
+<?php require_once dirname(__DIR__, 2) . '/layouts/footer.php'; ?>
 
 

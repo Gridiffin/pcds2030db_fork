@@ -10,11 +10,11 @@ if (!defined('PROJECT_ROOT_PATH')) {
     define('PROJECT_ROOT_PATH', rtrim(dirname(dirname(dirname(__DIR__))), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
 }
 
-require_once PROJECT_ROOT_PATH . 'app/config/config.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/agencies/index.php';
+require_once PROJECT_ROOT_PATH . 'config/config.php';
+require_once PROJECT_ROOT_PATH . 'lib/db_connect.php';
+require_once PROJECT_ROOT_PATH . 'lib/session.php';
+require_once PROJECT_ROOT_PATH . 'lib/functions.php';
+require_once PROJECT_ROOT_PATH . 'lib/agencies/index.php';
 
 if (!is_agency()) {
     header('Location: ' . APP_URL . '/login.php');
@@ -49,10 +49,10 @@ $additionalScripts = [
 ];
 
 // Include header
-require_once '../layouts/header.php';
+require_once '../../layouts/header.php';
 
 // Include agency navigation
-require_once '../layouts/agency_nav.php';
+require_once '../../layouts/agency_nav.php';
 
 // Set up the page header variables for dashboard_header.php
 $title = "Submit Sector Outcomes";
@@ -77,7 +77,7 @@ if ($current_period) {
 }
 
 // Include the dashboard header component
-require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
+require_once PROJECT_ROOT_PATH . 'lib/dashboard_header.php';
 ?>
 
 <?php if (!empty($message)): ?>
@@ -111,7 +111,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
 
     <?php if (!empty($settings['allow_create_outcome']) && $settings['allow_create_outcome']): ?>
     <div class="mb-3">
-        <a href="<?php echo APP_URL; ?>/app/views/agency/create_outcome.php" class="btn btn-success">
+        <a href="<?php echo APP_URL; ?>/app/views/agency/outcomes/create_outcome.php" class="btn btn-success">
             <i class="fas fa-plus me-1"></i> Create Outcome
         </a>
     </div>
@@ -275,6 +275,4 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
     </div>
 <?php endif; ?>
 
-<?php
-require_once '../layouts/footer.php';
-?>
+<?php require_once dirname(__DIR__, 2) . '/layouts/footer.php'; ?>

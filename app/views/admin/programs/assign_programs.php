@@ -22,7 +22,6 @@ if (!is_admin()) {
 // Process form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_program'])) {
     $program_name = trim($_POST['program_name']);
-    $description = trim($_POST['description']);
     $agency_id = intval($_POST['agency_id']);
     $start_date = !empty($_POST['start_date']) ? $_POST['start_date'] : NULL;
     $end_date = !empty($_POST['end_date']) ? $_POST['end_date'] : NULL;
@@ -66,14 +65,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_program'])) {
             
             // Insert program
             $stmt = $conn->prepare("INSERT INTO programs 
-                (program_name, description, sector_id, owner_agency_id, start_date, end_date, is_assigned, created_by, edit_permissions, created_at, updated_at) 
-                VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, NOW(), NOW())");
+                (program_name, sector_id, owner_agency_id, start_date, end_date, is_assigned, created_by, edit_permissions, created_at, updated_at) 
+                VALUES (?, ?, ?, ?, ?, 1, ?, ?, NOW(), NOW())");
             
             $admin_id = $_SESSION['user_id'];
             
-            $stmt->bind_param("ssiissis", 
+            $stmt->bind_param("siissis", 
                 $program_name, 
-                $description, 
                 $sector_id, 
                 $agency_id, 
                 $start_date, 
@@ -239,12 +237,7 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                                 <div class="form-text">The name of the program as it will appear in reports and dashboards.</div>
                             </div>
                             
-                            <div class="mb-3">
-                                <label for="description" class="form-label">Program Description</label>
-                                <textarea class="form-control" id="description" name="description" rows="3"><?php echo isset($_POST['description']) ? htmlspecialchars($_POST['description']) : ''; ?></textarea>
-                                <div class="form-text">Optional description of the program's purpose and goals.</div>
-                            </div>
-                            
+                                                        
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label for="agency_id" class="form-label">Assign to Agency <span class="text-danger">*</span></label>
@@ -371,11 +364,7 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                         <div class="col-md-12 mb-4">
                             <h6 class="fw-bold mb-3">Agency Edit Permissions</h6>
                             <div class="mb-3">
-                                <div class="form-check form-switch mb-2">
-                                    <input class="form-check-input" type="checkbox" id="edit_description" name="edit_permissions[]" value="description" checked>
-                                    <label class="form-check-label" for="edit_description">Agency can edit Description</label>
-                                </div>
-                                <div class="form-check form-switch mb-2">
+                                                                <div class="form-check form-switch mb-2">
                                     <input class="form-check-input" type="checkbox" id="edit_targets" name="edit_permissions[]" value="targets" checked>
                                     <label class="form-check-label" for="edit_targets">Agency can edit Targets</label>
                                 </div>

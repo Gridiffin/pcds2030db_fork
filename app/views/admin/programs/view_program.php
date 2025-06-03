@@ -69,11 +69,11 @@ if (isset($program['current_submission']['content_json']) && !empty($program['cu
                 $targets[] = $target;
             }
         }
-        $rating = $content['rating'] ?? $program['current_submission']['status'] ?? 'not-started';
+        $rating = $content['rating'] ?? 'not-started'; // Default since status column doesn't exist
         $remarks = $content['remarks'] ?? '';    } else {
         // Legacy data format - handle semicolon-separated targets
         $target_text = $content['target'] ?? $program['current_submission']['target'] ?? '';
-        $status_description = $content['status_text'] ?? $program['current_submission']['status_text'] ?? '';
+        $status_description = $content['status_text'] ?? '';
         
         // Check if targets are semicolon-separated
         if (strpos($target_text, ';') !== false) {
@@ -100,7 +100,7 @@ if (isset($program['current_submission']['content_json']) && !empty($program['cu
             ];
         }
         
-        $rating = $program['current_submission']['status'] ?? 'not-started';
+        $rating = 'not-started'; // Default since status column doesn't exist
         $remarks = $program['current_submission']['remarks'] ?? '';
     }
 } else {
@@ -108,10 +108,10 @@ if (isset($program['current_submission']['content_json']) && !empty($program['cu
     if (!empty($program['current_submission']['target'])) {
         $targets[] = [
             'text' => $program['current_submission']['target'],
-            'status_description' => $program['current_submission']['status_text'] ?? ''
+            'status_description' => ''
         ];
     }
-    $rating = $program['current_submission']['status'] ?? 'not-started';
+    $rating = 'not-started'; // Default since status column doesn't exist
     $remarks = $program['current_submission']['remarks'] ?? '';
 }
 
@@ -333,17 +333,7 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                                 </div>
                             </div>
                         </div>
-                          <?php if (!empty($program['description'])): ?>
-                        <div class="mt-4">
-                            <h6 class="info-section-title border-bottom pb-2 mb-3">
-                                <i class="fas fa-align-left me-2"></i>Description
-                            </h6>
-                            <div class="description-box p-3 rounded">
-                                <?php echo nl2br(htmlspecialchars($program['description'])); ?>
-                            </div>
-                        </div>
-                        <?php endif; ?>
-                        
+                                                  
                         <!-- Program Rating Pills -->
                         <div class="mt-4">
                             <h6 class="info-section-title border-bottom pb-2 mb-3">

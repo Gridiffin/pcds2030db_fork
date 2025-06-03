@@ -150,10 +150,10 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                     <dt class="col-sm-4">Reporting Period</dt>
                     <dd class="col-sm-8"><?php echo get_period_display_name($submission); ?></dd>
                     
-                    <dt class="col-sm-4">Status</dt>
+                    <dt class="col-sm-4">Draft Status</dt>
                     <dd class="col-sm-8">
-                        <span class="badge bg-<?php echo get_status_color($submission['status']); ?>">
-                            <?php echo get_status_label($submission['status']); ?>
+                        <span class="badge bg-<?php echo $submission['is_draft'] ? 'warning' : 'success'; ?>">
+                            <?php echo $submission['is_draft'] ? 'Draft' : 'Finalized'; ?>
                         </span>
                     </dd>
                     
@@ -183,36 +183,6 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
 </div>
 
 <?php
-// Helper functions for status display
-function get_status_color($status) {
-    switch ($status) {
-        case 'target-achieved':
-            return 'success';
-        case 'on-track-yearly':
-            return 'primary';
-        case 'severe-delay':
-            return 'danger';
-        case 'not-started':
-        default:
-            return 'secondary';
-    }
-}
-
-function get_status_label($status) {
-    switch ($status) {
-        case 'target-achieved':
-            return 'Target Achieved';
-        case 'on-track-yearly':
-            return 'On Track';
-        case 'severe-delay':
-            return 'Delayed';
-        case 'not-started':
-            return 'Not Started';
-        default:
-            return 'Unknown';
-    }
-}
-
 // Include footer
 require_once '../layouts/footer.php';
 ?>

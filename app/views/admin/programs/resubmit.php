@@ -83,7 +83,7 @@ if ($stmt) {
 
 // Log the action
 if (function_exists('log_action')) {
-    log_action('resubmit_program', "Program ID: $program_id, Period ID: $period_id. Status preserved: " . $submission_data['status'], $success);
+    log_action('resubmit_program', "Program ID: $program_id, Period ID: $period_id. Submission resubmitted.", $success);
 }
 
 // Construct redirect URL
