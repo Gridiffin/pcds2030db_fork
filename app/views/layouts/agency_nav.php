@@ -82,7 +82,7 @@ if (!function_exists('format_time_ago')) {
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <?php if ($current_page == 'view_programs.php' || $current_page == 'create_program.php' || $current_page == 'update_program.php' || $current_page == 'program_details.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/agency/view_programs.php">
+                    <a class="nav-link <?php if ($current_page == 'view_programs.php' || $current_page == 'create_program.php' || $current_page == 'update_program.php' || $current_page == 'program_details.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/agency/programs/view_programs.php">
                         <i class="fas fa-project-diagram me-1"></i> My Programs
                     </a>
                 </li>
@@ -93,18 +93,18 @@ if (!function_exists('format_time_ago')) {
                     </a>
                     <ul class="dropdown-menu" aria-labelledby="-">
                         <li>
-                            <a class="dropdown-item <?php if ($current_page == 'submit_outcomes.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/agency/submit_outcomes.php">
+                            <a class="dropdown-item <?php if ($current_page == 'submit_outcomes.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/agency/outcomes/submit_outcomes.php">
                                 <i class="fas fa-chart-line me-1"></i> Outcomes
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item <?php if ($current_page == 'create_outcomes_detail.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/agency/create_outcomes_detail.php">
+                            <a class="dropdown-item <?php if ($current_page == 'create_outcomes_detail.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/agency/outcomes/create_outcomes_detail.php">
                                 <i class="fas fa-chart-line me-1"></i> Create Outcome Details
                             </a>
                         </li>
                         <?php if (!empty($settings['allow_create_outcome']) && $settings['allow_create_outcome']): ?>
                         <li>
-                            <a class="dropdown-item <?php if ($current_page == 'create_outcome.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/agency/create_outcome.php">
+                            <a class="dropdown-item <?php if ($current_page == 'create_outcome.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/agency/outcomes/create_outcome.php">
                                 <i class="fas fa-plus me-1"></i> Create Outcome
                             </a>
                         </li>
@@ -169,7 +169,7 @@ if (!function_exists('format_time_ago')) {
                                 </div>
                             <?php endif; ?>
                         </div>                <div class="notification-footer border-top p-2 text-center">
-                            <a href="<?php echo APP_URL; ?>/app/views/agency/all_notifications.php" class="small">View all notifications</a>
+                            <a href="<?php echo APP_URL; ?>/app/views/agency/users/all_notifications.php" class="small">View all notifications</a>
                         </div>
                     </div>
                 </div>

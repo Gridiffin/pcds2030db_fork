@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', function() {
         button.addEventListener('click', function() {
             const programId = this.getAttribute('data-program-id');
 
-            fetch('ajax/submit_program.php', {
+            fetch('../ajax/submit_program.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'

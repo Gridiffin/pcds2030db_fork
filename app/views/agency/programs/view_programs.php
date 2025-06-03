@@ -11,12 +11,12 @@ if (!defined('PROJECT_ROOT_PATH')) {
 }
 
 // Include necessary files
-require_once PROJECT_ROOT_PATH . 'app/config/config.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/agencies/index.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/rating_helpers.php';
+require_once PROJECT_ROOT_PATH . 'config/config.php';
+require_once PROJECT_ROOT_PATH . 'lib/db_connect.php';
+require_once PROJECT_ROOT_PATH . 'lib/session.php';
+require_once PROJECT_ROOT_PATH . 'lib/functions.php';
+require_once PROJECT_ROOT_PATH . 'lib/agencies/index.php';
+require_once PROJECT_ROOT_PATH . 'lib/rating_helpers.php';
 
 // Verify user is an agency
 if (!is_agency()) {
@@ -124,10 +124,10 @@ $additionalScripts = [
 ];
 
 // Include header
-require_once '../layouts/header.php';
+require_once '../../layouts/header.php';
 
 // Include agency navigation
-require_once '../layouts/agency_nav.php';
+require_once '../../layouts/agency_nav.php';
 
 // Set up header variables
 $title = "Agency Programs";
@@ -135,7 +135,7 @@ $subtitle = "View and manage your agency's programs";
 $headerStyle = 'light'; // Use light (white) style for inner pages
 $actions = [
     [
-        'url' => APP_URL . '/app/views/agency/create_program.php', // Fix: use absolute URL with APP_URL
+        'url' => APP_URL . '/app/views/agency/programs/create_program.php', // Fix: use absolute URL with APP_URL
         'text' => 'Create New Program',
         'icon' => 'fas fa-plus-circle',
         'class' => 'btn-primary'
@@ -143,7 +143,7 @@ $actions = [
 ];
 
 // Include the dashboard header component with the light style
-require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
+require_once PROJECT_ROOT_PATH . 'lib/dashboard_header.php';
 ?>
 
 <?php if (!empty($message)): ?>
@@ -473,7 +473,8 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                 <p class="text-danger">This action cannot be undone.</p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>                <form action="<?php echo view_url('agency', 'delete_program.php'); ?>" method="post" id="delete-program-form">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form action="<?php echo view_url('agency/programs', 'delete_program.php'); ?>" method="post" id="delete-program-form">
                     <input type="hidden" name="program_id" id="program-id-input">
                     <button type="submit" class="btn btn-danger">Delete Program</button>
                 </form>
@@ -485,7 +486,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
 
 <?php
 // Include footer
-require_once '../layouts/footer.php';
+require_once '../../layouts/footer.php';
 ?>
 
 

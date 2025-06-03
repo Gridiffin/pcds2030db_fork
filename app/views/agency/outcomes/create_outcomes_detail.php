@@ -7,14 +7,18 @@
 
 // Define project root path for consistent file references
 if (!defined('PROJECT_ROOT_PATH')) {
-    define('PROJECT_ROOT_PATH', rtrim(dirname(dirname(dirname(__DIR__))), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
+    define('PROJECT_ROOT_PATH', rtrim(dirname(dirname(dirname(dirname(__DIR__)))), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
 }
 
 ob_start();
 session_start();
+require_once PROJECT_ROOT_PATH . 'app/config/config.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
-require_once '../layouts/header.php';
-require_once '../layouts/agency_nav.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/agencies/index.php';
+require_once PROJECT_ROOT_PATH . 'app/views/layouts/header.php';
+require_once PROJECT_ROOT_PATH . 'app/views/layouts/agency_nav.php';
 
 // Add cache control headers
 header("Cache-Control: no-cache, no-store, must-revalidate");
@@ -629,7 +633,7 @@ if ($result) {
             });
         });
     </script>
-<?php require_once '../layouts/footer.php'; ?>
+<?php require_once PROJECT_ROOT_PATH . 'app/views/layouts/footer.php'; ?>
 
 
 

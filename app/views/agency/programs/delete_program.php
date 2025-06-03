@@ -11,11 +11,11 @@ if (!defined('PROJECT_ROOT_PATH')) {
 }
 
 // Include necessary files
-require_once PROJECT_ROOT_PATH . 'app/config/config.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/agencies/index.php';
+require_once PROJECT_ROOT_PATH . 'config/config.php';
+require_once PROJECT_ROOT_PATH . 'lib/db_connect.php';
+require_once PROJECT_ROOT_PATH . 'lib/session.php';
+require_once PROJECT_ROOT_PATH . 'lib/functions.php';
+require_once PROJECT_ROOT_PATH . 'lib/agencies/index.php';
 
 // Verify user is an agency
 if (!is_agency()) {
@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['program_id'])) {
     if ($result->num_rows === 0) {
         $_SESSION['message'] = 'You do not have permission to delete this program.';
         $_SESSION['message_type'] = 'danger';
-        header('Location: view_programs.php');
+        header('Location: ' . APP_URL . '/app/views/agency/programs/view_programs.php');
         exit;
     }
     
@@ -72,13 +72,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['program_id'])) {
     }
     
     // Redirect back to program list
-    header('Location: view_programs.php');
+    header('Location: ' . APP_URL . '/app/views/agency/programs/view_programs.php');
     exit;
 } else {
     // Invalid request
     $_SESSION['message'] = 'Invalid request.';
     $_SESSION['message_type'] = 'danger';
-    header('Location: view_programs.php');
+    header('Location: ' . APP_URL . '/app/views/agency/programs/view_programs.php');
     exit;
 }
 
