@@ -47,25 +47,27 @@ $additionalScripts = [
 $agency_id = $_SESSION['user_id'];
 
 // Define the function if it doesn't exist
-if (!function_exists('get_agency_programs')) {
-    function get_agency_programs($agency_id) {
+if (!function_exists('get_agency_programs')) {    function get_agency_programs($agency_id) {
         global $conn;
         
-        // Optimized query using JOIN instead of subqueries for better performance
-        // This gets the latest submission for each program by using a self-join
-        // Also handles programs that might not have any submissions yet
-        $query = "SELECT DISTINCT p.*, 
-                         COALESCE(ps.is_draft, 1) as is_draft,
-                         ps.period_id,
-                         COALESCE(ps.submission_date, p.created_at) as updated_at,
-                         ps.submission_id as latest_submission_id
+        // Fixed query to properly get the latest submission for each program
+        // Uses a subquery to find the latest submission_id for each program, then joins back to get the full data
+        $query = "SELECT p.*, 
+                         COALESCE(latest_sub.is_draft, 1) as is_draft,
+                         latest_sub.period_id,
+                         COALESCE(latest_sub.submission_date, p.created_at) as updated_at,
+                         latest_sub.submission_id as latest_submission_id
                   FROM programs p 
-                  LEFT JOIN program_submissions ps ON p.program_id = ps.program_id
-                  LEFT JOIN program_submissions ps2 ON p.program_id = ps2.program_id 
-                      AND (ps2.submission_id > ps.submission_id 
-                           OR (ps2.submission_id = ps.submission_id AND ps2.updated_at > ps.updated_at))
-                  WHERE p.owner_agency_id = ? 
-                      AND (ps.submission_id IS NULL OR ps2.submission_id IS NULL)  -- Get latest submission or programs without submissions
+                  LEFT JOIN (
+                      SELECT ps1.*
+                      FROM program_submissions ps1
+                      INNER JOIN (
+                          SELECT program_id, MAX(submission_id) as max_submission_id
+                          FROM program_submissions
+                          GROUP BY program_id
+                      ) ps2 ON ps1.program_id = ps2.program_id AND ps1.submission_id = ps2.max_submission_id
+                  ) latest_sub ON p.program_id = latest_sub.program_id
+                  WHERE p.owner_agency_id = ?
                   ORDER BY p.program_name";
                   
         $stmt = $conn->prepare($query);

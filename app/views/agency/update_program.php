@@ -119,21 +119,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Determine submission type
     $is_draft = isset($_POST['save_draft']);
     $finalize_draft = isset($_POST['finalize_draft']);
-    
-    if ($finalize_draft) {
+      if ($finalize_draft) {
         $submission_id = $_POST['submission_id'] ?? 0;
-        // Use direct SQL to finalize draft since finalize_draft_submission() is undefined
-        if ($submission_id) {
+        // Get current reporting period to ensure we're finalizing the correct submission
+        $current_period = get_current_reporting_period();
+        
+        if ($submission_id && $current_period) {
             global $conn;
-            $stmt = $conn->prepare("UPDATE program_submissions SET is_draft = 0 WHERE submission_id = ?");
-            $stmt->bind_param("i", $submission_id);
-            if ($stmt->execute()) {
+            // Update submission but verify it belongs to current period and program
+            $stmt = $conn->prepare("UPDATE program_submissions SET is_draft = 0, submission_date = NOW() WHERE submission_id = ? AND program_id = ? AND period_id = ?");
+            $stmt->bind_param("iii", $submission_id, $program_id, $current_period['period_id']);
+            if ($stmt->execute() && $stmt->affected_rows > 0) {
                 $result = ['success' => true, 'message' => 'Draft finalized successfully.'];
             } else {
-                $result = ['error' => 'Failed to finalize draft.'];
+                $result = ['error' => 'Failed to finalize draft. Submission may not exist for current period.'];
             }
         } else {
-            $result = ['error' => 'Invalid submission ID.'];
+            $result = ['error' => 'Invalid submission ID or no active reporting period.'];
         }
     } else {
         // Use direct SQL to update program data since submit_program_data() is undefined
@@ -576,9 +578,6 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                             <?php if ($is_draft): ?>
                                 <button type="submit" name="save_draft" class="btn btn-secondary me-2">
                                     <i class="fas fa-save me-1"></i> Save Draft
-                                </button>
-                                <button type="submit" name="finalize_draft" class="btn btn-success">
-                                    <i class="fas fa-check-circle me-1"></i> Finalize Submission
                                 </button>
                             <?php else: ?>
                                 <button type="submit" name="save_draft" class="btn btn-secondary me-2">
