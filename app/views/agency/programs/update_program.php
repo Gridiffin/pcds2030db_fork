@@ -116,34 +116,52 @@ function get_field_value($field, $default = '') {
 
 // Process form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    error_log('DEBUG: POST received in update_program.php');
     // Determine submission type
     $is_draft = isset($_POST['save_draft']);
-    $finalize_draft = isset($_POST['finalize_draft']);
-    error_log('DEBUG: $is_draft = ' . var_export($is_draft, true) . ', $finalize_draft = ' . var_export($finalize_draft, true));
-      if ($finalize_draft) {
+    $finalize_draft = isset($_POST['finalize_draft']);    if ($finalize_draft) {
         $submission_id = $_POST['submission_id'] ?? 0;
         // Get current reporting period to ensure we're finalizing the correct submission
         $current_period = get_current_reporting_period();
         
         if ($submission_id && $current_period) {
             global $conn;
-            // Update submission but verify it belongs to current period and program
-            $stmt = $conn->prepare("UPDATE program_submissions SET is_draft = 0, submission_date = NOW() WHERE submission_id = ? AND program_id = ? AND period_id = ?");
-            $stmt->bind_param("iii", $submission_id, $program_id, $current_period['period_id']);
-            if ($stmt->execute() && $stmt->affected_rows > 0) {
-                $result = ['success' => true, 'message' => 'Draft finalized successfully.'];
+            
+            // First validate that the submission has content
+            $content_check = $conn->prepare("SELECT content_json FROM program_submissions WHERE submission_id = ? AND program_id = ? AND period_id = ?");
+            $content_check->bind_param("iii", $submission_id, $program_id, $current_period['period_id']);
+            $content_check->execute();
+            $content_result = $content_check->get_result();
+            
+            if ($content_result->num_rows > 0) {
+                $content_row = $content_result->fetch_assoc();
+                $content_json = $content_row['content_json'];
+                
+                // Validate content
+                if (empty($content_json) || $content_json === 'null') {
+                    $result = ['error' => 'Cannot finalize submission without content. Please add targets and rating first.'];
+                } else {
+                    $content_data = json_decode($content_json, true);
+                    if (!$content_data || (empty($content_data['targets']) && empty($content_data['target'])) || empty($content_data['rating'])) {
+                        $result = ['error' => 'Cannot finalize submission without targets and rating. Please complete the program details first.'];
+                    } else {
+                        // Content is valid, proceed with finalization
+                        $stmt = $conn->prepare("UPDATE program_submissions SET is_draft = 0, submission_date = NOW() WHERE submission_id = ? AND program_id = ? AND period_id = ?");
+                        $stmt->bind_param("iii", $submission_id, $program_id, $current_period['period_id']);
+                        if ($stmt->execute() && $stmt->affected_rows > 0) {
+                            $result = ['success' => true, 'message' => 'Draft finalized successfully.'];
+                        } else {
+                            $result = ['error' => 'Failed to finalize draft. Submission may not exist for current period.'];
+                        }
+                    }
+                }
             } else {
-                $result = ['error' => 'Failed to finalize draft. Submission may not exist for current period.'];
-            }        } else {
+                $result = ['error' => 'Submission not found.'];
+            }} else {
             $result = ['error' => 'Invalid submission ID or no active reporting period.'];
-        }
-    } else {
-        error_log('DEBUG: Entering save draft branch');
+        }    } else {
         // Handle save draft functionality - update both program basic info and submission content
         global $conn;
         try {
-            error_log('DEBUG: In save draft try block, about to start transaction');
             $conn->begin_transaction();
             
             // Get form data
@@ -235,10 +253,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (!$submission_stmt->execute()) {
                     throw new Exception('Failed to update submission: ' . $submission_stmt->error);
                 }
-                
-                if ($submission_stmt->affected_rows === 0) {
+                  if ($submission_stmt->affected_rows === 0) {
                     // No submission found to update, so insert a new one
-                    error_log('DEBUG: No submission found to update, inserting new submission instead');
                     $submission_query = "INSERT INTO program_submissions 
                                        (program_id, period_id, submitted_by, content_json, is_draft, submission_date, updated_at) 
                                        VALUES (?, ?, ?, ?, 1, NOW(), NOW())";
@@ -260,12 +276,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     throw new Exception('Failed to create submission: ' . $submission_stmt->error);
                 }
             }
-            
-            $conn->commit();
-            error_log('DEBUG: Save draft DB commit successful');
+              $conn->commit();
             $result = ['success' => true, 'message' => 'Program saved as draft successfully.'];
         } catch (Exception $e) {
-            error_log('DEBUG: Exception in save draft: ' . $e->getMessage());
             $conn->rollback();
             $result = ['error' => 'Failed to save draft: ' . $e->getMessage()];
         }
@@ -600,8 +613,7 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- 2. Program Targets Card -->
+                      <!-- 2. Program Targets Card -->
                     <div class="card shadow-sm mb-4">
                         <div class="card-header">
                             <h5 class="card-title m-0">Program Targets</h5>
@@ -651,7 +663,7 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                                                 </div>
                                             </li>
                                             <?php endforeach; ?>
-                                        </div>
+                                        </ul>
                                     </div>
                                 <?php endif; ?>
                             <?php endif; ?>
@@ -699,13 +711,33 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                             <?php endif; ?>
                         </div>
                     </div>
-                    
-                    <!-- Form Actions -->
-                    <div class="d-flex justify-content-between mb-4">
+
+                    <!-- 3. Remarks and Comments Card -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title m-0">Remarks and Comments</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="remarks" class="form-label">Additional Remarks</label>
+                                <textarea class="form-control" id="remarks" name="remarks" rows="4" 
+                                          placeholder="Add any additional remarks, challenges, or observations about this program..."
+                                          <?php echo (is_editable('remarks')) ? '' : 'readonly'; ?>><?php echo htmlspecialchars($remarks); ?></textarea>
+                                <?php if ($program['is_assigned'] && !is_editable('remarks')): ?>
+                                    <div class="form-text">Remarks were set by an administrator and cannot be changed.</div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                              <!-- Form Actions -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
                         <div>
                             <?php if ($is_draft): ?>
                                 <button type="submit" name="save_draft" class="btn btn-secondary me-2">
                                     <i class="fas fa-save me-1"></i> Save Draft
+                                </button>
+                                <button type="submit" name="finalize_draft" class="btn btn-primary">
+                                    <i class="fas fa-check-circle me-1"></i> Finalize Submission
                                 </button>
                             <?php else: ?>
                                 <button type="submit" name="save_draft" class="btn btn-secondary me-2">
@@ -716,127 +748,159 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                                 </button>
                             <?php endif; ?>
                         </div>
+                        <div>
+                            <a href="view_programs.php" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i> Cancel
+                            </a>
+                        </div>
                     </div>
                 </form>
-
-                <script>
-                    document.addEventListener('DOMContentLoaded', function() {
-                        // Rating pills selection
-                        const ratingPills = document.querySelectorAll('.rating-pill:not(.disabled)');
-                        const ratingInput = document.getElementById('rating');
-                        
-                        ratingPills.forEach(pill => {
-                            pill.addEventListener('click', function() {
-                                // Remove active class from all pills
-                                ratingPills.forEach(p => p.classList.remove('active'));
-                                
-                                // Add active class to clicked pill
-                                this.classList.add('active');
-                                
-                                // Update hidden input
-                                ratingInput.value = this.getAttribute('data-rating');
-                            });
-                        });
-                        
-                        // Add target functionality
-                        const addTargetBtn = document.getElementById('add-target-btn');
-                        if (addTargetBtn) {
-                            const targetsContainer = document.getElementById('targets-container');
-                            
-                            // Keep track of the highest target number
-                            let highestTargetNumber = document.querySelectorAll('.target-entry').length;
-                            
-                            // Function to update target numbers sequentially
-                            function updateTargetNumbers() {
-                                const targetEntries = document.querySelectorAll('.target-entry');
-                                targetEntries.forEach((entry, index) => {
-                                    const label = entry.querySelector('.form-label');
-                                    if (label) {
-                                        label.textContent = `Target ${index + 1} *`;
-                                    }
-                                });
-                            }
-                            
-                            addTargetBtn.addEventListener('click', function() {
-                                // Increment the highest target number
-                                highestTargetNumber++;
-                                
-                                const targetEntry = document.createElement('div');
-                                targetEntry.className = 'target-entry';
-                                
-                                const html = `
-                                    <button type="button" class="btn-close remove-target" aria-label="Remove target"></button>
-                                    <div class="mb-3">
-                                        <label class="form-label">Target ${highestTargetNumber} *</label>
-                                        <input type="text" class="form-control target-input" name="target_text[]" 
-                                               placeholder="Define a measurable target (e.g., 'Plant 100 trees')">
-                                        <div class="form-text">Define a specific, measurable target for this program.</div>
-                                    </div>
-                                    <div class="mb-2">
-                                        <label class="form-label">Status Description</label>
-                                        <textarea class="form-control status-description" name="target_status_description[]" rows="2" 
-                                                  placeholder="Describe the current status or progress toward this target"></textarea>
-                                        <div class="form-text">Describe the current status or achievement toward this target.</div>
-                                    </div>
-                                `;
-                                
-                                targetEntry.innerHTML = html;
-                                targetsContainer.appendChild(targetEntry);
-                                
-                                // Attach remove event listener to the new target
-                                const removeBtn = targetEntry.querySelector('.remove-target');
-                                if (removeBtn) {
-                                    removeBtn.addEventListener('click', function() {
-                                        targetEntry.remove();
-                                        // Update target numbers after removing
-                                        updateTargetNumbers();
-                                    });
-                                }
-                            });
-                        }
-                        
-                        // Initialize existing remove buttons
-                        document.querySelectorAll('.remove-target').forEach(btn => {
-                            btn.addEventListener('click', function() {
-                                this.closest('.target-entry').remove();
-                                // Update target numbers after removing
-                                updateTargetNumbers();
-                            });
-                        });
-                        
-                        // Form validation
-                        document.getElementById('updateProgramForm').addEventListener('submit', function(e) {
-                            const programName = document.getElementById('program_name').value;
-                            const targetInputs = document.querySelectorAll('.target-input');
-                            let hasFilledTarget = false;
-                            
-                            // Validate program name
-                            if (!programName.trim()) {
-                                alert('Please enter a program name.');
-                                e.preventDefault();
-                                return false;
-                            }
-                            
-                            // For finalize/submit actions, validate at least one target
-                            if (e.submitter && (e.submitter.name === 'submit_program' || e.submitter.name === 'finalize_draft')) {
-                                targetInputs.forEach(input => {
-                                    if (input.value.trim()) {
-                                        hasFilledTarget = true;
-                                    }
-                                });
-                                
-                                if (!hasFilledTarget) {
-                                    alert('Please add at least one target for this program.');
-                                    e.preventDefault();
-                                    return false;
-                                }
-                            }
-                            
-                            return true;                        });
-                    });                </script>
+            </div>
+        </div>
     </div>
 </section>
 
-<?php require_once dirname(__DIR__, 2) . '/layouts/footer.php'; ?>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Rating pills selection
+    const ratingPills = document.querySelectorAll('.rating-pill:not(.disabled)');
+    const ratingInput = document.getElementById('rating');
+    
+    ratingPills.forEach(pill => {
+        pill.addEventListener('click', function() {
+            // Remove active class from all pills
+            ratingPills.forEach(p => p.classList.remove('active'));
+            
+            // Add active class to clicked pill
+            this.classList.add('active');
+            
+            // Update hidden input
+            ratingInput.value = this.getAttribute('data-rating');
+        });
+    });
+    
+    // Add target functionality
+    const addTargetBtn = document.getElementById('add-target-btn');
+    if (addTargetBtn) {
+        const targetsContainer = document.getElementById('targets-container');
+        
+        // Keep track of the highest target number
+        let highestTargetNumber = document.querySelectorAll('.target-entry').length;
+        
+        // Function to update target numbers sequentially
+        function updateTargetNumbers() {
+            const targetEntries = document.querySelectorAll('.target-entry');
+            targetEntries.forEach((entry, index) => {
+                const label = entry.querySelector('.form-label');
+                if (label && label.textContent.includes('Target')) {
+                    label.textContent = `Target ${index + 1} *`;
+                }
+            });
+        }
+        
+        addTargetBtn.addEventListener('click', function() {
+            // Increment the highest target number
+            highestTargetNumber++;
+            
+            const targetEntry = document.createElement('div');
+            targetEntry.className = 'target-entry';
+            
+            const html = `
+                <button type="button" class="btn-close remove-target" aria-label="Remove target"></button>
+                <div class="mb-3">
+                    <label class="form-label">Target ${highestTargetNumber} *</label>
+                    <input type="text" class="form-control target-input" name="target_text[]" 
+                           placeholder="Define a measurable target (e.g., 'Plant 100 trees')">
+                    <div class="form-text">Define a specific, measurable target for this program.</div>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Status Description</label>
+                    <textarea class="form-control status-description" name="target_status_description[]" rows="2" 
+                              placeholder="Describe the current status or progress toward this target"></textarea>
+                    <div class="form-text">Describe the current status or achievement toward this target.</div>
+                </div>
+            `;
+            
+            targetEntry.innerHTML = html;
+            targetsContainer.appendChild(targetEntry);
+            
+            // Attach remove event listener to the new target
+            const removeBtn = targetEntry.querySelector('.remove-target');
+            if (removeBtn) {
+                removeBtn.addEventListener('click', function() {
+                    targetEntry.remove();
+                    // Update target numbers after removing
+                    updateTargetNumbers();
+                });
+            }
+        });
+    }
+    
+    // Initialize existing remove buttons
+    document.querySelectorAll('.remove-target').forEach(btn => {
+        btn.addEventListener('click', function() {
+            this.closest('.target-entry').remove();
+            // Update target numbers after removing
+            updateTargetNumbers();
+        });
+    });
+    
+    // History toggle functionality
+    document.querySelectorAll('.history-toggle-btn, .field-history-toggle').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const targetId = this.getAttribute('data-target') || this.getAttribute('data-history-target');
+            const targetPanel = document.getElementById(targetId);
+            
+            if (targetPanel) {
+                const isVisible = targetPanel.style.display !== 'none';
+                targetPanel.style.display = isVisible ? 'none' : 'block';
+                
+                // Update button text
+                const icon = this.querySelector('i');
+                if (icon) {
+                    if (isVisible) {
+                        this.innerHTML = this.innerHTML.replace('Hide', 'Show');
+                    } else {
+                        this.innerHTML = this.innerHTML.replace('Show', 'Hide');
+                    }
+                }
+            }
+        });
+    });
+    
+    // Form validation
+    document.getElementById('updateProgramForm').addEventListener('submit', function(e) {
+        const programName = document.getElementById('program_name').value;
+        const targetInputs = document.querySelectorAll('.target-input');
+        let hasFilledTarget = false;
+        
+        // Validate program name
+        if (!programName.trim()) {
+            alert('Please enter a program name.');
+            e.preventDefault();
+            return false;
+        }
+        
+        // For finalize/submit actions, validate at least one target
+        if (e.submitter && (e.submitter.name === 'submit_program' || e.submitter.name === 'finalize_draft')) {
+            targetInputs.forEach(input => {
+                if (input.value.trim()) {
+                    hasFilledTarget = true;
+                }
+            });
+            
+            if (!hasFilledTarget) {
+                alert('Please add at least one target for this program.');
+                e.preventDefault();
+                return false;
+            }
+        }
+        
+        return true;
+    });
+});
+</script>
 
-
+<?php
+// Include footer
+require_once dirname(__DIR__, 2) . '/layouts/footer.php';
