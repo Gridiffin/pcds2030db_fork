@@ -57,9 +57,8 @@ function initDashboardAssignedToggle() {
         document.querySelectorAll('.stat-card').forEach(card => {
             card.classList.add('loading');
         });
-        
-        if (document.getElementById('programStatusChart')) {
-            const chartContainer = document.getElementById('programStatusChart').closest('.card-body');
+          if (document.getElementById('programRatingChart')) {
+            const chartContainer = document.getElementById('programRatingChart').closest('.card-body');
             if (chartContainer) chartContainer.classList.add('loading');
         }
         
@@ -126,7 +125,7 @@ function fetchDashboardData(includeAssigned) {
         // Update UI components with new data
         renderStatCards(data.stats);
         if (data.chart_data) {
-            renderStatusChart(data.chart_data);
+            renderRatingChart(data.chart_data);
         }
         
         // Remove loading indicators
@@ -194,10 +193,10 @@ function updateCardSubtitle(selector, value, total) {
 }
 
 /**
- * Render status chart with provided data
+ * Render rating chart with provided data
  */
-function renderStatusChart(chartData) {
-    const chartCanvas = document.getElementById('programStatusChart');
+function renderRatingChart(chartData) {
+    const chartCanvas = document.getElementById('programRatingChart');
     if (!chartCanvas) {
         console.log('Chart canvas not found');
         return;
@@ -211,10 +210,9 @@ function renderStatusChart(chartData) {
     
     // Debug log
     console.log('Rendering chart with data:', chartData);
-    
-    // Clear any existing chart - with proper check to ensure it has destroy method
-    if (window.programStatusChart && typeof window.programStatusChart.destroy === 'function') {
-        window.programStatusChart.destroy();
+      // Clear any existing chart - with proper check to ensure it has destroy method
+    if (window.programRatingChart && typeof window.programRatingChart.destroy === 'function') {
+        window.programRatingChart.destroy();
     }
     
     // Validate chart data
@@ -230,10 +228,9 @@ function renderStatusChart(chartData) {
         completed: '#28a745',  // Green - Target achieved
         notStarted: '#6c757d'  // Gray - Not started
     };
-    
-    try {
+      try {
         // Create new chart
-        window.programStatusChart = new Chart(chartCanvas, {
+        window.programRatingChart = new Chart(chartCanvas, {
             type: 'doughnut',
             data: {
                 labels: chartData.labels,

@@ -163,9 +163,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         global $conn;
         try {
             $conn->begin_transaction();
-            
-            // Get form data
+              // Get form data
             $program_name = trim($_POST['program_name'] ?? '');
+            $brief_description = trim($_POST['brief_description'] ?? '');
             $start_date = !empty($_POST['start_date']) ? $_POST['start_date'] : null;
             $end_date = !empty($_POST['end_date']) ? $_POST['end_date'] : null;
             $rating = $_POST['rating'] ?? 'not-started';
@@ -229,12 +229,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 }
             }
-            
-            // 2. Handle program submission data
+              // 2. Handle program submission data
             $content_data = [
                 'rating' => $rating,
                 'targets' => $targets,
                 'remarks' => $remarks,
+                'brief_description' => $brief_description,
                 'program_name' => $program_name
             ];
             $content_json = json_encode($content_data);
@@ -317,12 +317,12 @@ if (isset($program['current_submission'])) {
     // Process content_json if available
     if (isset($current_submission['content_json']) && is_string($current_submission['content_json'])) {
         $content = json_decode($current_submission['content_json'], true);
-        
-        // If we have the new structure with targets array, use it
+          // If we have the new structure with targets array, use it
         if (isset($content['targets']) && is_array($content['targets'])) {
             $targets = $content['targets'];
             $rating = $content['rating'] ?? 'not-started';
-            $remarks = $content['remarks'] ?? '';        } else {
+            $remarks = $content['remarks'] ?? '';
+            $brief_description = $content['brief_description'] ?? '';} else {
             // Legacy data - handle semicolon-separated targets
             $target_text = $content['target'] ?? $current_submission['target'] ?? '';
             $status_description = $content['status_description'] ?? $content['status_text'] ?? $current_submission['status_text'] ?? '';
@@ -391,17 +391,18 @@ if (isset($program['current_submission'])) {
                     'target_text' => $target_text,
                     'status_description' => $status_description
                 ]
-            ];
-        }
+            ];        }
         
         $rating = $current_submission['status'] ?? 'not-started';
         $remarks = $current_submission['remarks'] ?? '';
+        $brief_description = $content['brief_description'] ?? '';
     }
 } else {
     // No current submission, initialize empty targets
     $targets = [['target_text' => '', 'status_description' => '']];
     $rating = 'not-started';
     $remarks = '';
+    $brief_description = '';
 }
 
 // Set page title
@@ -442,12 +443,8 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
 
 ?>
 
-<!-- Main Content -->
-<section class="section">
-    <div class="container-fluid px-4 py-4">
-        <!-- Main content (form, cards, etc.) goes here -->
-                <?php
-                // Include any draft notification banner if this is a draft
+<?php
+// Include any draft notification banner if this is a draft
                 if ($is_draft): ?>
                 <div class="draft-banner mb-4">
                     <i class="fas fa-exclamation-triangle"></i>
@@ -557,14 +554,21 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                                     <?php
                                     // Get complete history of program name changes
                                     $name_history = get_field_edit_history($program_history['submissions'], 'program_name');
-                                    
+                                    // DEBUG: Output the raw name_history for troubleshooting
+                                    echo '<pre style="background:#ffe0e0; color:#a00; padding:8px;">DEBUG name_history:\n';
+                                    print_r($name_history);
+                                    echo '</pre>';
+                                    ?>
+                                    <?php
+                                    // Show history panel if there is at least one entry in $name_history
+                                    $name_history = get_field_edit_history($program_history['submissions'], 'program_name');
                                     if (!empty($name_history)):
                                     ?>
                                         <div class="d-flex align-items-center mt-2">
                                             <button type="button" class="btn btn-sm btn-outline-secondary field-history-toggle" 
                                                     data-history-target="programNameHistory">
                                                 <i class="fas fa-history"></i> Show Name History
-                                        </button>
+                                            </button>
                                         </div>
                                         <div id="programNameHistory" class="history-complete" style="display: none;">
                                             <h6 class="small text-muted mb-2">Program Name History</h6>
@@ -587,9 +591,56 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                                             </ul>
                                         </div>
                                     <?php endif; ?>
+                                <?php endif; ?>                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="brief_description" class="form-label">Brief Description</label>
+                                <textarea class="form-control" id="brief_description" name="brief_description" rows="3" 
+                                        placeholder="Provide a short summary of the program"
+                                        <?php echo (!is_editable('brief_description')) ? 'readonly' : ''; ?>><?php echo htmlspecialchars($brief_description); ?></textarea>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    A brief overview to help identify this program
+                                </div>
+                                <?php if ($program['is_assigned'] && !is_editable('brief_description')): ?>
+                                    <div class="form-text">Brief description was set by an administrator and cannot be changed.</div>
                                 <?php endif; ?>
-                            </div>                <div class="mb-3">
-                                <!-- Removed Program Description field as the column no longer exists -->
+                                
+                                <?php if (isset($program_history['submissions']) && count($program_history['submissions']) > 1): ?>
+                                    <?php
+                                    // Get complete history of brief description changes
+                                    $description_history = get_field_edit_history($program_history['submissions'], 'brief_description');
+                                    
+                                    if (!empty($description_history)):
+                                    ?>
+                                        <div class="d-flex align-items-center mt-2">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary field-history-toggle" 
+                                                    data-history-target="briefDescriptionHistory">
+                                                <i class="fas fa-history"></i> Show Description History
+                                            </button>
+                                        </div>
+                                        <div id="briefDescriptionHistory" class="history-complete" style="display: none;">
+                                            <h6 class="small text-muted mb-2">Brief Description History</h6>
+                                            <ul class="history-list">
+                                                <?php foreach($description_history as $idx => $item): ?>
+                                                <li class="history-list-item">
+                                                    <div class="history-list-value">
+                                                        <?php echo htmlspecialchars($item['value']); ?>
+                                                    </div>
+                                                    <div class="history-list-meta">
+                                                        <?php echo $item['timestamp']; ?>
+                                                        <?php if (isset($item['submission_id']) && $item['submission_id'] > 0): ?>
+                                                            <span class="<?php echo ($item['is_draft'] ?? 0) ? 'history-draft-badge' : 'history-final-badge'; ?>">
+                                                                <?php echo ($item['is_draft'] ?? 0) ? 'Draft' : 'Final'; ?>
+                                                            </span>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                </li>
+                                                <?php endforeach; ?>
+                                            </ul>
+                                        </div>
+                                    <?php endif; ?>
+                                <?php endif; ?>
                             </div>
                             <div class="row g-3">
                                 <div class="col-md-6">
@@ -752,13 +803,8 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                             <a href="view_programs.php" class="btn btn-outline-secondary">
                                 <i class="fas fa-times me-1"></i> Cancel
                             </a>
-                        </div>
-                    </div>
+                        </div>                    </div>
                 </form>
-            </div>
-        </div>
-    </div>
-</section>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

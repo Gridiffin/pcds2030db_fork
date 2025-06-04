@@ -71,7 +71,14 @@ $actions = [
 
 // Include the dashboard header component
 require_once ROOT_PATH . 'app/lib/dashboard_header.php';
+
+// Pass hasActivePeriod to JavaScript
+$hasActivePeriod = isset($current_period) && !empty($current_period);
 ?>
+
+<script>
+const hasActivePeriod = <?php echo $hasActivePeriod ? 'true' : 'false'; ?>;
+</script>
 
 <!-- Dashboard Content -->
 <section class="section">

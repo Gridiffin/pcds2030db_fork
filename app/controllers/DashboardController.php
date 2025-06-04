@@ -42,15 +42,14 @@ class DashboardController {
      * @param int $period_id Current reporting period ID
      * @param bool $include_assigned Whether to include assigned programs
      * @return array Stats data
-     */
-    private function getStatsData($agency_id, $period_id, $include_assigned) {
+     */    private function getStatsData($agency_id, $period_id, $include_assigned) {
         // Build query with filters - this new query properly handles programs with no submissions
         $query = "SELECT 
                     p.program_id,
                     p.program_name,
                     p.is_assigned,
                     p.created_at,
-                    'not-started' as status, -- status column removed, default to 'not-started'
+                    COALESCE(JSON_UNQUOTE(JSON_EXTRACT(ps.content_json, '$.rating')), 'not-started') as rating,
                     CASE 
                         WHEN ps.submission_id IS NULL THEN 1
                         ELSE ps.is_draft 
@@ -94,23 +93,22 @@ class DashboardController {
             'completed' => 0,
             'not-started' => 0
         ];
-        
-        while ($program = $result->fetch_assoc()) {
+          while ($program = $result->fetch_assoc()) {
             // Skip draft programs and newly assigned programs (which are treated as drafts)
-            if ($program['is_draft'] == 1 || ($program['is_assigned'] == 1 && !isset($program['status']))) {
+            if ($program['is_draft'] == 1 || ($program['is_assigned'] == 1 && !isset($program['rating']))) {
                 continue;
             }
             
             $stats['total']++;
             
-            // Map status to categories
-            $status = $program['status'] ?? 'not-started';
+            // Map rating to categories
+            $rating = $program['rating'] ?? 'not-started';
             
-            if (in_array($status, ['on-track', 'on-track-yearly'])) {
+            if (in_array($rating, ['on-track', 'on-track-yearly'])) {
                 $stats['on-track']++;
-            } elseif (in_array($status, ['delayed', 'severe-delay'])) {
+            } elseif (in_array($rating, ['delayed', 'severe-delay'])) {
                 $stats['delayed']++;
-            } elseif (in_array($status, ['completed', 'target-achieved'])) {
+            } elseif (in_array($rating, ['completed', 'target-achieved'])) {
                 $stats['completed']++;
             } else {
                 $stats['not-started']++;
@@ -152,8 +150,7 @@ class DashboardController {
      * @param int $agency_id Current agency ID
      * @param int $period_id Current reporting period ID
      * @return array Recent program updates
-     */
-    private function getRecentUpdates($agency_id, $period_id) {
+     */    private function getRecentUpdates($agency_id, $period_id) {
         // This query gets both finalized and draft submissions for the Recent Updates section
         $query = "SELECT 
                     p.program_id, 
@@ -161,7 +158,7 @@ class DashboardController {
                     p.is_assigned,
                     p.created_at,
                     p.updated_at as program_updated_at,
-                    'not-started' as status, -- status column removed
+                    COALESCE(JSON_UNQUOTE(JSON_EXTRACT(ps.content_json, '$.rating')), 'not-started') as rating,
                     ps.is_draft,
                     ps.submission_date as updated_at
                   FROM programs p
@@ -183,13 +180,12 @@ class DashboardController {
         $stmt->bind_param("iii", $period_id, $agency_id, $agency_id);
         $stmt->execute();
         $result = $stmt->get_result();
-        
-        $programs = [];
+          $programs = [];
         while ($row = $result->fetch_assoc()) {
             // Mark newly assigned programs with no submissions as drafts
-            if ($row['is_assigned'] == 1 && $row['status'] === null) {
+            if ($row['is_assigned'] == 1 && $row['rating'] === null) {
                 $row['is_draft'] = 1;
-                $row['status'] = 'not-started';
+                $row['rating'] = 'not-started';
             }
             
             // Set updated_at timestamp with fallback to program creation date

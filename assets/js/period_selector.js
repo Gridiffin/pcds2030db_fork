@@ -160,11 +160,9 @@ function reinitializeComponents() {
         // Re-initialize dashboard charts
         if (typeof initDashboardCharts === 'function') {
             initDashboardCharts();
-        }
-        
-        // Re-initialize program status chart if data exists
-        if (typeof programStatusChartData !== 'undefined' && document.getElementById('programStatusChart')) {
-            initProgramStatusChart();
+        }        // Re-initialize program rating chart if data exists
+        if (typeof programRatingChartData !== 'undefined' && document.getElementById('programRatingChart')) {
+            initProgramRatingChart();
         }
     }
     

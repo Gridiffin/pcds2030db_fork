@@ -240,12 +240,8 @@ function fade(element, duration, callback) {
  * Initialize dropdown functionality
  */
 function initDropdowns() {
-    // Initialize Bootstrap dropdowns
-    if (typeof bootstrap !== 'undefined' && typeof bootstrap.Dropdown !== 'undefined') {
-        document.querySelectorAll('.dropdown-toggle').forEach(function(element) {
-            new bootstrap.Dropdown(element);
-        });
-    }
+    // Removed manual Bootstrap dropdown initialization to avoid conflicts.
+    // Bootstrap's data-API and dropdown_init.js handle dropdown initialization and events.
     
     // Custom dropdown toggle
     document.querySelectorAll('.custom-dropdown-toggle').forEach(toggle => {
@@ -269,6 +265,7 @@ function initDropdowns() {
         });
     });
 }
+
 
 // Initialize all components when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {

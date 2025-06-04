@@ -44,10 +44,23 @@ function handlePreloader() {
  * Initialize Bootstrap tooltips if available
  */
 function initTooltips() {
+    // Bootstrap's data-API (data-bs-toggle="tooltip") should handle tooltip initialization automatically.
+    // This function can be left empty or removed if no custom tooltip logic is needed beyond
+    // what Bootstrap provides by default.
+    // If there was specific custom logic here previously, ensure it's not conflicting
+    // with the automatic data-API initialization.
+    // For now, we'll ensure it doesn't try to re-initialize.
     if (typeof bootstrap !== 'undefined' && typeof bootstrap.Tooltip !== 'undefined') {
-        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        tooltipTriggerList.map(function(tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
+        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        tooltipTriggerList.forEach(tooltipTriggerEl => {
+            // We are relying on Bootstrap's data-API to initialize tooltips.
+            // This function will not create new bootstrap.Tooltip instances
+            // to avoid the "multiple instances" error.
+            // If you need to interact with a tooltip instance, use:
+            // bootstrap.Tooltip.getInstance(tooltipTriggerEl)
+            // Example: To manually show a tooltip (though usually not needed with data-API)
+            // const tooltip = bootstrap.Tooltip.getInstance(tooltipTriggerEl);
+            // if (tooltip) { tooltip.show(); }
         });
     }
 }

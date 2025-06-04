@@ -617,11 +617,16 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                         These settings control what parts of the program the owning agency can edit.
                     </div>
                     
-                    <div class="mb-3">
-                        <div class="form-check form-switch mb-2">
+                    <div class="mb-3">                        <div class="form-check form-switch mb-2">
                             <input class="form-check-input" type="checkbox" id="edit_program_name" name="edit_permissions[]" value="program_name" 
                                    <?php echo in_array('program_name', $edit_permissions) ? 'checked' : ''; ?>>
                             <label class="form-check-label" for="edit_program_name">Agency can edit Program Name</label>
+                        </div>
+                        
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" id="edit_brief_description" name="edit_permissions[]" value="brief_description" 
+                                   <?php echo in_array('brief_description', $edit_permissions) ? 'checked' : ''; ?>>
+                            <label class="form-check-label" for="edit_brief_description">Agency can edit Brief Description</label>
                         </div>
                         
                                                 

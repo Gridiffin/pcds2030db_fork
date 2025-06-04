@@ -201,14 +201,12 @@
             this.chart.data.datasets[0].data = newData.data;
             this.chart.update();
         }
-    }
-
-    /**
-     * Initialize the dashboard chart with program status data
+    }    /**
+     * Initialize the dashboard chart with program rating data
      */
     function initializeDashboardChart(chartData) {
         // Check if we have a chart container
-        const chartContainer = document.getElementById('programStatusChart');
+        const chartContainer = document.getElementById('programRatingChart');
         if (!chartContainer) return;
         
         // Define colors based on status meaning
@@ -239,8 +237,7 @@
     }
 
     // Expose these functions to global scope
-    window.initializeDashboardChart = function(chartData) {        console.log("initializeDashboardChart called with data:", chartData);
-        const chartInstance = new ChartManager('programStatusChart');
+    window.initializeDashboardChart = function(chartData) {        console.log("initializeDashboardChart called with data:", chartData);        const chartInstance = new ChartManager('programRatingChart');
         chartInstance.init(chartData);
         
         // Make chart available globally for updates
@@ -360,12 +357,10 @@
         } else {
             console.error("Dashboard chart not initialized");
         }
-    };
-
-    document.addEventListener('DOMContentLoaded', function() {
+    };    document.addEventListener('DOMContentLoaded', function() {
         // Initialize dashboard chart
-        if (typeof programStatusChartData !== 'undefined') {
-            window.dashboardChartManager = initializeDashboardChart(programStatusChartData);
+        if (typeof programRatingChartData !== 'undefined') {
+            window.dashboardChartManager = initializeDashboardChart(programRatingChartData);
         }
         
         // Handle toggle for including/excluding assigned programs in chart

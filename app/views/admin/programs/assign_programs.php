@@ -367,10 +367,13 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                                                                 <div class="form-check form-switch mb-2">
                                     <input class="form-check-input" type="checkbox" id="edit_targets" name="edit_permissions[]" value="targets" checked>
                                     <label class="form-check-label" for="edit_targets">Agency can edit Targets</label>
-                                </div>
-                                <div class="form-check form-switch mb-2">
+                                </div>                                <div class="form-check form-switch mb-2">
                                     <input class="form-check-input" type="checkbox" id="edit_status_text" name="edit_permissions[]" value="status_text" checked>
                                     <label class="form-check-label" for="edit_status_text">Agency can edit Status Descriptions</label>
+                                </div>
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" id="edit_brief_description" name="edit_permissions[]" value="brief_description" checked>
+                                    <label class="form-check-label" for="edit_brief_description">Agency can edit Brief Description</label>
                                 </div>
                                 <div class="form-check form-switch">
                                     <input class="form-check-input" type="checkbox" id="edit_timeline" name="edit_permissions[]" value="timeline">

@@ -2,7 +2,7 @@
 /**
  * Agency Dashboard
  * 
- * Main dashboard for agency users showing program stats and submission status.
+ * Main dashboard for agency users showing program stats and submission rating.
  */
 
 // Define project root path for consistent file references
@@ -191,15 +191,14 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                     </div>
                 </div>
             </div>
-        </div>        <div class="row">            <!-- Program Status Chart -->
+        </div>        <div class="row">            <!-- Program Rating Chart -->
             <div class="col-lg-6 mb-4">
-                <div class="card shadow-sm h-100">
-                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                        <h6 class="m-0 font-weight-bold text-white">Program Status Distribution</h6>
+                <div class="card shadow-sm h-100">                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-white">Program Rating Distribution</h6>
                     </div>
                     <div class="card-body">
                         <div class="chart-container" style="position: relative; height:300px; width:100%">
-                            <canvas id="programStatusChart"></canvas>
+                            <canvas id="programRatingChart"></canvas>
                         </div>
                     </div>
                 </div>
@@ -228,9 +227,8 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                                         <tr>
                                             <th class="sortable" data-sort="name">
                                                 Program Name <i class="fas fa-sort ms-1"></i>
-                                            </th>
-                                            <th class="sortable" data-sort="status">
-                                                Status <i class="fas fa-sort ms-1"></i>
+                                            </th>                                            <th class="sortable" data-sort="rating">
+                                                Rating <i class="fas fa-sort ms-1"></i>
                                             </th>
                                             <th class="sortable" data-sort="date">
                                                 Last Updated <i class="fas fa-sort ms-1"></i>
@@ -242,7 +240,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                                             $program_type = isset($program['is_assigned']) && $program['is_assigned'] ? 'assigned' : 'created';
                                             $program_type_label = $program_type === 'assigned' ? 'Assigned' : 'Agency-Created';
                                             $is_draft = isset($program['is_draft']) && $program['is_draft'] == 1;
-                                            $is_new_assigned = $program_type === 'assigned' && !isset($program['status']);
+                                            $is_new_assigned = $program_type === 'assigned' && !isset($program['rating']);
                                         ?>
                                             <tr data-program-type="<?php echo $program_type; ?>" 
                                                class="<?php echo ($is_draft || $is_new_assigned) ? 'draft-program' : ''; ?>">
@@ -257,29 +255,28 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                                                         <i class="fas fa-<?php echo $program_type === 'assigned' ? 'tasks' : 'folder-plus'; ?> me-1"></i>
                                                         <?php echo $program_type_label; ?>
                                                     </div>
-                                                </td>
-                                                <td>
+                                                </td>                                                <td>
                                                     <?php 
-                                                    $status = $program['status'] ?? 'not-started';
-                                                    $status_class = 'secondary';
+                                                    $rating = $program['rating'] ?? 'not-started';
+                                                    $rating_class = 'secondary';
                                                     
-                                                    switch($status) {
+                                                    switch($rating) {
                                                         case 'on-track':
                                                         case 'on-track-yearly':
-                                                            $status_class = 'warning';
+                                                            $rating_class = 'warning';
                                                             break;
                                                         case 'delayed':
                                                         case 'severe-delay':
-                                                            $status_class = 'danger';
+                                                            $rating_class = 'danger';
                                                             break;
                                                         case 'completed':
                                                         case 'target-achieved':
-                                                            $status_class = 'success';
+                                                            $rating_class = 'success';
                                                             break;
                                                     }
                                                     ?>
-                                                    <span class="badge bg-<?php echo $status_class; ?>">
-                                                        <?php echo ucfirst(str_replace('-', ' ', $status)); ?>
+                                                    <span class="badge bg-<?php echo $rating_class; ?>">
+                                                        <?php echo ucfirst(str_replace('-', ' ', $rating)); ?>
                                                     </span>
                                                 </td>
                                                 <td>
@@ -307,7 +304,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
 <!-- Pass chart data to JavaScript -->
 <script>
     // Initialize chart with data
-    const programStatusChartData = {
+    const programRatingChartData = {
         labels: <?php echo json_encode($chartData['labels']); ?>,
         data: <?php echo json_encode($chartData['data']); ?>
     };
