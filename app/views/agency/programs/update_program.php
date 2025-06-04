@@ -891,29 +891,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // History toggle functionality
-    document.querySelectorAll('.history-toggle-btn, .field-history-toggle').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const targetId = this.getAttribute('data-target') || this.getAttribute('data-history-target');
-            const targetPanel = document.getElementById(targetId);
-            
-            if (targetPanel) {
-                const isVisible = targetPanel.style.display !== 'none';
-                targetPanel.style.display = isVisible ? 'none' : 'block';
-                
-                // Update button text
-                const icon = this.querySelector('i');
-                if (icon) {
-                    if (isVisible) {
-                        this.innerHTML = this.innerHTML.replace('Hide', 'Show');
-                    } else {
-                        this.innerHTML = this.innerHTML.replace('Show', 'Hide');
-                    }
-                }
-            }
-        });
-    });
-    
     // Form validation
     document.getElementById('updateProgramForm').addEventListener('submit', function(e) {
         const programName = document.getElementById('program_name').value;

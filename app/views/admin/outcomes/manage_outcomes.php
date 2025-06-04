@@ -59,6 +59,9 @@ require_once ROOT_PATH . 'app/lib/admins/settings.php';
 $allow_outcome_creation = get_outcome_creation_setting();
 ?>
 
+<!-- Ensure Bootstrap JS is included -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 <div class="container-fluid px-4 py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>

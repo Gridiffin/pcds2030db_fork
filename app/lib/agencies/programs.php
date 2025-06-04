@@ -490,70 +490,48 @@ function get_program_edit_history($program_id) {
 function get_field_edit_history($submissions, $field_name) {
     $history = [];
     $seen_values = [];
-    
+
     if (!is_array($submissions)) {
         return $history;
     }
-    
+
     foreach ($submissions as $submission) {
         $value = null;
-        
-        // Extract the field value based on field name
-        switch ($field_name) {
-            case 'targets':
-                if (isset($submission['targets']) && is_array($submission['targets'])) {
-                    $value = $submission['targets'];
-                } elseif (isset($submission['target']) && !empty($submission['target'])) {
-                    // Convert legacy single target to array format
-                    $value = [['text' => $submission['target'], 'target_text' => $submission['target']]];
-                }
-                break;
-                
-            case 'program_name':
-                $value = $submission['program_name'] ?? null;
-                break;
-                
-            case 'description':
-                $value = $submission['description'] ?? null;
-                break;
-                
-            case 'target':
-                $value = $submission['target'] ?? null;
-                break;
-                
-            case 'achievement':
-                $value = $submission['achievement'] ?? null;
-                break;
-                
-            case 'remarks':
-                $value = $submission['remarks'] ?? null;
-                break;
-                
-            case 'status':
-                $value = $submission['status'] ?? null;
-                break;
-                
-            default:
-                // Try to get the field directly
-                $value = $submission[$field_name] ?? null;
-                break;
+
+        // Try to get the field from the top-level first
+        if (array_key_exists($field_name, $submission)) {
+            $value = $submission[$field_name];
         }
-        
+
+        // If not found, try to get it from content_json
+        if (($value === null || $value === '' || (is_array($value) && empty($value))) && isset($submission['content_json'])) {
+            $content = is_array($submission['content_json']) ? $submission['content_json'] : json_decode($submission['content_json'], true);
+            if (is_array($content) && array_key_exists($field_name, $content)) {
+                $value = $content[$field_name];
+            }
+        }
+
+        // Special handling for targets (legacy and new)
+        if ($field_name === 'targets') {
+            if (isset($submission['targets']) && is_array($submission['targets'])) {
+                $value = $submission['targets'];
+            } elseif (isset($submission['target']) && !empty($submission['target'])) {
+                $value = [['text' => $submission['target'], 'target_text' => $submission['target']]];
+            }
+        }
+
         // Skip if no value or empty value
         if ($value === null || $value === '' || (is_array($value) && empty($value))) {
             continue;
         }
-        
+
         // Create a hash of the value to detect duplicates
         $value_hash = is_array($value) ? md5(json_encode($value)) : md5((string)$value);
-        
-        // Skip duplicate values
         if (in_array($value_hash, $seen_values)) {
             continue;
         }
-        
         $seen_values[] = $value_hash;
-        
+
         // Format timestamp
         $timestamp = 'Unknown date';
         if (isset($submission['formatted_date'])) {
@@ -565,7 +543,7 @@ function get_field_edit_history($submissions, $field_name) {
         } elseif (isset($submission['created_at'])) {
             $timestamp = date('M j, Y', strtotime($submission['created_at']));
         }
-        
+
         $history[] = [
             'value' => $value,
             'timestamp' => $timestamp,
@@ -574,6 +552,6 @@ function get_field_edit_history($submissions, $field_name) {
             'period_name' => $submission['period_display'] ?? ''
         ];
     }
-    
+
     return $history;
 }
