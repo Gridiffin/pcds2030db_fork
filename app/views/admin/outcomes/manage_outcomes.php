@@ -224,13 +224,22 @@ $allow_outcome_creation = get_outcome_creation_setting();
                                                     <i class="fas fa-history"></i>
                                                 </a>
                                             </div>
-                                            <div class="mt-1 d-grid">
-                                                <a href="<?php echo APP_URL; ?>/app/views/admin/outcomes/unsubmit_outcome.php?metric_id=<?php echo $outcome['metric_id']; ?>" 
-                                                   class="btn btn-outline-warning btn-sm w-100" 
-                                                   title="Unsubmit Outcome"
-                                                   onclick="return confirm('Are you sure you want to unsubmit this outcome?');">
-                                                    <i class="fas fa-undo"></i> Unsubmit
-                                                </a>
+                                            <div class="mt-1 d-grid status-action-container" data-metric-id="<?php echo $outcome['metric_id']; ?>">
+                                                <?php if (isset($outcome['is_draft']) && $outcome['is_draft'] == 1): ?>
+                                                    <button type="button" 
+                                                            class="btn btn-outline-success btn-sm w-100 submit-outcome" 
+                                                            data-metric-id="<?php echo $outcome['metric_id']; ?>"
+                                                            title="Submit Outcome">
+                                                        <i class="fas fa-redo"></i> Submit
+                                                    </button>
+                                                <?php else: ?>
+                                                    <button type="button" 
+                                                            class="btn btn-outline-warning btn-sm w-100 unsubmit-outcome" 
+                                                            data-metric-id="<?php echo $outcome['metric_id']; ?>"
+                                                            title="Unsubmit Outcome">
+                                                        <i class="fas fa-undo"></i> Unsubmit
+                                                    </button>
+                                                <?php endif; ?>
                                             </div>
                                         </td>
                                     </tr>
@@ -246,12 +255,97 @@ $allow_outcome_creation = get_outcome_creation_setting();
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Refresh page button
         const refreshBtn = document.getElementById('refreshPage');
         if (refreshBtn) {
-            refreshBtn.addEventListener('click', function() {
-                window.location.reload();
+            refreshBtn.addEventListener('click', () => window.location.reload());
+        }
+
+        const outcomesTableBody = document.querySelector('#metricsTable tbody');
+
+        if (outcomesTableBody) {
+            outcomesTableBody.addEventListener('click', function(event) {
+                const targetButton = event.target.closest('.submit-outcome, .unsubmit-outcome');
+                if (!targetButton) {
+                    return; // Click was not on a relevant button
+                }
+                
+                event.preventDefault();
+                handleOutcomeAction(targetButton);
             });
+        }
+
+        function updateButtonAppearance(button, is_draft) {
+            button.disabled = false; // Re-enable button
+            if (is_draft == 1) { // Now a draft, show "Submit"
+                button.classList.remove('unsubmit-outcome', 'btn-outline-warning');
+                button.classList.add('submit-outcome', 'btn-outline-success');
+                button.innerHTML = '<i class="fas fa-redo"></i> Submit';
+                button.title = 'Submit Outcome';
+            } else { // Now submitted, show "Unsubmit"
+                button.classList.remove('submit-outcome', 'btn-outline-success');
+                button.classList.add('unsubmit-outcome', 'btn-outline-warning');
+                button.innerHTML = '<i class="fas fa-undo"></i> Unsubmit';
+                button.title = 'Unsubmit Outcome';
+            }
+        }
+
+        async function handleOutcomeAction(button) {
+            const metricId = button.dataset.metricId;
+            const action = button.classList.contains('submit-outcome') ? 'submit' : 'unsubmit';
+            const originalButtonText = button.innerHTML;
+            const originalButtonTitle = button.title;
+
+            if (!confirm(`Are you sure you want to ${action} this outcome?`)) {
+                return;
+            }
+
+            // Disable button and show loading state
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+            const formData = new FormData();
+            formData.append('metric_id', metricId);
+            formData.append('action', action);
+
+            try {
+                const response = await fetch('<?php echo APP_URL; ?>/app/views/admin/outcomes/handle_outcome_status.php', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json' // Ensure server knows we expect JSON
+                    }
+                });
+
+                if (!response.ok) {
+                    // Attempt to get error message from server if JSON, otherwise use status text
+                    let errorMsg = `HTTP error ${response.status}: ${response.statusText}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMsg = errorData.message || errorMsg;
+                    } catch (e) {
+                        // Failed to parse JSON, stick with HTTP status
+                    }
+                    throw new Error(errorMsg);
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    updateButtonAppearance(button, data.is_draft);
+                    alert(data.message); // Or use a more sophisticated notification
+                } else {
+                    throw new Error(data.message || 'An unknown error occurred.');
+                }
+
+            } catch (error) {
+                console.error('Error handling outcome action:', error);
+                alert('Error: ' + error.message);
+                // Restore button to its original state on error
+                button.disabled = false;
+                button.innerHTML = originalButtonText;
+                button.title = originalButtonTitle;
+            }
         }
     });
 </script>

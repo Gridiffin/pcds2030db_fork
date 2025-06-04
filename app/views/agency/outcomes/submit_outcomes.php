@@ -1,6 +1,6 @@
 <?php
 /**
- * Submit Metrics
+ * Submit Outcomes
  * 
  * Interface for agency users to submit sector outcomes.
  */
@@ -44,9 +44,7 @@ if (!is_array($draft_outcomes)) {
     $draft_outcomes = [];
 }
 
-$additionalScripts = [
-    APP_URL . '/assets/js/agency/metric_submission.js'
-];
+$additionalScripts = [];
 
 // Include header
 require_once '../../layouts/header.php';
@@ -120,7 +118,7 @@ require_once PROJECT_ROOT_PATH . 'lib/dashboard_header.php';
             <h5 class="card-title m-0">
                 <i class="fas fa-chart-bar me-2"></i>Submitted Outcomes
             </h5>
-            <span class="badge bg-light text-primary"><?= count(array_unique(array_column($outcomes, 'metric_id'))) ?> Outcomes</span>
+            <span class="badge bg-light text-primary"><?= count($outcomes) ?> Outcomes</span>
         </div>
         <div class="card-body">
             <?php if (empty($outcomes)): ?>                <div class="alert alert-info mt-3">
@@ -139,15 +137,16 @@ require_once PROJECT_ROOT_PATH . 'lib/dashboard_header.php';
                         </thead>
                         <tbody>
                             <?php
-                            $unique_metrics = [];
-                            foreach ($outcomes as $metric):
-                                if (!in_array($metric['metric_id'], $unique_metrics)):
-                                    $unique_metrics[] = $metric['metric_id'];
+                            // Fix: Use 'metric_id' as the unique key for outcomes and drafts
+                            $unique_outcomes = [];
+                            foreach ($outcomes as $outcome):
+                                if (!in_array($outcome['metric_id'], $unique_outcomes)):
+                                    $unique_outcomes[] = $outcome['metric_id'];
                             ?>
                                 <tr>
-                                    <td><strong><?= htmlspecialchars($metric['table_name']) ?></strong></td>
+                                    <td><strong><?= htmlspecialchars($outcome['table_name']) ?></strong></td>
                                     <td class="text-center">
-                                        <a href="view_metric.php?metric_id=<?= $metric['metric_id'] ?>" class="btn btn-sm btn-outline-primary">
+                                        <a href="view_outcome.php?outcome_id=<?= $outcome['metric_id'] ?>" class="btn btn-sm btn-outline-primary">
                                             <i class="fas fa-eye me-1"></i> View Details
                                         </a>
                                     </td>
@@ -170,7 +169,7 @@ require_once PROJECT_ROOT_PATH . 'lib/dashboard_header.php';
                 <h5 class="card-title m-0">
                     <i class="fas fa-edit me-2"></i>Outcomes Drafts
                 </h5>
-                <span class="badge bg-light text-primary"><?= count(array_unique(array_column($draft_outcomes, 'metric_id'))) ?> Drafts</span>
+                <span class="badge bg-light text-primary"><?= count($draft_outcomes) ?> Drafts</span>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -183,21 +182,22 @@ require_once PROJECT_ROOT_PATH . 'lib/dashboard_header.php';
                         </thead>
                         <tbody>
                             <?php
-                            $unique_metrics = [];
-                            foreach ($draft_outcomes as $metric) {
-                                if (!in_array($metric['metric_id'], $unique_metrics)) {
-                                    $unique_metrics[] = $metric['metric_id'];
+                            $unique_drafts = [];
+                            foreach ($draft_outcomes as $draft) {
+                                if (!in_array($draft['metric_id'], $unique_drafts)) {
+                                    $unique_drafts[] = $draft['metric_id'];
                             ?>
                                 <tr>
-                                    <td><strong><?= htmlspecialchars($metric['table_name']) ?></strong></td>
+                                    <td><strong><?= htmlspecialchars($draft['table_name']) ?></strong></td>
                                     <td>
                                         <div class="d-flex justify-content-center gap-2">
-                                            <a href="<?php echo APP_URL; ?>/app/views/agency/edit_outcomes.php?metric_id=<?= $metric['metric_id'] ?>" class="btn btn-sm btn-outline-primary">
+                                            <a href="<?php echo APP_URL; ?>/app/views/agency/outcomes/edit_outcomes.php?outcome_id=<?= $draft['metric_id'] ?>" class="btn btn-sm btn-outline-primary">
                                                 <i class="fas fa-edit me-1"></i> Edit
                                             </a>
-                                            <a href="submit_draft_metric.php?metric_id=<?= $metric['metric_id'] ?>" class="btn btn-sm btn-outline-success" onclick="return confirm('Are you sure you want to submit this metric draft?');">
+                                            <a href="submit_draft_outcome.php?outcome_id=<?= $draft['metric_id'] ?>" class="btn btn-sm btn-outline-success" onclick="return confirm('Are you sure you want to submit this draft outcome?');">
                                                 <i class="fas fa-check me-1"></i> Submit
-                                            </a>                                            <a href="<?php echo APP_URL; ?>/app/views/agency/delete_metric.php?metric_id=<?= $metric['metric_id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this outcome draft?');">
+                                            </a>
+                                            <a href="<?php echo APP_URL; ?>/app/views/admin/outcomes/delete_outcome.php?outcome_id=<?= $draft['metric_id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this outcome draft?');">
                                                 <i class="fas fa-trash-alt me-1"></i> Delete
                                             </a>
                                         </div>

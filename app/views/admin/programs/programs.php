@@ -236,14 +236,8 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                                 <td><?php echo htmlspecialchars($program['agency_name']); ?></td>
                                 <td class="text-center">
                                     <?php 
-                                    // Get rating from content_json if available, otherwise default to not-started
-                                    $rating = 'not-started';
-                                    if (!empty($program['content_json'])) {
-                                        $content = json_decode($program['content_json'], true);
-                                        if (isset($content['rating'])) {
-                                            $rating = $content['rating'];
-                                        }
-                                    }
+                                    // Get rating from latest submission rating field, otherwise default to not-started
+                                    $rating = $program['rating'] ?? 'not-started';
                                     echo get_rating_badge($rating);
                                     ?>
                                 </td>

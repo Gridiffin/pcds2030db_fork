@@ -1,4 +1,4 @@
-<?php
+i<?php
 /**
  * Outcomes Management Functions
  * 
@@ -85,17 +85,23 @@ function get_outcome_history($metric_id) {
  * Get all outcomes with JSON-based storage
  *
  * @param int|null $period_id Optional period ID to filter outcomes by
+ * @param bool $include_drafts Whether to include draft (unsubmitted) outcomes
  * @return array List of outcomes
  */
-function get_all_outcomes_data($period_id = null) {
+function get_all_outcomes_data($period_id = null, $include_drafts = true) {
     global $conn;
     
     $query = "SELECT sod.metric_id, sod.sector_id, sod.period_id, sod.table_name, s.sector_name, 
               rp.year, rp.quarter, sod.created_at, sod.updated_at 
               FROM sector_outcomes_data sod
               LEFT JOIN sectors s ON sod.sector_id = s.sector_id
-              LEFT JOIN reporting_periods rp ON sod.period_id = rp.period_id
-              WHERE sod.is_draft = 0";
+              LEFT JOIN reporting_periods rp ON sod.period_id = rp.period_id";
+    
+    if (!$include_drafts) {
+        $query .= " WHERE sod.is_draft = 0";
+    } else {
+        $query .= " WHERE 1=1";
+    }
     
     // Add period filter if provided
     if ($period_id) {
@@ -127,7 +133,7 @@ function get_outcome_data($metric_id) {
     
     // Query the sector_outcomes_data table with proper JOINs for sector and reporting period information
     $query = "SELECT sod.*, s.sector_name, rp.year, rp.quarter, rp.status as period_status,
-              u.username as submitted_by_username
+              COALESCE(u.username, 'System') as submitted_by_username
               FROM sector_outcomes_data sod
               LEFT JOIN sectors s ON sod.sector_id = s.sector_id
               LEFT JOIN reporting_periods rp ON sod.period_id = rp.period_id

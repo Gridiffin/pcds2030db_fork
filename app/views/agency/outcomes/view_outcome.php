@@ -10,12 +10,12 @@ if (!defined('PROJECT_ROOT_PATH')) {
     define('PROJECT_ROOT_PATH', rtrim(dirname(dirname(dirname(__DIR__))), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
 }
 
-// Include necessary files
-require_once PROJECT_ROOT_PATH . 'app/config/config.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/agencies/index.php';
+// Fix require_once paths for config and libraries
+require_once dirname(__DIR__, 3) . '/config/config.php';
+require_once dirname(__DIR__, 3) . '/lib/db_connect.php';
+require_once dirname(__DIR__, 3) . '/lib/session.php';
+require_once dirname(__DIR__, 3) . '/lib/functions.php';
+require_once dirname(__DIR__, 3) . '/lib/agencies/index.php';
 
 // Verify user is an agency
 if (!is_agency()) {
@@ -32,19 +32,19 @@ if (!isset($_GET['outcome_id']) || !is_numeric($_GET['outcome_id'])) {
     exit;
 }
 
-$metric_id = (int) $_GET['metric_id'];
+$outcome_id = (int) $_GET['outcome_id'];
 
-// Get metric data using JSON-based storage
-$query = "SELECT data_json, table_name, created_at, updated_at FROM sector_metrics_data 
-          WHERE metric_id = ? AND sector_id = ? AND is_draft = 0 LIMIT 1";
+// Get outcome data using JSON-based storage
+$query = "SELECT data_json, table_name, created_at, updated_at FROM sector_outcomes_data 
+          WHERE id = ? AND sector_id = ? AND is_draft = 0 LIMIT 1";
 $stmt = $conn->prepare($query);
-$stmt->bind_param("ii", $metric_id, $sector_id);
+$stmt->bind_param("ii", $outcome_id, $sector_id);
 $stmt->execute();
 $result = $stmt->get_result();
 
 if ($result->num_rows === 0) {
-    $_SESSION['error_message'] = 'Metric not found or you do not have permission to view it.';
-    header('Location: submit_metrics.php');
+    $_SESSION['error_message'] = 'Outcome not found or you do not have permission to view it.';
+    header('Location: submit_outcomes.php');
     exit;
 }
 
@@ -52,10 +52,10 @@ $row = $result->fetch_assoc();
 $table_name = $row['table_name'];
 $created_at = new DateTime($row['created_at']);
 $updated_at = new DateTime($row['updated_at']);
-$metrics_data = json_decode($row['data_json'], true);
+$outcome_data = json_decode($row['data_json'], true);
 
 // Get column names
-$metric_names = $metrics_data['columns'] ?? [];
+$metric_names = $outcome_data['columns'] ?? [];
 
 // Organize data for display
 $month_names = ['January', 'February', 'March', 'April', 'May', 'June', 
@@ -66,8 +66,8 @@ foreach ($month_names as $month_name) {
     $month_data = ['month_name' => $month_name, 'metrics' => []];
     
     // Add data for each metric in this month
-    if (isset($metrics_data['data'][$month_name])) {
-        $month_data['metrics'] = $metrics_data['data'][$month_name];
+    if (isset($outcome_data['data'][$month_name])) {
+        $month_data['metrics'] = $outcome_data['data'][$month_name];
     }
     
     $table_data[] = $month_data;
@@ -89,7 +89,7 @@ $title = "View Outcome Details";
 $subtitle = "Review your submitted outcomes data";
 $headerStyle = 'light'; // Use light (white) style for inner pages
 $actions = [
-    [        'url' => 'submit_metrics.php',
+    [        'url' => 'submit_outcomes.php',
         'text' => 'Back to Outcomes',
         'icon' => 'fa-arrow-left',
         'class' => 'btn-outline-primary'
@@ -137,7 +137,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                     <div class="row mb-4">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <strong>Outcomes ID:</strong> <?= $metric_id ?>
+                                <strong>Outcomes ID:</strong> <?= $outcome_id ?>
                             </div>
                             <div class="mb-3">
                                 <strong>Submitted:</strong> <?= $created_at->format('F j, Y g:i A') ?>
@@ -261,7 +261,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                 <small>
                     <i class="fas fa-info-circle me-1"></i> This is a view-only page. To make changes, you need to create a new draft.
                 </small>
-                <a href="<?php echo APP_URL; ?>/app/views/agency/edit_metric.php?metric_id=<?= $metric_id ?>" class="btn btn-primary btn-sm">
+                <a href="<?php echo APP_URL; ?>/app/views/agency/edit_outcomes.php?outcome_id=<?= $outcome_id ?>" class="btn btn-primary btn-sm">
                     <i class="fas fa-pencil-alt me-1"></i> Create New Draft
                 </a>
             </div>
@@ -277,7 +277,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
     document.addEventListener('DOMContentLoaded', function() {
         // Initialize chart with data from PHP
         initMetricsChart(
-            <?= json_encode($metrics_data) ?>, 
+            <?= json_encode($outcome_data) ?>, 
             <?= json_encode($table_data) ?>, 
             <?= json_encode($month_names) ?>,
             "<?= addslashes($table_name) ?>"

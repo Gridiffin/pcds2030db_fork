@@ -23,18 +23,19 @@ $message = '';
 $message_type = '';
 
 $sector_id = $_SESSION['sector_id'] ?? 0; // Use agency user's sector_id
-$metric_id = isset($_GET['metric_id']) ? intval($_GET['metric_id']) : 0;
+// Use outcome_id instead of metric_id
+$outcome_id = isset($_GET['outcome_id']) ? intval($_GET['outcome_id']) : 0;
 
-if ($metric_id === 0) {
-    $_SESSION['error_message'] = 'Invalid metric ID.';
+if ($outcome_id === 0) {
+    $_SESSION['error_message'] = 'Invalid outcome ID.';
     header('Location: submit_outcomes.php');
     exit;
 }
 
 // Load existing outcome data
-$query = "SELECT table_name, data_json FROM sector_outcomes_data WHERE metric_id = ? AND sector_id = ? AND is_draft = 1 LIMIT 1";
+$query = "SELECT table_name, data_json FROM sector_outcomes_data WHERE id = ? AND sector_id = ? AND is_draft = 1 LIMIT 1";
 $stmt = $conn->prepare($query);
-$stmt->bind_param("ii", $metric_id, $sector_id);
+$stmt->bind_param("ii", $outcome_id, $sector_id);
 $stmt->execute();
 $result = $stmt->get_result();
 
@@ -71,10 +72,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $message_type = 'danger';
         } else {
             // Update existing record in sector_outcomes_data
-            $update_query = "UPDATE sector_outcomes_data SET table_name = ?, data_json = ?, is_draft = ? WHERE metric_id = ? AND sector_id = ?";
+            $update_query = "UPDATE sector_outcomes_data SET table_name = ?, data_json = ?, is_draft = ? WHERE id = ? AND sector_id = ?";
             $stmt_update = $conn->prepare($update_query);
             $data_json_str = json_encode($post_data_array);
-            $stmt_update->bind_param("ssiii", $post_table_name, $data_json_str, $is_draft, $metric_id, $sector_id);
+            $stmt_update->bind_param("ssiii", $post_table_name, $data_json_str, $is_draft, $outcome_id, $sector_id);
             if ($stmt_update->execute()) {
                 // Redirect to submit_outcomes.php after successful save or save draft
                 header('Location: submit_outcomes.php');

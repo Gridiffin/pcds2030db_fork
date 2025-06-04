@@ -276,26 +276,30 @@ const hasActivePeriod = <?php echo $hasActivePeriod ? 'true' : 'false'; ?>;
                                                             <td><?php echo htmlspecialchars($program['agency_name']); ?></td>
                                                             <td>
                                                                 <?php 
-                                                                $status = $program['status'] ?? 'not-started';
+                                                                $status = isset($program['status']) ? $program['status'] : 'not-started';
                                                                 $status_class = 'secondary';
                                                                 
-                                                                switch($status) {
-                                                                    case 'on-track':
-                                                                    case 'on-track-yearly':
-                                                                        $status_class = 'warning';
-                                                                        break;
-                                                                    case 'delayed':
-                                                                    case 'severe-delay':
-                                                                        $status_class = 'danger';
-                                                                        break;
-                                                                    case 'completed':
-                                                                    case 'target-achieved':
-                                                                        $status_class = 'success';
-                                                                        break;
+                                                                if ($status) {
+                                                                    switch($status) {
+                                                                        case 'on-track':
+                                                                        case 'on-track-yearly':
+                                                                            $status_class = 'warning';
+                                                                            break;
+                                                                        case 'delayed':
+                                                                        case 'severe-delay':
+                                                                            $status_class = 'danger';
+                                                                            break;
+                                                                        case 'completed':
+                                                                        case 'target-achieved':
+                                                                            $status_class = 'success';
+                                                                            break;
+                                                                    }
                                                                 }
+                                                                
+                                                                $display_status = $status ? ucfirst(str_replace('-', ' ', $status)) : 'Not Started';
                                                                 ?>
                                                                 <span class="badge bg-<?php echo $status_class; ?>">
-                                                                    <?php echo ucfirst(str_replace('-', ' ', $status)); ?>
+                                                                    <?php echo $display_status; ?>
                                                                 </span>
                                                             </td>
                                                         </tr>
