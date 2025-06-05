@@ -28,7 +28,7 @@ if (!isset($_GET['outcome_id']) || !is_numeric($_GET['outcome_id'])) {
 $outcome_id = (int) $_GET['outcome_id'];
 
 // Update the draft outcome to submitted
-$query = "UPDATE sector_outcomes_data SET is_draft = 0 WHERE id = ? AND sector_id = ? AND is_draft = 1";
+$query = "UPDATE sector_outcomes_data SET is_draft = 0 WHERE metric_id = ? AND sector_id = ? AND is_draft = 1";
 $stmt = $conn->prepare($query);
 $stmt->bind_param("ii", $outcome_id, $sector_id);
 if ($stmt->execute()) {

@@ -113,13 +113,14 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
             <div class="col-md-3">
                 <label for="rating" class="form-label">Rating</label>
                 <div class="filter-control-wrapper">
-                    <select class="form-select" id="rating" name="rating">
-                        <option value="">All Ratings</option>
-                        <option value="target-achieved" <?php echo ($filters['status'] === 'target-achieved') ? 'selected' : ''; ?>>Target Achieved</option>
-                        <option value="on-track-yearly" <?php echo ($filters['status'] === 'on-track-yearly') ? 'selected' : ''; ?>>On Track</option>
-                        <option value="severe-delay" <?php echo ($filters['status'] === 'severe-delay') ? 'selected' : ''; ?>>Severe Delay</option>
-                        <option value="not-started" <?php echo ($filters['status'] === 'not-started') ? 'selected' : ''; ?>>Not Started</option>
-                    </select>
+                <select class="form-select" id="rating" name="rating">
+                    <option value="">All Ratings</option>
+                    <option value="target-achieved" <?php echo ($filters['status'] === 'target-achieved') ? 'selected' : ''; ?>>Monthly Target Achieved</option>
+                    <option value="on-track-yearly" <?php echo ($filters['status'] === 'on-track-yearly') ? 'selected' : ''; ?>>On Track for Year</option>
+                    <option value="severe-delay" <?php echo ($filters['status'] === 'severe-delay') ? 'selected' : ''; ?>>Severe Delays</option>
+                    <option value="not-started" <?php echo ($filters['status'] === 'not-started') ? 'selected' : ''; ?>>Not Started</option>
+                </select>
+
                 </div>
             </div>
             
@@ -236,12 +237,24 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                                 <td><?php echo htmlspecialchars($program['agency_name']); ?></td>
                                 <td class="text-center">
                                     <?php 
-                                    // Get rating from latest submission rating field, otherwise default to not-started
-                                    $rating = $program['rating'] ?? 'not-started';
-                                    echo get_rating_badge($rating);
+                                    $rating_map = [
+                                        'on-track' => ['label' => 'On Track', 'class' => 'warning'],
+                                        'on-track-yearly' => ['label' => 'On Track for Year', 'class' => 'warning'],
+                                        'target-achieved' => ['label' => 'Monthly Target Achieved', 'class' => 'success'],
+                                        'delayed' => ['label' => 'Delayed', 'class' => 'danger'],
+                                        'severe-delay' => ['label' => 'Severe Delays', 'class' => 'danger'],
+                                        'completed' => ['label' => 'Completed', 'class' => 'primary'],
+                                        'not-started' => ['label' => 'Not Started', 'class' => 'secondary']
+                                    ];
+                                    $current_rating = isset($program['rating']) ? convert_legacy_rating($program['rating']) : 'not-started';
+                                    if (!isset($rating_map[$current_rating])) {
+                                        $current_rating = 'not-started';
+                                    }
+                                    echo '<span class="badge bg-' . $rating_map[$current_rating]['class'] . '">' . $rating_map[$current_rating]['label'] . '</span>';
                                     ?>
                                 </td>
                                 <td class="text-center">
+
                                     <?php if (!empty($program['updated_at']) && $program['updated_at'] !== '0000-00-00 00:00:00'): ?>
                                         <small><?php echo date('M j, Y g:i A', strtotime($program['updated_at'])); ?></small>
                                     <?php elseif (!empty($program['submission_date']) && $program['submission_date'] !== '0000-00-00 00:00:00'): ?>
@@ -337,6 +350,3 @@ function confirmDeleteProgram(programId, periodId) {
 // Include footer
 require_once '../../layouts/footer.php';
 ?>
-
-
-

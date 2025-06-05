@@ -36,7 +36,7 @@ $outcome_id = (int) $_GET['outcome_id'];
 
 // Get outcome data using JSON-based storage
 $query = "SELECT data_json, table_name, created_at, updated_at FROM sector_outcomes_data 
-          WHERE id = ? AND sector_id = ? AND is_draft = 0 LIMIT 1";
+          WHERE metric_id = ? AND sector_id = ? AND is_draft = 0 LIMIT 1";
 $stmt = $conn->prepare($query);
 $stmt->bind_param("ii", $outcome_id, $sector_id);
 $stmt->execute();
@@ -79,10 +79,10 @@ $additionalStyles = [
 ];
 
 // Include header
-require_once '../layouts/header.php';
+require_once '../../layouts/header.php';
 
 // Include agency navigation
-require_once '../layouts/agency_nav.php';
+require_once '../../layouts/agency_nav.php';
 
 // Set up the page header variables for dashboard_header.php
 $title = "View Outcome Details";
@@ -97,7 +97,7 @@ $actions = [
 ];
 
 // Include the dashboard header component
-require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
+require_once PROJECT_ROOT_PATH . 'lib/dashboard_header.php';
 ?>
 
 <div class="container-fluid px-4 py-4">
@@ -287,7 +287,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
 
 <?php
 // Include footer
-require_once '../layouts/footer.php';
+require_once '../../layouts/footer.php';
 ?>
 
 

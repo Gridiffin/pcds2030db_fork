@@ -33,7 +33,7 @@ if ($outcome_id === 0) {
 }
 
 // Load existing outcome data
-$query = "SELECT table_name, data_json FROM sector_outcomes_data WHERE id = ? AND sector_id = ? AND is_draft = 1 LIMIT 1";
+$query = "SELECT table_name, data_json FROM sector_outcomes_data WHERE metric_id = ? AND sector_id = ? AND is_draft = 1 LIMIT 1";
 $stmt = $conn->prepare($query);
 $stmt->bind_param("ii", $outcome_id, $sector_id);
 $stmt->execute();
@@ -70,9 +70,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($post_data_array === null) {
             $message = 'Invalid JSON data.';
             $message_type = 'danger';
-        } else {
-            // Update existing record in sector_outcomes_data
-            $update_query = "UPDATE sector_outcomes_data SET table_name = ?, data_json = ?, is_draft = ? WHERE id = ? AND sector_id = ?";
+        } else {            // Update existing record in sector_outcomes_data
+            $update_query = "UPDATE sector_outcomes_data SET table_name = ?, data_json = ?, is_draft = ? WHERE metric_id = ? AND sector_id = ?";
             $stmt_update = $conn->prepare($update_query);
             $data_json_str = json_encode($post_data_array);
             $stmt_update->bind_param("ssiii", $post_table_name, $data_json_str, $is_draft, $outcome_id, $sector_id);
