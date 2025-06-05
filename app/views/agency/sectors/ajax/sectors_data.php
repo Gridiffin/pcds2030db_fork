@@ -12,9 +12,16 @@ require_once __DIR__ . '/../../../../lib/session.php';
 require_once __DIR__ . '/../../../../lib/functions.php';
 require_once __DIR__ . '/../../../../lib/agencies/index.php';
 require_once __DIR__ . '/../../../../lib/rating_helpers.php';
+require_once __DIR__ . '/../../../../lib/audit_log.php';
 
 // Verify user is an agency
 if (!is_agency()) {
+    // Log unauthorized agency sectors access attempt
+    log_audit_action(
+        'agency_sectors_access_denied',
+        'Unauthorized attempt to access agency sectors data',
+        'failure'
+    );
     header('HTTP/1.1 403 Forbidden');
     echo json_encode(['error' => 'Permission denied']);
     exit;

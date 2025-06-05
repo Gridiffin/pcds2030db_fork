@@ -12,6 +12,7 @@ require_once '../lib/db_connect.php';
 require_once '../lib/session.php';
 require_once '../lib/functions.php';
 require_once '../lib/admins/core.php';  // Added this file which contains is_admin()
+require_once '../lib/audit_log.php';
 
 // Make sure no output has been sent before we set headers
 if (ob_get_length()) ob_clean();
@@ -52,19 +53,23 @@ if ($reportId <= 0) {
 $conn->begin_transaction();
 
 try {
-    // Get the file path before deletion
-    $query = "SELECT pptx_path FROM reports WHERE report_id = ?";
+    // Get the report details before deletion for audit logging
+    $query = "SELECT report_id, pptx_path, agency_name, period_name, generated_at FROM reports WHERE report_id = ?";
     $stmt = $conn->prepare($query);
     $stmt->bind_param('i', $reportId);
     $stmt->execute();
     $result = $stmt->get_result();
     
     if ($result->num_rows === 0) {
+        // Log failed deletion attempt - report not found
+        log_audit_action('delete_report', "Attempted to delete non-existent report (ID: {$reportId})", 'failure');
+        
         throw new Exception('Report not found');
     }
     
     $report = $result->fetch_assoc();
     $filePath = '../reports/' . $report['pptx_path'];
+    $report_info = "{$report['agency_name']} - {$report['period_name']} (Generated: {$report['generated_at']})";
     
     // Delete from database
     $deleteQuery = "DELETE FROM reports WHERE report_id = ?";
@@ -73,17 +78,30 @@ try {
     $deleteStmt->execute();
     
     if ($deleteStmt->affected_rows === 0) {
+        // Log failed database deletion
+        log_audit_action('delete_report', "Failed to delete report from database: {$report_info} (ID: {$reportId})", 'failure');
+        
         throw new Exception('Failed to delete report from database');
     }
+    
+    // Track file deletion status for audit logging
+    $file_deleted = true;
+    $file_error = '';
     
     // Delete the physical file
     if (file_exists($filePath) && !unlink($filePath)) {
         // If file deletion fails, log but don't throw exception
+        $file_deleted = false;
+        $file_error = " (Warning: Physical file deletion failed)";
         error_log("Warning: Failed to delete file: $filePath");
     }
     
     // Commit transaction
     $conn->commit();
+    
+    // Log successful report deletion
+    $audit_details = "Deleted report: {$report_info} (ID: {$reportId}, File: {$report['pptx_path']}){$file_error}";
+    log_audit_action('delete_report', $audit_details, 'success');
     
     echo json_encode([
         'success' => true,
@@ -93,6 +111,9 @@ try {
 } catch (Exception $e) {
     // Rollback transaction
     $conn->rollback();
+    
+    // Log failed deletion attempt
+    log_audit_action('delete_report', "Failed to delete report (ID: {$reportId}). Error: " . $e->getMessage(), 'failure');
     
     echo json_encode([
         'success' => false,

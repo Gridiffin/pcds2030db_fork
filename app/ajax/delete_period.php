@@ -56,7 +56,8 @@ $required_libs = [
     ROOT_PATH . 'app/lib/session.php',       // For session management (is_logged_in)
     ROOT_PATH . 'app/lib/functions.php',     // For general functions (is_logged_in, potentially is_admin if not in admin_functions)
     ROOT_PATH . 'app/lib/admin_functions.php', // For admin-specific functions (is_admin)
-    ROOT_PATH . 'app/lib/db_connect.php'     // For database connection ($conn)
+    ROOT_PATH . 'app/lib/db_connect.php',    // For database connection ($conn)
+    ROOT_PATH . 'app/lib/audit_log.php'      // For audit logging
 ];
 
 foreach ($required_libs as $lib_path) {
@@ -89,10 +90,8 @@ try {
         send_json_response(false, 'Invalid or missing period ID.');
     }
 
-    $periodId = intval($_POST['period_id']);
-
-    // Check if the period exists using mysqli
-    $stmt = $conn->prepare("SELECT period_id FROM reporting_periods WHERE period_id = ?");
+    $periodId = intval($_POST['period_id']);    // Check if the period exists using mysqli and get period details for audit logging
+    $stmt = $conn->prepare("SELECT period_id, quarter, year, status FROM reporting_periods WHERE period_id = ?");
     if (!$stmt) {
         error_log("MySQLi prepare error (check period): " . $conn->error);
         send_json_response(false, 'Database query error (check period).');
@@ -103,8 +102,16 @@ try {
     
     if ($result->num_rows === 0) {
         $stmt->close();
+        
+        // Log failed deletion attempt - period not found
+        log_audit_action('delete_period', "Attempted to delete non-existent period (ID: {$periodId})", 'failure');
+        
         send_json_response(false, 'Period not found.');
     }
+    
+    // Store period details for audit logging
+    $period_data = $result->fetch_assoc();
+    $period_name = "Q{$period_data['quarter']} {$period_data['year']}";
     $stmt->close();
 
     // TODO: Add dependency check here if necessary (e.g., check for submissions linked to this period)
@@ -127,20 +134,41 @@ try {
     $deleteStmt->bind_param("i", $periodId);
     $deleteSuccess = $deleteStmt->execute();
     $affected_rows = $deleteStmt->affected_rows;
-    $deleteStmt->close();
-
-    if ($deleteSuccess && $affected_rows > 0) {
+    $deleteStmt->close();    if ($deleteSuccess && $affected_rows > 0) {
+        // Log successful period deletion
+        log_audit_action(
+            'delete_period',
+            "Deleted reporting period: {$period_name} (ID: {$periodId}, Status: {$period_data['status']})",
+            'success',
+            $_SESSION['user_id'] ?? null
+        ); // Added user_id for better traceability
+        
         send_json_response(true, 'Period deleted successfully.');
     } else if ($deleteSuccess && $affected_rows === 0) {
         // This means the query ran but didn't delete anything (e.g., already deleted)
+        log_audit_action('delete_period', "Attempted to delete already deleted period: {$period_name} (ID: {$periodId})", 'failure');
+        
         send_json_response(false, 'Period not found or already deleted.');
     } else {
         error_log("Failed to delete period ID: {$periodId}. MySQLi execute status: " . ($deleteSuccess ? 'true' : 'false') . ". Affected rows: " . $affected_rows . " Error: " . $conn->error);
+        
+        // Log failed deletion attempt
+        log_audit_action(
+            'delete_period',
+            "Failed to delete period: {$period_name} (ID: {$periodId}). Database error: " . $conn->error,
+            'failure',
+            $_SESSION['user_id'] ?? null
+        ); // Added user_id for better traceability
+        
         send_json_response(false, 'Failed to delete period. An error occurred.');
     }
 
 } catch (Exception $e) { // Catch any other exceptions
     error_log("General Error in delete_period.php: " . $e->getMessage() . "\nStack trace:\n" . $e->getTraceAsString());
+    
+    // Log general error
+    log_audit_action('delete_period', "Exception during period deletion (ID: {$periodId}). Error: " . $e->getMessage(), 'failure');
+    
     send_json_response(false, 'An unexpected error occurred: ' . $e->getMessage());
 }
 

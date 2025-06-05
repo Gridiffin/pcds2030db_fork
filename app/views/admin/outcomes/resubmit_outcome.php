@@ -10,6 +10,7 @@ require_once ROOT_PATH . 'app/lib/db_connect.php';
 require_once ROOT_PATH . 'app/lib/session.php';
 require_once ROOT_PATH . 'app/lib/functions.php';
 require_once ROOT_PATH . 'app/lib/admins/outcomes.php';
+require_once ROOT_PATH . 'app/lib/audit_log.php';
 
 // Verify user is an admin
 if (!is_admin()) {
@@ -63,16 +64,31 @@ try {
     )) {
         throw new Exception("Failed to record outcome history");
     }
-    
-    // Commit transaction
+      // Commit transaction
     $conn->commit();
     
     $_SESSION['success_message'] = "Outcome successfully resubmitted.";
+    
+    // Log successful outcome resubmit
+    log_audit_action(
+        'admin_outcome_resubmitted',
+        "Admin resubmitted outcome '{$outcome['table_name']}' (Metric ID: {$metric_id}) for sector {$outcome['sector_id']}",
+        'success',
+        $_SESSION['user_id']
+    );
     
 } catch (Exception $e) {
     // Rollback transaction on error
     $conn->rollback();
     $_SESSION['error_message'] = "Error resubmitting outcome: " . $e->getMessage();
+    
+    // Log outcome resubmit failure
+    log_audit_action(
+        'admin_outcome_resubmit_failed',
+        "Admin failed to resubmit outcome (Metric ID: {$metric_id}): " . $e->getMessage(),
+        'failure',
+        $_SESSION['user_id']
+    );
 }
 
 // Redirect back to the manage outcomes page

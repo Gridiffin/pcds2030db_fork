@@ -5,11 +5,11 @@
 
 // Include necessary files
 require_once '../../../config/config.php';
-require_once '../../../includes/db_connect.php';
-require_once '../../../includes/session.php';
-require_once '../../../includes/functions.php';
-require_once '../../../includes/admin_functions.php';
-require_once '../../../includes/rating_helpers.php';
+require_once '../../../lib/db_connect.php';
+require_once '../../../lib/session.php';
+require_once '../../../lib/functions.php';
+require_once '../../../lib/admin_functions.php';
+require_once '../../../lib/rating_helpers.php';
 
 // Verify user is admin
 if (!is_admin()) {

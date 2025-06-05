@@ -16,6 +16,7 @@ require_once PROJECT_ROOT_PATH . 'lib/db_connect.php';
 require_once PROJECT_ROOT_PATH . 'lib/session.php';
 require_once PROJECT_ROOT_PATH . 'lib/functions.php';
 require_once PROJECT_ROOT_PATH . 'lib/admins/index.php';
+require_once PROJECT_ROOT_PATH . 'lib/audit_log.php';
 
 // Verify user is admin
 if (!is_admin()) {
@@ -53,6 +54,9 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 if ($result->num_rows === 0) {
+    // Log failed deletion attempt - program not found
+    log_audit_action('delete_program_failed', "Program ID: $program_id | Error: Program not found", 'failure', $_SESSION['user_id']);
+    
     $_SESSION['message'] = "Program not found.";
     $_SESSION['message_type'] = "danger";
     header('Location: programs.php');
@@ -94,9 +98,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     throw new Exception("Failed to delete program. The program still exists.");
                 }
             }
-            
-            // Commit transaction
+              // Commit transaction
             $conn->commit();
+            
+            // Log successful deletion
+            log_audit_action('delete_program', "Program Name: {$program['program_name']} | Program ID: $program_id | Owner: {$program['agency_name']}", 'success', $_SESSION['user_id']);
             
             // Success message
             $_SESSION['message'] = "Program '{$program['program_name']}' successfully deleted.";
@@ -112,10 +118,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             header('Location: ' . $redirect_url);
             exit;
-            
-        } catch (Exception $e) {
+              } catch (Exception $e) {
             // Roll back transaction on error
             $conn->rollback();
+            
+            // Log failed deletion attempt
+            log_audit_action('delete_program_failed', "Program Name: {$program['program_name']} | Program ID: $program_id | Error: " . $e->getMessage(), 'failure', $_SESSION['user_id']);
+            
             $_SESSION['message'] = 'Error: ' . $e->getMessage() . '<br>Failed to delete the program. Please try again or contact support.';
             $_SESSION['message_type'] = "danger";
             // Redirect back to programs page or show error on current page

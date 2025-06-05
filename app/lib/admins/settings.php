@@ -6,6 +6,7 @@
  */
 
 require_once dirname(__DIR__) . '/utilities.php';
+require_once dirname(__DIR__) . '/audit_log.php';
 require_once 'core.php';
 
 /**
@@ -19,6 +20,12 @@ require_once 'core.php';
 function update_multi_sector_setting($enabled) {
     // Only admin can update system settings
     if (!is_admin()) {
+        // Log unauthorized settings access attempt
+        log_audit_action(
+            'settings_update_denied',
+            'Unauthorized attempt to update multi-sector setting',
+            'failure'
+        );
         return ['error' => 'Permission denied'];
     }
     
@@ -54,27 +61,25 @@ function update_multi_sector_setting($enabled) {
         // preg_replace error
         return ['error' => 'Error updating config file'];
     }
-    
-    // Write the updated content back to the file
+      // Write the updated content back to the file
     $result = file_put_contents($config_file, $updated_content);
     
     if ($result === false) {
+        // Log failed setting change
+        log_audit_action(
+            'settings_update_failed',
+            'Failed to write multi-sector setting to config file',
+            'failure'
+        );
         return ['error' => 'Could not write to config file'];
     }
     
-    // Log the setting change
-    $username = $_SESSION['username'] ?? 'Unknown';
-    $action = 'Updated Multi-Sector setting to: ' . ($enabled ? 'Enabled' : 'Disabled');
-    $log_query = "INSERT INTO audit_log (user_id, username, action, action_date) VALUES (?, ?, ?, NOW())";
-    
-    global $conn;
-    $stmt = $conn->prepare($log_query);
-    
-    if ($stmt) {
-        $user_id = $_SESSION['user_id'] ?? 0;
-        $stmt->bind_param("iss", $user_id, $username, $action);
-        $stmt->execute();
-    }
+    // Log successful setting change
+    log_audit_action(
+        'settings_update',
+        'Multi-sector setting updated to: ' . ($enabled ? 'Enabled' : 'Disabled'),
+        'success'
+    );
     
     return [
         'success' => true,
@@ -102,6 +107,12 @@ function get_multi_sector_setting() {
 function update_outcome_creation_setting($enabled) {
     // Only admin can update system settings
     if (!is_admin()) {
+        // Log unauthorized settings access attempt
+        log_audit_action(
+            'settings_update_denied',
+            'Unauthorized attempt to update outcome creation setting',
+            'failure'
+        );
         return ['error' => 'Permission denied'];
     }
     
@@ -137,27 +148,25 @@ function update_outcome_creation_setting($enabled) {
         // preg_replace error
         return ['error' => 'Error updating config file'];
     }
-    
-    // Write the updated content back to the file
+      // Write the updated content back to the file
     $result = file_put_contents($config_file, $updated_content);
     
     if ($result === false) {
+        // Log failed setting change
+        log_audit_action(
+            'settings_update_failed',
+            'Failed to write outcome creation setting to config file',
+            'failure'
+        );
         return ['error' => 'Could not write to config file'];
     }
     
-    // Log the setting change
-    $username = $_SESSION['username'] ?? 'Unknown';
-    $action = 'Updated Outcome Creation setting to: ' . ($enabled ? 'Enabled' : 'Disabled');
-    $log_query = "INSERT INTO audit_log (user_id, username, action, action_date) VALUES (?, ?, ?, NOW())";
-    
-    global $conn;
-    $stmt = $conn->prepare($log_query);
-    
-    if ($stmt) {
-        $user_id = $_SESSION['user_id'] ?? 0;
-        $stmt->bind_param("iss", $user_id, $username, $action);
-        $stmt->execute();
-    }
+    // Log successful setting change
+    log_audit_action(
+        'settings_update',
+        'Outcome creation setting updated to: ' . ($enabled ? 'Enabled' : 'Disabled'),
+        'success'
+    );
     
     return [
         'success' => true,

@@ -14,6 +14,9 @@ if (file_exists(dirname(__FILE__) . '/core.php')) {
     require_once dirname(__DIR__) . '/functions.php';
 }
 
+// Include audit logging
+require_once dirname(__DIR__) . '/audit_log.php';
+
 /**
  * Get programs owned by current agency, separated by type
  */
@@ -167,9 +170,12 @@ function create_wizard_program_draft($data) {
             // status column removed from insert
             $submission_stmt = $conn->prepare("INSERT INTO program_submissions (program_id, period_id, submitted_by, content_json, is_draft, submission_date, updated_at) VALUES (?, ?, ?, ?, 1, NOW(), NOW())");
             $submission_stmt->bind_param("iiis", $program_id, $current_period_id, $user_id, $content_json_string);
-            if (!$submission_stmt->execute()) throw new Exception('Failed to create program submission: ' . $submission_stmt->error);
-        }
+            if (!$submission_stmt->execute()) throw new Exception('Failed to create program submission: ' . $submission_stmt->error);        }
         $conn->commit();
+        
+        // Log successful program creation
+        log_audit_action('create_program', "Program Name: $program_name | Program ID: $program_id", 'success', $user_id);
+        
         return [
             'success' => true, 
             'message' => 'Program draft created successfully',
@@ -177,6 +183,10 @@ function create_wizard_program_draft($data) {
         ];
     } catch (Exception $e) {
         $conn->rollback();
+        
+        // Log failed program creation
+        log_audit_action('create_program_failed', "Program Name: $program_name | Error: " . $e->getMessage(), 'failure', $user_id);
+        
         return ['error' => 'Database error: ' . $e->getMessage()];
     }
 }
@@ -280,9 +290,12 @@ function update_wizard_program_draft($program_id, $data) {
                 $insert_stmt = $conn->prepare("INSERT INTO program_submissions (program_id, period_id, submitted_by, content_json, is_draft, submission_date, updated_at) VALUES (?, ?, ?, ?, 1, NOW(), NOW())");
                 $insert_stmt->bind_param("iiis", $program_id, $current_period_id, $user_id, $content_json_string);
                 if (!$insert_stmt->execute()) throw new Exception('Failed to create program submission: ' . $insert_stmt->error);
-            }
-        }
+            }        }
         $conn->commit();
+        
+        // Log successful program update
+        log_audit_action('update_program', "Program Name: $program_name | Program ID: $program_id", 'success', $user_id);
+        
         return [
             'success' => true,
             'message' => 'Program draft updated successfully',
@@ -290,6 +303,10 @@ function update_wizard_program_draft($program_id, $data) {
         ];
     } catch (Exception $e) {
         $conn->rollback();
+        
+        // Log failed program update
+        log_audit_action('update_program_failed', "Program Name: $program_name | Program ID: $program_id | Error: " . $e->getMessage(), 'failure', $user_id);
+        
         return ['error' => 'Database error: ' . $e->getMessage()];
     }
 }

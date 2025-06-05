@@ -12,6 +12,7 @@ require_once ROOT_PATH . 'app/lib/session.php';
 require_once ROOT_PATH . 'app/lib/functions.php'; // General functions, potentially outcome-related
 require_once ROOT_PATH . 'app/lib/admin_functions.php'; // Admin-specific functions
 require_once ROOT_PATH . 'app/lib/admins/outcomes.php'; // Contains outcome functions and record_outcome_history
+require_once ROOT_PATH . 'app/lib/audit_log.php';
 
 // Verify user is an admin
 if (!is_admin()) {
@@ -121,12 +122,19 @@ if ($stmt) {
             $action_type = 'unsubmit';
             $status = 'draft'; // After unsubmitting, the status becomes draft
             $description = "Outcome marked as draft (unsubmitted)";
-            
-            if ($outcome_record_id > 0) {
+              if ($outcome_record_id > 0) {
                 record_outcome_history($outcome_record_id, $metric_id, $data_json, $action_type, $status, $user_id, $description);
             }
             
             $_SESSION['success_message'] = "Outcome (ID: {$metric_id}) has been successfully un-submitted and marked as Draft.";
+            
+            // Log successful outcome unsubmit
+            log_audit_action(
+                'admin_outcome_unsubmitted',
+                "Admin unsubmitted outcome (Metric ID: {$metric_id}) - changed to draft status",
+                'success',
+                $_SESSION['user_id']
+            );
         } else {
             // Check if the outcome record actually exists to provide a more accurate message
             $check_sql = "SELECT metric_id FROM sector_outcomes_data WHERE metric_id = ?";
@@ -147,6 +155,14 @@ if ($stmt) {
             }
         }    } else {
         $_SESSION['error_message'] = "Failed to un-submit outcome (ID: {$metric_id}). Database error: " . $stmt->error;
+        
+        // Log outcome unsubmit failure
+        log_audit_action(
+            'admin_outcome_unsubmit_failed',
+            "Admin failed to unsubmit outcome (Metric ID: {$metric_id}): " . $stmt->error,
+            'failure',
+            $_SESSION['user_id']
+        );
     }
     $stmt->close();
 } else {

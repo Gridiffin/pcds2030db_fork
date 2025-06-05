@@ -154,22 +154,33 @@ function add_user($data) {
         
         $stmt = $conn->prepare($query);
         $stmt->bind_param("ssssiis", $username, $hashed_password, $agency_name, $role, $sector_id, $agency_group_id, $is_active);
-        
-        if (!$stmt->execute()) {
+          if (!$stmt->execute()) {
             throw new Exception($stmt->error);
         }
+        
+        $new_user_id = $stmt->insert_id;
         
         // Commit transaction
         $conn->commit();
         
-        return [
+        // Log successful user creation
+        require_once ROOT_PATH . 'app/lib/audit_log.php';
+        $details = "Username: $username | Role: $role" . ($agency_name ? " | Agency: $agency_name" : "");
+        log_data_operation('create', 'user', $new_user_id, [], $_SESSION['user_id'] ?? null);
+          return [
             'success' => true,
-            'user_id' => $stmt->insert_id
+            'user_id' => $new_user_id
         ];
         
     } catch (Exception $e) {
         // Rollback on error
         $conn->rollback();
+        
+        // Log failed user creation attempt
+        require_once ROOT_PATH . 'app/lib/audit_log.php';
+        $details = "Username: $username | Role: " . ($data['role'] ?? 'unknown') . " | Error: " . $e->getMessage();
+        log_audit_action('create_user_failed', $details, 'failure', $_SESSION['user_id'] ?? null);
+        
         return ['error' => 'Database error: ' . $e->getMessage()];
     }
 }
@@ -358,15 +369,30 @@ function update_user($data) {
                 throw new Exception($stmt->error);
             }
         }
-        
-        // Commit transaction
+          // Commit transaction
         $conn->commit();
         
-        return ['success' => true];
+        // Log successful user update
+        require_once ROOT_PATH . 'app/lib/audit_log.php';
+        $changes = [];
+        foreach($data as $key => $value) {
+            if ($key !== 'user_id' && $key !== 'password' && $key !== 'confirm_password') {
+                $changes[$key] = $value;
+            }
+        }
+        $details = "User ID: $user_id | Changes: " . json_encode($changes);
+        log_data_operation('update', 'user', $user_id, $changes, $_SESSION['user_id'] ?? null);
+          return ['success' => true];
         
     } catch (Exception $e) {
         // Rollback on error
         $conn->rollback();
+        
+        // Log failed user update attempt
+        require_once ROOT_PATH . 'app/lib/audit_log.php';
+        $details = "User ID: $user_id | Error: " . $e->getMessage();
+        log_audit_action('update_user_failed', $details, 'failure', $_SESSION['user_id'] ?? null);
+        
         return ['error' => 'Database error: ' . $e->getMessage()];
     }
 }
@@ -380,6 +406,9 @@ function update_user($data) {
 function delete_user($user_id) {
     global $conn;
     
+    // Include audit logging functionality
+    require_once dirname(__DIR__) . '/audit_log.php';
+    
     $user_id = intval($user_id);
     
     // Verify user exists
@@ -390,6 +419,8 @@ function delete_user($user_id) {
     $result = $stmt->get_result();
     
     if ($result->num_rows === 0) {
+        // Log failed deletion attempt - user not found
+        log_user_deletion_failed($user_id, 'User not found', $_SESSION['user_id'] ?? 0);
         return ['error' => 'User not found'];
     }
     
@@ -402,10 +433,12 @@ function delete_user($user_id) {
     $stmt->execute();
     $program_result = $stmt->get_result();
     $program_count = $program_result->fetch_assoc()['count'];
-    
-    if ($program_count > 0) {
+      if ($program_count > 0) {
+        // Log failed deletion attempt - user has associated programs
+        $error_msg = "Cannot delete user '{$user['username']}' because they own $program_count program(s). Reassign these programs first.";
+        log_user_deletion_failed($user_id, $error_msg, $_SESSION['user_id'] ?? 0);
         return [
-            'error' => "Cannot delete user '{$user['username']}' because they own $program_count program(s). Reassign these programs first."
+            'error' => $error_msg
         ];
     }
     
@@ -421,9 +454,11 @@ function delete_user($user_id) {
         if (!$stmt->execute()) {
             throw new Exception($stmt->error);
         }
-        
-        // Commit transaction
+          // Commit transaction
         $conn->commit();
+        
+        // Log successful user deletion
+        log_user_deletion_success($user_id, $user['username'], $user['role'], $_SESSION['user_id'] ?? 0);
         
         return [
             'success' => true,
@@ -433,7 +468,12 @@ function delete_user($user_id) {
     } catch (Exception $e) {
         // Rollback on error
         $conn->rollback();
-        return ['error' => 'Database error: ' . $e->getMessage()];
+        
+        // Log failed deletion attempt - database error
+        $error_msg = 'Database error: ' . $e->getMessage();
+        log_user_deletion_failed($user_id, $error_msg, $_SESSION['user_id'] ?? 0);
+        
+        return ['error' => $error_msg];
     }
 }
 

@@ -16,6 +16,7 @@ require_once ROOT_PATH . 'app/lib/db_connect.php';
 require_once ROOT_PATH . 'app/lib/session.php';
 require_once ROOT_PATH . 'app/lib/functions.php';
 require_once ROOT_PATH . 'app/lib/admin_functions.php';
+require_once ROOT_PATH . 'app/lib/audit_log.php';
 
 // Check if user is admin
 if (!is_admin()) {
@@ -143,10 +144,13 @@ try {
         if (!$insert_stmt->execute()) {
             throw new Exception('Failed to save period: ' . $insert_stmt->error);
         }
-        $period_id = $conn->insert_id;
-        // Commit transaction
+        $period_id = $conn->insert_id;        // Commit transaction
         $conn->commit();
-        // Log the action
+        
+        // Log successful period creation
+        log_audit_action('create_period', "Created reporting period: {$period_name_constructed} (ID: {$period_id}, Status: {$status})", 'success');
+        
+        // Log the action (legacy logging)
         if (function_exists('log_activity') && isset($_SESSION['user_id'])) {
             log_activity($_SESSION['user_id'], "Created new reporting period: {$period_name_constructed}");
         }
@@ -170,6 +174,14 @@ try {
 
 } catch (Exception $e) {
     error_log("Error in save_period.php: " . $e->getMessage());
+    
+    // Log failed period creation attempt
+    $error_details = "Failed to create reporting period. Error: " . $e->getMessage();
+    if (!empty($period_name_constructed)) {
+        $error_details = "Failed to create period {$period_name_constructed}. Error: " . $e->getMessage();
+    }
+    log_audit_action('create_period', $error_details, 'failure');
+    
     echo json_encode([
         'success' => false,
         'message' => $e->getMessage()

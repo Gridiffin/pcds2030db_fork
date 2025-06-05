@@ -84,28 +84,12 @@ function get_admin_dashboard_stats() {
                   WHERE ps.period_id = ?
                   GROUP BY ps.status";
         
-        $stmt = $conn->prepare($query);
-        $stmt->bind_param("i", $period_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        $status_data = [
+        // Removed status distribution query and processing as status column is deleted
+        $stats['program_status'] = [
             'labels' => [],
             'data' => [],
-            'backgroundColor' => [
-                '#28a745', // on-track (green)
-                '#ffc107', // delayed (yellow)
-                '#17a2b8', // completed (blue)
-                '#6c757d'  // not-started (gray)
-            ]
+            'backgroundColor' => []
         ];
-        
-        while ($row = $result->fetch_assoc()) {
-            $status_data['labels'][] = ucfirst($row['status']);
-            $status_data['data'][] = $row['count'];
-        }
-        
-        $stats['program_status'] = $status_data;
     }
     
     // Get programs by sector
@@ -526,6 +510,10 @@ function get_recent_submissions($period_id = null, $limit = 5) {
     $submissions = [];
     
     while ($row = $result->fetch_assoc()) {
+        // Remove status field from each submission as status column is deleted
+        if (isset($row['status'])) {
+            unset($row['status']);
+        }
         $submissions[] = $row;
     }
     

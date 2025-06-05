@@ -12,6 +12,7 @@ require_once ROOT_PATH . 'app/lib/session.php';
 require_once ROOT_PATH . 'app/lib/functions.php';
 require_once ROOT_PATH . 'app/lib/admins/index.php';
 require_once ROOT_PATH . 'app/lib/admins/statistics.php'; // Contains program functions
+require_once ROOT_PATH . 'app/lib/audit_log.php';
 
 // Verify user is an admin
 if (!is_admin()) {
@@ -43,14 +44,24 @@ $period_id = intval($_GET['period_id']);
 // Use the model function instead of direct SQL
 $success = unsubmit_program($program_id, $period_id);
 
+// Get program information for logging
+$program_info = get_program_submission($program_id, $period_id);
+$program_name = $program_info['program_name'] ?? 'Unknown Program';
+
 if ($success) {
     $_SESSION['success_message'] = "Program submission has been successfully un-submitted and marked as draft.";
+    
+    // Log successful program unsubmit
+    log_audit_action('admin_unsubmit_program', "Program: $program_name | Program ID: $program_id | Period ID: $period_id", 'success', $_SESSION['user_id']);
 } else {
     // Check if a submission record actually exists for this program_id and period_id
     $submission = get_program_submission($program_id, $period_id);
     
     if (!$submission) {
         $_SESSION['error_message'] = "No submission found for this program in the specified period. Nothing to un-submit.";
+        
+        // Log failed program unsubmit
+        log_audit_action('admin_unsubmit_program_failed', "Program: $program_name | Program ID: $program_id | Period ID: $period_id | Error: No submission found", 'failure', $_SESSION['user_id']);
     } else {
         // Record existed, but maybe no change was needed (e.g., already draft and not-started)
         $_SESSION['info_message'] = "Program submission was already in the desired state or no changes were made.";

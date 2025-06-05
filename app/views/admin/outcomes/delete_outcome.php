@@ -12,6 +12,7 @@ require_once ROOT_PATH . 'app/lib/session.php';
 require_once ROOT_PATH . 'app/lib/functions.php'; // Contains legacy functions
 require_once ROOT_PATH . 'app/lib/admins/outcomes.php'; // Contains updated outcome functions
 require_once ROOT_PATH . 'app/lib/admins/index.php'; // Contains is_admin
+require_once ROOT_PATH . 'app/lib/audit_log.php';
 
 // Verify user is an admin
 if (!is_admin()) {
@@ -71,15 +72,29 @@ try {
     // If using a specific function, it might look like:
     // if (!delete_outcome_entry($outcome_id, $conn)) { // Assuming such a function handles all deletion logic
     //     throw new Exception("Failed to delete outcome.");
-    // }
-
-    $conn->commit();
+    // }    $conn->commit();
     $_SESSION['success_message'] = 'Outcome (ID: ' . $outcome_id . ') and associated data deleted successfully.';
+    
+    // Log successful outcome deletion
+    log_audit_action(
+        'admin_outcome_deleted',
+        "Admin deleted outcome '{$outcome_data['table_name']}' (Metric ID: {$outcome_id}) for sector {$outcome_data['sector_id']}",
+        'success',
+        $_SESSION['user_id']
+    );
 
 } catch (Exception $e) {
     $conn->rollback();
     error_log("Error deleting outcome ID {$outcome_id}: " . $e->getMessage());
     $_SESSION['error_message'] = 'Error deleting outcome: ' . $e->getMessage();
+    
+    // Log outcome deletion failure
+    log_audit_action(
+        'admin_outcome_deletion_failed',
+        "Admin failed to delete outcome '{$outcome_data['table_name']}' (Metric ID: {$outcome_id}): " . $e->getMessage(),
+        'failure',
+        $_SESSION['user_id']
+    );
 }
 
 // Redirect back to the manage outcomes page

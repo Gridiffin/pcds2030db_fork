@@ -12,6 +12,7 @@ require_once ROOT_PATH . 'app/lib/db_connect.php';
 require_once ROOT_PATH . 'app/lib/session.php';
 require_once ROOT_PATH . 'app/lib/functions.php';
 require_once ROOT_PATH . 'app/lib/admins/index.php';
+require_once ROOT_PATH . 'app/lib/audit_log.php';
 
 // Verify user is admin
 if (!is_admin()) {
@@ -66,8 +67,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $update_query = "UPDATE program_submissions SET is_draft = 1 WHERE submission_id = ?";
     $update_stmt = $conn->prepare($update_query);
     $update_stmt->bind_param("i", $submission_id);
-    
-    if ($update_stmt->execute()) {
+      if ($update_stmt->execute()) {
+        // Log successful program reopening
+        log_audit_action('reopen_program', "Program: {$submission['program_name']} | Submission ID: $submission_id | Quarter: Q{$submission['quarter']}-{$submission['year']}", 'success', $_SESSION['user_id']);
+        
         // // Add a notification for the agency user
         // $notification_message = "Your program \"{$submission['program_name']}\" for Q{$submission['quarter']}-{$submission['year']} has been reopened for editing by an administrator.";
         
@@ -84,8 +87,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['message'] = "Program \"{$submission['program_name']}\" for Q{$submission['quarter']}-{$submission['year']} has been successfully reopened for editing.";
         $_SESSION['message_type'] = 'success';
         header('Location: view_program.php?id=' . $program_id);
-        exit;
-    } else {
+        exit;    } else {
+        // Log failed program reopening
+        log_audit_action('reopen_program_failed', "Program: {$submission['program_name']} | Submission ID: $submission_id | Error: " . $conn->error, 'failure', $_SESSION['user_id']);
+        
         $_SESSION['message'] = 'Error reopening program: ' . $conn->error;
         $_SESSION['message_type'] = 'danger';
     }
