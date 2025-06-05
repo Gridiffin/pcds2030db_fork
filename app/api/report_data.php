@@ -195,7 +195,7 @@ if (!empty($program_orders) && !empty($selected_program_ids)) {
 }
 
 $programs_query = "SELECT p.program_id, p.program_name, 
-                    ps.status, ps.content_json
+                    ps.content_json
                   FROM programs p
                   LEFT JOIN (
                       SELECT ps1.*
@@ -296,30 +296,30 @@ while ($program = $programs_result->fetch_assoc()) {    // Extract target from c
         $target = str_replace(['\\n', '\\r', '\\r\\n'], "\n", $target);
         $status_text = str_replace(['\\n', '\\r', '\\r\\n'], "\n", $status_text);
     }
-    
-    // Map status to color (green, yellow, red, grey)
+      // Map status to color (green, yellow, red, grey)
     $status_color = 'grey'; // Default for not reported
     
-    if (isset($program['status'])) {
-        switch ($program['status']) {
-            case 'on-track':
-            case 'on-track-yearly':
-            case 'target-achieved':
-                $status_color = 'green';
-                break;
-            case 'delayed':
-            case 'minor-issues':
-                $status_color = 'yellow';
-                break;
-            case 'severe-delay':
-            case 'major-issues':
-            case 'at-risk':
-                $status_color = 'red';
-                break;
-            case 'not-started':
-            default:
-                $status_color = 'grey';
-        }
+    // Get the rating from content_json instead of the removed status column
+    $rating = $content['rating'] ?? $content['status'] ?? 'not-reported';
+    
+    switch ($rating) {
+        case 'on-track':
+        case 'on-track-yearly':
+        case 'target-achieved':
+            $status_color = 'green';
+            break;
+        case 'delayed':
+        case 'minor-issues':
+            $status_color = 'yellow';
+            break;
+        case 'severe-delay':
+        case 'major-issues':
+        case 'at-risk':
+            $status_color = 'red';
+            break;
+        case 'not-started':
+        default:
+            $status_color = 'grey';
     }
     // Calculate text complexity metrics to help with frontend layout decisions
     // Handle different types of newlines that might appear in the data 
@@ -385,13 +385,13 @@ $current_year = $period['year'];
 $previous_year = $current_year - 1;
 $year_before_previous = $current_year - 2;
 
-// --- 4. Get Sector Metrics from Database ---
-// Fetch metrics for this sector and period
-$sector_metrics = [];
+// --- 4. Get Sector Outcomes from Database ---
+// Fetch outcomes for this sector and period
+$sector_outcomes = [];
 $charts_data = [];
 
-// NEW: Fetch metrics_details data for KPI sections
-$metrics_details = []; // This will hold the KPI data to be sent to the client
+// Fetch outcomes_details data for KPI sections
+$outcomes_details = []; // This will hold the KPI data to be sent to the client
 
 // Process selected KPI IDs if provided - KPI selection functionality is removed.
 // The following block that processed $selected_kpi_ids_raw and fetched specific KPIs
@@ -414,8 +414,7 @@ if (!empty($selected_kpi_ids_raw)) {
         try {
             $placeholders = implode(',', array_fill(0, count($selected_kpi_ids), '?'));
             $order_fields = implode(',', $selected_kpi_ids);
-            
-            $kpi_query = "SELECT detail_id, detail_name, detail_json FROM metrics_details 
+              $kpi_query = "SELECT detail_id, detail_name, detail_json FROM outcomes_details 
                           WHERE is_draft = 0 AND detail_id IN ($placeholders)
                           ORDER BY FIELD(detail_id, $order_fields)";
             
@@ -454,36 +453,29 @@ if (!empty($selected_kpi_ids_raw)) {
 }
 */
 
-// Fallback to old logic if no KPIs were selected or fetched (Now default behavior as $metrics_details is empty)
-if (empty($metrics_details)) {
-    // First, try to find a "TPA Protection" metric specifically
-    $tpa_query = "SELECT detail_id, detail_name, detail_json FROM metrics_details 
+// Fallback to old logic if no KPIs were selected or fetched (Now default behavior as $outcomes_details is empty)
+if (empty($outcomes_details)) {// First, try to find a "TPA Protection" metric specifically
+    $tpa_query = "SELECT detail_id, detail_name, detail_json FROM outcomes_details 
                   WHERE is_draft = 0 
                   AND (detail_name LIKE '%TPA%' OR detail_name LIKE '%Protection%' OR detail_name LIKE '%Biodiversity%') 
                   ORDER BY created_at DESC LIMIT 1";
-    $tpa_result = $conn->query($tpa_query);
-
-    // Then get other metrics
-    $other_metrics_query = "SELECT detail_id, detail_name, detail_json FROM metrics_details 
+    $tpa_result = $conn->query($tpa_query);    // Then get other metrics
+    $other_metrics_query = "SELECT detail_id, detail_name, detail_json FROM outcomes_details 
                               WHERE is_draft = 0 
                               AND (detail_name NOT LIKE '%TPA%' AND detail_name NOT LIKE '%Protection%' AND detail_name NOT LIKE '%Biodiversity%')
                               ORDER BY created_at DESC LIMIT 2";
-    $other_metrics_result = $conn->query($other_metrics_query);
-
-    if ($tpa_result && $tpa_result->num_rows > 0) {
+    $other_metrics_result = $conn->query($other_metrics_query);    if ($tpa_result && $tpa_result->num_rows > 0) {
         $row = $tpa_result->fetch_assoc();
-        $metrics_details[] = [
+        $outcomes_details[] = [
             'id' => $row['detail_id'],
             'name' => $row['detail_name'],
             'detail_json' => $row['detail_json']
         ];
-    }
-
-    if ($other_metrics_result && $other_metrics_result->num_rows > 0) {
+    }    if ($other_metrics_result && $other_metrics_result->num_rows > 0) {
         while ($row = $other_metrics_result->fetch_assoc()) {
             // Ensure we don't add more than 3 KPIs in total for fallback
-            if (count($metrics_details) < 3) {
-                $metrics_details[] = [
+            if (count($outcomes_details) < 3) {
+                $outcomes_details[] = [
                     'id' => $row['detail_id'],
                     'name' => $row['detail_name'],
                     'detail_json' => $row['detail_json']
@@ -503,7 +495,7 @@ $degraded_area_units = '';
 
 // Query to find Total Degraded Area records
 $degraded_area_query = "SELECT m.data_json, m.table_name 
-                        FROM sector_metrics_data m 
+                        FROM sector_outcomes_data m 
                         WHERE m.sector_id = ? 
                         AND m.is_draft = 0 
                         AND m.table_name = 'TOTAL DEGRADED AREA'
@@ -567,7 +559,7 @@ $timber_export_data = [
 
 // Query to find Timber Export Value records
 $timber_query = "SELECT m.data_json, m.table_name 
-                FROM sector_metrics_data m 
+                FROM sector_outcomes_data m 
                 WHERE m.sector_id = ? 
                 AND m.is_draft = 0 
                 AND (m.table_name LIKE '%Timber Export%' OR m.table_name LIKE '%Export Value%')
@@ -638,7 +630,7 @@ if ($timber_result->num_rows > 0) {
 }
 
 // Now query for other metrics data
-$metrics_query = "SELECT * FROM sector_metrics_data 
+$metrics_query = "SELECT * FROM sector_outcomes_data 
                   WHERE sector_id = ? AND period_id = ? AND is_draft = 0";
 $stmt = $conn->prepare($metrics_query);
 $stmt->bind_param("ii", $sector_id, $period_id);
@@ -747,10 +739,9 @@ $report_data = [
     'quarter' => $quarter,
     'projects' => $programs,
     'programs' => $programs, // Add programs with the correct key name that the frontend expects
-    'charts' => $charts_data,
-    'draftDate' => $draft_date,
+    'charts' => $charts_data,    'draftDate' => $draft_date,
     'sector_id' => $sector_id,  // Include sector_id for client-side use
-    'metrics_details' => $metrics_details,  // This is the primary source for KPIs now
+    'metrics_details' => $outcomes_details,  // This is the primary source for KPIs now
 ];
 
 // Remove any undefined variables reference that could cause PHP warnings
