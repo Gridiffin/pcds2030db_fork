@@ -11,6 +11,7 @@ require_once ROOT_PATH . 'app/lib/db_connect.php';
 require_once ROOT_PATH . 'app/lib/session.php';
 require_once ROOT_PATH . 'app/lib/functions.php';
 require_once ROOT_PATH . 'app/lib/agency_functions.php';
+require_once ROOT_PATH . 'app/lib/audit_log.php';
 
 // Verify user is an agency user
 if (!is_agency()) {
@@ -56,16 +57,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $conn->prepare($insert_query);
             $sector_id = intval($sector_id);
             $data_json_str = json_encode($data_array);
-            $stmt->bind_param("iissi", $metric_id, $sector_id, $table_name, $data_json_str, $is_draft);
-            if ($stmt->execute()) {
+            $stmt->bind_param("iissi", $metric_id, $sector_id, $table_name, $data_json_str, $is_draft);            if ($stmt->execute()) {
                 $message = 'Outcome created successfully.';
                 $message_type = 'success';
+                
+                // Log successful outcome creation
+                log_audit_action(
+                    'outcome_created',
+                    "Created outcome '{$table_name}' (Metric ID: {$metric_id}) for sector {$sector_id}" . ($is_draft ? ' as draft' : ''),
+                    'success',
+                    $_SESSION['user_id']
+                );
+                
                 // Redirect to manage outcomes or edit page
                 header('Location: submit_outcomes.php');
                 exit;
             } else {
                 $message = 'Error saving outcome: ' . $conn->error;
                 $message_type = 'danger';
+                
+                // Log outcome creation failure
+                log_audit_action(
+                    'outcome_creation_failed',
+                    "Failed to create outcome '{$table_name}' for sector {$sector_id}: " . $conn->error,
+                    'failure',
+                    $_SESSION['user_id']
+                );
             }
         }
     }

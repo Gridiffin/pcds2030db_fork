@@ -14,9 +14,16 @@ if (!defined('PROJECT_ROOT_PATH')) {
 require_once PROJECT_ROOT_PATH . 'app/config/config.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/audit_log.php';
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
+    // Log failed download attempt
+    log_audit_action(
+        'file_download_denied',
+        "Unauthorized download attempt for file: {$file_path}",
+        'failure'
+    );
     header('Location: ' . APP_URL . '/login.php');
     exit;
 }
@@ -38,6 +45,13 @@ $allowed_types = [
 
 // Validate file type
 if (!isset($allowed_types[$type])) {
+    // Log invalid file type attempt
+    log_audit_action(
+        'file_download_invalid_type',
+        "Invalid file type requested: {$type} for file: {$file_path}",
+        'failure',
+        $_SESSION['user_id']
+    );
     header('HTTP/1.1 400 Bad Request');
     exit('Invalid file type: ' . $type);
 }
@@ -63,6 +77,13 @@ $full_path = __DIR__ . '/' . $allowed_types[$type] . $file_path;
 
 // Check if file exists
 if (!file_exists($full_path)) {
+    // Log file not found error
+    log_audit_action(
+        'file_download_not_found',
+        "File not found: {$file_path} (Type: {$type})",
+        'failure',
+        $_SESSION['user_id']
+    );
     header('HTTP/1.1 404 Not Found');
     exit('File not found: ' . $full_path);
 }
@@ -87,6 +108,15 @@ header('Content-Disposition: attachment; filename="' . $file_path . '"');
 header('Content-Length: ' . filesize($full_path));
 header('Cache-Control: max-age=0');
 
+// Log successful file download
+$file_size = filesize($full_path);
+log_audit_action(
+    'file_download',
+    "File downloaded: {$file_path} (Type: {$type}, Size: {$file_size} bytes)",
+    'success',
+    $_SESSION['user_id']
+);
+
 // Disable output buffering
 if (ob_get_level()) {
     ob_end_clean();
@@ -94,4 +124,12 @@ if (ob_get_level()) {
 
 // Read the file and output it to the browser
 readfile($full_path);
+
+// Log the successful file download
+log_audit_action(
+    'file_download',
+    "User {$_SESSION['user_id']} downloaded file: {$file_path}",
+    'success'
+);
+
 exit;

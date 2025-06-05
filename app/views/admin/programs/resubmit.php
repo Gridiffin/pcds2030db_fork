@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../../../lib/audit_log.php';
 /**
  * Resubmit Program Submission
  * 
@@ -13,6 +14,8 @@ require_once ROOT_PATH . 'app/lib/session.php';
 require_once ROOT_PATH . 'app/lib/functions.php';
 require_once ROOT_PATH . 'app/lib/admins/index.php';
 require_once ROOT_PATH . 'app/lib/admins/statistics.php'; // Contains program functions and log_action
+require_once ROOT_PATH . 'app/lib/audit_log.php';
+require_once ROOT_PATH . 'app/lib/audit_log.php';
 
 // Verify user is an admin
 if (!is_admin()) {
@@ -59,11 +62,14 @@ $stmt = $conn->prepare($sql);
 
 $success = false;
 if ($stmt) {
-    $stmt->bind_param('ii', $program_id, $period_id);
-    if ($stmt->execute()) {
+    $stmt->bind_param('ii', $program_id, $period_id);    if ($stmt->execute()) {
         if ($stmt->affected_rows > 0) {
             $_SESSION['success_message'] = "Program has been successfully re-submitted.";
             $success = true;
+            
+            // Log successful program resubmit
+            $program_name = $submission_data['program_name'] ?? 'Unknown Program';
+            log_audit_action('admin_resubmit_program', "Program: $program_name | Program ID: $program_id | Period ID: $period_id", 'success', $_SESSION['user_id']);
         } else {
             // If no rows affected, it might be because it was already not a draft
             if ($submission_data['is_draft'] == 0) {
@@ -71,10 +77,18 @@ if ($stmt) {
                  // Consider $success = true here if this is not an error condition
             } else {
                 $_SESSION['error_message'] = "Failed to resubmit the program. No rows were updated, though a record exists.";
+                
+                // Log failed program resubmit
+                $program_name = $submission_data['program_name'] ?? 'Unknown Program';
+                log_audit_action('admin_resubmit_program_failed', "Program: $program_name | Program ID: $program_id | Period ID: $period_id | Error: No rows updated", 'failure', $_SESSION['user_id']);
             }
         }
     } else {
         $_SESSION['error_message'] = "Failed to resubmit the program. Database error: " . $stmt->error;
+        
+        // Log failed program resubmit
+        $program_name = $submission_data['program_name'] ?? 'Unknown Program';
+        log_audit_action('admin_resubmit_program_failed', "Program: $program_name | Program ID: $program_id | Period ID: $period_id | Error: " . $stmt->error, 'failure', $_SESSION['user_id']);
     }
     $stmt->close();
 } else {
@@ -85,6 +99,16 @@ if ($stmt) {
 if (function_exists('log_action')) {
     log_action('resubmit_program', "Program ID: $program_id, Period ID: $period_id. Submission resubmitted.", $success);
 }
+
+// Audit log
+$log_data = array(
+    'admin_id' => $_SESSION['admin_id'], // Assuming admin ID is stored in session
+    'action' => 'resubmit_program',
+    'details' => "Program ID: $program_id, Period ID: $period_id",
+    'success' => $success,
+    'timestamp' => date('Y-m-d H:i:s')
+);
+log_audit_action($log_data); // Assuming audit_log is a function that takes an array
 
 // Construct redirect URL
 $redirect_url = 'programs.php?period_id=' . $period_id;

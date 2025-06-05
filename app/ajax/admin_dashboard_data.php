@@ -11,9 +11,16 @@ require_once '../lib/db_connect.php';
 require_once '../lib/session.php';
 require_once '../lib/functions.php';
 require_once '../lib/admin_functions.php';
+require_once '../lib/audit_log.php';
 
 // Verify user is admin
 if (!is_admin()) {
+    // Log unauthorized admin dashboard access attempt
+    log_audit_action(
+        'admin_dashboard_access_denied',
+        'Unauthorized attempt to access admin dashboard data',
+        'failure'
+    );
     http_response_code(403);
     echo json_encode(['error' => 'Unauthorized access']);
     exit;
@@ -156,6 +163,15 @@ $response = [
     'sectors_section' => $sectors_section ?? '',
     'submissions_section' => $submissions_section ?? ''
 ];
+
+// Log successful admin dashboard access
+$period_name = $viewing_period ? $viewing_period['name'] : 'All Periods';
+log_audit_action(
+    'admin_dashboard_access',
+    "Successfully accessed admin dashboard data for period: {$period_name}",
+    'success',
+    $_SESSION['user_id'] ?? null
+); // Added user_id for better traceability
 
 // Return JSON response
 header('Content-Type: application/json');

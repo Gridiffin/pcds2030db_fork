@@ -12,6 +12,7 @@ require_once ROOT_PATH . 'app/lib/session.php';
 require_once ROOT_PATH . 'app/lib/functions.php';
 require_once ROOT_PATH . 'app/lib/admins/index.php';
 require_once ROOT_PATH . 'app/lib/rating_helpers.php';
+require_once ROOT_PATH . 'app/lib/audit_log.php';
 
 // Verify user is admin
 if (!is_admin()) {
@@ -144,9 +145,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_program'])) {
                 
             $notification_stmt->bind_param("iss", $agency_id, $notification_message, $action_url);
             $notification_stmt->execute();
-            
-            // Commit transaction
+              // Commit transaction
             $conn->commit();
+            
+            // Get agency name for logging
+            $agency_query = "SELECT agency_name FROM users WHERE user_id = ?";
+            $agency_stmt = $conn->prepare($agency_query);
+            $agency_stmt->bind_param("i", $agency_id);
+            $agency_stmt->execute();
+            $agency_result = $agency_stmt->get_result();
+            $agency_name = $agency_result->num_rows > 0 ? $agency_result->fetch_assoc()['agency_name'] : 'Unknown Agency';
+            
+            // Log successful program assignment
+            log_audit_action('assign_program', "Program Name: $program_name | Program ID: $program_id | Assigned to: $agency_name", 'success', $_SESSION['user_id']);
             
             // Success message
             $_SESSION['message'] = "Program successfully assigned to agency as a draft. The agency will need to review and submit it.";
@@ -155,10 +166,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_program'])) {
             // Redirect to programs page
             header("Location: programs.php");
             exit;
-            
-        } catch (Exception $e) {
+              } catch (Exception $e) {
             // Roll back transaction on error
             $conn->rollback();
+            
+            // Log failed program assignment
+            log_audit_action('assign_program_failed', "Program Name: $program_name | Error: " . $e->getMessage(), 'failure', $_SESSION['user_id']);
+            
             $errors[] = "Database error: " . $e->getMessage();
         }
     }

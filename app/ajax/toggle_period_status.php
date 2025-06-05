@@ -16,6 +16,7 @@ require_once ROOT_PATH . 'app/lib/db_connect.php';
 require_once ROOT_PATH . 'app/lib/session.php';
 require_once ROOT_PATH . 'app/lib/functions.php';
 require_once ROOT_PATH . 'app/lib/admin_functions.php';
+require_once ROOT_PATH . 'app/lib/audit_log.php';
 
 // Ensure user is admin
 if (!is_admin()) {
@@ -51,8 +52,7 @@ try {
       // Begin transaction
     $conn->begin_transaction();
     
-    try {
-        // Check if period exists
+    try {        // Check if period exists
         $check_query = "SELECT period_id, year, quarter, status FROM reporting_periods WHERE period_id = ?";
         $check_stmt = $conn->prepare($check_query);
         $check_stmt->bind_param("i", $period_id);
@@ -61,7 +61,19 @@ try {
         $period = $result->fetch_assoc();
         
         if (!$period) {
+            // Log failed status change attempt - period not found
+            log_audit_action('toggle_period_status', "Attempted to change status of non-existent period (ID: {$period_id}) to {$status}", 'failure');
+            
             throw new Exception('Period not found');
+        }
+        
+        $period_name = "Q{$period['quarter']} {$period['year']}";
+        $old_status = $period['status'];
+        
+        // Check if status is actually changing
+        if ($old_status === $status) {
+            // Log no-change status toggle
+            log_audit_action('toggle_period_status', "No status change needed for period: {$period_name} (ID: {$period_id}, already {$status})", 'success');
         }
         
         // If setting to open, close all other periods first
@@ -75,23 +87,25 @@ try {
         $update_stmt = $conn->prepare($update_query);
         $update_stmt->bind_param("si", $status, $period_id);
         $update_stmt->execute();
-        
-        // Commit transaction
+          // Commit transaction
         $conn->commit();
         
-        // Log the action
-        if (function_exists('log_activity') && isset($_SESSION['user_id'])) {
-            $period_name = "Q" . $period['quarter'] . " " . $period['year'];
-            log_activity($_SESSION['user_id'], "Changed status of period {$period_name} to {$status}");
+        // Log successful status change
+        if ($old_status !== $status) {
+            log_audit_action('toggle_period_status', "Changed status of period: {$period_name} (ID: {$period_id}) from {$old_status} to {$status}", 'success');
         }
         
-        echo json_encode([
+        // Log the action (legacy logging)
+        if (function_exists('log_activity') && isset($_SESSION['user_id'])) {
+            log_activity($_SESSION['user_id'], "Changed status of period {$period_name} to {$status}");
+        }
+          echo json_encode([
             'success' => true,
             'message' => 'Status updated successfully',
             'data' => [
                 'period_id' => $period_id,
                 'status' => $status,
-                'period_name' => "Q" . $period['quarter'] . " " . $period['year']
+                'period_name' => $period_name
             ]
         ]);
           } catch (Exception $e) {
@@ -101,6 +115,11 @@ try {
 
 } catch (Exception $e) {
     error_log("Error in toggle_period_status.php: " . $e->getMessage());
+    
+    // Log failed status change attempt
+    $period_info = isset($period_id) ? "(ID: {$period_id})" : "";
+    log_audit_action('toggle_period_status', "Failed to change period status {$period_info} to {$status}. Error: " . $e->getMessage(), 'failure');
+    
     echo json_encode([
         'success' => false,
         'message' => $e->getMessage()

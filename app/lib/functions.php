@@ -362,6 +362,9 @@ function get_reporting_period($period_id) {
 function validate_login($username, $password) {
     global $conn;
     
+    // Include audit log functions
+    require_once ROOT_PATH . 'app/lib/audit_log.php';
+    
     // Sanitize inputs
     $username = $conn->real_escape_string(trim($username));
     
@@ -373,6 +376,8 @@ function validate_login($username, $password) {
     $result = $stmt->get_result();
     
     if ($result->num_rows === 0) {
+        // Log failed login attempt - user not found
+        log_login_attempt($username, false, 'User not found');
         return ['error' => 'Invalid username or password'];
     }
     
@@ -380,6 +385,8 @@ function validate_login($username, $password) {
     
     // Check if account is active
     if (isset($user['is_active']) && $user['is_active'] == 0) {
+        // Log failed login attempt - account deactivated
+        log_login_attempt($username, false, 'Account deactivated', $user['user_id']);
         return ['error' => 'Your account has been deactivated. Please contact an administrator.'];
     }
     
@@ -389,8 +396,13 @@ function validate_login($username, $password) {
         unset($user['password']);
         $_SESSION = $user;
         
+        // Log successful login
+        log_login_attempt($username, true, '', $user['user_id']);
+        
         return ['success' => true, 'user' => $user];
     } else {
+        // Log failed login attempt - wrong password
+        log_login_attempt($username, false, 'Invalid password', $user['user_id']);
         return ['error' => 'Invalid username or password'];
     }
 }

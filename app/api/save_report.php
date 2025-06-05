@@ -14,6 +14,7 @@ require_once ROOT_PATH . 'app/lib/db_connect.php';
 require_once ROOT_PATH . 'app/lib/session.php';
 require_once ROOT_PATH . 'app/lib/functions.php';
 require_once ROOT_PATH . 'app/lib/admins/index.php';
+require_once ROOT_PATH . 'app/lib/audit_log.php';
 
 // Verify user is admin
 if (!is_admin()) {
@@ -49,6 +50,9 @@ $is_public = isset($_POST['is_public']) ? intval($_POST['is_public']) : 0;
 
 // Validate required parameters
 if ($period_id <= 0 || $sector_id <= 0 || empty($report_name)) {
+    // Log failed report save attempt due to invalid parameters
+    log_audit_action('save_report', "Failed to save report due to invalid parameters. Period ID: {$period_id}, Sector ID: {$sector_id}, Report Name: '{$report_name}'", 'failure');
+    
     header('HTTP/1.1 400 Bad Request');
     echo json_encode(['error' => 'Missing required parameters']);
     exit;
@@ -78,6 +82,10 @@ $sector = $sector_result->fetch_assoc();
 
 // Check if file was uploaded
 if (!isset($_FILES['report_file']) || $_FILES['report_file']['error'] != UPLOAD_ERR_OK) {
+    // Log failed upload attempt
+    $upload_error = isset($_FILES['report_file']) ? $_FILES['report_file']['error'] : 'No file';
+    log_audit_action('save_report', "Failed to save report '{$report_name}' for {$sector['sector_name']} - Upload error: {$upload_error}", 'failure');
+    
     header('HTTP/1.1 400 Bad Request');
     echo json_encode(['error' => 'No file uploaded or upload error']);
     exit;
@@ -89,6 +97,9 @@ $file_ext = strtolower(pathinfo($uploaded_file['name'], PATHINFO_EXTENSION));
 
 // Validate file type
 if ($file_ext !== 'pptx') {
+    // Log invalid file type attempt
+    log_audit_action('save_report', "Failed to save report '{$report_name}' for {$sector['sector_name']} - Invalid file type: {$file_ext}", 'failure');
+    
     header('HTTP/1.1 400 Bad Request');
     echo json_encode(['error' => 'Invalid file type. Only PPTX files are allowed.']);
     exit;
@@ -103,6 +114,9 @@ $filepath = $pptx_dir . $filename;
 
 // Move uploaded file to destination
 if (!move_uploaded_file($uploaded_file['tmp_name'], $filepath)) {
+    // Log file save failure
+    log_audit_action('save_report', "Failed to save report '{$report_name}' for {$sector['sector_name']} - File system error during upload", 'failure');
+    
     header('HTTP/1.1 500 Internal Server Error');
     echo json_encode(['error' => 'Failed to save the file']);
     exit;
@@ -122,6 +136,10 @@ $stmt->bind_param("isssii", $period_id, $report_name, $description, $pptx_path, 
 if (!$stmt->execute()) {
     // If database insert fails, delete the uploaded file
     unlink($filepath);
+    
+    // Log database error
+    log_audit_action('save_report', "Failed to save report '{$report_name}' for {$sector['sector_name']} - Database error: " . $stmt->error, 'failure');
+    
     header('HTTP/1.1 500 Internal Server Error');
     echo json_encode(['error' => 'Failed to record report in database: ' . $stmt->error]);
     exit;
@@ -129,6 +147,12 @@ if (!$stmt->execute()) {
 
 // Get the newly created report id
 $report_id = $conn->insert_id;
+
+// Log successful report save
+$file_size = filesize($filepath);
+$quarter_year = 'Q' . $period['quarter'] . ' ' . $period['year'];
+$report_details = "Report: '{$report_name}' for {$sector['sector_name']} - {$quarter_year} (ID: {$report_id}, File: {$filename}, Size: " . number_format($file_size) . " bytes)";
+log_audit_action('save_report', "Successfully saved {$report_details}", 'success');
 
 // Return success response
 $response = [

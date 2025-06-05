@@ -12,10 +12,17 @@ if (!defined('PROJECT_ROOT_PATH')) {
 
 // Include config for APP_URL
 require_once PROJECT_ROOT_PATH . 'app/config/config.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/audit_log.php';
 
 // Start session if not already started
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
+}
+
+// Log logout before destroying session
+if (isset($_SESSION['user_id']) && isset($_SESSION['username'])) {
+    log_logout($_SESSION['user_id']);
 }
 
 // Unset all session variables

@@ -16,6 +16,7 @@ require_once ROOT_PATH . 'app/lib/db_connect.php';
 require_once ROOT_PATH . 'app/lib/session.php';
 require_once ROOT_PATH . 'app/lib/functions.php';
 require_once ROOT_PATH . 'app/lib/admin_functions.php';
+require_once ROOT_PATH . 'app/lib/audit_log.php';
 
 // Check if user is admin
 if (!is_admin()) {
@@ -81,16 +82,19 @@ try {
     if (!in_array($status, ['open', 'closed'])) {
         throw new Exception('Invalid status value');
     }
-    
-    // Check if the period exists
-    $checkStmt = $conn->prepare("SELECT period_id FROM reporting_periods WHERE period_id = ?");
+      // Check if the period exists and get current data
+    $checkStmt = $conn->prepare("SELECT period_id, quarter, year, start_date, end_date, status, is_standard_dates FROM reporting_periods WHERE period_id = ?");
     $checkStmt->bind_param("i", $periodId);
     $checkStmt->execute();
     $checkResult = $checkStmt->get_result();
     
     if ($checkResult->num_rows === 0) {
+        $checkStmt->close();
         throw new Exception('Period not found');
     }
+    
+    // Store current data for audit logging
+    $current_period = $checkResult->fetch_assoc();
     $checkStmt->close();
     
     // Check for conflicting periods (same quarter/year but different ID)
@@ -131,10 +135,14 @@ try {
     if (!$updateSuccess) {
         throw new Exception("Database error: " . $conn->error);
     }
-    
-    if ($updateStmt->affected_rows === 0) {
+      if ($updateStmt->affected_rows === 0) {
         // No rows were updated (maybe data hasn't changed)
         $updateStmt->close();
+        
+        // Log no changes made
+        $period_name = "Q{$quarter} {$year}";
+        log_audit_action('update_period', "No changes made to period: {$period_name} (ID: {$periodId})", 'success');
+        
         echo json_encode([
             'success' => true,
             'message' => 'No changes were made to the period'
@@ -144,6 +152,31 @@ try {
     
     $updateStmt->close();
     
+    // Log successful period update with before/after data
+    $period_name = "Q{$quarter} {$year}";
+    $changes = [];
+    if ($current_period['quarter'] != $quarter) {
+        $changes[] = "Quarter: {$current_period['quarter']} → {$quarter}";
+    }
+    if ($current_period['year'] != $year) {
+        $changes[] = "Year: {$current_period['year']} → {$year}";
+    }
+    if ($current_period['start_date'] != $start_date_db) {
+        $changes[] = "Start Date: {$current_period['start_date']} → {$start_date_db}";
+    }
+    if ($current_period['end_date'] != $end_date_db) {
+        $changes[] = "End Date: {$current_period['end_date']} → {$end_date_db}";
+    }
+    if ($current_period['status'] != $status) {
+        $changes[] = "Status: {$current_period['status']} → {$status}";
+    }
+    if ($current_period['is_standard_dates'] != $is_standard_dates) {
+        $changes[] = "Custom Dates: " . ($current_period['is_standard_dates'] ? 'No' : 'Yes') . " → " . ($is_standard_dates ? 'No' : 'Yes');
+    }
+    
+    $change_details = !empty($changes) ? implode(', ', $changes) : 'Minor updates';
+    log_audit_action('update_period', "Updated period: {$period_name} (ID: {$periodId}). Changes: {$change_details}", 'success');
+    
     // Success
     echo json_encode([
         'success' => true,
@@ -152,12 +185,20 @@ try {
     ]);
     
 } catch (Exception $e) {
+    // Log failed period update attempt
+    $period_name = !empty($quarter) && !empty($year) ? "Q{$quarter} {$year}" : "Unknown Period";
+    log_audit_action('update_period', "Failed to update period: {$period_name} (ID: {$periodId}). Error: " . $e->getMessage(), 'failure');
+    
     echo json_encode([
         'success' => false,
         'message' => $e->getMessage()
     ]);
 } catch (Error $e) {
     error_log("Error in update_period.php: " . $e->getMessage());
+    
+    // Log system error
+    log_audit_action('update_period', "System error while updating period (ID: {$periodId}). Error: " . $e->getMessage(), 'failure');
+    
     echo json_encode([
         'success' => false,
         'message' => 'A system error occurred. Please try again.'

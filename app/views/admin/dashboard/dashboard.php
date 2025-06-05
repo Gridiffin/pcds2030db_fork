@@ -261,7 +261,7 @@ const hasActivePeriod = <?php echo $hasActivePeriod ? 'true' : 'false'; ?>;
                                                 <tr>
                                                     <th>Program</th>
                                                     <th>Agency</th>
-                                                    <th>Status</th>
+                                                    <th></th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -274,34 +274,6 @@ const hasActivePeriod = <?php echo $hasActivePeriod ? 'true' : 'false'; ?>;
                                                                 </a>
                                                             </td>
                                                             <td><?php echo htmlspecialchars($program['agency_name']); ?></td>
-                                                            <td>
-                                                                <?php 
-                                                                $status = isset($program['status']) ? $program['status'] : 'not-started';
-                                                                $status_class = 'secondary';
-                                                                
-                                                                if ($status) {
-                                                                    switch($status) {
-                                                                        case 'on-track':
-                                                                        case 'on-track-yearly':
-                                                                            $status_class = 'warning';
-                                                                            break;
-                                                                        case 'delayed':
-                                                                        case 'severe-delay':
-                                                                            $status_class = 'danger';
-                                                                            break;
-                                                                        case 'completed':
-                                                                        case 'target-achieved':
-                                                                            $status_class = 'success';
-                                                                            break;
-                                                                    }
-                                                                }
-                                                                
-                                                                $display_status = $status ? ucfirst(str_replace('-', ' ', $status)) : 'Not Started';
-                                                                ?>
-                                                                <span class="badge bg-<?php echo $status_class; ?>">
-                                                                    <?php echo $display_status; ?>
-                                                                </span>
-                                                            </td>
                                                         </tr>
                                                         <?php $count++; ?>
                                                     <?php endif; ?>
@@ -337,7 +309,7 @@ const hasActivePeriod = <?php echo $hasActivePeriod ? 'true' : 'false'; ?>;
                                                 <tr>
                                                     <th>Program</th>
                                                     <th>Agency</th>
-                                                    <th>Status</th>
+                                                    <th></th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -350,30 +322,6 @@ const hasActivePeriod = <?php echo $hasActivePeriod ? 'true' : 'false'; ?>;
                                                                 </a>
                                                             </td>
                                                             <td><?php echo htmlspecialchars($program['agency_name']); ?></td>
-                                                            <td>
-                                                                <?php 
-                                                                $status = $program['status'] ?? 'not-started';
-                                                                $status_class = 'secondary';
-                                                                
-                                                                switch($status) {
-                                                                    case 'on-track':
-                                                                    case 'on-track-yearly':
-                                                                        $status_class = 'warning';
-                                                                        break;
-                                                                    case 'delayed':
-                                                                    case 'severe-delay':
-                                                                        $status_class = 'danger';
-                                                                        break;
-                                                                    case 'completed':
-                                                                    case 'target-achieved':
-                                                                        $status_class = 'success';
-                                                                        break;
-                                                                }
-                                                                ?>
-                                                                <span class="badge bg-<?php echo $status_class; ?>">
-                                                                    <?php echo ucfirst(str_replace('-', ' ', $status)); ?>
-                                                                </span>
-                                                            </td>
                                                         </tr>
                                                         <?php $count++; ?>
                                                     <?php endif; ?>
@@ -540,42 +488,19 @@ const hasActivePeriod = <?php echo $hasActivePeriod ? 'true' : 'false'; ?>;
                                     <tr>
                                         <th>Agency</th>
                                         <th>Program</th>
-                                        <th>Status</th>
                                         <th>Submitted</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php if (empty($recent_submissions)): ?>
                                         <tr>
-                                            <td colspan="4" class="text-center py-3">No recent submissions for this period</td>
+                                            <td colspan="3" class="text-center py-3">No recent submissions for this period</td>
                                         </tr>
                                     <?php else: ?>
                                         <?php foreach ($recent_submissions as $submission): ?>
                                             <tr>
                                                 <td><?php echo $submission['agency_name']; ?></td>
                                                 <td><?php echo $submission['program_name']; ?></td>
-                                                <td>
-                                                    <?php 
-                                                        $status_class = 'secondary'; // Default to gray (not started)
-                                                        switch ($submission['status']) {
-                                                            case 'on-track': 
-                                                            case 'on-track-yearly':
-                                                                $status_class = 'warning'; // Yellow - Still on track for the year
-                                                                break;
-                                                            case 'delayed': 
-                                                            case 'severe-delay':
-                                                                $status_class = 'danger'; // Red - Delayed
-                                                                break;
-                                                            case 'completed': 
-                                                            case 'target-achieved':
-                                                                $status_class = 'success'; // Green - Monthly target achieved
-                                                                break;
-                                                        }
-                                                    ?>
-                                                    <span class="badge bg-<?php echo $status_class; ?>">
-                                                        <?php echo ucfirst(str_replace('-', ' ', $submission['status'])); ?>
-                                                    </span>
-                                                </td>
                                                 <td><?php echo date('M j, g:i a', strtotime($submission['submission_date'])); ?></td>
                                             </tr>
                                         <?php endforeach; ?>

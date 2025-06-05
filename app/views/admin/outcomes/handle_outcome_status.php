@@ -5,9 +5,16 @@ require_once ROOT_PATH . 'app/lib/db_connect.php';
 require_once ROOT_PATH . 'app/lib/session.php';
 require_once ROOT_PATH . 'app/lib/functions.php';
 require_once ROOT_PATH . 'app/lib/admins/outcomes.php';
+require_once ROOT_PATH . 'app/lib/audit_log.php';
 
 // Verify user is an admin and request is AJAX
 if (!is_admin() || !isset($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) != 'xmlhttprequest') {
+    // Log unauthorized outcome status change attempt
+    log_audit_action(
+        'outcome_status_change_denied',
+        'Unauthorized attempt to change outcome status',
+        'failure'
+    );
     http_response_code(403);
     exit(json_encode(['success' => false, 'message' => 'Unauthorized access']));
 }
@@ -32,6 +39,12 @@ if (!isset($conn) || !$conn instanceof mysqli || $conn->connect_error) {
 }
 
 if (!$metric_id || !in_array($action, ['submit', 'unsubmit'])) {
+    // Log invalid outcome status change parameters
+    log_audit_action(
+        'outcome_status_change_failed',
+        "Invalid parameters for outcome status change. Metric ID: {$metric_id}, Action: {$action}",
+        'failure'
+    );
     http_response_code(400);
     exit(json_encode(['success' => false, 'message' => 'Invalid parameters', 'metric_id' => $metric_id]));
 }
@@ -85,9 +98,16 @@ try {
     )) {
         throw new Exception("Failed to record outcome history");
     }
-    
-    // Commit transaction
+      // Commit transaction
     $conn->commit();
+    
+    // Log successful outcome status change
+    $status_text = $is_draft ? 'unsubmitted (set to draft)' : 'submitted';
+    log_audit_action(
+        'outcome_status_change',
+        "Successfully {$status_text} outcome for metric ID: {$metric_id}",
+        'success'
+    );
     
     // Return success response with new draft status
     exit(json_encode([
@@ -102,6 +122,15 @@ try {
     if (isset($conn) && $conn instanceof mysqli && $conn->thread_id) {
         @$conn->rollback();
     }
+    
+    // Log failed outcome status change
+    $status_text = isset($is_draft) ? ($is_draft ? 'unsubmit' : 'submit') : 'change status of';
+    log_audit_action(
+        'outcome_status_change_failed',
+        "Failed to {$status_text} outcome for metric ID: {$metric_id}. Error: " . $e->getMessage(),
+        'failure'
+    );
+    
     http_response_code(500);
     $response_metric_id_on_error = isset($metric_id) ? $metric_id : (isset($_POST['metric_id']) ? intval($_POST['metric_id']) : 0);
     exit(json_encode([

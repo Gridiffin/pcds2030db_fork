@@ -17,6 +17,7 @@ require_once PROJECT_ROOT_PATH . 'lib/session.php';
 require_once PROJECT_ROOT_PATH . 'lib/functions.php';
 require_once PROJECT_ROOT_PATH . 'lib/agencies/index.php';
 require_once PROJECT_ROOT_PATH . 'lib/rating_helpers.php';
+require_once PROJECT_ROOT_PATH . 'lib/audit_log.php';
 
 // Verify user is an agency
 if (!is_agency()) {
@@ -135,22 +136,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($content_result->num_rows > 0) {
                 $content_row = $content_result->fetch_assoc();
                 $content_json = $content_row['content_json'];
-                
-                // Validate content
+                  // Validate content
                 if (empty($content_json) || $content_json === 'null') {
                     $result = ['error' => 'Cannot finalize submission without content. Please add targets and rating first.'];
+                    
+                    // Log validation failure
+                    log_audit_action(
+                        'program_submission_finalization_failed',
+                        "Failed to finalize program '{$program['program_name']}' (ID: {$program_id}) - no content",
+                        'failure',
+                        $_SESSION['user_id']
+                    );
                 } else {
                     $content_data = json_decode($content_json, true);
                     if (!$content_data || (empty($content_data['targets']) && empty($content_data['target'])) || empty($content_data['rating'])) {
                         $result = ['error' => 'Cannot finalize submission without targets and rating. Please complete the program details first.'];
+                        
+                        // Log validation failure
+                        log_audit_action(
+                            'program_submission_finalization_failed',
+                            "Failed to finalize program '{$program['program_name']}' (ID: {$program_id}) - missing targets or rating",
+                            'failure',
+                            $_SESSION['user_id']
+                        );
                     } else {
                         // Content is valid, proceed with finalization
                         $stmt = $conn->prepare("UPDATE program_submissions SET is_draft = 0, submission_date = NOW() WHERE submission_id = ? AND program_id = ? AND period_id = ?");
-                        $stmt->bind_param("iii", $submission_id, $program_id, $current_period['period_id']);
-                        if ($stmt->execute() && $stmt->affected_rows > 0) {
+                        $stmt->bind_param("iii", $submission_id, $program_id, $current_period['period_id']);                        if ($stmt->execute() && $stmt->affected_rows > 0) {
                             $result = ['success' => true, 'message' => 'Draft finalized successfully.'];
+                            
+                            // Log successful finalization
+                            log_audit_action(
+                                'program_submission_finalized',
+                                "Program '{$program['program_name']}' (ID: {$program_id}) submission finalized for period {$current_period['period_id']}",
+                                'success',
+                                $_SESSION['user_id']
+                            );
                         } else {
                             $result = ['error' => 'Failed to finalize draft. Submission may not exist for current period.'];
+                            
+                            // Log finalization failure
+                            log_audit_action(
+                                'program_submission_finalization_failed',
+                                "Failed to finalize program '{$program['program_name']}' (ID: {$program_id}) submission for period {$current_period['period_id']}",
+                                'failure',
+                                $_SESSION['user_id']
+                            );
                         }
                     }
                 }
@@ -275,12 +306,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (!$submission_stmt->execute()) {
                     throw new Exception('Failed to create submission: ' . $submission_stmt->error);
                 }
-            }
-              $conn->commit();
+            }            $conn->commit();
             $result = ['success' => true, 'message' => 'Program saved as draft successfully.'];
+            
+            // Log successful draft save
+            log_audit_action(
+                'program_draft_saved',
+                "Program '{$program_name}' (ID: {$program_id}) draft saved for period {$period_id}",
+                'success',
+                $_SESSION['user_id']
+            );
         } catch (Exception $e) {
             $conn->rollback();
             $result = ['error' => 'Failed to save draft: ' . $e->getMessage()];
+            
+            // Log draft save failure
+            log_audit_action(
+                'program_draft_save_failed',
+                "Failed to save draft for program '{$program['program_name']}' (ID: {$program_id}): " . $e->getMessage(),
+                'failure',
+                $_SESSION['user_id']
+            );
         }
     }
     

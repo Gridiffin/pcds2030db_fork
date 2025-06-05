@@ -13,6 +13,7 @@ require_once ROOT_PATH . 'app/lib/functions.php';
 require_once ROOT_PATH . 'app/lib/admin_functions.php';
 require_once ROOT_PATH . 'app/lib/rating_helpers.php';
 require_once ROOT_PATH . 'app/lib/agencies/programs.php'; // Added for program history feature
+require_once ROOT_PATH . 'app/lib/audit_log.php';
 
 // Verify user is admin
 if (!is_admin()) {
@@ -167,15 +168,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new Exception('Failed to insert program submission history: ' . $stmt_insert_submission->error);
             }
             $stmt_insert_submission->close();
-            
-            $conn->commit();
+              $conn->commit();
             $message = 'Program updated successfully and history recorded.';
             $messageType = 'success';
+            
+            // Log successful program edit
+            log_audit_action(
+                'admin_program_edited',
+                "Admin edited program '{$program_name_form}' (ID: {$program_id}) - Owner: Agency {$owner_agency_id}, Sector: {$sector_id}",
+                'success',
+                $_SESSION['user_id']
+            );
 
         } catch (Exception $e) {
             $conn->rollback();
             $message = 'Operation failed: ' . $e->getMessage();
             $messageType = 'danger';
+            
+            // Log program edit failure
+            log_audit_action(
+                'admin_program_edit_failed',
+                "Admin failed to edit program (ID: {$program_id}): " . $e->getMessage(),
+                'failure',
+                $_SESSION['user_id']
+            );
         }
     }
 }

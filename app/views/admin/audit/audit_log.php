@@ -11,6 +11,7 @@ require_once ROOT_PATH . 'app/lib/db_connect.php';
 require_once ROOT_PATH . 'app/lib/session.php';
 require_once ROOT_PATH . 'app/lib/functions.php';
 require_once ROOT_PATH . 'app/lib/admins/index.php';
+require_once ROOT_PATH . 'app/lib/audit_log.php';
 
 // Verify user is admin
 if (!is_admin()) {
@@ -64,6 +65,9 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
 
 <div class="row mb-4">
     <div class="col-lg-12">
+        <!-- Error alert container -->
+        <div id="auditLogAlertContainer"></div>
+        
         <div class="card shadow-sm">
             <div class="card-header">
                 <h6 class="card-title m-0">
@@ -84,16 +88,18 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                         <label for="filterAction" class="form-label">Action Type</label>
                         <select class="form-select" id="filterAction" name="action_type">
                             <option value="">All Actions</option>
-                            <option value="login">Login</option>
+                            <option value="login_success">Login Success</option>
+                            <option value="login_failure">Login Failed</option>
                             <option value="logout">Logout</option>
                             <option value="create">Create</option>
                             <option value="update">Update</option>
                             <option value="delete">Delete</option>
+                            <option value="export">Export</option>
                         </select>
                     </div>
                     <div class="col-md-3">
                         <label for="filterUser" class="form-label">User</label>
-                        <input type="text" class="form-control" id="filterUser" name="user" placeholder="Username or email">
+                        <input type="text" class="form-control" id="filterUser" name="user" placeholder="Username">
                     </div>
                     <div class="col-12">
                         <button type="submit" class="btn btn-primary">
@@ -109,14 +115,30 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
     </div>
 </div>
 
+<!-- Error alert for displaying errors -->
+<div class="row mb-4 d-none" id="errorAlert">
+    <div class="col-12">
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <span id="errorMessage">Error loading audit logs</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
 <div class="row">
     <div class="col-lg-12">
         <div class="card shadow-sm">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title m-0">Audit Log Entries</h5>
-                <button class="btn btn-outline-primary" id="exportLogs">
-                    <i class="fas fa-download me-1"></i> Export Logs
-                </button>
+                <div>
+                    <button class="btn btn-outline-secondary me-2" id="refreshLogs">
+                        <i class="fas fa-sync-alt me-1"></i> Refresh
+                    </button>
+                    <button class="btn btn-outline-primary" id="exportLogs">
+                        <i class="fas fa-download me-1"></i> Export Logs
+                    </button>
+                </div>
             </div>
             <div class="card-body">
                 <!-- Audit log table will be loaded here -->
@@ -126,6 +148,8 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                         <p class="mt-2 text-muted">Loading audit logs...</p>
                     </div>
                 </div>
+                <!-- Pagination area will be dynamically added here -->
+                <div id="paginationContainer"></div>
             </div>
         </div>
     </div>
@@ -134,6 +158,35 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
 <script>
 // Initialize APP_URL for JavaScript
 const APP_URL = '<?php echo APP_URL; ?>';
+
+// Helper function to show error alerts
+function showErrorAlert(message) {
+    const errorAlert = document.getElementById('errorAlert');
+    const errorMessage = document.getElementById('errorMessage');
+    
+    if (errorAlert && errorMessage) {
+        errorMessage.textContent = message;
+        errorAlert.classList.remove('d-none');
+    }
+}
+
+// Function to close error alerts
+function closeErrorAlert() {
+    const errorAlert = document.getElementById('errorAlert');
+    if (errorAlert) {
+        errorAlert.classList.add('d-none');
+    }
+}
+
+// Add event listener to refresh button
+document.getElementById('refreshLogs')?.addEventListener('click', function() {
+    // This will be picked up by the audit-log.js loadAuditLogs function
+    if (typeof loadAuditLogs === 'function') {
+        loadAuditLogs();
+    } else {
+        location.reload();
+    }
+});
 </script>
 
 <?php

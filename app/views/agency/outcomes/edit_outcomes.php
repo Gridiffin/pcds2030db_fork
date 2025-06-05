@@ -11,6 +11,7 @@ require_once ROOT_PATH . 'app/lib/db_connect.php';
 require_once ROOT_PATH . 'app/lib/session.php';
 require_once ROOT_PATH . 'app/lib/functions.php';
 require_once ROOT_PATH . 'app/lib/agency_functions.php';
+require_once ROOT_PATH . 'app/lib/audit_log.php';
 
 // Verify user is an agency user
 if (!is_agency()) {
@@ -74,14 +75,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $update_query = "UPDATE sector_outcomes_data SET table_name = ?, data_json = ?, is_draft = ? WHERE metric_id = ? AND sector_id = ?";
             $stmt_update = $conn->prepare($update_query);
             $data_json_str = json_encode($post_data_array);
-            $stmt_update->bind_param("ssiii", $post_table_name, $data_json_str, $is_draft, $outcome_id, $sector_id);
-            if ($stmt_update->execute()) {
+            $stmt_update->bind_param("ssiii", $post_table_name, $data_json_str, $is_draft, $outcome_id, $sector_id);            if ($stmt_update->execute()) {
+                // Log successful outcome edit
+                log_audit_action(
+                    'outcome_updated',
+                    "Updated outcome '{$post_table_name}' (Metric ID: {$outcome_id}) for sector {$sector_id}" . ($is_draft ? ' as draft' : ''),
+                    'success',
+                    $_SESSION['user_id']
+                );
+                
                 // Redirect to submit_outcomes.php after successful save or save draft
                 header('Location: submit_outcomes.php');
                 exit;
             } else {
                 $message = 'Error updating outcome: ' . $conn->error;
                 $message_type = 'danger';
+                
+                // Log outcome update failure
+                log_audit_action(
+                    'outcome_update_failed',
+                    "Failed to update outcome '{$post_table_name}' (Metric ID: {$outcome_id}) for sector {$sector_id}: " . $conn->error,
+                    'failure',
+                    $_SESSION['user_id']
+                );
             }
         }
     }
