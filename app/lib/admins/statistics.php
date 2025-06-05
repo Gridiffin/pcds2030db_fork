@@ -343,14 +343,25 @@ function get_admin_programs_list($period_id = null, $filters = []) {
     // ) ps ON p.program_id = ps.program_id";
     // This subquery for ps might be causing issues with ONLY_FULL_GROUP_BY if not handled correctly when integrated.    // Simpler JOIN without subquery for ps:
     $sql = "SELECT 
-        p.program_id, p.program_name, p.owner_agency_id, p.sector_id, p.created_at,
-        s.sector_name, 
-        u.agency_name,
-        ps.submission_id, JSON_EXTRACT(ps.content_json, '$.status') as status, ps.is_draft, ps.submission_date, ps.updated_at, ps.period_id AS submission_period_id
-    FROM programs p
-    JOIN sectors s ON p.sector_id = s.sector_id
-    JOIN users u ON p.owner_agency_id = u.user_id
-    LEFT JOIN program_submissions ps ON p.program_id = ps.program_id AND ps.period_id = ?";
+                p.program_id, p.program_name, p.owner_agency_id, p.sector_id, p.created_at,
+                s.sector_name, 
+                u.agency_name,
+                latest_sub.submission_id, latest_sub.is_draft, latest_sub.submission_date, latest_sub.updated_at, latest_sub.period_id AS submission_period_id,
+                COALESCE(JSON_UNQUOTE(JSON_EXTRACT(latest_sub.content_json, '$.rating')), 'not-started') as rating
+            FROM programs p
+            JOIN sectors s ON p.sector_id = s.sector_id
+            JOIN users u ON p.owner_agency_id = u.user_id
+            LEFT JOIN (
+                SELECT ps1.*
+                FROM program_submissions ps1
+                INNER JOIN (
+                    SELECT program_id, MAX(submission_id) as max_submission_id
+                    FROM program_submissions
+                    WHERE period_id = ?
+                    GROUP BY program_id
+                ) ps2 ON ps1.program_id = ps2.program_id AND ps1.submission_id = ps2.max_submission_id
+            ) latest_sub ON p.program_id = latest_sub.program_id";
+
 
     $params = []; // Re-initialize params for this corrected SQL structure
     $param_types = '';
