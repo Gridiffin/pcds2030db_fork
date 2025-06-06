@@ -4,7 +4,11 @@
  * Handles all API calls and server communication for the report generator
  */
 
-const ReportAPI = (function() {    /**
+// Prevent multiple instantiations
+if (typeof window.ReportAPI !== 'undefined') {
+    console.log('ReportAPI module already loaded, skipping redeclaration');
+} else {
+    window.ReportAPI = (function() {/**
      * Fetches report data from the API
      * @param {number} periodId - The reporting period ID
      * @param {number} sectorId - The sector ID
@@ -257,9 +261,7 @@ const ReportAPI = (function() {    /**
                 reject(error);
             });
         });
-    }
-
-    // Expose public methods
+    }    // Expose public methods
     return {
         fetchReportData,
         uploadPresentation,
@@ -267,3 +269,5 @@ const ReportAPI = (function() {    /**
         deleteReport
     };
 })();
+
+} // End ReportAPI guard

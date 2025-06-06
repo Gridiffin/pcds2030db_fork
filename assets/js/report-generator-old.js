@@ -14,9 +14,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Prevent multiple initializations
     if (reportGeneratorInitialized) {
         console.log('Report generator already initialized, skipping duplicate initialization.');
-        // The program container element might not be defined here yet if this is the first run
+        // The programContainerElement might not be defined here yet if this is the first run
         // and the DOMContentLoaded listener is firing a second time for some reason.
         // It's safer to re-query it or ensure it's defined before this block.
+        // For now, we'll assume it might be null and proceed if it was set by a previous init.
         const existingProgramContainer = document.getElementById('programSelector')?.querySelector('.program-selector-container');
         if (existingProgramContainer) {
             existingProgramContainer.innerHTML = `

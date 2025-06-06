@@ -4,7 +4,11 @@
  * Handles UI interactions for the report generator
  */
 
-const ReportUI = (function() {
+// Prevent multiple instantiations
+if (typeof window.ReportUI !== 'undefined') {
+    console.log('ReportUI module already loaded, skipping redeclaration');
+} else {
+    window.ReportUI = (function() {
     // Store DOM element references
     let elements = {};
 
@@ -297,9 +301,7 @@ const ReportUI = (function() {
         toast.addEventListener('hidden.bs.toast', function() {
             toast.remove();
         });
-    }
-
-    // Expose public methods
+    }    // Expose public methods
     return {
         initUI,
         showToast,
@@ -307,3 +309,5 @@ const ReportUI = (function() {
         setupDeleteModal // Make this function publicly accessible so it can be called after table refresh
     };
 })();
+
+} // End ReportUI guard

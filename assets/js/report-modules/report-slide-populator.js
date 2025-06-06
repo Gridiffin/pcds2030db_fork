@@ -4,7 +4,11 @@
  * Handles populating slides with content from the report data
  */
 
-const ReportPopulator = (function() {
+// Prevent multiple instantiations
+if (typeof window.ReportPopulator !== 'undefined') {
+    console.log('ReportPopulator module already loaded, skipping redeclaration');
+} else {
+    window.ReportPopulator = (function() {
     /**
      * Populate the slide with data from the API
      * @param {Object} slide - The slide to populate
@@ -476,11 +480,11 @@ const ReportPopulator = (function() {
                 reject(new Error('Error in presentation generation: ' + error.message));
             }
         });
-    }
-
-    // Expose public methods
+    }    // Expose public methods
     return {
         populateSlide,
         generatePresentation
     };
 })();
+
+} // End ReportPopulator guard

@@ -71,7 +71,6 @@
 <script src="<?php echo APP_URL; ?>/assets/js/utilities/initialization.js"></script>
 <script src="<?php echo APP_URL; ?>/assets/js/utilities/form_utils.js"></script>
 <script src="<?php echo APP_URL; ?>/assets/js/utilities/filter_utils.js"></script>
-<script src="<?php echo APP_URL; ?>/assets/js/main.js"></script>
 
 <!-- Inline page-specific scripts -->
 <?php if (isset($inlineScripts)): ?>

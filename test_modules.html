@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Report Modules Loading</title>
+</head>
+<body>
+    <h1>Testing Report Modules Loading</h1>
+    <div id="test-results"></div>
+
+    <!-- Load modules in the correct order -->
+    <script src="/assets/js/report-modules/report-ui.js"></script>
+    <script src="/assets/js/report-modules/report-api.js"></script>
+    <script src="/assets/js/report-modules/report-slide-styler.js"></script>
+    <script src="/assets/js/report-modules/report-slide-populator.js"></script>
+    <script src="/assets/js/report-generator.js"></script>
+
+    <script>
+        // Test if modules are loaded correctly
+        const testResults = document.getElementById('test-results');
+        let results = [];
+
+        // Test ReportUI module
+        if (typeof ReportUI !== 'undefined') {
+            results.push('✅ ReportUI module loaded successfully');
+        } else {
+            results.push('❌ ReportUI module not found');
+        }
+
+        // Test ReportAPI module
+        if (typeof ReportAPI !== 'undefined') {
+            results.push('✅ ReportAPI module loaded successfully');
+        } else {
+            results.push('❌ ReportAPI module not found');
+        }
+
+        // Test ReportStyler module
+        if (typeof ReportStyler !== 'undefined') {
+            results.push('✅ ReportStyler module loaded successfully');
+        } else {
+            results.push('❌ ReportStyler module not found');
+        }
+
+        // Test ReportPopulator module
+        if (typeof ReportPopulator !== 'undefined') {
+            results.push('✅ ReportPopulator module loaded successfully');
+        } else {
+            results.push('❌ ReportPopulator module not found');
+        }
+
+        // Test if ReportGenerator can find ReportUI (the original issue)
+        try {
+            // This is the check that was failing before
+            if (typeof ReportUI !== 'undefined') {
+                results.push('✅ ReportGenerator can access ReportUI module');
+            } else {
+                results.push('❌ ReportGenerator cannot access ReportUI module');
+            }
+        } catch (error) {
+            results.push('❌ Error testing ReportGenerator: ' + error.message);
+        }
+
+        testResults.innerHTML = '<ul><li>' + results.join('</li><li>') + '</li></ul>';
+    </script>
+</body>
+</html>

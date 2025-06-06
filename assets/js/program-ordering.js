@@ -3,6 +3,11 @@
  * Handles drag and drop ordering of programs in the report generator
  */
 
+// Prevent multiple instantiations
+if (typeof window.ProgramOrderManager !== 'undefined') {
+    console.log('ProgramOrderManager already loaded, skipping redeclaration');
+} else {
+    
 class ProgramOrderManager {
     constructor() {
         this.draggedElement = null;
@@ -267,3 +272,5 @@ window.addEventListener('unload', () => {
         delete window.programOrderManager;
     }
 });
+
+} // End ProgramOrderManager guard

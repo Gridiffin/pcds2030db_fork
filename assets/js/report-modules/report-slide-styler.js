@@ -4,7 +4,11 @@
  * Handles all styling-related functionality for the report generator
  */
 
-const ReportStyler = (function() {
+// Prevent multiple instantiations
+if (typeof window.ReportStyler !== 'undefined') {
+    console.log('ReportStyler module already loaded, skipping redeclaration');
+} else {
+    window.ReportStyler = (function() {
     /**
      * Get the theme colors for the presentation
      * @returns {Object} The theme colors
@@ -1218,11 +1222,10 @@ const ReportStyler = (function() {
                 const statusColCharsPerLine = 72;
                 const programColCharsPerLine = Math.floor(statusColCharsPerLine * (colWidths[0] / colWidths[3]));
                 const targetColCharsPerLine = Math.floor(statusColCharsPerLine * (colWidths[1] / colWidths[3]));
-                
-                // Get the raw text lines
+                  // Get the raw text lines
                 const targetLines = normalizeNewlines(program.target || 'N/A');
                 const statusLines = normalizeNewlines(program.status || 'N/A');
-                const nameText = program.name || 'N/A';
+                const nameText = program.program_name || 'N/A';
 
                 // Calculate height for program name
                 const nameChars = nameText.length;
@@ -1294,7 +1297,7 @@ const ReportStyler = (function() {
                 let currentXPos = tableDimensions.x + padding;
 
                 // Program name
-                slide.addText(program.name || 'N/A', {
+                slide.addText(program.program_name || 'N/A', {
                     x: currentXPos,
                     y: rowY,
                     w: colWidths[0],
@@ -1670,12 +1673,12 @@ slide.addText(statusText, {
         // Add chart (no need to set axis titles as they've been removed)
         slide.addChart(pptx.ChartType.line || 'line', chartData, chartOptions);
         console.log("Line chart with real data added to slide");
-    }
-
-    return {
+    }    return {
         createErrorKpiBox: createErrorKpiBox,
         getDegradedAreaChartOptions: getDegradedAreaChartOptions,
         addTotalDegradedAreaChart: addTotalDegradedAreaChart,
         createProgramDataTable: createProgramDataTable
     };
 })();
+
+} // End ReportStyler guard
