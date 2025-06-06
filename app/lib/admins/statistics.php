@@ -684,32 +684,52 @@ function get_program_submission($program_id, $period_id) {
  */
 function unsubmit_program($program_id, $period_id) {
     global $conn;
-    
     $program_id = intval($program_id);
     $period_id = intval($period_id);
-    
-    $sql = "UPDATE program_submissions 
-            SET is_draft = 1, status = 'not-started' 
-            WHERE program_id = ? AND period_id = ?";
-            
-    $stmt = $conn->prepare($sql);
-    
+
+    // Fetch the current content_json
+    $sql_select = "SELECT submission_id, content_json FROM program_submissions WHERE program_id = ? AND period_id = ? ORDER BY submission_id DESC LIMIT 1";
+    $stmt = $conn->prepare($sql_select);
     if (!$stmt) {
-        error_log("Database error in unsubmit_program: " . $conn->error);
+        error_log("Database error in unsubmit_program (select): " . $conn->error);
         return false;
     }
-    
     $stmt->bind_param('ii', $program_id, $period_id);
-    
     if (!$stmt->execute()) {
-        error_log("Execution error in unsubmit_program: " . $stmt->error);
+        error_log("Execution error in unsubmit_program (select): " . $stmt->error);
         $stmt->close();
         return false;
     }
-    
+    $result = $stmt->get_result();
+    if ($result->num_rows === 0) {
+        $stmt->close();
+        return false;
+    }
+    $row = $result->fetch_assoc();
+    $submission_id = $row['submission_id'];
+    $content_json = $row['content_json'];
+    $stmt->close();
+
+    // Update the rating/status in content_json
+    $content = json_decode($content_json, true) ?: [];
+    $content['rating'] = 'not-started';
+    $new_content_json = json_encode($content);
+
+    // Update is_draft and content_json
+    $sql_update = "UPDATE program_submissions SET is_draft = 1, content_json = ? WHERE submission_id = ?";
+    $stmt = $conn->prepare($sql_update);
+    if (!$stmt) {
+        error_log("Database error in unsubmit_program (update): " . $conn->error);
+        return false;
+    }
+    $stmt->bind_param('si', $new_content_json, $submission_id);
+    if (!$stmt->execute()) {
+        error_log("Execution error in unsubmit_program (update): " . $stmt->error);
+        $stmt->close();
+        return false;
+    }
     $affected = $stmt->affected_rows;
     $stmt->close();
-    
     return $affected > 0;
 }
 

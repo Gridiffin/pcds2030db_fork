@@ -451,6 +451,28 @@ if (isset($program['current_submission'])) {
     $brief_description = '';
 }
 
+// Ensure $brief_description is always defined as a string to prevent warnings and deprecated notices
+if (!isset($brief_description) || $brief_description === null) {
+    $brief_description = '';
+}
+
+// Fallback: If brief_description is still empty, use the value from the program's content_json if not present in the latest submission, since that's where the data is stored.
+if (empty($brief_description)) {
+    // Try to extract from program['content_json'] if available
+    if (!empty($program['content_json'])) {
+        $program_content = json_decode($program['content_json'], true);
+        if (is_array($program_content) && !empty($program_content['brief_description'])) {
+            $brief_description = $program_content['brief_description'];
+        }
+    }
+    // Legacy fallback (if any other fields are used in the future)
+    elseif (!empty($program['brief_description'])) {
+        $brief_description = $program['brief_description'];
+    } elseif (!empty($program['description'])) {
+        $brief_description = $program['description'];
+    }
+}
+
 // Set page title
 $pageTitle = 'Update Program';
 
@@ -600,10 +622,6 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                                     <?php
                                     // Get complete history of program name changes
                                     $name_history = get_field_edit_history($program_history['submissions'], 'program_name');
-                                    // DEBUG: Output the raw name_history for troubleshooting
-                                    echo '<pre style="background:#ffe0e0; color:#a00; padding:8px;">DEBUG name_history:\n';
-                                    print_r($name_history);
-                                    echo '</pre>';
                                     ?>
                                     <?php
                                     // Show history panel if there is at least one entry in $name_history
@@ -832,9 +850,6 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                             <?php if ($is_draft): ?>
                                 <button type="submit" name="save_draft" class="btn btn-secondary me-2">
                                     <i class="fas fa-save me-1"></i> Save Draft
-                                </button>
-                                <button type="submit" name="finalize_draft" class="btn btn-primary">
-                                    <i class="fas fa-check-circle me-1"></i> Finalize Submission
                                 </button>
                             <?php else: ?>
                                 <button type="submit" name="save_draft" class="btn btn-secondary me-2">
