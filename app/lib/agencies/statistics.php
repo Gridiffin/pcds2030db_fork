@@ -115,6 +115,7 @@ function get_all_sectors_programs($period_id = null, $filters = []) {
                 p.created_at,
                 p.updated_at,
                 p.sector_id,
+                p.owner_agency_id AS agency_id,
                 s.sector_name,
                 u.agency_name";
     
@@ -197,7 +198,7 @@ function get_all_sectors_programs($period_id = null, $filters = []) {
     }
       // Finalize query
     $query .= " GROUP BY p.program_id, p.program_name, p.start_date, p.end_date, 
-                p.created_at, p.updated_at, p.sector_id, s.sector_name, u.agency_name";
+                p.created_at, p.updated_at, p.sector_id, p.owner_agency_id, s.sector_name, u.agency_name";
     
     // Add additional GROUP BY fields based on schema
     if ($has_content_json) {

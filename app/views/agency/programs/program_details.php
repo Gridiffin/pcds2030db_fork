@@ -158,7 +158,11 @@ $subtitle = $program['program_name'];
 $headerStyle = 'light'; // Use light (white) style for inner pages
 
 // Back button URL depends on source
-$backUrl = $source === 'all_sectors' ? 'sectors/view_all_sectors.php' : 'view_programs.php';
+// Back button URL depends on source
+$allSectorsUrl = APP_URL . '/app/views/agency/sectors/view_all_sectors.php';
+$myProgramsUrl = APP_URL . '/app/views/agency/programs/view_programs.php';
+
+$backUrl = $source === 'all_sectors' ? $allSectorsUrl : $myProgramsUrl;
 
 $actions = [
     [

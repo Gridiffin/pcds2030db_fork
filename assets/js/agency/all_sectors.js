@@ -1,200 +1,164 @@
 /**
- * All Sectors View Functionality
- * 
- * Handles searching and filtering for the All Sectors view
+ * All Sectors Programs Filtering and Sorting
+ * Client-side filtering and sorting for the view_all_sectors.php page
  */
 document.addEventListener('DOMContentLoaded', function() {
-    // Disable client-side filtering to avoid conflict with server-side filtering
-    // initializeFiltering();
-});
+    // Initialize sorting
+    const table = document.getElementById('programsTable');
+    if (!table) return;
 
-/**
- * Initialize search and filtering functionality
- */
-function initializeFiltering() {
-    // Fix: Changed element IDs to match what's in the HTML
-    const searchInput = document.getElementById('search');
-    const ratingFilter = document.getElementById('rating') || document.getElementById('status'); // Support both for backward compatibility
-    const sectorFilter = document.getElementById('sector_id');
-    const resetButton = document.getElementById('resetFilters');
-    const filterIndicators = document.getElementById('activeFilters');
-    const filterBadges = document.getElementById('filterBadges');
-    const noResultsMessage = document.getElementById('noResultsMessage');
-    const programCount = document.getElementById('programCount');
-    
-    // Skip initialization if elements don't exist on this page
-    if (!searchInput && !ratingFilter && !sectorFilter) {
-        console.log('Filtering elements not found - might be on a different view');
-        return;
-    }
-    
-    // Function to apply all filters
-    function applyFilters() {
-        const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
-        const ratingValue = ratingFilter ? ratingFilter.value.toLowerCase() : '';
-        const sectorValue = sectorFilter ? sectorFilter.value : '';
-        
-        // Check if any filters are active
-        const hasActiveFilters = searchTerm || ratingValue || sectorValue;
-        
-        // Update filter indicators visibility
-        if (filterIndicators) {
-            filterIndicators.style.display = hasActiveFilters ? 'block' : 'none';
-        }
-        
-        // Update filter badges
-        if (filterBadges) {
-            filterBadges.innerHTML = '';
-            
-            if (searchTerm) {
-                addFilterBadge('Search', searchTerm, () => {
-                    searchInput.value = '';
-                    applyFilters();
-                });
-            }
-            
-            if (ratingValue) {
-                const ratingText = ratingFilter.options[ratingFilter.selectedIndex].text;
-                addFilterBadge('Rating', ratingText, () => {
-                    ratingFilter.value = '';
-                    applyFilters();
-                });
-            }
-            
-            if (sectorValue) {
-                const sectorText = sectorFilter.options[sectorFilter.selectedIndex].text;
-                addFilterBadge('Sector', sectorText.replace(' (Your Sector)', ''), () => {
-                    sectorFilter.value = '';
-                    applyFilters();
-                });
-            }
-        }
-        
-        // Apply filters to all rows in the table
-        const programsTable = document.getElementById('programsTable');
-        if (!programsTable) return;
-        
-        const allRows = programsTable.querySelectorAll('tbody tr');
-        
-        // Skip filtering if there's a "No programs found" row
-        if (allRows.length === 1 && allRows[0].querySelector('td[colspan]')) {
-            return;
-        }
-        
-        let visibleCount = 0;
-        
-        allRows.forEach(row => {
-            // Skip rows that are just "No programs found" messages
-            if (row.querySelector('td[colspan]')) {
-                return;
-            }
-            
-            const programName = row.querySelector('td:first-child .fw-medium')?.textContent.toLowerCase() || '';
-            const programDesc = row.querySelector('td:first-child .small')?.textContent.toLowerCase() || '';
-            const rating = row.querySelector('td:nth-child(4) .badge')?.textContent.toLowerCase() || '';
-            const sectorText = row.querySelector('td:nth-child(3) .badge')?.textContent.toLowerCase() || '';
-            
-            // Check if row matches all filters
-            const matchesSearch = !searchTerm || 
-                programName.includes(searchTerm) || 
-                programDesc.includes(searchTerm);
-                
-            const matchesRating = !ratingValue || rating.toLowerCase().includes(ratingValue.toLowerCase());
-            
-            const matchesSector = !sectorValue || row.classList.contains(`sector-${sectorValue}`);
-            
-            // Show/hide row based on filters
-            if (matchesSearch && matchesRating && matchesSector) {
-                row.style.display = '';
-                visibleCount++;
-            } else {
-                row.style.display = 'none';
-            }
+    const sortableHeaders = table.querySelectorAll('th.sortable');
+    sortableHeaders.forEach(header => {
+        header.style.cursor = 'pointer';
+        header.addEventListener('click', function() {
+            const sortBy = this.getAttribute('data-sort');
+            const currentDirection = this.getAttribute('data-direction') || 'asc';
+            const newDirection = currentDirection === 'asc' ? 'desc' : 'asc';
+
+            // Update all icons in this table
+            sortableHeaders.forEach(h => {
+                const icon = h.querySelector('i');
+                if (h === this) {
+                    icon.className = newDirection === 'asc' 
+                        ? 'fas fa-sort-up ms-1' 
+                        : 'fas fa-sort-down ms-1';
+                } else {
+                    icon.className = 'fas fa-sort ms-1';
+                    h.removeAttribute('data-direction');
+                }
+            });
+
+            // Update direction attribute
+            this.setAttribute('data-direction', newDirection);
+
+            sortTableRows(table, sortBy, newDirection);
         });
-        
-        // Update the count display
-        if (programCount) {
-            programCount.textContent = `${visibleCount} Program${visibleCount !== 1 ? 's' : ''}`;
-        }
-        
-        // Show/hide no results message
-        if (noResultsMessage) {
-            noResultsMessage.style.display = (visibleCount === 0 && hasActiveFilters) ? 'block' : 'none';
-        }
-        
-        // If we have a normal table (not a "no data" message) but no visible rows after filtering
-        const tableBody = programsTable.querySelector('tbody');
-        
-        // Check for existing "No results from filter" message row
-        let noFilterResultsRow = tableBody.querySelector('tr.no-filter-results');
-        
-        if (visibleCount === 0 && hasActiveFilters) {
-            // Add a "no filter results" message if it doesn't exist
-            if (!noFilterResultsRow) {
-                const colSpan = document.querySelector('#programsTable thead tr').children.length;
-                noFilterResultsRow = document.createElement('tr');
-                noFilterResultsRow.className = 'no-filter-results';
-                noFilterResultsRow.innerHTML = `
-                    <td colspan="${colSpan}" class="text-center py-4">
-                        <div class="alert alert-info mb-0">
-                            <i class="fas fa-filter me-2"></i>
-                            No programs match your filter criteria. Try adjusting your filters.
-                        </div>
-                    </td>
-                `;
-                tableBody.appendChild(noFilterResultsRow);
-            } else {
-                noFilterResultsRow.style.display = '';
-            }
-        } else if (noFilterResultsRow) {
-            // Hide the "no filter results" message if it exists but we have results
-            noFilterResultsRow.style.display = 'none';
-        }
-    }
-    
-    // Helper function to add filter badge
-    function addFilterBadge(type, value, clearFn) {
-        if (!filterBadges) return;
-        
-        const badge = document.createElement('span');
-        badge.className = 'badge rounded-pill bg-light text-dark border';
-        badge.innerHTML = `${type}: ${value} <button type="button" class="btn-close" aria-label="Remove filter"></button>`;
-        
-        // Add click handler to clear this filter
-        badge.querySelector('.btn-close').addEventListener('click', clearFn);
-        
-        filterBadges.appendChild(badge);
-    }
-    
-    // Add event listeners for filters
-    if (searchInput) searchInput.addEventListener('input', applyFilters);
+    });
+
+    // Initialize filters
+    const searchInput = document.getElementById('searchFilter');
+    const ratingFilter = document.getElementById('ratingFilter');
+    const agencyFilter = document.getElementById('agencyFilter');
+    const resetFiltersBtn = document.getElementById('resetFilters');
+
+    if (searchInput) searchInput.addEventListener('keyup', applyFilters);
     if (ratingFilter) ratingFilter.addEventListener('change', applyFilters);
-    if (sectorFilter) sectorFilter.addEventListener('change', applyFilters);
-    
-    // Reset all filters
-    if (resetButton) {
-        resetButton.addEventListener('click', () => {
+    if (agencyFilter) agencyFilter.addEventListener('change', applyFilters);
+
+    if (resetFiltersBtn) {
+        resetFiltersBtn.addEventListener('click', function() {
             if (searchInput) searchInput.value = '';
             if (ratingFilter) ratingFilter.value = '';
-            if (sectorFilter) sectorFilter.value = '';
+            if (agencyFilter) agencyFilter.value = '';
             applyFilters();
         });
     }
-    
-    // Only apply initial filters if explicit selections have been made
-    // This prevents auto-filtering to current sector on page load
-    if ((searchInput && searchInput.value) || 
-        (ratingFilter && ratingFilter.value) || 
-        (sectorFilter && sectorFilter.value !== '')) {
-        applyFilters();
-    } else {
-        // Just update the program count
-        if (programCount) {
-            const programsTable = document.getElementById('programsTable');
-            if (programsTable) {
-                const totalPrograms = programsTable.querySelectorAll('tbody tr:not([style*="display: none"])').length;
-                programCount.textContent = `${totalPrograms} Program${totalPrograms !== 1 ? 's' : ''}`;
+
+    // Initial filter application
+    applyFilters();
+
+    // Function to apply filters to table rows
+    function applyFilters() {
+        const searchText = searchInput ? searchInput.value.toLowerCase() : '';
+        const ratingValue = ratingFilter ? ratingFilter.value : '';
+        const agencyValue = agencyFilter ? agencyFilter.value : '';
+
+        const tbody = table.querySelector('tbody');
+        const rows = tbody.querySelectorAll('tr');
+
+        rows.forEach(row => {
+            const programName = row.querySelector('td:first-child')?.textContent.toLowerCase() || '';
+            const rating = row.getAttribute('data-rating') || '';
+            const agency = row.getAttribute('data-agency') || '';
+
+            let showRow = true;
+
+            if (searchText && !programName.includes(searchText)) {
+                showRow = false;
+            }
+
+            if (ratingValue && rating !== ratingValue) {
+                showRow = false;
+            }
+
+            if (agencyValue && agency !== agencyValue) {
+                showRow = false;
+            }
+
+            row.style.display = showRow ? '' : 'none';
+        });
+
+        updateNoResultsMessage(tbody);
+    }
+
+    // Function to sort table rows
+    function sortTableRows(table, sortBy, direction) {
+        const tbody = table.querySelector('tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr')).filter(row => row.style.display !== 'none');
+
+        rows.sort((a, b) => {
+            let aValue = '';
+            let bValue = '';
+
+            switch (sortBy) {
+                case 'name':
+                    aValue = a.querySelector('td:first-child')?.textContent.toLowerCase() || '';
+                    bValue = b.querySelector('td:first-child')?.textContent.toLowerCase() || '';
+                    break;
+                case 'agency':
+                    aValue = a.querySelector('td:nth-child(2)')?.textContent.toLowerCase() || '';
+                    bValue = b.querySelector('td:nth-child(2)')?.textContent.toLowerCase() || '';
+                    break;
+                case 'sector':
+                    aValue = a.querySelector('td:nth-child(3) .badge')?.textContent.toLowerCase() || '';
+                    bValue = b.querySelector('td:nth-child(3) .badge')?.textContent.toLowerCase() || '';
+                    break;
+                case 'rating':
+                    aValue = a.querySelector('td:nth-child(4) .badge')?.textContent.toLowerCase() || '';
+                    bValue = b.querySelector('td:nth-child(4) .badge')?.textContent.toLowerCase() || '';
+                    break;
+                case 'date':
+                    aValue = a.querySelector('td:nth-child(6)')?.textContent.toLowerCase() || '';
+                    bValue = b.querySelector('td:nth-child(6)')?.textContent.toLowerCase() || '';
+                    break;
+                default:
+                    break;
+            }
+
+            if (aValue < bValue) return direction === 'asc' ? -1 : 1;
+            if (aValue > bValue) return direction === 'asc' ? 1 : -1;
+            return 0;
+        });
+
+            // Append sorted rows back to tbody
+            rows.forEach(row => tbody.appendChild(row));
+            
+            // Initialize tooltips for newly sorted rows
+            if (typeof bootstrap !== 'undefined') {
+                const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                tooltipTriggerList.map(function (tooltipTriggerEl) {
+                    return new bootstrap.Tooltip(tooltipTriggerEl);
+                });
+            }
+
+    }
+
+    // Function to update "no results" message
+    function updateNoResultsMessage(tbody) {
+        const visibleRows = Array.from(tbody.querySelectorAll('tr')).filter(row => row.style.display !== 'none');
+        let noResultsRow = tbody.querySelector('.no-results-row');
+
+        if (visibleRows.length === 0) {
+            if (!noResultsRow) {
+                noResultsRow = document.createElement('tr');
+                noResultsRow.className = 'no-results-row';
+                noResultsRow.innerHTML = '<td colspan="7" class="text-center py-4">No matching programs found.</td>';
+                tbody.appendChild(noResultsRow);
+            }
+        } else {
+            if (noResultsRow) {
+                noResultsRow.remove();
             }
         }
     }
-}
+});
