@@ -228,7 +228,7 @@ if (!empty($program['edit_permissions'])) {
 $program_history = get_program_edit_history($program_id);
 
 // Get program submission status and content
-$status_query = "SELECT status, content_json, submission_id FROM program_submissions 
+$status_query = "SELECT content_json, submission_id FROM program_submissions 
                 WHERE program_id = ? 
                 ORDER BY submission_date DESC LIMIT 1";
 $status_stmt = $conn->prepare($status_query);
@@ -242,16 +242,13 @@ $remarks = '';
 
 if ($status_result->num_rows > 0) {
     $submission = $status_result->fetch_assoc();
-    $current_status = $submission['status'];
     $submission_id = $submission['submission_id'];
-    
-    // Process content_json to extract targets and remarks
+    // Process content_json to extract status, targets, remarks
     if (!empty($submission['content_json'])) {
         $content = json_decode($submission['content_json'], true);
         if (isset($content['rating'])) {
             $current_status = $content['rating'];
         }
-        
         if (isset($content['targets']) && is_array($content['targets'])) {
             $current_targets = $content['targets'];
         } else {
@@ -259,12 +256,13 @@ if ($status_result->num_rows > 0) {
             $current_targets = [
                 [
                     'target_text' => $content['target'] ?? '',
-                    'status_description' => $content['status_text'] ?? ''
+                    // ...other legacy fields...
                 ]
             ];
         }
-        
-        $remarks = $content['remarks'] ?? '';
+        if (isset($content['remarks'])) {
+            $remarks = $content['remarks'];
+        }
     }
 }
 

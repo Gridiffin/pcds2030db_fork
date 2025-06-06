@@ -127,10 +127,11 @@ $user_id = $_SESSION['user_id'] ?? 0;
 $pptx_path = 'app/reports/pptx/' . $filename; // Relative path from project root for database storage
 
 // Prepare SQL to insert record
-$insert_query = "INSERT INTO reports (period_id, report_name, description, pptx_path, generated_by, is_public) 
-                VALUES (?, ?, ?, ?, ?, ?)";
+$insert_query = "INSERT INTO reports (period_id, report_name, description, pdf_path, pptx_path, generated_by, is_public) 
+                VALUES (?, ?, ?, ?, ?, ?, ?)";
 $stmt = $conn->prepare($insert_query);
-$stmt->bind_param("isssii", $period_id, $report_name, $description, $pptx_path, $user_id, $is_public);
+$pdf_path = ''; // Initialize empty pdf_path since we're only saving PPTX for now
+$stmt->bind_param("issssii", $period_id, $report_name, $description, $pdf_path, $pptx_path, $user_id, $is_public);
 
 // Execute query
 if (!$stmt->execute()) {

@@ -243,7 +243,27 @@ if (typeof window.ReportPopulator !== 'undefined') {
                         status_max_chars: Math.max(...status.split('\n').map(line => line.length), 0)
                     }
                 };
-            });        } else if (data && data.sector_programs && Array.isArray(data.sector_programs)) {
+            });        } else if (data && data.projects && Array.isArray(data.projects)) {
+            // Extract from projects data structure (new API format)
+            programs = data.projects.map(project => {
+                const targetText = project.target || 'Not specified';
+                const statusText = project.status || 'Not available';
+                return {
+                    name: project.name || 'Unnamed Program',
+                    target: targetText,
+                    rating: project.rating || 'not-started',
+                    status: statusText,
+                    text_metrics: project.text_metrics || {
+                        // Create basic text metrics if not provided
+                        name_length: (project.name || 'Unnamed Program').length,
+                        target_bullet_count: targetText.split('\n').length,
+                        target_max_chars: Math.max(...targetText.split('\n').map(line => line.length), 0),
+                        status_bullet_count: statusText.split('\n').length,
+                        status_max_chars: Math.max(...statusText.split('\n').map(line => line.length), 0)
+                    }
+                };
+            });
+        } else if (data && data.sector_programs && Array.isArray(data.sector_programs)) {
             // Extract from sector_programs data structure if available
             programs = data.sector_programs.map(program => {
                 const targetText = program.target || 'Not specified';

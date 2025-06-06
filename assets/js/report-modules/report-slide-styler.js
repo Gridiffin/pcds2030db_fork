@@ -1213,7 +1213,6 @@ if (typeof window.ReportStyler !== 'undefined') {
             }
 
             const programsToDisplay = programs.slice(0, targetDataRowCount);            // First pass: Calculate required height for each row based on precise text metrics
-            console.log('Calculating row heights using text metrics:', programsToDisplay.map(p => p.text_metrics));
             
             const rowHeights = programsToDisplay.map((program, index) => {
                 const metrics = program.text_metrics || {};
@@ -1221,11 +1220,10 @@ if (typeof window.ReportStyler !== 'undefined') {
                 // Calculate characters per line for the table columns based on widths and font size
                 const statusColCharsPerLine = 72;
                 const programColCharsPerLine = Math.floor(statusColCharsPerLine * (colWidths[0] / colWidths[3]));
-                const targetColCharsPerLine = Math.floor(statusColCharsPerLine * (colWidths[1] / colWidths[3]));
-                  // Get the raw text lines
+                const targetColCharsPerLine = Math.floor(statusColCharsPerLine * (colWidths[1] / colWidths[3]));                // Get the raw text lines
                 const targetLines = normalizeNewlines(program.target || 'N/A');
                 const statusLines = normalizeNewlines(program.status || 'N/A');
-                const nameText = program.program_name || 'N/A';
+                const nameText = program.name || program.program_name || 'N/A';
 
                 // Calculate height for program name
                 const nameChars = nameText.length;
@@ -1249,43 +1247,21 @@ if (typeof window.ReportStyler !== 'undefined') {
                 
                 // Add padding based on number of bullet points
                 const bulletPadding = Math.max(targetLines.length, statusLines.length) > 1 ? 0.08 : 0.05;
-                
-                // Ensure minimum height and add bullet padding
+                  // Ensure minimum height and add bullet padding
                 const rowHeight = Math.max(0.18, maxContentHeight + bulletPadding);
 
-                console.log(`Row height calculation for "${nameText}":`, {
-                    nameHeight,
-                    targetHeight,
-                    statusHeight,
-                    bulletPadding,
-                    finalHeight: rowHeight
-                });
-
                 return rowHeight;
-            });
-
-            // Check if total height exceeds available space
+            });            // Check if total height exceeds available space
             const totalRequiredHeight = rowHeights.reduce((sum, height) => sum + height, 0) + 
                                        ((programsToDisplay.length - 1) * newRowSpacing);
             
-            console.log('Row height summary:', {
-                availableHeight: totalAvailableHeightForDataRows,
-                requiredHeight: totalRequiredHeight,
-                individualRowHeights: rowHeights,
-                rowSpacing: newRowSpacing,
-                totalRows: programsToDisplay.length
-            });
-            
             // If total exceeds available space, scale down proportionally
             let scaleRatio = 1;
-            if (totalRequiredHeight > totalAvailableHeightForDataRows) {
-                scaleRatio = totalAvailableHeightForDataRows / totalRequiredHeight;
+            if (totalRequiredHeight > totalAvailableHeightForDataRows) {                scaleRatio = totalAvailableHeightForDataRows / totalRequiredHeight;
                 // Apply scaling with minimum height protection
                 for (let i = 0; i < rowHeights.length; i++) {
                     rowHeights[i] = Math.max(0.18, rowHeights[i] * scaleRatio);
                 }
-                
-                console.log(`Scaling down row heights by factor ${scaleRatio} to fit table. New heights:`, rowHeights);
             }
 
             // Apply the calculated row heights
@@ -1294,10 +1270,8 @@ if (typeof window.ReportStyler !== 'undefined') {
             programsToDisplay.forEach((program, rowIndex) => {
                 const currentRowHeight = rowHeights[rowIndex];
                 const rowY = currentYPos;
-                let currentXPos = tableDimensions.x + padding;
-
-                // Program name
-                slide.addText(program.program_name || 'N/A', {
+                let currentXPos = tableDimensions.x + padding;                // Program name
+                slide.addText(program.name || program.program_name || 'N/A', {
                     x: currentXPos,
                     y: rowY,
                     w: colWidths[0],

@@ -377,6 +377,7 @@ while ($program = $programs_result->fetch_assoc()) {    // Extract target from c
         'status' => $status_text,
         'text_metrics' => $text_metrics
     ];
+    error_log('Program name in API response: ' . $program['program_name']);
 }
 
 // --- 3. Get Monthly Labels ---
