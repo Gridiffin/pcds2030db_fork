@@ -14,11 +14,6 @@
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
-
--- Dumping database structure for pcds2030_dashboard
-CREATE DATABASE IF NOT EXISTS `pcds2030_dashboard` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
-USE `pcds2030_dashboard`;
-
 -- Dumping structure for table pcds2030_dashboard.agency_group
 CREATE TABLE IF NOT EXISTS `agency_group` (
   `agency_group_id` int NOT NULL AUTO_INCREMENT,
@@ -27,7 +22,7 @@ CREATE TABLE IF NOT EXISTS `agency_group` (
   PRIMARY KEY (`agency_group_id`),
   KEY `sector_id` (`sector_id`),
   CONSTRAINT `agency_group_ibfk_2` FOREIGN KEY (`sector_id`) REFERENCES `sectors` (`sector_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Dumping data for table pcds2030_dashboard.agency_group: ~3 rows (approximately)
 REPLACE INTO `agency_group` (`agency_group_id`, `group_name`, `sector_id`) VALUES
@@ -48,9 +43,9 @@ CREATE TABLE IF NOT EXISTS `audit_logs` (
   KEY `user_id` (`user_id`),
   KEY `action` (`action`),
   KEY `created_at` (`created_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=75 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table pcds2030_dashboard.audit_logs: ~66 rows (approximately)
+-- Dumping data for table pcds2030_dashboard.audit_logs: ~74 rows (approximately)
 REPLACE INTO `audit_logs` (`id`, `user_id`, `action`, `details`, `ip_address`, `status`, `created_at`) VALUES
 	(1, 1, 'audit_log_access', 'Successfully accessed audit logs (Page 1, 25 per page, 0 total records). Filters: No filters applied', '127.0.0.1', 'success', '2025-06-05 15:56:10'),
 	(2, 1, 'audit_log_access', 'Successfully accessed audit logs (Page 1, 25 per page, 1 total records). Filters: No filters applied', '127.0.0.1', 'success', '2025-06-05 15:56:26'),
@@ -136,7 +131,7 @@ CREATE TABLE IF NOT EXISTS `metrics_details` (
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`detail_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=72 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Dumping data for table pcds2030_dashboard.metrics_details: ~3 rows (approximately)
 REPLACE INTO `metrics_details` (`detail_id`, `detail_name`, `detail_json`, `is_draft`, `created_at`, `updated_at`) VALUES
@@ -169,7 +164,7 @@ CREATE TABLE IF NOT EXISTS `outcomes_details` (
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`detail_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=40 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Dumping data for table pcds2030_dashboard.outcomes_details: ~3 rows (approximately)
 REPLACE INTO `outcomes_details` (`detail_id`, `detail_name`, `detail_json`, `is_draft`, `created_at`, `updated_at`) VALUES
@@ -193,9 +188,9 @@ CREATE TABLE IF NOT EXISTS `outcome_history` (
   KEY `fk_outcome_history_record` (`outcome_record_id`),
   CONSTRAINT `fk_outcome_history_record` FOREIGN KEY (`outcome_record_id`) REFERENCES `sector_outcomes_data` (`id`),
   CONSTRAINT `fk_outcome_history_user` FOREIGN KEY (`changed_by`) REFERENCES `users` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping data for table pcds2030_dashboard.outcome_history: ~2 rows (approximately)
+-- Dumping data for table pcds2030_dashboard.outcome_history: ~3 rows (approximately)
 REPLACE INTO `outcome_history` (`history_id`, `outcome_record_id`, `metric_id`, `data_json`, `action_type`, `status`, `changed_by`, `change_description`, `created_at`) VALUES
 	(1, 21, 8, '{\r\n  "columns": ["2022", "2023", "2024", "2025", "2026"],\r\n  "units": {\r\n    "2022": "Ha",\r\n    "2023": "Ha",\r\n    "2024": "Ha",\r\n    "2025": "Ha"\r\n  },\r\n  "data": {\r\n    "January": {\r\n      "2022": 787.01,\r\n      "2023": 1856.37,\r\n      "2024": 3146.60,\r\n      "2025": null,\r\n      "2026": 0\r\n    },\r\n    "February": {\r\n      "2022": 912.41,\r\n      "2023": 3449.94,\r\n      "2024": 6660.50,\r\n      "2025": null,\r\n      "2026": 0\r\n    },\r\n    "March": {\r\n      "2022": 513.04,\r\n      "2023": 2284.69,\r\n      "2024": 3203.80,\r\n      "2025": null,\r\n      "2026": 0\r\n    },\r\n    "April": {\r\n      "2022": 428.18,\r\n      "2023": 1807.69,\r\n      "2024": 1871.50,\r\n      "2025": null,\r\n      "2026": 0\r\n    },\r\n    "May": {\r\n      "2022": 485.08,\r\n      "2023": 3255.80,\r\n      "2024": 2750.20,\r\n      "2025": null,\r\n      "2026": 0\r\n    },\r\n    "June": {\r\n      "2022": 1277.90,\r\n      "2023": 3120.66,\r\n      "2024": 3396.30,\r\n      "2025": null,\r\n      "2026": 0\r\n    },\r\n    "July": {\r\n      "2022": 745.15,\r\n      "2023": 2562.38,\r\n      "2024": null,\r\n      "2025": null,\r\n      "2026": 0\r\n    },\r\n    "August": {\r\n      "2022": 762.69,\r\n      "2023": 2474.93,\r\n      "2024": null,\r\n      "2025": null,\r\n      "2026": 0\r\n    },\r\n    "September": {\r\n      "2022": 579.09,\r\n      "2023": 3251.93,\r\n      "2024": null,\r\n      "2025": null,\r\n      "2026": 0\r\n    },\r\n    "October": {\r\n      "2022": 676.27,\r\n      "2023": 3086.64,\r\n      "2024": null,\r\n      "2025": null,\r\n      "2026": 0\r\n    },\r\n    "November": {\r\n      "2022": 2012.35,\r\n      "2023": 3081.63,\r\n      "2024": null,\r\n      "2025": null,\r\n      "2026": 0\r\n    },\r\n    "December": {\r\n      "2022": 1114.64,\r\n      "2023": 3240.14,\r\n      "2024": null,\r\n      "2025": null,\r\n      "2026": 0\r\n    }\r\n  }\r\n}', 'resubmit', 'submitted', 1, 'Outcome resubmitted by admin', '2025-06-04 06:11:05'),
 	(2, 20, 7, '{"columns":["2022","2023","2024","2025","2026"],"units":{"2022":"RM","2023":"RM","2024":"RM","2025":"RM"},"data":{"January":{"2022":408531176.77,"2023":263569916.63,"2024":276004972.69,"2025":null,"2026":0},"February":{"2022":239761718.38,"2023":226356164.3,"2024":191530929.47,"2025":null,"2026":0},"March":{"2022":394935606.46,"2023":261778295.29,"2024":214907671.7,"2025":null,"2026":0},"April":{"2022":400891037.27,"2023":215771835.07,"2024":232014272.14,"2025":null,"2026":0},"May":{"2022":345725679.36,"2023":324280067.64,"2024":324627750.87,"2025":null,"2026":0},"June":{"2022":268966198.26,"2023":235560482.89,"2024":212303812.34,"2025":null,"2026":0},"July":{"2022":359792973.34,"2023":244689028.37,"2024":274788036.68,"2025":null,"2026":0},"August":{"2022":310830376.16,"2023":344761866.36,"2024":210420404.31,"2025":null,"2026":0},"September":{"2022":318990291.52,"2023":210214202.2,"2024":191837139,"2025":null,"2026":0},"October":{"2022":304693148.3,"2023":266639022.25,"2024":null,"2025":null,"2026":0},"November":{"2022":303936172.09,"2023":296062485.55,"2024":null,"2025":null,"2026":0},"December":{"2022":289911760.38,"2023":251155864.77,"2024":null,"2025":null,"2026":0}}}', 'resubmit', 'submitted', 1, 'Outcome resubmitted by admin', '2025-06-04 06:11:08'),
@@ -217,7 +212,7 @@ CREATE TABLE IF NOT EXISTS `programs` (
   PRIMARY KEY (`program_id`),
   KEY `owner_agency_id` (`owner_agency_id`),
   KEY `sector_id` (`sector_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=176 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table pcds2030_dashboard.programs: ~9 rows (approximately)
 REPLACE INTO `programs` (`program_id`, `program_name`, `owner_agency_id`, `sector_id`, `start_date`, `end_date`, `created_at`, `updated_at`, `is_assigned`, `edit_permissions`, `created_by`) VALUES
@@ -249,7 +244,7 @@ CREATE TABLE IF NOT EXISTS `program_submissions` (
   CONSTRAINT `program_submissions_ibfk_1` FOREIGN KEY (`program_id`) REFERENCES `programs` (`program_id`) ON DELETE CASCADE,
   CONSTRAINT `program_submissions_ibfk_2` FOREIGN KEY (`period_id`) REFERENCES `reporting_periods` (`period_id`),
   CONSTRAINT `program_submissions_ibfk_3` FOREIGN KEY (`submitted_by`) REFERENCES `users` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=160 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table pcds2030_dashboard.program_submissions: ~18 rows (approximately)
 REPLACE INTO `program_submissions` (`submission_id`, `program_id`, `period_id`, `submitted_by`, `content_json`, `submission_date`, `updated_at`, `is_draft`) VALUES
@@ -288,7 +283,7 @@ CREATE TABLE IF NOT EXISTS `reporting_periods` (
   UNIQUE KEY `year_quarter_unique` (`year`,`quarter`),
   UNIQUE KEY `year_quarter` (`year`,`quarter`),
   KEY `quarter_year_idx` (`quarter`,`year`)
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table pcds2030_dashboard.reporting_periods: ~7 rows (approximately)
 REPLACE INTO `reporting_periods` (`period_id`, `year`, `quarter`, `start_date`, `end_date`, `status`, `updated_at`, `is_standard_dates`, `created_at`) VALUES
@@ -316,9 +311,9 @@ CREATE TABLE IF NOT EXISTS `reports` (
   KEY `generated_by` (`generated_by`),
   CONSTRAINT `reports_ibfk_1` FOREIGN KEY (`period_id`) REFERENCES `reporting_periods` (`period_id`),
   CONSTRAINT `reports_ibfk_2` FOREIGN KEY (`generated_by`) REFERENCES `users` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=313 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table pcds2030_dashboard.reports: ~1 rows (approximately)
+-- Dumping data for table pcds2030_dashboard.reports: ~2 rows (approximately)
 REPLACE INTO `reports` (`report_id`, `period_id`, `report_name`, `description`, `pdf_path`, `pptx_path`, `generated_by`, `generated_at`, `is_public`) VALUES
 	(301, 2, 'Forestry Report - Q2 2025', '', '', 'pptx/Forestry_Q2-2025_20250521030906.pptx', 1, '2025-05-21 01:09:06', 0),
 	(312, 2, 'Forestry Report - Q2 2025', '', '', 'app/reports/pptx/Forestry_Q2-2025_20250606082526.pptx', 1, '2025-06-06 08:25:26', 0);
@@ -329,7 +324,7 @@ CREATE TABLE IF NOT EXISTS `sectors` (
   `sector_name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
   `description` text COLLATE utf8mb4_unicode_ci,
   PRIMARY KEY (`sector_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table pcds2030_dashboard.sectors: ~1 rows (approximately)
 REPLACE INTO `sectors` (`sector_id`, `sector_name`, `description`) VALUES
@@ -353,7 +348,7 @@ CREATE TABLE IF NOT EXISTS `sector_outcomes_data` (
   KEY `fk_submitted_by` (`submitted_by`),
   CONSTRAINT `fk_submitted_by` FOREIGN KEY (`submitted_by`) REFERENCES `users` (`user_id`),
   CONSTRAINT `sector_outcomes_data_chk_1` CHECK (json_valid(`data_json`))
-) ENGINE=InnoDB AUTO_INCREMENT=58 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table pcds2030_dashboard.sector_outcomes_data: ~2 rows (approximately)
 REPLACE INTO `sector_outcomes_data` (`id`, `metric_id`, `sector_id`, `period_id`, `table_name`, `data_json`, `is_draft`, `created_at`, `updated_at`, `submitted_by`) VALUES
@@ -378,9 +373,9 @@ CREATE TABLE IF NOT EXISTS `users` (
   KEY `agency_id` (`agency_group_id`),
   CONSTRAINT `users_ibfk_1` FOREIGN KEY (`sector_id`) REFERENCES `sectors` (`sector_id`),
   CONSTRAINT `users_ibfk_2` FOREIGN KEY (`agency_group_id`) REFERENCES `agency_group` (`agency_group_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=46 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping data for table pcds2030_dashboard.users: ~12 rows (approximately)
+-- Dumping data for table pcds2030_dashboard.users: ~11 rows (approximately)
 REPLACE INTO `users` (`user_id`, `username`, `password`, `agency_name`, `role`, `sector_id`, `agency_group_id`, `created_at`, `updated_at`, `is_active`) VALUES
 	(1, 'admin', '$2y$10$bPQQFeR4PbcueCgmV7/2Au.HWCjWH8v8ox.R.MxMfk4qXXHi3uPw6', 'Ministry of Natural Resources and Urban Development', 'admin', NULL, 0, '2025-03-25 01:31:15', '2025-03-25 01:31:15', 1),
 	(12, 'user', '$2y$10$/Z6xCsE7OknP.4HBT5CdBuWDZK5VNMf7MqwmGusJ0SM8xxaGQKdq2', 'testagency', 'agency', 1, 0, '2025-03-25 07:42:27', '2025-05-05 06:41:55', 1),
