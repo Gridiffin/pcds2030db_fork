@@ -169,7 +169,7 @@
     <script src="<?php echo asset_url('js', 'main.js'); ?>"></script>
 
 </head>
-<body class="<?php echo isset($bodyClass) ? htmlspecialchars($bodyClass) : ''; ?>">
+<body class="<?php echo isset($bodyClass) ? htmlspecialchars($bodyClass) : ''; ?><?php if (strpos($_SERVER['REQUEST_URI'], '/app/views/agency/') !== false) echo ' agency-layout'; ?>">
     <!-- Preloader -->
     <div class="preloader" id="preloader">
         <div class="spinner"></div>
@@ -178,7 +178,7 @@
     <!-- Main content wrapper - removed overflow-hidden -->
     <div class="d-flex flex-column min-vh-100">
         <!-- Content container will be inserted by specific view files -->
-        <div class="content-wrapper">
+        <div class="content-wrapper<?php if (strpos($_SERVER['REQUEST_URI'], '/app/views/agency/') !== false) echo ' agency-content'; ?>">
             <!-- Wrap agency navigation and header properly -->
             <div class="agency-header-wrapper">
                 <?php require_once 'agency_nav.php'; ?>

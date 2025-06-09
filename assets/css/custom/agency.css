@@ -120,3 +120,8 @@ body.agency-layout {
 .footer.agency-footer {
     margin-top: auto;
 }
+
+/* Dashboard header wrapper padding to offset fixed navbar */
+.dashboard-header-wrapper {
+    padding-top: 70px;
+}
