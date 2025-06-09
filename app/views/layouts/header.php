@@ -185,7 +185,4 @@
                 <!-- Remove or comment out the empty .page-header div to prevent the large green bar -->
                 <!-- <div class="page-header">
                     <!-- Page header content -->
-                <!-- </div> -->
-            </div>
-            <!-- Toast notification container (for all pages) -->
-            <div id="toast-container" class="toast-container"></div>
+                <!-- </div> -->            </div>

@@ -179,13 +179,7 @@ if (!function_exists('format_time_ago')) {
                 </div>
                 <a href="<?php echo APP_URL; ?>/logout.php" class="btn btn-outline-danger btn-sm logout-btn">
                     <i class="fas fa-sign-out-alt me-1"></i> Logout
-                </a>
-            </div>
+                </a>            </div>
         </div>
     </div>
 </nav>
-
-<!-- Content wrapper -->
-<div class="content-wrapper">
-    <div class="container-fluid">
-        <!-- Page content will be inserted here -->

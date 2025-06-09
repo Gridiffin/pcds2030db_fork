@@ -23,7 +23,7 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    padding-top: 70px; /* Account for fixed navbar (70px height) - NOTE: Agency pages override this to 0 in agency.css */
+    padding-top: 85px; /* Account for fixed navbar (70px height) + 15px breathing space - NOTE: Agency pages override this to 0 in agency.css */
     flex: 1;
 }
 
