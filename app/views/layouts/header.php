@@ -178,3 +178,14 @@
     <!-- Main content wrapper - removed overflow-hidden -->
     <div class="d-flex flex-column min-vh-100">
         <!-- Content container will be inserted by specific view files -->
+        <div class="content-wrapper">
+            <!-- Wrap agency navigation and header properly -->
+            <div class="agency-header-wrapper">
+                <?php require_once 'agency_nav.php'; ?>
+                <!-- Remove or comment out the empty .page-header div to prevent the large green bar -->
+                <!-- <div class="page-header">
+                    <!-- Page header content -->
+                <!-- </div> -->
+            </div>
+            <!-- Toast notification container (for all pages) -->
+            <div id="toast-container" class="toast-container"></div>

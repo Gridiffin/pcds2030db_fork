@@ -194,21 +194,21 @@ if (!isset($status_map[$status])) {
 }
 ?>
 
-<!-- Program Draft Banner (if applicable) -->
-<?php if ($is_draft): ?>
-<div class="alert alert-warning alert-dismissible fade show" role="alert">
-    <div class="d-flex">
-        <div class="me-3">
-            <i class="fas fa-exclamation-triangle fa-2x"></i>
-        </div>
-        <div>
-            <h5 class="alert-heading">Draft Submission</h5>
-            <p class="mb-0">This program has a draft submission that needs to be finalized. 
-            <a href="<?php echo APP_URL; ?>/app/views/agency/programs/update_program.php?id=<?php echo $program_id; ?>" class="alert-link">Click here to edit and submit the final version</a>.</p>
-        </div>
-    </div>
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-</div>
+<!-- Toast Notifications -->
+<?php if ($showDraftAlert): ?>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        showToast('Draft Submission', 'This program is in draft mode. <a href="<?= APP_URL ?>/app/views/agency/programs/update_program.php?id=<?= $program_id ?>" class="alert-link">Click here to edit and submit the final version</a>.', 'warning', 10000);
+    });
+</script>
+<?php endif; ?>
+
+<?php if ($showNoTargetsAlert): ?>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        showToast('No Targets', 'No targets have been added for this program. <a href="<?= APP_URL ?>/app/views/agency/programs/update_program.php?id=<?= $program_id ?>" class="alert-link">Add targets</a>.', 'info', 10000);
+    });
+</script>
 <?php endif; ?>
 
 <!-- Program Overview Card -->

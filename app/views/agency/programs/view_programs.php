@@ -148,16 +148,6 @@ $actions = [
 require_once PROJECT_ROOT_PATH . 'lib/dashboard_header.php';
 ?>
 
-<?php if (!empty($message)): ?>
-    <div class="alert alert-<?php echo $messageType; ?> alert-dismissible fade show" role="alert">
-        <div class="d-flex align-items-center">
-            <i class="fas fa-<?php echo $messageType === 'success' ? 'check-circle' : 'exclamation-circle'; ?> me-2"></i>
-            <div><?php echo $message; ?></div>
-            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    </div>
-<?php endif; ?>
-
 <!-- Draft Programs Card -->
 <div class="card shadow-sm mb-4 w-100">
     <div class="card-header d-flex justify-content-between align-items-center">

@@ -93,17 +93,7 @@ function validateProgramForm() {
     }
     
     if (!isValid) {
-        const alertDiv = document.createElement('div');
-        alertDiv.className = 'alert alert-danger mt-3';
-        alertDiv.innerHTML = '<strong>Please fix the following errors:</strong><br>' + errorMessage;
-        
-        const form = document.querySelector('form');
-        const existingAlert = form.querySelector('.alert');
-        if (existingAlert) {
-            existingAlert.remove();
-        }
-        
-        form.prepend(alertDiv);
+        showToast('Validation Error', errorMessage, 'danger');
     }
     
     return isValid;
@@ -140,4 +130,15 @@ function clearValidationError(fieldId) {
     // Remove error message if it exists
     const errorDiv = document.getElementById(`${fieldId}-error`);
     if (errorDiv) errorDiv.remove();
+}
+
+// Helper for toast notification (uses global showToast if available)
+function showToast(title, message, type = 'info', duration = 5000) {
+    if (typeof window.showToast === 'function') {
+        window.showToast(title, message, type, duration);
+    } else if (typeof showToast === 'function') {
+        showToast(title, message, type, duration);
+    } else {
+        alert(title + ': ' + message);
+    }
 }

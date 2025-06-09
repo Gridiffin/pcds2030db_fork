@@ -175,6 +175,14 @@ require_once '../layouts/agency_nav.php';
     </div>
 </div>
 
+<?php if (!empty($infoMessage)): ?>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        showToast('Info', <?= json_encode($infoMessage) ?>, 'info');
+    });
+</script>
+<?php endif; ?>
+
 <?php
 // Include footer
 require_once '../layouts/footer.php';

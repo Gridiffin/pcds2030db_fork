@@ -78,16 +78,6 @@ if ($current_period) {
 require_once PROJECT_ROOT_PATH . 'lib/dashboard_header.php';
 ?>
 
-<?php if (!empty($message)): ?>
-    <div class="alert alert-<?= $message_type ?> alert-dismissible fade show" role="alert">
-        <div class="d-flex align-items-center">
-            <i class="fas fa-<?= $message_type === 'success' ? 'check-circle' : ($message_type === 'warning' ? 'exclamation-triangle' : 'exclamation-circle') ?> me-2"></i>
-            <div><?= $message ?></div>
-            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    </div>
-<?php endif; ?>
-
 <?php if (!$show_form): ?>
     <div class="alert alert-warning">
         <i class="fas fa-exclamation-triangle me-2"></i>

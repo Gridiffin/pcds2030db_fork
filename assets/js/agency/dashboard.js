@@ -141,7 +141,7 @@ function fetchDashboardData(includeAssigned) {
         });
         
         // Show error message
-        alert('There was an error fetching dashboard data: ' + error.message);
+        showToast('Error', 'There was an error fetching dashboard data: ' + error.message, 'danger');
     });
 }
 

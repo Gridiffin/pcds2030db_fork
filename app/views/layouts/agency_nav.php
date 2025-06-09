@@ -185,8 +185,7 @@ if (!function_exists('format_time_ago')) {
     </div>
 </nav>
 
-<!-- Main Content Container -->
-<div class="content-wrapper d-flex flex-column <?php if ($current_page == 'dashboard.php') echo 'dashboard-content'; ?>">
-    <main class="flex-fill">
-        <div class="container-fluid">
-            <!-- Page content will be inserted here -->
+<!-- Content wrapper -->
+<div class="content-wrapper">
+    <div class="container-fluid">
+        <!-- Page content will be inserted here -->

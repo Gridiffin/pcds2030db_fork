@@ -868,6 +868,12 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                 </form>
 
 <script>
+function showToast(title, message, type = 'info', duration = 5000) {
+    if (window.showToast) {
+        window.showToast(title, message, type, duration);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Rating pills selection
     const ratingPills = document.querySelectorAll('.rating-pill:not(.disabled)');
@@ -960,7 +966,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Validate program name
         if (!programName.trim()) {
-            alert('Please enter a program name.');
+            showToast('Validation Error', 'Please enter a program name.', 'danger');
             e.preventDefault();
             return false;
         }
@@ -974,7 +980,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             if (!hasFilledTarget) {
-                alert('Please add at least one target for this program.');
+                showToast('Validation Error', 'Please add at least one target for this program.', 'danger');
                 e.preventDefault();
                 return false;
             }

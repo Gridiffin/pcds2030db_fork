@@ -95,12 +95,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     alert(data.message);
                     location.reload();
                 } else {
-                    alert(data.message);
+                    showToast('Error', data.message, 'danger');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred while submitting the program.');
+                showToast('Error', 'An error occurred while submitting the program.', 'danger');
             });
         });
     });
