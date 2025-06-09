@@ -151,7 +151,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                 <label for="searchFilter" class="form-label">Search</label>
                 <div class="input-group">
                     <span class="input-group-text"><i class="fas fa-search"></i></span>
-                    <input type="text" class="form-control" id="searchFilter" placeholder="<?php echo $active_tab === 'outcomes' ? 'Outcome table name or description' : 'Program name or description'; ?>">
+                    <input type="text" class="form-control" id="searchFilter" placeholder="<?php echo $active_tab === 'outcomes' ? 'Outcome table name or description' : 'Program name or description'; ?>" value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
                 </div>
             </div>
             

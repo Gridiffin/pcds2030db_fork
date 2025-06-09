@@ -3,37 +3,37 @@
  * Client-side filtering and sorting for the view_all_sectors.php page
  */
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize sorting
-    const table = document.getElementById('programsTable');
-    if (!table) return;
+    // Initialize sorting for programs table if present
+    const programsTable = document.getElementById('programsTable');
+    if (programsTable) {
+        const sortableHeaders = programsTable.querySelectorAll('th.sortable');
+        sortableHeaders.forEach(header => {
+            header.style.cursor = 'pointer';
+            header.addEventListener('click', function() {
+                const sortBy = this.getAttribute('data-sort');
+                const currentDirection = this.getAttribute('data-direction') || 'asc';
+                const newDirection = currentDirection === 'asc' ? 'desc' : 'asc';
 
-    const sortableHeaders = table.querySelectorAll('th.sortable');
-    sortableHeaders.forEach(header => {
-        header.style.cursor = 'pointer';
-        header.addEventListener('click', function() {
-            const sortBy = this.getAttribute('data-sort');
-            const currentDirection = this.getAttribute('data-direction') || 'asc';
-            const newDirection = currentDirection === 'asc' ? 'desc' : 'asc';
+                // Update all icons in this table
+                sortableHeaders.forEach(h => {
+                    const icon = h.querySelector('i');
+                    if (h === this) {
+                        icon.className = newDirection === 'asc' 
+                            ? 'fas fa-sort-up ms-1' 
+                            : 'fas fa-sort-down ms-1';
+                    } else {
+                        icon.className = 'fas fa-sort ms-1';
+                        h.removeAttribute('data-direction');
+                    }
+                });
 
-            // Update all icons in this table
-            sortableHeaders.forEach(h => {
-                const icon = h.querySelector('i');
-                if (h === this) {
-                    icon.className = newDirection === 'asc' 
-                        ? 'fas fa-sort-up ms-1' 
-                        : 'fas fa-sort-down ms-1';
-                } else {
-                    icon.className = 'fas fa-sort ms-1';
-                    h.removeAttribute('data-direction');
-                }
+                // Update direction attribute
+                this.setAttribute('data-direction', newDirection);
+
+                sortTableRows(programsTable, sortBy, newDirection);
             });
-
-            // Update direction attribute
-            this.setAttribute('data-direction', newDirection);
-
-            sortTableRows(table, sortBy, newDirection);
         });
-    });
+    }
 
     // Initialize filters
     const searchInput = document.getElementById('searchFilter');
@@ -41,7 +41,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const agencyFilter = document.getElementById('agencyFilter');
     const resetFiltersBtn = document.getElementById('resetFilters');
 
-    if (searchInput) searchInput.addEventListener('keyup', applyFilters);
+    if (searchInput) {
+        searchInput.addEventListener('keyup', applyFilters);
+        searchInput.addEventListener('input', applyFilters);
+    }
     if (ratingFilter) ratingFilter.addEventListener('change', applyFilters);
     if (agencyFilter) agencyFilter.addEventListener('change', applyFilters);
 
@@ -59,36 +62,66 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Function to apply filters to table rows
     function applyFilters() {
-        const searchText = searchInput ? searchInput.value.toLowerCase() : '';
-        const ratingValue = ratingFilter ? ratingFilter.value : '';
-        const agencyValue = agencyFilter ? agencyFilter.value : '';
+        // Determine active tab from URL parameter 'tab'
+        const urlParams = new URLSearchParams(window.location.search);
+        const activeTab = urlParams.get('tab') || 'programs';
 
-        const tbody = table.querySelector('tbody');
-        const rows = tbody.querySelectorAll('tr');
+        console.log('Active tab:', activeTab);
+        console.log('Search input value:', searchInput ? searchInput.value : '');
 
-        rows.forEach(row => {
-            const programName = row.querySelector('td:first-child')?.textContent.toLowerCase() || '';
-            const rating = row.getAttribute('data-rating') || '';
-            const agency = row.getAttribute('data-agency') || '';
+        if (activeTab === 'programs') {
+            const searchText = searchInput ? searchInput.value.toLowerCase() : '';
+            const ratingValue = ratingFilter ? ratingFilter.value : '';
+            const agencyValue = agencyFilter ? agencyFilter.value : '';
 
-            let showRow = true;
+            const tbody = document.querySelector('#programsTable tbody');
+            if (!tbody) return;
+            const rows = tbody.querySelectorAll('tr');
 
-            if (searchText && !programName.includes(searchText)) {
-                showRow = false;
-            }
+            rows.forEach(row => {
+                const programName = row.querySelector('td:first-child')?.textContent.toLowerCase() || '';
+                const rating = row.getAttribute('data-rating') || '';
+                const agency = row.getAttribute('data-agency') || '';
 
-            if (ratingValue && rating !== ratingValue) {
-                showRow = false;
-            }
+                let showRow = true;
 
-            if (agencyValue && agency !== agencyValue) {
-                showRow = false;
-            }
+                if (searchText && !programName.includes(searchText)) {
+                    showRow = false;
+                }
 
-            row.style.display = showRow ? '' : 'none';
-        });
+                if (ratingValue && rating !== ratingValue) {
+                    showRow = false;
+                }
 
-        updateNoResultsMessage(tbody);
+                if (agencyValue && agency !== agencyValue) {
+                    showRow = false;
+                }
+
+                row.style.display = showRow ? '' : 'none';
+            });
+
+            updateNoResultsMessage(tbody, 7, 'No matching programs found.');
+        } else if (activeTab === 'outcomes') {
+            const searchText = searchInput ? searchInput.value.toLowerCase() : '';
+
+            const tbody = document.querySelector('#outcomesTable tbody');
+            if (!tbody) return;
+            const rows = tbody.querySelectorAll('tr');
+
+            rows.forEach(row => {
+                const tableName = row.querySelector('td:first-child')?.textContent.toLowerCase() || '';
+
+                let showRow = true;
+
+                if (searchText && !tableName.includes(searchText)) {
+                    showRow = false;
+                }
+
+                row.style.display = showRow ? '' : 'none';
+            });
+
+            updateNoResultsMessage(tbody, 5, 'No matching outcomes found.');
+        }
     }
 
     // Function to sort table rows
@@ -144,7 +177,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Function to update "no results" message
-    function updateNoResultsMessage(tbody) {
+    function updateNoResultsMessage(tbody, colspan, message) {
         const visibleRows = Array.from(tbody.querySelectorAll('tr')).filter(row => row.style.display !== 'none');
         let noResultsRow = tbody.querySelector('.no-results-row');
 
@@ -152,7 +185,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!noResultsRow) {
                 noResultsRow = document.createElement('tr');
                 noResultsRow.className = 'no-results-row';
-                noResultsRow.innerHTML = '<td colspan="7" class="text-center py-4">No matching programs found.</td>';
+                noResultsRow.innerHTML = '<td colspan="' + colspan + '" class="text-center py-4">' + message + '</td>';
                 tbody.appendChild(noResultsRow);
             }
         } else {
