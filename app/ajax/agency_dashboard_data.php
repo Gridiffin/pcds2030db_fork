@@ -45,7 +45,7 @@ try {
             'on-track' => $submission_status['program_status']['on-track'],
             'delayed' => $submission_status['program_status']['delayed'],
             'completed' => $submission_status['program_status']['completed'],
-            'not_started' => $submission_status['program_status']['not-started']
+            'not-started' => $submission_status['program_status']['not-started']
         ],
         'chart_data' => [
             'labels' => ['On Track', 'Delayed', 'Completed', 'Not Started'],

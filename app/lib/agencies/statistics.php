@@ -264,10 +264,19 @@ function get_agency_submission_status($agency_id, $period_id = null) {
             ]
         ];
 
-        // Get total programs for agency
-        $query = "SELECT COUNT(*) as total FROM programs WHERE owner_agency_id = ?";
-        $stmt = $conn->prepare($query);
-        $stmt->bind_param("i", $agency_id);
+        // Get total programs for agency (filtered by period if provided)
+        if ($period_id) {
+            $query = "SELECT COUNT(DISTINCT p.program_id) as total
+                      FROM programs p
+                      INNER JOIN program_submissions ps ON p.program_id = ps.program_id
+                      WHERE p.owner_agency_id = ? AND ps.period_id = ?";
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param("ii", $agency_id, $period_id);
+        } else {
+            $query = "SELECT COUNT(*) as total FROM programs WHERE owner_agency_id = ?";
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param("i", $agency_id);
+        }
         $stmt->execute();
         $result = $stmt->get_result();
         $stats['total_programs'] = $result->fetch_assoc()['total'];
