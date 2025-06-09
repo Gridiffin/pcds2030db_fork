@@ -138,7 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_program'])) {
                 $submission_stmt->execute();
             }            // Create notification for the agency
             $notification_message = "New program '{$program_name}' has been assigned to your agency. Please review and submit it.";
-            $action_url = APP_URL . '/dashboard.php?program_id=' . $program_id;
+            $action_url = APP_URL . '/app/views/agency/programs/program_details.php?id=' . $program_id;
             $notification_stmt = $conn->prepare("INSERT INTO notifications 
                 (user_id, message, type, action_url, read_status) 
                 VALUES (?, ?, 'program_assignment', ?, 0)");

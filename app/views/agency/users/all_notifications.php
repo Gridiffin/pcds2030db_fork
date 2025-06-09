@@ -106,10 +106,10 @@ function format_time_ago($timestamp) {
 }
 
 // Include header
-require_once '../layouts/header.php';
+require_once '../../layouts/header.php';
 
 // Include agency navigation
-require_once '../layouts/agency_nav.php';
+require_once '../../layouts/agency_nav.php';
 
 // Set up the dashboard header variables
 $title = "All Notifications";
@@ -270,6 +270,6 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
 
 <?php
 // Include footer
-require_once '../layouts/footer.php';
+require_once '../../layouts/footer.php';
 ?>
 
