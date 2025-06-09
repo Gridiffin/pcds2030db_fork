@@ -99,7 +99,7 @@ class DashboardController {
                 continue;
             }
             
-            $stats['total']++;
+                $stats['total']++;
             
             // Map rating to categories
             $rating = $program['rating'] ?? 'not-started';
