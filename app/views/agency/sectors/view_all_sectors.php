@@ -156,25 +156,56 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
             </div>
             
             <div class="col-md-2 filter-control-wrapper">
-                <label for="ratingFilter" class="form-label">Rating</label>
+                <label for="ratingFilter" class="form-label">
+                    <?php echo $active_tab === 'outcomes' ? 'Status' : 'Rating'; ?>
+                </label>
                 <select class="form-select" id="ratingFilter">
-                    <option value="">All Ratings</option>
-                    <option value="target-achieved">Target Achieved</option>
-                    <option value="on-track-yearly">On Track</option>
-                    <option value="severe-delay">Delayed</option>
-                    <option value="not-started">Not Started</option>
+                    <?php if ($active_tab === 'outcomes'): ?>
+                        <option value="">All Statuses</option>
+                        <option value="submitted">Submitted</option>
+                        <option value="pending">Pending</option>
+                        <option value="rejected">Rejected</option>
+                    <?php else: ?>
+                        <option value="">All Ratings</option>
+                        <option value="target-achieved">Target Achieved</option>
+                        <option value="on-track-yearly">On Track</option>
+                        <option value="severe-delay">Delayed</option>
+                        <option value="not-started">Not Started</option>
+                    <?php endif; ?>
                 </select>
             </div>
             
             <div class="col-md-3 filter-control-wrapper">
-                <label for="agencyFilter" class="form-label">Agency</label>
+                <label for="agencyFilter" class="form-label">
+                    <?php echo $active_tab === 'outcomes' ? 'Created By' : 'Agency'; ?>
+                </label>
                 <select class="form-select" id="agencyFilter">
-                    <option value="">All Agencies</option>
-                    <?php foreach ($agencies as $agency): ?>
-                        <option value="<?php echo $agency['user_id']; ?>">
-                            <?php echo htmlspecialchars($agency['agency_name']); ?>
-                        </option>
-                    <?php endforeach; ?>
+                    <?php if ($active_tab === 'outcomes'): ?>
+                        <option value="">All Creators</option>
+                        <?php
+                        // For outcomes, get distinct creators from $sector_outcomes_data
+                        $creators = [];
+                        foreach ($sector_outcomes_data as $outcome) {
+                            $creator_id = $outcome['submitted_by'] ?? null;
+                            $creator_name = $outcome['submitted_by_username'] ?? 'Unknown';
+                            if ($creator_id && !isset($creators[$creator_id])) {
+                                $creators[$creator_id] = $creator_name;
+                            }
+                        }
+                        foreach ($creators as $id => $name):
+                        ?>
+                            <option value="<?php echo htmlspecialchars($id); ?>">
+                                <?php echo htmlspecialchars($name); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <option value="">All Agencies</option>
+                        <?php foreach ($agencies as $agency): ?>
+                            <option value="<?php echo $agency['user_id']; ?>">
+                                <?php echo htmlspecialchars($agency['agency_name']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </select>
             </div>
             

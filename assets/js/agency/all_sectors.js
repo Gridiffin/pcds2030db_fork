@@ -103,6 +103,8 @@ document.addEventListener('DOMContentLoaded', function() {
             updateNoResultsMessage(tbody, 7, 'No matching programs found.');
         } else if (activeTab === 'outcomes') {
             const searchText = searchInput ? searchInput.value.toLowerCase() : '';
+            const statusValue = ratingFilter ? ratingFilter.value.toLowerCase() : '';
+            const createdByValue = agencyFilter ? agencyFilter.value.toLowerCase() : '';
 
             const tbody = document.querySelector('#outcomesTable tbody');
             if (!tbody) return;
@@ -110,10 +112,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
             rows.forEach(row => {
                 const tableName = row.querySelector('td:first-child')?.textContent.toLowerCase() || '';
+                const createdBy = row.querySelector('td:nth-child(2)')?.textContent.toLowerCase() || '';
+                const status = row.querySelector('td:nth-child(3)')?.textContent.toLowerCase() || '';
 
                 let showRow = true;
 
                 if (searchText && !tableName.includes(searchText)) {
+                    showRow = false;
+                }
+
+                if (statusValue && !status.includes(statusValue)) {
+                    showRow = false;
+                }
+
+                if (createdByValue && !createdBy.includes(createdByValue)) {
                     showRow = false;
                 }
 
