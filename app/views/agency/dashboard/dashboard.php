@@ -289,7 +289,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                             </div>
                             
                             <div class="text-center mt-3">
-                                <a href="view_programs.php" class="btn btn-outline-primary">
+                                <a href="../programs/view_programs.php" class="btn btn-outline-primary">
                                     View All Programs <i class="fas fa-arrow-right ms-1"></i>
                                 </a>
                             </div>
