@@ -392,6 +392,14 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
 <?php endif; ?>
 </div>
 
+<?php if (!empty($infoMessage)): ?>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        showToast('Info', <?= json_encode($infoMessage) ?>, 'info');
+    });
+</script>
+<?php endif; ?>
+
 <?php
 // Include footer
 require_once '../../layouts/footer.php';

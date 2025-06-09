@@ -52,10 +52,13 @@ ob_start();
 
 <!-- Programs Content HTML -->
 <?php if (empty($all_programs) || isset($all_programs['error'])): ?>
-    <div class="alert alert-info">
-        <i class="fas fa-info-circle me-2"></i>
-        <?php echo isset($all_programs['error']) ? $all_programs['error'] : 'No programs found across sectors for this period.'; ?>
-    </div>
+    <?php if (!empty($infoMessage)): ?>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            showToast('Info', <?= json_encode($infoMessage) ?>, 'info');
+        });
+    </script>
+    <?php endif; ?>
 <?php else: ?>
     <!-- Unified Programs Table (replacing tabs) -->
     <div class="card shadow-sm mb-4">

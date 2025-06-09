@@ -147,29 +147,36 @@ require_once '../../layouts/header.php';
 
 // Include agency navigation
 require_once '../../layouts/agency_nav.php';
+
+// Set up header variables
+$title = "Create New Program";
+$subtitle = "Create a new program draft with basic information";
+$headerStyle = 'light'; // Use light (white) style for inner pages
+$actions = [
+    [
+        'url' => 'view_programs.php',
+        'text' => 'Back to Programs',
+        'icon' => 'fas fa-arrow-left',
+        'class' => 'btn-outline-secondary'
+    ]
+];
+
+// Include the dashboard header component
+require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
 ?>
 
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
-            <!-- Page Header -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h4 class="mb-1">Create New Program</h4>
-                    <p class="text-muted mb-0">Create a new program draft with basic information</p>
-                </div>
-                <a href="view_programs.php" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left me-1"></i> Back to Programs
-                </a>
-            </div>
 
             <!-- Error/Success Messages -->
             <?php if (!empty($message)): ?>
-                <div class="alert alert-<?php echo $messageType; ?> alert-dismissible fade show" role="alert">
-                    <i class="fas fa-<?php echo $messageType === 'success' ? 'check-circle' : 'exclamation-triangle'; ?> me-2"></i>
-                    <?php echo htmlspecialchars($message); ?>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>                </div>
-            <?php endif; ?>            <!-- Program Creation Wizard -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        showToast('<?= ucfirst($messageType) ?>', <?= json_encode($message) ?>, '<?= $messageType ?>');
+    });
+</script>
+<?php endif; ?>            <!-- Program Creation Wizard -->
             <div class="card shadow-sm mb-4 w-100">
                 <div class="card-header">
                     <h5 class="card-title mb-0">

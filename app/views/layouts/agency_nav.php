@@ -179,14 +179,7 @@ if (!function_exists('format_time_ago')) {
                 </div>
                 <a href="<?php echo APP_URL; ?>/logout.php" class="btn btn-outline-danger btn-sm logout-btn">
                     <i class="fas fa-sign-out-alt me-1"></i> Logout
-                </a>
-            </div>
+                </a>            </div>
         </div>
     </div>
 </nav>
-
-<!-- Main Content Container -->
-<div class="content-wrapper d-flex flex-column <?php if ($current_page == 'dashboard.php') echo 'dashboard-content'; ?>">
-    <main class="flex-fill">
-        <div class="container-fluid">
-            <!-- Page content will be inserted here -->

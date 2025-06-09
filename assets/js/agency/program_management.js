@@ -260,16 +260,7 @@ function validateProgramSubmission(e) {
     }
     
     if (!isValid) {
-        const alertDiv = document.createElement('div');
-        alertDiv.className = 'alert alert-danger mt-3';
-        alertDiv.innerHTML = '<strong>Please fix the following errors:</strong><br>' + errorMessage;
-        
-        const existingAlert = form.querySelector('.alert');
-        if (existingAlert) {
-            existingAlert.remove();
-        }
-        
-        form.prepend(alertDiv);
+        showToast('Validation Error', errorMessage, 'danger');
         return false;
     }
     

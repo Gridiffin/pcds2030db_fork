@@ -80,3 +80,18 @@
 /* If these files don't exist yet, comment out these lines */
 /* @import 'shared/components.css'; */
 /* @import 'shared/global.css'; */
+
+/* Fix layout gap between agency navbar and header */
+.agency-header-wrapper {
+    margin-top: 0;
+    padding-top: 0;
+    display: flex;
+    flex-direction: column;
+}
+.page-header {
+    margin-top: 0;
+    padding-top: 1rem; /* Restored original value */
+}
+.navbar.fixed-top {
+    margin-bottom: 0;
+}

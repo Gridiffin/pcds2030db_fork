@@ -210,3 +210,18 @@ echo json_encode([
     ]
 ]);
 ?>
+
+<?php if (!empty($successMessage)): ?>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        showToast('Success', <?= json_encode($successMessage) ?>, 'success');
+    });
+</script>
+<?php endif; ?>
+<?php if (!empty($warningMessage)): ?>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        showToast('Warning', <?= json_encode($warningMessage) ?>, 'warning');
+    });
+</script>
+<?php endif; ?>

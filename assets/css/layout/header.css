@@ -7,7 +7,7 @@
 .page-header {
     background: linear-gradient(135deg, var(--forest-deep, #537D5D), var(--forest-medium, #73946B));
     padding: 2rem 0;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem; /* Reduced from 2rem */
     border-radius: 0 0 1rem 1rem;
     color: white;
     box-shadow: 0 4px 20px rgba(var(--forest-deep-rgb, 83, 125, 93), 0.2);
