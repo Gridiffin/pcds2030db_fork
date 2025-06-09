@@ -170,7 +170,7 @@ function applyFilters(tableType) {
     const tableRows = document.querySelectorAll(`#${tableId} tbody tr`);
     tableRows.forEach(row => {
         const programName = row.querySelector('td:first-child .fw-medium')?.textContent.toLowerCase() || '';
-        const ratingText = row.querySelector('td:nth-child(2) .badge')?.textContent.toLowerCase() || '';
+        const ratingText = row.querySelector('td:nth-child(2) .badge')?.textContent.trim().toLowerCase() || '';
         const programType = row.getAttribute('data-program-type') || '';
         
         // Map display text back to rating values for comparison

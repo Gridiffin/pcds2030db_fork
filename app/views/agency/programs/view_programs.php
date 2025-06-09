@@ -325,7 +325,10 @@ require_once PROJECT_ROOT_PATH . 'lib/dashboard_header.php';
                     <option value="">All Ratings</option>
                     <option value="target-achieved">Monthly Target Achieved</option>
                     <option value="on-track-yearly">On Track for Year</option>
+                    <option value="on-track">On Track</option>
+                    <option value="delayed">Delayed</option>
                     <option value="severe-delay">Severe Delays</option>
+                    <option value="completed">Completed</option>
                     <option value="not-started">Not Started</option>
                 </select>
             </div>
