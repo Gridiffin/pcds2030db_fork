@@ -49,6 +49,10 @@ if (!empty($all_programs) && !isset($all_programs['error'])) {
 // Get current agency's sector
 $current_sector_id = $_SESSION['sector_id'];
 
+// Load sector outcomes data for the current sector
+require_once PROJECT_ROOT_PATH . 'app/lib/agencies/outcomes.php';
+$sector_outcomes_data = get_agency_sector_outcomes($current_sector_id);
+
 // Get all sectors from the database
 if (MULTI_SECTOR_ENABLED) {
     $sectors = get_all_sectors();
@@ -122,8 +126,13 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
     <!-- Metrics tab removed: Only Programs tab is shown -->
     <ul class="nav nav-tabs mb-4" id="viewTabs" role="tablist">
         <li class="nav-item" role="presentation">
-            <a class="nav-link active" href="?tab=programs<?php echo $period_id ? '&period_id=' . $period_id : ''; ?><?php echo isset($_GET['sector_id']) ? '&sector_id=' . $_GET['sector_id'] : ''; ?><?php echo isset($_GET['agency_id']) ? '&agency_id=' . $_GET['agency_id'] : ''; ?><?php echo isset($_GET['status']) ? '&status=' . $_GET['status'] : ''; ?><?php echo isset($_GET['search']) ? '&search=' . urlencode($_GET['search']) : ''; ?>" id="programs-tab">
+            <a class="nav-link <?php echo $active_tab === 'programs' ? 'active' : ''; ?>" href="?tab=programs<?php echo $period_id ? '&period_id=' . $period_id : ''; ?><?php echo isset($_GET['sector_id']) ? '&sector_id=' . $_GET['sector_id'] : ''; ?><?php echo isset($_GET['agency_id']) ? '&agency_id=' . $_GET['agency_id'] : ''; ?><?php echo isset($_GET['status']) ? '&status=' . $_GET['status'] : ''; ?><?php echo isset($_GET['search']) ? '&search=' . urlencode($_GET['search']) : ''; ?>" id="programs-tab">
                 <i class="fas fa-project-diagram me-1"></i> Programs
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link <?php echo $active_tab === 'outcomes' ? 'active' : ''; ?>" href="?tab=outcomes<?php echo $period_id ? '&period_id=' . $period_id : ''; ?><?php echo isset($_GET['sector_id']) ? '&sector_id=' . $_GET['sector_id'] : ''; ?><?php echo isset($_GET['agency_id']) ? '&agency_id=' . $_GET['agency_id'] : ''; ?><?php echo isset($_GET['status']) ? '&status=' . $_GET['status'] : ''; ?><?php echo isset($_GET['search']) ? '&search=' . urlencode($_GET['search']) : ''; ?>" id="outcomes-tab">
+                <i class="fas fa-chart-bar me-1"></i> Outcomes
             </a>
         </li>
     </ul>
@@ -132,7 +141,8 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
 <div class="card shadow-sm mb-4">
     <div class="card-header bg-primary text-white">
         <h5 class="card-title m-0">
-            <i class="fas fa-filter me-2"></i>Filter Programs
+            <i class="fas fa-filter me-2"></i>
+            <?php echo $active_tab === 'outcomes' ? 'Filter Outcomes' : 'Filter Programs'; ?>
         </h5>
     </div>
     <div class="card-body">
@@ -141,7 +151,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                 <label for="searchFilter" class="form-label">Search</label>
                 <div class="input-group">
                     <span class="input-group-text"><i class="fas fa-search"></i></span>
-                    <input type="text" class="form-control" id="searchFilter" placeholder="Program name or description">
+                    <input type="text" class="form-control" id="searchFilter" placeholder="<?php echo $active_tab === 'outcomes' ? 'Outcome table name or description' : 'Program name or description'; ?>">
                 </div>
             </div>
             
@@ -195,7 +205,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
     </div>
     <?php endif; ?>
 
-<!-- Only Programs List remains. Metrics functionality and UI removed. -->
+<?php if ($active_tab === 'programs'): ?>
 <div class="card shadow-sm">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="card-title m-0">All Programs</h5>
@@ -244,19 +254,15 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
                                     </span>
                                 </td>
 
-
-
-
                                 <td><?php echo htmlspecialchars($program['agency_name']); ?></td>
                                 <td>
                                     <span class="badge bg-secondary"><?php echo htmlspecialchars($program['sector_name']); ?></span>
                                 </td>
                                 <td>
-                                    <?php if (isset($program['status'])): ?>
-                                        <?php echo get_status_badge($program['status']); ?>
-                                    <?php else: ?>
-                                        <span class="badge bg-secondary">Not Reported</span>
-                                    <?php endif; ?>
+                                    <?php
+                                    $rating = $program['rating'] ?? 'not-started';
+                                    echo get_rating_badge($rating);
+                                    ?>
                                 </td>
                                 <td>
                                     <?php if (isset($program['start_date']) && $program['start_date']): ?>
@@ -289,6 +295,70 @@ require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
         </div>
     </div>
 </div>
+<?php elseif ($active_tab === 'outcomes'): ?>
+<div class="card shadow-sm">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title m-0">All Sector Outcomes</h5>
+        <div>
+            <span class="badge bg-primary"><?php echo count($sector_outcomes_data); ?> Outcomes</span>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-custom mb-0" id="outcomesTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>Table Name</th>
+                        <th>Created By</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (empty($sector_outcomes_data)): ?>
+                        <tr>
+                            <td colspan="5" class="text-center py-4">
+                                <div class="alert alert-info mb-0">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    No outcomes found for this sector.
+                                </div>
+                            </td>
+                        </tr>
+                    <?php else: ?>
+                        <?php foreach ($sector_outcomes_data as $outcome): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($outcome['table_name']); ?></td>
+                                <td>
+                                    <?php
+                                    $current_user_id = $_SESSION['user_id'] ?? null;
+                                    if ($current_user_id && $outcome['submitted_by'] == $current_user_id) {
+                                        echo 'You';
+                                    } else {
+                                        echo htmlspecialchars($outcome['submitted_by_username']);
+                                    }
+                                    ?>
+                                </td>
+                                <td>
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check-circle me-1"></i> Submitted
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="../outcomes/view_outcome.php?outcome_id=<?php echo $outcome['metric_id']; ?>" class="btn btn-outline-primary" title="View Details">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
 </div>
 
 <?php

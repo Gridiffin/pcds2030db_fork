@@ -15,9 +15,11 @@ function get_agency_sector_outcomes($sector_id) {
     global $conn;
 
     $sector_id = intval($sector_id);
-    $query = "SELECT metric_id, sector_id, table_name, data_json 
-              FROM sector_outcomes_data 
-              WHERE sector_id = ? AND is_draft = 0";
+    $query = "SELECT sod.metric_id, sod.sector_id, sod.table_name, sod.data_json, sod.submitted_by, 
+                     COALESCE(u.username, 'Unknown') AS submitted_by_username
+              FROM sector_outcomes_data sod
+              LEFT JOIN users u ON sod.submitted_by = u.user_id
+              WHERE sod.sector_id = ? AND sod.is_draft = 0";
     $stmt = $conn->prepare($query);
     $stmt->bind_param("i", $sector_id);
     $stmt->execute();
@@ -31,7 +33,9 @@ function get_agency_sector_outcomes($sector_id) {
                 'metric_id' => $row['metric_id'],
                 'sector_id' => $row['sector_id'],
                 'table_name' => $row['table_name'],
-                'is_submitted' => true
+                'is_submitted' => true,
+                'submitted_by' => $row['submitted_by'],
+                'submitted_by_username' => $row['submitted_by_username']
             ];
             
             // Add to outcomes array
