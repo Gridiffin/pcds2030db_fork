@@ -162,7 +162,7 @@ $actions = [
 ];
 
 // Include the dashboard header component
-require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
+require_once PROJECT_ROOT_PATH . 'lib/dashboard_header.php';
 ?>
 
 <div class="container-fluid">
