@@ -96,19 +96,18 @@ $additionalScripts = [
 // Include header
 require_once '../../layouts/header.php';
 
-// Include agency navigation
-require_once '../../layouts/agency_nav.php';
+// Configure modern page header
+$header_config = [
+    'title' => MULTI_SECTOR_ENABLED ? "Cross-Sector Programs" : "Forestry Sector Programs",
+    'subtitle' => MULTI_SECTOR_ENABLED ? 
+        "View and track programs across all sectors" : 
+        "View and track forestry sector programs",
+    'variant' => 'green',
+    'actions' => []
+];
 
-// Set up the page header variables
-$title = MULTI_SECTOR_ENABLED ? "Cross-Sector Programs" : "Forestry Sector Programs";
-$subtitle = MULTI_SECTOR_ENABLED ? 
-    "View and track programs across all sectors" : 
-    "View and track forestry sector programs";
-$headerStyle = 'light'; // Use light (white) style for inner pages
-$actions = []; // No actions needed for this view
-
-// Include the dashboard header component
-require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
+// Include modern page header
+require_once '../../layouts/page_header.php';
 ?>
 
 <div class="container-fluid px-4">

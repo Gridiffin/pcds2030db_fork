@@ -60,25 +60,24 @@ $additionalScripts = [
 // Include header - removed dashboard-specific body class to fix navbar appearance
 require_once PROJECT_ROOT_PATH . 'app/views/layouts/header.php';
 
-// Include agency navigation
-require_once PROJECT_ROOT_PATH . 'app/views/layouts/agency_nav.php';
-
-$title = "Agency Dashboard";
-$subtitle = "Program tracking and reporting";
-$headerStyle = 'standard-blue'; // Updated to use standardized blue variant
-$headerClass = ''; // Removed homepage-header class as it's no longer needed
-$actions = [
-    [
-        'url' => '#',
-        'id' => 'refreshDashboard',
-        'text' => 'Refresh Data',
-        'icon' => 'fas fa-sync-alt',
-        'class' => 'btn-light' // White outline button on blue background
+// Configure modern page header
+$header_config = [
+    'title' => 'Agency Dashboard',
+    'subtitle' => 'Program tracking and reporting',
+    'variant' => 'green',
+    'actions' => [
+        [
+            'url' => '#',
+            'id' => 'refreshDashboard',
+            'text' => 'Refresh Data',
+            'icon' => 'fas fa-sync-alt',
+            'class' => 'btn-light'
+        ]
     ]
 ];
 
-// Include the dashboard header component with the primary style
-require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
+// Include modern page header
+require_once PROJECT_ROOT_PATH . 'app/views/layouts/page_header.php';
 ?>
 
 <!-- Dashboard Content -->

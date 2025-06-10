@@ -128,24 +128,23 @@ $additionalScripts = [
 // Include header
 require_once '../../layouts/header.php';
 
-// Include agency navigation
-require_once '../../layouts/agency_nav.php';
-
-// Set up header variables
-$title = "Agency Programs";
-$subtitle = "View and manage your agency's programs";
-$headerStyle = 'light'; // Use light (white) style for inner pages
-$actions = [
-    [
-        'url' => APP_URL . '/app/views/agency/programs/create_program.php', // Fix: use absolute URL with APP_URL
-        'text' => 'Create New Program',
-        'icon' => 'fas fa-plus-circle',
-        'class' => 'btn-primary'
+// Configure modern page header
+$header_config = [
+    'title' => 'Agency Programs',
+    'subtitle' => 'View and manage your agency\'s programs',
+    'variant' => 'green',
+    'actions' => [
+        [
+            'url' => APP_URL . '/app/views/agency/programs/create_program.php',
+            'text' => 'Create New Program',
+            'icon' => 'fas fa-plus-circle',
+            'class' => 'btn-primary'
+        ]
     ]
 ];
 
-// Include the dashboard header component with the light style
-require_once PROJECT_ROOT_PATH . 'lib/dashboard_header.php';
+// Include modern page header
+require_once '../../layouts/page_header.php';
 ?>
 
 <!-- Draft Programs Card -->

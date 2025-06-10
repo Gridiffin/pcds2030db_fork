@@ -81,23 +81,23 @@ $additionalStyles = [
 // Include header
 require_once '../../layouts/header.php';
 
-// Include agency navigation
-require_once '../../layouts/agency_nav.php';
-
-// Set up the page header variables for dashboard_header.php
-$title = "View Outcome Details";
-$subtitle = "Review your submitted outcomes data";
-$headerStyle = 'light'; // Use light (white) style for inner pages
-$actions = [
-    [        'url' => 'submit_outcomes.php',
-        'text' => 'Back to Outcomes',
-        'icon' => 'fa-arrow-left',
-        'class' => 'btn-outline-primary'
+// Configure modern page header
+$header_config = [
+    'title' => 'View Outcome Details',
+    'subtitle' => 'Review your submitted outcomes data',
+    'variant' => 'white',
+    'actions' => [
+        [
+            'url' => 'submit_outcomes.php',
+            'text' => 'Back to Outcomes',
+            'icon' => 'fa-arrow-left',
+            'class' => 'btn-outline-primary'
+        ]
     ]
 ];
 
-// Include the dashboard header component
-require_once PROJECT_ROOT_PATH . 'lib/dashboard_header.php';
+// Include modern page header
+require_once '../../layouts/page_header.php';
 ?>
 
 <div class="container-fluid px-4 py-4">

@@ -145,24 +145,23 @@ $pageTitle = 'Create New Program';
 // Include header
 require_once '../../layouts/header.php';
 
-// Include agency navigation
-require_once '../../layouts/agency_nav.php';
-
-// Set up header variables
-$title = "Create New Program";
-$subtitle = "Create a new program draft with basic information";
-$headerStyle = 'light'; // Use light (white) style for inner pages
-$actions = [
-    [
-        'url' => 'view_programs.php',
-        'text' => 'Back to Programs',
-        'icon' => 'fas fa-arrow-left',
-        'class' => 'btn-outline-secondary'
+// Configure modern page header
+$header_config = [
+    'title' => 'Create New Program',
+    'subtitle' => 'Create a new program draft with basic information',
+    'variant' => 'white',
+    'actions' => [
+        [
+            'url' => 'view_programs.php',
+            'text' => 'Back to Programs',
+            'icon' => 'fas fa-arrow-left',
+            'class' => 'btn-outline-secondary'
+        ]
     ]
 ];
 
-// Include the dashboard header component
-require_once PROJECT_ROOT_PATH . 'lib/dashboard_header.php';
+// Include modern page header
+require_once '../../layouts/page_header.php';
 ?>
 
 <div class="container-fluid">

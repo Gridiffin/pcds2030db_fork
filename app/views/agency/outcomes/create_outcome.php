@@ -98,26 +98,27 @@ $additionalScripts = [
 
 // Include header and agency navigation
 require_once '../../layouts/header.php';
-require_once '../../layouts/agency_nav.php';
 
-// Include dashboard header
-require_once ROOT_PATH . 'app/lib/dashboard_header.php';
-?>
-
-<?php
-// Set page header variables
-$title = "Create Outcome";
-$subtitle = "Create a new outcome with monthly data";
-$headerStyle = 'light';
-$actions = [
-    [
-        'url' => 'manage_outcomes.php',
-        'text' => 'Back to Manage Outcomes',
-        'icon' => 'fa-arrow-left',
-        'class' => 'btn-outline-primary'
+// Configure modern page header
+$header_config = [
+    'title' => 'Create Outcome',
+    'subtitle' => 'Create a new outcome with monthly data',
+    'variant' => 'white',
+    'actions' => [
+        [
+            'url' => 'submit_outcomes.php',
+            'text' => 'Back to Submit Outcomes',
+            'icon' => 'fa-arrow-left',
+            'class' => 'btn-outline-primary'
+        ]
     ]
 ];
+
+// Include modern page header
+require_once '../../layouts/page_header.php';
 ?>
+
+<div class="container-fluid px-4 py-4">
 
 <div class="container-fluid px-4 py-4">
     <?php if (!empty($message)): ?>

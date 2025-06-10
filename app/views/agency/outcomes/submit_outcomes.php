@@ -49,33 +49,30 @@ $additionalScripts = [];
 // Include header
 require_once '../../layouts/header.php';
 
-// Include agency navigation
-require_once '../../layouts/agency_nav.php';
+// Configure modern page header
+$header_config = [
+    'title' => 'Submit Sector Outcomes',
+    'subtitle' => 'Update your sector-specific outcomes for this reporting period',
+    'variant' => 'green',
+    'actions' => []
+];
 
-// Set up the page header variables for dashboard_header.php
-$title = "Submit Sector Outcomes";
-$subtitle = "Update your sector-specific outcomes for this reporting period";
-$headerStyle = 'light'; // Use light (white) style for inner pages
-
-// Set up period badge for actions array if period exists
-$actions = [];
-
-// Add period badges first
+// Add period badges to actions
 if ($current_period) {
-    $actions[] = [
+    $header_config['actions'][] = [
         'html' => '<span class="badge bg-success"><i class="fas fa-calendar-alt me-1"></i> Q' . $current_period['quarter'] . '-' . $current_period['year'] . '</span>'
     ];
-    $actions[] = [
+    $header_config['actions'][] = [
         'html' => '<span class="badge bg-success ms-2"><i class="fas fa-clock me-1"></i> Ends: ' . date('M j, Y', strtotime($current_period['end_date'])) . '</span>'
     ];
 } else {
-    $actions[] = [
+    $header_config['actions'][] = [
         'html' => '<span class="badge bg-warning"><i class="fas fa-exclamation-triangle me-1"></i> No Active Reporting Period</span>'
     ];
 }
 
-// Include the dashboard header component
-require_once PROJECT_ROOT_PATH . 'lib/dashboard_header.php';
+// Include modern page header
+require_once '../../layouts/page_header.php';
 ?>
 
 <?php if (!$show_form): ?>

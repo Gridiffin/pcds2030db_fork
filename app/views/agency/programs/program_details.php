@@ -149,32 +149,28 @@ $additionalScripts = [
 // Include header
 require_once '../../layouts/header.php';
 
-// Include agency navigation
-require_once '../../layouts/agency_nav.php';
-
-// Set up the page header variables
-$title = "Program Details";
-$subtitle = $program['program_name'];
-$headerStyle = 'light'; // Use light (white) style for inner pages
-
-// Back button URL depends on source
 // Back button URL depends on source
 $allSectorsUrl = APP_URL . '/app/views/agency/sectors/view_all_sectors.php';
 $myProgramsUrl = APP_URL . '/app/views/agency/programs/view_programs.php';
-
 $backUrl = $source === 'all_sectors' ? $allSectorsUrl : $myProgramsUrl;
 
-$actions = [
-    [
-        'url' => $backUrl,
-        'text' => 'Back to ' . ($source === 'all_sectors' ? 'All Sectors' : 'My Programs'),
-        'icon' => 'fas fa-arrow-left',
-        'class' => 'btn-outline-secondary'
+// Configure modern page header
+$header_config = [
+    'title' => 'Program Details',
+    'subtitle' => $program['program_name'],
+    'variant' => 'white',
+    'actions' => [
+        [
+            'url' => $backUrl,
+            'text' => 'Back to ' . ($source === 'all_sectors' ? 'All Sectors' : 'My Programs'),
+            'icon' => 'fas fa-arrow-left',
+            'class' => 'btn-outline-secondary'
+        ]
     ]
 ];
 
-// Include the dashboard header component
-require_once ROOT_PATH . 'app/lib/dashboard_header.php';
+// Include modern page header
+require_once '../../layouts/page_header.php';
 
 // Define status mapping for display
 $status_map = [

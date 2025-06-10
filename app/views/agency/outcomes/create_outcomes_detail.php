@@ -18,7 +18,6 @@ require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/agencies/index.php';
 require_once PROJECT_ROOT_PATH . 'app/views/layouts/header.php';
-require_once PROJECT_ROOT_PATH . 'app/views/layouts/agency_nav.php';
 
 // Add cache control headers
 header("Cache-Control: no-cache, no-store, must-revalidate");
@@ -187,128 +186,214 @@ if ($result) {
 }
 ?>
 
+<?php
+// Header configuration
+$header_config = [
+    'title' => 'Create Outcome Detail',
+    'subtitle' => 'Design and manage detailed KPI structures for outcome reporting',
+    'variant' => 'white',    'actions' => [
+        [
+            'text' => 'Back to Outcomes',
+            'url' => APP_URL . '/app/views/agency/outcomes/submit_outcomes.php',
+            'class' => 'btn-outline-primary',
+            'icon' => 'fas fa-arrow-left'
+        ]
+    ]
+];
+require_once '../../layouts/page_header.php';
+?>
+
 <!DOCTYPE html>
 <html lang="en">
-<head>    <meta charset="UTF-8">
+<head>
+    <meta charset="UTF-8">
     <title>Create Outcome Detail</title>
     <link href="<?php echo APP_URL; ?>/assets/css/main.css" rel="stylesheet">
     <link href="<?php echo APP_URL; ?>/assets/css/components/forms.css" rel="stylesheet">
     <link href="<?php echo APP_URL; ?>/assets/css/components/buttons.css" rel="stylesheet">
     <link href="<?php echo APP_URL; ?>/assets/css/layout/navigation.css" rel="stylesheet">
     <link href="<?php echo APP_URL; ?>/assets/css/layout/dashboard.css" rel="stylesheet">
-    <link href="<?php echo APP_URL; ?>/assets/css/custom/agency.css" rel="stylesheet"></head>
-<body>    <div class="container mt-5">
-        <h1>Create Outcome Detail</h1>
-        <div id="errorContainer" class="alert alert-danger" style="display: none;"></div>
-        <div id="successContainer" class="alert alert-success" style="display: none;"></div>
-          <form id="metricDetailForm" method="post" action="<?php echo view_url('$ViewType', '$currentFileName'); ?>">
-            <div class="mb-3">
-                <label for="title" class="form-label">Title</label>
-                <input type="text" class="form-control" id="title" name="title" required>
+    <link href="<?php echo APP_URL; ?>/assets/css/custom/agency.css" rel="stylesheet">
+</head>
+<body>
+    <div class="main-content">        <div class="container-fluid p-4">
+            <!-- Alert Messages -->
+            <div id="errorContainer" class="alert alert-danger" style="display: none;"></div>
+            <div id="successContainer" class="alert alert-success" style="display: none;"></div>
+
+            <!-- Form Section -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Outcome Detail Configuration</h5>
+                </div>
+                <div class="card-body">                <div class="card-body">
+                    <form id="metricDetailForm" method="post" action="<?php echo view_url('$ViewType', '$currentFileName'); ?>">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="title" class="form-label">Title</label>
+                                    <input type="text" class="form-control" id="title" name="title" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="layout_type" class="form-label">Layout Type</label>
+                                    <select class="form-control" id="layout_type" name="layout_type" required>
+                                        <option value="simple">Simple (Default)</option>
+                                        <option value="detailed_list">Detailed List</option>
+                                        <option value="comparison">Comparison</option>
+                                    </select>
+                                    <small class="text-muted">Select the visual presentation style for this KPI.</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h6 class="mb-2">KPI Values and Descriptions</h6>
+                            <p class="text-muted small">Add the values and descriptions for this KPI. For simple layout, only the first item will be used. For detailed list, each item represents a row. For comparison layout, items are shown side by side.</p>
+                        </div>
+                        
+                        <div id="itemsContainer">
+                            <div class="item-container border rounded p-3 mb-3 position-relative" data-index="0">
+                                <span class="remove-item position-absolute top-0 end-0 bg-danger text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 25px; height: 25px; cursor: pointer; margin: 5px;" onclick="removeItem(this)">×</span>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="value_0" class="form-label">Value</label>
+                                            <input type="text" class="form-control" id="value_0" name="value_0" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="description_0" class="form-label">Description</label>
+                                            <textarea class="form-control" id="description_0" name="description_0" rows="3" required></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex gap-2 mb-3">
+                            <button type="button" class="btn btn-outline-secondary" onclick="addItem()">
+                                <i class="fas fa-plus me-1"></i> Add Another Value
+                            </button>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                                <i class="fas fa-save me-1"></i> Create
+                            </button>
+                            <a href="<?php echo APP_URL; ?>/app/views/agency/outcomes/submit_outcomes.php" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-1"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
             </div>
-            
-            <div class="mb-3">
-                <label for="layout_type" class="form-label">Layout Type</label>
-                <select class="form-control" id="layout_type" name="layout_type" required>
-                    <option value="simple">Simple (Default)</option>
-                    <option value="detailed_list">Detailed List</option>
-                    <option value="comparison">Comparison</option>
-                </select>
-                <small class="text-muted">Select the visual presentation style for this KPI.</small>
-            </div>
-            
-            <div class="mb-3">
-                <h4>KPI Values and Descriptions</h4>
-                <p class="text-muted small">Add the values and descriptions for this KPI. For simple layout, only the first item will be used. For detailed list, each item represents a row. For comparison layout, items are shown side by side.</p>
-            </div>
-            
-            <div id="itemsContainer">
-                <div class="item-container" data-index="0">
-                    <span class="remove-item" onclick="removeItem(this)">×</span>
-                    <div class="mb-3">
-                        <label for="value_0" class="form-label">Value</label>
-                        <input type="text" class="form-control" id="value_0" name="value_0" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="description_0" class="form-label">Description</label>
-                        <textarea class="form-control" id="description_0" name="description_0" rows="3" required></textarea>
+
+            <!-- Existing Details Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Created Outcome Details</h5>
+                    <small class="text-muted">Manage your existing outcome detail configurations</small>
+                </div>
+                <div class="card-body">
+                    <div id="metricDetailsContainer">                    <div id="metricDetailsContainer">
+                        <?php if (empty($detailsArray)): ?>
+                            <div class="text-center py-4">
+                                <i class="fas fa-list-alt fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">No outcome details found.</p>
+                                <p class="small text-muted">Create your first outcome detail using the form above.</p>
+                            </div>
+                        <?php else: ?>
+                            <div class="row">
+                                <?php foreach ($detailsArray as $detail): ?>
+                                    <div class="col-lg-6 col-xl-4 mb-4">
+                                        <div class="card h-100">
+                                            <div class="card-header d-flex justify-content-between align-items-center">
+                                                <h6 class="card-title mb-0"><?= htmlspecialchars($detail['title']) ?></h6>
+                                                <span class="badge bg-secondary"><?= ucfirst($detail['layout_type'] ?? 'simple') ?></span>
+                                            </div>
+                                            <div class="card-body">
+                                                <?php
+                                                $values = explode(';', $detail['value']);
+                                                $descriptions = explode(';', $detail['description']);
+                                                
+                                                if (count($values) === 1): ?>
+                                                    <div class="d-flex align-items-center gap-3">
+                                                        <div class="text-primary fw-bold fs-3"><?= htmlspecialchars($values[0]) ?></div>
+                                                        <div class="text-muted small"><?= htmlspecialchars($descriptions[0] ?? '') ?></div>
+                                                    </div>
+                                                <?php else: ?>
+                                                    <div class="row">
+                                                        <?php foreach ($values as $index => $val): ?>
+                                                            <div class="col-6 mb-2">
+                                                                <div class="text-primary fw-bold"><?= htmlspecialchars($val) ?></div>
+                                                                <div class="text-muted small"><?= htmlspecialchars($descriptions[$index] ?? '') ?></div>
+                                                            </div>
+                                                        <?php endforeach; ?>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </div>
+                                            <div class="card-footer bg-transparent">
+                                                <div class="d-flex gap-2">
+                                                    <button class="btn btn-sm btn-outline-primary flex-fill" onclick="editMetricDetail(<?= $detail['id'] ?>)">
+                                                        <i class="fas fa-edit me-1"></i> Edit
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteMetricDetail(<?= $detail['id'] ?>)">
+                                                        <i class="fas fa-trash me-1"></i> Delete
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
-            
-            <button type="button" class="btn btn-secondary add-item-btn" onclick="addItem()">+ Add Another Value</button>
-            
-            <button type="submit" class="btn btn-primary" id="submitBtn">Create</button>
-            <a href="<?php echo APP_URL; ?>/views/agency/create_metric_detail.php" class="btn btn-secondary ms-2">Cancel</a>
-        </form>        <div class="mt-5">
-            <h2>Created Outcome Details</h2>            <div id="metricDetailsContainer">
-                <?php if (empty($detailsArray)): ?>
-                    <p>No outcome details found.</p>
-                <?php else: ?>
-                    <ul>
-                        <?php foreach ($detailsArray as $detail): ?>                            <li>
-                                <div class="details-list">
-                                    <div class="title">
-                                        <h3><?= htmlspecialchars($detail['title']) ?></h3>
-                                    </div>
-                                    <div class="content">
-                                        <?php
-                                        $values = explode(';', $detail['value']);
-                                        $descriptions = explode(';', $detail['description']);
-                                        
-                                        if (count($values) === 1): ?>
-                                            <div class="value-display">
-                                                <div class="value"><?= htmlspecialchars($values[0]) ?></div>
-                                                <div class="description"><?= htmlspecialchars($descriptions[0] ?? '') ?></div>
-                                            </div>
-                                        <?php else: ?>
-                                            <div class="values-grid" style="grid-template-columns: repeat(<?= count($values) ?>, 1fr);">
-                                                <?php foreach ($values as $val): ?>
-                                                    <div class="value"><?= htmlspecialchars($val) ?></div>
-                                                <?php endforeach; ?>
-                                                <?php foreach ($descriptions as $desc): ?>
-                                                    <div class="description"><?= htmlspecialchars($desc) ?></div>
-                                                <?php endforeach; ?>
-                                            </div>
-                                        <?php endif; ?>
-                                    </div>
-                                    <div class="action-buttons">
-                                        <button class="btn btn-sm btn-outline-primary" onclick="editMetricDetail(<?= $detail['id'] ?>)">Edit</button>
-                                        <button class="btn btn-sm btn-outline-danger delete-btn" onclick="deleteMetricDetail(<?= $detail['id'] ?>)">Delete</button>
-                                    </div>
-                                </div>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                <?php endif; ?>
-            </div>
         </div>
-    </div>
-
-    <script>
+    </div>    <script>
         // Embed detailsArray as JS object for edit lookup
         const metricDetails = <?= json_encode($detailsArray) ?>;
         let editingDetailId = null;
 
-        // Function to add a new item
+        // Helper function to escape HTML
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+        }// Function to add a new item
         function addItem() {
             const container = document.getElementById('itemsContainer');
             const itemCount = container.children.length;
             const newIndex = itemCount;
             
             const newItem = document.createElement('div');
-            newItem.className = 'item-container';
+            newItem.className = 'item-container border rounded p-3 mb-3 position-relative';
             newItem.dataset.index = newIndex;
             
             newItem.innerHTML = `
-                <span class="remove-item" onclick="removeItem(this)">×</span>
-                <div class="mb-3">
-                    <label for="value_${newIndex}" class="form-label">Value</label>
-                    <input type="text" class="form-control" id="value_${newIndex}" name="value_${newIndex}" required>
-                </div>
-                <div class="mb-3">
-                    <label for="description_${newIndex}" class="form-label">Description</label>
-                    <textarea class="form-control" id="description_${newIndex}" name="description_${newIndex}" rows="3" required></textarea>
+                <span class="remove-item position-absolute top-0 end-0 bg-danger text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 25px; height: 25px; cursor: pointer; margin: 5px;" onclick="removeItem(this)">×</span>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="value_${newIndex}" class="form-label">Value</label>
+                            <input type="text" class="form-control" id="value_${newIndex}" name="value_${newIndex}" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="description_${newIndex}" class="form-label">Description</label>
+                            <textarea class="form-control" id="description_${newIndex}" name="description_${newIndex}" rows="3" required></textarea>
+                        </div>
+                    </div>
                 </div>
             `;
             
@@ -423,24 +508,28 @@ if ($result) {
 
             // Clear existing items
             const container = document.getElementById('itemsContainer');
-            container.innerHTML = '';
-
-            // Handle both legacy format and new format
+            container.innerHTML = '';            // Handle both legacy format and new format
             if (detail.items && Array.isArray(detail.items)) {
                 // New format with items array
                 detail.items.forEach((item, i) => {
                     const newItem = document.createElement('div');
-                    newItem.className = 'item-container';
+                    newItem.className = 'item-container border rounded p-3 mb-3 position-relative';
                     newItem.dataset.index = i;
                     newItem.innerHTML = `
-                        <span class="remove-item" onclick="removeItem(this)">×</span>
-                        <div class="mb-3">
-                            <label for="value_${i}" class="form-label">Value</label>
-                            <input type="text" class="form-control" id="value_${i}" name="value_${i}" required value="${escapeHtml(item.value)}">
-                        </div>
-                        <div class="mb-3">
-                            <label for="description_${i}" class="form-label">Description</label>
-                            <textarea class="form-control" id="description_${i}" name="description_${i}" rows="3" required>${escapeHtml(item.description)}</textarea>
+                        <span class="remove-item position-absolute top-0 end-0 bg-danger text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 25px; height: 25px; cursor: pointer; margin: 5px;" onclick="removeItem(this)">×</span>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="value_${i}" class="form-label">Value</label>
+                                    <input type="text" class="form-control" id="value_${i}" name="value_${i}" required value="${escapeHtml(item.value)}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="description_${i}" class="form-label">Description</label>
+                                    <textarea class="form-control" id="description_${i}" name="description_${i}" rows="3" required>${escapeHtml(item.description)}</textarea>
+                                </div>
+                            </div>
                         </div>
                     `;
                     container.appendChild(newItem);
@@ -452,75 +541,76 @@ if ($result) {
 
                 for (let i = 0; i < values.length; i++) {
                     const newItem = document.createElement('div');
-                    newItem.className = 'item-container';
+                    newItem.className = 'item-container border rounded p-3 mb-3 position-relative';
                     newItem.dataset.index = i;
                     newItem.innerHTML = `
-                        <span class="remove-item" onclick="removeItem(this)">×</span>
-                        <div class="mb-3">
-                            <label for="value_${i}" class="form-label">Value</label>
-                            <input type="text" class="form-control" id="value_${i}" name="value_${i}" required value="${escapeHtml(values[i])}">
-                        </div>
-                        <div class="mb-3">
-                            <label for="description_${i}" class="form-label">Description</label>
-                            <textarea class="form-control" id="description_${i}" name="description_${i}" rows="3" required>${escapeHtml(descriptions[i] || '')}</textarea>
+                        <span class="remove-item position-absolute top-0 end-0 bg-danger text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 25px; height: 25px; cursor: pointer; margin: 5px;" onclick="removeItem(this)">×</span>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="value_${i}" class="form-label">Value</label>
+                                    <input type="text" class="form-control" id="value_${i}" name="value_${i}" required value="${escapeHtml(values[i])}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="description_${i}" class="form-label">Description</label>
+                                    <textarea class="form-control" id="description_${i}" name="description_${i}" rows="3" required>${escapeHtml(descriptions[i] || '')}</textarea>
+                                </div>
+                            </div>
                         </div>
                     `;
                     container.appendChild(newItem);
                 }
-            }
-
-            // Change submit button text to Update
-            document.getElementById('submitBtn').textContent = 'Update';
+            }            // Change submit button text and icon to Update
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.innerHTML = '<i class="fas fa-save me-1"></i> Update';
             
             // Scroll to the form
             document.getElementById('metricDetailForm').scrollIntoView({ behavior: 'smooth' });
-        }
-
-        // Function to update metric detail in UI without reloading
+        }        // Function to update metric detail in UI without reloading
         function updateMetricDetailInUI(id, title, items) {
             // Find the existing item in the UI
-            const itemElement = document.querySelector(`li button[onclick="editMetricDetail(${id})"]`)?.closest('li');
+            const itemElement = document.querySelector(`button[onclick="editMetricDetail(${id})"]`)?.closest('.col-lg-6');
             
             if (!itemElement) return;
             
             // Update the title
-            const titleElement = itemElement.querySelector('h3');
+            const titleElement = itemElement.querySelector('.card-title');
             if (titleElement) titleElement.textContent = title;
             
-            // Update values and descriptions
-            const valuesContainer = itemElement.querySelector('div[style*="grid-template-columns"]') || 
-                                  itemElement.querySelector('div[style*="align-items: center"]');
-            
-            if (items.length === 1) {
-                valuesContainer.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 15px;">
-                        <div style="color: #007bff; font-weight: bold; font-size: 2rem;">${items[0].value}</div>
-                        <div style="color: #000; font-size: 1rem;">${items[0].description}</div>
-                    </div>
-                `;
-            } else {
-                let valuesHTML = '';
-                let descsHTML = '';
-                
-                items.forEach(item => {
-                    valuesHTML += `<div style="color: #007bff; font-weight: bold; font-size: 2rem;">${item.value}</div>`;
-                    descsHTML += `<div style="color: #000; font-size: 1rem;">${item.description}</div>`;
-                });
-                
-                valuesContainer.innerHTML = `
-                    <div style="display: grid; grid-template-columns: repeat(${items.length}, 1fr); grid-template-rows: auto auto; gap: 10px;">
-                        ${valuesHTML}
-                        ${descsHTML}
-                    </div>
-                `;
+            // Update the card body content
+            const cardBody = itemElement.querySelector('.card-body');
+            if (cardBody) {
+                if (items.length === 1) {
+                    cardBody.innerHTML = `
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="text-primary fw-bold fs-3">${escapeHtml(items[0].value)}</div>
+                            <div class="text-muted small">${escapeHtml(items[0].description)}</div>
+                        </div>
+                    `;
+                } else {
+                    let itemsHTML = '';
+                    items.forEach(item => {
+                        itemsHTML += `
+                            <div class="col-6 mb-2">
+                                <div class="text-primary fw-bold">${escapeHtml(item.value)}</div>
+                                <div class="text-muted small">${escapeHtml(item.description)}</div>
+                            </div>
+                        `;
+                    });
+                    
+                    cardBody.innerHTML = `<div class="row">${itemsHTML}</div>`;
+                }
             }
             
-            // Also update the metricDetails array for future edits
+            // Update the metricDetails array for future edits
             const detailIndex = metricDetails.findIndex(d => d.id == id);
             if (detailIndex !== -1) {
                 metricDetails[detailIndex] = {
                     id: id,
                     title: title,
+                    items: items,
                     value: items.map(i => i.value).join(';'),
                     description: items.map(i => i.description).join(';')
                 };
@@ -624,11 +714,10 @@ if ($result) {
                 .catch((error) => {
                     console.error('Fetch error:', error);
                     showAlert('Failed to submit data. Please try again.', 'error');
-                })
-                .finally(() => {
+                })                .finally(() => {
                     // Re-enable the submit button
                     submitBtn.disabled = false;
-                    submitBtn.textContent = editingDetailId ? 'Update' : 'Create';
+                    submitBtn.innerHTML = editingDetailId ? '<i class="fas fa-save me-1"></i> Update' : '<i class="fas fa-save me-1"></i> Create';
                 });
             });
         });

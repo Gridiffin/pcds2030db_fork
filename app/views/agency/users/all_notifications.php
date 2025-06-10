@@ -108,24 +108,23 @@ function format_time_ago($timestamp) {
 // Include header
 require_once '../../layouts/header.php';
 
-// Include agency navigation
-require_once '../../layouts/agency_nav.php';
-
-// Set up the dashboard header variables
-$title = "All Notifications";
-$subtitle = "View and manage all your notifications";
-$headerStyle = 'light'; // Changed from 'primary' to 'light' to match other inner pages
-$actions = [
-    [
-        'url' => 'all_notifications.php?mark_all_read=1',
-        'text' => 'Mark All as Read',
-        'icon' => 'fas fa-check-double',
-        'class' => 'btn-primary' // Changed to btn-primary for better visibility on light background
+// Configure modern page header
+$header_config = [
+    'title' => 'All Notifications',
+    'subtitle' => 'View and manage all your notifications',
+    'variant' => 'white',
+    'actions' => [
+        [
+            'url' => 'all_notifications.php?mark_all_read=1',
+            'text' => 'Mark All as Read',
+            'icon' => 'fas fa-check-double',
+            'class' => 'btn-primary'
+        ]
     ]
 ];
 
-// Include the dashboard header component
-require_once ROOT_PATH . 'app/lib/dashboard_header.php';
+// Include modern page header
+require_once '../../layouts/page_header.php';
 ?>
 
 <!-- Notifications Content -->

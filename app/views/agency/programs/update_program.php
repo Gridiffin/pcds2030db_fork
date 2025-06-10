@@ -490,24 +490,27 @@ $additionalStyles = '
 
 // Include header (which contains the DOCTYPE declaration)
 require_once dirname(__DIR__, 2) . '/layouts/header.php';
-require_once dirname(__DIR__, 2) . '/layouts/agency_nav.php';
 
-// Set up header variables
-$title = "Update Program";
-$subtitle = htmlspecialchars($program['program_name']) . " - " . 
-            htmlspecialchars($current_period['name'] ?? '') . 
-            " (" . date('M j, Y', strtotime($current_period['start_date'])) . " - " . 
-            date('M j, Y', strtotime($current_period['end_date'])) . ")";
-$headerStyle = 'light'; // Use light (white) style for inner pages
-$actions = [
-    [
-        'url' => 'view_programs.php',
-        'text' => 'Back to Programs',
-        'icon' => 'fa-arrow-left',
-        'class' => 'btn-outline-secondary'
+// Configure modern page header
+$header_config = [
+    'title' => 'Update Program',
+    'subtitle' => htmlspecialchars($program['program_name']) . " - " . 
+                htmlspecialchars($current_period['name'] ?? '') . 
+                " (" . date('M j, Y', strtotime($current_period['start_date'])) . " - " . 
+                date('M j, Y', strtotime($current_period['end_date'])) . ")",
+    'variant' => 'white',
+    'actions' => [
+        [
+            'url' => 'view_programs.php',
+            'text' => 'Back to Programs',
+            'icon' => 'fa-arrow-left',
+            'class' => 'btn-outline-secondary'
+        ]
     ]
 ];
-require_once ROOT_PATH . 'app/lib/dashboard_header.php';
+
+// Include modern page header
+require_once dirname(__DIR__, 2) . '/layouts/page_header.php';
 
 ?>
 

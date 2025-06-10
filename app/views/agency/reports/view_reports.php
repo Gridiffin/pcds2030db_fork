@@ -35,16 +35,17 @@ $additionalScripts = [
 // Include header
 require_once '../layouts/header.php';
 
-// Include agency navigation
-require_once '../layouts/agency_nav.php';
-?>
+// Configure modern page header
+$header_config = [
+    'title' => 'View Reports',
+    'subtitle' => 'Access and download reports for your programs and sector',
+    'variant' => 'green',
+    'actions' => []
+];
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h1 class="h2 mb-0">View Reports</h1>
-        <p class="text-muted">Access and download reports for your programs and sector</p>
-    </div>
-</div>
+// Include modern page header
+require_once '../layouts/page_header.php';
+?>
 
 <!-- Report Filter Card -->
 <div class="card shadow-sm mb-4">
