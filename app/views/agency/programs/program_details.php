@@ -188,6 +188,10 @@ $status = convert_legacy_status($rating);
 if (!isset($status_map[$status])) {
     $status = 'not-started';
 }
+
+// Initialize alert flags
+$showDraftAlert = $is_draft && $is_owner; // Only show draft alert if user owns the program
+$showNoTargetsAlert = empty($targets) && $is_owner; // Only show no targets alert if user owns the program
 ?>
 
 <!-- Toast Notifications -->
