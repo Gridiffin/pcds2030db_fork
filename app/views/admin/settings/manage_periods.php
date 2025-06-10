@@ -32,7 +32,6 @@ $additionalScripts = [
 require_once '../layouts/header.php';
 
 // Include admin navigation
-require_once '../../layouts/admin_nav.php';
 ?>
 
 <div class="container-fluid px-4 py-4">

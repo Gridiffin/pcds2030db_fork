@@ -308,8 +308,6 @@ $additionalStyles = '
 $pageTitle = 'Edit Program';
 
 require_once '../../layouts/header.php';
-require_once '../../layouts/admin_nav.php';
-
 // Set up header variables
 $title = "Edit Program";
 $subtitle = "Modify program details";
@@ -326,6 +324,7 @@ $actions = [
 require_once ROOT_PATH . 'app/lib/dashboard_header.php';
 ?>
 
+<main class="flex-fill">
 <?php if (!empty($message)): ?>
     <div class="alert alert-<?php echo htmlspecialchars($messageType); ?> alert-dismissible fade show" role="alert">
         <div class="d-flex align-items-center">
@@ -816,6 +815,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+</main>
 
 <?php
 require_once '../../layouts/footer.php';

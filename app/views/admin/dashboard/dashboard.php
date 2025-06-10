@@ -51,9 +51,6 @@ $additionalScripts = [
 // Include header
 require_once '../../layouts/header.php';
 
-// Include admin navigation
-require_once '../../layouts/admin_nav.php';
-
 // Set up the dashboard header variables
 $title = "Admin Dashboard";
 $subtitle = "System overview and management";
@@ -81,9 +78,11 @@ const hasActivePeriod = <?php echo $hasActivePeriod ? 'true' : 'false'; ?>;
 </script>
 
 <!-- Dashboard Content -->
-<section class="section">
-    <div class="container-fluid">        <!-- Period Selector Component -->
-        <?php require_once ROOT_PATH . 'app/lib/period_selector.php'; ?>
+<main class="flex-fill">
+    <section class="section">
+        <div class="container-fluid">
+            <!-- Period Selector Component -->
+            <?php require_once ROOT_PATH . 'app/lib/period_selector.php'; ?>
 
         <!-- Quick Actions Section - Optimized for high-value admin actions -->
         <div class="row mb-4">
@@ -511,9 +510,9 @@ const hasActivePeriod = <?php echo $hasActivePeriod ? 'true' : 'false'; ?>;
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-</section>
+        </div>        </div>
+    </section>
+</main>
 
 <?php
 // Include footer

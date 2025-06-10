@@ -1,6 +1,4 @@
-            </div> <!-- Close container-fluid -->
-        </main>
-          <!-- Footer -->
+                    <!-- Footer -->
         <footer class="footer">
             <div class="container-fluid">
                 <div class="d-flex justify-content-between align-items-center py-2">

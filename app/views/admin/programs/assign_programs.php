@@ -203,8 +203,6 @@ $additionalScripts = [
 require_once '../../layouts/header.php';
 
 // Include admin navigation
-require_once '../../layouts/admin_nav.php';
-
 // Set up the dashboard header variables
 $title = "Assign Programs";
 $subtitle = "Create and assign programs to agencies";
@@ -222,6 +220,7 @@ $actions = [
 require_once ROOT_PATH . 'app/lib/dashboard_header.php';
 ?>
 
+<main class="flex-fill">
 <div class="row">
     <div class="col-lg-12">
         <div class="card shadow-sm">
@@ -539,6 +538,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+</main>
+
 <?php
 // Include footer
 require_once '../../layouts/footer.php';

@@ -115,8 +115,6 @@ $pageTitle = 'Reopen Program Submission';
 require_once '../layouts/header.php';
 
 // Include admin navigation
-require_once '../../layouts/admin_nav.php';
-
 // Set up the dashboard header variables
 $title = "Reopen Program Submission";
 $subtitle = "Convert a finalized submission back to draft status";

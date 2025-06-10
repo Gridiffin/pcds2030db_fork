@@ -52,8 +52,6 @@ if ($selected_sector > 0 && !empty($outcomes)) {
 require_once '../../layouts/header.php';
 
 // Include admin navigation
-require_once '../../layouts/admin_nav.php';
-
 // Get outcome creation setting
 require_once ROOT_PATH . 'app/lib/admins/settings.php';
 $allow_outcome_creation = get_outcome_creation_setting();

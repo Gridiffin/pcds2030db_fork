@@ -75,6 +75,7 @@
 
 /* Custom overrides */
 @import 'custom/agency.css'; /* Agency-specific overrides */
+@import 'custom/admin.css'; /* Admin layout fixes */
 
 /* Shared components (if these exist) */
 /* If these files don't exist yet, comment out these lines */

@@ -35,8 +35,6 @@ $additionalScripts = [
 require_once '../../layouts/header.php';
 
 // Include admin navigation
-require_once '../../layouts/admin_nav.php';
-
 // Set up the dashboard header variables
 $title = "Reporting Periods Management";
 $subtitle = "Manage reporting periods for the PCDS 2030 dashboard";

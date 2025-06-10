@@ -210,8 +210,6 @@ $additionalScripts = [
 require_once '../../layouts/header.php';
 
 // Include admin navigation
-require_once '../../layouts/admin_nav.php';
-
 // Set up the page header variables
 $title = "Program Details";
 $subtitle = $program['program_name'];
@@ -229,6 +227,7 @@ $actions = [
 require_once ROOT_PATH . 'app/lib/dashboard_header.php';
 ?>
 
+<main class="flex-fill">
 <?php if (isset($program['current_submission']['is_draft']) && $program['current_submission']['is_draft']): ?>
 <div class="alert alert-warning alert-dismissible fade show custom-alert" role="alert">
     <div class="d-flex">
@@ -491,10 +490,10 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
                 </div>
                 <?php endif; ?>
             </div>
-        </div>
-    </div>
+        </div>    </div>
     <?php endif; ?>
 </div>
+</main>
 
 <?php
 // Include footer

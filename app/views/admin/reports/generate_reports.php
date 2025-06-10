@@ -205,6 +205,7 @@ $jsConfig = [
     window.ReportGeneratorConfig = <?php echo json_encode($jsConfig, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
 </script>
 
+<main class="flex-fill">
 <!-- Main Page Content -->
 <section class="section">
     <div class="container-fluid">
@@ -491,8 +492,9 @@ $jsConfig = [
                     <i class="fas fa-trash me-1"></i>Delete Report
                 </button>
             </div>        </div>
-    </div>
-</div>
+    </div>    </div>
+</section>
+</main>
 
 <?php
 // Include footer

@@ -83,8 +83,6 @@ $additionalStyles = [
 require_once '../layouts/header.php';
 
 // Include admin navigation
-require_once '../../layouts/admin_nav.php';
-
 // Set up the page header variables for dashboard_header.php
 $title = "View Metric Details";
 $subtitle = "Review metric data for " . htmlspecialchars($sector_name) . " sector";

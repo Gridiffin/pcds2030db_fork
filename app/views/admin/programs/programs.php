@@ -78,8 +78,6 @@ $additionalScripts = [
 require_once '../../layouts/header.php';
 
 // Include admin navigation
-require_once '../../layouts/admin_nav.php';
-
 // Set up the dashboard header variables
 $title = "Programs Overview";
 $subtitle = "Monitor and manage all programs across sectors";
@@ -97,8 +95,10 @@ $actions = [
 require_once ROOT_PATH . 'app/lib/dashboard_header.php';
 ?>
 
-<!-- Period Selector Component -->
-<?php require_once ROOT_PATH . 'app/lib/period_selector.php'; ?>
+<!-- Programs Management Content -->
+<main class="flex-fill">
+    <!-- Period Selector Component -->
+    <?php require_once ROOT_PATH . 'app/lib/period_selector.php'; ?>
 
 <!-- Filter Card -->
 <div class="card shadow-sm mb-4">
@@ -343,8 +343,9 @@ function confirmDeleteProgram(programId, periodId) {
         document.body.appendChild(form);
         form.submit();
     }
-}
+    }
 </script>
+</main>
 
 <?php
 // Include footer

@@ -72,8 +72,6 @@ $additionalScripts = [
 
 // Include header and admin navigation
 require_once '../../layouts/header.php';
-require_once '../../layouts/admin_nav.php';
-
 // Set page header variables
 $title = "Create Outcome";
 $subtitle = "Create a new outcome with monthly data";

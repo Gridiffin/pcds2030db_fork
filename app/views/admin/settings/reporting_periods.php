@@ -133,7 +133,6 @@ $actions = [
 ];
 
 require_once '../../layouts/header.php';
-require_once '../../layouts/admin_nav.php';
 require_once ROOT_PATH . 'app/lib/dashboard_header.php';
 
 // Function to get display name for quarter in admin table

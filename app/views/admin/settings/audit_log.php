@@ -30,9 +30,9 @@ require_once '../../layouts/header.php';
 <link rel="stylesheet" href="../../assets/css/custom/audit_log.css">
 
 <?php
-require_once '../../layouts/admin_nav.php';
 ?>
 
+<main class="flex-fill">
 <div class="container-fluid px-4 py-4">
     <h1 class="h2 mb-4">Audit Log</h1>
     <p class="text-muted">This page displays audit logs</p>
@@ -232,8 +232,8 @@ require_once '../../layouts/admin_nav.php';
                 </div>
             <?php endforeach; ?>
         </div>
-    <?php endif; ?>
-</div>
+    <?php endif; ?>    </div>
+</main>
 <?php
 require_once '../../layouts/footer.php';
 ?>

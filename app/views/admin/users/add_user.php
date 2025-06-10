@@ -55,9 +55,6 @@ $additionalScripts = [
 // Include header
 require_once '../../layouts/header.php';
 
-// Include admin navigation
-require_once '../../layouts/admin_nav.php';
-
 // Set up the page header variables
 $title = "Add New User";
 $subtitle = "Create a new user account";
@@ -75,6 +72,7 @@ $actions = [
 require_once ROOT_PATH . 'app/lib/dashboard_header.php';
 ?>
 
+<main class="flex-fill">
 <script>
     // Make sure APP_URL is defined for JavaScript
     window.APP_URL = '<?php echo APP_URL; ?>';
@@ -392,6 +390,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+</main>
 
 <?php
 // Include footer

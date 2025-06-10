@@ -135,11 +135,6 @@ $is_settings_page = in_array($current_page, ['reporting_periods.php', 'audit_log
     </div>
 </nav>
 
-<!-- Content wrapper -->
-<div class="content-wrapper">
-    <div class="container-fluid">
-        <!-- Page content will be inserted here -->
-
 <style>
 .nav-link.btn {
     background: none;

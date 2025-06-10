@@ -68,9 +68,6 @@ $pageTitle = 'System Settings';
 // Include header
 require_once '../../layouts/header.php';
 
-// Include admin navigation
-require_once '../../layouts/admin_nav.php';
-
 // Set up the page header variables for dashboard_header.php
 $title = "System Settings";
 $subtitle = "Configure system-wide settings";
@@ -81,7 +78,8 @@ $actions = [];
 require_once ROOT_PATH . 'app/lib/dashboard_header.php';
 ?>
 
-<div class="container-fluid px-4 py-4">    <?php if (!empty($message)): ?>
+<main class="flex-fill">
+<div class="container-fluid px-4 py-4"><?php if (!empty($message)): ?>
         <div class="alert alert-forest alert-<?php echo $messageType; ?> alert-dismissible fade show" role="alert">
             <i class="fas fa-info-circle alert-icon"></i>
             <?php echo $message; ?>
@@ -239,6 +237,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+</main>
 
 <?php
 // Include footer

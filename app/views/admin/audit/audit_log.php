@@ -36,8 +36,6 @@ $additionalScripts = [
 require_once '../../layouts/header.php';
 
 // Include admin navigation
-require_once '../../layouts/admin_nav.php';
-
 // Set up the dashboard header variables
 $title = "System Audit Log";
 $subtitle = "View system activity and security logs";

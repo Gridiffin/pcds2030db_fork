@@ -277,9 +277,6 @@ $sectorsJson = json_encode($sectors);
 // Include header
 require_once '../../layouts/header.php';
 
-// Include admin navigation
-require_once '../../layouts/admin_nav.php';
-
 // Set up the page header variables
 $title = "User Management";
 $subtitle = "Create and manage user accounts for the system";
@@ -320,11 +317,12 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
             <i class="fas fa-<?php echo $message_type === 'success' ? 'check-circle' : 'exclamation-circle'; ?> alert-icon"></i>
             <div><?php echo $message; ?></div>
             <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    </div>
+        </div>    </div>
 <?php endif; ?>
 
-<div id="userTablesWrapper">
+<!-- User Management Content -->
+<main class="flex-fill">
+    <div id="userTablesWrapper">
     <!-- Admin Users Table Card -->
     <div class="card shadow-sm mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
@@ -451,6 +449,7 @@ require_once ROOT_PATH . 'app/lib/dashboard_header.php';
     </div>
 </div>
 </div> <!-- End of userTablesWrapper -->
+</main>
 
 <?php
 // Include footer
