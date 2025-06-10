@@ -1,30 +1,40 @@
 <?php
 /**
- * Recent Reports Table AJAX Endpoint
- * 
- * Returns HTML for the recent reports table to be dynamically updated
- * after a new report is generated.
+ * Recent Reports Table AJAX View
+ * Simple endpoint to get recent reports data
  */
 
 // Include necessary files
-require_once '../../../../config/config.php';
+require_once '../../../../app/config/config.php';
 require_once '../../../../app/lib/db_connect.php';
 require_once '../../../../app/lib/session.php';
-require_once '../../../../app/lib/functions.php';
-require_once '../../../../app/lib/admins/index.php';
 
-// Verify user is admin
-if (!is_admin()) {
-    header('HTTP/1.1 403 Forbidden');
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+    http_response_code(403);
     echo '<div class="alert alert-danger">Access denied</div>';
     exit;
 }
 
-/**
- * Format period display name (copied from main page)
- * @param array $report Report data with quarter and year
- * @return string Formatted period name
- */
+// Get recent reports from database
+$query = "SELECT r.report_id, r.report_name, r.pptx_path, r.generated_at, r.is_public,
+                 rp.quarter, rp.year, u.username
+          FROM reports r 
+          LEFT JOIN reporting_periods rp ON r.period_id = rp.period_id 
+          LEFT JOIN users u ON r.generated_by = u.user_id 
+          ORDER BY r.generated_at DESC 
+          LIMIT 10";
+
+$result = $conn->query($query);
+$reports = [];
+
+if ($result) {
+    while ($row = $result->fetch_assoc()) {
+        $reports[] = $row;
+    }
+}
+
+// Format period function
 function formatPeriod($report) {
     if (!$report || !isset($report['quarter'], $report['year'])) {
         return 'Unknown';
@@ -43,41 +53,9 @@ function formatPeriod($report) {
     
     return "Period {$quarter} {$year}";
 }
+?>
 
-/**
- * Get recently generated reports directly from database
- * @param int $limit Number of reports to retrieve
- * @return array Array of recent reports
- */
-function getRecentReports($limit = 10) {
-    global $conn;
-    
-    $query = "SELECT r.report_id, r.report_name, r.pptx_path, r.generated_at, r.is_public,
-                     rp.quarter, rp.year, u.username
-              FROM reports r 
-              LEFT JOIN reporting_periods rp ON r.period_id = rp.period_id 
-              LEFT JOIN users u ON r.generated_by = u.user_id 
-              ORDER BY r.generated_at DESC 
-              LIMIT ?";
-    
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param("i", $limit);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    $reports = [];
-    while ($row = $result->fetch_assoc()) {
-        $reports[] = $row;
-    }
-    
-    return $reports;
-}
-
-// Get recent reports
-$recentReports = getRecentReports(10);
-
-// Generate the table HTML (matching the format in the main page)
-if (!empty($recentReports)): ?>
+<?php if (!empty($reports)): ?>
     <div class="table-responsive">
         <table class="table table-hover table-sm">
             <thead>
@@ -90,7 +68,7 @@ if (!empty($recentReports)): ?>
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($recentReports as $report): ?>
+                <?php foreach ($reports as $report): ?>
                     <tr>
                         <td>
                             <div style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" 
