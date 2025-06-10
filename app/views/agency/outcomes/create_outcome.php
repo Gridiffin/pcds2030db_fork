@@ -6,7 +6,7 @@
  */
 
 // Include necessary files
-require_once '../../config/config.php';
+require_once '../../../config/config.php';
 require_once ROOT_PATH . 'app/lib/db_connect.php';
 require_once ROOT_PATH . 'app/lib/session.php';
 require_once ROOT_PATH . 'app/lib/functions.php';
@@ -97,8 +97,8 @@ $additionalScripts = [
 ];
 
 // Include header and agency navigation
-require_once '../layouts/header.php';
-require_once '../layouts/agency_nav.php';
+require_once '../../layouts/header.php';
+require_once '../../layouts/agency_nav.php';
 
 // Include dashboard header
 require_once ROOT_PATH . 'app/lib/dashboard_header.php';
@@ -335,5 +335,5 @@ $actions = [
 
 <?php
 // Include footer
-require_once '../layouts/footer.php';
+require_once '../../layouts/footer.php';
 ?>
