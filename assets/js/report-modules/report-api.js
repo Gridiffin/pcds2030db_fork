@@ -146,9 +146,7 @@ if (typeof window.ReportAPI !== 'undefined') {
                 reject(error);
             });
         });
-    }
-
-    /**
+    }    /**
      * Refresh the reports table by fetching the latest data
      * @returns {Promise<boolean>} - A promise that resolves to true if successful
      */
@@ -163,11 +161,26 @@ if (typeof window.ReportAPI !== 'undefined') {
                 return;
             }
             
-            // Show loading indicator
-            reportsTableContainer.innerHTML = '<div class="text-center p-4"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Refreshing report list...</p></div>';
+            // Show loading indicator with better styling
+            reportsTableContainer.innerHTML = `
+                <div class="d-flex justify-content-center align-items-center py-4">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary mb-3" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="text-muted mb-0">
+                            <i class="fas fa-sync fa-spin me-1"></i>
+                            Refreshing report list...
+                        </p>
+                    </div>
+                </div>
+            `;
             
-            // Fetch the table HTML directly from a dedicated endpoint
-            fetch('../../views/admin/ajax/recent_reports_table.php')
+            // Get the correct path - we need to go up from the current report generator page location
+            const ajaxPath = `${window.APP_URL || ''}/app/views/admin/ajax/recent_reports_table.php`;
+            
+            // Fetch the table HTML directly from the dedicated endpoint
+            fetch(ajaxPath)
                 .then(response => {
                     if (!response.ok) {
                         throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
@@ -175,19 +188,53 @@ if (typeof window.ReportAPI !== 'undefined') {
                     return response.text(); // We're expecting HTML, not JSON
                 })
                 .then(html => {
-                    // Simply insert the HTML into the container
-                    reportsTableContainer.innerHTML = html;
+                    // Simple fade-out effect before updating
+                    reportsTableContainer.style.opacity = '0.5';
                     
-                    // Re-setup delete modal functionality for the new buttons
-                    if (typeof ReportUI !== 'undefined' && ReportUI.setupDeleteModal) {
-                        ReportUI.setupDeleteModal();
-                    }
-                    
-                    resolve(true);
+                    setTimeout(() => {
+                        // Insert the HTML into the container
+                        reportsTableContainer.innerHTML = html;
+                        
+                        // Fade back in
+                        reportsTableContainer.style.opacity = '1';
+                        
+                        // Re-setup delete modal functionality for the new buttons
+                        if (typeof ReportUI !== 'undefined' && ReportUI.setupDeleteModal) {
+                            ReportUI.setupDeleteModal();
+                        }
+                        
+                        // Show a brief success indicator
+                        const refreshIndicator = document.getElementById('refreshIndicator');
+                        if (refreshIndicator) {
+                            refreshIndicator.style.display = 'block';
+                            refreshIndicator.innerHTML = `
+                                <small class="text-success">
+                                    <i class="fas fa-check-circle"></i> Updated
+                                </small>
+                            `;
+                            
+                            // Hide the indicator after 2 seconds
+                            setTimeout(() => {
+                                refreshIndicator.style.display = 'none';
+                            }, 2000);
+                        }
+                        
+                        resolve(true);
+                    }, 300); // Small delay for smoother transition
                 })
                 .catch(error => {
                     console.error('Error refreshing reports table:', error);
-                    reportsTableContainer.innerHTML = '<div class="alert alert-danger">Error loading reports. Please refresh the page.</div>';
+                    reportsTableContainer.innerHTML = `
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Unable to refresh reports list.</strong>
+                            <p class="mb-2">Your report was generated successfully, but we couldn't update the list automatically.</p>
+                            <button class="btn btn-sm btn-outline-primary" onclick="window.location.reload()">
+                                <i class="fas fa-refresh me-1"></i>Refresh Page
+                            </button>
+                        </div>
+                    `;
+                    reportsTableContainer.style.opacity = '1';
                     reject(error);
                 });
         });

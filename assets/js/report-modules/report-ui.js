@@ -219,8 +219,7 @@ if (typeof window.ReportUI !== 'undefined') {
             })
             .then(blob => {
                 elements.statusMessage.textContent = 'Saving report...';
-                return ReportAPI.uploadPresentation(blob, periodId, sectorId, reportName, reportDescription, isPublic);
-            })
+                return ReportAPI.uploadPresentation(blob, periodId, sectorId, reportName, reportDescription, isPublic);            })
             .then(result => {
                 // Hide status and show success
                 elements.statusCard.classList.add('d-none');
@@ -234,11 +233,24 @@ if (typeof window.ReportUI !== 'undefined') {
                 // Re-enable generate button
                 elements.generateBtn.disabled = false;
 
-                // Try to update recent reports table but don't fail the whole operation if it doesn't work
-                ReportAPI.refreshReportsTable()
+                // Update recent reports table with enhanced feedback
+                console.log('Refreshing recent reports table...');
+                const refreshPromise = ReportAPI.refreshReportsTable();
+                
+                refreshPromise
+                    .then(() => {
+                        console.log('Reports table refreshed successfully');
+                        // Optionally show a subtle success notification
+                        if (typeof showToast !== 'undefined') {
+                            showToast('Success', 'Report generated and list updated!', 'success');
+                        }
+                    })
                     .catch(refreshError => {
                         console.warn('Failed to refresh reports table:', refreshError);
-                        showToast('Note', 'Report generated successfully. Refresh the page to see it in the list.', 'info');
+                        // Show informative message instead of generic warning
+                        if (typeof showToast !== 'undefined') {
+                            showToast('Notice', 'Report generated successfully! The list will update when you refresh the page.', 'info');
+                        }
                     });
                 
                 return result; // Return the original result so the promise chain is not broken

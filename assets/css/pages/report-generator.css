@@ -169,6 +169,58 @@
     white-space: nowrap; /* Prevent header wrapping */
 }
 
+/* Recent reports container transitions */
+#recentReportsContainer {
+    transition: opacity 0.3s ease;
+}
+
+#recentReportsContainer.updating {
+    opacity: 0.6;
+}
+
+/* Refresh indicator styling */
+#refreshIndicator {
+    transition: all 0.3s ease;
+}
+
+#refreshIndicator.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+#refreshIndicator.hide {
+    opacity: 0;
+    transform: translateY(-10px);
+}
+
+/* Loading states for recent reports */
+.recent-reports-loading {
+    background: linear-gradient(90deg, 
+        rgba(248, 249, 250, 0.8) 25%, 
+        rgba(233, 236, 239, 0.8) 50%, 
+        rgba(248, 249, 250, 0.8) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 0.375rem;
+    padding: 1rem;
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+/* Enhanced feedback animations */
+.report-success-flash {
+    animation: successFlash 0.6s ease-out;
+}
+
+@keyframes successFlash {
+    0% { background-color: transparent; }
+    50% { background-color: rgba(25, 135, 84, 0.1); }
+    100% { background-color: transparent; }
+}
+
 /* KPI Selector Styling */
 .kpi-selector-list-group {
     max-height: 220px;
