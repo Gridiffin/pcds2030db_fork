@@ -370,11 +370,12 @@
 }
 
 .form-check-label {
-    /* Allow text to wrap instead of truncating */
+    /* Allow text to wrap and display full program names */
     display: inline-block;
     word-break: break-word;
     white-space: normal;
-    width: calc(100% - 70px); /* Make room for the order input and some padding */
+    line-height: 1.4;
+    flex: 1;
     margin-right: 10px; /* Add some space between text and order input */
 }
 
@@ -438,5 +439,24 @@
     }
     .reports-table .action-btn i {
         font-size: 0.8rem;
+    }
+    
+    /* Ensure program names wrap properly on mobile */
+    .program-checkbox-container {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 0.75rem 0.5rem;
+    }
+    
+    .form-check-label {
+        margin-bottom: 0.5rem;
+        margin-right: 0;
+        line-height: 1.3;
+    }
+    
+    .program-order-input {
+        width: 40px;
+        margin-left: 0;
+        align-self: flex-end;
     }
 }

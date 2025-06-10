@@ -325,16 +325,18 @@ a.btn:hover {
 /* --- Program Selector Layout Fixes --- */
 .program-checkbox-container {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 0.5rem;
     min-width: 0;
+    padding: 0.5rem;
 }
 .program-checkbox-container label {
     flex: 1 1 0;
     min-width: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    line-height: 1.4;
 }
 .program-order-input {
     width: 60px;
