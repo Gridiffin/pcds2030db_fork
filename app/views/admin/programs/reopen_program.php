@@ -114,22 +114,23 @@ $pageTitle = 'Reopen Program Submission';
 // Include header
 require_once '../layouts/header.php';
 
-// Include admin navigation
-// Set up the dashboard header variables
-$title = "Reopen Program Submission";
-$subtitle = "Convert a finalized submission back to draft status";
-$headerStyle = 'light';
-$actions = [
-    [
-        'url' => 'view_program.php?id=' . $program_id,
-        'text' => 'Back to Program',
-        'icon' => 'fas fa-arrow-left',
-        'class' => 'btn-outline-secondary'
+// Configure the modern page header
+$header_config = [
+    'title' => 'Reopen Program Submission',
+    'subtitle' => 'Convert a finalized submission back to draft status',
+    'variant' => 'white',
+    'actions' => [
+        [
+            'text' => 'Back to Program',
+            'url' => 'view_program.php?id=' . $program_id,
+            'class' => 'btn-outline-primary',
+            'icon' => 'fas fa-arrow-left'
+        ]
     ]
 ];
 
-// Include the dashboard header component
-require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
+// Include the modern page header
+require_once '../../layouts/page_header.php';
 ?>
 
 <div class="row">

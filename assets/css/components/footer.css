@@ -1,0 +1,233 @@
+/**
+ * Modern Footer Component - Best Practice Design
+ * Mobile-first responsive footer with proper spacing
+ */
+
+/* =================================
+   CSS CUSTOM PROPERTIES (VARIABLES)
+   ================================= */
+
+:root {
+    /* Footer spacing system */
+    --footer-padding-mobile: 1rem 1rem 1.5rem;
+    --footer-padding-tablet: 1.5rem 1.5rem 2rem;
+    --footer-padding-desktop: 2rem 2rem 2rem;
+    
+    /* Footer colors */
+    --footer-bg: #f8f9fa;
+    --footer-border: #dee2e6;
+    --footer-text: #6c757d;
+    --footer-text-hover: #495057;
+    
+    /* Footer typography */
+    --footer-font-size: 0.875rem;
+    --footer-line-height: 1.5;
+    --footer-font-weight: 400;
+    
+    /* Version badge */
+    --version-badge-bg: #e9ecef;
+    --version-badge-color: #495057;
+    --version-badge-border: #ced4da;
+}
+
+/* =================================
+   FOOTER LAYOUT - MOBILE FIRST
+   ================================= */
+
+/* Footer container - mobile first */
+.app-footer {
+    /* Flexbox sticky footer */
+    flex-shrink: 0;
+    margin-top: auto;
+    
+    /* Visual styling */
+    background-color: var(--footer-bg);
+    border-top: 1px solid var(--footer-border);
+    
+    /* Typography */
+    font-size: var(--footer-font-size);
+    line-height: var(--footer-line-height);
+    color: var(--footer-text);
+    
+    /* Accessibility */
+    position: relative;
+    z-index: 10;
+}
+
+/* Footer container - responsive padding */
+.footer-container {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: var(--footer-padding-mobile);
+}
+
+/* Footer content layout - mobile (stacked) */
+.footer-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: center;
+    text-align: center;
+}
+
+/* Copyright section */
+.footer-copyright {
+    font-weight: var(--footer-font-weight);
+}
+
+/* Version section */
+.footer-version {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.version-label {
+    font-weight: var(--footer-font-weight);
+}
+
+.version-badge {
+    background-color: var(--version-badge-bg);
+    color: var(--version-badge-color);
+    border: 1px solid var(--version-badge-border);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1;
+}
+
+/* =================================
+   RESPONSIVE BREAKPOINTS
+   ================================= */
+
+/* Tablet and up (768px+) */
+@media (min-width: 768px) {
+    .footer-container {
+        padding: var(--footer-padding-tablet);
+    }
+    
+    .footer-content {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        text-align: left;
+        gap: 1rem;
+    }
+}
+
+/* Desktop and up (1024px+) */
+@media (min-width: 1024px) {
+    .footer-container {
+        padding: var(--footer-padding-desktop);
+        max-width: 1200px; /* Optional: limit max width */
+    }
+}
+
+/* Large screens (1440px+) */
+@media (min-width: 1440px) {
+    .footer-container {
+        max-width: 1400px;
+    }
+}
+
+/* =================================
+   ACCESSIBILITY ENHANCEMENTS
+   ================================= */
+
+/* Focus states for interactive elements */
+.app-footer a {
+    color: var(--footer-text);
+    text-decoration: none;
+    border-radius: 0.25rem;
+    transition: color 0.15s ease-in-out;
+}
+
+.app-footer a:hover,
+.app-footer a:focus {
+    color: var(--footer-text-hover);
+    outline: 2px solid transparent;
+}
+
+.app-footer a:focus-visible {
+    outline: 2px solid #0d6efd;
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .app-footer {
+        border-top-width: 2px;
+    }
+    
+    .version-badge {
+        border-width: 2px;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .app-footer a {
+        transition: none;
+    }
+}
+
+/* =================================
+   PRINT STYLES
+   ================================= */
+
+@media print {
+    .app-footer {
+        background: white !important;
+        border-top: 1px solid #000 !important;
+        color: #000 !important;
+        padding: 1rem !important;
+        margin-top: 2rem;
+        page-break-inside: avoid;
+    }
+    
+    .version-badge {
+        background: white !important;
+        border: 1px solid #000 !important;
+        color: #000 !important;
+    }
+}
+
+/* =================================
+   ADMIN LAYOUT INTEGRATION
+   ================================= */
+
+/* Ensure footer works with admin flexbox layout */
+body.admin-layout .app-footer {
+    flex-shrink: 0;
+}
+
+/* Remove any conflicting margin/padding from admin layout */
+.admin-content .app-footer {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+/* =================================
+   UTILITY CLASSES (OPTIONAL)
+   ================================= */
+
+/* Hide footer on certain pages if needed */
+.footer-hidden .app-footer {
+    display: none;
+}
+
+/* Compact footer variant */
+.footer-compact .footer-container {
+    padding: 0.75rem 1rem;
+}
+
+.footer-compact .footer-content {
+    gap: 0.5rem;
+}
+
+.footer-compact .version-badge {
+    padding: 0.125rem 0.375rem;
+    font-size: 0.625rem;
+}

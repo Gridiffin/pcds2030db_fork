@@ -230,15 +230,27 @@ $sectors = get_all_sectors();
 
 // Include header
 require_once ROOT_PATH . 'app/views/layouts/header.php';
-require_once ROOT_PATH . 'app/views/layouts/admin_nav.php';
+
+// Configure modern page header
+$header_config = [
+    'title' => $pageTitle,
+    'subtitle' => 'Edit outcome data and table structure',
+    'variant' => 'white',
+    'actions' => [
+        [
+            'url' => 'manage_outcomes.php',
+            'text' => 'Back to Manage Outcomes',
+            'icon' => 'fa-arrow-left',
+            'class' => 'btn-outline-primary'
+        ]
+    ]
+];
+
+// Include modern page header
+require_once '../../layouts/page_header.php';
 ?>
 
-<div class="container-fluid px-4 py-4">    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1 class="h2 mb-0"><?php echo $pageTitle; ?></h1>
-        <a href="manage_outcomes.php" class="btn btn-sm btn-outline-secondary">
-            <i class="fas fa-arrow-left me-1"></i> Back to Manage Outcomes
-        </a>
-    </div>
+<div class="container-fluid px-4 py-4">
 
     <!-- Placeholder for JavaScript-driven messages -->
     <div id="outcome-editor-messages" style="display: none;"></div>

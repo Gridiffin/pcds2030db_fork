@@ -1,0 +1,373 @@
+/**
+ * Modern Page Header Component - Best Practice Design
+ * Unified header system for all admin pages
+ */
+
+/* =================================
+   CSS CUSTOM PROPERTIES (VARIABLES)
+   ================================= */
+
+:root {
+    /* Header spacing system */
+    --header-padding-mobile: 1rem 1rem;
+    --header-padding-tablet: 1.25rem 1.5rem;
+    --header-padding-desktop: 1.5rem 2rem;
+    
+    /* Header typography */
+    --header-title-size-mobile: 1.25rem;
+    --header-title-size-tablet: 1.375rem;
+    --header-title-size-desktop: 1.5rem;
+    --header-subtitle-size: 0.9rem;
+    --header-title-weight: 600;
+    --header-subtitle-weight: 400;
+    --header-line-height: 1.3;
+      /* Header colors - Green/Forest variant */
+    --header-green-bg: linear-gradient(135deg, var(--forest-deep, #537D5D) 0%, var(--forest-medium, #73946B) 100%);
+    --header-green-text: #ffffff;
+    --header-green-subtitle: rgba(255, 255, 255, 0.9);
+    --header-green-border: none;
+    --header-green-shadow: 0 4px 20px rgba(83, 125, 93, 0.15);
+    
+    /* Header colors - White variant */
+    --header-white-bg: #ffffff;
+    --header-white-text: #212529;
+    --header-white-subtitle: #6c757d;
+    --header-white-border: 1px solid #dee2e6;
+    --header-white-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    
+    /* Button variables */
+    --header-btn-spacing: 0.5rem;
+}
+
+/* =================================
+   BASE HEADER COMPONENT
+   ================================= */
+
+.page-header {
+    position: relative;
+    z-index: 100;
+    margin-bottom: 1.5rem;
+}
+
+.page-header__container {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: var(--header-padding-mobile);
+}
+
+.page-header__content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+}
+
+.page-header__text {
+    flex: 1;
+    min-width: 0; /* Allow text to shrink */
+}
+
+.page-header__title {
+    font-size: var(--header-title-size-mobile);
+    font-weight: var(--header-title-weight);
+    line-height: var(--header-line-height);
+    margin: 0 0 0.25rem 0;
+}
+
+.page-header__subtitle {
+    font-size: var(--header-subtitle-size);
+    font-weight: var(--header-subtitle-weight);
+    line-height: 1.4;
+    margin: 0;
+}
+
+.page-header__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--header-btn-spacing);
+    align-items: center;
+}
+
+/* =================================
+   HEADER VARIANTS
+   ================================= */
+
+/* Green variant - for dashboard/homepage */
+.page-header--green {
+    background: var(--header-green-bg);
+    color: var(--header-green-text);
+    border-bottom: var(--header-green-border);
+    box-shadow: var(--header-green-shadow);
+}
+
+.page-header--green .page-header__title {
+    color: var(--header-green-text);
+}
+
+.page-header--green .page-header__subtitle {
+    color: var(--header-green-subtitle);
+}
+
+/* White variant - for content pages */
+.page-header--white {
+    background: var(--header-white-bg);
+    color: var(--header-white-text);
+    border-bottom: var(--header-white-border);
+    box-shadow: var(--header-white-shadow);
+}
+
+.page-header--white .page-header__title {
+    color: var(--header-white-text);
+}
+
+.page-header--white .page-header__subtitle {
+    color: var(--header-white-subtitle);
+}
+
+/* =================================
+   RESPONSIVE BREAKPOINTS
+   ================================= */
+
+/* Tablet and up (768px+) */
+@media (min-width: 768px) {
+    .page-header__container {
+        padding: var(--header-padding-tablet);
+    }
+    
+    .page-header__content {
+        flex-direction: row;
+        align-items: center;
+        gap: 2rem;
+    }
+    
+    .page-header__title {
+        font-size: var(--header-title-size-tablet);
+    }
+    
+    .page-header__actions {
+        margin-left: auto;
+        flex-shrink: 0;
+    }
+}
+
+/* Desktop and up (1024px+) */
+@media (min-width: 1024px) {
+    .page-header__container {
+        padding: var(--header-padding-desktop);
+        max-width: 1200px; /* Optional: limit max width */
+    }
+    
+    .page-header__title {
+        font-size: var(--header-title-size-desktop);
+    }
+}
+
+/* Large screens (1440px+) */
+@media (min-width: 1440px) {
+    .page-header__container {
+        max-width: 1400px;
+    }
+}
+
+/* =================================
+   BUTTON STYLING
+   ================================= */
+
+/* Green header buttons */
+.page-header--green .btn {
+    border-radius: 0.375rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.page-header--green .btn-light {
+    background-color: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+}
+
+.page-header--green .btn-light:hover,
+.page-header--green .btn-light:focus {
+    background-color: rgba(255, 255, 255, 0.25);
+    border-color: white;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(83, 125, 93, 0.2);
+}
+
+.page-header--green .btn-outline-light {
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    background-color: transparent;
+}
+
+.page-header--green .btn-outline-light:hover,
+.page-header--green .btn-outline-light:focus {
+    background-color: white;
+    border-color: white;
+    color: var(--forest-deep, #537D5D);
+}
+
+/* White header buttons */
+.page-header--white .btn {
+    border-radius: 0.375rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.page-header--white .btn-primary {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+    color: white;
+}
+
+.page-header--white .btn-primary:hover,
+.page-header--white .btn-primary:focus {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.page-header--white .btn-outline-primary {
+    border: 1px solid var(--bs-primary);
+    color: var(--bs-primary);
+    background-color: transparent;
+}
+
+.page-header--white .btn-outline-primary:hover,
+.page-header--white .btn-outline-primary:focus {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+    color: white;
+}
+
+/* =================================
+   ACCESSIBILITY ENHANCEMENTS
+   ================================= */
+
+/* Focus states */
+.page-header .btn:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+}
+
+.page-header--white .btn:focus-visible {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .page-header--blue {
+        border-bottom: 2px solid #000;
+    }
+    
+    .page-header--white {
+        border-bottom: 2px solid #000;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .page-header .btn {
+        transition: none;
+        transform: none !important;
+    }
+}
+
+/* =================================
+   PRINT STYLES
+   ================================= */
+
+@media print {
+    .page-header {
+        background: white !important;
+        color: #000 !important;
+        box-shadow: none !important;
+        border-bottom: 1px solid #000 !important;
+        margin-bottom: 2rem;
+        page-break-inside: avoid;
+    }
+    
+    .page-header__title {
+        color: #000 !important;
+        font-size: 1.25rem !important;
+    }
+    
+    .page-header__subtitle {
+        color: #666 !important;
+    }
+    
+    .page-header__actions {
+        display: none !important;
+    }
+}
+
+/* =================================
+   LEGACY COMPATIBILITY
+   ================================= */
+
+/* Support for existing blue variant during migration */
+.page-header--blue {
+    /* Map blue to green for consistency */
+    background: var(--header-green-bg);
+    color: var(--header-green-text);
+    border-bottom: var(--header-green-border);
+    box-shadow: var(--header-green-shadow);
+}
+
+.page-header--blue .page-header__title {
+    color: var(--header-green-text);
+}
+
+.page-header--blue .page-header__subtitle {
+    color: var(--header-green-subtitle);
+}
+
+.page-header--blue .btn {
+    border-radius: 0.375rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.page-header--blue .btn-light {
+    background-color: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+}
+
+.page-header--blue .btn-light:hover,
+.page-header--blue .btn-light:focus {
+    background-color: rgba(255, 255, 255, 0.25);
+    border-color: white;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(83, 125, 93, 0.2);
+}
+
+/* =================================
+   UTILITY CLASSES
+   ================================= */
+
+/* Compact header variant */
+.page-header--compact .page-header__container {
+    padding: 0.75rem 1rem;
+}
+
+@media (min-width: 768px) {
+    .page-header--compact .page-header__container {
+        padding: 1rem 1.5rem;
+    }
+}
+
+/* No margin bottom variant */
+.page-header--no-margin {
+    margin-bottom: 0;
+}
+
+/* Full width variant */
+.page-header--full-width .page-header__container {
+    max-width: none;
+}

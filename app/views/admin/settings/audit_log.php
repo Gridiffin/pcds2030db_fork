@@ -22,21 +22,24 @@ $pageTitle = 'Audit Log';
 
 // Include header and admin navigation
 require_once '../../layouts/header.php';
+
+// Configure modern page header
+$header_config = [
+    'title' => 'Audit Log',
+    'subtitle' => 'View system activity and database changes',
+    'variant' => 'white',
+    'actions' => []
+];
+
+// Include modern page header
+require_once '../../layouts/page_header.php';
 ?>
 
 <!-- Import Google Material Icons -->
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-
 <link rel="stylesheet" href="../../assets/css/custom/audit_log.css">
 
-<?php
-?>
-
-<main class="flex-fill">
 <div class="container-fluid px-4 py-4">
-    <h1 class="h2 mb-4">Audit Log</h1>
-    <p class="text-muted">This page displays audit logs</p>
-
     <?php
     // Get filter values from GET parameters
     $filter_event_type = $_GET['event_type'] ?? 'All';

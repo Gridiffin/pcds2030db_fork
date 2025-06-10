@@ -277,21 +277,23 @@ $sectorsJson = json_encode($sectors);
 // Include header
 require_once '../../layouts/header.php';
 
-// Set up the page header variables
-$title = "User Management";
-$subtitle = "Create and manage user accounts for the system";
-$headerStyle = 'forest-theme'; // Using our forest theme
-$actions = [
-    [
-        'url' => APP_URL . '/app/views/admin/users/add_user.php',
-        'text' => 'Add New User',
-        'icon' => 'fas fa-user-plus',
-        'class' => 'btn-forest'
+// Configure the modern page header
+$header_config = [
+    'title' => 'User Management',
+    'subtitle' => 'Create and manage user accounts for the system',
+    'variant' => 'green',
+    'actions' => [
+        [
+            'text' => 'Add New User',
+            'url' => APP_URL . '/app/views/admin/users/add_user.php',
+            'class' => 'btn-light',
+            'icon' => 'fas fa-user-plus'
+        ]
     ]
 ];
 
-// Include dashboard header component
-require_once ROOT_PATH . 'app/lib/dashboard_header.php';
+// Include the modern page header
+require_once '../../layouts/page_header.php';
 ?>
 
 <!-- Make APP_URL and other data available to JavaScript -->

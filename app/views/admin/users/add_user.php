@@ -55,21 +55,23 @@ $additionalScripts = [
 // Include header
 require_once '../../layouts/header.php';
 
-// Set up the page header variables
-$title = "Add New User";
-$subtitle = "Create a new user account";
-$headerStyle = 'light'; 
-$actions = [
-    [
-        'url' => 'manage_users.php',
-        'text' => 'Back to Users',
-        'icon' => 'fas fa-arrow-left',
-        'class' => 'btn-outline-secondary'
+// Configure the modern page header
+$header_config = [
+    'title' => 'Add New User',
+    'subtitle' => 'Create a new user account',
+    'variant' => 'white',
+    'actions' => [
+        [
+            'text' => 'Back to Users',
+            'url' => APP_URL . '/app/views/admin/users/manage_users.php',
+            'class' => 'btn-outline-primary',
+            'icon' => 'fas fa-arrow-left'
+        ]
     ]
 ];
 
-// Include dashboard header component
-require_once ROOT_PATH . 'app/lib/dashboard_header.php';
+// Include the modern page header
+require_once '../../layouts/page_header.php';
 ?>
 
 <main class="flex-fill">

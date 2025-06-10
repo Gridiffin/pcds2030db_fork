@@ -38,19 +38,24 @@ require_once '../../layouts/header.php';
 // Set up the dashboard header variables
 $title = "Reporting Periods Management";
 $subtitle = "Manage reporting periods for the PCDS 2030 dashboard";
-$headerStyle = 'light';
-$actions = [
-    [
-        'url' => '#',
-        'text' => 'Add Period',
-        'icon' => 'fas fa-plus-circle',
-        'class' => 'btn-primary',
-        'id' => 'addPeriodBtn'
+// Configure modern page header
+$header_config = [
+    'title' => 'Reporting Periods',
+    'subtitle' => 'Manage quarterly reporting periods for data collection',
+    'variant' => 'green',
+    'actions' => [
+        [
+            'url' => '#',
+            'text' => 'Add Period',
+            'icon' => 'fas fa-plus-circle',
+            'class' => 'btn-primary',
+            'id' => 'addPeriodBtn'
+        ]
     ]
 ];
 
-// Include the dashboard header component
-require_once ROOT_PATH . 'app/lib/dashboard_header.php';
+// Include modern page header
+require_once '../../layouts/page_header.php';
 ?>
 
 <div class="row">

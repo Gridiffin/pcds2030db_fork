@@ -54,21 +54,33 @@ unset($_SESSION['error_message']);
 
 // Include header
 require_once ROOT_PATH . 'app/views/layouts/header.php';
-require_once ROOT_PATH . 'app/views/layouts/admin_nav.php';
+
+// Configure modern page header
+$header_config = [
+    'title' => 'History: ' . htmlspecialchars($outcome_data['table_name']),
+    'subtitle' => 'View historical changes and activity for this outcome',
+    'variant' => 'white',
+    'actions' => [
+        [
+            'url' => 'edit_outcome.php?metric_id=' . $metric_id,
+            'text' => 'Edit Outcome',
+            'icon' => 'fa-edit',
+            'class' => 'btn-outline-primary'
+        ],
+        [
+            'url' => 'manage_outcomes.php',
+            'text' => 'Back to Manage Outcomes',
+            'icon' => 'fa-arrow-left',
+            'class' => 'btn-outline-secondary'
+        ]
+    ]
+];
+
+// Include modern page header
+require_once '../../layouts/page_header.php';
 ?>
 
 <div class="container-fluid px-4 py-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1 class="h2 mb-0">History: <?php echo htmlspecialchars($outcome_data['table_name']); ?></h1>
-        <div>
-            <a href="edit_outcome.php?metric_id=<?php echo $metric_id; ?>" class="btn btn-sm btn-outline-primary me-2">
-                <i class="fas fa-edit me-1"></i> Edit Outcome
-            </a>
-            <a href="manage_outcomes.php" class="btn btn-sm btn-outline-secondary">
-                <i class="fas fa-arrow-left me-1"></i> Back to Manage Outcomes
-            </a>
-        </div>
-    </div>
     
     <?php if (!empty($message)): ?>
         <div class="alert alert-<?php echo $message_type; ?> alert-dismissible fade show" role="alert">

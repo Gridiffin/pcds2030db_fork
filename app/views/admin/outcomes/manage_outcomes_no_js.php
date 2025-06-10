@@ -50,24 +50,32 @@ if ($selected_sector > 0 && !empty($outcomes)) {
 // Include header
 require_once '../../layouts/header.php';
 
-// Include admin navigation
+// Configure modern page header
+$header_config = [
+    'title' => 'Manage Outcomes (Debug - No JS)',
+    'subtitle' => 'Testing if JavaScript is causing the blank page issue',
+    'variant' => 'white',
+    'actions' => [
+        [
+            'url' => 'edit_metric.php',
+            'text' => 'Create New Outcome',
+            'icon' => 'fa-plus-circle',
+            'class' => 'btn-primary'
+        ],
+        [
+            'url' => '?refresh=1',
+            'text' => 'Refresh',
+            'icon' => 'fa-sync-alt',
+            'class' => 'btn-secondary'
+        ]
+    ]
+];
+
+// Include modern page header
+require_once '../../layouts/page_header.php';
 ?>
 
 <div class="container-fluid px-4 py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="h2 mb-0">Manage Outcomes (Debug - No JS)</h1>
-            <p class="text-muted">Testing if JavaScript is causing the blank page issue</p>
-        </div>
-        <div>
-            <a href="edit_metric.php" class="btn btn-primary me-2">
-                <i class="fas fa-plus-circle me-1"></i> Create New Outcome
-            </a>
-            <a href="?refresh=1" class="btn btn-secondary">
-                <i class="fas fa-sync-alt me-1"></i> Refresh
-            </a>
-        </div>
-    </div>
 
     <!-- Debug Information -->
     <div class="card mb-4" style="border-left: 4px solid #17a2b8;">

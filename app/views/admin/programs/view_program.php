@@ -209,22 +209,23 @@ $additionalScripts = [
 // Include header
 require_once '../../layouts/header.php';
 
-// Include admin navigation
-// Set up the page header variables
-$title = "Program Details";
-$subtitle = $program['program_name'];
-$headerStyle = 'light';
-$actions = [
-    [
-        'url' => 'programs.php',
-        'text' => 'Back to Programs',
-        'icon' => 'fas fa-arrow-left',
-        'class' => 'btn-outline-secondary'
+// Configure the modern page header
+$header_config = [
+    'title' => 'Program Details',
+    'subtitle' => htmlspecialchars($program['program_name']),
+    'variant' => 'white',
+    'actions' => [
+        [
+            'text' => 'Back to Programs',
+            'url' => APP_URL . '/app/views/admin/programs/programs.php',
+            'class' => 'btn-outline-primary',
+            'icon' => 'fas fa-arrow-left'
+        ]
     ]
 ];
 
-// Include the dashboard header component
-require_once ROOT_PATH . 'app/lib/dashboard_header.php';
+// Include the modern page header
+require_once '../../layouts/page_header.php';
 ?>
 
 <main class="flex-fill">

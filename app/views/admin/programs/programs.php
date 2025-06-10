@@ -77,22 +77,23 @@ $additionalScripts = [
 // Include header
 require_once '../../layouts/header.php';
 
-// Include admin navigation
-// Set up the dashboard header variables
-$title = "Programs Overview";
-$subtitle = "Monitor and manage all programs across sectors";
-$headerStyle = 'light';
-$actions = [
-    [
-        'url' => 'assign_programs.php',
-        'text' => 'Assign Programs',
-        'icon' => 'fas fa-tasks',
-        'class' => 'btn-success me-2'
+// Configure the modern page header
+$header_config = [
+    'title' => 'Programs Overview',
+    'subtitle' => 'Monitor and manage all programs across sectors',
+    'variant' => 'green',
+    'actions' => [
+        [
+            'text' => 'Assign Programs',
+            'url' => APP_URL . '/app/views/admin/programs/assign_programs.php',
+            'class' => 'btn-light',
+            'icon' => 'fas fa-tasks'
+        ]
     ]
 ];
 
-// Include the dashboard header component
-require_once ROOT_PATH . 'app/lib/dashboard_header.php';
+// Include the modern page header
+require_once '../../layouts/page_header.php';
 ?>
 
 <!-- Programs Management Content -->

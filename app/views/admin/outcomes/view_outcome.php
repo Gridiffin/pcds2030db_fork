@@ -83,36 +83,36 @@ $additionalStyles = [
 
 // Include header
 require_once ROOT_PATH . 'app/views/layouts/header.php';
-// Include admin navigation
-require_once ROOT_PATH . 'app/views/layouts/admin_nav.php';
 
-// Set up the page header variables for dashboard_header.php
-$title = "View Outcome Details";
-$subtitle = "Review outcome data for " . htmlspecialchars($sector_name) . " sector for " . htmlspecialchars($reporting_period_name);
-$headerStyle = 'light'; 
-$actions = [
-    [
-        'url' => 'manage_outcomes.php',
-        'text' => 'Back to Manage Outcomes',
-        'icon' => 'fa-arrow-left',
-        'class' => 'btn-outline-primary'
-    ],
-    [
-        'url' => 'outcome_history.php?metric_id=' . $metric_id,
-        'text' => 'View History',
-        'icon' => 'fa-history',
-        'class' => 'btn-outline-info'
-    ],
-    [
-        'url' => 'edit_outcome.php?metric_id=' . $metric_id, // Use consistent parameter naming
-        'text' => 'Edit Outcome',
-        'icon' => 'fa-edit',
-        'class' => 'btn-primary'
+// Configure modern page header
+$header_config = [
+    'title' => 'View Outcome Details',
+    'subtitle' => 'Review outcome data for ' . htmlspecialchars($sector_name) . ' sector for ' . htmlspecialchars($reporting_period_name),
+    'variant' => 'white',
+    'actions' => [
+        [
+            'url' => 'manage_outcomes.php',
+            'text' => 'Back to Manage Outcomes',
+            'icon' => 'fa-arrow-left',
+            'class' => 'btn-outline-primary'
+        ],
+        [
+            'url' => 'outcome_history.php?metric_id=' . $metric_id,
+            'text' => 'View History',
+            'icon' => 'fa-history',
+            'class' => 'btn-outline-info'
+        ],
+        [
+            'url' => 'edit_outcome.php?metric_id=' . $metric_id,
+            'text' => 'Edit Outcome',
+            'icon' => 'fa-edit',
+            'class' => 'btn-primary'
+        ]
     ]
 ];
 
-// Include the dashboard header component
-require_once ROOT_PATH . 'app/lib/dashboard_header.php';
+// Include modern page header
+require_once '../../layouts/page_header.php';
 ?>
 
 <div class="container-fluid px-4 py-4">

@@ -31,19 +31,27 @@ $additionalScripts = [
 // Include header
 require_once '../layouts/header.php';
 
-// Include admin navigation
+// Configure modern page header
+$header_config = [
+    'title' => 'Manage Reporting Periods',
+    'subtitle' => 'Admin interface to manage reporting periods',
+    'variant' => 'green',
+    'actions' => [
+        [
+            'url' => '#',
+            'text' => 'Refresh',
+            'icon' => 'fa-sync-alt',
+            'class' => 'btn-outline-primary',
+            'id' => 'refreshPage'
+        ]
+    ]
+];
+
+// Include modern page header
+require_once '../layouts/page_header.php';
 ?>
 
 <div class="container-fluid px-4 py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="h2 mb-0">Manage Reporting Periods</h1>
-            <p class="text-muted">Admin interface to manage reporting periods</p>
-        </div>
-        <button class="btn btn-sm btn-outline-primary" id="refreshPage">
-            <i class="fas fa-sync-alt me-1"></i> Refresh
-        </button>
-    </div>
 
     <div class="card mb-4">
         <div class="card-header">

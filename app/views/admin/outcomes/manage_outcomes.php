@@ -51,33 +51,45 @@ if ($selected_sector > 0 && !empty($outcomes)) {
 // Include header
 require_once '../../layouts/header.php';
 
-// Include admin navigation
 // Get outcome creation setting
 require_once ROOT_PATH . 'app/lib/admins/settings.php';
 $allow_outcome_creation = get_outcome_creation_setting();
+
+// Configure the modern page header
+$header_config = [
+    'title' => 'Manage Outcomes',
+    'subtitle' => 'Admin interface to manage outcomes',
+    'variant' => 'green',
+    'actions' => [
+        [
+            'text' => 'Refresh',
+            'url' => '#',
+            'id' => 'refreshPage',
+            'class' => 'btn-light',
+            'icon' => 'fas fa-sync-alt'
+        ]
+    ]
+];
+
+// Add create button if outcome creation is allowed
+if ($allow_outcome_creation) {
+    $header_config['actions'][] = [
+        'text' => 'Create New Outcome',
+        'url' => APP_URL . '/app/views/admin/outcomes/create_outcome.php',
+        'class' => 'btn-primary',
+        'icon' => 'fas fa-plus-circle',
+        'id' => 'createMetricBtn'
+    ];
+}
+
+// Include the modern page header
+require_once '../../layouts/page_header.php';
 ?>
 
 <!-- Ensure Bootstrap JS is included -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <div class="container-fluid px-4 py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="h2 mb-0">Manage Outcomes</h1>
-            <p class="text-muted">Admin interface to manage outcomes</p>
-        </div>
-        <div>
-            <?php if ($allow_outcome_creation): ?>
-            <a href="<?php echo APP_URL; ?>/app/views/admin/outcomes/create_outcome.php" class="btn btn-forest me-2" id="createMetricBtn">
-                <i class="fas fa-plus-circle me-1"></i> Create New Outcome
-            </a>
-            <?php endif; ?>
-            <button class="btn btn-forest-light" id="refreshPage">
-                <i class="fas fa-sync-alt me-1"></i> Refresh
-            </button>
-        </div>
-    </div>
-
     <!-- Sector Filter -->
     <div class="card admin-card mb-4">
         <div class="card-header">

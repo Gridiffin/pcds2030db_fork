@@ -118,22 +118,27 @@ krsort($periods_by_year);
 $pageTitle = 'Manage Periods';
 $additionalScripts = [APP_URL . '/assets/js/admin/reporting_periods.js'];
 
-// Setup header variables
-$title = "Reporting Periods";
-$subtitle = "Manage system reporting periods for quarterly submissions";
-$headerStyle = 'light';
-$actions = [
-    [
-        'url' => '#',
-        'id' => 'addPeriodBtn',
-        'text' => 'Add Period',
-        'icon' => 'fas fa-plus-circle',
-        'class' => 'btn-light border border-primary text-primary'
+// Include header
+require_once '../../layouts/header.php';
+
+// Configure modern page header
+$header_config = [
+    'title' => 'Reporting Periods',
+    'subtitle' => 'Manage system reporting periods for quarterly submissions',
+    'variant' => 'green',
+    'actions' => [
+        [
+            'url' => '#',
+            'id' => 'addPeriodBtn',
+            'text' => 'Add Period',
+            'icon' => 'fas fa-plus-circle',
+            'class' => 'btn-light border border-primary text-primary'
+        ]
     ]
 ];
 
-require_once '../../layouts/header.php';
-require_once ROOT_PATH . 'app/lib/dashboard_header.php';
+// Include modern page header
+require_once '../../layouts/page_header.php';
 
 // Function to get display name for quarter in admin table
 function get_admin_quarter_display_name($quarter_val) {

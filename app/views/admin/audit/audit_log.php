@@ -38,27 +38,31 @@ require_once '../../layouts/header.php';
 // Include admin navigation
 // Set up the dashboard header variables
 $title = "System Audit Log";
-$subtitle = "View system activity and security logs";
-$headerStyle = 'light';
-$actions = [
-    [
-        'url' => '#',
-        'text' => 'Export Log',
-        'icon' => 'fas fa-download',
-        'class' => 'btn-outline-primary',
-        'id' => 'exportLogBtn'
-    ],
-    [
-        'url' => '#',
-        'text' => 'Clear Filters',
-        'icon' => 'fas fa-filter',
-        'class' => 'btn-outline-secondary',
-        'id' => 'clearFiltersBtn'
+// Configure modern page header
+$header_config = [
+    'title' => 'Audit Log',
+    'subtitle' => 'View system activity and security logs',
+    'variant' => 'white',
+    'actions' => [
+        [
+            'url' => '#',
+            'text' => 'Export Log',
+            'icon' => 'fas fa-download',
+            'class' => 'btn-outline-primary',
+            'id' => 'exportLogBtn'
+        ],
+        [
+            'url' => '#',
+            'text' => 'Clear Filters',
+            'icon' => 'fas fa-filter',
+            'class' => 'btn-outline-secondary',
+            'id' => 'clearFiltersBtn'
+        ]
     ]
 ];
 
-// Include the dashboard header component
-require_once ROOT_PATH . 'app/lib/dashboard_header.php';
+// Include modern page header
+require_once '../../layouts/page_header.php';
 ?>
 
 <div class="row mb-4">

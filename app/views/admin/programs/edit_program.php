@@ -308,20 +308,24 @@ $additionalStyles = '
 $pageTitle = 'Edit Program';
 
 require_once '../../layouts/header.php';
-// Set up header variables
-$title = "Edit Program";
-$subtitle = "Modify program details";
-$headerStyle = 'light';
-$actions = [
-    [
-        'url' => APP_URL . '/app/views/admin/programs/programs.php',
-        'text' => 'Back to Programs',
-        'icon' => 'fas fa-arrow-left',
-        'class' => 'btn-secondary'
+
+// Configure the modern page header
+$header_config = [
+    'title' => 'Edit Program',
+    'subtitle' => 'Modify program details',
+    'variant' => 'white',
+    'actions' => [
+        [
+            'text' => 'Back to Programs',
+            'url' => APP_URL . '/app/views/admin/programs/programs.php',
+            'class' => 'btn-outline-primary',
+            'icon' => 'fas fa-arrow-left'
+        ]
     ]
 ];
 
-require_once ROOT_PATH . 'app/lib/dashboard_header.php';
+// Include the modern page header
+require_once '../../layouts/page_header.php';
 ?>
 
 <main class="flex-fill">

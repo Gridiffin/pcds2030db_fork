@@ -168,23 +168,24 @@ $additionalScripts = [
 
 // Include header and navigation
 require_once PROJECT_ROOT_PATH . 'app/views/layouts/header.php';
-require_once PROJECT_ROOT_PATH . 'app/views/layouts/admin_nav.php';
 
-// Set up page header variables
-$title = "Generate Reports";
-$subtitle = "Create and manage sector progress reports in PPTX format";
-$headerStyle = 'standard-white';
-$actions = [
-    [
-        'url' => APP_URL . '/app/views/admin/reports/view_all_reports.php',
-        'text' => 'View All Reports',
-        'icon' => 'fa-list-alt',
-        'class' => 'btn-outline-primary'
+// Configure the modern page header
+$header_config = [
+    'title' => 'Generate Reports',
+    'subtitle' => 'Create and manage sector progress reports in PPTX format',
+    'variant' => 'green',
+    'actions' => [
+        [
+            'text' => 'View All Reports',
+            'url' => APP_URL . '/app/views/admin/reports/view_all_reports.php',
+            'class' => 'btn-light',
+            'icon' => 'fas fa-list-alt'
+        ]
     ]
 ];
 
-// Include dashboard header component
-require_once PROJECT_ROOT_PATH . 'app/lib/dashboard_header.php';
+// Include the modern page header
+require_once '../../layouts/page_header.php';
 
 // JavaScript Configuration Object for ReportGenerator
 $jsConfig = [

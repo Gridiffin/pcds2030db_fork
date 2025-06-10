@@ -51,19 +51,10 @@ main.flex-fill {
     padding-right: 1.5rem;
 }
 
-/* Footer always at bottom */
-.footer {
+/* Footer positioning for admin layout */
+.app-footer {
     flex-shrink: 0;
     margin-top: auto;
-    background: #f8f9fa;
-    border-top: 1px solid #dee2e6;
-    padding: 1rem 0;
-}
-
-/* Footer container padding */
-.footer .container-fluid {
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
 }
 
 /* =================================
@@ -73,11 +64,6 @@ main.flex-fill {
 @media (max-width: 768px) {
     main.flex-fill {
         padding-top: 70px;
-        padding-left: 1rem;
-        padding-right: 1rem;
-    }
-    
-    .footer .container-fluid {
         padding-left: 1rem;
         padding-right: 1rem;
     }

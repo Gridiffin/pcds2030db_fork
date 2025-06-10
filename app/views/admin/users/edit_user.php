@@ -75,21 +75,23 @@ $additionalScripts = []; // Set to empty array if no other scripts are needed he
 // Include header
 require_once '../../layouts/header.php';
 
-// Set up the page header variables
-$title = "Edit User";
-$subtitle = "Update user account information";
-$headerStyle = 'light'; 
-$actions = [
-    [
-        'url' => 'manage_users.php',
-        'text' => 'Back to Users',
-        'icon' => 'fas fa-arrow-left',
-        'class' => 'btn-outline-secondary'
+// Configure the modern page header
+$header_config = [
+    'title' => 'Edit User',
+    'subtitle' => 'Update user account information',
+    'variant' => 'white',
+    'actions' => [
+        [
+            'text' => 'Back to Users',
+            'url' => APP_URL . '/app/views/admin/users/manage_users.php',
+            'class' => 'btn-outline-primary',
+            'icon' => 'fas fa-arrow-left'
+        ]
     ]
 ];
 
-// Include dashboard header component
-require_once ROOT_PATH . 'app/lib/dashboard_header.php';
+// Include the modern page header
+require_once '../../layouts/page_header.php';
 ?>
 
 <main class="flex-fill">

@@ -51,23 +51,24 @@ $additionalScripts = [
 // Include header
 require_once '../../layouts/header.php';
 
-// Set up the dashboard header variables
-$title = "Admin Dashboard";
-$subtitle = "System overview and management";
-$headerStyle = 'standard-blue'; // Updated to use standardized blue variant
-$headerClass = ''; // Removed homepage-header class as it's no longer needed
-$actions = [
-    [
-        'url' => '#',
-        'id' => 'refreshPage',
-        'text' => 'Refresh Data',
-        'icon' => 'fas fa-sync-alt',
-        'class' => 'btn-light' // White outline button on blue background
+// Configure the modern page header
+$header_config = [
+    'title' => 'Admin Dashboard',
+    'subtitle' => 'System overview and management',
+    'variant' => 'green',
+    'actions' => [
+        [
+            'text' => 'Refresh Data',
+            'url' => '#',
+            'id' => 'refreshPage',
+            'class' => 'btn-light',
+            'icon' => 'fas fa-sync-alt'
+        ]
     ]
 ];
 
-// Include the dashboard header component
-require_once ROOT_PATH . 'app/lib/dashboard_header.php';
+// Include the modern page header
+require_once '../../layouts/page_header.php';
 
 // Pass hasActivePeriod to JavaScript
 $hasActivePeriod = isset($current_period) && !empty($current_period);

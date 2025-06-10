@@ -68,14 +68,16 @@ $pageTitle = 'System Settings';
 // Include header
 require_once '../../layouts/header.php';
 
-// Set up the page header variables for dashboard_header.php
-$title = "System Settings";
-$subtitle = "Configure system-wide settings";
-$headerStyle = 'forest-theme'; // Use forest theme
-$actions = [];
+// Configure the modern page header
+$header_config = [
+    'title' => 'System Settings',
+    'subtitle' => 'Configure system-wide settings',
+    'variant' => 'green',
+    'actions' => []
+];
 
-// Include the dashboard header component
-require_once ROOT_PATH . 'app/lib/dashboard_header.php';
+// Include the modern page header
+require_once '../../layouts/page_header.php';
 ?>
 
 <main class="flex-fill">

@@ -1,12 +1,13 @@
-                    <!-- Footer -->
-        <footer class="footer">
-            <div class="container-fluid">
-                <div class="d-flex justify-content-between align-items-center py-2">
-                    <div class="text-muted small">
-                        &copy; <?php echo date('Y'); ?> <?php echo APP_NAME; ?>
+                            <!-- Modern Footer - Best Practice Design -->
+        <footer class="app-footer" role="contentinfo" aria-label="Site footer">
+            <div class="footer-container">
+                <div class="footer-content">
+                    <div class="footer-copyright">
+                        <span>&copy; <?php echo date('Y'); ?> <?php echo APP_NAME; ?></span>
                     </div>
-                    <div class="text-muted small">
-                        Version <span class="badge bg-light text-dark"><?php echo defined('APP_VERSION') ? APP_VERSION : '1.0.0'; ?></span>
+                    <div class="footer-version">
+                        <span class="version-label">Version</span>
+                        <span class="version-badge"><?php echo defined('APP_VERSION') ? APP_VERSION : '1.0.0'; ?></span>
                     </div>
                 </div>
             </div>
