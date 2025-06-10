@@ -12,7 +12,14 @@ class ReportGenerator {
     constructor() {
         this.config = window.ReportGeneratorConfig || {};
         this.isInitialized = false;
-        this.currentPrograms = [];
+                     data-sector-id="${program.sector_id}">
+                <div class="d-flex align-items-center">
+                    <div class="form-check flex-grow-1">
+                        <input class="form-check-input program-checkbox" 
+                               type="checkbox" 
+                               name="selected_program_ids[]" 
+                               value="${program.program_id}" 
+                               id="program_${program.program_id}">`rentPrograms = [];
         this.isGenerating = false;
         
         // DOM elements

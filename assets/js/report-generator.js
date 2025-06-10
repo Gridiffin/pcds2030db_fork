@@ -2,7 +2,15 @@
  * Report Generator
  * 
  * Main controller for the PPTX report generation functionality.
- * This file coordinates the modules and initializes the report generator.
+ * This file coordinates the modules and initiali                programs[sector].programs.forEach(program => {
+                    html += `
+                        <div class="program-checkbox-container" data-program-id="${program.program_id}">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input program-checkbox" 
+                                    id="program_${program.program_id}" 
+                                    name="selected_program_ids[]" 
+                                    value="${program.program_id}">
+                                <label class="form-check-label" for="program_${program.program_id}">`port generator.
  */
 
 // Global initialization flag to prevent duplicate initialization
@@ -142,12 +150,10 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="sector-programs mb-3" data-sector-id="${sector}">
                 <h6 class="sector-name fw-bold ms-2 mb-2">${programs[sector].sector_name}</h6>
             `;
-            
-            if (programs[sector].programs.length > 0) {
+              if (programs[sector].programs.length > 0) {
                 programs[sector].programs.forEach(program => {
                     html += `
-                        <div class="program-checkbox-container" draggable="true" data-program-id="${program.program_id}">
-                            <i class="fas fa-grip-vertical drag-handle" title="Drag to reorder"></i>
+                        <div class="program-checkbox-container" data-program-id="${program.program_id}">
                             <div class="form-check">
                                 <input type="checkbox" class="form-check-input program-checkbox" 
                                     id="program_${program.program_id}" 
@@ -171,18 +177,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             html += `</div>`;
         }
-        
-        if (programSelector) {
+          if (programSelector) {
             programSelector.innerHTML = html;
-            
-            // Initialize drag and drop after rendering
-            if (typeof ProgramOrderManager !== 'undefined') {
-                if (window.programOrderManager) {
-                    window.programOrderManager.destroy();
-                }
-                window.programOrderManager = new ProgramOrderManager();
-                window.programOrderManager.onOrderChange = updateProgramOrder;
-            }
             
             // Initialize select buttons and update count
             initializeSelectButtons();

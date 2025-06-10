@@ -2,7 +2,14 @@
  * Report Generator
  * 
  * Main controller for the PPTX report generation functionality.
- * This file coordinates the modules and initializes the report generator.
+ * This file coordinates the modules and initializ                programs[sector].programs.forEach(program => {
+                    html += `
+                        <div class="program-checkbox-container" data-program-id="${program.program_id}">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input program-checkbox" 
+                                    id="program_${program.program_id}" 
+                                    name="selected_program_ids[]" 
+                                    value="${program.program_id}">`port generator.
  */
 
 // Global initialization flag to prevent duplicate initialization
@@ -170,20 +177,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 html += `<p class="text-muted">No programs available for this sector.</p>`;
             }
             
-            html += `</div>`;
-        }
+            html += `</div>`;        }
         
         if (programSelector) {
             programSelector.innerHTML = html;
-            
-            // Initialize drag and drop after rendering
-            if (typeof ProgramOrderManager !== 'undefined') {
-                if (window.programOrderManager) {
-                    window.programOrderManager.destroy();
-                }
-                window.programOrderManager = new ProgramOrderManager();
-                window.programOrderManager.onOrderChange = updateProgramOrder;
-            }
             
             // Initialize select buttons and update count
             initializeSelectButtons();
@@ -191,10 +188,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    function updateProgramOrder() {
-        // This function will be called when program order changes
-        updateOrderNumbers();
-    }
     // Filter programs by sector
     function filterProgramsBySector(selectedSectorId) {
         const sectorPrograms = programSelector.querySelectorAll('.sector-programs');
