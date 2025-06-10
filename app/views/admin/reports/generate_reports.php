@@ -89,61 +89,56 @@ function getSectors() {
 }
 
 /**
- * Get recently generated reports for display
+ * Get recently generated reports directly from database
  * @param int $limit Number of reports to retrieve
  * @return array Array of recent reports
  */
 function getRecentReports($limit = 10) {
     global $conn;
     
-    try {
-        $query = "SELECT r.report_id, r.report_name, r.description, r.pptx_path, 
-                         r.generated_at, r.is_public,
-                         rp.quarter, rp.year,
-                         u.username, u.first_name, u.last_name
-                  FROM reports r
-                  INNER JOIN reporting_periods rp ON r.period_id = rp.period_id
-                  INNER JOIN users u ON r.generated_by = u.user_id
-                  ORDER BY r.generated_at DESC
-                  LIMIT ?";
-        
-        $stmt = $conn->prepare($query);
-        $stmt->bind_param("i", $limit);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        $reports = [];
-        if ($result && $result->num_rows > 0) {
-            while ($report = $result->fetch_assoc()) {
-                $reports[] = $report;
-            }
-        }
-        
-        return $reports;
-    } catch (Exception $e) {
-        error_log("Error fetching recent reports: " . $e->getMessage());
-        return [];
+    $query = "SELECT r.report_id, r.report_name, r.pptx_path, r.generated_at, r.is_public,
+                     rp.quarter, rp.year, u.username
+              FROM reports r 
+              LEFT JOIN reporting_periods rp ON r.period_id = rp.period_id 
+              LEFT JOIN users u ON r.generated_by = u.user_id 
+              ORDER BY r.generated_at DESC 
+              LIMIT ?";
+    
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("i", $limit);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    $reports = [];
+    while ($row = $result->fetch_assoc()) {
+        $reports[] = $row;
     }
+    
+    return $reports;
 }
 
 /**
- * Format period display name for UI
- * @param array $period Period data
+ * Format period display name
+ * @param array $report Report data with quarter and year
  * @return string Formatted period name
  */
-function formatPeriodDisplayName($period) {
-    if (!$period || !isset($period['quarter'], $period['year'])) {
-        return 'Unknown Period';
+function formatPeriod($report) {
+    if (!$report || !isset($report['quarter'], $report['year'])) {
+        return 'Unknown';
     }
     
-    switch ((int)$period['quarter']) {
-        case 5:
-            return 'Half Yearly 1 ' . $period['year'];
-        case 6:
-            return 'Half Yearly 2 ' . $period['year'];
-        default:
-            return 'Q' . $period['quarter'] . ' ' . $period['year'];
+    $quarter = (int)$report['quarter'];
+    $year = $report['year'];
+    
+    if ($quarter >= 1 && $quarter <= 4) {
+        return "Q{$quarter} {$year}";
+    } elseif ($quarter == 5) {
+        return "H1 {$year}";
+    } elseif ($quarter == 6) {
+        return "H2 {$year}";
     }
+    
+    return "Period {$quarter} {$year}";
 }
 
 // Fetch data for page
@@ -230,10 +225,9 @@ $jsConfig = [
                                             <span class="text-danger">*</span>
                                         </label>
                                         <select class="form-select" id="periodSelect" name="period_id" required>
-                                            <option value="">Select Reporting Period</option>
-                                            <?php foreach ($periods as $period): ?>
+                                            <option value="">Select Reporting Period</option>                                            <?php foreach ($periods as $period): ?>
                                                 <option value="<?php echo htmlspecialchars($period['period_id']); ?>">
-                                                    <?php echo htmlspecialchars(formatPeriodDisplayName($period)); ?>
+                                                    <?php echo htmlspecialchars(get_period_display_name($period)); ?>
                                                 </option>
                                             <?php endforeach; ?>
                                         </select>
@@ -394,45 +388,52 @@ $jsConfig = [
                         <h5 class="mb-0">
                             <i class="fas fa-history me-2"></i>Recent Reports
                         </h5>
-                    </div>
-                    <div class="card-body" id="recentReportsContainer">
+                    </div>                    <div class="card-body" id="recentReportsContainer">
                         <?php if (!empty($recentReports)): ?>
                             <div class="table-responsive">
-                                <table class="table table-sm table-hover">
-                                    <thead class="table-light">
+                                <table class="table table-hover table-sm">
+                                    <thead>
                                         <tr>
                                             <th>Report Name</th>
                                             <th>Period</th>
                                             <th>Generated</th>
-                                            <th class="text-center">Actions</th>
+                                            <th>By</th>
+                                            <th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <?php foreach ($recentReports as $report): ?>
                                             <tr>
                                                 <td>
-                                                    <div class="text-truncate" style="max-width: 200px;" 
+                                                    <div style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" 
                                                          title="<?php echo htmlspecialchars($report['report_name']); ?>">
                                                         <?php echo htmlspecialchars($report['report_name']); ?>
                                                     </div>
                                                 </td>
                                                 <td>
                                                     <small class="text-muted">
-                                                        <?php echo htmlspecialchars(formatPeriodDisplayName($report)); ?>
+                                                        <?php echo formatPeriod($report); ?>
                                                     </small>
                                                 </td>
                                                 <td>
                                                     <small class="text-muted">
-                                                        <?php echo date('M j, Y', strtotime($report['generated_at'])); ?>
+                                                        <?php echo date('M j, Y g:i A', strtotime($report['generated_at'])); ?>
                                                     </small>
                                                 </td>
-                                                <td class="text-center">
+                                                <td>
+                                                    <small class="text-muted">
+                                                        <?php echo htmlspecialchars($report['username'] ?? 'Unknown'); ?>
+                                                    </small>
+                                                </td>
+                                                <td>
                                                     <div class="btn-group btn-group-sm">
-                                                        <a href="<?php echo APP_URL; ?>/download.php?type=report&file=<?php echo urlencode($report['pptx_path']); ?>" 
-                                                           class="btn btn-outline-primary btn-sm" 
-                                                           title="Download Report">
-                                                            <i class="fas fa-download"></i>
-                                                        </a>
+                                                        <?php if (!empty($report['pptx_path'])): ?>
+                                                            <a href="<?php echo APP_URL; ?>/download.php?type=report&file=<?php echo urlencode($report['pptx_path']); ?>" 
+                                                               class="btn btn-outline-success btn-sm" 
+                                                               title="Download Report">
+                                                                <i class="fas fa-download"></i>
+                                                            </a>
+                                                        <?php endif; ?>
                                                         <button type="button" 
                                                                 class="btn btn-outline-danger btn-sm delete-report-btn" 
                                                                 title="Delete Report"
@@ -447,12 +448,6 @@ $jsConfig = [
                                     </tbody>
                                 </table>
                             </div>
-                            <div class="text-center mt-3">
-                                <a href="<?php echo APP_URL; ?>/app/views/admin/reports/view_all_reports.php" 
-                                   class="btn btn-outline-secondary btn-sm">
-                                    <i class="fas fa-list me-1"></i>View All Reports
-                                </a>
-                            </div>
                         <?php else: ?>
                             <div class="text-center text-muted py-4">
                                 <i class="fas fa-file-powerpoint fa-3x mb-3 opacity-50"></i>
@@ -460,6 +455,13 @@ $jsConfig = [
                                 <small>Generated reports will appear here.</small>
                             </div>
                         <?php endif; ?>
+                        
+                        <!-- Auto refresh indicator -->
+                        <div id="refreshIndicator" class="text-center mt-2" style="display: none;">
+                            <small class="text-muted">
+                                <i class="fas fa-sync fa-spin"></i> Refreshing...
+                            </small>
+                        </div>
                     </div>
                 </div>
             </div>
