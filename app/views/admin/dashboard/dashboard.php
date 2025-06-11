@@ -242,7 +242,14 @@ const hasActivePeriod = <?php echo $hasActivePeriod ? 'true' : 'false'; ?>;
             <div class="col-12">
                 <div class="card shadow-sm">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="card-title m-0">Programs Overview</h5>
+                        <h5 class="card-title m-0">Programs Overview</h5>                        <div>
+                            <a href="<?php echo view_url('admin', 'programs.php', ['program_type' => 'assigned']); ?>" class="btn btn-sm btn-success me-2">
+                                <i class="fas fa-tasks me-1"></i> View Assigned Programs
+                            </a>
+                            <a href="<?php echo view_url('admin', 'programs.php', ['program_type' => 'agency']); ?>" class="btn btn-sm btn-info">
+                                <i class="fas fa-list me-1"></i> View Agency Programs
+                            </a>
+                        </div>
                     </div>
                     <div class="card-body">
                         <div class="row gx-4 gy-4">
@@ -357,7 +364,7 @@ const hasActivePeriod = <?php echo $hasActivePeriod ? 'true' : 'false'; ?>;
                                             </table>
                                         </div>
                                         <div class="text-center mt-2">
-                                            <a href="<?php echo view_url('admin', 'programs.php', ['program_type' => 'agency']); ?>" class="btn btn-sm btn-outline-info">
+                                            <a href="<?php echo view_url('admin', 'programs/programs.php', ['program_type' => 'agency']); ?>" class="btn btn-sm btn-outline-info">
                                                 View All Agency Programs <i class="fas fa-arrow-right ms-1"></i>
                                             </a>
                                         </div>
