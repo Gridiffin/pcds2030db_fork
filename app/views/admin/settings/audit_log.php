@@ -74,11 +74,10 @@ require_once '../../layouts/page_header.php';
     if ($result) {
         while ($row = $result->fetch_assoc()) {
             $tables[] = $row['TABLE_NAME'];
-        }
-    }
-    // Ensure metrics_details table is included in audit logs
-    if (!in_array('metrics_details', $tables)) {
-        $tables[] = 'metrics_details';
+        }    }
+    // Ensure outcomes_details table is included in audit logs
+    if (!in_array('outcomes_details', $tables)) {
+        $tables[] = 'outcomes_details';
     }
 
     $audit_entries = [];
@@ -113,10 +112,9 @@ require_once '../../layouts/page_header.php';
         if ($table === 'sector_metrics_data') {
             $name_column = 'table_name';
         } elseif ($table === 'users') {
-            $name_column = 'username';
-        } elseif ($table === 'programs') {
+            $name_column = 'username';        } elseif ($table === 'programs') {
             $name_column = 'program_name';
-        } elseif ($table === 'metrics_details') {
+        } elseif ($table === 'outcomes_details') {
             $name_column = 'detail_name';
         }
 

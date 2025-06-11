@@ -71,11 +71,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos($_SERVER['CONTENT_TYPE'] ?? 
     $detail_json = json_encode([
         'layout_type' => $layout_type,
         'items' => $items
-    ]);
-
-    if ($detail_id === null) {        // Insert new outcome detail
-        // First check if a metric detail with the same name already exists
-        $check_stmt = $conn->prepare("SELECT detail_id FROM metrics_details WHERE detail_name = ?");
+    ]);    if ($detail_id === null) {        // Insert new outcome detail
+        // First check if an outcome detail with the same name already exists
+        $check_stmt = $conn->prepare("SELECT detail_id FROM outcomes_details WHERE detail_name = ?");
         if (!$check_stmt) {
             $errors[] = 'Database error: ' . $conn->error;
         } else {
@@ -90,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos($_SERVER['CONTENT_TYPE'] ?? 
                 $check_stmt->close();
                 
                 // No duplicates found, proceed with insertion
-                $stmt = $conn->prepare("INSERT INTO metrics_details (detail_name, detail_json, is_draft) VALUES (?, ?, 0)");
+                $stmt = $conn->prepare("INSERT INTO outcomes_details (detail_name, detail_json, is_draft) VALUES (?, ?, 0)");
                 if ($stmt) {
                     $stmt->bind_param('ss', $detail_name, $detail_json);
                     if ($stmt->execute()) {
@@ -115,7 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos($_SERVER['CONTENT_TYPE'] ?? 
             }
         }
     } else {        // Update existing outcome detail
-        $stmt = $conn->prepare("UPDATE metrics_details SET detail_name = ?, detail_json = ? WHERE detail_id = ?");
+        $stmt = $conn->prepare("UPDATE outcomes_details SET detail_name = ?, detail_json = ? WHERE detail_id = ?");
         if ($stmt) {
             $stmt->bind_param('ssi', $detail_name, $detail_json, $detail_id);
             if ($stmt->execute()) {
@@ -145,8 +143,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos($_SERVER['CONTENT_TYPE'] ?? 
     exit;
 }
 
-// Fetch existing metric details for display
-$result = $conn->query("SELECT detail_id, detail_name, detail_json FROM metrics_details WHERE is_draft = 0 ORDER BY created_at DESC");
+// Fetch existing outcome details for display
+$result = $conn->query("SELECT detail_id, detail_name, detail_json FROM outcomes_details WHERE is_draft = 0 ORDER BY created_at DESC");
 $detailsArray = [];
 if ($result) {
     while ($row = $result->fetch_assoc()) {
