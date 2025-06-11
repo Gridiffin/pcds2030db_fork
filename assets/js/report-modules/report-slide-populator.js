@@ -373,13 +373,15 @@ if (typeof window.ReportPopulator !== 'undefined') {
      * @param {Object} themeColors - The theme colors for styling
      * @param {string} defaultFont - The default font
      * @param {string} sectorName - The sector name
-     */
-    function addTopSection(slide, data, pptx, themeColors, defaultFont, sectorName) {
+     */    function addTopSection(slide, data, pptx, themeColors, defaultFont, sectorName) {
         // Create the sector box in the top left
         ReportStyler.createSectorBox(slide, pptx, themeColors);
         
         // Add sector icon or fallback shape
-        ReportStyler.addSectorIcon(slide, pptx, themeColors, '../../assets/images/forest-icon.png');
+        // Use absolute URL for PptxGenJS image loading
+        const baseUrl = window.ReportGeneratorConfig?.appUrl || window.APP_URL || window.location.origin;
+        const iconPath = `${baseUrl}/assets/images/forest-icon.png`;
+        ReportStyler.addSectorIcon(slide, pptx, themeColors, iconPath);
         
         // Add sector name and target text
         ReportStyler.addSectorText(slide, sectorName, 'RM 8 bil in exports by 2030', themeColors, defaultFont);
