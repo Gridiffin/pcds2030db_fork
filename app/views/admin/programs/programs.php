@@ -46,6 +46,9 @@ if ($url_period_id) {
 // This $viewing_period is used by the period_selector.php component to show the correct selection in the dropdown
 $viewing_period = $current_period; // $current_period is now correctly set based on URL or default
 
+// Check for program type filter from URL
+$initial_program_type = isset($_GET['program_type']) ? $_GET['program_type'] : null;
+
 // Get all programs with filters
 $programs = get_admin_programs_list($period_id, []); // No filters, get all
 
@@ -485,6 +488,7 @@ require_once '../../layouts/page_header.php';
     const unsubmittedPrograms = <?php echo json_encode($unsubmitted_programs, JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
     const submittedPrograms = <?php echo json_encode($submitted_programs, JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
     const periodId = <?php echo json_encode($period_id); ?>;
+    const initialProgramType = <?php echo json_encode($initial_program_type); ?>;
 </script>
 </main>
 

@@ -243,10 +243,10 @@ const hasActivePeriod = <?php echo $hasActivePeriod ? 'true' : 'false'; ?>;
                 <div class="card shadow-sm">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="card-title m-0">Programs Overview</h5>                        <div>
-                            <a href="<?php echo view_url('admin', 'programs.php', ['program_type' => 'assigned']); ?>" class="btn btn-sm btn-success me-2">
+                            <a href="<?php echo view_url('admin', 'programs/programs.php', ['program_type' => 'assigned']); ?>" class="btn btn-sm btn-success me-2">
                                 <i class="fas fa-tasks me-1"></i> View Assigned Programs
                             </a>
-                            <a href="<?php echo view_url('admin', 'programs.php', ['program_type' => 'agency']); ?>" class="btn btn-sm btn-info">
+                            <a href="<?php echo view_url('admin', 'programs/programs.php', ['program_type' => 'agency']); ?>" class="btn btn-sm btn-info">
                                 <i class="fas fa-list me-1"></i> View Agency Programs
                             </a>
                         </div>
@@ -303,9 +303,8 @@ const hasActivePeriod = <?php echo $hasActivePeriod ? 'true' : 'false'; ?>;
                                                     <?php endforeach; ?>
                                                 </tbody>
                                             </table>
-                                        </div>
-                                        <div class="text-center mt-2">
-                                            <a href="<?php echo view_url('admin', 'programs.php', ['program_type' => 'assigned']); ?>" class="btn btn-sm btn-outline-success">
+                                        </div>                                        <div class="text-center mt-2">
+                                            <a href="<?php echo view_url('admin', 'programs/programs.php', ['program_type' => 'assigned']); ?>" class="btn btn-sm btn-outline-success">
                                                 View All Assigned Programs <i class="fas fa-arrow-right ms-1"></i>
                                             </a>
                                         </div>

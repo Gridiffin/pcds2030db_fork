@@ -42,6 +42,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize filtering for both sections
     initializeFiltering();
+    
+    // Apply initial filters from URL parameters
+    applyInitialFilters();
 });
 
 /**
@@ -455,4 +458,42 @@ function escapeHtml(text) {
         "'": '&#039;'
     };
     return text ? text.replace(/[&<>"']/g, m => map[m]) : '';
+}
+
+/**
+ * Apply initial filters based on URL parameters
+ */
+function applyInitialFilters() {
+    // Check if initialProgramType is defined and has a valid value
+    if (typeof initialProgramType !== 'undefined' && initialProgramType) {
+        if (initialProgramType === 'assigned') {
+            // Apply "assigned" filter to both sections
+            const unsubmittedTypeFilter = document.getElementById('unsubmittedTypeFilter');
+            const submittedTypeFilter = document.getElementById('submittedTypeFilter');
+            
+            if (unsubmittedTypeFilter) {
+                unsubmittedTypeFilter.value = 'assigned';
+                filterPrograms('unsubmitted');
+            }
+            
+            if (submittedTypeFilter) {
+                submittedTypeFilter.value = 'assigned';
+                filterPrograms('submitted');
+            }
+        } else if (initialProgramType === 'agency') {
+            // Apply "agency" filter to both sections
+            const unsubmittedTypeFilter = document.getElementById('unsubmittedTypeFilter');
+            const submittedTypeFilter = document.getElementById('submittedTypeFilter');
+            
+            if (unsubmittedTypeFilter) {
+                unsubmittedTypeFilter.value = 'agency';
+                filterPrograms('unsubmitted');
+            }
+            
+            if (submittedTypeFilter) {
+                submittedTypeFilter.value = 'agency';
+                filterPrograms('submitted');
+            }
+        }
+    }
 }
