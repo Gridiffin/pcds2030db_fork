@@ -45,6 +45,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
         `;
+        loadingOverlay.style.cssText = `
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.8);
+            z-index: 10;
+            display: none;
+        `;
         tableContainer.style.position = 'relative';
         tableContainer.appendChild(loadingOverlay);
         
@@ -57,9 +67,6 @@ document.addEventListener('DOMContentLoaded', function() {
         function hideLoading() {
             loadingOverlay.style.display = 'none';
         }
-        
-        // Hide loading overlay initially
-        hideLoading();
         
         // Create or get toast container
         let toastContainer = document.querySelector('.toast-container');
@@ -97,7 +104,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     if (response.status === 'success') {
                         // Update the table data
-                        const tableBody = $('#programsTable tbody');
+                        const tableBody = document.querySelector('table tbody');
                         
                         // Destroy existing DataTable if it exists
                         if (dataTable) {
@@ -109,25 +116,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                         
                         // Update HTML
-                        tableBody.html(response.tableHtml);
+                        tableBody.innerHTML = response.tableHtml;
                         
-                        // Update program count badge
-                        $('.card-header .badge').text(response.count + ' Programs');
-                        
-                        // Show/hide active filters display - FIXED ERROR HERE
-                        const activeFilters = document.querySelector('.alert-info');
-                        if (activeFilters) {
-                            if (response.filters) {
-                                activeFilters.style.display = 'block';
-                                
-                                // Check if strong element exists before updating it
-                                const strongElement = activeFilters.querySelector('strong');
-                                if (strongElement) {
-                                    strongElement.textContent = response.count;
-                                }
-                            } else {
-                                activeFilters.style.display = 'none';
-                            }
+                        // Update program count in header if exists
+                        const countElement = document.querySelector('.card-header .badge');
+                        if (countElement) {
+                            countElement.textContent = response.count + ' Programs';
                         }
                         
                         // Try to reinitialize DataTable with safety checks
@@ -284,7 +278,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 updateProgramsList(formData);
             }
         });
-          // Handle form submission via AJAX
+        
+        // Handle form submission via AJAX
         filterForm.addEventListener('submit', function(e) {
             e.preventDefault();
             
@@ -309,24 +304,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Reset all form fields
                 filterForm.reset();
-                  // Prepare minimal data (just period_id if it exists)
+                
+                // Prepare minimal data (just period_id if it exists)
                 const minimalData = {};
                 const periodInput = filterForm.querySelector('input[name="period_id"]');
                 if (periodInput) {
                     minimalData.period_id = periodInput.value;
-                } else {
-                    // Check for period_id in URL params
-                    const urlParams = new URLSearchParams(window.location.search);
-                    if (urlParams.has('period_id')) {
-                        minimalData.period_id = urlParams.get('period_id');
-                    }
                 }
                 
                 // Update with reset filters
                 updateProgramsList(minimalData);
             });
         }
-          // Handle dropdown changes for auto-submit
+        
+        // Handle dropdown changes for auto-submit
         const dropdownFilters = filterForm.querySelectorAll('select');
         dropdownFilters.forEach(dropdown => {
             dropdown.addEventListener('change', function() {
@@ -343,44 +334,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 updateProgramsList(serializedData);
             });
         });
-          // Handle search input with debouncing
-        const searchInput = filterForm.querySelector('#programSearch');
-        if (searchInput) {
-            let searchTimeout;
-            searchInput.addEventListener('input', function() {
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(() => {
-                    // Get form data with current values
-                    const formData = new FormData(filterForm);
-                    const serializedData = {};
-                    
-                    // Convert FormData to plain object
-                    for (const [key, value] of formData.entries()) {
-                        serializedData[key] = value;
-                    }
-                    
-                    // Update programs list via AJAX
-                    updateProgramsList(serializedData);
-                }, 500); // 500ms delay
+        
+        // Handle refresh button
+        const refreshButton = document.getElementById('refreshTable');
+        if (refreshButton) {
+            refreshButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Get current form data
+                const formData = new FormData(filterForm);
+                const serializedData = {};
+                
+                // Convert FormData to plain object
+                for (const [key, value] of formData.entries()) {
+                    serializedData[key] = value;
+                }
+                
+                // Update programs list via AJAX
+                updateProgramsList(serializedData);
             });
-        }    }
-
-    // Handle refresh button
-    const refreshButton = document.getElementById('refreshTable');
-    if (refreshButton) {
-        refreshButton.addEventListener('click', function() {
-            // Get current form data
-            const formData = new FormData(filterForm);
-            const serializedData = {};
-            
-            // Convert FormData to plain object
-            for (const [key, value] of formData.entries()) {
-                serializedData[key] = value;
-            }
-            
-            // Update programs list via AJAX
-            updateProgramsList(serializedData);
-        });
+        }
     }
 
     // Initialize tooltips for action buttons

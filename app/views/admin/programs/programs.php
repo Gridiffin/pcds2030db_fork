@@ -2,7 +2,7 @@
 /**
  * Admin Programs
  * 
- * Programs overview for admin users.
+ * Programs overview for admin users with separate sections for unsubmitted and submitted programs.
  */
 
 // Include necessary files
@@ -43,19 +43,26 @@ if ($url_period_id) {
     $period_id = $current_period ? $current_period['period_id'] : null;
 }
 
-// Process filters
-$filters = [
-    'status' => $_GET['rating'] ?? null,
-    'sector_id' => isset($_GET['sector_id']) ? intval($_GET['sector_id']) : null,
-    'agency_id' => isset($_GET['agency_id']) ? intval($_GET['agency_id']) : null
-    // Note: 'period_id' for filtering within get_admin_programs_list is handled by passing $period_id directly
-];
-
 // This $viewing_period is used by the period_selector.php component to show the correct selection in the dropdown
 $viewing_period = $current_period; // $current_period is now correctly set based on URL or default
 
 // Get all programs with filters
-$programs = get_admin_programs_list($period_id, $filters);
+$programs = get_admin_programs_list($period_id, []); // No filters, get all
+
+// Separate programs into unsubmitted and submitted
+$unsubmitted_programs = [];
+$submitted_programs = [];
+
+foreach ($programs as $program) {
+    // Determine if this is an unsubmitted program (draft in backend)
+    $is_unsubmitted = isset($program['is_draft']) && $program['is_draft'] == 1;
+    
+    if ($is_unsubmitted) {
+        $unsubmitted_programs[] = $program;
+    } else {
+        $submitted_programs[] = $program;
+    }
+}
 
 // Get all sectors for filter dropdown
 $sectors = get_all_sectors();
@@ -71,7 +78,7 @@ while ($row = $agencies_result->fetch_assoc()) {
 // Additional scripts
 $additionalScripts = [
     APP_URL . '/assets/js/period_selector.js',
-    APP_URL . '/assets/js/admin/programs_list.js'
+    APP_URL . '/assets/js/admin/programs_admin.js'
 ];
 
 // Include header
@@ -101,171 +108,154 @@ require_once '../../layouts/page_header.php';
     <!-- Period Selector Component -->
     <?php require_once ROOT_PATH . 'app/lib/period_selector.php'; ?>
 
-<!-- Filter Card -->
-<div class="card shadow-sm mb-4">
-    <div class="card-header">
-        <h5 class="card-title m-0">
-            <i class="fas fa-filter me-2"></i>Filter Programs
-        </h5>
-    </div>
-    <div class="card-body">
-        <form method="get" class="row g-3 align-items-end" id="filterForm">
-            <!-- Rating/Status Filter -->
-            <div class="col-md-3">
-                <label for="rating" class="form-label">Rating</label>
-                <div class="filter-control-wrapper">
-                <select class="form-select" id="rating" name="rating">
-                    <option value="">All Ratings</option>
-                    <option value="target-achieved" <?php echo ($filters['status'] === 'target-achieved') ? 'selected' : ''; ?>>Monthly Target Achieved</option>
-                    <option value="on-track-yearly" <?php echo ($filters['status'] === 'on-track-yearly') ? 'selected' : ''; ?>>On Track for Year</option>
-                    <option value="severe-delay" <?php echo ($filters['status'] === 'severe-delay') ? 'selected' : ''; ?>>Severe Delays</option>
-                    <option value="not-started" <?php echo ($filters['status'] === 'not-started') ? 'selected' : ''; ?>>Not Started</option>
-                </select>
-
-                </div>
-            </div>
-            
-            <!-- Sector Filter -->
-            <div class="col-md-3">
-                <label for="sector_id" class="form-label">Sector</label>
-                <div class="filter-control-wrapper">
-                    <select class="form-select" id="sector_id" name="sector_id">
-                        <option value="">All Sectors</option>
-                        <?php foreach ($sectors as $sector): ?>
-                            <option value="<?php echo $sector['sector_id']; ?>" 
-                                    <?php echo ($filters['sector_id'] === $sector['sector_id']) ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($sector['sector_name']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-            </div>
-            
-            <!-- Agency Filter -->
-            <div class="col-md-3">
-                <label for="agency_id" class="form-label">Agency</label>
-                <div class="filter-control-wrapper">
-                    <select class="form-select" id="agency_id" name="agency_id">
-                        <option value="">All Agencies</option>
-                        <?php foreach ($agencies as $agency): ?>
-                            <option value="<?php echo $agency['user_id']; ?>" 
-                                    <?php echo ($filters['agency_id'] === $agency['user_id']) ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($agency['agency_name']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-            </div>
-            
-            <!-- Filter Actions -->
-            <div class="col-md-3">
-                <div class="filter-actions">
-                    <button type="reset" class="btn btn-light" id="resetFilters">
-                        <i class="fas fa-undo me-1"></i>Reset
-                    </button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-search me-1"></i>Apply
-                    </button>
-                </div>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Programs Table -->
-<div class="card shadow-sm">
+<!-- Unsubmitted Programs Card -->
+<div class="card shadow-sm mb-4 w-100">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="card-title m-0">Programs List</h5>
-        <div class="btn-group">
-            <button class="btn btn-sm btn-light border" id="refreshTable">
-                <i class="fas fa-sync-alt me-1"></i>Refresh
-            </button>
-        </div>
+        <h5 class="card-title m-0">
+            <i class="fas fa-edit me-2"></i>Unsubmitted Programs
+        </h5>
+        <span class="badge bg-warning"><?php echo count($unsubmitted_programs); ?> Programs</span>
     </div>
-    <div class="card-body p-0">
+    
+    <!-- Unsubmitted Programs Filters -->
+    <div class="card-body pb-0">
+        <div class="row g-3">
+            <div class="col-md-4 col-sm-12">
+                <label for="unsubmittedProgramSearch" class="form-label">Search</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="text" class="form-control" id="unsubmittedProgramSearch" placeholder="Search by program name">
+                </div>
+            </div>
+            <div class="col-md-2 col-sm-6">
+                <label for="unsubmittedRatingFilter" class="form-label">Rating</label>
+                <select class="form-select" id="unsubmittedRatingFilter">
+                    <option value="">All Ratings</option>
+                    <option value="target-achieved">Monthly Target Achieved</option>
+                    <option value="on-track-yearly">On Track for Year</option>
+                    <option value="severe-delay">Severe Delays</option>
+                    <option value="not-started">Not Started</option>
+                </select>
+            </div>
+            <div class="col-md-2 col-sm-6">
+                <label for="unsubmittedTypeFilter" class="form-label">Program Type</label>
+                <select class="form-select" id="unsubmittedTypeFilter">
+                    <option value="">All Types</option>
+                    <option value="assigned">Assigned</option>
+                    <option value="agency">Agency-Created</option>
+                </select>
+            </div>
+            <div class="col-md-2 col-sm-6">
+                <label for="unsubmittedSectorFilter" class="form-label">Sector</label>
+                <select class="form-select" id="unsubmittedSectorFilter">
+                    <option value="">All Sectors</option>
+                    <?php foreach ($sectors as $sector): ?>
+                        <option value="<?php echo $sector['sector_id']; ?>">
+                            <?php echo htmlspecialchars($sector['sector_name']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-md-2 col-sm-6">
+                <label for="unsubmittedAgencyFilter" class="form-label">Agency</label>
+                <select class="form-select" id="unsubmittedAgencyFilter">
+                    <option value="">All Agencies</option>
+                    <?php foreach ($agencies as $agency): ?>
+                        <option value="<?php echo $agency['user_id']; ?>">
+                            <?php echo htmlspecialchars($agency['agency_name']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
+        <div class="row mt-2">
+            <div class="col-12 d-flex justify-content-end">
+                <button id="resetUnsubmittedFilters" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-undo me-1"></i> Reset Filters
+                </button>
+            </div>
+        </div>
+        <div id="unsubmittedFilterBadges" class="filter-badges mt-2"></div>
+    </div>
+    
+    <div class="card-body pt-2 p-0">
         <div class="table-responsive">
-            <table class="table table-hover table-custom mb-0">
-                <thead>
+            <table class="table table-hover table-custom mb-0" id="unsubmittedProgramsTable">
+                <thead class="table-light">
                     <tr>
-                        <th>Program</th>
-                        <th>Sector</th>
-                        <th>Agency</th>
-                        <th class="text-center">Rating</th>
-                        <th class="text-center">Last Updated</th>
-                        <th class="text-center">Actions</th>
+                        <th class="sortable" data-sort="name">Program Name <i class="fas fa-sort ms-1"></i></th>
+                        <th class="sortable" data-sort="sector">Sector <i class="fas fa-sort ms-1"></i></th>
+                        <th class="sortable" data-sort="agency">Agency <i class="fas fa-sort ms-1"></i></th>
+                        <th class="sortable" data-sort="rating">Rating <i class="fas fa-sort ms-1"></i></th>
+                        <th class="sortable" data-sort="date">Last Updated <i class="fas fa-sort ms-1"></i></th>
+                        <th class="text-end">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if (empty($programs)): ?>
+                    <?php if (empty($unsubmitted_programs)): ?>
                         <tr>
-                            <td colspan="6" class="text-center py-4">
-                                <div class="alert alert-info mb-0">
-                                    <i class="fas fa-info-circle me-2"></i>
-                                    <?php 
-                                    // Determine the correct message based on whether a specific period is being viewed
-                                    $active_period_id = $current_period['period_id'] ?? null;
-                                    if ($period_id && $period_id != $active_period_id && !empty(get_reporting_period($period_id))) {
-                                        // Viewing a specific, valid past or future period
-                                        echo "No programs were created within the selected reporting period.";
-                                    } elseif ($period_id && empty(get_reporting_period($period_id))) {
-                                        // Invalid period_id in URL
-                                        echo "The selected reporting period is invalid. Please select a valid period.";
-                                    } elseif (!empty($filters['status']) || !empty($filters['sector_id']) || !empty($filters['agency_id'])) {
-                                        // Filters are applied
-                                        echo "No programs found matching your filter criteria for the current period.";
-                                    } else {
-                                        // No filters, default view for current/active period
-                                        echo "No programs have been created yet for the current period.";
-                                    }
-                                    ?>
-                                </div>
-                            </td>
+                            <td colspan="6" class="text-center py-4">No unsubmitted programs found.</td>
                         </tr>
                     <?php else: ?>
-                        <?php foreach ($programs as $program): ?>
-                            <tr>
+                        <?php foreach ($unsubmitted_programs as $program): 
+                            // Determine program type (assigned or agency-created)
+                            $is_assigned = isset($program['is_assigned']) && $program['is_assigned'] ? true : false;
+                            
+                            // Convert rating for display
+                            $current_rating = isset($program['rating']) ? convert_legacy_rating($program['rating']) : 'not-started';
+                            
+                            // Map database rating values to display labels and classes
+                            $rating_map = [
+                                'on-track' => ['label' => 'On Track', 'class' => 'warning'],
+                                'on-track-yearly' => ['label' => 'On Track for Year', 'class' => 'warning'],
+                                'target-achieved' => ['label' => 'Monthly Target Achieved', 'class' => 'success'],
+                                'delayed' => ['label' => 'Delayed', 'class' => 'danger'],
+                                'severe-delay' => ['label' => 'Severe Delays', 'class' => 'danger'],
+                                'completed' => ['label' => 'Completed', 'class' => 'primary'],
+                                'not-started' => ['label' => 'Not Started', 'class' => 'secondary']
+                            ];
+                            
+                            // Set default if rating is not in our map
+                            if (!isset($rating_map[$current_rating])) {
+                                $current_rating = 'not-started';
+                            }
+                        ?>
+                            <tr data-program-type="<?php echo $is_assigned ? 'assigned' : 'agency'; ?>"
+                                data-sector-id="<?php echo $program['sector_id']; ?>"
+                                data-agency-id="<?php echo $program['owner_agency_id']; ?>"
+                                data-rating="<?php echo $current_rating; ?>">
                                 <td>
                                     <div class="fw-medium">
                                         <a href="view_program.php?id=<?php echo $program['program_id']; ?>&period_id=<?php echo $period_id; ?>">
                                             <?php echo htmlspecialchars($program['program_name']); ?>
                                         </a>
-                                        <?php if (!empty($program['is_draft']) && $program['is_draft']): ?>
-                                            <span class="badge bg-light text-dark ms-1">Draft</span>
-                                        <?php endif; ?>
+                                        <span class="badge bg-light text-dark ms-1">Unsubmitted</span>
                                     </div>
-                                                                    </td>
+                                    <div class="small text-muted program-type-indicator">
+                                        <i class="fas fa-<?php echo $is_assigned ? 'tasks' : 'folder-plus'; ?> me-1"></i>
+                                        <?php echo $is_assigned ? 'Assigned' : 'Agency-Created'; ?>
+                                    </div>
+                                </td>
                                 <td><?php echo htmlspecialchars($program['sector_name']); ?></td>
                                 <td><?php echo htmlspecialchars($program['agency_name']); ?></td>
-                                <td class="text-center">
+                                <td>
+                                    <span class="badge bg-<?php echo $rating_map[$current_rating]['class']; ?>">
+                                        <?php echo $rating_map[$current_rating]['label']; ?>
+                                    </span>
+                                </td>
+                                <td>
                                     <?php 
-                                    $rating_map = [
-                                        'on-track' => ['label' => 'On Track', 'class' => 'warning'],
-                                        'on-track-yearly' => ['label' => 'On Track for Year', 'class' => 'warning'],
-                                        'target-achieved' => ['label' => 'Monthly Target Achieved', 'class' => 'success'],
-                                        'delayed' => ['label' => 'Delayed', 'class' => 'danger'],
-                                        'severe-delay' => ['label' => 'Severe Delays', 'class' => 'danger'],
-                                        'completed' => ['label' => 'Completed', 'class' => 'primary'],
-                                        'not-started' => ['label' => 'Not Started', 'class' => 'secondary']
-                                    ];
-                                    $current_rating = isset($program['rating']) ? convert_legacy_rating($program['rating']) : 'not-started';
-                                    if (!isset($rating_map[$current_rating])) {
-                                        $current_rating = 'not-started';
+                                    if (!empty($program['updated_at']) && $program['updated_at'] !== '0000-00-00 00:00:00') {
+                                        echo date('M j, Y', strtotime($program['updated_at']));
+                                    } elseif (!empty($program['submission_date']) && $program['submission_date'] !== '0000-00-00 00:00:00') {
+                                        echo date('M j, Y', strtotime($program['submission_date']));
+                                    } else {
+                                        echo 'Not set';
                                     }
-                                    echo '<span class="badge bg-' . $rating_map[$current_rating]['class'] . '">' . $rating_map[$current_rating]['label'] . '</span>';
                                     ?>
                                 </td>
-                                <td class="text-center">
-
-                                    <?php if (!empty($program['updated_at']) && $program['updated_at'] !== '0000-00-00 00:00:00'): ?>
-                                        <small><?php echo date('M j, Y g:i A', strtotime($program['updated_at'])); ?></small>
-                                    <?php elseif (!empty($program['submission_date']) && $program['submission_date'] !== '0000-00-00 00:00:00'): ?>
-                                        <small><?php echo date('M j, Y g:i A', strtotime($program['submission_date'])); ?></small>
-                                    <?php else: ?>
-                                        <small class="text-muted">--</small>
-                                    <?php endif; ?>
-                                </td>
-                                <td class="text-center">
-                                    <div class="btn-group btn-group-sm" role="group" aria-label="Primary program actions">
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group" aria-label="Program actions">
                                         <a href="view_program.php?id=<?php echo $program['program_id']; ?>&period_id=<?php echo $period_id; ?>" class="btn btn-outline-primary" title="View Program Details">
                                             <i class="fas fa-eye"></i>
                                         </a>
@@ -279,28 +269,15 @@ require_once '../../layouts/page_header.php';
                                             <i class="fas fa-trash"></i>
                                         </a>
                                     </div>
-                                    <div class="mt-1 d-grid"> 
-                                        <?php // Button Logic: Only show buttons if there are submissions ?>
+                                    <div class="mt-1 d-grid">
                                         <?php if (isset($program['submission_id']) && !empty($program['submission_id'])): ?>
-                                            <?php if (!empty($program['is_draft']) && $program['is_draft'] == 1): ?>
-                                                <!-- Draft submission - show Resubmit button -->
-                                                <a href="resubmit.php?program_id=<?php echo $program['program_id']; ?>&period_id=<?php echo $period_id; ?>" 
-                                                   class="btn btn-outline-success btn-sm w-100" 
-                                                   title="Resubmit Program for this Period"
-                                                   onclick="return confirm('Are you sure you want to resubmit this program for the period? This will mark it as officially submitted.');">
-                                                    <i class="fas fa-check-circle"></i> Resubmit
-                                                </a>
-                                            <?php elseif (empty($program['is_draft']) || $program['is_draft'] == 0): ?>
-                                                <!-- Submitted program - show Unsubmit button -->
-                                                <a href="unsubmit.php?program_id=<?php echo $program['program_id']; ?>&period_id=<?php echo $period_id; ?>" 
-                                                   class="btn btn-outline-warning btn-sm btn-unsubmit w-100" 
-                                                   title="Unsubmit Program for this Period"
-                                                   onclick="return confirm('Are you sure you want to unsubmit this program for the period? This will revert its status and allow the agency to edit it again.');">
-                                                    <i class="fas fa-undo"></i> Unsubmit
-                                                </a>
-                                            <?php endif; ?>
+                                            <a href="resubmit.php?program_id=<?php echo $program['program_id']; ?>&period_id=<?php echo $period_id; ?>" 
+                                               class="btn btn-outline-success btn-sm w-100" 
+                                               title="Submit Program for this Period"
+                                               onclick="return confirm('Are you sure you want to submit this program for the period? This will mark it as officially submitted.');">
+                                                <i class="fas fa-check-circle"></i> Submit
+                                            </a>
                                         <?php else: ?>
-                                            <!-- No submissions - don't show any buttons -->
                                             <small class="text-muted">No submissions</small>
                                         <?php endif; ?>
                                     </div>
@@ -314,37 +291,200 @@ require_once '../../layouts/page_header.php';
     </div>
 </div>
 
+<!-- Submitted Programs Card -->
+<div class="card shadow-sm mb-4 w-100">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title m-0">
+            <i class="fas fa-check-circle me-2"></i>Submitted Programs
+            <span class="badge bg-info ms-2" title="These programs have been officially submitted">
+                <i class="fas fa-lock me-1"></i> Finalized
+            </span>
+        </h5>
+        <span class="badge bg-success"><?php echo count($submitted_programs); ?> Programs</span>
+    </div>
+    
+    <!-- Submitted Programs Filters -->
+    <div class="card-body pb-0">
+        <div class="row g-3">
+            <div class="col-md-4 col-sm-12">
+                <label for="submittedProgramSearch" class="form-label">Search</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="text" class="form-control" id="submittedProgramSearch" placeholder="Search by program name">
+                </div>
+            </div>
+            <div class="col-md-2 col-sm-6">
+                <label for="submittedRatingFilter" class="form-label">Rating</label>
+                <select class="form-select" id="submittedRatingFilter">
+                    <option value="">All Ratings</option>
+                    <option value="target-achieved">Monthly Target Achieved</option>
+                    <option value="on-track-yearly">On Track for Year</option>
+                    <option value="on-track">On Track</option>
+                    <option value="delayed">Delayed</option>
+                    <option value="severe-delay">Severe Delays</option>
+                    <option value="completed">Completed</option>
+                    <option value="not-started">Not Started</option>
+                </select>
+            </div>
+            <div class="col-md-2 col-sm-6">
+                <label for="submittedTypeFilter" class="form-label">Program Type</label>
+                <select class="form-select" id="submittedTypeFilter">
+                    <option value="">All Types</option>
+                    <option value="assigned">Assigned</option>
+                    <option value="agency">Agency-Created</option>
+                </select>
+            </div>
+            <div class="col-md-2 col-sm-6">
+                <label for="submittedSectorFilter" class="form-label">Sector</label>
+                <select class="form-select" id="submittedSectorFilter">
+                    <option value="">All Sectors</option>
+                    <?php foreach ($sectors as $sector): ?>
+                        <option value="<?php echo $sector['sector_id']; ?>">
+                            <?php echo htmlspecialchars($sector['sector_name']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-md-2 col-sm-6">
+                <label for="submittedAgencyFilter" class="form-label">Agency</label>
+                <select class="form-select" id="submittedAgencyFilter">
+                    <option value="">All Agencies</option>
+                    <?php foreach ($agencies as $agency): ?>
+                        <option value="<?php echo $agency['user_id']; ?>">
+                            <?php echo htmlspecialchars($agency['agency_name']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
+        <div class="row mt-2">
+            <div class="col-12 d-flex justify-content-end">
+                <button id="resetSubmittedFilters" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-undo me-1"></i> Reset Filters
+                </button>
+            </div>
+        </div>
+        <div id="submittedFilterBadges" class="filter-badges mt-2"></div>
+    </div>
+    
+    <div class="card-body pt-2 p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-custom mb-0" id="submittedProgramsTable">
+                <thead class="table-light">
+                    <tr>
+                        <th class="sortable" data-sort="name">Program Name <i class="fas fa-sort ms-1"></i></th>
+                        <th class="sortable" data-sort="sector">Sector <i class="fas fa-sort ms-1"></i></th>
+                        <th class="sortable" data-sort="agency">Agency <i class="fas fa-sort ms-1"></i></th>
+                        <th class="sortable" data-sort="rating">Rating <i class="fas fa-sort ms-1"></i></th>
+                        <th class="sortable" data-sort="date">Last Updated <i class="fas fa-sort ms-1"></i></th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (empty($submitted_programs)): ?>
+                        <tr>
+                            <td colspan="6" class="text-center py-4">No submitted programs found.</td>
+                        </tr>
+                    <?php else: ?>
+                        <?php foreach ($submitted_programs as $program): 
+                            // Determine program type (assigned or agency-created)
+                            $is_assigned = isset($program['is_assigned']) && $program['is_assigned'] ? true : false;
+                            
+                            // Convert rating for display
+                            $current_rating = isset($program['rating']) ? convert_legacy_rating($program['rating']) : 'not-started';
+                            
+                            // Map database rating values to display labels and classes
+                            $rating_map = [
+                                'on-track' => ['label' => 'On Track', 'class' => 'warning'],
+                                'on-track-yearly' => ['label' => 'On Track for Year', 'class' => 'warning'],
+                                'target-achieved' => ['label' => 'Monthly Target Achieved', 'class' => 'success'],
+                                'delayed' => ['label' => 'Delayed', 'class' => 'danger'],
+                                'severe-delay' => ['label' => 'Severe Delays', 'class' => 'danger'],
+                                'completed' => ['label' => 'Completed', 'class' => 'primary'],
+                                'not-started' => ['label' => 'Not Started', 'class' => 'secondary']
+                            ];
+                            
+                            // Set default if rating is not in our map
+                            if (!isset($rating_map[$current_rating])) {
+                                $current_rating = 'not-started';
+                            }
+                        ?>
+                            <tr data-program-type="<?php echo $is_assigned ? 'assigned' : 'agency'; ?>"
+                                data-sector-id="<?php echo $program['sector_id']; ?>"
+                                data-agency-id="<?php echo $program['owner_agency_id']; ?>"
+                                data-rating="<?php echo $current_rating; ?>">
+                                <td>
+                                    <div class="fw-medium">
+                                        <a href="view_program.php?id=<?php echo $program['program_id']; ?>&period_id=<?php echo $period_id; ?>">
+                                            <?php echo htmlspecialchars($program['program_name']); ?>
+                                        </a>
+                                    </div>
+                                    <div class="small text-muted program-type-indicator">
+                                        <i class="fas fa-<?php echo $is_assigned ? 'tasks' : 'folder-plus'; ?> me-1"></i>
+                                        <?php echo $is_assigned ? 'Assigned' : 'Agency-Created'; ?>
+                                    </div>
+                                </td>
+                                <td><?php echo htmlspecialchars($program['sector_name']); ?></td>
+                                <td><?php echo htmlspecialchars($program['agency_name']); ?></td>
+                                <td>
+                                    <span class="badge bg-<?php echo $rating_map[$current_rating]['class']; ?>">
+                                        <?php echo $rating_map[$current_rating]['label']; ?>
+                                    </span>
+                                </td>
+                                <td>
+                                    <?php 
+                                    if (!empty($program['updated_at']) && $program['updated_at'] !== '0000-00-00 00:00:00') {
+                                        echo date('M j, Y', strtotime($program['updated_at']));
+                                    } elseif (!empty($program['submission_date']) && $program['submission_date'] !== '0000-00-00 00:00:00') {
+                                        echo date('M j, Y', strtotime($program['submission_date']));
+                                    } else {
+                                        echo 'Not set';
+                                    }
+                                    ?>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group" aria-label="Program actions">
+                                        <a href="view_program.php?id=<?php echo $program['program_id']; ?>&period_id=<?php echo $period_id; ?>" class="btn btn-outline-primary" title="View Program Details">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="edit_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-secondary" title="Edit Program">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="#" 
+                                           class="btn btn-outline-danger" 
+                                           title="Delete Program"
+                                           onclick="confirmDeleteProgram(<?php echo $program['program_id']; ?>, <?php echo $period_id ?? 'null'; ?>); return false;">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                    <div class="mt-1 d-grid">
+                                        <?php if (isset($program['submission_id']) && !empty($program['submission_id'])): ?>
+                                            <a href="unsubmit.php?program_id=<?php echo $program['program_id']; ?>&period_id=<?php echo $period_id; ?>" 
+                                               class="btn btn-outline-warning btn-sm w-100" 
+                                               title="Unsubmit Program for this Period"
+                                               onclick="return confirm('Are you sure you want to unsubmit this program for the period? This will revert its status and allow the agency to edit it again.');">
+                                                <i class="fas fa-undo"></i> Unsubmit
+                                            </a>
+                                        <?php else: ?>
+                                            <small class="text-muted">No submissions</small>
+                                        <?php endif; ?>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Store program data for JavaScript filtering -->
 <script>
-function confirmDeleteProgram(programId, periodId) {
-    if (confirm('Are you sure you want to delete this program? This action cannot be undone.')) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = 'delete_program.php?id=' + programId + (periodId ? '&period_id=' + periodId : '');
-
-        const programIdInput = document.createElement('input');
-        programIdInput.type = 'hidden';
-        programIdInput.name = 'program_id';
-        programIdInput.value = programId;
-        form.appendChild(programIdInput);
-
-        const confirmInput = document.createElement('input');
-        confirmInput.type = 'hidden';
-        confirmInput.name = 'confirm_delete';
-        confirmInput.value = '1';
-        form.appendChild(confirmInput);
-        
-        if (periodId) {
-            const periodIdInput = document.createElement('input');
-            periodIdInput.type = 'hidden';
-            periodIdInput.name = 'period_id';
-            periodIdInput.value = periodId;
-            form.appendChild(periodIdInput);
-        }
-
-        document.body.appendChild(form);
-        form.submit();
-    }
-    }
+    // Make program data available to JavaScript for client-side filtering
+    const unsubmittedPrograms = <?php echo json_encode($unsubmitted_programs, JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+    const submittedPrograms = <?php echo json_encode($submitted_programs, JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+    const periodId = <?php echo json_encode($period_id); ?>;
 </script>
 </main>
 

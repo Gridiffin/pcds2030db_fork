@@ -34,8 +34,18 @@ $sector_data = get_sector_data_for_period($period_id);
 $recent_submissions = get_recent_submissions($period_id, 5);
 
 // Get both assigned and agency-created programs for display
-$assigned_programs = get_admin_programs_list($period_id, ['is_assigned' => true]);
-$agency_programs = get_admin_programs_list($period_id, ['is_assigned' => false]);
+$assigned_programs = get_admin_programs_list($period_id, [
+    'is_assigned' => true,
+    'limit' => 5,
+    'sort_by' => 'p.created_at',
+    'sort_order' => 'DESC'
+]);
+$agency_programs = get_admin_programs_list($period_id, [
+    'is_assigned' => false,
+    'limit' => 5,
+    'sort_by' => 'p.created_at',
+    'sort_order' => 'DESC'
+]);
 
 // Count assigned and agency-created programs
 $assigned_count = count($assigned_programs);
@@ -187,7 +197,7 @@ const hasActivePeriod = <?php echo $hasActivePeriod ? 'true' : 'false'; ?>;
                             </div>
                             <div class="stat-card-content">
                                 <div class="stat-title">Programs Delayed</div>
-                                <div class="stat-value">
+                                <div class="stat-value>
                                     <?php echo $submission_stats['delayed_programs'] ?? 0; ?>
                                 </div>
                                 <?php if (isset($submission_stats['total_programs']) && $submission_stats['total_programs'] > 0): ?>
@@ -232,112 +242,127 @@ const hasActivePeriod = <?php echo $hasActivePeriod ? 'true' : 'false'; ?>;
             <div class="col-12">
                 <div class="card shadow-sm">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="card-title m-0">Programs Overview</h5>                        <div>
-                            <a href="<?php echo view_url('admin', 'programs.php', ['program_type' => 'assigned']); ?>" class="btn btn-sm btn-success me-2">
-                                <i class="fas fa-tasks me-1"></i> View Assigned Programs
-                            </a>
-                            <a href="<?php echo view_url('admin', 'programs.php', ['program_type' => 'agency']); ?>" class="btn btn-sm btn-info">
-                                <i class="fas fa-list me-1"></i> View Agency Programs
-                            </a>
-                        </div>
+                        <h5 class="card-title m-0">Programs Overview</h5>
                     </div>
                     <div class="card-body">
-                        <div class="row gx-4">
-                            <!-- Assigned Programs -->
+                        <div class="row gx-4 gy-4">
+                            <!-- Assigned Programs Section -->
                             <div class="col-md-6">
-                                <h6 class="border-bottom pb-2 mb-3">
-                                    <i class="fas fa-tasks text-success me-2"></i>Assigned Programs
-                                    <span class="badge bg-success ms-2"><?php echo $assigned_count; ?></span>
-                                </h6>
-                                  <?php if (empty($assigned_programs)): ?>
-                                    <div class="alert alert-light">
-                                        <i class="fas fa-info-circle me-2"></i>No assigned programs found.
-                                        <a href="<?php echo view_url('admin', 'programs/assign_programs.php'); ?>" class="alert-link">Assign programs to agencies</a>
+                                <div class="p-3 border rounded h-100 bg-light">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <span class="badge bg-success me-2" style="min-width: 90px;">Assigned</span>
+                                        <span class="fw-bold">Latest Assigned Programs</span>
+                                        <span class="badge bg-secondary ms-auto">Total: <?php echo $assigned_count; ?></span>
                                     </div>
-                                <?php else: ?>
-                                    <div class="table-responsive">
-                                        <table class="table table-sm table-hover">
-                                            <thead class="table-light">
-                                                <tr>
-                                                    <th>Program</th>
-                                                    <th>Agency</th>
-                                                    <th></th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <?php $count = 0; ?>                                                <?php foreach ($assigned_programs as $program): ?>
-                                                    <?php if ($count < 5): ?>
+                                    <?php if (empty($assigned_programs)): ?>
+                                        <div class="alert alert-light">
+                                            <i class="fas fa-info-circle me-2"></i>No assigned programs found.
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-hover table-custom" style="table-layout: fixed; width: 100%; min-width: 600px;">
+                                                <colgroup>
+                                                    <col style="width: 38%">
+                                                    <col style="width: 28%">
+                                                    <col style="width: 22%">
+                                                    <col style="width: 12%">
+                                                </colgroup>
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th>Program Name</th>
+                                                        <th>Agency</th>
+                                                        <th>Created Date</th>
+                                                        <th>Type</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <?php foreach ($assigned_programs as $program): ?>
                                                         <tr>
-                                                            <td>
+                                                            <td class="text-truncate" title="<?php echo htmlspecialchars($program['program_name']); ?>">
                                                                 <a href="<?php echo view_url('admin', 'programs/view_program.php', ['id' => $program['program_id']]); ?>" class="text-decoration-none">
                                                                     <?php echo htmlspecialchars($program['program_name']); ?>
                                                                 </a>
                                                             </td>
-                                                            <td><?php echo htmlspecialchars($program['agency_name']); ?></td>
+                                                            <td class="text-truncate" title="<?php echo htmlspecialchars($program['agency_name']); ?>">
+                                                                <?php echo htmlspecialchars($program['agency_name']); ?>
+                                                            </td>
+                                                            <td>
+                                                                <?php echo date('M j, Y', strtotime($program['created_at'])); ?>
+                                                            </td>
+                                                            <td>
+                                                                <span class="badge bg-success">Assigned</span>
+                                                            </td>
                                                         </tr>
-                                                        <?php $count++; ?>
-                                                    <?php endif; ?>
-                                                <?php endforeach; ?>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                      <?php if ($assigned_count > 5): ?>
+                                                    <?php endforeach; ?>
+                                                </tbody>
+                                            </table>
+                                        </div>
                                         <div class="text-center mt-2">
                                             <a href="<?php echo view_url('admin', 'programs.php', ['program_type' => 'assigned']); ?>" class="btn btn-sm btn-outline-success">
                                                 View All Assigned Programs <i class="fas fa-arrow-right ms-1"></i>
                                             </a>
                                         </div>
                                     <?php endif; ?>
-                                <?php endif; ?>
+                                </div>
                             </div>
-                            
-                            <!-- Agency Created Programs -->
+                            <!-- Agency Created Programs Section -->
                             <div class="col-md-6">
-                                <h6 class="border-bottom pb-2 mb-3">
-                                    <i class="fas fa-list text-info me-2"></i>Agency Created Programs
-                                    <span class="badge bg-info ms-2"><?php echo $agency_count; ?></span>
-                                </h6>
-                                
-                                <?php if (empty($agency_programs)): ?>
-                                    <div class="alert alert-light">
-                                        <i class="fas fa-info-circle me-2"></i>No agency-created programs found.
+                                <div class="p-3 border rounded h-100 bg-light">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <span class="badge bg-info me-2" style="min-width: 90px;">Agency</span>
+                                        <span class="fw-bold">Latest Agency-Created Programs</span>
+                                        <span class="badge bg-secondary ms-auto">Total: <?php echo $agency_count; ?></span>
                                     </div>
-                                <?php else: ?>
-                                    <div class="table-responsive">
-                                        <table class="table table-sm table-hover">
-                                            <thead class="table-light">
-                                                <tr>
-                                                    <th>Program</th>
-                                                    <th>Agency</th>
-                                                    <th></th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <?php $count = 0; ?>                                                <?php foreach ($agency_programs as $program): ?>
-                                                    <?php if ($count < 5): ?>
+                                    <?php if (empty($agency_programs)): ?>
+                                        <div class="alert alert-light">
+                                            <i class="fas fa-info-circle me-2"></i>No agency-created programs found.
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-hover table-custom" style="table-layout: fixed; width: 100%; min-width: 600px;">
+                                                <colgroup>
+                                                    <col style="width: 38%">
+                                                    <col style="width: 28%">
+                                                    <col style="width: 22%">
+                                                    <col style="width: 12%">
+                                                </colgroup>
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th>Program Name</th>
+                                                        <th>Agency</th>
+                                                        <th>Created Date</th>
+                                                        <th>Type</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <?php foreach ($agency_programs as $program): ?>
                                                         <tr>
-                                                            <td>
+                                                            <td class="text-truncate" title="<?php echo htmlspecialchars($program['program_name']); ?>">
                                                                 <a href="<?php echo view_url('admin', 'programs/view_program.php', ['id' => $program['program_id']]); ?>" class="text-decoration-none">
                                                                     <?php echo htmlspecialchars($program['program_name']); ?>
                                                                 </a>
                                                             </td>
-                                                            <td><?php echo htmlspecialchars($program['agency_name']); ?></td>
+                                                            <td class="text-truncate" title="<?php echo htmlspecialchars($program['agency_name']); ?>">
+                                                                <?php echo htmlspecialchars($program['agency_name']); ?>
+                                                            </td>
+                                                            <td>
+                                                                <?php echo date('M j, Y', strtotime($program['created_at'])); ?>
+                                                            </td>
+                                                            <td>
+                                                                <span class="badge bg-info">Agency-Created</span>
+                                                            </td>
                                                         </tr>
-                                                        <?php $count++; ?>
-                                                    <?php endif; ?>
-                                                <?php endforeach; ?>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                    
-                                    <?php if ($agency_count > 5): ?>
+                                                    <?php endforeach; ?>
+                                                </tbody>
+                                            </table>
+                                        </div>
                                         <div class="text-center mt-2">
                                             <a href="<?php echo view_url('admin', 'programs.php', ['program_type' => 'agency']); ?>" class="btn btn-sm btn-outline-info">
                                                 View All Agency Programs <i class="fas fa-arrow-right ms-1"></i>
                                             </a>
                                         </div>
                                     <?php endif; ?>
-                                <?php endif; ?>
+                                </div>
                             </div>
                         </div>
                     </div>

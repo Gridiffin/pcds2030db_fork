@@ -222,11 +222,9 @@ function get_admin_programs_list($period_id = null, $filters = []) {
         if ($period_result->num_rows > 0) {
             $period_info = $period_result->fetch_assoc();
         }
-    }
-
-    // Construct the main query with subquery to get latest submission per program
+    }    // Construct the main query with subquery to get latest submission per program
     $sql = "SELECT 
-                p.program_id, p.program_name, p.owner_agency_id, p.sector_id, p.created_at,
+                p.program_id, p.program_name, p.owner_agency_id, p.sector_id, p.created_at, p.is_assigned,
                 s.sector_name, 
                 u.agency_name,
                 latest_sub.submission_id, latest_sub.is_draft, latest_sub.submission_date, latest_sub.updated_at, latest_sub.period_id AS submission_period_id,
@@ -250,8 +248,10 @@ function get_admin_programs_list($period_id = null, $filters = []) {
     
     // Apply filters
     if (!empty($filters)) {
+        // Remove any reference to ps.status (column deleted)
+        // Use rating from JSON content instead
         if (isset($filters['status']) && $filters['status'] !== 'all' && $filters['status'] !== '') {
-            $conditions[] = "ps.status = ?";
+            $conditions[] = "COALESCE(JSON_UNQUOTE(JSON_EXTRACT(latest_sub.content_json, '$.rating')), 'not-started') = ?";
             $params[] = $filters['status'];
             $param_types .= 's';
         }
@@ -276,13 +276,19 @@ function get_admin_programs_list($period_id = null, $filters = []) {
             $param_types .= "ss";
         }
     }
-    
-    // Add program creation date filtering based on the viewing_period_id's start and end dates
+      // Add program creation date filtering based on the viewing_period_id's start and end dates
     if ($period_info) {
         $conditions[] = "p.created_at >= ? AND p.created_at <= ?";
         $params[] = $period_info['start_date'] . ' 00:00:00';
         $params[] = $period_info['end_date'] . ' 23:59:59';
         $param_types .= 'ss';
+    }
+    
+    // Add is_assigned filter
+    if (isset($filters['is_assigned'])) {
+        $conditions[] = "p.is_assigned = ?";
+        $params[] = $filters['is_assigned'] ? 1 : 0;
+        $param_types .= "i";
     }
     
     if (!empty($conditions)) {
@@ -327,7 +333,7 @@ function get_admin_programs_list($period_id = null, $filters = []) {
     // ) ps ON p.program_id = ps.program_id";
     // This subquery for ps might be causing issues with ONLY_FULL_GROUP_BY if not handled correctly when integrated.    // Simpler JOIN without subquery for ps:
     $sql = "SELECT 
-                p.program_id, p.program_name, p.owner_agency_id, p.sector_id, p.created_at,
+                p.program_id, p.program_name, p.owner_agency_id, p.sector_id, p.created_at, p.is_assigned,
                 s.sector_name, 
                 u.agency_name,
                 latest_sub.submission_id, latest_sub.is_draft, latest_sub.submission_date, latest_sub.updated_at, latest_sub.period_id AS submission_period_id,
@@ -359,11 +365,9 @@ function get_admin_programs_list($period_id = null, $filters = []) {
         $params[] = $period_info['start_date'] . ' 00:00:00';
         $params[] = $period_info['end_date'] . ' 23:59:59';
         $param_types .= 'ss';
-    }
-
-    // Add other filters as before
+    }    // Add other filters as before
     if (isset($filters['status']) && $filters['status'] !== 'all' && $filters['status'] !== '') {
-        $where_clauses[] = "ps.status = ?";
+        $where_clauses[] = "COALESCE(JSON_UNQUOTE(JSON_EXTRACT(latest_sub.content_json, '$.rating')), 'not-started') = ?";
         $params[] = $filters['status'];
         $param_types .= "s";
     }
@@ -376,13 +380,21 @@ function get_admin_programs_list($period_id = null, $filters = []) {
         $where_clauses[] = "p.owner_agency_id = ?";
         $params[] = $filters['agency_id'];
         $param_types .= "i";
-    }    if (isset($filters['search']) && !empty($filters['search'])) {
+    }
+    if (isset($filters['search']) && !empty($filters['search'])) {
         $search_term = '%' . $filters['search'] . '%';
         $where_clauses[] = "(p.program_name LIKE ?)";
         $params[] = $search_term;
-        $param_types .= "ss";
+        $param_types .= "s";
     }
 
+    // Add is_assigned filter
+    if (isset($filters['is_assigned'])) {
+        $where_clauses[] = "p.is_assigned = ?";
+        $params[] = $filters['is_assigned'] ? 1 : 0;
+        $param_types .= "i";
+    }
+    
     if (!empty($where_clauses)) {
         $sql .= " WHERE " . implode(" AND ", $where_clauses);
     }
