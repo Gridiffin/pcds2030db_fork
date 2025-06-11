@@ -396,7 +396,7 @@ $outcomes_details = []; // This will hold the KPI data to be sent to the client
 
 // Process selected KPI IDs if provided - KPI selection functionality is removed.
 // The following block that processed $selected_kpi_ids_raw and fetched specific KPIs
-// is now entirely commented out or removed, so $metrics_details remains empty here.
+// is now entirely commented out or removed, so $outcomes_details remains empty here.
 
 /*
 if (!empty($selected_kpi_ids_raw)) {
@@ -414,8 +414,7 @@ if (!empty($selected_kpi_ids_raw)) {
     if (!empty($selected_kpi_ids)) {
         try {
             $placeholders = implode(',', array_fill(0, count($selected_kpi_ids), '?'));
-            $order_fields = implode(',', $selected_kpi_ids);
-              $kpi_query = "SELECT detail_id, detail_name, detail_json FROM outcomes_details 
+            $order_fields = implode(',', $selected_kpi_ids);              $kpi_query = "SELECT detail_id, detail_name, detail_json FROM outcomes_details 
                           WHERE is_draft = 0 AND detail_id IN ($placeholders)
                           ORDER BY FIELD(detail_id, $order_fields)";
             
@@ -435,9 +434,8 @@ if (!empty($selected_kpi_ids_raw)) {
 
             $stmt_kpi->execute();
             $result_kpi = $stmt_kpi->get_result();
-            
-            while ($row = $result_kpi->fetch_assoc()) {
-                $metrics_details[] = [
+              while ($row = $result_kpi->fetch_assoc()) {
+                $outcomes_details[] = [
                     'id' => $row['detail_id'],
                     'name' => $row['detail_name'],
                     'detail_json' => $row['detail_json']
@@ -742,7 +740,7 @@ $report_data = [
     'programs' => $programs, // Add programs with the correct key name that the frontend expects
     'charts' => $charts_data,    'draftDate' => $draft_date,
     'sector_id' => $sector_id,  // Include sector_id for client-side use
-    'metrics_details' => $outcomes_details,  // This is the primary source for KPIs now
+    'outcomes_details' => $outcomes_details,  // This is the primary source for KPIs now
 ];
 
 // Remove any undefined variables reference that could cause PHP warnings

@@ -48,7 +48,7 @@ if (typeof window.ReportPopulator !== 'undefined') {
                 });
             }
             
-            // Add KPI boxes with metrics_details data
+            // Add KPI boxes with outcomes_details data
             addKpiBoxes(slide, data, pptx, themeColors, defaultFont);
             addFooterSection(slide, data, pptx, themeColors, defaultFont);
             
@@ -83,10 +83,10 @@ if (typeof window.ReportPopulator !== 'undefined') {
      * @param {string} defaultFont - The default font
      */
     function addKpiBoxes(slide, data, pptx, themeColors, defaultFont) {
-        console.log("Adding KPI boxes with outcomes_details data");        if (data && data.metrics_details && data.metrics_details.length > 0) {
-            console.log("Using outcomes_details data for KPIs:", data.metrics_details);
+        console.log("Adding KPI boxes with outcomes_details data");        if (data && data.outcomes_details && data.outcomes_details.length > 0) {
+            console.log("Using outcomes_details data for KPIs:", data.outcomes_details);
 
-            data.metrics_details.forEach((kpi, index) => {
+            data.outcomes_details.forEach((kpi, index) => {
                 if (index < 3) { // Ensure we only process up to 3 KPIs
                     try {
                         const detailJson = JSON.parse(kpi.detail_json);
