@@ -111,9 +111,8 @@ if (typeof window.ReportUI !== 'undefined') {
             if (elements.confirmDeleteBtn) {
                 elements.confirmDeleteBtn.addEventListener('click', function() {
                     if (!reportIdToDelete) return;
-                    
-                    // Store reference to the button that triggered the modal
-                    const triggerButton = document.querySelector(`.action-btn-delete[data-report-id="${reportIdToDelete}"]`);
+                      // Store reference to the button that triggered the modal
+                    const triggerButton = document.querySelector(`.delete-report-btn[data-report-id="${reportIdToDelete}"]`);
                     
                     // Disable delete button and show loading state
                     elements.confirmDeleteBtn.disabled = true;

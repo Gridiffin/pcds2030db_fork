@@ -54,7 +54,13 @@ $conn->begin_transaction();
 
 try {
     // Get the report details before deletion for audit logging
-    $query = "SELECT report_id, pptx_path, agency_name, period_name, generated_at FROM reports WHERE report_id = ?";
+    $query = "SELECT r.report_id, r.report_name, r.pptx_path, r.generated_at,
+                     u.username, u.agency_name,
+                     rp.quarter, rp.year
+              FROM reports r 
+              LEFT JOIN users u ON r.generated_by = u.user_id 
+              LEFT JOIN reporting_periods rp ON r.period_id = rp.period_id 
+              WHERE r.report_id = ?";
     $stmt = $conn->prepare($query);
     $stmt->bind_param('i', $reportId);
     $stmt->execute();
@@ -68,8 +74,18 @@ try {
     }
     
     $report = $result->fetch_assoc();
-    $filePath = '../reports/' . $report['pptx_path'];
-    $report_info = "{$report['agency_name']} - {$report['period_name']} (Generated: {$report['generated_at']})";
+    
+    // Construct the file path - handle both old and new path formats
+    $filePath = '';
+    if (strpos($report['pptx_path'], 'app/reports/') === 0) {
+        // New format: path includes app/reports/
+        $filePath = ROOT_PATH . $report['pptx_path'];
+    } else {
+        // Old format: path starts from pptx/
+        $filePath = ROOT_PATH . 'app/reports/' . $report['pptx_path'];
+    }
+    
+    $report_info = "{$report['agency_name']} - Q{$report['quarter']} {$report['year']} (Generated: {$report['generated_at']})";
     
     // Delete from database
     $deleteQuery = "DELETE FROM reports WHERE report_id = ?";

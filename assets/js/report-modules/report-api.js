@@ -123,17 +123,46 @@ if (typeof window.ReportAPI !== 'undefined') {
             formData.append('report_name', reportName);
             formData.append('description', description);
             formData.append('is_public', isPublic);
-            
-            // Send to server
+              // Send to server
             fetch(apiUrl("save_report.php"), {
                 method: 'POST',
                 body: formData
             })
             .then(response => {
+                console.log('Upload response status:', response.status);
+                console.log('Upload response headers:', response.headers);
+                
                 if (!response.ok) {
                     throw new Error(`HTTP error! Status: ${response.status}`);
                 }
-                return response.json();
+                
+                // Get raw text first to debug potential JSON issues
+                return response.text();
+            })
+            .then(rawText => {
+                console.log('Upload raw response length:', rawText.length);
+                console.log('Upload raw response first 500 chars:', rawText.substring(0, 500));
+                
+                // Check for PHP errors or non-JSON content
+                if (rawText.trim().startsWith('<?php') || 
+                    rawText.includes('Warning:') || 
+                    rawText.includes('Notice:') || 
+                    rawText.includes('Fatal error:') ||
+                    rawText.includes('Parse error:')) {
+                    console.error('PHP code or error in upload response:', rawText.substring(0, 1000));
+                    throw new Error('PHP error detected in upload response. Check console for details.');
+                }
+                
+                // Try to parse JSON
+                try {
+                    const result = JSON.parse(rawText);
+                    console.log('Upload JSON parsed successfully:', result);
+                    return result;
+                } catch (error) {
+                    console.error('Upload JSON parsing error:', error);
+                    console.error('Raw upload response causing JSON parse error:', rawText.substring(0, 1000));
+                    throw new Error('Upload API returned invalid JSON. See console for details.');
+                }
             })
             .then(result => {
                 if (result.success) {
@@ -143,6 +172,7 @@ if (typeof window.ReportAPI !== 'undefined') {
                 }
             })
             .catch(error => {
+                console.error('Upload error:', error);
                 reject(error);
             });
         });

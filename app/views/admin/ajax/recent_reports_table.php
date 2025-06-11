@@ -7,11 +7,11 @@
  */
 
 // Include necessary files
-require_once '../../../../config/config.php';
-require_once '../../../../app/lib/db_connect.php';
-require_once '../../../../app/lib/session.php';
-require_once '../../../../app/lib/functions.php';
-require_once '../../../../app/lib/admins/index.php';
+require_once '../../../config/config.php';
+require_once '../../../lib/db_connect.php';
+require_once '../../../lib/session.php';
+require_once '../../../lib/functions.php';
+require_once '../../../lib/admins/index.php';
 
 // Verify user is admin
 if (!is_admin()) {
@@ -121,10 +121,11 @@ if (!empty($recentReports)): ?>
                                        title="Download Report">
                                         <i class="fas fa-download"></i>
                                     </a>
-                                <?php endif; ?>
-                                <button type="button" 
+                                <?php endif; ?>                                <button type="button" 
                                         class="btn btn-outline-danger btn-sm delete-report-btn" 
                                         title="Delete Report"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#deleteReportModal"
                                         data-report-id="<?php echo $report['report_id']; ?>" 
                                         data-report-name="<?php echo htmlspecialchars($report['report_name']); ?>">
                                     <i class="fas fa-trash"></i>

@@ -8,6 +8,13 @@
  * Only admin users are allowed to access this endpoint.
  */
 
+// Suppress any output that might break JSON
+ob_start();
+
+// Ensure no error output interferes with JSON response
+ini_set('display_errors', 0);
+error_reporting(0);
+
 // Include necessary files
 require_once dirname(__DIR__) . '/config/config.php';
 require_once ROOT_PATH . 'app/lib/db_connect.php';
@@ -18,7 +25,9 @@ require_once ROOT_PATH . 'app/lib/audit_log.php';
 
 // Verify user is admin
 if (!is_admin()) {
+    ob_clean(); // Clear any output
     header('HTTP/1.1 403 Forbidden');
+    header('Content-Type: application/json');
     echo json_encode(['error' => 'Permission denied. Only admin users can save reports.']);
     exit;
 }
@@ -53,7 +62,9 @@ if ($period_id <= 0 || $sector_id <= 0 || empty($report_name)) {
     // Log failed report save attempt due to invalid parameters
     log_audit_action('save_report', "Failed to save report due to invalid parameters. Period ID: {$period_id}, Sector ID: {$sector_id}, Report Name: '{$report_name}'", 'failure');
     
+    ob_clean(); // Clear any output
     header('HTTP/1.1 400 Bad Request');
+    header('Content-Type: application/json');
     echo json_encode(['error' => 'Missing required parameters']);
     exit;
 }
@@ -61,7 +72,9 @@ if ($period_id <= 0 || $sector_id <= 0 || empty($report_name)) {
 // Get period and sector details for validation
 $period = get_reporting_period($period_id);
 if (!$period) {
+    ob_clean(); // Clear any output
     header('HTTP/1.1 400 Bad Request');
+    header('Content-Type: application/json');
     echo json_encode(['error' => 'Invalid reporting period']);
     exit;
 }
@@ -73,7 +86,9 @@ $stmt->execute();
 $sector_result = $stmt->get_result();
 
 if ($sector_result->num_rows === 0) {
+    ob_clean(); // Clear any output
     header('HTTP/1.1 400 Bad Request');
+    header('Content-Type: application/json');
     echo json_encode(['error' => 'Invalid sector']);
     exit;
 }
@@ -86,7 +101,9 @@ if (!isset($_FILES['report_file']) || $_FILES['report_file']['error'] != UPLOAD_
     $upload_error = isset($_FILES['report_file']) ? $_FILES['report_file']['error'] : 'No file';
     log_audit_action('save_report', "Failed to save report '{$report_name}' for {$sector['sector_name']} - Upload error: {$upload_error}", 'failure');
     
+    ob_clean(); // Clear any output
     header('HTTP/1.1 400 Bad Request');
+    header('Content-Type: application/json');
     echo json_encode(['error' => 'No file uploaded or upload error']);
     exit;
 }
@@ -100,7 +117,9 @@ if ($file_ext !== 'pptx') {
     // Log invalid file type attempt
     log_audit_action('save_report', "Failed to save report '{$report_name}' for {$sector['sector_name']} - Invalid file type: {$file_ext}", 'failure');
     
+    ob_clean(); // Clear any output
     header('HTTP/1.1 400 Bad Request');
+    header('Content-Type: application/json');
     echo json_encode(['error' => 'Invalid file type. Only PPTX files are allowed.']);
     exit;
 }
@@ -117,7 +136,9 @@ if (!move_uploaded_file($uploaded_file['tmp_name'], $filepath)) {
     // Log file save failure
     log_audit_action('save_report', "Failed to save report '{$report_name}' for {$sector['sector_name']} - File system error during upload", 'failure');
     
+    ob_clean(); // Clear any output
     header('HTTP/1.1 500 Internal Server Error');
+    header('Content-Type: application/json');
     echo json_encode(['error' => 'Failed to save the file']);
     exit;
 }
@@ -141,7 +162,9 @@ if (!$stmt->execute()) {
     // Log database error
     log_audit_action('save_report', "Failed to save report '{$report_name}' for {$sector['sector_name']} - Database error: " . $stmt->error, 'failure');
     
+    ob_clean(); // Clear any output
     header('HTTP/1.1 500 Internal Server Error');
+    header('Content-Type: application/json');
     echo json_encode(['error' => 'Failed to record report in database: ' . $stmt->error]);
     exit;
 }
@@ -164,6 +187,7 @@ $response = [
     'filename' => $filename
 ];
 
+ob_clean(); // Clear any output that might have been generated
 header('Content-Type: application/json');
 echo json_encode($response);
 exit;

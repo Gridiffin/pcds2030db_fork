@@ -99,10 +99,11 @@ function formatPeriod($report) {
                                        title="Download Report">
                                         <i class="fas fa-download"></i>
                                     </a>
-                                <?php endif; ?>
-                                <button type="button" 
+                                <?php endif; ?>                                <button type="button" 
                                         class="btn btn-outline-danger btn-sm delete-report-btn" 
                                         title="Delete Report"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#deleteReportModal"
                                         data-report-id="<?php echo $report['report_id']; ?>" 
                                         data-report-name="<?php echo htmlspecialchars($report['report_name']); ?>">
                                     <i class="fas fa-trash"></i>

@@ -480,18 +480,17 @@ if (typeof window.ReportPopulator !== 'undefined') {
                 
                 // Populate slide with top and bottom sections
                 populateSlide(slide, data, pptx, themeColors);
-                
-                // Get PPTX as blob
+                  // Get PPTX as blob
                 if (statusMessage) statusMessage.textContent = 'Finalizing presentation...';
                 
-                pptx.writeFile('forestry-report')
-                    .then(() => {
-                        // Return empty blob to avoid errors
-                        const emptyBlob = new Blob(['success'], { type: 'application/octet-stream' });
-                        resolve(emptyBlob);
+                // Use write('blob') to get the actual PPTX content as a Blob for server upload
+                pptx.write('blob')
+                    .then(blob => {
+                        console.log('PPTX generated successfully as blob, size:', blob.size, 'bytes');
+                        resolve(blob);
                     })
                     .catch(error => {
-                        console.error('Error in writeFile:', error);
+                        console.error('Error generating PPTX blob:', error);
                         reject(new Error('Error generating PPTX: ' + error.message));
                     });
                 

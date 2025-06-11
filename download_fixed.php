@@ -10,7 +10,6 @@ ob_start();
 
 // Include necessary files
 require_once 'app/config/config.php';
-require_once 'app/lib/db_connect.php';
 require_once 'app/lib/session.php';
 require_once 'app/lib/audit_log.php';
 
