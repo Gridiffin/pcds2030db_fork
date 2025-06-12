@@ -16,6 +16,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/agencies/index.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/agencies/outcomes.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/rating_helpers.php';
 require_once PROJECT_ROOT_PATH . 'app/controllers/DashboardController.php';
 
@@ -50,6 +51,9 @@ $dashboardData = $dashboardController->getDashboardData(
 $stats = $dashboardData['stats'];
 $chartData = $dashboardData['chart_data'];
 $recentUpdates = $dashboardData['recent_updates'];
+
+// Get outcomes statistics for the agency's sector
+$outcomes_stats = get_agency_outcomes_statistics($_SESSION['sector_id'], $period_id);
 
 // Additional scripts needed for dashboard
 $additionalScripts = [
@@ -291,8 +295,110 @@ require_once PROJECT_ROOT_PATH . 'app/views/layouts/page_header.php';
                                 <a href="../programs/view_programs.php" class="btn btn-outline-primary">
                                     View All Programs <i class="fas fa-arrow-right ms-1"></i>
                                 </a>
+                            </div>                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Outcomes Overview Section -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h5 class="card-title m-0 text-white">
+                            <i class="fas fa-clipboard-list me-2 text-warning"></i>Outcomes Overview
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row gx-4 gy-4">
+                            <!-- Outcomes Statistics Cards -->
+                            <div class="col-lg-4 col-md-6">
+                                <div class="card bg-primary text-white h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-clipboard-list fa-3x mb-3"></i>
+                                        <h4><?php echo $outcomes_stats['total_outcomes']; ?></h4>
+                                        <p class="mb-0">Total Outcomes</p>
+                                    </div>
+                                </div>
                             </div>
-                        <?php endif; ?>
+                            
+                            <div class="col-lg-4 col-md-6">
+                                <div class="card bg-success text-white h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-check-square fa-3x mb-3"></i>
+                                        <h4><?php echo $outcomes_stats['submitted_outcomes']; ?></h4>
+                                        <p class="mb-0">Submitted</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-lg-4 col-md-6">
+                                <div class="card bg-warning text-white h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-file-alt fa-3x mb-3"></i>
+                                        <h4><?php echo $outcomes_stats['draft_outcomes']; ?></h4>
+                                        <p class="mb-0">Drafts</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Outcomes Actions -->
+                        <div class="row mt-4">
+                            <div class="col-md-6">
+                                <div class="p-3 border rounded h-100 bg-light">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <span class="badge bg-success me-2" style="min-width: 90px;">Submit</span>
+                                        <span class="fw-bold">Manage Your Outcomes</span>
+                                    </div>
+                                    <p class="text-muted mb-3">Submit and manage outcomes data for your sector</p>
+                                    <div class="d-flex gap-2">
+                                        <a href="../outcomes/submit_outcomes.php" class="btn btn-sm btn-outline-success">
+                                            <i class="fas fa-upload me-1"></i> Submit Outcomes
+                                        </a>
+                                        <a href="../outcomes/create_outcome.php" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-plus-circle me-1"></i> Create New
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="p-3 border rounded h-100 bg-light">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <span class="badge bg-info me-2" style="min-width: 90px;">Activity</span>
+                                        <span class="fw-bold">Recent Outcomes Activity</span>
+                                    </div>
+                                    <?php if (empty($outcomes_stats['recent_outcomes'])): ?>
+                                        <div class="alert alert-light">
+                                            <i class="fas fa-info-circle me-2"></i>No recent outcomes activity found.
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="list-group list-group-flush">
+                                            <?php foreach (array_slice($outcomes_stats['recent_outcomes'], 0, 3) as $outcome): ?>
+                                                <div class="list-group-item px-0 py-2 border-0">
+                                                    <div class="d-flex justify-content-between align-items-start">
+                                                        <div>
+                                                            <h6 class="mb-1"><?php echo htmlspecialchars($outcome['table_name']); ?></h6>
+                                                            <small class="text-muted"><?php echo date('M j, Y', strtotime($outcome['updated_at'])); ?></small>
+                                                        </div>
+                                                        <span class="badge bg-<?php echo $outcome['is_draft'] ? 'warning' : 'success'; ?>">
+                                                            <?php echo $outcome['is_draft'] ? 'Draft' : 'Submitted'; ?>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                        <div class="text-center mt-2">
+                                            <a href="../outcomes/submit_outcomes.php" class="btn btn-sm btn-outline-info">
+                                                <i class="fas fa-eye me-1"></i> View All Outcomes <i class="fas fa-arrow-right ms-1"></i>
+                                            </a>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

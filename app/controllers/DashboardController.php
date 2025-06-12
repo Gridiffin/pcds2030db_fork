@@ -172,9 +172,8 @@ class DashboardController {
                         GROUP BY program_id
                     ) ps2 ON ps1.program_id = ps2.program_id AND ps1.submission_id = ps2.max_id
                   ) ps ON p.program_id = ps.program_id
-                  WHERE (p.owner_agency_id = ? OR (p.is_assigned = 1 AND p.owner_agency_id = ?))
-                  ORDER BY COALESCE(ps.submission_date, p.updated_at, p.created_at) DESC
-                  LIMIT 10";
+                  WHERE (p.owner_agency_id = ? OR (p.is_assigned = 1 AND p.owner_agency_id = ?))                  ORDER BY COALESCE(ps.submission_date, p.updated_at, p.created_at) DESC
+                  LIMIT 5";
         
         $stmt = $this->db->prepare($query);
         $stmt->bind_param("iii", $period_id, $agency_id, $agency_id);
