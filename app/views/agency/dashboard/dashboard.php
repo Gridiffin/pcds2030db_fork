@@ -58,7 +58,9 @@ $outcomes_stats = get_agency_outcomes_statistics($_SESSION['sector_id'], $period
 // Additional scripts needed for dashboard
 $additionalScripts = [
     asset_url('js', 'period_selector.js'),
-    asset_url('js/agency', 'dashboard.js')
+    asset_url('js/agency', 'dashboard.js'),
+    asset_url('js/agency', 'dashboard_chart.js'),
+    asset_url('js/agency', 'dashboard_charts.js')
 ];
 
 // Include header - removed dashboard-specific body class to fix navbar appearance
@@ -413,6 +415,103 @@ require_once PROJECT_ROOT_PATH . 'app/views/layouts/page_header.php';
         labels: <?php echo json_encode($chartData['labels']); ?>,
         data: <?php echo json_encode($chartData['data']); ?>
     };
+    
+    // Simple, direct chart initialization
+    let programRatingChart = null;
+    
+    function createSimpleChart() {
+        const canvas = document.getElementById('programRatingChart');
+        if (!canvas) {
+            console.error('Chart canvas not found');
+            return;
+        }
+        
+        if (typeof Chart === 'undefined') {
+            console.error('Chart.js not loaded');
+            return;
+        }
+        
+        // Destroy existing chart if it exists
+        if (programRatingChart) {
+            programRatingChart.destroy();
+        }
+        
+        try {
+            programRatingChart = new Chart(canvas, {
+                type: 'doughnut',
+                data: {
+                    labels: programRatingChartData.labels,
+                    datasets: [{
+                        data: programRatingChartData.data,
+                        backgroundColor: ['#ffc107', '#dc3545', '#28a745', '#6c757d'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    const total = context.dataset.data.reduce((acc, val) => acc + val, 0);
+                                    const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+            
+            // Make chart globally accessible for updates
+            window.programRatingChart = programRatingChart;
+            window.dashboardChart = {
+                update: function(newData) {
+                    if (programRatingChart && newData) {
+                        programRatingChart.data.datasets[0].data = newData.data;
+                        programRatingChart.update();
+                    }
+                }
+            };
+            
+        } catch (error) {
+            console.error('Error creating chart:', error);
+        }
+    }
+    
+    // Initialize when DOM is ready and Chart.js is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check if Chart.js is already loaded
+        if (typeof Chart !== 'undefined') {
+            createSimpleChart();
+        } else {
+            // Wait for Chart.js to load
+            let checkCount = 0;
+            const checkInterval = setInterval(function() {
+                checkCount++;
+                if (typeof Chart !== 'undefined') {
+                    createSimpleChart();
+                    clearInterval(checkInterval);
+                } else if (checkCount > 50) { // 5 seconds max wait
+                    console.error('Chart.js failed to load after 5 seconds');
+                    clearInterval(checkInterval);
+                }
+            }, 100);
+        }
+    });
 </script>
 
 <?php

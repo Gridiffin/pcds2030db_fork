@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chart.js Test</title>
+    <style>
+        .chart-container {
+            width: 400px;
+            height: 400px;
+            margin: 50px auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Chart.js Test</h1>
+    <div class="chart-container">
+        <canvas id="testChart"></canvas>
+    </div>
+
+    <!-- Load Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Chart.js loaded:', typeof Chart !== 'undefined');
+            
+            const ctx = document.getElementById('testChart');
+            const testChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['On Track', 'Delayed', 'Completed', 'Not Started'],
+                    datasets: [{
+                        data: [3, 1, 2, 4],
+                        backgroundColor: ['#ffc107', '#dc3545', '#28a745', '#6c757d'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+            
+            console.log('Test chart created:', testChart);
+        });
+    </script>
+</body>
+</html>

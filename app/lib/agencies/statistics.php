@@ -283,17 +283,15 @@ function get_agency_submission_status($agency_id, $period_id = null) {
 
         if ($stats['total_programs'] === 0) {
             return $stats;
-        }
-
-        // Get submission status counts
+        }        // Get submission status counts with proper rating extraction
         $status_query = "SELECT 
-            'not-started' as status, -- status column removed
+            COALESCE(JSON_UNQUOTE(JSON_EXTRACT(ps.content_json, '$.rating')), 'not-started') as rating,
             COUNT(*) as count,
             SUM(CASE WHEN ps.is_draft = 1 THEN 1 ELSE 0 END) as draft_count,
             SUM(CASE WHEN ps.is_draft = 0 THEN 1 ELSE 0 END) as submitted_count
             FROM programs p 
             LEFT JOIN (
-                SELECT program_id, is_draft
+                SELECT program_id, is_draft, content_json
                 FROM program_submissions ps1
                 WHERE (period_id = ? OR ? IS NULL)
                 AND NOT EXISTS (
@@ -302,7 +300,8 @@ function get_agency_submission_status($agency_id, $period_id = null) {
                     AND ps2.submission_id > ps1.submission_id
                 )
             ) ps ON p.program_id = ps.program_id
-            WHERE p.owner_agency_id = ?";
+            WHERE p.owner_agency_id = ?
+            GROUP BY COALESCE(JSON_UNQUOTE(JSON_EXTRACT(ps.content_json, '$.rating')), 'not-started')";
 
         $stmt = $conn->prepare($status_query);
         $stmt->bind_param("iii", $period_id, $period_id, $agency_id);
@@ -310,29 +309,20 @@ function get_agency_submission_status($agency_id, $period_id = null) {
         $result = $stmt->get_result();
 
         $submitted_total = 0;
-        $draft_total = 0;
-
-        while ($row = $result->fetch_assoc()) {
-            $status = strtolower($row['status'] ?? 'not-started');
+        $draft_total = 0;        while ($row = $result->fetch_assoc()) {
+            $rating = strtolower($row['rating'] ?? 'not-started');
             $submitted = $row['submitted_count'] ?? 0;
             $draft = $row['draft_count'] ?? 0;
 
-            // Map status to our categories
-            switch ($status) {
-                case 'on-track':
-                case 'on-track-yearly':
-                    $stats['program_status']['on-track'] += $submitted;
-                    break;
-                case 'delayed':
-                case 'severe-delay':
-                    $stats['program_status']['delayed'] += $submitted;
-                    break;
-                case 'completed':
-                case 'target-achieved':
-                    $stats['program_status']['completed'] += $submitted;
-                    break;
-                default:
-                    $stats['program_status']['not-started'] += $submitted;
+            // Map rating to our categories (only count submitted/finalized programs)
+            if (in_array($rating, ['on-track', 'on-track-yearly'])) {
+                $stats['program_status']['on-track'] += $submitted;
+            } elseif (in_array($rating, ['delayed', 'severe-delay'])) {
+                $stats['program_status']['delayed'] += $submitted;
+            } elseif (in_array($rating, ['completed', 'target-achieved'])) {
+                $stats['program_status']['completed'] += $submitted;
+            } else {
+                $stats['program_status']['not-started'] += $submitted;
             }
 
             $submitted_total += $submitted;

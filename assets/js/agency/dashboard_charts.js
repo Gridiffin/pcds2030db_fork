@@ -8,11 +8,13 @@ let programRatingChart = null; // Updated from programStatusChart to programRati
 
 // Initialize charts when document is ready
 document.addEventListener('DOMContentLoaded', function() {
-    initCharts();
+    // DISABLED: Chart initialization is now handled by dashboard_chart.js to avoid conflicts
+    // initCharts();
     
     // Re-initialize charts when content updated (period changes)
     document.addEventListener('contentUpdated', function() {
-        initCharts();
+        // DISABLED: Chart initialization is now handled by dashboard_chart.js to avoid conflicts
+        // initCharts();
     });
 });
 

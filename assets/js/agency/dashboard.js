@@ -83,49 +83,30 @@ function fetchDashboardData(includeAssigned) {
     console.log('Fetching dashboard data:', {
         periodId,
         includeAssigned,
-        url: ajaxUrl('agency_dashboard_data.php')
+        url: '../ajax/chart_data.php'  // Fixed path - go up one level from dashboard/
     });
     
-    fetch(ajaxUrl('agency_dashboard_data.php'), {
+    // Use the correct path to the AJAX endpoint
+    const formData = new FormData();
+    formData.append('period_id', periodId);
+    formData.append('include_assigned', includeAssigned);
+    
+    fetch('../ajax/chart_data.php', {  // Fixed path
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: new URLSearchParams({
-            period_id: periodId,
-            include_assigned: includeAssigned.toString()
-        }).toString()
+        body: formData
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        return response.text()
-        .then(text => {
-            try {
-                // console.log('Raw response text:', text); // Log the raw response
-                const data = JSON.parse(text);
-                // console.log('Parsed data:', data);
-                return data;
-            } catch (e) {
-                // If parsing fails, log the raw response and throw error
-                console.error('Failed to parse JSON response:', text);
-                throw new Error('Invalid JSON response from server');
-            }
-        });
-    })
+    .then(response => response.json())
     .then(data => {
         console.log('Received dashboard data:', data);
         
-        if (data.error) {
-            throw new Error(data.error);
+        if (!data.success) {
+            throw new Error(data.error || 'Unknown error');
         }
         
         // Update UI components with new data
         renderStatCards(data.stats);
-        if (data.chart_data) {
-            renderRatingChart(data.chart_data);
+        if (data.chart_data && window.dashboardChart) {
+            window.dashboardChart.update(data.chart_data);
         }
         
         // Remove loading indicators
@@ -176,6 +157,9 @@ function renderStatCards(stats) {
         programsSubmitted.innerHTML = `<i class="fas fa-check me-1"></i>${stats.total} Programs`;
     }
 }
+
+// Make renderStatCards globally accessible
+window.renderStatCards = renderStatCards;
 
 /**
  * Update a stat card subtitle with percentage
