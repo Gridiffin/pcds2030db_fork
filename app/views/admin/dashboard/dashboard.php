@@ -240,16 +240,8 @@ const hasActivePeriod = <?php echo $hasActivePeriod ? 'true' : 'false'; ?>;
         <!-- Programs Overview Section -->
         <div class="row mb-4">
             <div class="col-12">
-                <div class="card shadow-sm">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="card-title m-0">Programs Overview</h5>                        <div>
-                            <a href="<?php echo view_url('admin', 'programs/programs.php', ['program_type' => 'assigned']); ?>" class="btn btn-sm btn-success me-2">
-                                <i class="fas fa-tasks me-1"></i> View Assigned Programs
-                            </a>
-                            <a href="<?php echo view_url('admin', 'programs/programs.php', ['program_type' => 'agency']); ?>" class="btn btn-sm btn-info">
-                                <i class="fas fa-list me-1"></i> View Agency Programs
-                            </a>
-                        </div>
+                <div class="card shadow-sm">                    <div class="card-header">
+                        <h5 class="card-title m-0">Programs Overview</h5>
                     </div>
                     <div class="card-body">
                         <div class="row gx-4 gy-4">
@@ -265,21 +257,18 @@ const hasActivePeriod = <?php echo $hasActivePeriod ? 'true' : 'false'; ?>;
                                         <div class="alert alert-light">
                                             <i class="fas fa-info-circle me-2"></i>No assigned programs found.
                                         </div>
-                                    <?php else: ?>
-                                        <div class="table-responsive">
-                                            <table class="table table-sm table-hover table-custom" style="table-layout: fixed; width: 100%; min-width: 600px;">
+                                    <?php else: ?>                                        <div class="table-responsive">
+                                            <table class="table table-sm table-hover table-custom" style="table-layout: fixed; width: 100%; min-width: 500px;">
                                                 <colgroup>
-                                                    <col style="width: 38%">
-                                                    <col style="width: 28%">
-                                                    <col style="width: 22%">
-                                                    <col style="width: 12%">
+                                                    <col style="width: 45%">
+                                                    <col style="width: 30%">
+                                                    <col style="width: 25%">
                                                 </colgroup>
                                                 <thead class="table-light">
                                                     <tr>
                                                         <th>Program Name</th>
                                                         <th>Agency</th>
                                                         <th>Created Date</th>
-                                                        <th>Type</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -296,14 +285,11 @@ const hasActivePeriod = <?php echo $hasActivePeriod ? 'true' : 'false'; ?>;
                                                             <td>
                                                                 <?php echo date('M j, Y', strtotime($program['created_at'])); ?>
                                                             </td>
-                                                            <td>
-                                                                <span class="badge bg-success">Assigned</span>
-                                                            </td>
                                                         </tr>
                                                     <?php endforeach; ?>
                                                 </tbody>
                                             </table>
-                                        </div>                                        <div class="text-center mt-2">
+                                        </div><div class="text-center mt-2">
                                             <a href="<?php echo view_url('admin', 'programs/programs.php', ['program_type' => 'assigned']); ?>" class="btn btn-sm btn-outline-success">
                                                 View All Assigned Programs <i class="fas fa-arrow-right ms-1"></i>
                                             </a>
@@ -323,21 +309,18 @@ const hasActivePeriod = <?php echo $hasActivePeriod ? 'true' : 'false'; ?>;
                                         <div class="alert alert-light">
                                             <i class="fas fa-info-circle me-2"></i>No agency-created programs found.
                                         </div>
-                                    <?php else: ?>
-                                        <div class="table-responsive">
-                                            <table class="table table-sm table-hover table-custom" style="table-layout: fixed; width: 100%; min-width: 600px;">
+                                    <?php else: ?>                                        <div class="table-responsive">
+                                            <table class="table table-sm table-hover table-custom" style="table-layout: fixed; width: 100%; min-width: 500px;">
                                                 <colgroup>
-                                                    <col style="width: 38%">
-                                                    <col style="width: 28%">
-                                                    <col style="width: 22%">
-                                                    <col style="width: 12%">
+                                                    <col style="width: 45%">
+                                                    <col style="width: 30%">
+                                                    <col style="width: 25%">
                                                 </colgroup>
                                                 <thead class="table-light">
                                                     <tr>
                                                         <th>Program Name</th>
                                                         <th>Agency</th>
                                                         <th>Created Date</th>
-                                                        <th>Type</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -353,9 +336,6 @@ const hasActivePeriod = <?php echo $hasActivePeriod ? 'true' : 'false'; ?>;
                                                             </td>
                                                             <td>
                                                                 <?php echo date('M j, Y', strtotime($program['created_at'])); ?>
-                                                            </td>
-                                                            <td>
-                                                                <span class="badge bg-info">Agency-Created</span>
                                                             </td>
                                                         </tr>
                                                     <?php endforeach; ?>
@@ -377,14 +357,12 @@ const hasActivePeriod = <?php echo $hasActivePeriod ? 'true' : 'false'; ?>;
         </div>
 
         <!-- Sector Overview section - conditionally displayed based on MULTI_SECTOR_ENABLED -->
-        <?php if (MULTI_SECTOR_ENABLED): ?>
-        <div class="row">
+        <?php if (MULTI_SECTOR_ENABLED): ?>        <div class="row">
             <!-- Sector Overview -->
             <div class="col-lg-6 mb-4">
                 <div class="card shadow-sm">
-                    <div class="card-header d-flex justify-content-between align-items-center">
+                    <div class="card-header">
                         <h5 class="card-title m-0">Sector Overview</h5>
-                        <a href="<?php echo view_url('admin', 'sector_details.php'); ?>" class="btn btn-sm btn-outline-primary">View Details</a>
                     </div>
                     <div class="card-body" data-period-content="sectors_section">
                         <div class="table-responsive">
@@ -431,13 +409,12 @@ const hasActivePeriod = <?php echo $hasActivePeriod ? 'true' : 'false'; ?>;
                     </div>
                 </div>
             </div>
-        <?php else: ?>
-        <div class="row">
+        <?php else: ?>        <div class="row">
             <!-- Forestry Sector Overview -->
             <div class="col-lg-6 mb-4">
-                <div class="card shadow-sm">                    <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="card shadow-sm">
+                    <div class="card-header">
                         <h5 class="card-title m-0">Forestry Sector Overview</h5>
-                        <a href="<?php echo view_url('admin', 'sector_details.php', ['sector_id' => FORESTRY_SECTOR_ID]); ?>" class="btn btn-sm btn-outline-primary">View Details</a>
                     </div>
                     <div class="card-body" data-period-content="sectors_section">
                         <?php 
