@@ -5,10 +5,14 @@
  * Retrieves reporting periods data for the admin interface
  */
 
+// Start output buffering immediately to catch any stray output
+if (ob_get_level() > 0) {
+    ob_end_clean();
+}
+ob_start();
+
 // Start session
 session_start();
-
-header('Content-Type: application/json');
 
 // Include necessary files
 require_once '../config/config.php';
@@ -17,14 +21,39 @@ require_once ROOT_PATH . 'app/lib/session.php';
 require_once ROOT_PATH . 'app/lib/functions.php';
 require_once ROOT_PATH . 'app/lib/admin_functions.php';
 
+// Clear any output from includes and set JSON header
+ob_end_clean();
+header('Content-Type: application/json');
+
+// Function to send JSON response and exit cleanly
+function send_json_response($success, $message, $data = null) {
+    $response = ['success' => $success, 'message' => $message];
+    if ($data !== null) {
+        $response['data'] = $data;
+    }
+    echo json_encode($response);
+    exit;
+}
+
+// Set up global error handler to catch any PHP errors and return JSON
+function json_error_handler($errno, $errstr, $errfile, $errline) {
+    error_log("PHP Error in periods_data.php: [$errno] $errstr in $errfile on line $errline");
+    send_json_response(false, 'Server error occurred');
+}
+set_error_handler('json_error_handler');
+
 // Check if user is admin
 if (!is_admin()) {
-    echo json_encode(['success' => false, 'message' => 'Access denied']);
-    exit;
+    send_json_response(false, 'Access denied');
 }
 
 try {
     // Database connection is already available via db_connect.php as $conn (MySQLi)
+    
+    // Check database connection
+    if (!isset($conn) || $conn->connect_error) {
+        throw new Exception('Database connection failed');
+    }
     
     // Check if a specific period ID is requested
     if (isset($_GET['period_id']) && is_numeric($_GET['period_id'])) {
@@ -45,21 +74,22 @@ try {
                   WHERE period_id = ?";
         
         $stmt = $conn->prepare($query);
+        if (!$stmt) {
+            throw new Exception('Failed to prepare statement: ' . $conn->error);
+        }
+        
         $stmt->bind_param("i", $periodId);
         $stmt->execute();
         $result = $stmt->get_result();
         
         if ($result->num_rows === 0) {
-            echo json_encode(['success' => false, 'message' => 'Period not found']);
-            exit;
+            send_json_response(false, 'Period not found');
         }
         
         $period = $result->fetch_assoc();
-        echo json_encode(['success' => true, 'data' => $period]);
-        exit;
+        send_json_response(true, 'Period found', $period);
     }
-    
-    // If no specific period requested, return all periods
+      // If no specific period requested, return all periods
     $query = "SELECT 
                 period_id,
                 year,
@@ -74,12 +104,17 @@ try {
               ORDER BY year DESC, quarter DESC";
     
     $stmt = $conn->prepare($query);
+    if (!$stmt) {
+        throw new Exception('Failed to prepare statement: ' . $conn->error);
+    }
+    
     $stmt->execute();
     $result = $stmt->get_result();
     $periods = $result->fetch_all(MYSQLI_ASSOC);
     
     // Format the data
-    $formattedPeriods = [];    foreach ($periods as $period) {
+    $formattedPeriods = [];    
+    foreach ($periods as $period) {
         // Create period name from year and quarter with proper terminology
         if ($period['quarter'] >= 1 && $period['quarter'] <= 4) {
             $periodName = "Q" . $period['quarter'] . " " . $period['year'];
@@ -105,17 +140,16 @@ try {
         ];
     }
     
-    echo json_encode([
+    $response = [
         'success' => true,
         'data' => $formattedPeriods,
         'count' => count($formattedPeriods)
-    ]);
+    ];
+    
+    echo json_encode($response);
 
 } catch (Exception $e) {
     error_log("Error in periods_data.php: " . $e->getMessage());
-    echo json_encode([
-        'success' => false,
-        'message' => 'Failed to load periods data: ' . $e->getMessage()
-    ]);
+    send_json_response(false, 'Failed to load periods data: ' . $e->getMessage());
 }
 ?>

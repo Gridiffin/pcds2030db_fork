@@ -71,11 +71,15 @@ function loadPeriods() {
             <p class="mt-2 text-muted">Loading periods...</p>
         </div>
     `;
-    
-    fetch(`${APP_URL}/app/ajax/periods_data.php`)
+      fetch(`${APP_URL}/app/ajax/periods_data.php`)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            // Check if response is actually JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error('Server returned non-JSON response. Please check if you are logged in as an admin.');
             }
             return response.json();
         })
@@ -99,12 +103,26 @@ function loadPeriods() {
                 // Add event listeners for the edit, delete, and toggle status buttons
                 setupActionButtons();
             } else {
-                tableContainer.innerHTML = `<div class="alert alert-danger">${data.message || 'Failed to load periods'}</div>`;
+                // Handle authentication and other errors
+                let errorMessage = data.message || 'Failed to load periods';
+                if (errorMessage.includes('Access denied') || errorMessage.includes('denied')) {
+                    errorMessage = 'Access denied. Please make sure you are logged in as an administrator and refresh the page.';
+                }
+                tableContainer.innerHTML = `<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i>${errorMessage}</div>`;
             }
         })
         .catch(error => {
             console.error('Error loading periods:', error);
-            tableContainer.innerHTML = `<div class="alert alert-danger">Error loading periods: ${error.message}</div>`;
+            let errorMessage = 'Error loading periods: ' + error.message;
+            
+            // Provide more helpful error messages
+            if (error.message.includes('JSON')) {
+                errorMessage = 'Failed to load periods data. This may be due to a session timeout or permission issue. Please try logging out and back in as an administrator.';
+            } else if (error.message.includes('non-JSON')) {
+                errorMessage = error.message; // Use the custom message from above
+            }
+            
+            tableContainer.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>${errorMessage}</div>`;
         });
 }
 
