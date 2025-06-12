@@ -1,4 +1,4 @@
-i<?php
+<?php
 /**
  * Outcomes Management Functions
  * 
@@ -424,5 +424,94 @@ function create_outcome_data($data) {
         $conn->rollback();
         return false;
     }
+}
+
+/**
+ * Get outcomes statistics for admin dashboard
+ *
+ * @param int|null $period_id Optional period ID to filter by
+ * @return array Array containing outcomes statistics
+ */
+function get_outcomes_statistics($period_id = null) {
+    global $conn;
+    
+    $stats = [
+        'total_outcomes' => 0,
+        'submitted_outcomes' => 0,
+        'draft_outcomes' => 0,
+        'recent_outcomes' => [],
+        'sectors_with_outcomes' => 0
+    ];
+    
+    try {
+        // Build base query
+        $where_clause = "WHERE 1=1";
+        $params = [];
+        $param_types = "";
+        
+        if ($period_id) {
+            $where_clause .= " AND sod.period_id = ?";
+            $params[] = $period_id;
+            $param_types .= "i";
+        }
+        
+        // Get total counts
+        $query = "SELECT 
+                    COUNT(*) as total_outcomes,
+                    SUM(CASE WHEN is_draft = 0 THEN 1 ELSE 0 END) as submitted_outcomes,
+                    SUM(CASE WHEN is_draft = 1 THEN 1 ELSE 0 END) as draft_outcomes,
+                    COUNT(DISTINCT sector_id) as sectors_with_outcomes
+                  FROM sector_outcomes_data sod 
+                  $where_clause";
+        
+        if (!empty($params)) {
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param($param_types, ...$params);
+            $stmt->execute();
+            $result = $stmt->get_result();
+        } else {
+            $result = $conn->query($query);
+        }
+        
+        if ($result && $row = $result->fetch_assoc()) {
+            $stats['total_outcomes'] = (int)$row['total_outcomes'];
+            $stats['submitted_outcomes'] = (int)$row['submitted_outcomes'];
+            $stats['draft_outcomes'] = (int)$row['draft_outcomes'];
+            $stats['sectors_with_outcomes'] = (int)$row['sectors_with_outcomes'];
+        }
+        
+        // Get recent outcomes (last 5)
+        $recent_query = "SELECT sod.metric_id, sod.table_name, sod.is_draft, 
+                                sod.created_at, sod.updated_at,
+                                s.sector_name, rp.year, rp.quarter,
+                                COALESCE(u.username, 'System') as submitted_by_username
+                         FROM sector_outcomes_data sod
+                         LEFT JOIN sectors s ON sod.sector_id = s.sector_id
+                         LEFT JOIN reporting_periods rp ON sod.period_id = rp.period_id
+                         LEFT JOIN users u ON sod.submitted_by = u.user_id
+                         $where_clause
+                         ORDER BY sod.updated_at DESC 
+                         LIMIT 5";
+        
+        if (!empty($params)) {
+            $stmt = $conn->prepare($recent_query);
+            $stmt->bind_param($param_types, ...$params);
+            $stmt->execute();
+            $result = $stmt->get_result();
+        } else {
+            $result = $conn->query($recent_query);
+        }
+        
+        if ($result) {
+            while ($row = $result->fetch_assoc()) {
+                $stats['recent_outcomes'][] = $row;
+            }
+        }
+        
+    } catch (Exception $e) {
+        error_log("Error in get_outcomes_statistics: " . $e->getMessage());
+    }
+    
+    return $stats;
 }
 ?>
