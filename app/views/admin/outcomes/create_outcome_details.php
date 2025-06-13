@@ -252,7 +252,7 @@ require_once '../../layouts/page_header.php';
     <div class="card admin-card mb-4">
         <div class="card-header">
             <h5 class="card-title mb-0">Outcome Detail Configuration</h5>
-            <small class="text-muted">Create structured KPI templates for outcome reporting</small>
+            <small class="text-dark-emphasis">Create structured KPI templates for outcome reporting</small>
         </div>
         <div class="card-body">
             <form id="metricDetailForm" method="post">
@@ -306,7 +306,7 @@ require_once '../../layouts/page_header.php';
     <div class="card admin-card">
         <div class="card-header">
             <h5 class="card-title mb-0">Existing Outcome Details</h5>
-            <small class="text-muted">Manage your existing outcome detail configurations</small>
+            <small class="text-dark-emphasis">Manage your existing outcome detail configurations</small>
         </div>
         <div class="card-body">
             <div id="metricDetailsContainer">
@@ -323,13 +323,13 @@ require_once '../../layouts/page_header.php';
                                 <div class="card h-100 border-light shadow-sm">
                                     <div class="card-header bg-light">
                                         <div class="d-flex justify-content-between align-items-center">
-                                            <h6 class="card-title mb-0 text-primary">
+                                            <h6 class="card-title mb-0">
                                                 <i class="fas fa-chart-line me-1"></i>
                                                 <?= htmlspecialchars($detail['title']) ?>
                                             </h6>
                                             <span class="badge bg-info"><?= ucfirst($detail['layout_type']) ?></span>
                                         </div>
-                                        <small class="text-muted">Created: <?= date('M j, Y', strtotime($detail['created_at'])) ?></small>
+                                        <small class="text-dark-emphasis">Created: <?= date('M j, Y', strtotime($detail['created_at'])) ?></small>
                                     </div>
                                     <div class="card-body">
                                         <?php if (!empty($detail['items'])): ?>
