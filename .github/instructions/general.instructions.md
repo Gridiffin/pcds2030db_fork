@@ -15,8 +15,8 @@ Coding standards, domain knowledge, and preferences that AI should follow.
 - suggest improvements to the codebase, including refactoring, optimization, and performance enhancements.
 - for any database operations please use DBCode extension to help you.
 - Ensure that all database queries are properly parameterized to prevent SQL injection attacks.
-- make sure that you understand how the files are referenced across the project. For example: in layouts/headers.php, there are base.css (or main.css) file that is referenced so you need to use these files as a centralized referencer file for all the css styles that is being used in the project. So if you are going to add a new css file, make sure to import them in base.css. (or main.css)
-- whenever "continue" is used, you have to summarize the preivous converstaion history and then continue from there. So for example, if the previous conversation was about fixing a bug in the login functionality, you should summarize that conversation and then continue from there.
+- make sure that you understand how the files are referenced across the project. For example: in layouts/headers.php, there are base.css (or main.css) file that is referenced so you need to use these files as a centralized referencer file for all the css styles that is being used in the project. So if you are going to add a new css file, make sure to import them in main.css. (or base.css)
+- whenever "continue" is used, you have to summarize the previous conversation history and then continue from there. So for example, if the previous conversation was about fixing a bug in the login functionality, you should summarize that conversation and then continue from there.
 
 ## Project Structure
 - Follow the project structure and organization as outlined in the project documentation.

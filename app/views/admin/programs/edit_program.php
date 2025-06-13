@@ -144,23 +144,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ];
             $content_json_history = json_encode($content_for_history);
             $admin_id = $_SESSION['user_id'];
-            $is_draft_history = 0; // Admin edits are final
-
-            // Insert new submission for history
+            $is_draft_history = 0; // Admin edits are final            // Insert new submission for history
             $query_insert_submission = "INSERT INTO program_submissions (program_id, period_id, submitted_by, 
-                                         content_json, status, is_draft, submission_date) 
-                                         VALUES (?, ?, ?, ?, ?, ?, NOW())";
+                                         content_json, is_draft, submission_date) 
+                                         VALUES (?, ?, ?, ?, ?, NOW())";
             $stmt_insert_submission = $conn->prepare($query_insert_submission);
             if (!$stmt_insert_submission) {
                  throw new Exception('Failed to prepare submission insert: ' . $conn->error);
             }
-            // Using $rating_form as the status for this submission record
-            $stmt_insert_submission->bind_param('iiissi', 
+            // Note: status column removed as it's no longer used
+            $stmt_insert_submission->bind_param('iiisi', 
                 $program_id, 
                 $current_period_id, 
                 $admin_id, 
                 $content_json_history, 
-                $rating_form, 
                 $is_draft_history
             );
 
@@ -227,21 +224,21 @@ if (!empty($program['edit_permissions'])) {
 // Get program edit history
 $program_history = get_program_edit_history($program_id);
 
-// Get program submission status and content
-$status_query = "SELECT content_json, submission_id FROM program_submissions 
+// Get program submission content
+$submission_query = "SELECT content_json, submission_id FROM program_submissions 
                 WHERE program_id = ? 
                 ORDER BY submission_date DESC LIMIT 1";
-$status_stmt = $conn->prepare($status_query);
-$status_stmt->bind_param('i', $program_id);
-$status_stmt->execute();
-$status_result = $status_stmt->get_result();
+$submission_stmt = $conn->prepare($submission_query);
+$submission_stmt->bind_param('i', $program_id);
+$submission_stmt->execute();
+$submission_result = $submission_stmt->get_result();
 $current_status = 'not-started';
 $current_targets = [];
 $submission_id = null;
 $remarks = '';
 
-if ($status_result->num_rows > 0) {
-    $submission = $status_result->fetch_assoc();
+if ($submission_result->num_rows > 0) {
+    $submission = $submission_result->fetch_assoc();
     $submission_id = $submission['submission_id'];
     // Process content_json to extract status, targets, remarks
     if (!empty($submission['content_json'])) {
@@ -386,16 +383,42 @@ require_once '../../layouts/page_header.php';
         </div>
         <?php endif; ?>
         
-            <div class="row g-3">
-                <!-- Basic Information -->
-                <div class="col-md-12 mb-4">
-                    <h6 class="fw-bold mb-3">Basic Information</h6>
-                      <div class="row mb-3">
-                        <div class="col-md-6">
+            <div class="row g-3">                <!-- Rating Section -->
+                <div class="rating-section mb-4">
+                    <h6 class="fw-bold mb-3">Program Rating</h6>
+                    <p class="text-muted mb-3">
+                        How would you rate the overall progress of this program?
+                    </p>
+                    
+                    <input type="hidden" id="rating" name="rating" value="<?php echo $current_status; ?>">
+                    
+                    <div class="rating-pills">
+                        <div class="rating-pill target-achieved <?php echo ($current_status == 'target-achieved') ? 'active' : ''; ?>" data-rating="target-achieved">
+                            <i class="fas fa-check-circle me-2"></i> Monthly Target Achieved
+                        </div>
+                        <div class="rating-pill on-track-yearly <?php echo ($current_status == 'on-track-yearly') ? 'active' : ''; ?>" data-rating="on-track-yearly">
+                            <i class="fas fa-calendar-check me-2"></i> On Track for Year
+                        </div>
+                        <div class="rating-pill severe-delay <?php echo ($current_status == 'severe-delay') ? 'active' : ''; ?>" data-rating="severe-delay">
+                            <i class="fas fa-exclamation-triangle me-2"></i> Severe Delays
+                        </div>
+                        <div class="rating-pill not-started <?php echo ($current_status == 'not-started' || !$current_status) ? 'active' : ''; ?>" data-rating="not-started">
+                            <i class="fas fa-clock me-2"></i> Not Started
+                        </div>
+                    </div>
+                </div>
+                    
+                <!-- 1. Basic Information Card -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title m-0">Basic Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
                             <label for="program_name" class="form-label">Program Name <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="program_name" name="program_name" 
                                    value="<?php echo htmlspecialchars($program['program_name']); ?>" required>
-                              <?php if (isset($program_history['submissions']) && count($program_history['submissions']) > 1): ?>
+                            <?php if (isset($program_history['submissions']) && count($program_history['submissions']) > 1): ?>
                                 <?php
                                 // Get complete history of program name changes
                                 $name_history = get_field_edit_history($program_history['submissions'], 'program_name');
@@ -432,8 +455,8 @@ require_once '../../layouts/page_header.php';
                                 <?php endif; ?>
                             <?php endif; ?>
                         </div>
-                        
-                        <div class="col-md-6">
+
+                        <div class="mb-3">
                             <label for="owner_agency_id" class="form-label">Owner Agency <span class="text-danger">*</span></label>
                             <select class="form-select" id="owner_agency_id" name="owner_agency_id" required>
                                 <option value="">Select Agency</option>
@@ -444,10 +467,8 @@ require_once '../../layouts/page_header.php';
                                 <?php endforeach; ?>
                             </select>
                         </div>
-                    </div>
-                    
-                    <div class="row mb-3">
-                        <div class="col-md-6">
+
+                        <div class="mb-3">
                             <label for="sector_id" class="form-label">Sector <span class="text-danger">*</span></label>
                             <select class="form-select" id="sector_id" name="sector_id" required>
                                 <option value="">Select Sector</option>
@@ -458,9 +479,9 @@ require_once '../../layouts/page_header.php';
                                 <?php endforeach; ?>
                             </select>
                         </div>
-                        
-                        <div class="col-md-6">
-                            <div class="form-check form-switch mt-4">
+
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" id="is_assigned" name="is_assigned" 
                                       <?php echo ($program['is_assigned'] == 1) ? 'checked' : ''; ?>>
                                 <label class="form-check-label" for="is_assigned">
@@ -469,219 +490,183 @@ require_once '../../layouts/page_header.php';
                                 <div class="form-text">Assigned programs are created by admins for agencies.</div>
                             </div>
                         </div>
-                    </div>
-                    
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="start_date" class="form-label">Start Date</label>
-                            <input type="date" class="form-control" id="start_date" name="start_date" 
-                                   value="<?php echo isset($program['start_date']) ? date('Y-m-d', strtotime($program['start_date'])) : ''; ?>">
-                        </div>
-                        
-                        <div class="col-md-6">
-                            <label for="end_date" class="form-label">End Date</label>
-                            <input type="date" class="form-control" id="end_date" name="end_date"
-                                   value="<?php echo isset($program['end_date']) ? date('Y-m-d', strtotime($program['end_date'])) : ''; ?>">
-                        </div>
-                    </div>
-                                          
-                    <h6 class="fw-bold mb-3 mt-4">Program Status</h6>
-                    <div class="rating-pills">
-                        <div class="rating-pill target-achieved <?php echo ($current_status == 'target-achieved') ? 'active' : ''; ?>" data-rating="target-achieved">
-                            <i class="fas fa-check-circle me-2"></i> Monthly Target Achieved
-                        </div>
-                        <div class="rating-pill on-track-yearly <?php echo ($current_status == 'on-track-yearly') ? 'active' : ''; ?>" data-rating="on-track-yearly">
-                            <i class="fas fa-calendar-check me-2"></i> On Track for Year
-                        </div>
-                        <div class="rating-pill severe-delay <?php echo ($current_status == 'severe-delay') ? 'active' : ''; ?>" data-rating="severe-delay">
-                            <i class="fas fa-exclamation-triangle me-2"></i> Severe Delays
-                        </div>
-                        <div class="rating-pill not-started <?php echo ($current_status == 'not-started' || !$current_status) ? 'active' : ''; ?>" data-rating="not-started">
-                            <i class="fas fa-clock me-2"></i> Not Started
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="start_date" class="form-label">Start Date</label>
+                                <input type="date" class="form-control" id="start_date" name="start_date" 
+                                       value="<?php echo isset($program['start_date']) ? date('Y-m-d', strtotime($program['start_date'])) : ''; ?>">
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="end_date" class="form-label">End Date</label>
+                                <input type="date" class="form-control" id="end_date" name="end_date"
+                                       value="<?php echo isset($program['end_date']) ? date('Y-m-d', strtotime($program['end_date'])) : ''; ?>">
+                            </div>
                         </div>
                     </div>
-                </div>
-                  <!-- Program Targets Section -->
-                <div class="col-md-12 mb-4">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="fw-bold mb-0">Program Targets</h6>
+                </div>                <!-- 2. Program Targets Card -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title m-0">Program Targets</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-3">
+                            Define one or more targets for this program, each with its own status description.
+                        </p>
                         
                         <?php if (isset($program_history['submissions']) && count($program_history['submissions']) > 1): ?>
-                            <button type="button" class="history-toggle-btn" data-target="targetsHistoryContainer">
-                                <i class="fas fa-history"></i> Show Target History
-                            </button>
-                        <?php endif; ?>
-                    </div>
-                    
-                    <?php if (isset($program_history['submissions']) && count($program_history['submissions']) > 1): ?>
-                        <div id="targetsHistoryContainer" class="targets-history-container mb-3" style="display: none;">
-                            <h6 class="mb-2">Target History</h6>
-                            
-                            <?php foreach($program_history['submissions'] as $idx => $submission): ?>
-                                <?php if ($idx > 0 && isset($submission['targets']) && !empty($submission['targets'])): ?>
-                                    <div class="target-history-item">
-                                        <div class="target-history-header">
-                                            <strong><?php echo $submission['formatted_date']; ?></strong>
-                                            <span><?php echo $submission['period_name'] ?? ''; ?></span>
-                                        </div>
-                                        
-                                        <?php foreach($submission['targets'] as $t_idx => $target): ?>
-                                            <div class="mb-1">
-                                                <strong>Target #<?php echo ($t_idx + 1); ?>:</strong> 
-                                                <?php echo htmlspecialchars($target['target_text'] ?? ''); ?>
+                            <div class="d-flex align-items-center mt-2 mb-3">
+                                <button type="button" class="btn btn-sm btn-outline-secondary field-history-toggle" 
+                                        data-history-target="programTargetsHistory">
+                                    <i class="fas fa-history"></i> Show Target History
+                                </button>
+                            </div>
+                            <div id="programTargetsHistory" class="history-complete" style="display: none;">
+                                <h6 class="small text-muted mb-2">Program Target History</h6>
+                                <?php foreach($program_history['submissions'] as $idx => $submission): ?>
+                                    <?php if ($idx > 0 && isset($submission['targets']) && !empty($submission['targets'])): ?>
+                                        <div class="target-history-item">
+                                            <div class="target-history-header">
+                                                <strong><?php echo $submission['formatted_date']; ?></strong>
+                                                <span><?php echo $submission['period_name'] ?? ''; ?></span>
                                             </div>
-                                            <?php if (!empty($target['status_description'])): ?>
-                                                <div class="mb-1 ps-3">
-                                                    <em>Status:</em> <?php echo htmlspecialchars($target['status_description']); ?>
+                                            
+                                            <?php foreach($submission['targets'] as $t_idx => $target): ?>
+                                                <div class="mb-1">
+                                                    <strong>Target #<?php echo ($t_idx + 1); ?>:</strong> 
+                                                    <?php echo htmlspecialchars($target['target_text'] ?? ''); ?>
                                                 </div>
-                                            <?php endif; ?>
-                                        <?php endforeach; ?>
-                                    </div>
-                                <?php endif; ?>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <div id="targets-container">
-                        <?php if (!empty($current_targets)): ?>
-                            <?php foreach ($current_targets as $index => $target): ?>
-                                <div class="target-item card mb-3">
-                                    <div class="card-body">
-                                        <div class="d-flex justify-content-between mb-2">
-                                            <h6 class="card-title">Target #<?php echo ($index + 1); ?></h6>
-                                            <?php if ($index > 0): ?>
-                                                <button type="button" class="btn btn-sm btn-outline-danger remove-target">
-                                                    <i class="fas fa-times"></i> Remove
-                                                </button>
-                                            <?php endif; ?>
+                                                <?php if (!empty($target['status_description'])): ?>
+                                                    <div class="mb-1 ps-3">
+                                                        <em>Status:</em> <?php echo htmlspecialchars($target['status_description']); ?>
+                                                    </div>
+                                                <?php endif; ?>
+                                            <?php endforeach; ?>
                                         </div>
-                                        
-                                        <div class="mb-3">
-                                            <label for="target_text_<?php echo $index; ?>" class="form-label">Target Description</label>
-                                            <textarea class="form-control" name="target_text[]" rows="2"><?php echo htmlspecialchars($target['target_text'] ?? ''); ?></textarea>
-                                        </div>
-                                        
-                                        <div class="mb-3">
-                                            <label for="status_description_<?php echo $index; ?>" class="form-label">Status/Achievement Description</label>
-                                            <textarea class="form-control" name="status_description[]" rows="2"><?php echo htmlspecialchars($target['status_description'] ?? ''); ?></textarea>
-                                        </div>
-                                        
-                                        <div class="mb-3">
-                                            <label class="form-label">Target Status</label>
-                                            <select class="form-select" name="target_status[]">
-                                                <option value="not-started" <?php echo (($target['status'] ?? '') == 'not-started') ? 'selected' : ''; ?>>Not Started</option>
-                                                <option value="on-track" <?php echo (($target['status'] ?? '') == 'on-track') ? 'selected' : ''; ?>>On Track</option>
-                                                <option value="delayed" <?php echo (($target['status'] ?? '') == 'delayed') ? 'selected' : ''; ?>>Delayed</option>
-                                                <option value="completed" <?php echo (($target['status'] ?? '') == 'completed') ? 'selected' : ''; ?>>Completed</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <!-- Default empty target when no targets exist -->
-                            <div class="target-item card mb-3">
-                                <div class="card-body">
-                                    <h6 class="card-title">Target #1</h6>
-                                    
-                                    <div class="mb-3">
-                                        <label class="form-label">Target Description</label>
-                                        <textarea class="form-control" name="target_text[]" rows="2"></textarea>
-                                    </div>
-                                    
-                                    <div class="mb-3">
-                                        <label class="form-label">Status/Achievement Description</label>
-                                        <textarea class="form-control" name="status_description[]" rows="2"></textarea>
-                                    </div>
-                                    
-                                    <div class="mb-3">
-                                        <label class="form-label">Target Status</label>
-                                        <select class="form-select" name="target_status[]">
-                                            <option value="not-started" selected>Not Started</option>
-                                            <option value="on-track">On Track</option>
-                                            <option value="delayed">Delayed</option>
-                                            <option value="completed">Completed</option>
-                                        </select>
-                                    </div>
-                                </div>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
                             </div>
                         <?php endif; ?>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <button type="button" id="add-target" class="btn btn-outline-primary">
-                            <i class="fas fa-plus"></i> Add Another Target
+                        
+                        <div id="targets-container">
+                            <?php if (!empty($current_targets)): ?>
+                                <?php foreach ($current_targets as $index => $target): ?>
+                                    <div class="target-entry">
+                                        <?php if ($index > 0): ?>
+                                        <button type="button" class="btn-close remove-target" aria-label="Remove target"></button>
+                                        <?php endif; ?>
+                                        <div class="mb-3">
+                                            <label class="form-label">Target <?php echo $index + 1; ?> *</label>
+                                            <input type="text" class="form-control target-input" name="target_text[]" 
+                                                    value="<?php echo htmlspecialchars($target['target_text'] ?? ''); ?>" 
+                                                    placeholder="Define a measurable target (e.g., 'Plant 100 trees')">
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label">Status Description</label>
+                                            <textarea class="form-control status-description" name="status_description[]" rows="2" 
+                                                        placeholder="Describe the current status or progress toward this target"><?php echo htmlspecialchars($target['status_description'] ?? ''); ?></textarea>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <!-- Default empty target when no targets exist -->
+                                <div class="target-entry">
+                                    <div class="mb-3">
+                                        <label class="form-label">Target 1 *</label>
+                                        <input type="text" class="form-control target-input" name="target_text[]" 
+                                                placeholder="Define a measurable target (e.g., 'Plant 100 trees')">
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label">Status Description</label>
+                                        <textarea class="form-control status-description" name="status_description[]" rows="2" 
+                                                    placeholder="Describe the current status or progress toward this target"></textarea>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                        
+                        <button type="button" id="add-target-btn" class="btn btn-outline-secondary add-target-btn">
+                            <i class="fas fa-plus-circle me-1"></i> Add Another Target
                         </button>
                     </div>
                 </div>
-                
-                <!-- Additional Remarks -->
-                <div class="col-md-12 mb-4">
-                    <h6 class="fw-bold mb-3">Additional Remarks</h6>
-                    <div class="mb-3">
-                        <textarea class="form-control" name="remarks" rows="3"><?php echo htmlspecialchars($remarks); ?></textarea>
-                        <div class="form-text">
-                            Optional additional notes or context about this program for the reporting period.
+                  <!-- 3. Remarks and Comments Card -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title m-0">Remarks and Comments</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="remarks" class="form-label">Additional Remarks</label>
+                            <textarea class="form-control" id="remarks" name="remarks" rows="4" 
+                                      placeholder="Add any additional remarks, challenges, or observations about this program..."><?php echo htmlspecialchars($remarks); ?></textarea>
+                            <div class="form-text">
+                                Optional additional notes or context about this program for the reporting period.
+                            </div>
                         </div>
                     </div>
                 </div>
-                
-                <!-- Edit Permissions (for assigned programs) -->
-                <div class="col-md-12 mb-4" id="permissions-section">
-                    <h6 class="fw-bold mb-3">Agency Edit Permissions</h6>
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        These settings control what parts of the program the owning agency can edit.
+                  <!-- 4. Edit Permissions Card -->
+                <div class="card shadow-sm mb-4" id="permissions-section">
+                    <div class="card-header">
+                        <h5 class="card-title m-0">Agency Edit Permissions</h5>
                     </div>
-                    
-                    <div class="mb-3">                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" id="edit_program_name" name="edit_permissions[]" value="program_name" 
-                                   <?php echo in_array('program_name', $edit_permissions) ? 'checked' : ''; ?>>
-                            <label class="form-check-label" for="edit_program_name">Agency can edit Program Name</label>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            These settings control what parts of the program the owning agency can edit.
                         </div>
                         
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" id="edit_brief_description" name="edit_permissions[]" value="brief_description" 
-                                   <?php echo in_array('brief_description', $edit_permissions) ? 'checked' : ''; ?>>
-                            <label class="form-check-label" for="edit_brief_description">Agency can edit Brief Description</label>
-                        </div>
-                        
-                                                
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" id="edit_targets" name="edit_permissions[]" value="targets" 
-                                   <?php echo in_array('targets', $edit_permissions) ? 'checked' : ''; ?>>
-                            <label class="form-check-label" for="edit_targets">Agency can edit Targets</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" id="edit_status_text" name="edit_permissions[]" value="status_text" 
-                                   <?php echo in_array('status_text', $edit_permissions) ? 'checked' : ''; ?>>
-                            <label class="form-check-label" for="edit_status_text">Agency can edit Status Descriptions</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" id="edit_rating" name="edit_permissions[]" value="rating" 
-                                   <?php echo in_array('rating', $edit_permissions) ? 'checked' : ''; ?>>
-                            <label class="form-check-label" for="edit_rating">Agency can edit Rating</label>
-                        </div>
-                        
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="edit_timeline" name="edit_permissions[]" value="timeline" 
-                                   <?php echo in_array('timeline', $edit_permissions) ? 'checked' : ''; ?>>
-                            <label class="form-check-label" for="edit_timeline">Agency can edit Timeline (Start/End Dates)</label>
+                        <div class="mb-3">
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="edit_program_name" name="edit_permissions[]" value="program_name" 
+                                      <?php echo in_array('program_name', $edit_permissions) ? 'checked' : ''; ?>>
+                                <label class="form-check-label" for="edit_program_name">Agency can edit Program Name</label>
+                            </div>
+                            
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="edit_brief_description" name="edit_permissions[]" value="brief_description" 
+                                      <?php echo in_array('brief_description', $edit_permissions) ? 'checked' : ''; ?>>
+                                <label class="form-check-label" for="edit_brief_description">Agency can edit Brief Description</label>
+                            </div>
+                            
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="edit_targets" name="edit_permissions[]" value="targets" 
+                                      <?php echo in_array('targets', $edit_permissions) ? 'checked' : ''; ?>>
+                                <label class="form-check-label" for="edit_targets">Agency can edit Targets</label>
+                            </div>
+                            
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="edit_status_text" name="edit_permissions[]" value="status_text" 
+                                      <?php echo in_array('status_text', $edit_permissions) ? 'checked' : ''; ?>>
+                                <label class="form-check-label" for="edit_status_text">Agency can edit Status Descriptions</label>
+                            </div>
+                            
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="edit_rating" name="edit_permissions[]" value="rating" 
+                                      <?php echo in_array('rating', $edit_permissions) ? 'checked' : ''; ?>>
+                                <label class="form-check-label" for="edit_rating">Agency can edit Rating</label>
+                            </div>
+                            
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="edit_timeline" name="edit_permissions[]" value="timeline" 
+                                      <?php echo in_array('timeline', $edit_permissions) ? 'checked' : ''; ?>>
+                                <label class="form-check-label" for="edit_timeline">Agency can edit Timeline (Start/End Dates)</label>
+                            </div>
                         </div>
                     </div>
                 </div>
                 
                 <!-- Form Actions -->
-                <div class="col-md-12">
-                    <div class="d-flex justify-content-between">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> Update Program
+                    </button>
+                    <div>
                         <a href="programs.php" class="btn btn-outline-secondary">
-                            <i class="fas fa-arrow-left me-1"></i> Cancel
+                            <i class="fas fa-times me-1"></i> Cancel
                         </a>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save me-1"></i> Update Program
-                        </button>
                     </div>
                 </div>
             </div>
@@ -707,77 +692,70 @@ document.addEventListener('DOMContentLoaded', function() {
             ratingInput.value = this.getAttribute('data-rating');
         });
     });
-    
-    // Add target handling
-    const addTargetBtn = document.getElementById('add-target');
-    const targetsContainer = document.getElementById('targets-container');
-    
-    if (addTargetBtn && targetsContainer) {
+      // Add target functionality
+    const addTargetBtn = document.getElementById('add-target-btn');
+    if (addTargetBtn) {
+        const targetsContainer = document.getElementById('targets-container');
+        
+        // Keep track of the highest target number
+        let highestTargetNumber = document.querySelectorAll('.target-entry').length;
+        
+        // Function to update target numbers sequentially
+        function updateTargetNumbers() {
+            const targetEntries = document.querySelectorAll('.target-entry');
+            targetEntries.forEach((entry, index) => {
+                const label = entry.querySelector('.form-label');
+                if (label && label.textContent.includes('Target')) {
+                    label.textContent = `Target ${index + 1} *`;
+                }
+            });
+        }
+        
         addTargetBtn.addEventListener('click', function() {
-            const targetCount = document.querySelectorAll('.target-item').length + 1;
-            const targetHtml = `
-                <div class="target-item card mb-3">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between mb-2">
-                            <h6 class="card-title">Target #${targetCount}</h6>
-                            <button type="button" class="btn btn-sm btn-outline-danger remove-target">
-                                <i class="fas fa-times"></i> Remove
-                            </button>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Target Description</label>
-                            <textarea class="form-control" name="target_text[]" rows="2"></textarea>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Status/Achievement Description</label>
-                            <textarea class="form-control" name="status_description[]" rows="2"></textarea>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Target Status</label>
-                            <select class="form-select" name="target_status[]">
-                                <option value="not-started" selected>Not Started</option>
-                                <option value="on-track">On Track</option>
-                                <option value="delayed">Delayed</option>
-                                <option value="completed">Completed</option>
-                            </select>
-                        </div>
-                    </div>
+            // Increment the highest target number
+            highestTargetNumber++;
+            
+            const targetEntry = document.createElement('div');
+            targetEntry.className = 'target-entry';
+            
+            const html = `
+                <button type="button" class="btn-close remove-target" aria-label="Remove target"></button>
+                <div class="mb-3">
+                    <label class="form-label">Target ${highestTargetNumber} *</label>
+                    <input type="text" class="form-control target-input" name="target_text[]" 
+                           placeholder="Define a measurable target (e.g., 'Plant 100 trees')">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Status Description</label>
+                    <textarea class="form-control status-description" name="status_description[]" rows="2" 
+                              placeholder="Describe the current status or progress toward this target"></textarea>
                 </div>
             `;
             
-            // Add new target form to the container
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = targetHtml;
-            targetsContainer.appendChild(tempDiv.firstElementChild);
+            targetEntry.innerHTML = html;
+            targetsContainer.appendChild(targetEntry);
             
-            // Add event listener to newly created remove button
-            bindRemoveTargetEvent();
+            // Attach remove event listener to the new target
+            const removeBtn = targetEntry.querySelector('.remove-target');
+            if (removeBtn) {
+                removeBtn.addEventListener('click', function() {
+                    targetEntry.remove();
+                    // Update target numbers after removing
+                    updateTargetNumbers();
+                });
+            }
         });
         
-        function bindRemoveTargetEvent() {
-            document.querySelectorAll('.remove-target').forEach(btn => {
-                btn.removeEventListener('click', removeTarget);
-                btn.addEventListener('click', removeTarget);
+        // Initialize existing remove buttons
+        document.querySelectorAll('.remove-target').forEach(btn => {
+            btn.addEventListener('click', function() {
+                this.closest('.target-entry').remove();
+                // Update target numbers after removing
+                updateTargetNumbers();
             });
-        }
-        
-        function removeTarget() {
-            this.closest('.target-item').remove();
-            
-            // Renumber targets
-            document.querySelectorAll('.target-item').forEach((item, index) => {
-                item.querySelector('.card-title').textContent = `Target #${index + 1}`;
-            });
-        }
-        
-        // Initialize event listeners for existing remove buttons
-        bindRemoveTargetEvent();
+        });
     }
-    
-    // Toggle permissions section based on assigned status
+      // Toggle permissions section based on assigned status
     const isAssignedCheckbox = document.getElementById('is_assigned');
     const permissionsSection = document.getElementById('permissions-section');
     
@@ -817,6 +795,35 @@ document.addEventListener('DOMContentLoaded', function() {
             this.innerHTML = isVisible ? '<i class="fas fa-history"></i> Show History' : '<i class="fas fa-history"></i> Hide History';
         });
     }
+    
+    // Form validation
+    document.getElementById('editProgramForm').addEventListener('submit', function(e) {
+        const programName = document.getElementById('program_name').value;
+        const targetInputs = document.querySelectorAll('.target-input');
+        let hasFilledTarget = false;
+        
+        // Validate program name
+        if (!programName.trim()) {
+            alert('Please enter a program name.');
+            e.preventDefault();
+            return false;
+        }
+        
+        // Validate at least one target
+        targetInputs.forEach(input => {
+            if (input.value.trim()) {
+                hasFilledTarget = true;
+            }
+        });
+        
+        if (!hasFilledTarget) {
+            alert('Please add at least one target for this program.');
+            e.preventDefault();
+            return false;
+        }
+        
+        return true;
+    });
 });
 </script>
 </main>
