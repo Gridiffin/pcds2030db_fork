@@ -269,31 +269,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'program_name' => $program_name
             ];
             $content_json = json_encode($content_data);
-            
-            if ($submission_id > 0) {
-                // Update existing submission
-                $submission_query = "UPDATE program_submissions 
-                                   SET content_json = ?, 
-                                       updated_at = NOW() 
-                                   WHERE submission_id = ? 
-                                   AND program_id = ? 
-                                   AND period_id = ?";
+              if ($submission_id > 0) {
+                // Whenever changes are made, we should insert a new record to preserve change history
+                // This is particularly important for brief_description which needs a full change history
+                
+                // Create new submission instead of updating
+                $submission_query = "INSERT INTO program_submissions 
+                                   (program_id, period_id, submitted_by, content_json, is_draft, submission_date, updated_at) 
+                                   VALUES (?, ?, ?, ?, 1, NOW(), NOW())";
                 $submission_stmt = $conn->prepare($submission_query);
-                $submission_stmt->bind_param("siii", $content_json, $submission_id, $program_id, $period_id);
+                $submission_stmt->bind_param("iiis", $program_id, $period_id, $current_user_id, $content_json);
                 
                 if (!$submission_stmt->execute()) {
-                    throw new Exception('Failed to update submission: ' . $submission_stmt->error);
-                }
-                  if ($submission_stmt->affected_rows === 0) {
-                    // No submission found to update, so insert a new one
-                    $submission_query = "INSERT INTO program_submissions 
-                                       (program_id, period_id, submitted_by, content_json, is_draft, submission_date, updated_at) 
-                                       VALUES (?, ?, ?, ?, 1, NOW(), NOW())";
-                    $submission_stmt = $conn->prepare($submission_query);
-                    $submission_stmt->bind_param("iiis", $program_id, $period_id, $current_user_id, $content_json);
-                    if (!$submission_stmt->execute()) {
-                        throw new Exception('Failed to create submission: ' . $submission_stmt->error);
-                    }
+                    throw new Exception('Failed to create submission record: ' . $submission_stmt->error);
                 }
             } else {
                 // Create new submission
