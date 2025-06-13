@@ -116,9 +116,8 @@ function create_agency_program($data) {
         if (!$has_content_json || isset($validated['create_submission'])) {
             $target = $validated['target'] ?? '';
             $achievement = $validated['achievement'] ?? '';
-            $status_text = $validated['status_text'] ?? '';
-            $sub_query = "INSERT INTO program_submissions 
-                        (program_id, period_id, target, achievement, status_text, is_draft, submitted_at)
+            $status_text = $validated['status_text'] ?? '';            $sub_query = "INSERT INTO program_submissions 
+                        (program_id, period_id, target, achievement, status_text, is_draft, submission_date)
                         VALUES (?, ?, ?, ?, ?, 1, NOW())";
             $period_id = get_current_reporting_period()['period_id'] ?? 1;
             $sub_stmt = $conn->prepare($sub_query);

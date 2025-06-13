@@ -198,22 +198,58 @@ require_once '../../layouts/page_header.php';
 
     const monthNames = <?= json_encode($month_names) ?>;
     let columns = <?= json_encode($data_array['columns'] ?? []) ?>;
-    let data = <?= json_encode($data_array['data'] ?? []) ?>;
-
-    function addColumn() {
+    let data = <?= json_encode($data_array['data'] ?? []) ?>;    function addColumn() {
         const columnName = prompt('Enter column title:');
         if (!columnName || columnName.trim() === '') return;
         if (columns.includes(columnName)) {
             alert('Column title already exists.');
             return;
         }
+        
+        // Collect current data from DOM before adding column
+        collectCurrentData();
+        
         columns.push(columnName);
         renderTable();
     }
 
     function removeColumn(columnName) {
+        // Collect current data from DOM before removing column
+        collectCurrentData();
+        
         columns = columns.filter(c => c !== columnName);
+        
+        // Remove data for the deleted column
+        monthNames.forEach(month => {
+            if (data[month]) {
+                delete data[month][columnName];
+            }
+        });
+        
         renderTable();
+    }
+
+    function collectCurrentData() {
+        // Initialize data structure if needed
+        if (!data || typeof data !== 'object') {
+            data = {};
+        }
+        
+        // Collect all current values from DOM
+        monthNames.forEach(month => {
+            if (!data[month]) {
+                data[month] = {};
+            }
+            
+            columns.forEach(col => {
+                const cell = document.querySelector(`.metric-cell[data-month="${month}"][data-column="${col}"]`);
+                if (cell) {
+                    let val = parseFloat(cell.textContent.trim());
+                    if (isNaN(val)) val = 0;
+                    data[month][col] = val;
+                }
+            });
+        });
     }
 
     function renderTable() {
@@ -259,9 +295,7 @@ require_once '../../layouts/page_header.php';
                     removeColumn(col);
                 }
             };
-        });
-
-        // Attach contenteditable change handlers for column titles
+        });        // Attach contenteditable change handlers for column titles
         document.querySelectorAll('.metric-title').forEach(el => {
             el.addEventListener('input', () => {
                 const oldCol = el.getAttribute('data-column');
@@ -272,10 +306,23 @@ require_once '../../layouts/page_header.php';
                         el.textContent = oldCol;
                         return;
                     }
+                    
+                    // Collect current data before renaming column
+                    collectCurrentData();
+                    
                     const index = columns.indexOf(oldCol);
                     if (index !== -1) {
                         columns[index] = newCol;
                         el.setAttribute('data-column', newCol);
+                        
+                        // Update data object with new column name
+                        monthNames.forEach(month => {
+                            if (data[month] && data[month][oldCol] !== undefined) {
+                                data[month][newCol] = data[month][oldCol];
+                                delete data[month][oldCol];
+                            }
+                        });
+                        
                         // Update all cells data-column attribute
                         document.querySelectorAll(`[data-column="${oldCol}"]`).forEach(cell => {
                             cell.setAttribute('data-column', newCol);
@@ -303,9 +350,7 @@ require_once '../../layouts/page_header.php';
                     sel.addRange(range);
                 }
             });
-        });
-
-        // Make entire body td clickable to focus the contenteditable div inside
+        });        // Make entire body td clickable to focus the contenteditable div inside
         document.querySelectorAll('.metrics-table tbody td').forEach(td => {
             td.style.cursor = 'text';
             td.addEventListener('click', (e) => {
@@ -324,28 +369,48 @@ require_once '../../layouts/page_header.php';
                 }
             });
         });
-    }
 
-    document.getElementById('addColumnBtn').addEventListener('click', addColumn);
-
-    document.getElementById('editOutcomeForm').addEventListener('submit', function(e) {
-        // Collect data into JSON
-        const collectedData = {
-            columns: columns,
-            data: {}
-        };
-        monthNames.forEach(month => {
-            collectedData.data[month] = {};
-            columns.forEach(col => {
-                const cell = document.querySelector(`.metric-cell[data-month="${month}"][data-column="${col}"]`);
-                let val = 0;
-                if (cell) {
-                    val = parseFloat(cell.textContent.trim());
+        // Add real-time data updating for cell edits
+        document.querySelectorAll('.metric-cell').forEach(cell => {
+            cell.addEventListener('input', () => {
+                const month = cell.getAttribute('data-month');
+                const column = cell.getAttribute('data-column');
+                if (month && column) {
+                    if (!data[month]) {
+                        data[month] = {};
+                    }
+                    let val = parseFloat(cell.textContent.trim());
                     if (isNaN(val)) val = 0;
+                    data[month][column] = val;
                 }
-                collectedData.data[month][col] = val;
+            });
+            
+            // Also update on blur (when user leaves the cell)
+            cell.addEventListener('blur', () => {
+                const month = cell.getAttribute('data-month');
+                const column = cell.getAttribute('data-column');
+                if (month && column) {
+                    if (!data[month]) {
+                        data[month] = {};
+                    }
+                    let val = parseFloat(cell.textContent.trim());
+                    if (isNaN(val)) val = 0;
+                    data[month][column] = val;
+                }
             });
         });
+    }
+
+    document.getElementById('addColumnBtn').addEventListener('click', addColumn);    document.getElementById('editOutcomeForm').addEventListener('submit', function(e) {
+        // Collect any final changes from DOM before submission
+        collectCurrentData();
+        
+        // Use the maintained data object
+        const collectedData = {
+            columns: columns,
+            data: data
+        };
+        
         document.getElementById('dataJsonInput').value = JSON.stringify(collectedData);
     });
 

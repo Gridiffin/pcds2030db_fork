@@ -110,8 +110,7 @@ require_once '../../layouts/page_header.php';
                     <h6><?php echo get_period_display_name($outcome_data); ?></h6>
                 </div>
             </div>
-            
-            <div class="row">
+              <div class="row">
                 <div class="col-md-3 mb-3">
                     <p class="mb-1 text-muted">Created At:</p>
                     <h6><?php echo date('M j, Y g:i A', strtotime($outcome_data['created_at'])); ?></h6>
@@ -120,10 +119,10 @@ require_once '../../layouts/page_header.php';
                     <p class="mb-1 text-muted">Last Updated:</p>
                     <h6><?php echo date('M j, Y g:i A', strtotime($outcome_data['updated_at'])); ?></h6>
                 </div>
-                <?php if (!empty($outcome_data['submitted_at'])): ?>
+                <?php if (!empty($outcome_data['submitted_by_username']) && isset($outcome_data['is_draft']) && $outcome_data['is_draft'] == 0): ?>
                 <div class="col-md-3 mb-3">
-                    <p class="mb-1 text-muted">Submitted At:</p>
-                    <h6><?php echo date('M j, Y g:i A', strtotime($outcome_data['submitted_at'])); ?></h6>
+                    <p class="mb-1 text-muted">Submission Status:</p>
+                    <h6><span class="badge bg-success">Submitted</span></h6>
                 </div>
                 <div class="col-md-3 mb-3">
                     <p class="mb-1 text-muted">Submitted By:</p>

@@ -56,16 +56,19 @@ try {
     // Ensure session user_id is set
     if (!isset($_SESSION['user_id'])) {
         throw new Exception("User session not found or user_id is not set.");
-    }
-    $user_id = $_SESSION['user_id'];
+    }    $user_id = $_SESSION['user_id'];
     $is_draft = ($action === 'unsubmit') ? 1 : 0;
     
-    // Update the outcome status
+    // Get the outcome data BEFORE updating it (for history recording)
+    $outcome = get_outcome_data_for_display($metric_id);
+    if (!$outcome) {
+        throw new Exception("Could not retrieve outcome data");
+    }
+      // Update the outcome status
     $update_query = "UPDATE sector_outcomes_data 
                      SET is_draft = ?, 
                          submitted_by = ?, 
-                         updated_at = NOW(),
-                         submitted_at = IF(? = 1, NULL, submitted_at)
+                         updated_at = NOW()
                      WHERE metric_id = ?";
     $stmt = $conn->prepare($update_query);
 
@@ -73,17 +76,11 @@ try {
         throw new Exception("Error preparing statement: " . $conn->error);
     }
 
-    // Bind with an extra slot for is_draft to handle the IF condition
-    $stmt->bind_param("iiii", $is_draft, $user_id, $is_draft, $metric_id);
+    // Bind parameters: is_draft, submitted_by, metric_id
+    $stmt->bind_param("iii", $is_draft, $user_id, $metric_id);
     
     if (!$stmt->execute()) {
         throw new Exception("Error updating outcome: " . $stmt->error);
-    }
-    
-    // Get the outcome data for history recording
-    $outcome = get_outcome_data_for_display($metric_id);
-    if (!$outcome) {
-        throw new Exception("Could not retrieve outcome data");
     }
     
     // Record in history
