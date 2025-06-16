@@ -130,7 +130,7 @@ if (!function_exists('format_time_ago')) {
                             </span>
                         <?php endif; ?>
                     </button>
-                    <div class="dropdown-menu dropdown-menu-end notification-dropdown p-0" aria-labelledby="notificationsDropdown">
+                    <div class="dropdown-menu dropdown-menu-end notification-dropdown notification-dropdown-mobile p-0" aria-labelledby="notificationsDropdown">
                         <div class="notification-header p-3">
                             <h6 class="m-0 d-flex justify-content-between align-items-center">
                                 <span>Notifications</span>

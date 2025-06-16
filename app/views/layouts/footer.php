@@ -24,6 +24,7 @@
 <!-- Utility scripts -->
 <script src="<?php echo asset_url('js/utilities', 'rating_utils.js'); ?>"></script>
 <script src="<?php echo asset_url('js/utilities', 'dropdown_init.js'); ?>"></script>
+<script src="<?php echo asset_url('js/utilities', 'mobile_dropdown_position.js'); ?>"></script>
     
 <!-- Core App JavaScript -->
 <script>
