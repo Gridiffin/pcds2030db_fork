@@ -19,15 +19,53 @@
 
 .program-info-card .card-header,
 .performance-card .card-header {
-  background: linear-gradient(45deg, rgba(var(--primary-rgb), 0.05), rgba(var(--primary-rgb), 0.1));
-  border-bottom: 1px solid rgba(var(--primary-rgb), 0.1);
+  background: linear-gradient(45deg, rgba(var(--primary-rgb), 0.85), rgba(var(--primary-rgb), 0.95));
+  border-bottom: 1px solid rgba(var(--primary-rgb), 0.3);
   padding: 1rem 1.25rem;
+  color: white; /* Ensure all text in header is white */
 }
 
 .program-info-card .card-title,
 .performance-card .card-title {
   font-weight: 600;
-  color: var(--primary-color);
+  color: white !important; /* Override primary color with white */
+}
+
+/* Ensure icons in the header are also white */
+.program-info-card .card-header .fas,
+.program-info-card .card-header i,
+.performance-card .card-header .fas,
+.performance-card .card-header i {
+  color: white !important;
+}
+
+/* Override Bootstrap's text-primary class in card headers */
+.program-info-card .card-header .text-primary,
+.performance-card .card-header .text-primary {
+  color: white !important;
+}
+
+/* Ensure buttons in the header are visible */
+.program-info-card .card-header .btn,
+.performance-card .card-header .btn {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: white;
+  transition: all 0.2s ease;
+}
+
+.program-info-card .card-header .btn:hover,
+.performance-card .card-header .btn:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  color: white;
+  transform: translateY(-1px);
+}
+
+/* Rating badges should maintain their original colors but ensure readability */
+.program-info-card .card-header .rating-badge,
+.performance-card .card-header .rating-badge {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 /* Status badge enhancement */

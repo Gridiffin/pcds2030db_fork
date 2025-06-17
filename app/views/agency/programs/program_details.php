@@ -319,27 +319,27 @@ $showNoTargetsAlert = empty($targets) && $is_owner; // Only show no targets aler
             <i class="fas fa-tasks me-2"></i>Current Period Performance
         </h5>
     </div>
-    <div class="card-body">
-        <?php if (!empty($targets)): ?>
+    <div class="card-body">        <?php if (!empty($targets)): ?>
             <div class="targets-container">
                 <div class="table-responsive">
-                    <table class="table table-bordered table-hover">
+                    <table class="table table-sm table-hover table-bordered" style="min-width: 500px;">
                         <thead class="table-light">
                             <tr>
-                                <th width="50%">Target</th>
-                                <th width="50%">Status / Achievements</th>
+                                <th width="50%">Program Target</th>
+                                <th width="50%">Status & Achievements</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php foreach ($targets as $index => $target): ?>
-                            <tr class="<?php echo ($index % 2 == 0) ? 'bg-light' : ''; ?>">
-                                <td>
+                            <tr>
+                                <td class="text-truncate">
                                     <?php if (!empty($target['text'])): ?>
                                         <?php echo nl2br(htmlspecialchars($target['text'])); ?>
                                     <?php else: ?>
                                         <span class="text-muted fst-italic">No target specified</span>
                                     <?php endif; ?>
-                                </td>                                <td>
+                                </td>
+                                <td class="text-truncate">
                                     <?php if (!empty($target['status_description'])): ?>
                                         <?php echo nl2br(htmlspecialchars($target['status_description'])); ?>
                                     <?php else: ?>
@@ -351,26 +351,17 @@ $showNoTargetsAlert = empty($targets) && $is_owner; // Only show no targets aler
                         </tbody>
                     </table>
                 </div>
-                
-                <?php if (isset($current_submission['achievement']) && !empty($current_submission['achievement'])): ?>
-                <div class="mt-3 p-3 rounded border bg-light">
-                    <label class="fw-medium mb-1">Overall Achievement:</label>
-                    <div>
-                        <?php echo nl2br(htmlspecialchars($current_submission['achievement'])); ?>
-                    </div>
+            </div>            
+            <?php if (isset($current_submission['achievement']) && !empty($current_submission['achievement'])): ?>
+            <div class="overall-achievement p-4">
+                <div class="overall-achievement-label">
+                    <i class="fas fa-award me-2"></i>Overall Achievement
                 </div>
-                <?php endif; ?>
-            </div>
-            
-            <?php if (!empty($remarks)): ?>
-            <div class="remarks-section mt-4">
-                <h6 class="border-bottom pb-2 mb-3">Additional Remarks</h6>
-                <div class="p-3 bg-light rounded border">
-                    <?php echo nl2br(htmlspecialchars($remarks)); ?>
+                <div class="achievement-content">
+                    <?php echo nl2br(htmlspecialchars($current_submission['achievement'])); ?>
                 </div>
             </div>
             <?php endif; ?>
-            
         <?php else: ?>
             <div class="alert alert-info">
                 <i class="fas fa-info-circle me-2"></i>

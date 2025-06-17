@@ -1,0 +1,146 @@
+/**
+ * Responsive Performance Table Styles
+ * Standard table with horizontal scrolling on small screens
+ */
+
+/* Base table styling */
+.performance-table,
+.admin-performance-table,
+.program-details-table {
+  width: 100%;
+  margin-bottom: 0;
+}
+
+.performance-table .cell-content,
+.admin-performance-table .cell-content,
+.program-details-table .cell-content {
+  word-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
+}
+
+/* Alternating row colors with proper text visibility */
+.performance-row,
+.admin-performance-row,
+.program-row {
+  color: #212529; /* Ensure dark text for default rows */
+}
+
+.performance-row.bg-light,
+.admin-performance-row.bg-light,
+.program-row.bg-light {
+  background-color: #f8f9fa !important; /* Light gray background */
+  color: #212529 !important; /* Dark text for contrast */
+}
+
+.performance-row:not(.bg-light),
+.admin-performance-row:not(.bg-light),
+.program-row:not(.bg-light) {
+  background-color: #ffffff; /* White background for odd rows */
+  color: #212529; /* Dark text */
+}
+
+/* Desktop and tablet styling */
+@media (min-width: 769px) {
+  .performance-table td,
+  .admin-performance-table td,
+  .program-details-table td {
+    white-space: normal;
+    word-wrap: break-word;
+    vertical-align: top;
+    padding: 1rem;
+  }
+  
+  .performance-table .target-cell,
+  .performance-table .admin-target-cell,
+  .admin-performance-table .target-cell,
+  .admin-performance-table .admin-target-cell,
+  .program-details-table .target-cell {
+    border-right: 1px solid #dee2e6;
+  }
+  
+  .performance-table .cell-content,
+  .admin-performance-table .cell-content,
+  .program-details-table .cell-content {
+    line-height: 1.5;
+  }
+  
+  /* Enhanced hover effects for desktop */
+  .performance-row:hover,
+  .admin-performance-row:hover,
+  .program-row:hover {
+    background-color: rgba(var(--forest-light-rgb, 158, 188, 138), 0.15) !important;
+    color: #212529 !important;
+    transform: translateY(-1px);
+    transition: all 0.2s ease;
+  }
+}
+
+/* Mobile and tablet horizontal scrolling */
+@media (max-width: 991.98px) {
+  .table-responsive {
+    width: 100%;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    display: block !important;
+    white-space: nowrap;
+  }
+  
+  .table-responsive table {
+    min-width: 600px !important;
+    width: auto !important;
+    display: table !important;
+    table-layout: auto !important;
+  }
+  
+  .table-responsive table thead {
+    display: table-header-group !important;
+  }
+  
+  .table-responsive table tbody {
+    display: table-row-group !important;
+  }
+  
+  .table-responsive table tr {
+    display: table-row !important;
+  }
+  
+  .table-responsive table td,
+  .table-responsive table th {
+    display: table-cell !important;
+    white-space: nowrap !important;
+    padding: 0.5rem !important;
+    min-width: 150px;
+  }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  .performance-row,
+  .admin-performance-row,
+  .program-row {
+    transition: none;
+  }
+}
+
+/* Print styles */
+@media print {
+  .performance-table,
+  .admin-performance-table,
+  .program-details-table {
+    border-collapse: collapse;
+  }
+  
+  .performance-table td,
+  .admin-performance-table td,
+  .program-details-table td {
+    border: 1px solid #000;
+    padding: 0.5rem;
+  }
+  
+  .performance-row,
+  .admin-performance-row,
+  .program-row {
+    page-break-inside: avoid;
+  }
+}

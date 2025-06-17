@@ -20,6 +20,8 @@
 @import 'components/tables.css';
 @import 'components/alerts.css';
 @import 'components/badges.css';
+@import 'components/responsive-performance-table.css';
+@import 'components/admin-performance-table.css';
 
 /* Pages */
 @import 'pages/style-guide.css';
