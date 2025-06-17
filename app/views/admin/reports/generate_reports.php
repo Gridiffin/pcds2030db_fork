@@ -388,24 +388,20 @@ $jsConfig = [
                         <h5 class="mb-0">
                             <i class="fas fa-history me-2"></i>Recent Reports
                         </h5>
-                    </div>                    <div class="card-body" id="recentReportsContainer">
-                        <?php if (!empty($recentReports)): ?>
+                    </div>                    <div class="card-body" id="recentReportsContainer">                        <?php if (!empty($recentReports)): ?>
                             <div class="table-responsive">
-                                <table class="table table-hover table-sm">
-                                    <thead>
+                                <table class="table table-hover table-sm">                                    <thead>
                                         <tr>
-                                            <th>Report Name</th>
-                                            <th>Period</th>
-                                            <th>Generated</th>
-                                            <th>By</th>
-                                            <th>Actions</th>
+                                            <th style="width: 45%;">Report Name</th>
+                                            <th style="width: 20%;">Period</th>
+                                            <th style="width: 25%;">Generated</th>
+                                            <th style="width: 10%;">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php foreach ($recentReports as $report): ?>
-                                            <tr>
+                                        <?php foreach ($recentReports as $report): ?>                                            <tr>
                                                 <td>
-                                                    <div style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" 
+                                                    <div style="max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" 
                                                          title="<?php echo htmlspecialchars($report['report_name']); ?>">
                                                         <?php echo htmlspecialchars($report['report_name']); ?>
                                                     </div>
@@ -414,19 +410,12 @@ $jsConfig = [
                                                     <small class="text-muted">
                                                         <?php echo formatPeriod($report); ?>
                                                     </small>
-                                                </td>
-                                                <td>
+                                                </td>                                                <td>
                                                     <small class="text-muted">
                                                         <?php echo date('M j, Y g:i A', strtotime($report['generated_at'])); ?>
                                                     </small>
-                                                </td>
-                                                <td>
-                                                    <small class="text-muted">
-                                                        <?php echo htmlspecialchars($report['username'] ?? 'Unknown'); ?>
-                                                    </small>
-                                                </td>
-                                                <td>
-                                                    <div class="btn-group btn-group-sm">
+                                                </td>                                                <td>
+                                                    <div class="btn-group btn-group-sm" style="white-space: nowrap;">
                                                         <?php if (!empty($report['pptx_path'])): ?>
                                                             <a href="<?php echo APP_URL; ?>/download.php?type=report&file=<?php echo urlencode($report['pptx_path']); ?>" 
                                                                class="btn btn-outline-success btn-sm" 
