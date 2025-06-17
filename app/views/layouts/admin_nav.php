@@ -28,9 +28,11 @@ $is_settings_page = in_array($current_page, ['reporting_periods.php', 'audit_log
 
 <!-- Main Navigation -->
 <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
-    <div class="container-fluid px-4">
-        <a class="navbar-brand" href="<?php echo APP_URL; ?>/app/views/admin/dashboard/dashboard.php">
-            <?php echo APP_NAME; ?>
+    <div class="container-fluid px-4">        <a class="navbar-brand" href="<?php echo APP_URL; ?>/app/views/admin/dashboard/dashboard.php"
+           data-full-text="<?php echo APP_NAME; ?>" 
+           data-short-text="PCDS 2030 Dashboard"
+           data-ultra-short-text="PCDS Dashboard">
+            <span class="brand-text"><?php echo APP_NAME; ?></span>
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNavbar" aria-controls="adminNavbar" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>

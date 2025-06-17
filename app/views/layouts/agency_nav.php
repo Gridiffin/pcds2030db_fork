@@ -67,9 +67,11 @@ if (!function_exists('format_time_ago')) {
 
 <!-- Main Navigation -->
 <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
-    <div class="container-fluid px-4">        <a class="navbar-brand" href="<?php echo APP_URL; ?>/app/views/agency/dashboard/dashboard.php">
-            <?php echo APP_NAME; ?>
-            
+    <div class="container-fluid px-4">        <a class="navbar-brand" href="<?php echo APP_URL; ?>/app/views/agency/dashboard/dashboard.php" 
+           data-full-text="<?php echo APP_NAME; ?>" 
+           data-short-text="PCDS 2030 Dashboard"
+           data-ultra-short-text="PCDS Dashboard">
+            <span class="brand-text"><?php echo APP_NAME; ?></span>
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>

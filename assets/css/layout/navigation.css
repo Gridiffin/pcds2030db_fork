@@ -33,20 +33,23 @@
   font-family: var(--font-primary);
 }
 
-/* Navbar brand */
+/* Navbar brand - Responsive */
 .navbar-brand {
   display: inline-flex;
   align-items: center;
   padding-top: 0.3125rem;
   padding-bottom: 0.3125rem;
   margin-right: 1.5rem;
-  font-size: 1.35rem;
-  line-height: inherit;
+  font-size: clamp(1rem, 2.5vw, 1.35rem); /* Responsive font size */
+  line-height: 1.2;
   white-space: nowrap;
   font-weight: var(--font-weight-semibold);
   color: var(--forest-deep);
   letter-spacing: -0.01em;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  max-width: calc(100vw - 200px); /* Prevent overflow, account for navbar controls */
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Important: Prevent underline on hover for navbar brand */
@@ -229,6 +232,7 @@
   
   .navbar-brand {
     font-size: 1.25rem;
+    max-width: calc(100vw - 180px); /* Adjust for mobile navbar controls */
   }
   
   .user-info {
@@ -239,6 +243,22 @@
   /* Ensure notification dropdown is properly positioned */
   .navbar .dropdown {
     position: static !important;
+  }
+}
+
+/* Tablet landscape */
+@media (max-width: 768px) {
+  .navbar-brand {
+    font-size: 1.1rem;
+    max-width: calc(100vw - 160px);
+  }
+}
+
+/* Mobile landscape */
+@media (max-width: 576px) {
+  .navbar-brand {
+    font-size: 1rem;
+    max-width: calc(100vw - 140px);
   }
 }
 
@@ -290,6 +310,50 @@
   .navbar .dropdown {
     order: 1;
     margin-right: 0 !important;
+  }
+  
+  /* Very small screens - aggressive text handling */
+  .navbar-brand {
+    font-size: 0.9rem;
+    max-width: calc(100vw - 120px);
+    line-height: 1.1;
+  }
+}
+
+/* Ultra small screens (iPhone SE and similar) */
+@media (max-width: 380px) {
+  .navbar-brand {
+    font-size: 0.8rem;
+    max-width: calc(100vw - 100px);
+    letter-spacing: -0.02em;
+  }
+  
+  .navbar {
+    padding: 0.4rem 0.75rem;
+  }
+  
+  .navbar-toggler {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* Responsive brand text visibility */
+@media (max-width: 576px) {
+  .navbar-brand .brand-text {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* Ensure proper text scaling on very small screens */
+@media (max-width: 320px) {
+  .navbar-brand {
+    font-size: 0.75rem;
+    max-width: calc(100vw - 80px);
   }
 }
 

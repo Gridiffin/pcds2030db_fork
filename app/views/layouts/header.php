@@ -32,9 +32,11 @@
     <script>
         window.APP_URL = '<?php echo APP_URL; ?>';
     </script>
-    
-    <!-- JavaScript URL helper functions -->
+      <!-- JavaScript URL helper functions -->
     <script src="<?php echo asset_url('js', 'url_helpers.js'); ?>"></script>
+    
+    <!-- Responsive navbar text handler -->
+    <script src="<?php echo asset_url('js', 'responsive-navbar.js'); ?>"></script>
     
     <!-- Additional page-specific styles -->
     <?php if (isset($additionalStyles) && is_array($additionalStyles)): ?>
