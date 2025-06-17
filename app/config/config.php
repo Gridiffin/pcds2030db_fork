@@ -14,7 +14,62 @@ define('DB_NAME', 'pcds2030_dashboard'); // Updated to correct database name
 
 // Application settings
 define('APP_NAME', 'PCDS2030 Dashboard Forestry Sector'); 
-define('APP_URL', 'http://localhost/pcds2030_dashboard');
+
+// Dynamic APP_URL detection for better cross-environment compatibility
+if (!defined('APP_URL')) {
+    // Check if we're running from command line
+    if (php_sapi_name() === 'cli') {
+        define('APP_URL', 'http://localhost/pcds2030_dashboard'); // Default for CLI
+    } else {
+        // Detect the correct APP_URL based on current request
+        $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        
+        // Get the directory path of the application
+        $script_name = $_SERVER['SCRIPT_NAME'] ?? '';
+        $request_uri = $_SERVER['REQUEST_URI'] ?? '';
+        
+        // Extract the base path by finding the common directory structure
+        $app_path = '';
+        if (strpos($script_name, '/pcds2030_dashboard/') !== false) {
+            // If script is in pcds2030_dashboard folder
+            $app_path = '/pcds2030_dashboard';
+        } elseif (strpos($script_name, '/') !== false) {
+            // Try to detect from script path
+            $path_parts = explode('/', trim($script_name, '/'));
+            if (count($path_parts) > 0) {
+                // Check if we're in a subdirectory
+                foreach ($path_parts as $part) {
+                    if (in_array($part, ['app', 'views', 'admin', 'agency'])) {
+                        break;
+                    }
+                    if (!empty($part)) {
+                        $app_path .= '/' . $part;
+                    }
+                }
+            }
+        }
+        
+        // Fallback to document root detection
+        if (empty($app_path)) {
+            $document_root = $_SERVER['DOCUMENT_ROOT'] ?? '';
+            $current_dir = dirname(dirname(dirname(__FILE__)));
+            if (!empty($document_root) && strpos($current_dir, $document_root) === 0) {
+                $app_path = str_replace($document_root, '', $current_dir);
+                $app_path = str_replace('\\', '/', $app_path); // Windows compatibility
+            }
+        }
+        
+        // Ensure app_path doesn't end with slash and starts with slash
+        $app_path = '/' . trim($app_path, '/');
+        if ($app_path === '/') {
+            $app_path = '';
+        }
+        
+        define('APP_URL', $protocol . '://' . $host . $app_path);
+    }
+}
+
 define('APP_VERSION', '1.0.0'); // Example version
 define('ASSET_VERSION', APP_VERSION); // Use APP_VERSION for asset versioning
 

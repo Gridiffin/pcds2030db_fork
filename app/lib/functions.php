@@ -7,6 +7,8 @@
 require_once 'rating_helpers.php';
 // Include status helpers
 require_once 'status_helpers.php';
+// Include asset helpers
+require_once 'asset_helpers.php';
 
 
 /**
