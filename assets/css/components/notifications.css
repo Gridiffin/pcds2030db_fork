@@ -267,3 +267,153 @@
     background-color: var(--forest-deep);
     border-color: var(--forest-deep);
 }
+
+/* Toast Notification System */
+#toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    max-width: 350px;
+    pointer-events: none;
+}
+
+#toast-container .alert {
+    pointer-events: auto;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: none;
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+    animation: slideInRight 0.3s ease-out;
+}
+
+#toast-container .alert:last-child {
+    margin-bottom: 0;
+}
+
+/* Toast fade-out animation */
+#toast-container .alert.fade:not(.show) {
+    animation: slideOutRight 0.3s ease-in;
+}
+
+/* Toast slide animations */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* Enhanced toast styling */
+#toast-container .alert-success {
+    background-color: rgba(40, 167, 69, 0.95);
+    color: #212529; /* Dark text for better contrast */
+    border-left: 4px solid #155724;
+}
+
+#toast-container .alert-danger {
+    background-color: rgba(220, 53, 69, 0.95);
+    color: white; /* Keep white for red background */
+    border-left: 4px solid #721c24;
+}
+
+#toast-container .alert-warning {
+    background-color: rgba(255, 193, 7, 0.95);
+    color: #212529; /* Dark text for yellow background */
+    border-left: 4px solid #856404;
+}
+
+#toast-container .alert-info {
+    background-color: rgba(23, 162, 184, 0.95);
+    color: white; /* Keep white for blue background */
+    border-left: 4px solid #0c5460;
+}
+
+/* Toast icon styling for better visibility */
+#toast-container .alert-success .fas {
+    color: #155724; /* Darker green for icon */
+}
+
+#toast-container .alert-warning .fas {
+    color: #856404; /* Darker yellow/amber for icon */
+}
+
+#toast-container .alert-danger .fas,
+#toast-container .alert-info .fas {
+    color: inherit; /* Keep white for red and blue backgrounds */
+}
+
+/* Ensure button close visibility */
+#toast-container .alert-success .btn-close,
+#toast-container .alert-warning .btn-close {
+    filter: invert(1); /* Make close button dark for light backgrounds */
+}
+
+#toast-container .alert-danger .btn-close,
+#toast-container .alert-info .btn-close {
+    filter: none; /* Keep close button light for dark backgrounds */
+}
+
+/* Toast responsive design */
+@media (max-width: 768px) {
+    #toast-container {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+    }
+}
+
+/* Loading Overlay Styles */
+#loading-overlay {
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+}
+
+#loading-overlay .spinner-border {
+    width: 3rem;
+    height: 3rem;
+    border-width: 0.3em;
+}
+
+/* Enhanced delete button states */
+.btn-deleting {
+    background-color: #ffc107 !important;
+    border-color: #ffc107 !important;
+    color: #212529 !important;
+    pointer-events: none;
+    opacity: 0.8;
+}
+
+.btn-deleting:hover,
+.btn-deleting:focus {
+    background-color: #ffc107 !important;
+    border-color: #ffc107 !important;
+    color: #212529 !important;
+}
+
+/* Row highlighting during deletion */
+.row-deleting {
+    background-color: #fff3cd !important;
+    border-left: 4px solid #ffc107 !important;
+    transition: all 0.3s ease;
+}
+
+.row-deleting td {
+    background-color: transparent !important;
+}

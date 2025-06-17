@@ -442,7 +442,55 @@ function initDeleteButtons() {
  */
 function confirmDeleteProgram(programId, periodId) {
     if (confirm('Are you sure you want to delete this program? This action cannot be undone.')) {
-        window.location.href = `delete_program.php?id=${programId}&period_id=${periodId}`;
+        // Find and disable the delete button to prevent double-clicks
+        const deleteButton = document.querySelector(`a[onclick*="confirmDeleteProgram(${programId}"]`);
+        const programRow = deleteButton ? deleteButton.closest('tr') : null;
+          if (deleteButton) {
+            deleteButton.classList.add('btn-deleting');
+            deleteButton.classList.remove('btn-danger');
+            deleteButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Deleting...';
+            deleteButton.title = 'Deleting program...';
+        }
+        
+        // Highlight the row being deleted with smooth animation
+        if (programRow) {
+            programRow.classList.add('row-deleting');
+        }
+        
+        // Show toast notification for immediate feedback
+        showToast('Deleting program...', 'info', 3000);
+        
+        // Create a form to submit the delete request via POST
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = 'delete_program.php';
+        
+        // Add program_id field
+        const programIdField = document.createElement('input');
+        programIdField.type = 'hidden';
+        programIdField.name = 'program_id';
+        programIdField.value = programId;
+        form.appendChild(programIdField);
+        
+        // Add period_id field if provided
+        if (periodId && periodId !== 'null') {
+            const periodIdField = document.createElement('input');
+            periodIdField.type = 'hidden';
+            periodIdField.name = 'period_id';
+            periodIdField.value = periodId;
+            form.appendChild(periodIdField);
+        }
+        
+        // Add confirm_delete field
+        const confirmField = document.createElement('input');
+        confirmField.type = 'hidden';
+        confirmField.name = 'confirm_delete';
+        confirmField.value = '1';
+        form.appendChild(confirmField);
+        
+        // Append to body and submit
+        document.body.appendChild(form);
+        form.submit();
     }
 }
 
@@ -495,5 +543,139 @@ function applyInitialFilters() {
                 filterPrograms('submitted');
             }
         }
+    }
+}
+
+/**
+ * Toast Notification System
+ * Provides immediate feedback to users without page reloads
+ */
+function showToast(message, type = 'info', duration = 5000) {
+    // Create toast container if it doesn't exist
+    let toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        toastContainer.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            max-width: 350px;
+        `;
+        document.body.appendChild(toastContainer);
+    }
+    
+    // Create toast element
+    const toastId = 'toast-' + Date.now();
+    const toast = document.createElement('div');
+    toast.id = toastId;
+    toast.className = `alert alert-${type} alert-dismissible fade show mb-2`;
+    toast.setAttribute('role', 'alert');
+    toast.style.cssText = `
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border: none;
+    `;
+    
+    // Set icon based on type
+    let icon;
+    switch (type) {
+        case 'success':
+            icon = 'fa-check-circle';
+            break;
+        case 'danger':
+        case 'error':
+            icon = 'fa-exclamation-circle';
+            break;
+        case 'warning':
+            icon = 'fa-exclamation-triangle';
+            break;
+        default:
+            icon = 'fa-info-circle';
+    }
+    
+    toast.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="fas ${icon} me-2"></i>
+            <div>${message}</div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    `;
+    
+    // Add to container
+    toastContainer.appendChild(toast);
+    
+    // Auto-remove after duration
+    if (duration > 0) {
+        setTimeout(() => {
+            if (document.getElementById(toastId)) {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 150);
+            }
+        }, duration);
+    }
+    
+    return toast;
+}
+
+/**
+ * Enhanced error handling for form submissions
+ */
+function handleFormError(message) {
+    showToast(message, 'danger', 8000);
+    console.error('Form submission error:', message);
+}
+
+/**
+ * Show loading state for long operations
+ */
+function showLoadingOverlay(message = 'Processing...') {
+    let overlay = document.getElementById('loading-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'loading-overlay';
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        `;
+        
+        const spinner = document.createElement('div');
+        spinner.className = 'text-center text-white';
+        spinner.innerHTML = `
+            <div class="spinner-border mb-3" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <div id="loading-message">${message}</div>
+        `;
+        
+        overlay.appendChild(spinner);
+        document.body.appendChild(overlay);
+    } else {
+        document.getElementById('loading-message').textContent = message;
+        overlay.style.display = 'flex';
+    }
+    
+    return overlay;
+}
+
+/**
+ * Hide loading overlay
+ */
+function hideLoadingOverlay() {
+    const overlay = document.getElementById('loading-overlay');
+    if (overlay) {
+        overlay.style.display = 'none';
     }
 }

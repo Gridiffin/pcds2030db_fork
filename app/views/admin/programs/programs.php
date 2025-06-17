@@ -104,10 +104,45 @@ $header_config = [
 
 // Include the modern page header
 require_once '../../layouts/page_header.php';
+
+// Check for session messages
+$message = '';
+$message_type = '';
+
+if (isset($_SESSION['message']) && !empty($_SESSION['message'])) {
+    $message = $_SESSION['message'];
+    $message_type = $_SESSION['message_type'] ?? 'info';
+    
+    // Clear the message from session after using it
+    unset($_SESSION['message']);
+    unset($_SESSION['message_type']);
+}
 ?>
 
 <!-- Programs Management Content -->
-<main class="flex-fill">
+<main class="flex-fill">    <?php if (!empty($message)): ?>
+        <div class="alert alert-<?php echo $message_type; ?> alert-dismissible fade show mb-4" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-<?php echo $message_type === 'success' ? 'check-circle' : ($message_type === 'danger' ? 'exclamation-circle' : 'info-circle'); ?> me-2"></i>
+                <div><?php echo htmlspecialchars($message); ?></div>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </div>
+        
+        <script>
+        // Show toast notification for immediate feedback
+        document.addEventListener('DOMContentLoaded', function() {
+            <?php if ($message_type === 'success'): ?>
+                showToast('<?php echo addslashes($message); ?>', 'success', 6000);
+            <?php elseif ($message_type === 'danger'): ?>
+                showToast('<?php echo addslashes($message); ?>', 'danger', 8000);
+            <?php else: ?>
+                showToast('<?php echo addslashes($message); ?>', '<?php echo $message_type; ?>', 5000);
+            <?php endif; ?>
+        });
+        </script>
+    <?php endif; ?>
+
     <!-- Period Selector Component -->
     <?php require_once ROOT_PATH . 'app/lib/period_selector.php'; ?>
 
