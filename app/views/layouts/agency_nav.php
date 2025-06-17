@@ -119,8 +119,16 @@ if (!function_exists('format_time_ago')) {
                         <i class="fas fa-globe me-1"></i> All Sectors
                     </a>
                 </li>
-            </ul>
-            <div class="d-flex align-items-center ms-auto">
+            </ul>            <div class="d-flex align-items-center ms-auto">
+                <!-- Public Reports Icon -->
+                <div class="me-3">
+                    <a href="<?php echo APP_URL; ?>/app/views/agency/reports/public_reports.php" 
+                       class="btn btn-link nav-link p-0 <?php if ($current_page == 'public_reports.php') echo 'active'; ?>" 
+                       title="Public Reports">
+                        <i class="fas fa-file-download"></i>
+                    </a>
+                </div>
+                
                 <!-- Notifications Dropdown -->
                 <div class="dropdown me-3">
                     <button class="btn btn-link nav-link position-relative dropdown-toggle p-0 <?php if ($current_page == 'all_notifications.php') echo 'active notification-active'; ?>" id="notificationsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
