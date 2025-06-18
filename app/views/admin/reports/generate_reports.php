@@ -21,6 +21,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/admins/index.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/admins/agencies.php';
 
 // Security check: Verify user is admin
 if (!is_admin()) {
@@ -145,6 +146,7 @@ function formatPeriod($report) {
 $periods = getReportingPeriods();
 $sectors = getSectors();
 $recentReports = getRecentReports(10);
+$agencies = get_all_agencies($conn);
 
 // Additional JavaScript files required for this page (order matters!)
 $additionalScripts = [
@@ -216,16 +218,17 @@ $jsConfig = [
                     </div>
                     <div class="card-body">
                         <form id="reportGenerationForm" novalidate>
-                            <!-- Period and Sector Selection -->
+                            <!-- Period, Sector, and Agency Selection -->
                             <div class="row">
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <div class="mb-3">
                                         <label for="periodSelect" class="form-label">
                                             <i class="fas fa-calendar-alt me-1"></i>Reporting Period
                                             <span class="text-danger">*</span>
                                         </label>
                                         <select class="form-select" id="periodSelect" name="period_id" required>
-                                            <option value="">Select Reporting Period</option>                                            <?php foreach ($periods as $period): ?>
+                                            <option value="">Select Reporting Period</option>
+                                            <?php foreach ($periods as $period): ?>
                                                 <option value="<?php echo htmlspecialchars($period['period_id']); ?>">
                                                     <?php echo htmlspecialchars(get_period_display_name($period)); ?>
                                                 </option>
@@ -234,7 +237,7 @@ $jsConfig = [
                                         <div class="invalid-feedback">Please select a reporting period.</div>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <div class="mb-3">
                                         <label for="sectorSelect" class="form-label">
                                             <i class="fas fa-industry me-1"></i>Sector
@@ -249,6 +252,22 @@ $jsConfig = [
                                             <?php endforeach; ?>
                                         </select>
                                         <div class="invalid-feedback">Please select a sector.</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="agencySelect" class="form-label">
+                                            <i class="fas fa-users me-1"></i>Agency
+                                            <span class="text-danger">*</span>
+                                        </label>
+                                        <select class="form-select" id="agencySelect" name="agency_ids[]" multiple>
+                                            <?php foreach ($agencies as $agency): ?>
+                                                <option value="<?php echo htmlspecialchars($agency['user_id']); ?>">
+                                                    <?php echo htmlspecialchars($agency['agency_name']); ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <div class="form-text">You may select one or more agencies to filter programs. Leave empty to show all.</div>
                                     </div>
                                 </div>
                             </div>

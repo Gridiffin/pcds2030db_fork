@@ -487,6 +487,25 @@
     opacity: 0;
 }
 
+/* Agency filter and grouped program selector styles */
+#agencySelect {
+    min-height: 120px;
+}
+.agency-group {
+    border-left: 3px solid var(--bs-primary);
+    margin-bottom: 0.5rem;
+    padding-left: 0.75rem;
+    background: #f8f9fa;
+    border-radius: 0.25rem;
+}
+.agency-group .fw-semibold {
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+}
+.program-checkbox-container.ms-4 {
+    margin-left: 1.5rem !important;
+}
+
 @media (max-width: 768px) {
     .reports-table .action-btn {
         padding: 0.25rem 0.5rem;

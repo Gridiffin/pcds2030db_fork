@@ -49,6 +49,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const programSelector = document.getElementById('programSelector');
     const periodSelect = document.getElementById('periodSelect');
     const sectorSelect = document.getElementById('sectorSelect');
+    const agencySelect = document.getElementById('agencySelect');
     const programContainerElement = programSelector ? programSelector.querySelector('.program-selector-container') : null;
 
     // Show default state in program selector if it exists and no period is selected
@@ -86,7 +87,11 @@ document.addEventListener('DOMContentLoaded', function() {
     function loadPrograms() {
         const periodId = periodSelect.value;
         const sectorId = sectorSelect.value;
-          // Need at least a period to load programs
+        let agencyIds = [];
+        if (agencySelect) {
+            agencyIds = Array.from(agencySelect.selectedOptions).map(opt => opt.value).filter(Boolean);
+        }
+        // Need at least a period to load programs
         if (!periodId) {
             if (programContainerElement) {
                 programContainerElement.innerHTML = `
@@ -107,9 +112,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // Show loading indicator
         showProgramsLoading();
         
-        // Fetch programs for this period
-        const url = `${APP_URL}/app/api/get_period_programs.php?period_id=${periodId}${sectorId ? '&sector_id=' + sectorId : ''}`;
-        
+        // Build URL with agency IDs
+        let url = `${APP_URL}/app/api/get_period_programs.php?period_id=${periodId}${sectorId ? '&sector_id=' + sectorId : ''}`;
+        if (agencyIds.length > 0) {
+            url += '&agency_ids=' + agencyIds.join(',');
+        }
         fetch(url)
             .then(response => {
                 if (!response.ok) {
@@ -142,18 +149,23 @@ document.addEventListener('DOMContentLoaded', function() {
     // Render programs in the UI
     function renderPrograms(programs, selectedSectorId) {
         let html = '';
-        
         for (const sector in programs) {
             if (selectedSectorId && sector !== selectedSectorId) continue;
-            
             html += `
             <div class="sector-programs mb-3" data-sector-id="${sector}">
                 <h6 class="sector-name fw-bold ms-2 mb-2">${programs[sector].sector_name}</h6>
             `;
-              if (programs[sector].programs.length > 0) {
-                programs[sector].programs.forEach(program => {
+            // Group by agency if available
+            const agencyGroups = {};
+            programs[sector].programs.forEach(program => {
+                if (!agencyGroups[program.agency_name]) agencyGroups[program.agency_name] = [];
+                agencyGroups[program.agency_name].push(program);
+            });
+            for (const agency in agencyGroups) {
+                html += `<div class="agency-group mb-2"><div class="fw-semibold text-primary ms-3">${agency}</div>`;
+                agencyGroups[agency].forEach(program => {
                     html += `
-                        <div class="program-checkbox-container" data-program-id="${program.program_id}">
+                        <div class="program-checkbox-container ms-4" data-program-id="${program.program_id}">
                             <div class="form-check">
                                 <input type="checkbox" class="form-check-input program-checkbox" 
                                     id="program_${program.program_id}" 
@@ -171,18 +183,18 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     `;
                 });
-            } else {
+                html += `</div>`;
+            }
+            if (programs[sector].programs.length === 0) {
                 html += `<p class="text-muted">No programs available for this sector.</p>`;
             }
-            
             html += `</div>`;
         }
-          if (programSelector) {
-            programSelector.innerHTML = html;
-            
-            // Initialize select buttons and update count
-            initializeSelectButtons();
-            updateProgramCount();
+        if (programSelector) {
+            const programContainerElement = programSelector.querySelector('.program-selector-container');
+            if (programContainerElement) {
+                programContainerElement.innerHTML = html;
+            }
         }
     }
     
@@ -533,6 +545,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         }
+          // Add event listener for agencySelect
+    if (agencySelect) {
+        agencySelect.addEventListener('change', loadPrograms);
+    }
+    
           // Show default state in program selector
         if (programContainerElement) {
             programContainerElement.innerHTML = `

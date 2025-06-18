@@ -27,6 +27,11 @@ if (!is_admin()) {
 $period_id = isset($_GET['period_id']) ? intval($_GET['period_id']) : null;
 $sector_id = isset($_GET['sector_id']) ? intval($_GET['sector_id']) : null;
 
+$agency_ids = [];
+if (isset($_GET['agency_ids']) && $_GET['agency_ids'] !== '') {
+    $agency_ids = array_filter(array_map('intval', explode(',', $_GET['agency_ids'])));
+}
+
 // Validate period_id
 if (!$period_id) {
     ob_end_clean(); // Clear any buffered output
@@ -37,27 +42,32 @@ if (!$period_id) {
 
 try {
     // Get programs that have submissions for this period or all programs if no submissions exist
-    $programs_query = "SELECT DISTINCT p.program_id, p.program_name, s.sector_id, s.sector_name
+    $programs_query = "SELECT DISTINCT p.program_id, p.program_name, s.sector_id, s.sector_name, u.agency_name, u.user_id as owner_agency_id
                       FROM programs p
                       LEFT JOIN program_submissions ps ON p.program_id = ps.program_id AND ps.period_id = ?
                       LEFT JOIN sectors s ON p.sector_id = s.sector_id
+                      LEFT JOIN users u ON p.owner_agency_id = u.user_id
                       WHERE 
                             (ps.period_id IS NOT NULL OR NOT EXISTS (
                                 SELECT 1 FROM program_submissions WHERE period_id = ?
                             ))
-                            " . ($sector_id ? "AND p.sector_id = ?" : "") . "
-                      ORDER BY s.sector_name, p.program_name";
+                            ". ($sector_id ? "AND p.sector_id = ? " : "") .
+                            (!empty($agency_ids) ? "AND p.owner_agency_id IN (" . implode(",", array_fill(0, count($agency_ids), '?')) . ") " : "") .
+                      "ORDER BY s.sector_name, u.agency_name, p.program_name";
     
     // Add debug logging
     error_log("Fetching programs for period_id: {$period_id}" . ($sector_id ? ", sector_id: {$sector_id}" : ", all sectors"));
     
-    $stmt = $conn->prepare($programs_query);
-
-    if ($sector_id) {
-        $stmt->bind_param("iii", $period_id, $period_id, $sector_id);
-    } else {
-        $stmt->bind_param("ii", $period_id, $period_id);
+    // Prepare statement with dynamic params
+    $param_types = $sector_id ? 'iii' : 'ii';
+    $params = [$period_id, $period_id];
+    if ($sector_id) $params[] = $sector_id;
+    if (!empty($agency_ids)) {
+        $param_types .= str_repeat('i', count($agency_ids));
+        $params = array_merge($params, $agency_ids);
     }
+    $stmt = $conn->prepare($programs_query);
+    $stmt->bind_param($param_types, ...$params);
 
     $stmt->execute();    $result = $stmt->get_result();
     $program_count = $result->num_rows;
