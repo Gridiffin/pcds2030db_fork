@@ -253,12 +253,10 @@ $jsConfig = [
                                         </select>
                                         <div class="invalid-feedback">Please select a sector.</div>
                                     </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label for="agencySelect" class="form-label">
+                                </div>                                <div class="col-md-4">
+                                    <div class="mb-3">                                        <label for="agencySelect" class="form-label">
                                             <i class="fas fa-users me-1"></i>Agency
-                                            <span class="text-danger">*</span>
+                                            <small class="text-muted">(Optional)</small>
                                         </label>
                                         <select class="form-select" id="agencySelect" name="agency_ids[]" multiple>
                                             <?php foreach ($agencies as $agency): ?>
@@ -267,7 +265,17 @@ $jsConfig = [
                                                 </option>
                                             <?php endforeach; ?>
                                         </select>
-                                        <div class="form-text">You may select one or more agencies to filter programs. Leave empty to show all.</div>
+                                        <div class="mt-2">
+                                            <button type="button" 
+                                                    class="btn btn-outline-secondary btn-sm" 
+                                                    id="resetAgencyFilter"
+                                                    style="display: none;">
+                                                <i class="fas fa-undo me-1"></i>Reset Selection
+                                            </button>
+                                        </div>
+                                        <div class="form-text">
+                                            Select one or more agencies to filter programs. Leave empty to show all.
+                                        </div>
                                     </div>
                                 </div>
                             </div>

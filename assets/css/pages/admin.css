@@ -86,3 +86,51 @@
   display: flex;
   justify-content: flex-end;
 }
+
+/* Agency filter enhancements */
+#resetAgencyFilter {
+    font-size: 0.875rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.375rem;
+    transition: all 0.15s ease-in-out;
+    min-height: 44px; /* Ensure touch-friendly height for mobile */
+    min-width: 120px; /* Ensure adequate width for text */
+}
+
+#resetAgencyFilter:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#resetAgencyFilter:active {
+    transform: translateY(0);
+}
+
+/* Multi-select improvements */
+select[multiple] {
+    min-height: 120px;
+    border-radius: 0.375rem;
+}
+
+select[multiple]:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Report generator specific styles */
+.report-generator-card .form-text {
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+}
+
+/* Mobile-friendly improvements */
+@media (max-width: 768px) {
+    #resetAgencyFilter {
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+    
+    select[multiple] {
+        min-height: 100px; /* Slightly smaller on mobile */
+    }
+}

@@ -43,13 +43,12 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     reportGeneratorInitialized = true;
-    console.log('Initializing report generator...');
-
-    // Moved declarations up
+    console.log('Initializing report generator...');    // Moved declarations up
     const programSelector = document.getElementById('programSelector');
     const periodSelect = document.getElementById('periodSelect');
     const sectorSelect = document.getElementById('sectorSelect');
     const agencySelect = document.getElementById('agencySelect');
+    const clearAgencyFilterBtn = document.getElementById('resetAgencyFilter');
     const programContainerElement = programSelector ? programSelector.querySelector('.program-selector-container') : null;
 
     // Show default state in program selector if it exists and no period is selected
@@ -544,11 +543,66 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             });
-        }
-          // Add event listener for agencySelect
+        }          // Add event listener for agencySelect
     if (agencySelect) {
-        agencySelect.addEventListener('change', loadPrograms);
+        agencySelect.addEventListener('change', function() {
+            loadPrograms();
+            toggleResetAgencyButton();
+        });
     }
+    
+    // Add event listener for reset agency filter button
+    if (clearAgencyFilterBtn) {
+        clearAgencyFilterBtn.addEventListener('click', function() {
+            resetAgencySelection();
+        });
+    }
+    
+    // Function to toggle reset button visibility
+    function toggleResetAgencyButton() {
+        if (agencySelect && clearAgencyFilterBtn) {
+            const hasSelectedAgencies = agencySelect.selectedOptions.length > 0;
+            clearAgencyFilterBtn.style.display = hasSelectedAgencies ? 'inline-block' : 'none';
+        }
+    }
+    
+    // Function to reset all agency selections
+    function resetAgencySelection() {
+        if (agencySelect) {
+            // Clear all selections
+            for (let option of agencySelect.options) {
+                option.selected = false;
+            }
+            // Trigger change event to reload programs
+            agencySelect.dispatchEvent(new Event('change'));
+            // Hide reset button
+            toggleResetAgencyButton();
+            
+            // Show a brief confirmation message
+            showResetConfirmation();
+        }
+    }
+    
+    // Function to show reset confirmation
+    function showResetConfirmation() {
+        const button = clearAgencyFilterBtn;
+        const originalText = button.innerHTML;
+        
+        // Temporarily change button text to show confirmation
+        button.innerHTML = '<i class="fas fa-check me-1"></i>Reset!';
+        button.classList.add('btn-success');
+        button.classList.remove('btn-outline-secondary');
+        
+        // Revert after 1.5 seconds
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.classList.remove('btn-success');
+            button.classList.add('btn-outline-secondary');
+        }, 1500);
+    }
+    
+    // Initialize reset button state
+    toggleResetAgencyButton();
     
           // Show default state in program selector
         if (programContainerElement) {
