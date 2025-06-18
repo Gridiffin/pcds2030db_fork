@@ -1339,32 +1339,49 @@ slide.addText(targetText, {
     paraSpaceBefore: 0, // REDUCED from 2 to 0 to match status column
     paraSpaceAfter: 0  // REDUCED from 2 to 0 to match status column
 });
-currentXPos += colWidths[1];
-
-                // Rating and status indicator
-                let ratingColor = themeColors.greenStatus;
+currentXPos += colWidths[1];                /**
+                 * Rating and status indicator color mapping
+                 * The API returns simplified color values: 'green', 'yellow', 'red', 'grey'
+                 * Map these to the appropriate theme colors
+                 */
                 const rating = (program.rating || '').toLowerCase();
-                if (rating.includes('minor') || rating.includes('caution') || rating === 'yellow') {
-                    ratingColor = themeColors.yellowStatus;
-                } else if (rating.includes('major') || rating.includes('critical') || rating.includes('off-track') || rating === 'red') {
-                    ratingColor = themeColors.redStatus;
-                } else if (rating.includes('not-started') || rating === 'grey') {
-                    ratingColor = themeColors.greyStatus;
+                const ratingValue = program.rating_value || 'unknown';
+                
+                // Debug logging to help troubleshoot rating color issues
+                console.log(`Program: ${program.name}, Rating: "${rating}", Rating Value: "${ratingValue}"`);
+                
+                let ratingColor = themeColors.greyStatus; // Default color for not-started
+                
+                // Map API color values to theme colors
+                switch (rating) {
+                    case 'green':
+                        ratingColor = themeColors.greenStatus; // Green for Monthly Target Achieved
+                        break;
+                    case 'red':
+                        ratingColor = themeColors.redStatus;  // Red for Delayed/Severe Issues
+                        break;
+                    case 'yellow':
+                        ratingColor = themeColors.yellowStatus; // Yellow for On Track/Minor Issues
+                        break;
+                    case 'grey':
+                    default:
+                        ratingColor = themeColors.greyStatus; // Gray for Not Started/Not Reported
+                        break;
                 }
 
-// Add colored rating indicator - align with the first line of content
-// Position the dot to align with the first line of text rather than center of row
-const contentTopPadding = 0.03; // Space from top of cell to first line of text
-const indicatorSize = 0.1;  // Size of the rating indicator dot
-slide.addShape(pptx.shapes.OVAL, {
-    x: currentXPos + (colWidths[2] / 2) - (indicatorSize / 2), // Centered horizontally in column
-    y: rowY + contentTopPadding, // Aligned with first line of content instead of center
-    w: indicatorSize,
-    h: indicatorSize,
-    fill: { color: ratingColor },
-    line: { color: ratingColor, width: 0.5 }
-});
-currentXPos += colWidths[2];
+                // Add colored rating indicator - align with the first line of content
+                // Position the dot to align with the first line of text rather than center of row
+                const contentTopPadding = 0.03; // Space from top of cell to first line of text
+                const indicatorSize = 0.1;  // Size of the rating indicator dot
+                slide.addShape(pptx.shapes.OVAL, {
+                    x: currentXPos + (colWidths[2] / 2) - (indicatorSize / 2), // Centered horizontally in column
+                    y: rowY + contentTopPadding, // Aligned with first line of content instead of center
+                    w: indicatorSize,
+                    h: indicatorSize,
+                    fill: { color: ratingColor },
+                    line: { color: ratingColor, width: 0.5 }
+                });
+                currentXPos += colWidths[2];
 
                 // ====== STATUS COLUMN - COMPLETE REWRITE ======
                 // Split the status text by newlines to create bullet points
@@ -1520,6 +1537,7 @@ slide.addText(statusText, {
         createChartTitle(slide, 'Timber Export Value (RM)', container, themeColors, defaultFont);
         
         // Check if we have the required chart data from the API
+
         if (!data || !data.charts || !data.charts.main_chart || !data.charts.main_chart.data) {
             console.warn("No timber export data available, using placeholder");
             return;

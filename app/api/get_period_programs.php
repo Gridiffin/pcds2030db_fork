@@ -5,7 +5,9 @@
  * Returns program data for a specific reporting period.
  * Only includes finalized (non-draft) program submissions.
  * 
- * Update 2025-06-18: Modified to exclude draft programs from report generation.
+ * Update 2025-06-18: 
+ * - Modified to exclude draft programs from report generation.
+ * - Fixed duplicate program issue by selecting only the latest submission for each program.
  */
 
 // Prevent any output before headers
@@ -43,12 +45,19 @@ if (!$period_id) {
     exit;
 }
 
-try {    // Get programs that have non-draft submissions for this period
+try {    // Get programs that have non-draft submissions for this period (only latest submission per program)
     $programs_query = "SELECT DISTINCT p.program_id, p.program_name, s.sector_id, s.sector_name, u.agency_name, u.user_id as owner_agency_id
                       FROM programs p
                       LEFT JOIN (
-                          SELECT program_id FROM program_submissions 
-                          WHERE period_id = ? AND is_draft = 0
+                          SELECT ps1.program_id
+                          FROM program_submissions ps1
+                          INNER JOIN (
+                              SELECT program_id, MAX(submission_date) as latest_date
+                              FROM program_submissions
+                              WHERE period_id = ? AND is_draft = 0
+                              GROUP BY program_id
+                          ) ps2 ON ps1.program_id = ps2.program_id AND ps1.submission_date = ps2.latest_date
+                          WHERE ps1.period_id = ? AND ps1.is_draft = 0
                       ) ps ON p.program_id = ps.program_id
                       LEFT JOIN sectors s ON p.sector_id = s.sector_id
                       LEFT JOIN users u ON p.owner_agency_id = u.user_id
@@ -59,10 +68,9 @@ try {    // Get programs that have non-draft submissions for this period
                       "ORDER BY s.sector_name, u.agency_name, p.program_name";
     
     // Add debug logging
-    error_log("Fetching programs for period_id: {$period_id}" . ($sector_id ? ", sector_id: {$sector_id}" : ", all sectors"));
-      // Prepare statement with dynamic params - only need period_id once now
-    $param_types = $sector_id ? 'ii' : 'i';
-    $params = [$period_id];
+    error_log("Fetching programs for period_id: {$period_id}" . ($sector_id ? ", sector_id: {$sector_id}" : ", all sectors"));    // Prepare statement with dynamic params - need period_id twice for the nested subquery
+    $param_types = $sector_id ? 'iii' : 'ii';
+    $params = [$period_id, $period_id];
     if ($sector_id) $params[] = $sector_id;
     if (!empty($agency_ids)) {
         $param_types .= str_repeat('i', count($agency_ids));

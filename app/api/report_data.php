@@ -298,23 +298,21 @@ while ($program = $programs_result->fetch_assoc()) {    // Extract target from c
     }
       // Map status to color (green, yellow, red, grey)
     $status_color = 'grey'; // Default for not reported
-    
-    // Get the rating from content_json instead of the removed status column
+      // Get the rating from content_json instead of the removed status column
     $rating = $content['rating'] ?? $content['status'] ?? 'not-reported';
     
+    // Use the same color mapping as the rating_helpers.php and program admin
     switch ($rating) {
-        case 'on-track':
-        case 'on-track-yearly':
         case 'target-achieved':
+        case 'completed':
             $status_color = 'green';
             break;
-        case 'delayed':
-        case 'minor-issues':
-            $status_color = 'yellow';
+        case 'on-track':
+        case 'on-track-yearly':
+            $status_color = 'yellow';  // Fixed: on-track-yearly should be yellow, not green
             break;
+        case 'delayed':
         case 'severe-delay':
-        case 'major-issues':
-        case 'at-risk':
             $status_color = 'red';
             break;
         case 'not-started':
@@ -369,11 +367,11 @@ while ($program = $programs_result->fetch_assoc()) {    // Extract target from c
         'status_wrapped_lines' => $status_wrapped_lines, // New metric for more accurate height calculation
         'name_length' => strlen($program['program_name'])
     ];
-    
-    $programs[] = [
+      $programs[] = [
         'name' => $program['program_name'],
         'target' => $target,
         'rating' => $status_color,
+        'rating_value' => $rating, // Include the actual rating value for debugging
         'status' => $status_text,
         'text_metrics' => $text_metrics
     ];
