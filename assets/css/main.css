@@ -27,6 +27,7 @@
 @import 'pages/style-guide.css';
 @import 'pages/admin.css';
 @import 'pages/agency.css';
+@import 'pages/report-generator.css';
 
 /* Custom */
 @import 'custom/theme.css';
@@ -76,6 +77,7 @@
 @import 'pages/login.css';
 @import 'pages/home.css';
 @import 'pages/program.css'; /* Program pages styling */
+@import 'pages/report-generator.css';
 
 /* Custom overrides */
 @import 'custom/agency.css'; /* Agency-specific overrides */

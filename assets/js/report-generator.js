@@ -2,15 +2,7 @@
  * Report Generator
  * 
  * Main controller for the PPTX report generation functionality.
- * This file coordinates the modules and initiali                programs[sector].programs.forEach(program => {
-                    html += `
-                        <div class="program-checkbox-container" data-program-id="${program.program_id}">
-                            <div class="form-check">
-                                <input type="checkbox" class="form-check-input program-checkbox" 
-                                    id="program_${program.program_id}" 
-                                    name="selected_program_ids[]" 
-                                    value="${program.program_id}">
-                                <label class="form-check-label" for="program_${program.program_id}">`port generator.
+ * This file coordinates the modules and initializes the report generator.
  */
 
 // Global initialization flag to prevent duplicate initialization
@@ -188,11 +180,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 html += `<p class="text-muted">No programs available for this sector.</p>`;
             }
             html += `</div>`;
-        }
-        if (programSelector) {
+        }        if (programSelector) {
             const programContainerElement = programSelector.querySelector('.program-selector-container');
             if (programContainerElement) {
                 programContainerElement.innerHTML = html;
+                // Initialize event listeners after HTML is inserted
+                initializeSelectButtons();
             }
         }
     }
@@ -260,13 +253,16 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize the UI
     if (typeof ReportUI !== 'undefined') {
-        ReportUI.initUI();            // Initialize Select All / Deselect All buttons
-            function initializeSelectButtons() {
-                const selectAllBtn = document.getElementById('selectAllPrograms');
-                const deselectAllBtn = document.getElementById('deselectAllPrograms');
-                const sortProgramOrderBtn = document.getElementById('sortProgramOrder');
-                
-                if (selectAllBtn && deselectAllBtn) {// Select all visible programs
+        ReportUI.initUI();
+        
+        // Initialize Select All / Deselect All buttons
+        function initializeSelectButtons() {
+            const selectAllBtn = document.getElementById('selectAllPrograms');
+            const deselectAllBtn = document.getElementById('deselectAllPrograms');
+            const sortProgramOrderBtn = document.getElementById('sortProgramOrder');
+            
+            if (selectAllBtn && deselectAllBtn) {
+                // Select all visible programs
                 selectAllBtn.addEventListener('click', function() {
                     const visibleSectors = document.querySelectorAll('.sector-programs:not([style*="display: none"])');
                     let index = 1;
@@ -312,12 +308,22 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     updateProgramCount();
                 });
-            }              // Add change event listeners to all program checkboxes
+            }            // Add change event listeners to all program checkboxes
             const programCheckboxes = document.querySelectorAll('#programSelector input[name="selected_program_ids[]"]');
             programCheckboxes.forEach(checkbox => {
                 checkbox.addEventListener('change', function() {
                     updateProgramCount();
                     toggleOrderInput(this);
+                });
+            });
+            
+            // Add change event listeners to all order inputs
+            const orderInputs = document.querySelectorAll('#programSelector .program-order-input');
+            orderInputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    updateOrderBadges();
+                });
+                input.addEventListener('change', function() {
                     updateOrderNumbers();
                 });
             });
@@ -420,12 +426,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         setTimeout(() => notice.remove(), 500);
                     }, 3000);
                 }
-            }
-        
-        // Show/hide order input when checkbox is checked/unchecked
+            }        // Show/hide order input when checkbox is checked/unchecked
         function toggleOrderInput(checkbox) {
             const programId = checkbox.value;
             const orderInput = document.getElementById(`order_${programId}`);
+            const orderBadge = checkbox.closest('.program-checkbox-container').querySelector('.program-order-badge');
+            
             if (orderInput) {
                 orderInput.style.display = checkbox.checked ? 'inline-block' : 'none';
                 if (checkbox.checked && !orderInput.value) {
@@ -435,6 +441,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else if (!checkbox.checked) {
                     orderInput.value = '';
                 }
+            }
+            
+            // Update the badge display
+            if (orderBadge) {
+                if (checkbox.checked) {
+                    orderBadge.textContent = orderInput ? orderInput.value : '#';
+                    orderBadge.classList.add('active');
+                } else {
+                    orderBadge.textContent = '#';
+                    orderBadge.classList.remove('active');
+                }
+            }
+            
+            // If a program was deselected, renumber all remaining selected programs to maintain sequential order
+            if (!checkbox.checked) {
+                renumberSelectedPrograms();
             }
         }
           // Update all order numbers to ensure they're sequential and valid
@@ -507,6 +529,58 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             }
+            
+            // Update all badges to reflect current order numbers
+            updateOrderBadges();
+        }
+          // Update all order badges to show current numbers
+        function updateOrderBadges() {
+            const orderInputs = document.querySelectorAll('#programSelector .program-order-input[style*="display: inline-block"]');
+            orderInputs.forEach(input => {
+                const programContainer = input.closest('.program-checkbox-container');
+                const badge = programContainer?.querySelector('.program-order-badge');
+                if (badge && input.value) {
+                    badge.textContent = input.value;
+                }
+            });
+        }
+        
+        // Dynamically renumber all selected programs to maintain sequential order
+        function renumberSelectedPrograms() {
+            // Get all checked checkboxes and their corresponding order inputs
+            const checkedBoxes = document.querySelectorAll('#programSelector input[name="selected_program_ids[]"]:checked');
+            const programsWithOrder = [];
+            
+            // Collect all selected programs with their current order
+            checkedBoxes.forEach(checkbox => {
+                const programId = checkbox.value;
+                const orderInput = document.getElementById(`order_${programId}`);
+                if (orderInput) {
+                    const currentOrder = parseInt(orderInput.value) || 999; // Use 999 for empty/invalid values
+                    programsWithOrder.push({
+                        checkbox: checkbox,
+                        orderInput: orderInput,
+                        currentOrder: currentOrder,
+                        programId: programId
+                    });
+                }
+            });
+            
+            // Sort by current order to maintain user's intended sequence
+            programsWithOrder.sort((a, b) => a.currentOrder - b.currentOrder);
+            
+            // Renumber sequentially starting from 1
+            programsWithOrder.forEach((program, index) => {
+                const newOrder = index + 1;
+                program.orderInput.value = newOrder;
+                
+                // Update the badge
+                const orderBadge = program.checkbox.closest('.program-checkbox-container').querySelector('.program-order-badge');
+                if (orderBadge) {
+                    orderBadge.textContent = newOrder;
+                    orderBadge.classList.add('active');
+                }
+            });
         }
         
         // Update the program count badge
@@ -642,8 +716,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <strong>Please select a reporting period first!</strong>
                         <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
                     `;
-                    
-                    // Position relative to period select
+                      // Position relative to period select
                     const periodContainer = periodSelect.closest('.report-form-group');
                     if (periodContainer) {
                         periodContainer.style.position = 'relative';
@@ -660,6 +733,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         }
+        // End of ReportUI check
     } else {
         console.error('ReportUI module not found. Make sure report-ui.js is loaded before report-generator.js');
     }
