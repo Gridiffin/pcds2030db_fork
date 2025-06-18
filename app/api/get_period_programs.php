@@ -2,7 +2,10 @@
 /**
  * Get Programs By Period API
  * 
- * Returns program data for a specific reporting period
+ * Returns program data for a specific reporting period.
+ * Only includes finalized (non-draft) program submissions.
+ * 
+ * Update 2025-06-18: Modified to exclude draft programs from report generation.
  */
 
 // Prevent any output before headers
@@ -40,27 +43,26 @@ if (!$period_id) {
     exit;
 }
 
-try {
-    // Get programs that have submissions for this period or all programs if no submissions exist
+try {    // Get programs that have non-draft submissions for this period
     $programs_query = "SELECT DISTINCT p.program_id, p.program_name, s.sector_id, s.sector_name, u.agency_name, u.user_id as owner_agency_id
                       FROM programs p
-                      LEFT JOIN program_submissions ps ON p.program_id = ps.program_id AND ps.period_id = ?
+                      LEFT JOIN (
+                          SELECT program_id FROM program_submissions 
+                          WHERE period_id = ? AND is_draft = 0
+                      ) ps ON p.program_id = ps.program_id
                       LEFT JOIN sectors s ON p.sector_id = s.sector_id
                       LEFT JOIN users u ON p.owner_agency_id = u.user_id
                       WHERE 
-                            (ps.period_id IS NOT NULL OR NOT EXISTS (
-                                SELECT 1 FROM program_submissions WHERE period_id = ?
-                            ))
+                            (ps.program_id IS NOT NULL)
                             ". ($sector_id ? "AND p.sector_id = ? " : "") .
                             (!empty($agency_ids) ? "AND p.owner_agency_id IN (" . implode(",", array_fill(0, count($agency_ids), '?')) . ") " : "") .
                       "ORDER BY s.sector_name, u.agency_name, p.program_name";
     
     // Add debug logging
     error_log("Fetching programs for period_id: {$period_id}" . ($sector_id ? ", sector_id: {$sector_id}" : ", all sectors"));
-    
-    // Prepare statement with dynamic params
-    $param_types = $sector_id ? 'iii' : 'ii';
-    $params = [$period_id, $period_id];
+      // Prepare statement with dynamic params - only need period_id once now
+    $param_types = $sector_id ? 'ii' : 'i';
+    $params = [$period_id];
     if ($sector_id) $params[] = $sector_id;
     if (!empty($agency_ids)) {
         $param_types .= str_repeat('i', count($agency_ids));
@@ -72,7 +74,7 @@ try {
     $stmt->execute();    $result = $stmt->get_result();
     $program_count = $result->num_rows;
     
-    error_log("Found {$program_count} programs matching criteria");
+    error_log("Found {$program_count} non-draft programs matching criteria");
 
     $programs = [];
     while ($program = $result->fetch_assoc()) {
@@ -102,7 +104,7 @@ try {
                 'sector_name' => $sector_data['sector_name'],
                 'programs' => []
             ];
-            error_log("No programs found for sector {$sector_data['sector_name']}, returning empty array");
+            error_log("No non-draft programs found for sector {$sector_data['sector_name']}, returning empty array");
         }
     }
 

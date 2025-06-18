@@ -3,6 +3,9 @@
  * 
  * Main controller for the PPTX report generation functionality.
  * This file coordinates the modules and initializes the report generator.
+ * 
+ * Update 2025-06-18: Modified the backend query to exclude draft programs from selection.
+ * Now only finalized (non-draft) programs will be available for report generation.
  */
 
 // Global initialization flag to prevent duplicate initialization

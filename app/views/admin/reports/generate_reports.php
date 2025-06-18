@@ -316,11 +316,10 @@ $jsConfig = [
                                     <i class="fas fa-list-check me-1"></i>Select Programs to Include
                                     <small class="text-muted">(Optional)</small>
                                 </label>
-                                <div class="mb-2">
-                                    <div class="alert alert-info border-info">
+                                <div class="mb-2">                                    <div class="alert alert-info border-info">
                                         <i class="fas fa-info-circle me-2"></i>
-                                        <strong>How it works:</strong> First select a reporting period above, then programs for that period will appear here for selection.
-                                        If no programs are selected, all programs for the chosen sector will be included.
+                                        <strong>How it works:</strong> First select a reporting period above, then finalized (non-draft) programs for that period will appear here for selection.
+                                        If no programs are selected, all finalized programs for the chosen sector will be included.
                                     </div>
                                 </div>
                                 
