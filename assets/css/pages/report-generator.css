@@ -537,6 +537,136 @@
     border-color: #007bff;
 }
 
+/* Multi-Agency Report Enhancements */
+
+/* Agency Group Enhancements */
+.agency-group {
+    border-left: 3px solid var(--bs-primary);
+    padding-left: 0.75rem;
+    margin-bottom: 1rem;
+    background-color: rgba(var(--bs-primary-rgb), 0.05);
+    border-radius: 0 0.25rem 0.25rem 0;
+}
+
+.agency-group .fw-semibold {
+    color: var(--bs-primary) !important;
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+    padding: 0.5rem 0;
+}
+
+/* Agency Action Buttons */
+.select-agency-programs,
+.deselect-agency-programs {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+}
+
+/* Program Selection Summary Styles */
+.alert-success .d-flex {
+    align-items: center;
+}
+
+#viewSelectedPrograms,
+#clearAllSelections {
+    font-size: 0.875rem;
+    padding: 0.375rem 0.75rem;
+}
+
+/* Multi-select Agency Filter Styles */
+#agencySelect {
+    border: 2px solid #e9ecef;
+    border-radius: 0.375rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+#agencySelect:focus {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
+}
+
+#agencySelect option {
+    padding: 0.5rem;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+#agencySelect option:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.1);
+}
+
+#agencySelect option:checked {
+    background-color: var(--bs-primary);
+    color: white;
+}
+
+/* Reset Agency Filter Button */
+#resetAgencyFilter {
+    font-size: 0.8rem;
+    padding: 0.375rem 0.75rem;
+    transition: all 0.2s ease;
+}
+
+#resetAgencyFilter:hover {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+}
+
+/* Form text improvements for multi-agency */
+.form-text strong {
+    color: var(--bs-primary);
+}
+
+/* Enhanced program checkbox container */
+.program-checkbox-container {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    transition: background-color 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.program-checkbox-container:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.05);
+}
+
+.program-checkbox-container:last-child {
+    border-bottom: none;
+}
+
+/* Program order input styling */
+.program-order-input {
+    width: 60px;
+    margin-left: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    text-align: center;
+}
+
+.program-order-input:focus {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
+}
+
+/* Selected Programs Modal Enhancements */
+.modal-lg .table-responsive {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.remove-program {
+    transition: all 0.2s ease;
+}
+
+.remove-program:hover {
+    transform: scale(1.1);
+}
+
+/* Mobile responsive enhancements */
 @media (max-width: 768px) {
     .reports-table .action-btn {
         padding: 0.25rem 0.5rem;

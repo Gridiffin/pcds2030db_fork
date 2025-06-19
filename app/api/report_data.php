@@ -51,6 +51,7 @@ if ($program_orders_raw) {
 
 // Add debug logging for parameters
 error_log("API parameters - period_id: {$period_id}, sector_id: {$sector_id}");
+error_log("Fixed duplicate submission query - using MAX(submission_id) for tie-breaking");
 if (!empty($program_orders)) {
     error_log("Program orders provided: " . json_encode($program_orders));
 }
@@ -201,11 +202,13 @@ $programs_query = "SELECT p.program_id, p.program_name,
                       SELECT ps1.*
                       FROM program_submissions ps1
                       INNER JOIN (
-                          SELECT program_id, MAX(submission_date) as latest_date
+                          SELECT program_id, MAX(submission_date) as latest_date, MAX(submission_id) as latest_submission_id
                           FROM program_submissions
                           WHERE period_id = ? AND is_draft = 0
                           GROUP BY program_id
-                      ) ps2 ON ps1.program_id = ps2.program_id AND ps1.submission_date = ps2.latest_date
+                      ) ps2 ON ps1.program_id = ps2.program_id 
+                           AND ps1.submission_date = ps2.latest_date 
+                           AND ps1.submission_id = ps2.latest_submission_id
                       WHERE ps1.period_id = ? AND ps1.is_draft = 0
                   ) ps ON p.program_id = ps.program_id
                   WHERE $program_filter_condition

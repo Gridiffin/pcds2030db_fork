@@ -52,11 +52,13 @@ try {    // Get programs that have non-draft submissions for this period (only l
                           SELECT ps1.program_id
                           FROM program_submissions ps1
                           INNER JOIN (
-                              SELECT program_id, MAX(submission_date) as latest_date
+                              SELECT program_id, MAX(submission_date) as latest_date, MAX(submission_id) as latest_submission_id
                               FROM program_submissions
                               WHERE period_id = ? AND is_draft = 0
                               GROUP BY program_id
-                          ) ps2 ON ps1.program_id = ps2.program_id AND ps1.submission_date = ps2.latest_date
+                          ) ps2 ON ps1.program_id = ps2.program_id 
+                               AND ps1.submission_date = ps2.latest_date 
+                               AND ps1.submission_id = ps2.latest_submission_id
                           WHERE ps1.period_id = ? AND ps1.is_draft = 0
                       ) ps ON p.program_id = ps.program_id
                       LEFT JOIN sectors s ON p.sector_id = s.sector_id
@@ -66,9 +68,9 @@ try {    // Get programs that have non-draft submissions for this period (only l
                             ". ($sector_id ? "AND p.sector_id = ? " : "") .
                             (!empty($agency_ids) ? "AND p.owner_agency_id IN (" . implode(",", array_fill(0, count($agency_ids), '?')) . ") " : "") .
                       "ORDER BY s.sector_name, u.agency_name, p.program_name";
-    
-    // Add debug logging
-    error_log("Fetching programs for period_id: {$period_id}" . ($sector_id ? ", sector_id: {$sector_id}" : ", all sectors"));    // Prepare statement with dynamic params - need period_id twice for the nested subquery
+      // Add debug logging
+    error_log("Fetching programs for period_id: {$period_id}" . ($sector_id ? ", sector_id: {$sector_id}" : ", all sectors"));
+    error_log("Fixed duplicate submission query - using MAX(submission_id) for tie-breaking");// Prepare statement with dynamic params - need period_id twice for the nested subquery
     $param_types = $sector_id ? 'iii' : 'ii';
     $params = [$period_id, $period_id];
     if ($sector_id) $params[] = $sector_id;
@@ -82,9 +84,7 @@ try {    // Get programs that have non-draft submissions for this period (only l
     $stmt->execute();    $result = $stmt->get_result();
     $program_count = $result->num_rows;
     
-    error_log("Found {$program_count} non-draft programs matching criteria");
-
-    $programs = [];
+    error_log("Found {$program_count} non-draft programs matching criteria");    $programs = [];
     while ($program = $result->fetch_assoc()) {
         if (!isset($programs[$program['sector_id']])) {
             $programs[$program['sector_id']] = [
@@ -94,7 +94,9 @@ try {    // Get programs that have non-draft submissions for this period (only l
         }
         $programs[$program['sector_id']]['programs'][] = [
             'program_id' => $program['program_id'],
-            'program_name' => $program['program_name']
+            'program_name' => $program['program_name'],
+            'agency_name' => $program['agency_name'],
+            'owner_agency_id' => $program['owner_agency_id']
         ];
     }
     

@@ -181,21 +181,48 @@ if (typeof window.ReportUI !== 'undefined') {
         const sectorId = elements.sectorSelect.value;
         const reportName = elements.reportNameInput.value;
         const reportDescription = elements.reportDescInput.value || '';
-        const isPublic = elements.isPublicCheckbox.checked ? 1 : 0;        // Get selected program IDs with their order
+        const isPublic = elements.isPublicCheckbox.checked ? 1 : 0;        // Get selected program IDs with their order from global state
         const selectedProgramIds = [];
         const programOrders = {};
-        const programCheckboxes = document.querySelectorAll('#programSelector input[name="selected_program_ids[]"]:checked');
         
-        programCheckboxes.forEach(checkbox => {
-            const programId = checkbox.value;
-            selectedProgramIds.push(programId);
+        // Check if globalProgramSelections is available (from report-generator.js)
+        if (typeof window.globalProgramSelections !== 'undefined' && window.globalProgramSelections) {
+            // Use global state for multi-agency support
+            window.globalProgramSelections.forEach((data, programId) => {
+                if (data.selected) {
+                    selectedProgramIds.push(programId);
+                    if (data.order) {
+                        programOrders[programId] = data.order;
+                    }
+                }
+            });
             
-            // Get the order value for this program
-            const orderInput = document.getElementById(`order_${programId}`);
-            if (orderInput && orderInput.value) {
-                programOrders[programId] = parseInt(orderInput.value);
-            }
-        });
+            console.log('Using global state - Selected programs:', selectedProgramIds);
+            console.log('Program orders:', programOrders);
+        } else {
+            // Fallback to DOM-based collection for backward compatibility
+            console.log('Global state not available, falling back to DOM collection');
+            const programCheckboxes = document.querySelectorAll('#programSelector input[name="selected_program_ids[]"]:checked');
+            
+            programCheckboxes.forEach(checkbox => {
+                const programId = checkbox.value;
+                selectedProgramIds.push(programId);
+                
+                // Get the order value for this program
+                const orderInput = document.getElementById(`order_${programId}`);
+                if (orderInput && orderInput.value) {
+                    programOrders[programId] = parseInt(orderInput.value);
+                }            });
+        }
+        
+        // Validate that we have selected programs
+        if (selectedProgramIds.length === 0) {
+            alert('Please select at least one program to include in the report.');
+            return;
+        }
+        
+        console.log('Final selected programs for report generation:', selectedProgramIds);
+        console.log('Final program orders:', programOrders);
         
         // Hide existing messages and show status
         elements.successMessage.classList.add('d-none');

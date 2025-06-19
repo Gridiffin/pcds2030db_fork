@@ -255,10 +255,10 @@ $jsConfig = [
                                     </div>
                                 </div>                                <div class="col-md-4">
                                     <div class="mb-3">                                        <label for="agencySelect" class="form-label">
-                                            <i class="fas fa-users me-1"></i>Agency
-                                            <small class="text-muted">(Optional)</small>
+                                            <i class="fas fa-users me-1"></i>Agency Filter
+                                            <small class="text-muted">(Multi-select)</small>
                                         </label>
-                                        <select class="form-select" id="agencySelect" name="agency_ids[]" multiple>
+                                        <select class="form-select" id="agencySelect" name="agency_ids[]" multiple size="4">
                                             <?php foreach ($agencies as $agency): ?>
                                                 <option value="<?php echo htmlspecialchars($agency['user_id']); ?>">
                                                     <?php echo htmlspecialchars($agency['agency_name']); ?>
@@ -274,7 +274,9 @@ $jsConfig = [
                                             </button>
                                         </div>
                                         <div class="form-text">
-                                            Select one or more agencies to filter programs. Leave empty to show all.
+                                            <strong>Multi-agency reports:</strong> Select multiple agencies to filter program display. 
+                                            You can select programs from different agencies for one report. 
+                                            Leave empty to show all agencies.
                                         </div>
                                     </div>
                                 </div>
