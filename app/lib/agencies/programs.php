@@ -416,9 +416,9 @@ function get_program_details($program_id, $allow_cross_agency = false) {
                     $submission['achievement'] = $content['achievement'] ?? '';
                     $submission['remarks'] = $content['remarks'] ?? '';
                     $submission['status_date'] = $content['status_date'] ?? '';
-                    $submission['status_text'] = $content['status_text'] ?? '';
-                    $submission['targets'] = $content['targets'] ?? [];
+                    $submission['status_text'] = $content['status_text'] ?? '';                    $submission['targets'] = $content['targets'] ?? [];
                     $submission['status'] = $content['status'] ?? 'not-started';
+                    $submission['brief_description'] = $content['brief_description'] ?? '';
                 }
             }
             $program['submissions'][] = $submission;
@@ -426,6 +426,13 @@ function get_program_details($program_id, $allow_cross_agency = false) {
         
         // Set current submission (most recent)
         $program['current_submission'] = $program['submissions'][0];
+        
+        // Extract brief_description from the most recent submission if not in program table
+        if (!isset($program['brief_description']) || empty($program['brief_description'])) {
+            if (isset($program['current_submission']['brief_description'])) {
+                $program['brief_description'] = $program['current_submission']['brief_description'];
+            }
+        }
     }
     
     return $program;
