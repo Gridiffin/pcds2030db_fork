@@ -12,6 +12,7 @@ require_once 'core.php';
 require_once 'programs.php';
 require_once 'statistics.php';
 require_once 'metrics.php';
+require_once 'program_attachments.php';
 
 // The following files can be included if they exist in your project
 // Uncomment as needed based on your application structure
