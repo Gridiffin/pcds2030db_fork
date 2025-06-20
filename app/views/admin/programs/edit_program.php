@@ -14,6 +14,7 @@ require_once ROOT_PATH . 'app/lib/admin_functions.php';
 require_once ROOT_PATH . 'app/lib/rating_helpers.php';
 require_once ROOT_PATH . 'app/lib/agencies/programs.php'; // Added for program history feature
 require_once ROOT_PATH . 'app/lib/audit_log.php';
+require_once ROOT_PATH . 'app/lib/agencies/program_attachments.php';
 
 // Verify user is admin
 if (!is_admin()) {
@@ -212,6 +213,9 @@ if (!$program) {
     exit;
 }
 
+// Get program attachments
+$program_attachments = get_program_attachments($program_id);
+
 // Extract edit permissions
 $edit_permissions = [];
 if (!empty($program['edit_permissions'])) {
@@ -299,6 +303,7 @@ $additionalScripts = [
 // Additional styles
 $additionalStyles = '
 <link rel="stylesheet" href="' . APP_URL . '/assets/css/components/program-history.css">
+<link rel="stylesheet" href="' . APP_URL . '/assets/css/admin/programs.css">
 ';
 
 // Set page title
@@ -653,8 +658,82 @@ require_once '../../layouts/page_header.php';
                                 <input class="form-check-input" type="checkbox" id="edit_timeline" name="edit_permissions[]" value="timeline" 
                                       <?php echo in_array('timeline', $edit_permissions) ? 'checked' : ''; ?>>
                                 <label class="form-check-label" for="edit_timeline">Agency can edit Timeline (Start/End Dates)</label>
-                            </div>
+                            </div>                        </div>
+                    </div>
+                </div>
+                
+                <!-- Program Attachments Section -->
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="card-title m-0">
+                            <i class="fas fa-paperclip me-2"></i>Program Attachments
+                        </h6>
+                        <span class="badge bg-secondary">
+                            <?php echo count($program_attachments); ?> 
+                            <?php echo count($program_attachments) === 1 ? 'file' : 'files'; ?>
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>View Only:</strong> This section displays attachments uploaded by the agency. 
+                            Admin users can view and download these files but cannot upload or delete them through this interface.
                         </div>
+                        
+                        <?php if (!empty($program_attachments)): ?>
+                            <div class="attachments-list">
+                                <?php foreach ($program_attachments as $attachment): ?>
+                                    <div class="attachment-item d-flex justify-content-between align-items-center border rounded p-3 mb-3">
+                                        <div class="attachment-info d-flex align-items-center">
+                                            <div class="attachment-icon me-3">
+                                                <i class="fas <?php echo get_file_icon($attachment['mime_type']); ?> fa-2x text-primary"></i>
+                                            </div>
+                                            <div class="attachment-details">
+                                                <h6 class="mb-1 fw-bold"><?php echo htmlspecialchars($attachment['original_filename']); ?></h6>
+                                                <div class="attachment-meta text-muted small">
+                                                    <span class="me-3">
+                                                        <i class="fas fa-hdd me-1"></i>
+                                                        <?php echo $attachment['file_size_formatted']; ?>
+                                                    </span>
+                                                    <span class="me-3">
+                                                        <i class="fas fa-calendar me-1"></i>
+                                                        <?php echo date('M j, Y \a\t g:i A', strtotime($attachment['upload_date'])); ?>
+                                                    </span>
+                                                    <span>
+                                                        <i class="fas fa-user me-1"></i>
+                                                        <?php echo htmlspecialchars($attachment['uploaded_by'] ?? 'Unknown'); ?>
+                                                    </span>
+                                                </div>
+                                                <?php if (!empty($attachment['description'])): ?>
+                                                    <div class="attachment-description mt-2">
+                                                        <small class="text-muted">
+                                                            <i class="fas fa-comment me-1"></i>
+                                                            <?php echo htmlspecialchars($attachment['description']); ?>
+                                                        </small>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                        <div class="attachment-actions">
+                                            <a href="<?php echo APP_URL; ?>/app/ajax/download_program_attachment.php?id=<?php echo $attachment['attachment_id']; ?>" 
+                                               class="btn btn-sm btn-outline-primary" 
+                                               target="_blank"
+                                               title="Download <?php echo htmlspecialchars($attachment['original_filename']); ?>">
+                                                <i class="fas fa-download me-1"></i> Download
+                                            </a>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php else: ?>
+                            <div class="text-center py-4">
+                                <div class="mb-3">
+                                    <i class="fas fa-folder-open fa-3x text-muted"></i>
+                                </div>
+                                <h6 class="text-muted">No Attachments</h6>
+                                <p class="text-muted mb-0">This program doesn't have any supporting documents uploaded.</p>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
                 
