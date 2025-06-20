@@ -313,6 +313,21 @@ $showNoTargetsAlert = empty($targets) && $is_owner; // Only show no targets aler
 </div>
 
 <!-- Program Targets and Status Card -->
+<style>
+    .targets-container td.target-cell, .targets-container td.status-cell {
+        max-width: 300px;
+        max-height: 100px;
+        overflow: auto;
+        word-break: break-word;
+        white-space: pre-line;
+        vertical-align: top;
+    }
+    .targets-container td.target-cell::-webkit-scrollbar,
+    .targets-container td.status-cell::-webkit-scrollbar {
+        height: 6px;
+        width: 6px;
+    }
+</style>
 <div class="card shadow-sm mb-4">
     <div class="card-header">
         <h5 class="card-title mb-0">
@@ -332,14 +347,14 @@ $showNoTargetsAlert = empty($targets) && $is_owner; // Only show no targets aler
                         <tbody>
                             <?php foreach ($targets as $index => $target): ?>
                             <tr>
-                                <td class="text-truncate">
+                                <td class="target-cell">
                                     <?php if (!empty($target['text'])): ?>
                                         <?php echo nl2br(htmlspecialchars($target['text'])); ?>
                                     <?php else: ?>
                                         <span class="text-muted fst-italic">No target specified</span>
                                     <?php endif; ?>
                                 </td>
-                                <td class="text-truncate">
+                                <td class="status-cell">
                                     <?php if (!empty($target['status_description'])): ?>
                                         <?php echo nl2br(htmlspecialchars($target['status_description'])); ?>
                                     <?php else: ?>

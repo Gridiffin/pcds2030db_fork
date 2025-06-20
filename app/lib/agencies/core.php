@@ -15,7 +15,7 @@ function is_agency() {
     if (!is_logged_in() || !isset($_SESSION['role'])) {
         return false;
     }
-    return $_SESSION['role'] === 'agency';
+    return $_SESSION['role'] === 'agency' || $_SESSION['role'] === 'focal';
 }
 
 /**

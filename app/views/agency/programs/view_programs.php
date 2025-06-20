@@ -43,16 +43,44 @@ $additionalScripts = [
     APP_URL . '/assets/js/utilities/table_sorting.js'
 ];
 
-// Get agency programs
-$agency_id = $_SESSION['user_id'];
-
-// Define the function if it doesn't exist
-if (!function_exists('get_agency_programs')) {    function get_agency_programs($agency_id) {
+// Get programs for FOCAL user (all agencies in their group) or just their own if not FOCAL
+if (isset($_SESSION['role']) && strtolower($_SESSION['role']) === 'focal') {
+    $agency_group_id = $_SESSION['agency_group_id'];
+    $programs = [];
+    if ($agency_group_id !== null) {
+        $query = "SELECT p.*, 
+                         COALESCE(latest_sub.is_draft, 1) as is_draft,
+                         latest_sub.period_id,
+                         COALESCE(latest_sub.submission_date, p.created_at) as updated_at,
+                         latest_sub.submission_id as latest_submission_id,
+                         COALESCE(JSON_UNQUOTE(JSON_EXTRACT(latest_sub.content_json, '$.rating')), 'not-started') as rating
+                  FROM programs p 
+                  LEFT JOIN (
+                      SELECT ps1.*
+                      FROM program_submissions ps1
+                      INNER JOIN (
+                          SELECT program_id, MAX(submission_id) as max_submission_id
+                          FROM program_submissions
+                          GROUP BY program_id
+                      ) ps2 ON ps1.program_id = ps2.program_id AND ps1.submission_id = ps2.max_submission_id
+                  ) latest_sub ON p.program_id = latest_sub.program_id
+                  INNER JOIN users u ON p.owner_agency_id = u.user_id
+                  WHERE u.agency_group_id = ?
+                  ORDER BY p.program_name";
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("i", $agency_group_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        while ($row = $result->fetch_assoc()) {
+            $programs[] = $row;
+        }
+    }
+} else {
+    $agency_id = $_SESSION['user_id'];
+    // Define the function if it doesn't exist
+    if (!function_exists('get_agency_programs')) {    function get_agency_programs($agency_id) {
         global $conn;
-        
         // Fixed query to properly get the latest submission for each program
-        // Uses a subquery to find the latest submission_id for each program, then joins back to get the full data
-        // Extract rating from JSON content
         $query = "SELECT p.*, 
                          COALESCE(latest_sub.is_draft, 1) as is_draft,
                          latest_sub.period_id,
@@ -71,23 +99,19 @@ if (!function_exists('get_agency_programs')) {    function get_agency_programs($
                   ) latest_sub ON p.program_id = latest_sub.program_id
                   WHERE p.owner_agency_id = ?
                   ORDER BY p.program_name";
-                  
         $stmt = $conn->prepare($query);
         $stmt->bind_param("i", $agency_id);
         $stmt->execute();
         $result = $stmt->get_result();
-        
         $programs = [];
         while ($row = $result->fetch_assoc()) {
             $programs[] = $row;
         }
-        
         return $programs;
     }
+    }
+    $programs = get_agency_programs($agency_id);
 }
-
-// Get programs data
-$programs = get_agency_programs($agency_id);
 
 // Separate programs into drafts and finalized submissions
 $draft_programs = [];
@@ -271,9 +295,11 @@ require_once '../../layouts/page_header.php';
                                                 title="Delete Program">
                                             <i class="fas fa-trash"></i>
                                         </button>
+                                        <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'focal'): ?>
                                         <button class="btn btn-outline-success btn-sm submit-program" data-program-id="<?php echo $program['program_id']; ?>" title="Submit Program">
                                             <i class="fas fa-check"></i>
                                         </button>
+                                        <?php endif; ?>
                                     </div>
                                 </td>
                             </tr>

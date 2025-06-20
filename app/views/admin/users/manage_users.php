@@ -257,10 +257,7 @@ $admin_users = array_filter($all_users, function($user) {
     return $user['role'] === 'admin';
 });
 $agency_users = array_filter($all_users, function($user) {
-    return $user['role'] === 'agency';
-});
-$focal_users = array_filter($all_users, function($user) {
-    return $user['role'] === 'focal';
+    return $user['role'] === 'agency' || $user['role'] === 'focal';
 });
 
 // Get all sectors for dropdown
@@ -392,70 +389,6 @@ require_once '../../layouts/page_header.php';
     </div>
 </div>
 
-<!-- Focal Users Table Card -->
-<div class="card admin-card mb-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="card-title m-0">Focal Users</h5>
-    </div>
-    <div class="card-body p-0">
-        <div class="table-responsive w-100">
-            <table class="table table-forest mb-0">
-                <thead>
-                    <tr>
-                        <th>Username</th>
-                        <th>Agency</th>
-                        <th>Sector</th>
-                        <th>Created</th>
-                        <th>Status</th>
-                        <th class="text-center" style="width: 100px;">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach($focal_users as $user): ?>
-                        <tr class="<?php echo !$user['is_active'] ? 'user-inactive' : ''; ?>">
-                            <td>
-                                <div class="fw-medium text-primary"><?php echo $user['username']; ?></div>
-                            </td>
-                            <td><?php echo $user['agency_name'] ?? '-'; ?></td>
-                            <td><?php echo $user['sector_name'] ?? '-'; ?></td>
-                            <td><?php echo date('M d, Y', strtotime($user['created_at'])); ?></td>
-                            <td>
-                                <?php if ($user['is_active']): ?>
-                                    <span class="badge bg-success">Active</span>
-                                <?php else: ?>
-                                    <span class="badge bg-danger">Inactive</span>
-                                <?php endif; ?>
-                                <button class="btn btn-sm ms-2 toggle-active-btn" 
-                                    data-user-id="<?php echo $user['user_id']; ?>"
-                                    data-username="<?php echo htmlspecialchars($user['username']); ?>"
-                                    data-status="<?php echo $user['is_active']; ?>"
-                                    title="<?php echo $user['is_active'] ? 'Deactivate User' : 'Activate User'; ?>">
-                                    <i class="fas fa-toggle-<?php echo $user['is_active'] ? 'on text-success' : 'off text-secondary'; ?>"></i>
-                                </button>
-                            </td>
-                            <td class="text-center">
-                                <div class="btn-group btn-group-sm d-inline-flex align-items-center justify-content-center">
-                                    <a href="<?php echo APP_URL; ?>/app/views/admin/users/edit_user.php?id=<?php echo $user['user_id']; ?>" class="btn btn-outline-primary" title="Edit User">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <a href="#" class="btn btn-outline-danger delete-user-btn" 
-                                        title="Delete User"
-                                        data-user-id="<?php echo $user['user_id']; ?>"
-                                        data-username="<?php echo $user['username']; ?>">
-                                        <i class="fas fa-trash"></i>
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                    <?php if (empty($focal_users)): ?>
-                        <tr><td colspan="6" class="text-center text-muted">No focal users found.</td></tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
 
 <!-- Agency Users Table Card -->
 <div class="card admin-card mb-4">
