@@ -160,23 +160,28 @@ function get_period_submission_stats($period_id) {
     if ($result && $row = $result->fetch_assoc()) {
         $stats['agencies_reported'] = $row['reported'];
     }
-    
-    // Get program status counts
-    $query = "SELECT is_draft, COUNT(*) as count 
-              FROM program_submissions 
-              WHERE period_id = ? 
-              GROUP BY is_draft";
+      // Get program status counts - Fixed to count unique programs, not all submissions
+    $query = "SELECT ps.is_draft, COUNT(DISTINCT ps.program_id) as count 
+              FROM program_submissions ps 
+              INNER JOIN (
+                  SELECT program_id, MAX(submission_id) as max_submission_id
+                  FROM program_submissions 
+                  WHERE period_id = ?
+                  GROUP BY program_id
+              ) latest ON ps.program_id = latest.program_id AND ps.submission_id = latest.max_submission_id
+              WHERE ps.period_id = ? 
+              GROUP BY ps.is_draft";
     $stmt = $conn->prepare($query);
-    $stmt->bind_param("i", $period_id);
+    $stmt->bind_param("ii", $period_id, $period_id);
     $stmt->execute();
     $result = $stmt->get_result();
     
     while ($result && $row = $result->fetch_assoc()) {
         if ($row['is_draft'] == 0) {
-            // final submissions
+            // final submissions - count unique programs with finalized submissions
             $stats['on_track_programs'] += $row['count'];
         } else {
-            // draft submissions
+            // draft submissions - count unique programs with only draft submissions
             $stats['delayed_programs'] += $row['count'];
         }
     }
@@ -449,26 +454,34 @@ function get_sector_data_for_period($period_id) {
     global $conn;
     
     $sector_data = array();
-    
-    $sql = "SELECT 
+      $sql = "SELECT 
                 s.sector_id,
                 s.sector_name,
                 COUNT(DISTINCT u.user_id) as agency_count,
                 COUNT(DISTINCT p.program_id) as program_count,
-                IFNULL(ROUND((COUNT(DISTINCT ps.submission_id) / 
+                IFNULL(ROUND((COUNT(DISTINCT CASE WHEN ps.submission_id IS NOT NULL THEN ps.program_id END) / 
                     NULLIF(COUNT(DISTINCT p.program_id), 0)) * 100, 0), 0) as submission_pct
             FROM 
                 sectors s
                 LEFT JOIN users u ON s.sector_id = u.sector_id AND u.role = 'agency'
                 LEFT JOIN programs p ON u.user_id = p.owner_agency_id
-                LEFT JOIN program_submissions ps ON p.program_id = ps.program_id AND ps.period_id = ?
+                LEFT JOIN (
+                    SELECT ps1.program_id, ps1.submission_id
+                    FROM program_submissions ps1
+                    INNER JOIN (
+                        SELECT program_id, MAX(submission_id) as max_submission_id
+                        FROM program_submissions 
+                        WHERE period_id = ?
+                        GROUP BY program_id
+                    ) latest ON ps1.program_id = latest.program_id AND ps1.submission_id = latest.max_submission_id
+                    WHERE ps1.period_id = ?
+                ) ps ON p.program_id = ps.program_id
             GROUP BY 
                 s.sector_id, s.sector_name
             ORDER BY 
-                s.sector_name ASC";
-                
+                s.sector_name ASC";                
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $period_id);
+    $stmt->bind_param("ii", $period_id, $period_id);
     $stmt->execute();
     $result = $stmt->get_result();
     
