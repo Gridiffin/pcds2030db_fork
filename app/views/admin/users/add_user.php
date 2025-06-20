@@ -115,8 +115,9 @@ require_once '../../layouts/page_header.php';
                             <option value="">Select Role</option>
                             <option value="admin">Administrator</option>
                             <option value="agency">Agency User</option>
+                            <option value="focal">Focal</option>
                         </select>
-                        <div class="form-text">Select whether this user is an Admin or Agency user.</div>
+                        <div class="form-text">Select whether this user is an Admin, Agency user, or Focal.</div>
                     </div>
                     
                     <div class="col-md-6">
