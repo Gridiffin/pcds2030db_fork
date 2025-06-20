@@ -707,10 +707,25 @@ if (typeof window.ReportStyler !== 'undefined') {
         const paddingCm = 0.23; 
         const numPaddingSegments = 4;
 
-        const totalOriginalContentCm = originalBoxWidthCm - (numPaddingSegments * paddingCm);
-
-        const titleProportion = titleOriginalCm / totalOriginalContentCm;
-        const valueProportion = valueOriginalCm / totalOriginalContentCm;
+        const totalOriginalContentCm = originalBoxWidthCm - (numPaddingSegments * paddingCm);        const titleProportion = titleOriginalCm / totalOriginalContentCm;
+        let valueProportion = valueOriginalCm / totalOriginalContentCm;
+          // Adjust value width for percentage values to provide more space
+        const valueStr = String(valueText);
+        const isPercentage = valueStr.includes('%');
+        const hasDecimal = valueStr.includes('.');
+        
+        // Debug logging for percentage detection (can be removed in production)
+        if (window.console && window.console.log) {
+            console.log(`KPI: ${kpiName}, Value: "${valueText}", IsPercentage: ${isPercentage}, HasDecimal: ${hasDecimal}`);
+        }
+        
+        if (isPercentage && hasDecimal) {
+            // Increase value width proportion for decimal percentages
+            valueProportion = Math.min(valueProportion * 1.4, 0.4); // Increase by 40% but cap at 40% of total
+        } else if (isPercentage) {
+            // Slight increase for regular percentages
+            valueProportion = Math.min(valueProportion * 1.2, 0.35); // Increase by 20% but cap at 35% of total
+        }
 
         const paddingIn = paddingCm / 2.54;
         const availableContentWidthIn = boxWidthIn - (numPaddingSegments * paddingIn);
@@ -718,7 +733,7 @@ if (typeof window.ReportStyler !== 'undefined') {
         const titleWIn = availableContentWidthIn * titleProportion;
         const valueWIn = availableContentWidthIn * valueProportion;
         // Ensure descWIn is not negative if boxWidthIn is too small
-        const descWIn = Math.max(0, availableContentWidthIn * (1 - titleProportion - valueProportion)); 
+        const descWIn = Math.max(0, availableContentWidthIn * (1 - titleProportion - valueProportion));
 
         const titleXIn = boxXIn + paddingIn;
         const titleYIn = boxYIn + (0.16 / 2.54); 
@@ -728,15 +743,50 @@ if (typeof window.ReportStyler !== 'undefined') {
             x: titleXIn, y: titleYIn, w: titleWIn, h: titleHIn,
             fontSize: 8, bold: true, underline: true, fontFace: defaultFont,
             color: themeColors.text, align: 'center', valign: 'middle', fit: 'shrink' // Added fit:shrink
-        });
-
-        const valueXIn = titleXIn + titleWIn + paddingIn;
+        });        const valueXIn = titleXIn + titleWIn + paddingIn;
         const valueYIn = boxYIn + (0.16 / 2.54); 
-        const valueHIn = boxHeightIn - (0.32 / 2.54); 
+        const valueHIn = boxHeightIn - (0.32 / 2.54);        // Dynamic font sizing based on value content
+        let valueFontSize = 25; // Default font size
+        const valueLength = valueStr.length;
+          if (isPercentage && hasDecimal) {
+            // For decimal percentages, use smaller font sizes for professional single-line display
+            if (valueLength <= 5) { // e.g., "56.7%"
+                valueFontSize = 18;
+            } else if (valueLength <= 6) { // e.g., "100.0%"
+                valueFontSize = 16;
+            } else { // longer decimal percentages like "99.99%"
+                valueFontSize = 16;
+            }
+        } else if (isPercentage) {
+            // For whole number percentages
+            if (valueLength <= 3) { // e.g., "56%"
+                valueFontSize = 25;
+            } else if (valueLength <= 4) { // e.g., "100%"
+                valueFontSize = 23;
+            } else {
+                valueFontSize = 21;
+            }
+        } else {
+            // For regular numbers, adjust based on length
+            if (valueLength <= 2) {
+                valueFontSize = 25;
+            } else if (valueLength <= 4) {
+                valueFontSize = 23;
+            } else if (valueLength <= 6) {
+                valueFontSize = 21;
+            } else {
+                valueFontSize = 19;
+            }
+        }
+        
+        // Additional debug logging for font sizing
+        if (window.console && window.console.log) {
+            console.log(`Font size for "${valueText}": ${valueFontSize}px (length: ${valueLength})`);
+        }
 
         let valueOptions = {
             x: valueXIn, y: valueYIn, w: valueWIn, h: valueHIn,
-            fontSize: 25, bold: true, fontFace: defaultFont,
+            fontSize: valueFontSize, bold: true, fontFace: defaultFont,
             color: '4472C4', align: 'center', valign: 'middle',
             fit: 'shrink' // Apply fit:shrink to the value
         };
