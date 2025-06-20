@@ -35,8 +35,8 @@ if (!isset($_GET['outcome_id']) || !is_numeric($_GET['outcome_id'])) {
 $outcome_id = (int) $_GET['outcome_id'];
 
 // Get outcome data using JSON-based storage
-$query = "SELECT data_json, table_name, created_at, updated_at FROM sector_outcomes_data 
-          WHERE metric_id = ? AND sector_id = ? AND is_draft = 0 LIMIT 1";
+$query = "SELECT data_json, table_name, created_at, updated_at, is_draft FROM sector_outcomes_data 
+          WHERE metric_id = ? AND sector_id = ? LIMIT 1";
 $stmt = $conn->prepare($query);
 $stmt->bind_param("ii", $outcome_id, $sector_id);
 $stmt->execute();
@@ -53,6 +53,7 @@ $table_name = $row['table_name'];
 $created_at = new DateTime($row['created_at']);
 $updated_at = new DateTime($row['updated_at']);
 $outcome_data = json_decode($row['data_json'], true);
+$is_draft = (bool)$row['is_draft'];
 
 // Get column names
 $metric_names = $outcome_data['columns'] ?? [];
@@ -107,9 +108,15 @@ require_once '../../layouts/page_header.php';
                 <i class="fas fa-chart-bar me-2"></i><?= htmlspecialchars($table_name) ?>
             </h5>
             <div>
-                <span class="badge bg-success">
-                    <i class="fas fa-check-circle me-1"></i>Submitted
+                <?php if ($is_draft): ?>
+                <span class="badge bg-warning">
+                    <i class="fas fa-pencil-alt me-1"></i> Draft
                 </span>
+                <?php else: ?>
+                <span class="badge bg-success">
+                    <i class="fas fa-check-circle me-1"></i> Submitted
+                </span>
+                <?php endif; ?>
             </div>
         </div>
         

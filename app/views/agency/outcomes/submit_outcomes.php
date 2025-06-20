@@ -178,6 +178,9 @@ require_once '../../layouts/page_header.php';
                                     <td><strong><?= htmlspecialchars($draft['table_name']) ?></strong></td>
                                     <td>
                                         <div class="d-flex justify-content-center gap-2">
+                                            <a href="<?php echo APP_URL; ?>/app/views/agency/outcomes/view_outcome.php?outcome_id=<?= $draft['metric_id'] ?>" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye me-1"></i> View Details
+                                            </a>
                                             <a href="<?php echo APP_URL; ?>/app/views/agency/outcomes/edit_outcomes.php?outcome_id=<?= $draft['metric_id'] ?>" class="btn btn-sm btn-outline-primary">
                                                 <i class="fas fa-edit me-1"></i> Edit
                                             </a>
