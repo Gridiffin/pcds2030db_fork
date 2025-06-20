@@ -18,6 +18,7 @@ require_once PROJECT_ROOT_PATH . 'lib/functions.php';
 require_once PROJECT_ROOT_PATH . 'lib/agencies/index.php';
 require_once PROJECT_ROOT_PATH . 'lib/rating_helpers.php';
 require_once PROJECT_ROOT_PATH . 'lib/audit_log.php';
+require_once PROJECT_ROOT_PATH . 'lib/agencies/program_attachments.php';
 
 // Verify user is an agency
 if (!is_agency()) {
@@ -47,6 +48,9 @@ if (!$program) {
 
 // Get program edit history
 $program_history = get_program_edit_history($program_id);
+
+// Load existing attachments for this program
+$existing_attachments = get_program_attachments($program_id);
 
 // Check if this program has a finalized (non-draft) submission for the current period
 // If it does, redirect to the program details page, as editing is not allowed
@@ -474,6 +478,72 @@ $additionalScripts = [
 // Additional styles
 $additionalStyles = '
 <link rel="stylesheet" href="' . APP_URL . '/assets/css/components/program-history.css">
+<style>
+/* Attachment Upload Styles */
+.upload-dropzone {
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    padding: 40px 20px;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    background: #f8f9fa;
+}
+
+.upload-dropzone:hover {
+    border-color: #007bff;
+    background: #e7f3ff;
+}
+
+.upload-dropzone.dragover {
+    border-color: #007bff;
+    background: #e7f3ff;
+    transform: scale(1.02);
+}
+
+.upload-dropzone-content {
+    pointer-events: none;
+}
+
+.attachment-item {
+    transition: all 0.2s ease;
+}
+
+.attachment-item:hover {
+    background-color: #f8f9fa;
+}
+
+.attachment-item .fw-medium {
+    word-break: break-word;
+    max-width: 400px;
+    overflow-wrap: break-word;
+}
+
+.attachment-actions .btn {
+    min-width: 80px;
+}
+
+.upload-instructions {
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 12px;
+}
+
+.draft-banner {
+    background: linear-gradient(135deg, #fff3cd, #fef7e3);
+    border: 1px solid #ffc107;
+    border-radius: 8px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #856404;
+}
+
+.draft-banner i {
+    color: #ffc107;
+}
+</style>
 ';
 
 // Include header (which contains the DOCTYPE declaration)
@@ -816,9 +886,7 @@ require_once dirname(__DIR__, 2) . '/layouts/page_header.php';
                             </button>
                             <?php endif; ?>
                         </div>
-                    </div>
-
-                    <!-- 3. Remarks and Comments Card -->
+                    </div>                    <!-- 3. Remarks and Comments Card -->
                     <div class="card shadow-sm mb-4">
                         <div class="card-header">
                             <h5 class="card-title m-0">Remarks and Comments</h5>
@@ -833,6 +901,98 @@ require_once dirname(__DIR__, 2) . '/layouts/page_header.php';
                                     <div class="form-text">Remarks were set by an administrator and cannot be changed.</div>
                                 <?php endif; ?>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. Program Attachments Card -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title m-0">Program Attachments</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted mb-3">
+                                Upload relevant documents, images, or other files related to this program.
+                            </p>
+                            
+                            <!-- Existing Attachments -->
+                            <?php if (!empty($existing_attachments)): ?>
+                                <div class="mb-4">
+                                    <h6 class="fw-bold mb-3">Current Attachments</h6>
+                                    <div id="existing-attachments-list">
+                                        <?php foreach ($existing_attachments as $attachment): ?>
+                                            <div class="attachment-item d-flex align-items-center justify-content-between p-3 border rounded mb-2" data-attachment-id="<?php echo $attachment['attachment_id']; ?>">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fas <?php echo get_file_icon($attachment['mime_type']); ?> me-2 text-primary"></i>
+                                                    <div>
+                                                        <div class="fw-medium"><?php echo htmlspecialchars($attachment['original_filename']); ?></div>
+                                                        <small class="text-muted">
+                                                            <?php echo format_file_size($attachment['file_size']); ?> • 
+                                                            Uploaded <?php echo date('M j, Y g:i A', strtotime($attachment['upload_date'])); ?>
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                                <div class="attachment-actions">
+                                                    <a href="<?php echo APP_URL; ?>/app/ajax/download_program_attachment.php?id=<?php echo $attachment['attachment_id']; ?>" 
+                                                       class="btn btn-sm btn-outline-primary me-2" target="_blank">
+                                                        <i class="fas fa-download"></i> Download
+                                                    </a>
+                                                    <?php if (is_editable('attachments')): ?>
+                                                        <button type="button" class="btn btn-sm btn-outline-danger delete-attachment-btn" 
+                                                                data-attachment-id="<?php echo $attachment['attachment_id']; ?>">
+                                                            <i class="fas fa-trash"></i> Delete
+                                                        </button>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+                            
+                            <!-- File Upload Section -->
+                            <?php if (is_editable('attachments')): ?>
+                                <div class="upload-section">
+                                    <h6 class="fw-bold mb-3">Add New Attachments</h6>
+                                    
+                                    <!-- Drag and Drop Area -->
+                                    <div id="attachment-dropzone" class="upload-dropzone">
+                                        <div class="upload-dropzone-content">
+                                            <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                            <h6>Drag & drop files here</h6>
+                                            <p class="text-muted mb-3">or click to browse</p>
+                                            <button type="button" class="btn btn-outline-primary" id="browse-files-btn">
+                                                <i class="fas fa-folder-open me-1"></i> Browse Files
+                                            </button>
+                                        </div>
+                                        <input type="file" id="attachment-file-input" multiple style="display: none;" 
+                                               accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.txt,.csv">
+                                    </div>
+                                    
+                                    <!-- Upload Progress -->
+                                    <div id="upload-progress" class="mt-3" style="display: none;">
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress flex-grow-1 me-3">
+                                                <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                            </div>
+                                            <span class="upload-status">Uploading...</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Upload Instructions -->
+                                    <div class="upload-instructions mt-3">
+                                        <small class="text-muted">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            Supported formats: PDF, Word documents, Excel files, PowerPoint, images (JPG, PNG, GIF), text files, CSV.
+                                            Maximum file size: 10MB per file.
+                                        </small>
+                                    </div>
+                                </div>
+                            <?php else: ?>
+                                <div class="text-muted">
+                                    <i class="fas fa-lock me-1"></i>
+                                    Attachment management is restricted for this program.
+                                </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                               <!-- Form Actions -->
@@ -882,6 +1042,289 @@ document.addEventListener('DOMContentLoaded', function() {
             ratingInput.value = this.getAttribute('data-rating');
         });
     });
+    
+    // Attachment Management
+    const dropzone = document.getElementById('attachment-dropzone');
+    const fileInput = document.getElementById('attachment-file-input');
+    const browseBtn = document.getElementById('browse-files-btn');
+    const uploadProgress = document.getElementById('upload-progress');
+    const progressBar = document.querySelector('.progress-bar');
+    const uploadStatus = document.querySelector('.upload-status');
+    
+    if (dropzone && fileInput) {
+        // Drag and drop functionality
+        dropzone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            dropzone.classList.add('dragover');
+        });
+        
+        dropzone.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+        });
+        
+        dropzone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            handleFileUpload(files);
+        });
+        
+        // Click to browse
+        if (browseBtn) {
+            browseBtn.addEventListener('click', function() {
+                fileInput.click();
+            });
+        }
+        
+        dropzone.addEventListener('click', function(e) {
+            if (e.target === dropzone || e.target.closest('.upload-dropzone-content')) {
+                fileInput.click();
+            }
+        });
+        
+        // File input change
+        fileInput.addEventListener('change', function() {
+            handleFileUpload(this.files);
+        });
+        
+        // Delete attachment functionality
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('delete-attachment-btn') || e.target.closest('.delete-attachment-btn')) {
+                const btn = e.target.classList.contains('delete-attachment-btn') ? e.target : e.target.closest('.delete-attachment-btn');
+                const attachmentId = btn.getAttribute('data-attachment-id');
+                
+                if (confirm('Are you sure you want to delete this attachment?')) {
+                    deleteAttachment(attachmentId);
+                }
+            }
+        });
+    }
+    
+    function handleFileUpload(files) {
+        if (files.length === 0) return;
+        
+        const formData = new FormData();
+        formData.append('program_id', <?php echo $program_id; ?>);
+        
+        // Add all files
+        for (let i = 0; i < files.length; i++) {
+            formData.append('attachments[]', files[i]);
+        }
+        
+        // Show progress
+        uploadProgress.style.display = 'block';
+        progressBar.style.width = '0%';
+        uploadStatus.textContent = 'Uploading...';
+        
+        fetch('<?php echo APP_URL; ?>/app/ajax/upload_program_attachment.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update progress to 100%
+                progressBar.style.width = '100%';
+                uploadStatus.textContent = 'Upload complete!';
+                
+                // Add uploaded files to the list
+                if (data.attachments) {
+                    data.attachments.forEach(attachment => {
+                        addAttachmentToList(attachment);
+                    });
+                }
+                
+                showToast('Success', 'Files uploaded successfully', 'success');
+                
+                // Hide progress after delay
+                setTimeout(() => {
+                    uploadProgress.style.display = 'none';
+                }, 2000);
+                
+                // Clear file input
+                fileInput.value = '';
+            } else {
+                uploadStatus.textContent = 'Upload failed';
+                showToast('Error', data.message || 'Failed to upload files', 'danger');
+                
+                setTimeout(() => {
+                    uploadProgress.style.display = 'none';
+                }, 3000);
+            }
+        })
+        .catch(error => {
+            console.error('Upload error:', error);
+            uploadStatus.textContent = 'Upload failed';
+            showToast('Error', 'Failed to upload files', 'danger');
+            
+            setTimeout(() => {
+                uploadProgress.style.display = 'none';
+            }, 3000);
+        });
+    }
+    
+    function deleteAttachment(attachmentId) {
+        const attachmentItem = document.querySelector(`[data-attachment-id="${attachmentId}"]`);
+        if (!attachmentItem) return;
+        
+        // Disable the delete button
+        const deleteBtn = attachmentItem.querySelector('.delete-attachment-btn');
+        if (deleteBtn) {
+            deleteBtn.disabled = true;
+            deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+        }
+        
+        fetch('<?php echo APP_URL; ?>/app/ajax/delete_program_attachment.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ attachment_id: attachmentId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Remove the attachment item from the list
+                attachmentItem.remove();
+                showToast('Success', 'Attachment deleted successfully', 'success');
+                
+                // Check if no attachments remain
+                const remainingAttachments = document.querySelectorAll('#existing-attachments-list .attachment-item');
+                if (remainingAttachments.length === 0) {
+                    const existingSection = document.querySelector('#existing-attachments-list').closest('.mb-4');
+                    if (existingSection) {
+                        existingSection.style.display = 'none';
+                    }
+                }
+            } else {
+                showToast('Error', data.message || 'Failed to delete attachment', 'danger');
+                
+                // Re-enable the delete button
+                if (deleteBtn) {
+                    deleteBtn.disabled = false;
+                    deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Delete';
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Delete error:', error);
+            showToast('Error', 'Failed to delete attachment', 'danger');
+            
+            // Re-enable the delete button
+            if (deleteBtn) {
+                deleteBtn.disabled = false;
+                deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Delete';
+            }
+        });
+    }
+    
+    function addAttachmentToList(attachment) {
+        let attachmentsList = document.getElementById('existing-attachments-list');
+        
+        // If no existing attachments list, create it
+        if (!attachmentsList) {
+            const attachmentsCard = document.querySelector('.card-body:has(#attachment-dropzone)');
+            const uploadSection = document.querySelector('.upload-section');
+            
+            const listSection = document.createElement('div');
+            listSection.className = 'mb-4';
+            listSection.innerHTML = `
+                <h6 class="fw-bold mb-3">Current Attachments</h6>
+                <div id="existing-attachments-list"></div>
+            `;
+            
+            attachmentsCard.insertBefore(listSection, uploadSection);
+            attachmentsList = document.getElementById('existing-attachments-list');
+        } else {
+            // Show the section if it was hidden
+            const existingSection = attachmentsList.closest('.mb-4');
+            if (existingSection) {
+                existingSection.style.display = 'block';
+            }
+        }
+        
+        // Get file icon
+        const fileIcon = getFileIcon(attachment.mime_type);
+        
+        const attachmentItem = document.createElement('div');
+        attachmentItem.className = 'attachment-item d-flex align-items-center justify-content-between p-3 border rounded mb-2';
+        attachmentItem.setAttribute('data-attachment-id', attachment.attachment_id);
+        
+        attachmentItem.innerHTML = `
+            <div class="d-flex align-items-center">
+                <i class="fas ${fileIcon} me-2 text-primary"></i>
+                <div>
+                    <div class="fw-medium">${escapeHtml(attachment.original_filename)}</div>
+                    <small class="text-muted">
+                        ${formatFileSize(attachment.file_size)} • 
+                        Uploaded ${formatUploadDate(attachment.upload_date)}
+                    </small>
+                </div>
+            </div>
+            <div class="attachment-actions">
+                <a href="<?php echo APP_URL; ?>/app/ajax/download_program_attachment.php?id=${attachment.attachment_id}" 
+                   class="btn btn-sm btn-outline-primary me-2" target="_blank">
+                    <i class="fas fa-download"></i> Download
+                </a>
+                <button type="button" class="btn btn-sm btn-outline-danger delete-attachment-btn" 
+                        data-attachment-id="${attachment.attachment_id}">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </div>
+        `;
+        
+        attachmentsList.appendChild(attachmentItem);
+    }
+    
+    function getFileIcon(mimeType) {
+        const icons = {
+            'application/pdf': 'fa-file-pdf',
+            'application/msword': 'fa-file-word',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'fa-file-word',
+            'application/vnd.ms-excel': 'fa-file-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'fa-file-excel',
+            'application/vnd.ms-powerpoint': 'fa-file-powerpoint',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'fa-file-powerpoint',
+            'text/plain': 'fa-file-alt',
+            'text/csv': 'fa-file-csv',
+            'image/jpeg': 'fa-file-image',
+            'image/jpg': 'fa-file-image',
+            'image/png': 'fa-file-image',
+            'image/gif': 'fa-file-image'
+        };
+        
+        return icons[mimeType] || 'fa-file';
+    }
+    
+    function formatFileSize(bytes) {
+        if (bytes >= 1048576) {
+            return (bytes / 1048576).toFixed(1) + ' MB';
+        } else if (bytes >= 1024) {
+            return (bytes / 1024).toFixed(1) + ' KB';
+        } else {
+            return bytes + ' bytes';
+        }
+    }
+    
+    function formatUploadDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric', 
+            year: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        });
+    }
+    
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
     
     // Add target functionality
     const addTargetBtn = document.getElementById('add-target-btn');

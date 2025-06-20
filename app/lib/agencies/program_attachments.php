@@ -264,11 +264,11 @@ function get_program_attachments($program_id) {
     $result = $stmt->get_result();
     
     $attachments = [];
-    while ($row = $result->fetch_assoc()) {
-        $attachments[] = [
+    while ($row = $result->fetch_assoc()) {        $attachments[] = [
             'attachment_id' => $row['attachment_id'],
             'original_filename' => $row['original_filename'],
             'file_size' => $row['file_size'],
+            'mime_type' => $row['file_type'], // Add mime_type field
             'file_type' => $row['file_type'],
             'description' => $row['description'],
             'upload_date' => $row['upload_date'],
@@ -489,7 +489,112 @@ function get_attachment_for_download($attachment_id) {
     if (!is_admin() && $attachment['owner_agency_id'] != $_SESSION['user_id']) {
         return false;
     }
+      return $attachment;
+}
+
+/**
+ * Validate attachment file
+ *
+ * @param array $file $_FILES array element
+ * @return array Validation result with success/error info
+ */
+function validate_attachment_file($file) {
+    // Check if file was uploaded without errors
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        $error_messages = [
+            UPLOAD_ERR_INI_SIZE => 'File is too large (exceeds server limit)',
+            UPLOAD_ERR_FORM_SIZE => 'File is too large (exceeds form limit)',
+            UPLOAD_ERR_PARTIAL => 'File was only partially uploaded',
+            UPLOAD_ERR_NO_FILE => 'No file was uploaded',
+            UPLOAD_ERR_NO_TMP_DIR => 'Missing temporary folder',
+            UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk',
+            UPLOAD_ERR_EXTENSION => 'File upload stopped by extension'
+        ];
+        
+        return [
+            'valid' => false,
+            'error' => $error_messages[$file['error']] ?? 'Unknown upload error'
+        ];
+    }
     
-    return $attachment;
+    // Check file size (10MB max)
+    $max_size = 10 * 1024 * 1024; // 10MB
+    if ($file['size'] > $max_size) {
+        return [
+            'valid' => false,
+            'error' => 'File is too large. Maximum size is 10MB.'
+        ];
+    }
+    
+    // Check MIME type
+    $allowed_types = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-powerpoint',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'text/plain',
+        'text/csv',
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/gif'
+    ];
+    
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $mime_type = finfo_file($finfo, $file['tmp_name']);
+    finfo_close($finfo);
+    
+    if (!in_array($mime_type, $allowed_types)) {
+        return [
+            'valid' => false,
+            'error' => 'File type not allowed. Supported formats: PDF, Word, Excel, PowerPoint, images, text files.'
+        ];
+    }
+    
+    // Check file extension
+    $allowed_extensions = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'jpg', 'jpeg', 'png', 'gif', 'txt', 'csv'];
+    $file_extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    
+    if (!in_array($file_extension, $allowed_extensions)) {
+        return [
+            'valid' => false,
+            'error' => 'File extension not allowed.'
+        ];
+    }
+    
+    return [
+        'valid' => true,
+        'mime_type' => $mime_type,
+        'extension' => $file_extension
+    ];
+}
+
+/**
+ * Get file icon class based on MIME type
+ *
+ * @param string $mime_type File MIME type
+ * @return string FontAwesome icon class
+ */
+function get_file_icon($mime_type) {
+    $icons = [
+        'application/pdf' => 'fa-file-pdf',
+        'application/msword' => 'fa-file-word',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'fa-file-word',
+        'application/vnd.ms-excel' => 'fa-file-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => 'fa-file-excel',
+        'application/vnd.ms-powerpoint' => 'fa-file-powerpoint',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation' => 'fa-file-powerpoint',
+        'text/plain' => 'fa-file-alt',
+        'text/csv' => 'fa-file-csv',
+        'image/jpeg' => 'fa-file-image',
+        'image/jpg' => 'fa-file-image',
+        'image/png' => 'fa-file-image',
+        'image/gif' => 'fa-file-image'
+    ];
+    
+    return $icons[$mime_type] ?? 'fa-file';
 }
 ?>
