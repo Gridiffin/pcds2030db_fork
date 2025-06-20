@@ -184,8 +184,7 @@ require_once '../../layouts/page_header.php';
                     </h5>
                 </div>
                 <div class="card-body">
-                    <!-- Wizard Progress Indicator -->
-                    <div class="wizard-progress mb-4">
+                    <!-- Wizard Progress Indicator -->                    <div class="wizard-progress mb-4">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <div class="step-indicator active" id="step-1-indicator">
                                 <div class="step-number">1</div>
@@ -199,13 +198,18 @@ require_once '../../layouts/page_header.php';
                             <div class="step-line"></div>
                             <div class="step-indicator" id="step-3-indicator">
                                 <div class="step-number">3</div>
+                                <div class="step-label">Attachments</div>
+                            </div>
+                            <div class="step-line"></div>
+                            <div class="step-indicator" id="step-4-indicator">
+                                <div class="step-number">4</div>
                                 <div class="step-label">Review</div>
                             </div>
                         </div>
                         <div class="progress" style="height: 4px;">
                             <div class="progress-bar bg-primary" id="wizard-progress-bar" style="width: 25%"></div>
                         </div>
-                    </div>                    <!-- Wizard Form -->
+                    </div><!-- Wizard Form -->
                     <form id="createProgramWizard" method="post">
                         <!-- Hidden field to track program_id for auto-save -->
                         <input type="hidden" id="program_id" name="program_id" value="0">
@@ -288,10 +292,72 @@ require_once '../../layouts/page_header.php';
 
                                 <button type="button" id="add-target-button" class="btn btn-secondary">Add Another Target</button>
                             </div>
+                        </div>                        <!-- Step 3: Attachments -->
+                        <div class="wizard-step" id="step-3">
+                            <div class="step-content">
+                                <h6 class="fw-bold mb-3">
+                                    <i class="fas fa-paperclip me-2"></i>
+                                    Supporting Documents (Optional)
+                                </h6>
+                                
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    You can upload supporting documents such as PDFs, Word documents, Excel files, or images to provide additional context for your program.
+                                </div>
+
+                                <!-- File Upload Section -->
+                                <div class="attachment-upload-section mb-4">
+                                    <div class="upload-zone" id="attachmentUploadZone">
+                                        <div class="upload-content text-center py-4">
+                                            <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                            <h6 class="text-muted">Drag and drop files here</h6>
+                                            <p class="text-muted mb-3">or</p>
+                                            <button type="button" class="btn btn-outline-primary" id="selectFilesBtn">
+                                                <i class="fas fa-folder-open me-2"></i>
+                                                Select Files
+                                            </button>
+                                            <input type="file" id="attachmentFileInput" multiple style="display: none;" 
+                                                   accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.txt">
+                                        </div>
+                                        <div class="upload-info mt-3">
+                                            <small class="text-muted">
+                                                <i class="fas fa-info-circle me-1"></i>
+                                                Allowed file types: PDF, DOC, DOCX, XLS, XLSX, JPG, PNG, TXT<br>
+                                                Maximum file size: 10MB per file, 50MB total
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Uploaded Files List -->
+                                <div class="uploaded-files-section">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h6 class="mb-0">Uploaded Files</h6>
+                                        <span class="badge bg-secondary" id="fileCountBadge">0 files</span>
+                                    </div>
+                                    <div class="uploaded-files-list" id="uploadedFilesList">
+                                        <div class="text-center text-muted py-3" id="noFilesMessage">
+                                            <i class="fas fa-folder-open fa-2x mb-2"></i>
+                                            <p class="mb-0">No files uploaded yet</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Upload Progress -->
+                                <div class="upload-progress" id="uploadProgress" style="display: none;">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="upload-filename">Uploading...</span>
+                                        <span class="upload-percentage">0%</span>
+                                    </div>
+                                    <div class="progress">
+                                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- Step 3: Review & Save -->
-                        <div class="wizard-step" id="step-3">
+                        <!-- Step 4: Review & Save -->
+                        <div class="wizard-step" id="step-4">
                             <div class="step-content">
                                 <h6 class="fw-bold mb-3">
                                     <i class="fas fa-eye me-2"></i>
@@ -321,8 +387,7 @@ require_once '../../layouts/page_header.php';
                                             </div>
                                         </div>
                                     </div>
-                                    
-                                    <!-- Targets Section -->
+                                      <!-- Targets Section -->
                                     <div class="review-section mt-4">
                                         <h6 class="text-muted mb-2">Targets</h6>
                                         <div id="review-targets">
@@ -337,6 +402,14 @@ require_once '../../layouts/page_header.php';
                                                     <!-- rows injected by JS -->
                                                 </tbody>
                                             </table>
+                                        </div>
+                                    </div>
+
+                                    <!-- Attachments Section -->
+                                    <div class="review-section mt-4">
+                                        <h6 class="text-muted mb-2">Attachments</h6>
+                                        <div id="review-attachments">
+                                            <div class="text-muted">No attachments uploaded</div>
                                         </div>
                                     </div>
                                 </div>
@@ -499,10 +572,9 @@ require_once '../../layouts/page_header.php';
 
 <!-- Wizard JavaScript -->
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Wizard state
+document.addEventListener('DOMContentLoaded', function() {    // Wizard state
     let currentStep = 1;
-    const totalSteps = 3;
+    const totalSteps = 4;
     let formData = {};
     
     // Elements
@@ -543,9 +615,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Update progress bar
         updateProgressBar();
-        
-        // Update review if on step 3
-        if (step === 3) {
+          // Update review if on step 4
+        if (step === 4) {
             updateReviewSummary();
         }
     }
@@ -725,11 +796,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 input.addEventListener('input', handleInputChange);
             });
         }
-        
-        function handleInputChange() {
+          function handleInputChange() {
             clearTimeout(autoSaveTimeout);
             autoSaveTimeout = setTimeout(() => {
-                autoSaveFormData();
+                autoSaveFormData().catch(error => {
+                    console.error('Auto-save failed from input change:', error);
+                });
             }, 2000); // Auto-save after 2 seconds of inactivity
         }
         
@@ -746,63 +818,68 @@ document.addEventListener('DOMContentLoaded', function() {
                 setTimeout(addAutoSaveToInputs, 100);
             };
         }
-    }
-      function autoSaveFormData() {
-        const data = collectFormData();
-        
-        // Only auto-save if program name is provided
-        if (!data.program_name || data.program_name.trim().length < 3) {
-            return;
-        }
-        
-        // Show saving indicator
-        showAutoSaveStatus('Saving...', 'warning');
-        
-        // Prepare data for auto-save
-        const formData = new FormData();
-        
-        // Add basic form fields
-        Object.keys(data).forEach(key => {
-            if (key !== 'targets' && data[key]) {
-                formData.append(key, data[key]);
+    }      function autoSaveFormData() {
+        return new Promise((resolve, reject) => {
+            const data = collectFormData();
+            
+            // Only auto-save if program name is provided
+            if (!data.program_name || data.program_name.trim().length < 3) {
+                reject(new Error('Program name is required'));
+                return;
             }
-        });
-        
-        // Add targets array data
-        if (data.targets && data.targets.length > 0) {
-            data.targets.forEach((target, index) => {
-                if (target.target) {
-                    formData.append(`targets[${index}][target]`, target.target);
-                }
-                if (target.status_description) {
-                    formData.append(`targets[${index}][status_description]`, target.status_description);
+            
+            // Show saving indicator
+            showAutoSaveStatus('Saving...', 'warning');
+            
+            // Prepare data for auto-save
+            const formData = new FormData();
+            
+            // Add basic form fields
+            Object.keys(data).forEach(key => {
+                if (key !== 'targets' && data[key]) {
+                    formData.append(key, data[key]);
                 }
             });
-        }
-        
-        formData.append('auto_save', '1');
-        
-        // Send AJAX request
-        fetch(window.location.href, {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(result => {
-            if (result.success) {
-                // Store program_id for subsequent auto-saves
-                if (result.program_id) {
-                    document.getElementById('program_id').value = result.program_id;
-                }
-                showAutoSaveStatus('Saved', 'success');
-            } else {
-                showAutoSaveStatus('Save failed', 'error');
-                console.error('Auto-save failed:', result.error);
+            
+            // Add targets array data
+            if (data.targets && data.targets.length > 0) {
+                data.targets.forEach((target, index) => {
+                    if (target.target) {
+                        formData.append(`targets[${index}][target]`, target.target);
+                    }
+                    if (target.status_description) {
+                        formData.append(`targets[${index}][status_description]`, target.status_description);
+                    }
+                });
             }
-        })
-        .catch(error => {
-            console.error('Auto-save error:', error);
-            showAutoSaveStatus('Save failed', 'error');
+            
+            formData.append('auto_save', '1');
+            
+            // Send AJAX request
+            fetch(window.location.href, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    // Store program_id for subsequent auto-saves
+                    if (result.program_id) {
+                        document.getElementById('program_id').value = result.program_id;
+                    }
+                    showAutoSaveStatus('Saved', 'success');
+                    resolve(result);
+                } else {
+                    showAutoSaveStatus('Save failed', 'error');
+                    console.error('Auto-save failed:', result.error);
+                    reject(new Error(result.error || 'Auto-save failed'));
+                }
+            })
+            .catch(error => {
+                console.error('Auto-save error:', error);
+                showAutoSaveStatus('Save failed', 'error');
+                reject(error);
+            });
         });
     }
     
@@ -953,20 +1030,22 @@ document.addEventListener('DOMContentLoaded', function() {
         // Add event listener for the remove button
         targetGroup.querySelector('.remove-target-button').addEventListener('click', function() {
             targetGroup.remove();
-            updateTargetNumbers();
-            // Trigger auto-save after removal
+            updateTargetNumbers();            // Trigger auto-save after removal
             setTimeout(() => {
-                autoSaveFormData();
+                autoSaveFormData().catch(error => {
+                    console.error('Auto-save failed after target removal:', error);
+                });
             }, 500);
         });
-        
-        // Setup auto-save for new inputs
+          // Setup auto-save for new inputs
         const newInputs = targetGroup.querySelectorAll('input');
         newInputs.forEach(input => {
             input.addEventListener('input', function() {
                 clearTimeout(window.autoSaveTimeout);
                 window.autoSaveTimeout = setTimeout(() => {
-                    autoSaveFormData();
+                    autoSaveFormData().catch(error => {
+                        console.error('Auto-save failed from new target input:', error);
+                    });
                 }, 2000);
             });
         });
@@ -987,18 +1066,18 @@ document.addEventListener('DOMContentLoaded', function() {
     `;
 
     container.appendChild(targetGroup);
-    
-    // Setup auto-save for initial target inputs
+      // Setup auto-save for initial target inputs
     const initialInputs = targetGroup.querySelectorAll('input');
     initialInputs.forEach(input => {
         input.addEventListener('input', function() {
             clearTimeout(window.autoSaveTimeout);
             window.autoSaveTimeout = setTimeout(() => {
-                autoSaveFormData();
+                autoSaveFormData().catch(error => {
+                    console.error('Auto-save failed from initial target input:', error);
+                });
             }, 2000);
         });
     });
-    
     // Utility functions for showing/clearing field errors
     function showFieldError(field, message) {
         field.classList.add('is-invalid');
@@ -1023,5 +1102,464 @@ document.addEventListener('DOMContentLoaded', function() {
             errorDiv.remove();
         }
     }
+
+    // ===========================
+    // ATTACHMENT FUNCTIONALITY
+    // ===========================
+    
+    // Attachment state
+    let uploadedAttachments = [];
+    const maxFileSize = 10 * 1024 * 1024; // 10MB
+    const maxTotalSize = 50 * 1024 * 1024; // 50MB
+    const allowedTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'image/jpeg',
+        'image/png',
+        'text/plain'
+    ];
+      // Initialize attachment functionality
+    function initializeAttachments() {
+        const uploadZone = document.getElementById('attachmentUploadZone');
+        const fileInput = document.getElementById('attachmentFileInput');
+        const selectFilesBtn = document.getElementById('selectFilesBtn');
+          // Only initialize if all elements exist
+        if (!uploadZone || !fileInput || !selectFilesBtn) {
+            console.log('Attachment elements not found, skipping initialization');
+            return;
+        }
+        
+        console.log('Initializing attachment functionality...');
+        
+        // File selection via button
+        selectFilesBtn.addEventListener('click', () => {
+            console.log('Select files button clicked');
+            fileInput.click();
+        });
+        
+        // File selection via input
+        fileInput.addEventListener('change', handleFileSelection);
+          // Drag and drop functionality
+        uploadZone.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            console.log('Dragenter event');
+            uploadZone.classList.add('drag-over');
+        });
+        
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+            console.log('Dragover event');
+            uploadZone.classList.add('drag-over');
+        });
+        
+        uploadZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            console.log('Dragleave event');
+            // Only remove drag-over if we're actually leaving the drop zone
+            if (!uploadZone.contains(e.relatedTarget)) {
+                uploadZone.classList.remove('drag-over');
+            }
+        });
+        
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            console.log('Drop event with', e.dataTransfer.files.length, 'files');
+            uploadZone.classList.remove('drag-over');
+            const files = Array.from(e.dataTransfer.files);
+            handleFiles(files);
+        });
+    }
+    
+    function handleFileSelection(e) {
+        const files = Array.from(e.target.files);
+        handleFiles(files);
+        // Clear the input so the same file can be selected again
+        e.target.value = '';
+    }
+    
+    function handleFiles(files) {
+        const validFiles = [];
+        
+        for (const file of files) {
+            const validation = validateFile(file);
+            if (validation.valid) {
+                validFiles.push(file);
+            } else {
+                showToast('File Validation Error', validation.error, 'danger');
+            }
+        }
+        
+        if (validFiles.length > 0) {
+            uploadFiles(validFiles);
+        }
+    }
+    
+    function validateFile(file) {
+        // Check file type
+        if (!allowedTypes.includes(file.type)) {
+            return {
+                valid: false,
+                error: `File type "${file.type}" is not allowed. Please upload PDF, DOC, DOCX, XLS, XLSX, JPG, PNG, or TXT files.`
+            };
+        }
+        
+        // Check file size
+        if (file.size > maxFileSize) {
+            return {
+                valid: false,
+                error: `File "${file.name}" is too large. Maximum file size is 10MB.`
+            };
+        }
+        
+        // Check total size
+        const currentTotalSize = uploadedAttachments.reduce((total, att) => total + att.size, 0);
+        if (currentTotalSize + file.size > maxTotalSize) {
+            return {
+                valid: false,
+                error: `Adding this file would exceed the total size limit of 50MB.`
+            };
+        }
+        
+        return { valid: true };
+    }    function uploadFiles(files) {
+        const programId = document.getElementById('program_id').value;
+        
+        if (!programId || programId === '0') {
+            // Auto-save the program first, then upload files
+            showToast('Info', 'Saving program first before uploading attachments...', 'info');
+            
+            // Check if required fields are filled
+            const programName = document.getElementById('program_name').value.trim();
+            if (!programName) {
+                showToast('Error', 'Please fill in the Program Name before uploading attachments.', 'danger');
+                return;
+            }
+            
+            // Trigger auto-save and wait for completion
+            autoSaveFormData().then(() => {
+                const newProgramId = document.getElementById('program_id').value;
+                if (!newProgramId || newProgramId === '0') {
+                    showToast('Error', 'Failed to save program. Please try again.', 'danger');
+                    return;
+                }
+                // Upload files with new program ID
+                files.forEach(file => uploadSingleFile(file, newProgramId));
+            }).catch(error => {
+                console.error('Auto-save failed:', error);
+                showToast('Error', 'Failed to save program before uploading attachments.', 'danger');
+            });
+            
+            return;
+        }
+        
+        files.forEach(file => uploadSingleFile(file, programId));
+    }      function uploadSingleFile(file, programId) {
+        const formData = new FormData();
+        formData.append('program_id', programId);
+        formData.append('attachment_file', file);
+        formData.append('description', ''); // Optional description
+        
+        // Show upload progress
+        showUploadProgress(file.name);
+        
+        fetch('<?php echo APP_URL; ?>/app/ajax/upload_program_attachment.php', {
+            method: 'POST',
+            body: formData        })        .then(response => response.json())
+        .then(data => {
+            hideUploadProgress();
+            
+            if (data.success) {                // Add to uploaded attachments list
+                uploadedAttachments.push({
+                    id: data.attachment.attachment_id,
+                    name: data.attachment.filename,
+                    size: data.attachment.file_size,
+                    type: data.attachment.mime_type,
+                    uploaded_date: data.attachment.upload_date
+                });
+                
+                updateAttachmentsList();
+                updateFileCountBadge();
+                showToast('Success', `File "${file.name}" uploaded successfully.`, 'success');
+            } else {
+                showToast('Upload Error', data.error || 'Failed to upload file.', 'danger');
+            }
+        })
+        .catch(error => {
+            hideUploadProgress();
+            console.error('Upload error:', error);
+            showToast('Upload Error', 'An error occurred while uploading the file.', 'danger');
+        });
+    }
+      function showUploadProgress(filename) {
+        const progressContainer = document.getElementById('uploadProgress');
+        if (!progressContainer) {
+            console.log('uploadProgress element not found - might not be on attachments step');
+            return;
+        }
+        
+        const filenameSpan = progressContainer.querySelector('.upload-filename');
+        const progressBar = progressContainer.querySelector('.progress-bar');
+        
+        if (!filenameSpan || !progressBar) {
+            console.log('Upload progress elements not found');
+            return;
+        }
+        
+        filenameSpan.textContent = `Uploading: ${filename}`;
+        progressBar.style.width = '0%';
+        progressContainer.style.display = 'block';
+        
+        // Simulate progress (since we don't have real progress tracking)
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += Math.random() * 30;
+            if (progress > 90) progress = 90;
+            progressBar.style.width = progress + '%';
+            const percentageSpan = progressContainer.querySelector('.upload-percentage');
+            if (percentageSpan) {
+                percentageSpan.textContent = Math.round(progress) + '%';
+            }
+        }, 200);
+        
+        progressContainer.dataset.interval = interval;
+    }
+      function hideUploadProgress() {
+        const progressContainer = document.getElementById('uploadProgress');
+        if (!progressContainer) {
+            console.log('uploadProgress element not found - might not be on attachments step');
+            return;
+        }
+        
+        const interval = progressContainer.dataset.interval;
+        if (interval) {
+            clearInterval(interval);
+        }
+        
+        // Complete the progress
+        const progressBar = progressContainer.querySelector('.progress-bar');
+        const percentageSpan = progressContainer.querySelector('.upload-percentage');
+        
+        if (progressBar) {
+            progressBar.style.width = '100%';
+        }
+        if (percentageSpan) {
+            percentageSpan.textContent = '100%';
+        }
+        
+        setTimeout(() => {
+            progressContainer.style.display = 'none';
+        }, 1000);
+    }function updateAttachmentsList() {
+        const listContainer = document.getElementById('uploadedFilesList');
+        const noFilesMessage = document.getElementById('noFilesMessage');
+        
+        // Add null checks for DOM elements - might not be available if not on step 3
+        if (!listContainer) {
+            console.log('uploadedFilesList element not found - might not be on attachments step');
+            return;
+        }
+        
+        if (uploadedAttachments.length === 0) {
+            if (noFilesMessage) {
+                noFilesMessage.style.display = 'block';
+            } else {
+                // If noFilesMessage doesn't exist, create the empty state in the list container
+                listContainer.innerHTML = `
+                    <div class="text-center text-muted py-3">
+                        <i class="fas fa-folder-open fa-2x mb-2"></i>
+                        <p class="mb-0">No files uploaded yet</p>
+                    </div>
+                `;
+            }
+            return;
+        }
+
+        if (noFilesMessage) {
+            noFilesMessage.style.display = 'none';
+        }
+        
+        const filesHtml = uploadedAttachments.map(attachment => `
+            <div class="attachment-item border rounded p-3 mb-2 d-flex justify-content-between align-items-center">
+                <div class="attachment-info d-flex align-items-center">
+                    <i class="fas ${getFileIcon(attachment.type)} fa-2x text-primary me-3"></i>
+                    <div>
+                        <h6 class="mb-1">${attachment.name}</h6>
+                        <small class="text-muted">
+                            ${formatFileSize(attachment.size)} • 
+                            Uploaded ${formatDate(attachment.uploaded_date)}
+                        </small>
+                    </div>
+                </div>
+                <div class="attachment-actions">
+                    <button type="button" class="btn btn-sm btn-outline-primary me-2" 
+                            onclick="downloadAttachment(${attachment.id})">
+                        <i class="fas fa-download"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                            onclick="deleteAttachment(${attachment.id})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+        
+        listContainer.innerHTML = filesHtml;
+    }    function updateFileCountBadge() {
+        const badge = document.getElementById('fileCountBadge');
+        if (!badge) {
+            console.log('fileCountBadge element not found - might not be on attachments step');
+            return;
+        }
+        
+        const count = uploadedAttachments.length;
+        badge.textContent = count === 1 ? '1 file' : `${count} files`;
+    }
+    
+    function getFileIcon(mimeType) {
+        const iconMap = {
+            'application/pdf': 'fa-file-pdf',
+            'application/msword': 'fa-file-word',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'fa-file-word',
+            'application/vnd.ms-excel': 'fa-file-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'fa-file-excel',
+            'image/jpeg': 'fa-file-image',
+            'image/png': 'fa-file-image',
+            'text/plain': 'fa-file-alt'
+        };
+        
+        return iconMap[mimeType] || 'fa-file';
+    }
+    
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }    // Global functions for attachment actions
+    window.downloadAttachment = function(attachmentId) {
+        window.open(`<?php echo APP_URL; ?>/app/ajax/download_program_attachment.php?id=${attachmentId}`, '_blank');
+    };
+    
+    window.deleteAttachment = function(attachmentId) {
+        if (!confirm('Are you sure you want to delete this attachment?')) {
+            return;
+        }
+        
+        fetch('<?php echo APP_URL; ?>/app/ajax/delete_program_attachment.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `attachment_id=${attachmentId}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Remove from local array
+                uploadedAttachments = uploadedAttachments.filter(att => att.id !== attachmentId);
+                updateAttachmentsList();
+                updateFileCountBadge();
+                showToast('Success', 'Attachment deleted successfully.', 'success');
+            } else {
+                showToast('Delete Error', data.error || 'Failed to delete attachment.', 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Delete error:', error);
+            showToast('Delete Error', 'An error occurred while deleting the attachment.', 'danger');
+        });
+    };
+    
+    // Update review summary to include attachments
+    function updateAttachmentsReview() {
+        const reviewContainer = document.getElementById('review-attachments');
+        
+        if (uploadedAttachments.length === 0) {
+            reviewContainer.innerHTML = '<div class="text-muted">No attachments uploaded</div>';
+            return;
+        }
+        
+        const attachmentsHtml = uploadedAttachments.map(attachment => `
+            <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                <div class="d-flex align-items-center">
+                    <i class="fas ${getFileIcon(attachment.type)} text-primary me-2"></i>
+                    <span>${attachment.name}</span>
+                </div>
+                <small class="text-muted">${formatFileSize(attachment.size)}</small>
+            </div>
+        `).join('');
+        
+        reviewContainer.innerHTML = attachmentsHtml;
+    }
+      // Initialize attachments when DOM is loaded
+    initializeAttachments();
+    
+    // Load existing attachments if editing an existing program
+    loadExistingAttachments();
+    
+    function loadExistingAttachments() {
+        const programId = document.getElementById('program_id').value;
+        
+        if (!programId || programId === '0') {
+            return; // No existing program to load attachments from
+        }
+        
+        // TODO: Implement AJAX call to load existing attachments
+        // This would be needed for the update program functionality
+    }
+    
+    // Update the review summary function to include attachments
+    const originalUpdateReviewSummary = updateReviewSummary;
+    updateReviewSummary = function() {
+        originalUpdateReviewSummary();
+        updateAttachmentsReview();
+    };
 });
 </script>
+
+<!-- Attachment CSS -->
+<style>
+.upload-zone {
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.upload-zone:hover,
+.upload-zone.drag-over {
+    border-color: #0d6efd;
+    background-color: rgba(13, 110, 253, 0.1);
+}
+
+.attachment-item {
+    transition: all 0.2s ease;
+}
+
+.attachment-item:hover {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.review-target-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.review-target-table th,
+.review-target-table td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.review-target-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+}
+</style>

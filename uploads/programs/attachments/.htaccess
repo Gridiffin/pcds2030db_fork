@@ -1,0 +1,34 @@
+# Secure upload directory - prevent direct access to uploaded files
+# Files should only be accessed through the download handler
+
+# Deny all direct access
+<Files "*">
+    Order Deny,Allow
+    Deny from all
+</Files>
+
+# Allow only specific safe file types to be served (as backup)
+<FilesMatch "\.(pdf|doc|docx|xls|xlsx|ppt|pptx|jpg|jpeg|png|gif|txt|csv)$">
+    # Still deny direct access - use download handler instead
+    Order Deny,Allow
+    Deny from all
+</FilesMatch>
+
+# Prevent execution of PHP files
+<FilesMatch "\.php$">
+    Order Deny,Allow
+    Deny from all
+</FilesMatch>
+
+# Prevent access to hidden files
+<FilesMatch "^\.">
+    Order Deny,Allow
+    Deny from all
+</FilesMatch>
+
+# Add security headers
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options nosniff
+    Header always set X-Frame-Options DENY
+    Header always set X-XSS-Protection "1; mode=block"
+</IfModule>
