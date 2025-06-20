@@ -338,9 +338,11 @@ require_once '../../layouts/page_header.php';
                                                     <button class="btn btn-sm btn-outline-primary flex-fill" onclick="editMetricDetail(<?= $detail['id'] ?>)">
                                                         <i class="fas fa-edit me-1"></i> Edit
                                                     </button>
+                                                    <?php if (isset($_SESSION['role']) && strtolower($_SESSION['role']) === 'focal'): ?>
                                                     <button class="btn btn-sm btn-outline-danger" onclick="deleteMetricDetail(<?= $detail['id'] ?>)">
                                                         <i class="fas fa-trash me-1"></i> Delete
                                                     </button>
+                                                    <?php endif; ?>
                                                 </div>
                                             </div>
                                         </div>
