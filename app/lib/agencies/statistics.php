@@ -262,16 +262,12 @@ function get_agency_submission_status($agency_id, $period_id = null) {
                 'completed' => 0,
                 'not-started' => 0
             ]
-        ];
-
-        // Get total programs for agency (filtered by period if provided)
+        ];        // Get total programs for agency (including those with and without submissions for the period)
         if ($period_id) {
-            $query = "SELECT COUNT(DISTINCT p.program_id) as total
-                      FROM programs p
-                      INNER JOIN program_submissions ps ON p.program_id = ps.program_id
-                      WHERE p.owner_agency_id = ? AND ps.period_id = ?";
+            // Count all programs owned by agency, regardless of submission status for the period
+            $query = "SELECT COUNT(*) as total FROM programs WHERE owner_agency_id = ?";
             $stmt = $conn->prepare($query);
-            $stmt->bind_param("ii", $agency_id, $period_id);
+            $stmt->bind_param("i", $agency_id);
         } else {
             $query = "SELECT COUNT(*) as total FROM programs WHERE owner_agency_id = ?";
             $stmt = $conn->prepare($query);
@@ -283,28 +279,29 @@ function get_agency_submission_status($agency_id, $period_id = null) {
 
         if ($stats['total_programs'] === 0) {
             return $stats;
-        }        // Get submission status counts with proper rating extraction
+        }        // Get submission status counts with proper rating extraction - Fixed to avoid duplicates
         $status_query = "SELECT 
             COALESCE(JSON_UNQUOTE(JSON_EXTRACT(ps.content_json, '$.rating')), 'not-started') as rating,
-            COUNT(*) as count,
+            COUNT(DISTINCT p.program_id) as count,
             SUM(CASE WHEN ps.is_draft = 1 THEN 1 ELSE 0 END) as draft_count,
             SUM(CASE WHEN ps.is_draft = 0 THEN 1 ELSE 0 END) as submitted_count
             FROM programs p 
             LEFT JOIN (
-                SELECT program_id, is_draft, content_json
+                SELECT ps1.program_id, ps1.is_draft, ps1.content_json
                 FROM program_submissions ps1
-                WHERE (period_id = ? OR ? IS NULL)
-                AND NOT EXISTS (
-                    SELECT 1 FROM program_submissions ps2
-                    WHERE ps2.program_id = ps1.program_id
-                    AND ps2.submission_id > ps1.submission_id
-                )
+                INNER JOIN (
+                    SELECT program_id, MAX(submission_id) as max_submission_id
+                    FROM program_submissions
+                    WHERE (period_id = ? OR ? IS NULL)
+                    GROUP BY program_id
+                ) latest ON ps1.program_id = latest.program_id AND ps1.submission_id = latest.max_submission_id
+                WHERE (ps1.period_id = ? OR ? IS NULL)
             ) ps ON p.program_id = ps.program_id
             WHERE p.owner_agency_id = ?
             GROUP BY COALESCE(JSON_UNQUOTE(JSON_EXTRACT(ps.content_json, '$.rating')), 'not-started')";
 
         $stmt = $conn->prepare($status_query);
-        $stmt->bind_param("iii", $period_id, $period_id, $agency_id);
+        $stmt->bind_param("iiiii", $period_id, $period_id, $period_id, $period_id, $agency_id);
         $stmt->execute();
         $result = $stmt->get_result();
 
