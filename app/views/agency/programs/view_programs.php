@@ -434,8 +434,8 @@ require_once '../../layouts/page_header.php';
                                             <i class="fas fa-eye"></i>
                                         </a>
                                         
-                                        <!-- Delete button only shows for custom programs (not assigned ones) -->
-                                        <?php if (!$is_assigned): ?>
+                                        <!-- Delete button only shows for custom programs (not assigned ones) and only for focal users on finalized programs -->
+                                        <?php if (!$is_assigned && isset($_SESSION['role']) && strtolower($_SESSION['role']) === 'focal'): ?>
                                         <button type="button" class="btn btn-outline-danger delete-program-btn" 
                                             data-id="<?php echo $program['program_id']; ?>"
                                             data-name="<?php echo htmlspecialchars($program['program_name']); ?>"
