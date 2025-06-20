@@ -132,20 +132,18 @@ require_once '../../layouts/header.php';
 $header_config = [
     'title' => 'Agency Programs',
     'subtitle' => 'View and manage your agency\'s programs',
-    'variant' => 'green',
-    'actions' => [
-        [
-            'url' => APP_URL . '/app/views/agency/programs/create_program.php',
-            'text' => 'Create New Program',
-            'icon' => 'fas fa-plus-circle',
-            'class' => 'btn-primary'
-        ]
-    ]
+    'variant' => 'green'
 ];
 
 // Include modern page header
 require_once '../../layouts/page_header.php';
 ?>
+
+<div class="mb-3">
+    <a href="<?php echo APP_URL; ?>/app/views/agency/programs/create_program.php" class="btn btn-primary">
+        <i class="fas fa-plus-circle me-1"></i> Create New Program
+    </a>
+</div>
 
 <!-- Draft Programs Card -->
 <div class="card shadow-sm mb-4 w-100">
