@@ -1121,34 +1121,53 @@ document.addEventListener('DOMContentLoaded', function() {    // Wizard state
         'image/png',
         'text/plain'
     ];
-    
-    // Initialize attachment functionality
+      // Initialize attachment functionality
     function initializeAttachments() {
         const uploadZone = document.getElementById('attachmentUploadZone');
         const fileInput = document.getElementById('attachmentFileInput');
         const selectFilesBtn = document.getElementById('selectFilesBtn');
+          // Only initialize if all elements exist
+        if (!uploadZone || !fileInput || !selectFilesBtn) {
+            console.log('Attachment elements not found, skipping initialization');
+            return;
+        }
+        
+        console.log('Initializing attachment functionality...');
         
         // File selection via button
         selectFilesBtn.addEventListener('click', () => {
+            console.log('Select files button clicked');
             fileInput.click();
         });
         
         // File selection via input
         fileInput.addEventListener('change', handleFileSelection);
+          // Drag and drop functionality
+        uploadZone.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            console.log('Dragenter event');
+            uploadZone.classList.add('drag-over');
+        });
         
-        // Drag and drop functionality
         uploadZone.addEventListener('dragover', (e) => {
             e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+            console.log('Dragover event');
             uploadZone.classList.add('drag-over');
         });
         
         uploadZone.addEventListener('dragleave', (e) => {
             e.preventDefault();
-            uploadZone.classList.remove('drag-over');
+            console.log('Dragleave event');
+            // Only remove drag-over if we're actually leaving the drop zone
+            if (!uploadZone.contains(e.relatedTarget)) {
+                uploadZone.classList.remove('drag-over');
+            }
         });
         
         uploadZone.addEventListener('drop', (e) => {
             e.preventDefault();
+            console.log('Drop event with', e.dataTransfer.files.length, 'files');
             uploadZone.classList.remove('drag-over');
             const files = Array.from(e.dataTransfer.files);
             handleFiles(files);

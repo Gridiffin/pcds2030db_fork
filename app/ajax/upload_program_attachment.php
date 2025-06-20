@@ -61,19 +61,20 @@ try {
     }
     
     // Upload the attachment
-    $result = upload_program_attachment($program_id, $_FILES['attachment_file'], $description, $submission_id);
-    
-    if (isset($result['success']) && $result['success']) {
+    $result = upload_program_attachment($program_id, $_FILES['attachment_file'], $description, $submission_id);    if (isset($result['success']) && $result['success']) {
         echo json_encode([
             'success' => true,
             'message' => $result['message'],
             'attachment' => [
                 'attachment_id' => $result['attachment_id'],
                 'filename' => $result['filename'],
+                'original_filename' => $result['filename'], // Same as filename
                 'file_size' => $result['file_size'],
                 'file_size_formatted' => format_file_size($result['file_size']),
+                'mime_type' => $result['mime_type'],
+                'file_type' => $result['file_type'],
                 'description' => $description,
-                'upload_date' => date('Y-m-d H:i:s')
+                'upload_date' => $result['upload_date']
             ]
         ]);
     } else {

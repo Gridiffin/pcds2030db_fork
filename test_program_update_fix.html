@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Program Update Attachment Fix Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Replicate the fixed upload dropzone styles */
+        .upload-dropzone {
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 50px 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: #f8f9fa;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .upload-dropzone:hover,
+        .upload-dropzone.dragover {
+            border-color: #0d6efd;
+            background-color: rgba(13, 110, 253, 0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .upload-dropzone-content {
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .upload-info {
+            border-top: 1px solid #e9ecef;
+            padding-top: 15px;
+            margin-top: 15px;
+        }
+
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+        }
+
+        .test-result {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        .test-success {
+            background-color: #d1edff;
+            border: 1px solid #0d6efd;
+            color: #0d6efd;
+        }
+
+        .test-error {
+            background-color: #f8d7da;
+            border: 1px solid #dc3545;
+            color: #dc3545;
+        }
+
+        .event-log {
+            max-height: 300px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-12">
+                <h2>Program Update Attachment Fix Test</h2>
+                <p class="text-muted">Testing the fixed showToast function and improved upload zone design.</p>
+                
+                <!-- Test Results -->
+                <div id="testResults"></div>
+
+                <!-- showToast Test -->
+                <div class="test-section">
+                    <h4>Toast Function Test</h4>
+                    <p>Test the fixed showToast function to ensure no infinite recursion occurs.</p>
+                    <div class="mb-3">
+                        <button class="btn btn-success me-2" onclick="testToast('success')">Test Success Toast</button>
+                        <button class="btn btn-danger me-2" onclick="testToast('error')">Test Error Toast</button>
+                        <button class="btn btn-info me-2" onclick="testToast('info')">Test Info Toast</button>
+                        <button class="btn btn-warning" onclick="testToast('warning')">Test Warning Toast</button>
+                    </div>
+                    <div id="toastTestResult"></div>
+                </div>
+
+                <!-- Upload Zone Visual Test -->
+                <div class="test-section">
+                    <h4>Upload Zone Visual Design Test</h4>
+                    <p>Compare the improved upload zone design with the original.</p>
+                    
+                    <!-- Enhanced Upload Zone -->
+                    <div class="upload-section mb-4">
+                        <h6 class="fw-bold mb-3">
+                            <i class="fas fa-paperclip me-2"></i>
+                            Add New Attachments (Enhanced Design)
+                        </h6>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            You can upload supporting documents such as PDFs, Word documents, Excel files, or images to provide additional context for your program.
+                        </div>
+                        
+                        <div id="attachment-dropzone" class="upload-dropzone">
+                            <div class="upload-dropzone-content">
+                                <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                <h6 class="text-muted">Drag and drop files here</h6>
+                                <p class="text-muted mb-3">or</p>
+                                <button type="button" class="btn btn-outline-primary" id="browse-files-btn">
+                                    <i class="fas fa-folder-open me-2"></i>
+                                    Select Files
+                                </button>
+                            </div>
+                            <div class="upload-info mt-3">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Allowed file types: PDF, DOC, DOCX, XLS, XLSX, JPG, PNG, TXT<br>
+                                    Maximum file size: 10MB per file, 50MB total
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Drag and Drop Test -->
+                <div class="test-section">
+                    <h4>Drag and Drop Functionality Test</h4>
+                    <div id="dragTestResult"></div>
+                    <div class="event-log mt-3" id="eventLog"></div>
+                    <button class="btn btn-secondary btn-sm mt-2" onclick="clearLog()">Clear Log</button>
+                </div>
+
+                <!-- File List -->
+                <div class="test-section">
+                    <h4>Selected Files</h4>
+                    <div id="fileList">
+                        <p class="text-muted">No files selected</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Fixed showToast function (no recursion)
+        function showToast(title, message, type = 'info', duration = 5000) {
+            const toast = document.createElement('div');
+            toast.className = `alert alert-${type === 'success' ? 'success' : type === 'error' || type === 'danger' ? 'danger' : type === 'warning' ? 'warning' : 'info'} alert-dismissible fade show position-fixed`;
+            toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; max-width: 500px;';
+            
+            toast.innerHTML = `
+                <strong>${title}</strong><br>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.remove();
+                }
+            }, duration);
+        }
+
+        let selectedFiles = [];
+        let recursionCount = 0;
+        const maxRecursionTest = 5;
+
+        function testToast(type) {
+            const resultDiv = document.getElementById('toastTestResult');
+            recursionCount = 0;
+            
+            try {
+                // Test the toast function multiple times quickly to detect recursion issues
+                for (let i = 0; i < maxRecursionTest; i++) {
+                    showToast(`Test ${type.toUpperCase()} Toast`, `This is test message ${i + 1}`, type, 2000);
+                    recursionCount++;
+                }
+                
+                resultDiv.innerHTML = `
+                    <div class="test-success">
+                        <i class="fas fa-check-circle me-2"></i>
+                        ✅ Toast function working correctly! Called ${recursionCount} times without recursion error.
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="test-error">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        ❌ Toast function failed: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        function logEvent(message, type = 'info') {
+            const eventLog = document.getElementById('eventLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'success' ? 'text-success' : 
+                         type === 'error' ? 'text-danger' : 
+                         type === 'warning' ? 'text-warning' : 'text-dark';
+            
+            eventLog.innerHTML += `<div class="${color}">[${timestamp}] ${message}</div>`;
+            eventLog.scrollTop = eventLog.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('eventLog').innerHTML = '';
+        }
+
+        function updateFileList() {
+            const fileList = document.getElementById('fileList');
+            
+            if (selectedFiles.length === 0) {
+                fileList.innerHTML = '<p class="text-muted">No files selected</p>';
+                return;
+            }
+
+            const filesHtml = selectedFiles.map((file, index) => `
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-file text-primary me-2"></i>
+                        <div>
+                            <strong>${file.name}</strong><br>
+                            <small class="text-muted">${formatFileSize(file.size)} • ${file.type}</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeFile(${index})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `).join('');
+
+            fileList.innerHTML = filesHtml;
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            updateFileList();
+            logEvent(`File removed: ${selectedFiles[index] ? selectedFiles[index].name : 'unknown'}`, 'warning');
+        }
+
+        // Initialize drag and drop functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropzone = document.getElementById('attachment-dropzone');
+            const browseBtn = document.getElementById('browse-files-btn');
+            const testResultDiv = document.getElementById('dragTestResult');
+
+            let dragTestsPassed = 0;
+            const dragTestsTotal = 4;
+
+            function updateDragTestResults() {
+                const allPassed = dragTestsPassed === dragTestsTotal;
+                const resultClass = allPassed ? 'test-success' : 'test-error';
+                const icon = allPassed ? 'fa-check-circle' : 'fa-exclamation-triangle';
+                
+                testResultDiv.innerHTML = `
+                    <div class="${resultClass}">
+                        <i class="fas ${icon} me-2"></i>
+                        <strong>Drag Test Results: ${dragTestsPassed}/${dragTestsTotal} events working</strong>
+                    </div>
+                `;
+            }
+
+            // Drag and drop events
+            dropzone.addEventListener('dragenter', function(e) {
+                e.preventDefault();
+                logEvent('✅ DRAGENTER event handled', 'success');
+                dropzone.classList.add('dragover');
+                dragTestsPassed = Math.max(dragTestsPassed, 1);
+                updateDragTestResults();
+            });
+
+            dropzone.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'copy';
+                logEvent('✅ DRAGOVER event handled', 'success');
+                dropzone.classList.add('dragover');
+                dragTestsPassed = Math.max(dragTestsPassed, 2);
+                updateDragTestResults();
+            });
+
+            dropzone.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                logEvent('✅ DRAGLEAVE event handled', 'success');
+                if (!dropzone.contains(e.relatedTarget)) {
+                    dropzone.classList.remove('dragover');
+                }
+                dragTestsPassed = Math.max(dragTestsPassed, 3);
+                updateDragTestResults();
+            });
+
+            dropzone.addEventListener('drop', function(e) {
+                e.preventDefault();
+                logEvent('✅ DROP event handled', 'success');
+                dropzone.classList.remove('dragover');
+                
+                const files = Array.from(e.dataTransfer.files);
+                selectedFiles = [...selectedFiles, ...files];
+                updateFileList();
+                
+                logEvent(`🎉 ${files.length} file(s) accepted via drag and drop!`, 'success');
+                dragTestsPassed = dragTestsTotal;
+                updateDragTestResults();
+            });
+
+            // Browse button functionality
+            browseBtn.addEventListener('click', function() {
+                // Create a temporary file input for testing
+                const tempInput = document.createElement('input');
+                tempInput.type = 'file';
+                tempInput.multiple = true;
+                tempInput.style.display = 'none';
+                
+                tempInput.addEventListener('change', function(e) {
+                    const files = Array.from(e.target.files);
+                    selectedFiles = [...selectedFiles, ...files];
+                    updateFileList();
+                    logEvent(`${files.length} file(s) selected via browse button`, 'info');
+                    document.body.removeChild(tempInput);
+                });
+                
+                document.body.appendChild(tempInput);
+                tempInput.click();
+            });
+
+            // Initial setup
+            logEvent('🚀 Program update attachment test initialized', 'success');
+            logEvent('📝 Try dragging files onto the upload zone above', 'info');
+            updateDragTestResults();
+        });
+    </script>
+</body>
+</html>

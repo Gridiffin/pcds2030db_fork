@@ -483,34 +483,49 @@ $additionalStyles = '
 .upload-dropzone {
     border: 2px dashed #dee2e6;
     border-radius: 8px;
-    padding: 40px 20px;
+    padding: 50px 20px;
     text-align: center;
     transition: all 0.3s ease;
     cursor: pointer;
     background: #f8f9fa;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
-.upload-dropzone:hover {
-    border-color: #007bff;
-    background: #e7f3ff;
-}
-
+.upload-dropzone:hover,
 .upload-dropzone.dragover {
-    border-color: #007bff;
-    background: #e7f3ff;
-    transform: scale(1.02);
+    border-color: #0d6efd;
+    background-color: rgba(13, 110, 253, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .upload-dropzone-content {
     pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.upload-info {
+    border-top: 1px solid #e9ecef;
+    padding-top: 15px;
+    margin-top: 15px;
 }
 
 .attachment-item {
     transition: all 0.2s ease;
+    border-radius: 6px;
+    padding: 12px;
 }
 
 .attachment-item:hover {
     background-color: #f8f9fa;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .attachment-item .fw-medium {
@@ -948,21 +963,36 @@ require_once dirname(__DIR__, 2) . '/layouts/page_header.php';
                                     </div>
                                 </div>
                             <?php endif; ?>
-                            
-                            <!-- File Upload Section -->
+                              <!-- File Upload Section -->
                             <?php if (is_editable('attachments')): ?>
-                                <div class="upload-section">
-                                    <h6 class="fw-bold mb-3">Add New Attachments</h6>
+                                <div class="upload-section mb-4">
+                                    <h6 class="fw-bold mb-3">
+                                        <i class="fas fa-paperclip me-2"></i>
+                                        Add New Attachments
+                                    </h6>
+                                    
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        You can upload supporting documents such as PDFs, Word documents, Excel files, or images to provide additional context for your program.
+                                    </div>
                                     
                                     <!-- Drag and Drop Area -->
                                     <div id="attachment-dropzone" class="upload-dropzone">
                                         <div class="upload-dropzone-content">
                                             <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
-                                            <h6>Drag & drop files here</h6>
-                                            <p class="text-muted mb-3">or click to browse</p>
+                                            <h6 class="text-muted">Drag and drop files here</h6>
+                                            <p class="text-muted mb-3">or</p>
                                             <button type="button" class="btn btn-outline-primary" id="browse-files-btn">
-                                                <i class="fas fa-folder-open me-1"></i> Browse Files
+                                                <i class="fas fa-folder-open me-2"></i>
+                                                Select Files
                                             </button>
+                                        </div>
+                                        <div class="upload-info mt-3">
+                                            <small class="text-muted">
+                                                <i class="fas fa-info-circle me-1"></i>
+                                                Allowed file types: PDF, DOC, DOCX, XLS, XLSX, JPG, PNG, TXT<br>
+                                                Maximum file size: 10MB per file, 50MB total
+                                            </small>
                                         </div>
                                         <input type="file" id="attachment-file-input" multiple style="display: none;" 
                                                accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.txt,.csv">
@@ -1020,9 +1050,25 @@ require_once dirname(__DIR__, 2) . '/layouts/page_header.php';
 
 <script>
 function showToast(title, message, type = 'info', duration = 5000) {
-    if (window.showToast) {
-        window.showToast(title, message, type, duration);
-    }
+    // Create a simple toast notification
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'success' ? 'success' : type === 'error' || type === 'danger' ? 'danger' : 'info'} alert-dismissible fade show position-fixed`;
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; max-width: 500px;';
+    
+    toast.innerHTML = `
+        <strong>${title}</strong><br>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Auto-remove after duration
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.remove();
+        }
+    }, duration);
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -1042,29 +1088,41 @@ document.addEventListener('DOMContentLoaded', function() {
             ratingInput.value = this.getAttribute('data-rating');
         });
     });
-    
-    // Attachment Management
+      // Attachment Management
     const dropzone = document.getElementById('attachment-dropzone');
     const fileInput = document.getElementById('attachment-file-input');
     const browseBtn = document.getElementById('browse-files-btn');
     const uploadProgress = document.getElementById('upload-progress');
     const progressBar = document.querySelector('.progress-bar');
-    const uploadStatus = document.querySelector('.upload-status');
-    
-    if (dropzone && fileInput) {
-        // Drag and drop functionality
+    const uploadStatus = document.querySelector('.upload-status');    // Only initialize attachment functionality if elements exist
+    if (dropzone && fileInput && browseBtn) {
+        console.log('Initializing attachment functionality...');
+          // Drag and drop functionality
+        dropzone.addEventListener('dragenter', function(e) {
+            e.preventDefault();
+            console.log('Dragenter event');
+            dropzone.classList.add('dragover');
+        });
+        
         dropzone.addEventListener('dragover', function(e) {
             e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+            console.log('Dragover event');
             dropzone.classList.add('dragover');
         });
         
         dropzone.addEventListener('dragleave', function(e) {
             e.preventDefault();
-            dropzone.classList.remove('dragover');
+            console.log('Dragleave event');
+            // Only remove dragover if we're actually leaving the drop zone
+            if (!dropzone.contains(e.relatedTarget)) {
+                dropzone.classList.remove('dragover');
+            }
         });
         
         dropzone.addEventListener('drop', function(e) {
             e.preventDefault();
+            console.log('Drop event with', e.dataTransfer.files.length, 'files');
             dropzone.classList.remove('dragover');
             
             const files = e.dataTransfer.files;
@@ -1087,36 +1145,52 @@ document.addEventListener('DOMContentLoaded', function() {
         // File input change
         fileInput.addEventListener('change', function() {
             handleFileUpload(this.files);
-        });
-        
-        // Delete attachment functionality
+        });          // Delete attachment functionality
         document.addEventListener('click', function(e) {
-            if (e.target.classList.contains('delete-attachment-btn') || e.target.closest('.delete-attachment-btn')) {
-                const btn = e.target.classList.contains('delete-attachment-btn') ? e.target : e.target.closest('.delete-attachment-btn');
-                const attachmentId = btn.getAttribute('data-attachment-id');
+            // Check if click is on a delete button or its child elements
+            const deleteBtn = e.target.closest('.delete-attachment-btn');
+            if (deleteBtn) {
+                e.preventDefault();
+                e.stopPropagation();
                 
-                if (confirm('Are you sure you want to delete this attachment?')) {
-                    deleteAttachment(attachmentId);
-                }
+                const attachmentId = deleteBtn.getAttribute('data-attachment-id');
+                deleteAttachment(attachmentId);
             }
         });
+    } else {
+        console.log('Attachment elements not found:', {
+            dropzone: !!dropzone,
+            fileInput: !!fileInput, 
+            browseBtn: !!browseBtn
+        });
     }
-    
-    function handleFileUpload(files) {
+      function handleFileUpload(files) {
         if (files.length === 0) return;
         
+        // Upload files one by one like create_program.php does
+        for (let i = 0; i < files.length; i++) {
+            uploadSingleFile(files[i]);
+        }
+    }
+    
+    function uploadSingleFile(file) {
         const formData = new FormData();
         formData.append('program_id', <?php echo $program_id; ?>);
-        
-        // Add all files
-        for (let i = 0; i < files.length; i++) {
-            formData.append('attachments[]', files[i]);
-        }
+        formData.append('attachment_file', file); // Match backend expectation
+        formData.append('description', ''); // Optional description
         
         // Show progress
         uploadProgress.style.display = 'block';
         progressBar.style.width = '0%';
-        uploadStatus.textContent = 'Uploading...';
+        uploadStatus.textContent = `Uploading ${file.name}...`;
+        
+        // Simulate progress (since we don't have real progress tracking)
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+            progress += Math.random() * 30;
+            if (progress > 90) progress = 90;
+            progressBar.style.width = progress + '%';
+        }, 200);
         
         fetch('<?php echo APP_URL; ?>/app/ajax/upload_program_attachment.php', {
             method: 'POST',
@@ -1124,30 +1198,29 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => response.json())
         .then(data => {
+            clearInterval(progressInterval);
+            progressBar.style.width = '100%';
+            
             if (data.success) {
-                // Update progress to 100%
-                progressBar.style.width = '100%';
                 uploadStatus.textContent = 'Upload complete!';
                 
-                // Add uploaded files to the list
-                if (data.attachments) {
-                    data.attachments.forEach(attachment => {
-                        addAttachmentToList(attachment);
-                    });
+                // Add uploaded file to the list
+                if (data.attachment) {
+                    addAttachmentToList(data.attachment);
                 }
+                  showToast('Success', `File "${file.name}" uploaded successfully`, 'success');
                 
-                showToast('Success', 'Files uploaded successfully', 'success');
+                // Clear file input for reuse
+                if (fileInput) {
+                    fileInput.value = '';
+                }
                 
                 // Hide progress after delay
                 setTimeout(() => {
                     uploadProgress.style.display = 'none';
                 }, 2000);
-                
-                // Clear file input
-                fileInput.value = '';
-            } else {
-                uploadStatus.textContent = 'Upload failed';
-                showToast('Error', data.message || 'Failed to upload files', 'danger');
+            } else {                uploadStatus.textContent = 'Upload failed';
+                showToast('Error', data.error || `Failed to upload ${file.name}`, 'danger');
                 
                 setTimeout(() => {
                     uploadProgress.style.display = 'none';
@@ -1155,17 +1228,21 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .catch(error => {
+            clearInterval(progressInterval);
             console.error('Upload error:', error);
             uploadStatus.textContent = 'Upload failed';
-            showToast('Error', 'Failed to upload files', 'danger');
+            showToast('Error', `Failed to upload ${file.name}`, 'danger');
             
             setTimeout(() => {
                 uploadProgress.style.display = 'none';
             }, 3000);
         });
     }
-    
-    function deleteAttachment(attachmentId) {
+      function deleteAttachment(attachmentId) {
+        if (!confirm('Are you sure you want to delete this attachment?')) {
+            return;
+        }
+        
         const attachmentItem = document.querySelector(`[data-attachment-id="${attachmentId}"]`);
         if (!attachmentItem) return;
         
@@ -1179,9 +1256,9 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch('<?php echo APP_URL; ?>/app/ajax/delete_program_attachment.php', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: JSON.stringify({ attachment_id: attachmentId })
+            body: `attachment_id=${attachmentId}`
         })
         .then(response => response.json())
         .then(data => {
@@ -1199,7 +1276,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             } else {
-                showToast('Error', data.message || 'Failed to delete attachment', 'danger');
+                showToast('Error', data.error || 'Failed to delete attachment', 'danger');
                 
                 // Re-enable the delete button
                 if (deleteBtn) {
