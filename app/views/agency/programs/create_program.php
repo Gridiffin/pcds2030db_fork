@@ -1294,11 +1294,20 @@ document.addEventListener('DOMContentLoaded', function() {    // Wizard state
             showToast('Upload Error', 'An error occurred while uploading the file.', 'danger');
         });
     }
-    
-    function showUploadProgress(filename) {
+      function showUploadProgress(filename) {
         const progressContainer = document.getElementById('uploadProgress');
+        if (!progressContainer) {
+            console.log('uploadProgress element not found - might not be on attachments step');
+            return;
+        }
+        
         const filenameSpan = progressContainer.querySelector('.upload-filename');
         const progressBar = progressContainer.querySelector('.progress-bar');
+        
+        if (!filenameSpan || !progressBar) {
+            console.log('Upload progress elements not found');
+            return;
+        }
         
         filenameSpan.textContent = `Uploading: ${filename}`;
         progressBar.style.width = '0%';
@@ -1310,40 +1319,68 @@ document.addEventListener('DOMContentLoaded', function() {    // Wizard state
             progress += Math.random() * 30;
             if (progress > 90) progress = 90;
             progressBar.style.width = progress + '%';
-            progressContainer.querySelector('.upload-percentage').textContent = Math.round(progress) + '%';
+            const percentageSpan = progressContainer.querySelector('.upload-percentage');
+            if (percentageSpan) {
+                percentageSpan.textContent = Math.round(progress) + '%';
+            }
         }, 200);
         
         progressContainer.dataset.interval = interval;
     }
-    
-    function hideUploadProgress() {
+      function hideUploadProgress() {
         const progressContainer = document.getElementById('uploadProgress');
-        const interval = progressContainer.dataset.interval;
+        if (!progressContainer) {
+            console.log('uploadProgress element not found - might not be on attachments step');
+            return;
+        }
         
+        const interval = progressContainer.dataset.interval;
         if (interval) {
             clearInterval(interval);
         }
         
         // Complete the progress
         const progressBar = progressContainer.querySelector('.progress-bar');
-        progressBar.style.width = '100%';
-        progressContainer.querySelector('.upload-percentage').textContent = '100%';
+        const percentageSpan = progressContainer.querySelector('.upload-percentage');
+        
+        if (progressBar) {
+            progressBar.style.width = '100%';
+        }
+        if (percentageSpan) {
+            percentageSpan.textContent = '100%';
+        }
         
         setTimeout(() => {
             progressContainer.style.display = 'none';
         }, 1000);
-    }
-    
-    function updateAttachmentsList() {
+    }function updateAttachmentsList() {
         const listContainer = document.getElementById('uploadedFilesList');
         const noFilesMessage = document.getElementById('noFilesMessage');
         
-        if (uploadedAttachments.length === 0) {
-            noFilesMessage.style.display = 'block';
+        // Add null checks for DOM elements - might not be available if not on step 3
+        if (!listContainer) {
+            console.log('uploadedFilesList element not found - might not be on attachments step');
             return;
         }
         
-        noFilesMessage.style.display = 'none';
+        if (uploadedAttachments.length === 0) {
+            if (noFilesMessage) {
+                noFilesMessage.style.display = 'block';
+            } else {
+                // If noFilesMessage doesn't exist, create the empty state in the list container
+                listContainer.innerHTML = `
+                    <div class="text-center text-muted py-3">
+                        <i class="fas fa-folder-open fa-2x mb-2"></i>
+                        <p class="mb-0">No files uploaded yet</p>
+                    </div>
+                `;
+            }
+            return;
+        }
+
+        if (noFilesMessage) {
+            noFilesMessage.style.display = 'none';
+        }
         
         const filesHtml = uploadedAttachments.map(attachment => `
             <div class="attachment-item border rounded p-3 mb-2 d-flex justify-content-between align-items-center">
@@ -1371,10 +1408,13 @@ document.addEventListener('DOMContentLoaded', function() {    // Wizard state
         `).join('');
         
         listContainer.innerHTML = filesHtml;
-    }
-    
-    function updateFileCountBadge() {
+    }    function updateFileCountBadge() {
         const badge = document.getElementById('fileCountBadge');
+        if (!badge) {
+            console.log('fileCountBadge element not found - might not be on attachments step');
+            return;
+        }
+        
         const count = uploadedAttachments.length;
         badge.textContent = count === 1 ? '1 file' : `${count} files`;
     }
