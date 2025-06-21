@@ -1,0 +1,247 @@
+/**
+ * Period Performance Table Redesign
+ * 
+ * Modern, responsive styling for program targets and status display
+ */
+
+/* Performance Grid Container */
+.performance-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* Individual Performance Item Cards */
+.performance-item {
+    border: 1px solid #e9ecef !important;
+    border-radius: 0.5rem !important;
+    transition: all 0.3s ease;
+    background: #fff;
+}
+
+.performance-item:hover {
+    border-color: #007bff !important;
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.15) !important;
+    transform: translateY(-2px);
+}
+
+/* Target Section Styling */
+.target-section {
+    padding: 1rem;
+    border-right: 2px solid #f8f9fa;
+    min-height: 120px;
+}
+
+.target-header {
+    color: var(--dark-color, #343a40);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.75rem;
+}
+
+.target-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+    border-radius: 50%;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+.target-content {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--dark-color, #343a40);
+}
+
+/* Status Section Styling */
+.status-section {
+    padding: 1rem;
+    min-height: 120px;
+}
+
+.status-header {
+    color: var(--dark-color, #343a40);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.75rem;
+}
+
+.status-content {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--dark-color, #343a40);
+}
+
+/* Overall Achievement Section */
+.overall-achievement {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    border-radius: 0.5rem;
+    color: white !important;
+    margin-top: 1.5rem;
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.2);
+}
+
+.overall-achievement-label {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    color: white !important;
+}
+
+.achievement-content {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 1rem;
+    border-radius: 0.375rem;
+    margin-top: 0.75rem;
+    color: white !important;
+}
+
+/* Force visibility - High specificity rules */
+.performance-item .target-content,
+.performance-item .target-content p,
+.performance-item .status-content,
+.performance-item .status-content p {
+    color: var(--dark-color, #343a40) !important;
+}
+
+.performance-item .target-header,
+.performance-item .status-header {
+    color: var(--dark-color, #343a40) !important;
+}
+
+/* Ensure muted text is still visible */
+.performance-item .text-muted {
+    color: #6c757d !important;
+}
+
+/* Mobile Responsive Design */
+@media (max-width: 991.98px) {
+    .target-section {
+        border-right: none;
+        border-bottom: 2px solid #f8f9fa;
+        padding-bottom: 1rem;
+        margin-bottom: 1rem;
+        min-height: auto;
+    }
+    
+    .status-section {
+        padding-top: 0;
+        min-height: auto;
+    }
+    
+    .performance-item .row {
+        margin: 0;
+    }
+    
+    .performance-item .col-lg-6 {
+        padding-left: 0;
+        padding-right: 0;
+    }
+}
+
+@media (max-width: 576px) {
+    .performance-grid {
+        gap: 0.75rem;
+    }
+    
+    .performance-item {
+        margin-bottom: 0.75rem !important;
+    }
+    
+    .target-section,
+    .status-section {
+        padding: 0.75rem;
+    }
+    
+    .target-header,
+    .status-header {
+        font-size: 0.8rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .target-number {
+        width: 20px;
+        height: 20px;
+        font-size: 0.7rem;
+    }
+    
+    .target-content,
+    .status-content {
+        font-size: 0.9rem;
+    }
+    
+    .overall-achievement {
+        padding: 1rem !important;
+    }
+    
+    .overall-achievement-label {
+        font-size: 0.9rem;
+    }
+    
+    .achievement-content {
+        font-size: 0.85rem;
+        padding: 0.75rem;
+    }
+}
+
+/* Dark mode support (if needed) */
+@media (prefers-color-scheme: dark) {
+    .performance-item {
+        background: #2d3748;
+        border-color: #4a5568 !important;
+    }
+    
+    .target-section {
+        border-color: #4a5568;
+    }
+    
+    .target-content,
+    .status-content {
+        color: #e2e8f0 !important;
+    }
+    
+    .target-header,
+    .status-header {
+        color: #cbd5e0 !important;
+    }
+    
+    .performance-item:hover {
+        border-color: #63b3ed !important;
+        box-shadow: 0 4px 12px rgba(99, 179, 237, 0.15) !important;
+    }
+}
+
+/* Print styles */
+@media print {
+    .performance-item {
+        break-inside: avoid;
+        box-shadow: none !important;
+        border: 1px solid #ccc !important;
+    }
+    
+    .performance-item:hover {
+        transform: none;
+    }
+    
+    .target-section {
+        border-right: 1px solid #ccc;
+    }
+    
+    @media (max-width: 991.98px) {
+        .target-section {
+            border-right: none;
+            border-bottom: 1px solid #ccc;
+        }
+    }
+}

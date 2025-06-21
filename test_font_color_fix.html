@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Font Color Fix Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Include CSS variables */
+        :root {
+            --dark-color: #343a40;
+            --primary-color: #0d6efd;
+        }
+        
+        body { background-color: #f8f9fa; padding: 2rem; }
+        .test-container { max-width: 800px; margin: 0 auto; }
+        
+        /* Import the updated period performance styles */
+        .performance-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .performance-item {
+            border: 1px solid #e9ecef !important;
+            border-radius: 0.5rem !important;
+            transition: all 0.3s ease;
+            background: #fff;
+        }
+
+        .target-section {
+            padding: 1rem;
+            border-right: 2px solid #f8f9fa;
+            min-height: 120px;
+        }
+
+        .target-header {
+            color: var(--dark-color, #343a40);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.75rem;
+        }
+
+        .target-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border-radius: 50%;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        .target-content {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: var(--dark-color, #343a40);
+        }
+
+        .status-section {
+            padding: 1rem;
+            min-height: 120px;
+        }
+
+        .status-header {
+            color: var(--dark-color, #343a40);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.75rem;
+        }
+
+        .status-content {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: var(--dark-color, #343a40);
+        }
+
+        /* Force visibility - High specificity rules */
+        .performance-item .target-content,
+        .performance-item .target-content p,
+        .performance-item .status-content,
+        .performance-item .status-content p {
+            color: var(--dark-color, #343a40) !important;
+        }
+
+        .performance-item .target-header,
+        .performance-item .status-header {
+            color: var(--dark-color, #343a40) !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1 class="mb-4">Font Color Visibility Test</h1>
+        
+        <div class="alert alert-info mb-4">
+            <strong>Testing:</strong> Text colors should now be clearly visible using <code>var(--dark-color, #343a40)</code> with <code>!important</code> declarations.
+        </div>
+        
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-tasks me-2"></i>Fixed Period Performance (Color Test)
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="performance-grid">
+                    <div class="performance-item card mb-3 shadow-sm">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <div class="target-section">
+                                        <h6 class="target-header d-flex align-items-center mb-3">
+                                            <span class="target-number me-2">1</span>
+                                            <span class="text-primary fw-bold">Program Target</span>
+                                        </h6>
+                                        <div class="target-content">
+                                            <p class="mb-0">This text should now be clearly visible in dark color (#343a40). Testing long content to ensure readability across multiple lines.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="status-section">
+                                        <h6 class="status-header d-flex align-items-center mb-3">
+                                            <i class="fas fa-chart-line me-2 text-success"></i>
+                                            <span class="text-success fw-bold">Status & Achievements</span>
+                                        </h6>
+                                        <div class="status-content">
+                                            <p class="mb-0">This status text should also be clearly visible. The color has been fixed using CSS variables and !important declarations.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="alert alert-success mt-4">
+            <h6><i class="fas fa-check-circle me-2"></i>Color Fix Applied:</h6>
+            <ul class="mb-0">
+                <li>Text color changed to <code>var(--dark-color, #343a40)</code></li>
+                <li>Added <code>!important</code> declarations for override</li>
+                <li>High specificity selectors for maximum visibility</li>
+                <li>Fallback color values for compatibility</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

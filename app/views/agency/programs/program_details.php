@@ -11,12 +11,14 @@ if (!defined('PROJECT_ROOT_PATH')) {
 }
 
 // Include necessary files
-require_once PROJECT_ROOT_PATH . 'config/config.php';
-require_once PROJECT_ROOT_PATH . 'lib/db_connect.php';
-require_once PROJECT_ROOT_PATH . 'lib/session.php';
-require_once PROJECT_ROOT_PATH . 'lib/functions.php';
-require_once PROJECT_ROOT_PATH . 'lib/agencies/index.php';
-require_once PROJECT_ROOT_PATH . 'lib/rating_helpers.php';
+require_once '../../../config/config.php';
+require_once ROOT_PATH . 'app/lib/db_connect.php';
+require_once ROOT_PATH . 'app/lib/session.php';
+require_once ROOT_PATH . 'app/lib/functions.php';
+require_once ROOT_PATH . 'app/lib/agencies/index.php';
+require_once ROOT_PATH . 'app/lib/agencies/programs.php';
+require_once ROOT_PATH . 'app/lib/rating_helpers.php';
+require_once ROOT_PATH . 'app/lib/agencies/program_attachments.php';
 
 // Verify user is an agency
 if (!is_agency()) {
@@ -58,6 +60,9 @@ if (!$program || (!$allow_view)) {
     header('Location: view_programs.php');
     exit;
 }
+
+// Get program attachments (permission check is handled by the function)
+$program_attachments = get_program_attachments($program_id);
 
 // Get current submission if available
 $current_submission = $program['current_submission'] ?? null;
@@ -144,6 +149,11 @@ $pageTitle = 'Program Details';
 // Additional scripts
 $additionalScripts = [
     APP_URL . '/assets/js/utilities/rating_utils.js'
+];
+
+// Additional CSS for attachments
+$additionalCSS = [
+    APP_URL . '/assets/css/admin/programs.css' // Reuse admin attachment styling
 ];
 
 // Include header
@@ -333,40 +343,48 @@ $showNoTargetsAlert = empty($targets) && $is_owner; // Only show no targets aler
         <h5 class="card-title mb-0">
             <i class="fas fa-tasks me-2"></i>Current Period Performance
         </h5>
-    </div>
-    <div class="card-body">        <?php if (!empty($targets)): ?>
-            <div class="targets-container">
-                <div class="table-responsive">
-                    <table class="table table-sm table-hover table-bordered" style="min-width: 500px;">
-                        <thead class="table-light">
-                            <tr>
-                                <th width="50%">Program Target</th>
-                                <th width="50%">Status & Achievements</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($targets as $index => $target): ?>
-                            <tr>
-                                <td class="target-cell">
-                                    <?php if (!empty($target['text'])): ?>
-                                        <?php echo nl2br(htmlspecialchars($target['text'])); ?>
-                                    <?php else: ?>
-                                        <span class="text-muted fst-italic">No target specified</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td class="status-cell">
-                                    <?php if (!empty($target['status_description'])): ?>
-                                        <?php echo nl2br(htmlspecialchars($target['status_description'])); ?>
-                                    <?php else: ?>
-                                        <span class="text-muted fst-italic">No status update provided</span>
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>            
+    </div>    <div class="card-body">
+        <?php if (!empty($targets)): ?>
+            <div class="performance-grid">
+                <?php foreach ($targets as $index => $target): ?>
+                    <div class="performance-item card mb-3 shadow-sm">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <div class="target-section">
+                                        <h6 class="target-header d-flex align-items-center mb-3">
+                                            <span class="target-number me-2"><?php echo $index + 1; ?></span>
+                                            <span class="text-primary fw-bold">Program Target</span>
+                                        </h6>
+                                        <div class="target-content">
+                                            <?php if (!empty($target['text'])): ?>
+                                                <p class="mb-0"><?php echo nl2br(htmlspecialchars($target['text'])); ?></p>
+                                            <?php else: ?>
+                                                <p class="text-muted fst-italic mb-0">No target specified</p>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="status-section">
+                                        <h6 class="status-header d-flex align-items-center mb-3">
+                                            <i class="fas fa-chart-line me-2 text-success"></i>
+                                            <span class="text-success fw-bold">Status & Achievements</span>
+                                        </h6>
+                                        <div class="status-content">
+                                            <?php if (!empty($target['status_description'])): ?>
+                                                <p class="mb-0"><?php echo nl2br(htmlspecialchars($target['status_description'])); ?></p>
+                                            <?php else: ?>
+                                                <p class="text-muted fst-italic mb-0">No status update provided</p>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
             <?php if (isset($current_submission['achievement']) && !empty($current_submission['achievement'])): ?>
             <div class="overall-achievement p-4">
                 <div class="overall-achievement-label">
@@ -383,6 +401,79 @@ $showNoTargetsAlert = empty($targets) && $is_owner; // Only show no targets aler
                 No targets have been specified for this program.                <?php if ($is_owner): ?>
                     <a href="<?php echo APP_URL; ?>/app/views/agency/programs/update_program.php?id=<?php echo $program_id; ?>" class="alert-link">Add targets</a>
                 <?php endif; ?>
+            </div>
+        <?php endif; ?>    </div>
+</div>
+
+<!-- Program Attachments Section -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title m-0">
+            <i class="fas fa-paperclip me-2 text-primary"></i>Program Attachments
+        </h5>
+        <span class="badge bg-secondary">
+            <?php echo count($program_attachments); ?> 
+            <?php echo count($program_attachments) === 1 ? 'file' : 'files'; ?>
+        </span>
+    </div>
+    <div class="card-body">
+        <?php if (!empty($program_attachments)): ?>
+            <div class="attachments-list">
+                <?php foreach ($program_attachments as $attachment): ?>
+                    <div class="attachment-item d-flex justify-content-between align-items-center border rounded p-3 mb-3">
+                        <div class="attachment-info d-flex align-items-center">
+                            <div class="attachment-icon me-3">
+                                <i class="fas <?php echo get_file_icon($attachment['mime_type']); ?> fa-2x text-primary"></i>
+                            </div>
+                            <div class="attachment-details">
+                                <h6 class="mb-1 fw-bold"><?php echo htmlspecialchars($attachment['original_filename']); ?></h6>
+                                <div class="attachment-meta text-muted small">
+                                    <span class="me-3">
+                                        <i class="fas fa-hdd me-1"></i>
+                                        <?php echo $attachment['file_size_formatted']; ?>
+                                    </span>
+                                    <span class="me-3">
+                                        <i class="fas fa-calendar me-1"></i>
+                                        <?php echo date('M j, Y \a\t g:i A', strtotime($attachment['upload_date'])); ?>
+                                    </span>
+                                    <span>
+                                        <i class="fas fa-user me-1"></i>
+                                        <?php echo htmlspecialchars($attachment['uploaded_by'] ?? 'Unknown'); ?>
+                                    </span>
+                                </div>
+                                <?php if (!empty($attachment['description'])): ?>
+                                    <div class="attachment-description mt-2">
+                                        <small class="text-muted">
+                                            <i class="fas fa-comment me-1"></i>
+                                            <?php echo htmlspecialchars($attachment['description']); ?>
+                                        </small>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <div class="attachment-actions">
+                            <a href="<?php echo APP_URL; ?>/app/ajax/download_program_attachment.php?id=<?php echo $attachment['attachment_id']; ?>" 
+                               class="btn btn-sm btn-outline-primary" 
+                               target="_blank"
+                               title="Download <?php echo htmlspecialchars($attachment['original_filename']); ?>">
+                                <i class="fas fa-download me-1"></i> Download
+                            </a>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php else: ?>
+            <div class="text-center py-4">
+                <div class="mb-3">
+                    <i class="fas fa-folder-open fa-3x text-muted"></i>
+                </div>
+                <h6 class="text-muted">No Attachments</h6>
+                <p class="text-muted mb-0">
+                    This program doesn't have any supporting documents uploaded.
+                    <?php if ($is_owner): ?>
+                        <br><a href="<?php echo APP_URL; ?>/app/views/agency/programs/update_program.php?id=<?php echo $program_id; ?>" class="text-decoration-none">Upload attachments</a> in the program editor.
+                    <?php endif; ?>
+                </p>
             </div>
         <?php endif; ?>
     </div>

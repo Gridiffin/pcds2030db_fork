@@ -22,6 +22,7 @@
 @import 'components/badges.css';
 @import 'components/responsive-performance-table.css';
 @import 'components/admin-performance-table.css';
+@import 'components/period-performance.css';
 
 /* Pages */
 @import 'pages/style-guide.css';
