@@ -161,15 +161,20 @@ function applyFilters(tableType) {
                     }
                     
                     applyFilters(tableType);
-                });
-            });
+                });            });
         }
     }
     
     // Apply filters to table rows
     const tableRows = document.querySelectorAll(`#${tableId} tbody tr`);
     tableRows.forEach(row => {
-        const programName = row.querySelector('td:first-child .fw-medium')?.textContent.toLowerCase() || '';
+        const programNameElement = row.querySelector('td:first-child .fw-medium');
+        const programName = programNameElement?.textContent.toLowerCase() || '';
+        
+        // Extract program number from the badge if it exists
+        const programNumberBadge = programNameElement?.querySelector('.badge.bg-info');
+        const programNumber = programNumberBadge ? programNumberBadge.textContent.toLowerCase() : '';
+        
         const ratingText = row.querySelector('td:nth-child(2) .badge')?.textContent.trim().toLowerCase() || '';
         const programType = row.getAttribute('data-program-type') || '';
         
@@ -189,8 +194,8 @@ function applyFilters(tableType) {
         // Apply all filters
         let showRow = true;
         
-        // Text search filter
-        if (searchText && !programName.includes(searchText)) {
+        // Text search filter - search in both program name and program number
+        if (searchText && !programName.includes(searchText) && !programNumber.includes(searchText)) {
             showRow = false;
         }
         

@@ -61,10 +61,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($status_descriptions_combined) && isset($_POST['status_description'])) {
             $status_descriptions_combined = $_POST['status_description'];
         }
-        
-        $program_data = [
+          $program_data = [
             'program_id' => $_POST['program_id'] ?? 0,
             'program_name' => $_POST['program_name'] ?? '',
+            'program_number' => $_POST['program_number'] ?? '',
             'brief_description' => $_POST['brief_description'] ?? '',
             'start_date' => $_POST['start_date'] ?? '',
             'end_date' => $_POST['end_date'] ?? '',
@@ -104,9 +104,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     if (empty($status_descriptions_combined) && isset($_POST['status_description'])) {
         $status_descriptions_combined = $_POST['status_description'];
-    }
-      $program_data = [
+    }      $program_data = [
         'program_name' => $_POST['program_name'] ?? '',
+        'program_number' => $_POST['program_number'] ?? '',
         'brief_description' => $_POST['brief_description'] ?? '',
         'start_date' => $_POST['start_date'] ?? '',
         'end_date' => $_POST['end_date'] ?? '',
@@ -220,8 +220,7 @@ require_once '../../layouts/page_header.php';
                                     <i class="fas fa-info-circle me-2"></i>
                                     Basic Program Information
                                 </h6>
-                                
-                                <!-- Program Name -->
+                                  <!-- Program Name -->
                                 <div class="mb-4">
                                     <label for="program_name" class="form-label">
                                         Program Name <span class="text-danger">*</span>
@@ -239,6 +238,25 @@ require_once '../../layouts/page_header.php';
                                     </div>
                                 </div>
 
+                                <!-- Program Number -->
+                                <div class="mb-4">
+                                    <label for="program_number" class="form-label">
+                                        Program Number
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="program_number" 
+                                           name="program_number" 
+                                           placeholder="e.g., 31.1, 32.5"
+                                           pattern="[0-9.]*"
+                                           title="Numbers and dots only"
+                                           value="<?php echo htmlspecialchars($_POST['program_number'] ?? ''); ?>">
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Initiative/action step number (optional) - numbers and dots only
+                                    </div>
+                                </div>
+
                                 <!-- Brief Description -->
                                 <div class="mb-4">
                                     <label for="brief_description" class="form-label">Brief Description</label>
@@ -251,28 +269,32 @@ require_once '../../layouts/page_header.php';
                                         <i class="fas fa-info-circle me-1"></i>
                                         A brief overview to help identify this program
                                     </div>
-                                </div>
-
-                                <!-- Add missing start_date and end_date input elements -->
+                                </div>                                <!-- Add missing start_date and end_date input elements -->
                                 <div class="form-group mb-4">
                                     <label for="start_date" class="form-label">
-                                        Start Date <span class="text-danger">*</span>
+                                        Start Date
                                     </label>
                                     <input type="date" 
                                            class="form-control" 
                                            id="start_date" 
-                                           name="start_date" 
-                                           required>
+                                           name="start_date">
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Optional: Set a start date if the program has a specific timeline
+                                    </div>
                                 </div>
                                 <div class="form-group mb-4">
                                     <label for="end_date" class="form-label">
-                                        End Date <span class="text-danger">*</span>
+                                        End Date
                                     </label>
                                     <input type="date" 
                                            class="form-control" 
                                            id="end_date" 
-                                           name="end_date" 
-                                           required>
+                                           name="end_date">
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Optional: Set an end date if the program has a specific timeline
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -369,11 +391,14 @@ require_once '../../layouts/page_header.php';
                                     Please review your program information below. You can go back to previous steps to make changes.
                                 </div>                                <!-- Review Summary -->
                                 <div class="review-summary">
-                                    <div class="row">
-                                        <div class="col-md-6">
+                                    <div class="row">                                        <div class="col-md-6">
                                             <div class="review-section mb-3">
                                                 <h6 class="text-muted mb-2">Program Name</h6>
                                                 <p class="mb-0" id="review-program-name">-</p>
+                                            </div>
+                                            <div class="review-section mb-3">
+                                                <h6 class="text-muted mb-2">Program Number</h6>
+                                                <p class="mb-0" id="review-program-number">-</p>
                                             </div>
                                             <div class="review-section mb-3">
                                                 <h6 class="text-muted mb-2">Timeline</h6>
@@ -654,10 +679,11 @@ document.addEventListener('DOMContentLoaded', function() {    // Wizard state
         progressBar.style.width = progressPercentage + '%';
     }
     function updateReviewSummary() {
-        const data = collectFormData();
-
-        // Program Name
+        const data = collectFormData();        // Program Name
         document.getElementById('review-program-name').textContent = data.program_name || '-';
+
+        // Program Number
+        document.getElementById('review-program-number').textContent = data.program_number || 'Not specified';
 
         // Timeline
         let timeline = '-';

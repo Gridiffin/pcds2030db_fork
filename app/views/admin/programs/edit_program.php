@@ -36,9 +36,9 @@ $message = '';
 $messageType = 'info';
 
 // Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Validate inputs
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {    // Validate inputs
     $program_name_form = trim($_POST['program_name'] ?? '');
+    $program_number_form = trim($_POST['program_number'] ?? '');
     $owner_agency_id = intval($_POST['owner_agency_id'] ?? 0);
     $sector_id = intval($_POST['sector_id'] ?? 0);
     $start_date_form = !empty($_POST['start_date']) ? $_POST['start_date'] : null;
@@ -46,6 +46,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $is_assigned = isset($_POST['is_assigned']) ? 1 : 0;
     $rating_form = isset($_POST['rating']) ? $_POST['rating'] : 'not-started'; // This is the overall program rating/status
     $remarks_form = trim($_POST['remarks'] ?? '');
+    
+    // Validate program_number format if provided
+    if (!empty($program_number_form) && !preg_match('/^[0-9.]+$/', $program_number_form)) {
+        $message = 'Program number can only contain numbers and dots.';
+        $messageType = 'danger';
+    }
     $targets_form = [];
     if (isset($_POST['target_text']) && is_array($_POST['target_text'])) {
         foreach ($_POST['target_text'] as $key => $target_text_item) {
@@ -76,10 +82,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $messageType = 'danger';
     } else {
         $conn->begin_transaction();
-        try {
-            // Update program in programs table
+        try {            // Update program in programs table
             $query_update_program = "UPDATE programs SET 
                       program_name = ?, 
+                      program_number = ?,
                       owner_agency_id = ?, 
                       sector_id = ?,
                       start_date = ?, 
@@ -90,14 +96,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                       WHERE program_id = ?";
                       
             $stmt_update_program = $conn->prepare($query_update_program);
-            $stmt_update_program->bind_param('siissisi', 
+            $stmt_update_program->bind_param('ssiissisi', 
                 $program_name_form, 
+                $program_number_form,
                 $owner_agency_id, 
                 $sector_id, 
                 $start_date_form, 
                 $end_date_form, 
                 $is_assigned, 
-                $edit_permissions_json, 
+                $edit_permissions_json,
                 $program_id
             );
 
@@ -134,11 +141,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // For now, let\'s throw an error if no period can be determined, as submissions are tied to periods.
                 throw new Exception("Could not determine a valid reporting period for submission history.");
             }
-            
-            // Content for program_submissions.content_json
+              // Content for program_submissions.content_json
             // This snapshot includes the program name and description AS THEY ARE NOW in the \'programs\' table (just updated)
             $content_for_history = [
                 'program_name' => $program_name_form, // Name as submitted in this form
+                'program_number' => $program_number_form, // Program number as submitted in this form
                 'rating'       => $rating_form,       // Rating/status from the form
                 'targets'      => $targets_form,      // Targets from the form
                 'remarks'      => $remarks_form       // Remarks from the form
@@ -314,7 +321,7 @@ require_once '../../layouts/header.php';
 // Configure the modern page header
 $header_config = [
     'title' => 'Edit Program',
-    'subtitle' => 'Modify program details',
+    'subtitle' => (!empty($program['program_number']) ? '#' . htmlspecialchars($program['program_number']) . ' - ' : '') . htmlspecialchars($program['program_name']),
     'variant' => 'white',
     'actions' => [
         [
@@ -507,6 +514,19 @@ require_once '../../layouts/page_header.php';
                                 <label for="end_date" class="form-label">End Date</label>
                                 <input type="date" class="form-control" id="end_date" name="end_date"
                                        value="<?php echo isset($program['end_date']) ? date('Y-m-d', strtotime($program['end_date'])) : ''; ?>">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="program_number" class="form-label">Program Number</label>
+                            <input type="text" class="form-control" id="program_number" name="program_number" 
+                                   value="<?php echo htmlspecialchars($program['program_number'] ?? ''); ?>"
+                                   pattern="[0-9.]+" 
+                                   title="Program number can only contain numbers and dots"
+                                   placeholder="e.g., 31.1, 2.5.3">
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Optional program identifier for easier mapping to initiatives (numbers and dots only)
                             </div>
                         </div>
                     </div>

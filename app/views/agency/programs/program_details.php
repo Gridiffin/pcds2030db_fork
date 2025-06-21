@@ -153,7 +153,8 @@ $additionalScripts = [
 
 // Additional CSS for attachments
 $additionalCSS = [
-    APP_URL . '/assets/css/admin/programs.css' // Reuse admin attachment styling
+    APP_URL . '/assets/css/admin/programs.css', // Reuse admin attachment styling
+    APP_URL . '/assets/css/components/period-performance.css' // Performance section styling
 ];
 
 // Include header
@@ -165,9 +166,16 @@ $myProgramsUrl = APP_URL . '/app/views/agency/programs/view_programs.php';
 $backUrl = $source === 'all_sectors' ? $allSectorsUrl : $myProgramsUrl;
 
 // Configure modern page header
+$program_display_name = '';
+if (!empty($program['program_number'])) {
+    $program_display_name = '<span class="badge bg-info me-2" title="Program Number">' . htmlspecialchars($program['program_number']) . '</span>';
+}
+$program_display_name .= htmlspecialchars($program['program_name']);
+
 $header_config = [
     'title' => 'Program Details',
-    'subtitle' => $program['program_name'],
+    'subtitle' => $program_display_name,
+    'subtitle_html' => true, // Allow HTML in subtitle
     'variant' => 'white',
     'actions' => [
         [
@@ -223,9 +231,8 @@ $showNoTargetsAlert = empty($targets) && $is_owner; // Only show no targets aler
 
 <!-- Program Overview Card -->
 <div class="card shadow-sm mb-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="card-title mb-0">
-            <i class="fas fa-clipboard-list me-2"></i>Program Overview
+    <div class="card-header d-flex justify-content-between align-items-center">        <h5 class="card-title mb-0">
+            <i class="fas fa-clipboard-list me-2"></i>Program Information
         </h5>
         <div>
             <span class="badge bg-<?php echo $status_map[$status]['class']; ?> py-2 px-3">
@@ -245,10 +252,14 @@ $showNoTargetsAlert = empty($targets) && $is_owner; // Only show no targets aler
                 <h6 class="border-bottom pb-2 mb-3">Basic Information</h6>
                 
                 <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <div class="row">
+                    <div class="col-md-6 mb-3">                        <div class="row">
                             <div class="col-md-4 text-muted">Program Name:</div>
-                            <div class="col-md-8 fw-medium"><?php echo htmlspecialchars($program['program_name']); ?></div>
+                            <div class="col-md-8 fw-medium">
+                                <?php if (!empty($program['program_number'])): ?>
+                                    <span class="badge bg-info me-2" title="Program Number"><?php echo htmlspecialchars($program['program_number']); ?></span>
+                                <?php endif; ?>
+                                <?php echo htmlspecialchars($program['program_name']); ?>
+                            </div>
                         </div>
                     </div>
                     
@@ -323,21 +334,6 @@ $showNoTargetsAlert = empty($targets) && $is_owner; // Only show no targets aler
 </div>
 
 <!-- Program Targets and Status Card -->
-<style>
-    .targets-container td.target-cell, .targets-container td.status-cell {
-        max-width: 300px;
-        max-height: 100px;
-        overflow: auto;
-        word-break: break-word;
-        white-space: pre-line;
-        vertical-align: top;
-    }
-    .targets-container td.target-cell::-webkit-scrollbar,
-    .targets-container td.status-cell::-webkit-scrollbar {
-        height: 6px;
-        width: 6px;
-    }
-</style>
 <div class="card shadow-sm mb-4">
     <div class="card-header">
         <h5 class="card-title mb-0">

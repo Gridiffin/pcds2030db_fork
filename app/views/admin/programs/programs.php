@@ -261,10 +261,12 @@ if (isset($_SESSION['message']) && !empty($_SESSION['message'])) {
                             <tr data-program-type="<?php echo $is_assigned ? 'assigned' : 'agency'; ?>"
                                 data-sector-id="<?php echo $program['sector_id']; ?>"
                                 data-agency-id="<?php echo $program['owner_agency_id']; ?>"
-                                data-rating="<?php echo $current_rating; ?>">
-                                <td>
+                                data-rating="<?php echo $current_rating; ?>">                                <td>
                                     <div class="fw-medium">
                                         <a href="view_program.php?id=<?php echo $program['program_id']; ?>&period_id=<?php echo $period_id; ?>">
+                                            <?php if (!empty($program['program_number'])): ?>
+                                                <span class="badge bg-info me-2" title="Program Number"><?php echo htmlspecialchars($program['program_number']); ?></span>
+                                            <?php endif; ?>
                                             <?php echo htmlspecialchars($program['program_name']); ?>
                                         </a>
                                         <span class="badge bg-light text-dark ms-1">Unsubmitted</span>
@@ -450,10 +452,12 @@ if (isset($_SESSION['message']) && !empty($_SESSION['message'])) {
                             <tr data-program-type="<?php echo $is_assigned ? 'assigned' : 'agency'; ?>"
                                 data-sector-id="<?php echo $program['sector_id']; ?>"
                                 data-agency-id="<?php echo $program['owner_agency_id']; ?>"
-                                data-rating="<?php echo $current_rating; ?>">
-                                <td>
+                                data-rating="<?php echo $current_rating; ?>">                                <td>
                                     <div class="fw-medium">
                                         <a href="view_program.php?id=<?php echo $program['program_id']; ?>&period_id=<?php echo $period_id; ?>">
+                                            <?php if (!empty($program['program_number'])): ?>
+                                                <span class="badge bg-info me-2" title="Program Number"><?php echo htmlspecialchars($program['program_number']); ?></span>
+                                            <?php endif; ?>
                                             <?php echo htmlspecialchars($program['program_name']); ?>
                                         </a>
                                     </div>

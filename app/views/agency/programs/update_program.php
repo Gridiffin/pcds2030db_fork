@@ -197,17 +197,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Handle save draft functionality - update both program basic info and submission content
         global $conn;
         try {
-            $conn->begin_transaction();
-              // Get form data
+            $conn->begin_transaction();              // Get form data
             $program_name = trim($_POST['program_name'] ?? '');
+            $program_number = trim($_POST['program_number'] ?? '');
             $brief_description = trim($_POST['brief_description'] ?? '');
             $start_date = !empty($_POST['start_date']) ? $_POST['start_date'] : null;
-            $end_date = !empty($_POST['end_date']) ? $_POST['end_date'] : null;
-            $rating = $_POST['rating'] ?? 'not-started';
+            $end_date = !empty($_POST['end_date']) ? $_POST['end_date'] : null;            $rating = $_POST['rating'] ?? 'not-started';
             $remarks = trim($_POST['remarks'] ?? '');
             $period_id = intval($_POST['period_id'] ?? 0);
             $submission_id = intval($_POST['submission_id'] ?? 0);
             $current_user_id = $_SESSION['user_id'];
+            
+            // Validate program_number format if provided
+            if (!empty($program_number) && !preg_match('/^[0-9.]+$/', $program_number)) {
+                $_SESSION['message'] = 'Program number can only contain numbers and dots.';
+                $_SESSION['message_type'] = 'danger';
+                header('Location: update_program.php?id=' . $program_id);
+                exit;
+            }
             
             // Process targets array
             $targets = [];
@@ -225,8 +232,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 }
             }
-            
-            // 1. Update program basic information (if allowed)
+              // 1. Update program basic information (if allowed)
             if (is_editable('program_name') || is_editable('start_date') || is_editable('end_date')) {
                 $update_fields = [];
                 $update_params = [];
@@ -237,6 +243,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $update_params[] = $program_name;
                     $param_types .= 's';
                 }
+                
+                // Always allow editing program_number (it's optional)
+                $update_fields[] = "program_number = ?";
+                $update_params[] = $program_number;
+                $param_types .= 's';
                 
                 if (is_editable('start_date')) {
                     $update_fields[] = "start_date = ?";
@@ -263,14 +274,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         throw new Exception('Failed to update program: ' . $program_stmt->error);
                     }
                 }
-            }
-              // 2. Handle program submission data
+            }              // 2. Handle program submission data
             $content_data = [
                 'rating' => $rating,
                 'targets' => $targets,
                 'remarks' => $remarks,
                 'brief_description' => $brief_description,
-                'program_name' => $program_name
+                'program_name' => $program_name,
+                'program_number' => $program_number
             ];
             $content_json = json_encode($content_data);
               if ($submission_id > 0) {
@@ -729,9 +740,21 @@ require_once dirname(__DIR__, 2) . '/layouts/page_header.php';
                                                 </li>
                                                 <?php endforeach; ?>
                                             </ul>
-                                        </div>
-                                    <?php endif; ?>
+                                        </div>                                    <?php endif; ?>
                                 <?php endif; ?>                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="program_number" class="form-label">Program Number</label>
+                                <input type="text" class="form-control" id="program_number" name="program_number" 
+                                        value="<?php echo htmlspecialchars($program['program_number'] ?? ''); ?>"
+                                        pattern="[0-9.]+" 
+                                        title="Program number can only contain numbers and dots"
+                                        placeholder="e.g., 31.1, 2.5.3">
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Optional program identifier for easier mapping to initiatives (numbers and dots only)
+                                </div>
+                            </div>
                             
                             <div class="mb-3">
                                 <label for="brief_description" class="form-label">Brief Description</label>

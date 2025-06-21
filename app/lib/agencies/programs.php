@@ -72,8 +72,12 @@ function create_agency_program($data) {
     global $conn;
     if (!is_agency()) return format_error('Permission denied', 403);
     $validated = validate_agency_program_input($data, ['program_name', 'rating']);
-    if (isset($validated['error'])) return $validated;
-    $program_name = $validated['program_name'];
+    if (isset($validated['error'])) return $validated;    $program_name = $validated['program_name'];
+    $program_number = $validated['program_number'] ?? null;
+    // Validate program_number format if provided (numbers and dots only)
+    if ($program_number && !preg_match('/^[0-9.]+$/', $program_number)) {
+        return format_error('Program number must contain only numbers and dots', 400);
+    }
     $start_date = $validated['start_date'] ?? null;
     $end_date = $validated['end_date'] ?? null;
     $rating = $validated['rating'];
@@ -96,20 +100,18 @@ function create_agency_program($data) {
                 ]
             ];
         }
-        $content_json = json_encode($content);
-        $query = "INSERT INTO programs (program_name, sector_id, owner_agency_id, is_assigned, content_json, created_at)
-                 VALUES (?, ?, ?, 0, ?, NOW())";
+        $content_json = json_encode($content);        $query = "INSERT INTO programs (program_name, program_number, sector_id, owner_agency_id, is_assigned, content_json, created_at)
+                 VALUES (?, ?, ?, ?, 0, ?, NOW())";
         $stmt = $conn->prepare($query);
         $sector_id = FORESTRY_SECTOR_ID;
         $user_id = $_SESSION['user_id'];
-        $stmt->bind_param("siis", $program_name, $sector_id, $user_id, $content_json);
-    } else {
-        $query = "INSERT INTO programs (program_name, sector_id, owner_agency_id, is_assigned, created_at)
-                 VALUES (?, ?, ?, 0, NOW())";
+        $stmt->bind_param("ssiis", $program_name, $program_number, $sector_id, $user_id, $content_json);
+    } else {        $query = "INSERT INTO programs (program_name, program_number, sector_id, owner_agency_id, is_assigned, created_at)
+                 VALUES (?, ?, ?, ?, 0, NOW())";
         $stmt = $conn->prepare($query);
         $sector_id = FORESTRY_SECTOR_ID;
         $user_id = $_SESSION['user_id'];
-        $stmt->bind_param("siii", $program_name, $sector_id, $user_id);
+        $stmt->bind_param("ssii", $program_name, $program_number, $sector_id, $user_id);
     }
     if ($stmt->execute()) {
         $program_id = $conn->insert_id;
@@ -139,11 +141,15 @@ function create_agency_program($data) {
  */
 function create_wizard_program_draft($data) {
     global $conn;
-    if (!is_agency()) return ['error' => 'Permission denied'];
-    if (empty($data['program_name']) || trim($data['program_name']) === '') {
+    if (!is_agency()) return ['error' => 'Permission denied'];    if (empty($data['program_name']) || trim($data['program_name']) === '') {
         return ['error' => 'Program name is required'];
     }
     $program_name = trim($data['program_name']);
+    $program_number = isset($data['program_number']) ? trim($data['program_number']) : null;
+    // Validate program_number format if provided (numbers and dots only)
+    if ($program_number && !preg_match('/^[0-9.]+$/', $program_number)) {
+        return ['error' => 'Program number must contain only numbers and dots'];
+    }
     $brief_description = isset($data['brief_description']) ? trim($data['brief_description']) : '';
     $start_date = isset($data['start_date']) && !empty($data['start_date']) ? $data['start_date'] : null;
     $end_date = isset($data['end_date']) && !empty($data['end_date']) ? $data['end_date'] : null;
@@ -152,9 +158,8 @@ function create_wizard_program_draft($data) {
     $user_id = $_SESSION['user_id'];
     $sector_id = FORESTRY_SECTOR_ID;
     try {
-        $conn->begin_transaction();
-        $stmt = $conn->prepare("INSERT INTO programs (program_name, start_date, end_date, owner_agency_id, sector_id, is_assigned, created_at) VALUES (?, ?, ?, ?, ?, 0, NOW())");
-        $stmt->bind_param("sssii", $program_name, $start_date, $end_date, $user_id, $sector_id);
+        $conn->begin_transaction();        $stmt = $conn->prepare("INSERT INTO programs (program_name, program_number, start_date, end_date, owner_agency_id, sector_id, is_assigned, created_at) VALUES (?, ?, ?, ?, ?, ?, 0, NOW())");
+        $stmt->bind_param("ssssii", $program_name, $program_number, $start_date, $end_date, $user_id, $sector_id);
         if (!$stmt->execute()) throw new Exception('Failed to create program: ' . $stmt->error);
         $program_id = $conn->insert_id;
         if (!empty($target) || !empty($status_description) || !empty($brief_description)) {
@@ -219,15 +224,18 @@ function update_program_draft_only($program_id, $data) {
     $check_stmt->execute();
     $result = $check_stmt->get_result();
     if ($result->num_rows === 0) {
-        return ['success' => false, 'error' => 'Program not found or access denied'];
-    }
+        return ['success' => false, 'error' => 'Program not found or access denied'];    }
     $program_name = trim($data['program_name']);
+    $program_number = isset($data['program_number']) ? trim($data['program_number']) : null;
+    // Validate program_number format if provided (numbers and dots only)
+    if ($program_number && !preg_match('/^[0-9.]+$/', $program_number)) {
+        return ['success' => false, 'error' => 'Program number must contain only numbers and dots'];
+    }
     $start_date = isset($data['start_date']) && !empty($data['start_date']) ? $data['start_date'] : null;
-    $end_date = isset($data['end_date']) && !empty($data['end_date']) ? $data['end_date'] : null;
-    try {
+    $end_date = isset($data['end_date']) && !empty($data['end_date']) ? $data['end_date'] : null;    try {
         $conn->begin_transaction();
-        $stmt = $conn->prepare("UPDATE programs SET program_name = ?, start_date = ?, end_date = ?, updated_at = NOW() WHERE program_id = ? AND owner_agency_id = ?");
-        $stmt->bind_param("sssii", $program_name, $start_date, $end_date, $program_id, $user_id);
+        $stmt = $conn->prepare("UPDATE programs SET program_name = ?, program_number = ?, start_date = ?, end_date = ?, updated_at = NOW() WHERE program_id = ? AND owner_agency_id = ?");
+        $stmt->bind_param("ssssii", $program_name, $program_number, $start_date, $end_date, $program_id, $user_id);
         if (!$stmt->execute()) throw new Exception('Failed to update program: ' . $stmt->error);
         $conn->commit();
         return [

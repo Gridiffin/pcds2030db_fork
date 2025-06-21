@@ -107,11 +107,12 @@ function filterPrograms(section) {
     const typeValue = document.getElementById(prefix + 'TypeFilter')?.value || '';
     const sectorValue = document.getElementById(prefix + 'SectorFilter')?.value || '';
     const agencyValue = document.getElementById(prefix + 'AgencyFilter')?.value || '';
-    
-    // Filter programs
+      // Filter programs
     const filteredPrograms = programs.filter(program => {
-        // Search filter
-        if (searchValue && !program.program_name.toLowerCase().includes(searchValue)) {
+        // Search filter - search in both program name and program number
+        if (searchValue && 
+            !program.program_name.toLowerCase().includes(searchValue) && 
+            !(program.program_number && program.program_number.toLowerCase().includes(searchValue))) {
             return false;
         }
         
@@ -238,11 +239,11 @@ function createProgramRow(program, section) {
     } else {
         actionButton = '<small class="text-muted">No submissions</small>';
     }
-    
-    row.innerHTML = `
+      row.innerHTML = `
         <td>
             <div class="fw-medium">
                 <a href="view_program.php?id=${program.program_id}&period_id=${periodId}">
+                    ${program.program_number ? `<span class="badge bg-info me-2" title="Program Number">${escapeHtml(program.program_number)}</span>` : ''}
                     ${escapeHtml(program.program_name)}
                 </a>
                 ${section === 'unsubmitted' ? '<span class="badge bg-light text-dark ms-1">Unsubmitted</span>' : ''}

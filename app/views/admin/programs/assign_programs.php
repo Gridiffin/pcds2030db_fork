@@ -23,6 +23,7 @@ if (!is_admin()) {
 // Process form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_program'])) {
     $program_name = trim($_POST['program_name']);
+    $program_number = trim($_POST['program_number'] ?? '');
     $agency_id = intval($_POST['agency_id']);
     $start_date = !empty($_POST['start_date']) ? $_POST['start_date'] : NULL;
     $end_date = !empty($_POST['end_date']) ? $_POST['end_date'] : NULL;
@@ -34,6 +35,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_program'])) {
     
     if (empty($program_name)) {
         $errors[] = "Program name is required";
+    }
+    
+    // Validate program_number format if provided
+    if (!empty($program_number) && !preg_match('/^[0-9.]+$/', $program_number)) {
+        $errors[] = "Program number can only contain numbers and dots";
     }
     
     if (empty($agency_id)) {
@@ -63,16 +69,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_program'])) {
             ];
             
             $program_settings_json = json_encode($program_settings);
-            
-            // Insert program
+              // Insert program
             $stmt = $conn->prepare("INSERT INTO programs 
-                (program_name, sector_id, owner_agency_id, start_date, end_date, is_assigned, created_by, edit_permissions, created_at, updated_at) 
-                VALUES (?, ?, ?, ?, ?, 1, ?, ?, NOW(), NOW())");
+                (program_name, program_number, sector_id, owner_agency_id, start_date, end_date, is_assigned, created_by, edit_permissions, created_at, updated_at) 
+                VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, NOW(), NOW())");
             
             $admin_id = $_SESSION['user_id'];
             
-            $stmt->bind_param("siissis", 
+            $stmt->bind_param("ssiissis", 
                 $program_name, 
+                $program_number,
                 $sector_id, 
                 $agency_id, 
                 $start_date, 
@@ -277,6 +283,16 @@ require_once '../../layouts/page_header.php';
                             <div class="form-text">The name of the program as it will appear in reports and dashboards.</div>
                         </div>
                         
+                        <div class="mb-3">
+                            <label for="program_number" class="form-label">Program Number</label>
+                            <input type="text" class="form-control" id="program_number" name="program_number" 
+                                  value="<?php echo isset($_POST['program_number']) ? htmlspecialchars($_POST['program_number']) : ''; ?>"
+                                  pattern="[0-9.]+" 
+                                  title="Program number can only contain numbers and dots"
+                                  placeholder="e.g., 31.1, 2.5.3">
+                            <div class="form-text">Optional program identifier for easier mapping to initiatives (numbers and dots only).</div>
+                        </div>
+                        
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label for="agency_id" class="form-label">Assign to Agency <span class="text-danger">*</span></label>
@@ -430,11 +446,14 @@ require_once '../../layouts/page_header.php';
                         <div class="review-summary mt-4 pt-3 border-top">
                             <h6 class="fw-bold mb-3"><i class="fas fa-clipboard-check me-2"></i>Review Program Assignment</h6>
                             <div class="alert alert-info"><i class="fas fa-info-circle me-1"></i> Please review all information before assigning the program.</div>
-                            <div class="row">
-                                <div class="col-md-6">
+                            <div class="row">                                <div class="col-md-6">
                                     <div class="review-section mb-3">
                                         <h6 class="text-muted mb-1">Program Name:</h6>
                                         <p class="mb-0" id="review-program-name">-</p>
+                                    </div>
+                                    <div class="review-section mb-3">
+                                        <h6 class="text-muted mb-1">Program Number:</h6>
+                                        <p class="mb-0" id="review-program-number">-</p>
                                     </div>
                                     <div class="review-section mb-3">
                                         <h6 class="text-muted mb-1">Assigned Agency:</h6>
@@ -872,11 +891,10 @@ document.addEventListener('DOMContentLoaded', function () {
             "'": '&#039;'
         };
         return text.replace(/[&<>"']/g, function(m) { return map[m]; });
-    }
-
-    function updateReviewSummary() {
+    }    function updateReviewSummary() {
         const data = collectFormData();
         document.getElementById('review-program-name').textContent = data.program_name || '-';
+        document.getElementById('review-program-number').textContent = data.program_number || 'Not specified';
         const agencySelect = document.getElementById('agency_id');
         document.getElementById('review-agency').textContent = agencySelect.options[agencySelect.selectedIndex]?.text || '-';
         

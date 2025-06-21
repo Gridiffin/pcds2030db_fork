@@ -151,7 +151,8 @@ $additionalScripts = [
 
 // Additional CSS
 $additionalCSS = [
-    APP_URL . '/assets/css/admin/programs.css'
+    APP_URL . '/assets/css/admin/programs.css',
+    APP_URL . '/assets/css/components/period-performance.css'
 ];
 
 // Include header
@@ -160,7 +161,7 @@ require_once '../../layouts/header.php';
 // Configure the modern page header
 $header_config = [
     'title' => 'Program Details',
-    'subtitle' => htmlspecialchars($program['program_name']),
+    'subtitle' => (!empty($program['program_number']) ? '#' . htmlspecialchars($program['program_number']) . ' - ' : '') . htmlspecialchars($program['program_name']),
     'variant' => 'white',
     'actions' => [
         [
@@ -195,10 +196,9 @@ require_once '../../layouts/page_header.php';
 <div class="row">    <!-- Program Information Card -->
     <div class="col-lg-12 mb-4">
         <div class="card shadow-sm program-info-card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="card-title m-0">
-                    <i class="fas fa-clipboard-list me-2 text-primary"></i>Program Information
-                </h5>                <div>
+            <div class="card-header d-flex justify-content-between align-items-center">                <h5 class="card-title m-0">
+                    <i class="fas fa-clipboard-list me-2"></i>Program Information
+                </h5><div>
                     <?php if (isset($program['status'])): ?>
                     <span class="rating-badge badge bg-<?php echo $rating_map[$rating_value]['class']; ?> py-2 px-3">
                         <i class="<?php echo $rating_map[$rating_value]['icon']; ?> me-1"></i> 
@@ -217,22 +217,24 @@ require_once '../../layouts/page_header.php';
                             <i class="fas fa-info-circle me-2"></i>Basic Information
                         </h6>
                         
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
+                        <div class="row">                            <div class="col-md-6 mb-3">
                                 <div class="row">
-                                    <div class="col-md-4 text-muted">Program Name:</div>
-                                    <div class="col-md-8 fw-medium"><?php echo htmlspecialchars($program['program_name']); ?></div>
+                                    <div class="col-md-4 text-muted">Program Name:</div>                                    <div class="col-md-8 fw-medium">
+                                        <?php if (!empty($program['program_number'])): ?>
+                                            <span class="badge bg-info me-2" title="Program Number"><?php echo htmlspecialchars($program['program_number']); ?></span>
+                                        <?php endif; ?>
+                                        <?php echo htmlspecialchars($program['program_name']); ?>
+                                    </div>
                                 </div>
                             </div>
                             
                             <div class="col-md-6 mb-3">
                                 <div class="row">
                                     <div class="col-md-4 text-muted">Program Type:</div>
-                                    <div class="col-md-8">
-                                        <?php if ($program['is_assigned']): ?>
+                                    <div class="col-md-8">                                        <?php if ($program['is_assigned']): ?>
                                             <span class="badge bg-info">Assigned Program</span>
                                         <?php else: ?>
-                                            <span class="badge bg-success">Agency Created</span>
+                                            <span class="badge bg-success">Agency-Created</span>
                                         <?php endif; ?>
                                     </div>
                                 </div>
@@ -354,37 +356,45 @@ require_once '../../layouts/page_header.php';
                         </div>
                     </div>
                 </div>                <?php if (!empty($targets)): ?>
-                    <div class="targets-container">
-                        <div class="table-responsive">
-                            <table class="table table-sm table-hover table-bordered" style="min-width: 500px;">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th width="50%">Program Target</th>
-                                        <th width="50%">Status & Achievements</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($targets as $index => $target): ?>
-                                    <tr>
-                                        <td class="text-truncate">
-                                            <?php if (!empty($target['text'])): ?>
-                                                <?php echo nl2br(htmlspecialchars($target['text'])); ?>
-                                            <?php else: ?>
-                                                <span class="text-muted fst-italic">No target specified</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td class="text-truncate">
-                                            <?php if (!empty($target['status_description'])): ?>
-                                                <?php echo nl2br(htmlspecialchars($target['status_description'])); ?>
-                                            <?php else: ?>
-                                                <span class="text-muted fst-italic">No status update provided</span>
-                                            <?php endif; ?>
-                                        </td>
-                                    </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
+                    <div class="performance-grid">
+                        <?php foreach ($targets as $index => $target): ?>
+                            <div class="performance-item card mb-3 shadow-sm">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-lg-6">
+                                            <div class="target-section">
+                                                <h6 class="target-header d-flex align-items-center mb-3">
+                                                    <span class="target-number me-2"><?php echo $index + 1; ?></span>
+                                                    <span class="text-primary fw-bold">Program Target</span>
+                                                </h6>
+                                                <div class="target-content">
+                                                    <?php if (!empty($target['text'])): ?>
+                                                        <p class="mb-0"><?php echo nl2br(htmlspecialchars($target['text'])); ?></p>
+                                                    <?php else: ?>
+                                                        <p class="text-muted fst-italic mb-0">No target specified</p>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <div class="status-section">
+                                                <h6 class="status-header d-flex align-items-center mb-3">
+                                                    <i class="fas fa-chart-line me-2 text-success"></i>
+                                                    <span class="text-success fw-bold">Status & Achievements</span>
+                                                </h6>
+                                                <div class="status-content">
+                                                    <?php if (!empty($target['status_description'])): ?>
+                                                        <p class="mb-0"><?php echo nl2br(htmlspecialchars($target['status_description'])); ?></p>
+                                                    <?php else: ?>
+                                                        <p class="text-muted fst-italic mb-0">No status update provided</p>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
                     </div>
                     
                     <?php if (isset($program['current_submission']['achievement']) && !empty($program['current_submission']['achievement'])): ?>

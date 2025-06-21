@@ -46,7 +46,7 @@ if (!$period_id) {
 }
 
 try {    // Get programs that have non-draft submissions for this period (only latest submission per program)
-    $programs_query = "SELECT DISTINCT p.program_id, p.program_name, s.sector_id, s.sector_name, u.agency_name, u.user_id as owner_agency_id
+    $programs_query = "SELECT DISTINCT p.program_id, p.program_name, p.program_number, s.sector_id, s.sector_name, u.agency_name, u.user_id as owner_agency_id
                       FROM programs p
                       LEFT JOIN (
                           SELECT ps1.program_id

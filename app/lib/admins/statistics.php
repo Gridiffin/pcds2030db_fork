@@ -226,10 +226,9 @@ function get_admin_programs_list($period_id = null, $filters = []) {
 
         if ($period_result->num_rows > 0) {
             $period_info = $period_result->fetch_assoc();
-        }
-    }    // Construct the main query with subquery to get latest submission per program
+        }    }    // Construct the main query with subquery to get latest submission per program
     $sql = "SELECT 
-                p.program_id, p.program_name, p.owner_agency_id, p.sector_id, p.created_at, p.is_assigned,
+                p.program_id, p.program_name, p.program_number, p.owner_agency_id, p.sector_id, p.created_at, p.is_assigned,
                 s.sector_name, 
                 u.agency_name,
                 latest_sub.submission_id, latest_sub.is_draft, latest_sub.submission_date, latest_sub.updated_at, latest_sub.period_id AS submission_period_id,
@@ -338,7 +337,7 @@ function get_admin_programs_list($period_id = null, $filters = []) {
     // ) ps ON p.program_id = ps.program_id";
     // This subquery for ps might be causing issues with ONLY_FULL_GROUP_BY if not handled correctly when integrated.    // Simpler JOIN without subquery for ps:
     $sql = "SELECT 
-                p.program_id, p.program_name, p.owner_agency_id, p.sector_id, p.created_at, p.is_assigned,
+                p.program_id, p.program_name, p.program_number, p.owner_agency_id, p.sector_id, p.created_at, p.is_assigned,
                 s.sector_name, 
                 u.agency_name,
                 latest_sub.submission_id, latest_sub.is_draft, latest_sub.submission_date, latest_sub.updated_at, latest_sub.period_id AS submission_period_id,

@@ -182,7 +182,7 @@ require_once '../../layouts/page_header.php';
                 <label for="draftProgramSearch" class="form-label">Search</label>
                 <div class="input-group">
                     <span class="input-group-text"><i class="fas fa-search"></i></span>
-                    <input type="text" class="form-control" id="draftProgramSearch" placeholder="Search by program name">
+                    <input type="text" class="form-control" id="draftProgramSearch" placeholder="Search by program name or number">
                 </div>
             </div>
             <div class="col-md-3 col-sm-6">
@@ -255,9 +255,11 @@ require_once '../../layouts/page_header.php';
                             $is_draft = isset($program['is_draft']) && $program['is_draft'] ? true : false;
                         ?>
                             <tr class="<?php echo $is_draft ? 'draft-program' : ''; ?>" 
-                                data-program-type="<?php echo $is_assigned ? 'assigned' : 'created'; ?>">
-                                <td>
+                                data-program-type="<?php echo $is_assigned ? 'assigned' : 'created'; ?>">                                <td>
                                     <div class="fw-medium">
+                                        <?php if (!empty($program['program_number'])): ?>
+                                            <span class="badge bg-info me-2" title="Program Number"><?php echo htmlspecialchars($program['program_number']); ?></span>
+                                        <?php endif; ?>
                                         <?php echo htmlspecialchars($program['program_name']); ?>
                                         <?php if ($is_draft): ?>
                                             <span class="draft-indicator" title="Draft"></span>
@@ -329,19 +331,15 @@ require_once '../../layouts/page_header.php';
                 <label for="finalizedProgramSearch" class="form-label">Search</label>
                 <div class="input-group">
                     <span class="input-group-text"><i class="fas fa-search"></i></span>
-                    <input type="text" class="form-control" id="finalizedProgramSearch" placeholder="Search by program name">
+                    <input type="text" class="form-control" id="finalizedProgramSearch" placeholder="Search by program name or number">
                 </div>
             </div>
             <div class="col-md-3 col-sm-6">
-                <label for="finalizedRatingFilter" class="form-label">Rating</label>
-                <select class="form-select" id="finalizedRatingFilter">
+                <label for="finalizedRatingFilter" class="form-label">Rating</label>                <select class="form-select" id="finalizedRatingFilter">
                     <option value="">All Ratings</option>
                     <option value="target-achieved">Monthly Target Achieved</option>
                     <option value="on-track-yearly">On Track for Year</option>
-                    <option value="on-track">On Track</option>
-                    <option value="delayed">Delayed</option>
                     <option value="severe-delay">Severe Delays</option>
-                    <option value="completed">Completed</option>
                     <option value="not-started">Not Started</option>
                 </select>
             </div>
@@ -402,9 +400,11 @@ require_once '../../layouts/page_header.php';
                                 $current_rating = 'not-started';
                             }
                         ?>
-                            <tr data-program-type="<?php echo $is_assigned ? 'assigned' : 'created'; ?>">
-                                <td>
+                            <tr data-program-type="<?php echo $is_assigned ? 'assigned' : 'created'; ?>">                                <td>
                                     <div class="fw-medium">
+                                        <?php if (!empty($program['program_number'])): ?>
+                                            <span class="badge bg-info me-2" title="Program Number"><?php echo htmlspecialchars($program['program_number']); ?></span>
+                                        <?php endif; ?>
                                         <?php echo htmlspecialchars($program['program_name']); ?>
                                     </div>
                                     <div class="small text-muted program-type-indicator">
