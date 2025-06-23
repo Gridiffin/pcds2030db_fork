@@ -76,71 +76,63 @@ function getRecentReports($limit = 10) {
 // Get recent reports
 $recentReports = getRecentReports(10);
 
-// Generate the table HTML (matching the format in the main page)
+// Generate the card-grid HTML (matching the format in the main page)
 if (!empty($recentReports)): ?>
-    <div class="table-responsive">
-        <table class="table table-hover table-sm">
-            <thead>
-                <tr>
-                    <th>Report Name</th>
-                    <th>Period</th>
-                    <th>Generated</th>
-                    <th>By</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($recentReports as $report): ?>
-                    <tr>
-                        <td>
-                            <div style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" 
-                                 title="<?php echo htmlspecialchars($report['report_name']); ?>">
-                                <?php echo htmlspecialchars($report['report_name']); ?>
-                            </div>
-                        </td>
-                        <td>
-                            <small class="text-muted">
+    <div class="recent-reports-grid">
+        <?php foreach ($recentReports as $report): ?>
+            <div class="report-card">
+                <div class="report-card-body">
+                    <div class="report-info">
+                        <h6 class="report-title" title="<?php echo htmlspecialchars($report['report_name']); ?>">
+                            <?php echo htmlspecialchars($report['report_name']); ?>
+                        </h6>
+                        <div class="report-meta">
+                            <span class="period-badge">
+                                <i class="fas fa-calendar me-1"></i>
                                 <?php echo formatPeriod($report); ?>
-                            </small>
-                        </td>
-                        <td>
-                            <small class="text-muted">
+                            </span>
+                            <span class="date-badge">
+                                <i class="fas fa-clock me-1"></i>
                                 <?php echo date('M j, Y g:i A', strtotime($report['generated_at'])); ?>
-                            </small>
-                        </td>
-                        <td>
-                            <small class="text-muted">
-                                <?php echo htmlspecialchars($report['username'] ?? 'Unknown'); ?>
-                            </small>
-                        </td>
-                        <td>
-                            <div class="btn-group btn-group-sm">
-                                <?php if (!empty($report['pptx_path'])): ?>
-                                    <a href="<?php echo APP_URL; ?>/download.php?type=report&file=<?php echo urlencode($report['pptx_path']); ?>" 
-                                       class="btn btn-outline-success btn-sm" 
-                                       title="Download Report">
-                                        <i class="fas fa-download"></i>
-                                    </a>
-                                <?php endif; ?>                                <button type="button" 
-                                        class="btn btn-outline-danger btn-sm delete-report-btn" 
-                                        title="Delete Report"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#deleteReportModal"
-                                        data-report-id="<?php echo $report['report_id']; ?>" 
-                                        data-report-name="<?php echo htmlspecialchars($report['report_name']); ?>">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="report-actions">
+                        <?php if (!empty($report['pptx_path'])): ?>
+                            <a href="<?php echo APP_URL; ?>/download.php?type=report&file=<?php echo urlencode($report['pptx_path']); ?>" 
+                               class="btn btn-success btn-sm" 
+                               title="Download Report">
+                                <i class="fas fa-download"></i>
+                            </a>
+                        <?php endif; ?>
+                        <button type="button" 
+                                class="btn btn-outline-danger btn-sm delete-report-btn" 
+                                title="Delete Report"
+                                data-bs-toggle="modal"
+                                data-bs-target="#deleteReportModal"
+                                data-report-id="<?php echo $report['report_id']; ?>" 
+                                data-report-name="<?php echo htmlspecialchars($report['report_name']); ?>">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        <?php endforeach; ?>
     </div>
 <?php else: ?>
-    <div class="text-center text-muted py-4">
-        <i class="fas fa-file-powerpoint fa-3x mb-3 opacity-50"></i>
-        <p class="mb-0">No reports generated yet.</p>
-        <small>Generated reports will appear here.</small>
+    <div class="empty-state text-center py-5">
+        <i class="fas fa-file-powerpoint fa-4x text-muted mb-3"></i>
+        <h5 class="text-muted">No reports generated yet</h5>
+        <p class="text-muted mb-3">Get started by generating your first report below.</p>
+        <button type="button" class="btn btn-primary" id="generateReportToggleEmpty">
+            <i class="fas fa-plus me-1"></i>Generate First Report
+        </button>
     </div>
 <?php endif; ?>
+
+<!-- Auto refresh indicator -->
+<div id="refreshIndicator" class="text-center mt-2" style="display: none;">
+    <small class="text-muted">
+        <i class="fas fa-sync fa-spin"></i> Refreshing...
+    </small>
+</div>

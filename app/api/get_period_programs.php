@@ -91,10 +91,10 @@ try {    // Get programs that have non-draft submissions for this period (only l
                 'sector_name' => $program['sector_name'],
                 'programs' => []
             ];
-        }
-        $programs[$program['sector_id']]['programs'][] = [
+        }        $programs[$program['sector_id']]['programs'][] = [
             'program_id' => $program['program_id'],
             'program_name' => $program['program_name'],
+            'program_number' => $program['program_number'],
             'agency_name' => $program['agency_name'],
             'owner_agency_id' => $program['owner_agency_id']
         ];

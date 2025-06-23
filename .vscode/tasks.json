@@ -1,0 +1,14 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Start PCDS2030 Dashboard (Apache)",
+			"type": "shell",
+			"command": "start-process \"C:\\laragon\\laragon.exe\"",
+			"args": [],
+			"group": "build",
+			"isBackground": true,
+			"problemMatcher": []
+		}
+	]
+}

@@ -220,8 +220,7 @@ if (typeof window.ReportAPI !== 'undefined') {
                 .then(html => {
                     // Simple fade-out effect before updating
                     reportsTableContainer.style.opacity = '0.5';
-                    
-                    setTimeout(() => {
+                      setTimeout(() => {
                         // Insert the HTML into the container
                         reportsTableContainer.innerHTML = html;
                         
@@ -231,6 +230,11 @@ if (typeof window.ReportAPI !== 'undefined') {
                         // Re-setup delete modal functionality for the new buttons
                         if (typeof ReportUI !== 'undefined' && ReportUI.setupDeleteModal) {
                             ReportUI.setupDeleteModal();
+                        }
+                        
+                        // Re-setup generate report toggle buttons (for empty state button)
+                        if (typeof window.setupGenerateReportToggle === 'function') {
+                            window.setupGenerateReportToggle();
                         }
                         
                         // Show a brief success indicator
@@ -275,16 +279,23 @@ if (typeof window.ReportAPI !== 'undefined') {
      * @param {number} reportId - The ID of the report to delete
      * @param {Element} button - The button that was clicked to trigger the delete
      * @returns {Promise<boolean>} - A promise that resolves to true if successful
-     */
-    function deleteReport(reportId, button) {
+     */    function deleteReport(reportId, button) {
         return new Promise((resolve, reject) => {
             if (!reportId) {
                 reject(new Error('No report ID provided'));
                 return;
             }
             
-            // Find row to delete
-            const rowToDelete = button ? button.closest('tr') : null;
+            // Find the element to delete (either table row or report card)
+            let elementToDelete = null;
+            if (button) {
+                // Try to find table row first (old layout)
+                elementToDelete = button.closest('tr');
+                // If not found, try to find report card (new layout)
+                if (!elementToDelete) {
+                    elementToDelete = button.closest('.report-card');
+                }
+            }
             
             // Create form data for the request
             const formData = new FormData();
@@ -312,20 +323,42 @@ if (typeof window.ReportAPI !== 'undefined') {
             })
             .then(data => { // 'data' is already parsed JSON here if successful
                 if (data.success) {
-                    // Remove the row from the table if it exists
-                    if (rowToDelete) {
-                        rowToDelete.remove();
+                    // Remove the element from the DOM if it exists
+                    if (elementToDelete) {
+                        // Add fade-out animation before removal
+                        elementToDelete.style.transition = 'opacity 0.3s';
+                        elementToDelete.style.opacity = '0';
                         
-                        // If no more reports, show empty state
-                        const tbody = document.querySelector('.reports-table tbody');
-                        if (tbody && tbody.children.length === 0) {
-                            const tableContainer = document.querySelector('.table-responsive');
-                            if (tableContainer) {
-                                tableContainer.innerHTML = '<div class="reports-empty-state"><p class="text-muted">No reports generated yet.</p></div>';
+                        setTimeout(() => {
+                            elementToDelete.remove();
+                            
+                            // Check if we need to show empty state
+                            const container = document.getElementById('recentReportsContainer');
+                            if (container) {
+                                const remainingCards = container.querySelectorAll('.report-card');
+                                const remainingRows = container.querySelectorAll('tbody tr');
+                                
+                                if (remainingCards.length === 0 && remainingRows.length === 0) {
+                                    // Show empty state for card layout
+                                    container.innerHTML = `
+                                        <div class="empty-state text-center py-5">
+                                            <i class="fas fa-file-powerpoint fa-4x text-muted mb-3"></i>
+                                            <h5 class="text-muted">No reports generated yet</h5>
+                                            <p class="text-muted mb-3">Get started by generating your first report below.</p>
+                                            <button type="button" class="btn btn-primary" id="generateReportToggleEmpty">
+                                                <i class="fas fa-plus me-1"></i>Generate First Report
+                                            </button>                                        </div>
+                                    `;
+                                    
+                                    // Re-setup the toggle button for the empty state
+                                    if (typeof window.setupGenerateReportToggle === 'function') {
+                                        window.setupGenerateReportToggle();
+                                    }
+                                }
                             }
-                        }
+                        }, 300);
                     } else {
-                        // If we couldn't find the row, reload the table
+                        // If we couldn't find the element, reload the entire container
                         refreshReportsTable();
                     }
                     resolve(true);

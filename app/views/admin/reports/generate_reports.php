@@ -207,20 +207,103 @@ $jsConfig = [
 <!-- Main Page Content -->
 <section class="section">
     <div class="container-fluid">
+        
+        <!-- Recent Reports Dashboard - Full Width -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-history me-2"></i>Recent Reports
+                        </h5>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-primary btn-sm" id="generateReportToggle">
+                                <i class="fas fa-plus me-1"></i>Generate New Report
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body" id="recentReportsContainer">
+                        <?php if (!empty($recentReports)): ?>
+                            <div class="recent-reports-grid">
+                                <?php foreach ($recentReports as $report): ?>
+                                    <div class="report-card">
+                                        <div class="report-card-body">
+                                            <div class="report-info">
+                                                <h6 class="report-title" title="<?php echo htmlspecialchars($report['report_name']); ?>">
+                                                    <?php echo htmlspecialchars($report['report_name']); ?>
+                                                </h6>
+                                                <div class="report-meta">
+                                                    <span class="period-badge">
+                                                        <i class="fas fa-calendar me-1"></i>
+                                                        <?php echo formatPeriod($report); ?>
+                                                    </span>
+                                                    <span class="date-badge">
+                                                        <i class="fas fa-clock me-1"></i>
+                                                        <?php echo date('M j, Y g:i A', strtotime($report['generated_at'])); ?>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div class="report-actions">
+                                                <?php if (!empty($report['pptx_path'])): ?>
+                                                    <a href="<?php echo APP_URL; ?>/download.php?type=report&file=<?php echo urlencode($report['pptx_path']); ?>" 
+                                                       class="btn btn-success btn-sm" 
+                                                       title="Download Report">
+                                                        <i class="fas fa-download"></i>
+                                                    </a>
+                                                <?php endif; ?>
+                                                <button type="button" 
+                                                        class="btn btn-outline-danger btn-sm delete-report-btn" 
+                                                        title="Delete Report"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#deleteReportModal"
+                                                        data-report-id="<?php echo $report['report_id']; ?>" 
+                                                        data-report-name="<?php echo htmlspecialchars($report['report_name']); ?>">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php else: ?>
+                            <div class="empty-state text-center py-5">
+                                <i class="fas fa-file-powerpoint fa-4x text-muted mb-3"></i>
+                                <h5 class="text-muted">No reports generated yet</h5>
+                                <p class="text-muted mb-3">Get started by generating your first report below.</p>
+                                <button type="button" class="btn btn-primary" id="generateReportToggleEmpty">
+                                    <i class="fas fa-plus me-1"></i>Generate First Report
+                                </button>
+                            </div>
+                        <?php endif; ?>
+                        
+                        <!-- Auto refresh indicator -->
+                        <div id="refreshIndicator" class="text-center mt-2" style="display: none;">
+                            <small class="text-muted">
+                                <i class="fas fa-sync fa-spin"></i> Refreshing...
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Generate Report Section - Collapsible -->
         <div class="row">
-            <!-- Report Generation Form -->
-            <div class="col-lg-7 col-md-12 mb-4">
-                <div class="card report-generator-card shadow-sm">
-                    <div class="card-header bg-primary text-white">
+            <div class="col-12">
+                <div class="card shadow-sm" id="generateReportSection" style="display: none;">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">
                             <i class="fas fa-file-powerpoint me-2"></i>Generate New Report
                         </h5>
+                        <button type="button" class="btn btn-outline-light btn-sm" id="closeGenerateForm">
+                            <i class="fas fa-times"></i>
+                        </button>
                     </div>
                     <div class="card-body">
                         <form id="reportGenerationForm" novalidate>
-                            <!-- Period, Sector, and Agency Selection -->
+                            <!-- Period and Sector Selection -->
                             <div class="row">
-                                <div class="col-md-4">
+                                <div class="col-md-6">
                                     <div class="mb-3">
                                         <label for="periodSelect" class="form-label">
                                             <i class="fas fa-calendar-alt me-1"></i>Reporting Period
@@ -237,7 +320,7 @@ $jsConfig = [
                                         <div class="invalid-feedback">Please select a reporting period.</div>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-6">
                                     <div class="mb-3">
                                         <label for="sectorSelect" class="form-label">
                                             <i class="fas fa-industry me-1"></i>Sector
@@ -253,36 +336,111 @@ $jsConfig = [
                                         </select>
                                         <div class="invalid-feedback">Please select a sector.</div>
                                     </div>
-                                </div>                                <div class="col-md-4">
-                                    <div class="mb-3">                                        <label for="agencySelect" class="form-label">
-                                            <i class="fas fa-users me-1"></i>Agency Filter
-                                            <small class="text-muted">(Multi-select)</small>
-                                        </label>
-                                        <select class="form-select" id="agencySelect" name="agency_ids[]" multiple size="4">
-                                            <?php foreach ($agencies as $agency): ?>
-                                                <option value="<?php echo htmlspecialchars($agency['user_id']); ?>">
-                                                    <?php echo htmlspecialchars($agency['agency_name']); ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        <div class="mt-2">
-                                            <button type="button" 
-                                                    class="btn btn-outline-secondary btn-sm" 
-                                                    id="resetAgencyFilter"
-                                                    style="display: none;">
-                                                <i class="fas fa-undo me-1"></i>Reset Selection
-                                            </button>
+                                </div>
+                            </div>
+
+                            <!-- Program Selection Section -->
+                            <div class="mb-4">
+                                <label class="form-label">
+                                    <i class="fas fa-list-check me-1"></i>Select Programs to Include
+                                    <small class="text-muted">(Optional - Multi-agency reports supported)</small>
+                                </label>
+                                
+                                <!-- Enhanced Filter Bar with Integrated Agency Filtering -->
+                                <div class="filter-bar border rounded p-3 mb-3 bg-light">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-8">
+                                            <div class="row g-2">
+                                                <div class="col-md-6">
+                                                    <div class="input-group input-group-sm">
+                                                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                                        <input type="text" 
+                                                               class="form-control" 
+                                                               id="programSearchInput" 
+                                                               placeholder="Search programs, numbers, agencies...">
+                                                        <button class="btn btn-outline-secondary" 
+                                                                type="button" 
+                                                                id="clearSearchBtn"
+                                                                title="Clear search">
+                                                            <i class="fas fa-times"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="program-count-display">
+                                                        <span class="badge bg-info" id="programCountBadge">
+                                                            <i class="fas fa-list me-1"></i>
+                                                            <span id="programCount">0</span> programs found
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="form-text">
-                                            <strong>Multi-agency reports:</strong> Select multiple agencies to filter program display. 
-                                            You can select programs from different agencies for one report. 
-                                            Leave empty to show all agencies.
+                                        <div class="col-md-4">
+                                            <div class="bulk-actions d-flex gap-2 justify-content-end">
+                                                <button type="button" 
+                                                        class="btn btn-outline-primary btn-sm" 
+                                                        id="selectAllPrograms"
+                                                        title="Select all visible programs">
+                                                    <i class="fas fa-check-square me-1"></i>Select All
+                                                </button>
+                                                <button type="button" 
+                                                        class="btn btn-outline-secondary btn-sm" 
+                                                        id="clearAllPrograms"
+                                                        title="Clear all selections">
+                                                    <i class="fas fa-square me-1"></i>Clear All
+                                                </button>
+                                                <button type="button" 
+                                                        class="btn btn-outline-warning btn-sm" 
+                                                        id="resetAllFilters"
+                                                        title="Reset all filters">
+                                                    <i class="fas fa-undo me-1"></i>Reset
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Integrated Agency Filter Row -->
+                                    <div class="row mt-2">
+                                        <div class="col-12">
+                                            <div class="agency-filter-section">
+                                                <small class="text-muted fw-bold">
+                                                    <i class="fas fa-building me-1"></i>Filter by Agency:
+                                                </small>
+                                                <div class="mt-1" id="agencyFilterTags">
+                                                    <button type="button" class="btn btn-outline-primary btn-sm me-1 mb-1 agency-filter-btn active" data-agency-id="all">
+                                                        <i class="fas fa-globe me-1"></i>All Agencies
+                                                    </button>
+                                                    <!-- Agency filter buttons will be populated here -->
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-2">
+                                    <div class="alert alert-info border-info">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <strong>Multi-agency reports:</strong> You can select programs from different agencies for one report. 
+                                        Use the agency filters above to quickly find programs, or search by agency name.
+                                        If no programs are selected, all filtered programs will be included.
+                                    </div>
+                                </div>
+                                
+                                <div id="programSelector" class="program-selector">
+                                    <div class="program-selector-container border rounded p-3" 
+                                         style="max-height: 300px; overflow-y: auto;" 
+                                         role="region" 
+                                         aria-label="Program selection">
+                                        <div class="alert alert-light text-center">
+                                            <i class="fas fa-arrow-up me-2"></i>
+                                            Please select a reporting period above to load available programs.
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Report Details -->
+                            <!-- Report Details (Moved after program selection) -->
                             <div class="mb-3">
                                 <label for="reportName" class="form-label">
                                     <i class="fas fa-file-signature me-1"></i>Report Name
@@ -309,35 +467,7 @@ $jsConfig = [
                                           rows="3" 
                                           maxlength="1000"
                                           placeholder="Brief description of the report content"></textarea>
-                                <div class="form-text">Maximum 1000 characters</div>
-                            </div>
-
-                            <!-- Program Selection -->
-                            <div class="mb-4">
-                                <label class="form-label">
-                                    <i class="fas fa-list-check me-1"></i>Select Programs to Include
-                                    <small class="text-muted">(Optional)</small>
-                                </label>
-                                <div class="mb-2">                                    <div class="alert alert-info border-info">
-                                        <i class="fas fa-info-circle me-2"></i>
-                                        <strong>How it works:</strong> First select a reporting period above, then finalized (non-draft) programs for that period will appear here for selection.
-                                        If no programs are selected, all finalized programs for the chosen sector will be included.
-                                    </div>
-                                </div>
-                                
-                                <div id="programSelector" class="program-selector">
-                                    <div class="program-selector-container border rounded p-3" 
-                                         style="max-height: 300px; overflow-y: auto;" 
-                                         role="region" 
-                                         aria-label="Program selection">
-                                        <div class="alert alert-light text-center">
-                                            <i class="fas fa-arrow-up me-2"></i>
-                                            Please select a reporting period above to load available programs.
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
+                                <div class="form-text">Maximum 1000 characters</div>                            
                             <!-- Report Options -->
                             <div class="mb-4">
                                 <div class="form-check">
@@ -405,83 +535,7 @@ $jsConfig = [
                     <p id="errorText" class="mb-3">Something went wrong. Please try again.</p>
                     <button type="button" class="btn btn-outline-danger btn-sm" id="retryBtn">
                         <i class="fas fa-redo me-1"></i>Try Again
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Recent Reports Sidebar -->
-            <div class="col-lg-5 col-md-12 mb-4">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-light">
-                        <h5 class="mb-0">
-                            <i class="fas fa-history me-2"></i>Recent Reports
-                        </h5>
-                    </div>                    <div class="card-body" id="recentReportsContainer">                        <?php if (!empty($recentReports)): ?>
-                            <div class="table-responsive">
-                                <table class="table table-hover table-sm">                                    <thead>
-                                        <tr>
-                                            <th style="width: 45%;">Report Name</th>
-                                            <th style="width: 20%;">Period</th>
-                                            <th style="width: 25%;">Generated</th>
-                                            <th style="width: 10%;">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php foreach ($recentReports as $report): ?>                                            <tr>
-                                                <td>
-                                                    <div style="max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" 
-                                                         title="<?php echo htmlspecialchars($report['report_name']); ?>">
-                                                        <?php echo htmlspecialchars($report['report_name']); ?>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <small class="text-muted">
-                                                        <?php echo formatPeriod($report); ?>
-                                                    </small>
-                                                </td>                                                <td>
-                                                    <small class="text-muted">
-                                                        <?php echo date('M j, Y g:i A', strtotime($report['generated_at'])); ?>
-                                                    </small>
-                                                </td>                                                <td>
-                                                    <div class="btn-group btn-group-sm" style="white-space: nowrap;">
-                                                        <?php if (!empty($report['pptx_path'])): ?>
-                                                            <a href="<?php echo APP_URL; ?>/download.php?type=report&file=<?php echo urlencode($report['pptx_path']); ?>" 
-                                                               class="btn btn-outline-success btn-sm" 
-                                                               title="Download Report">
-                                                                <i class="fas fa-download"></i>
-                                                            </a>
-                                                        <?php endif; ?>                                                        <button type="button" 
-                                                                class="btn btn-outline-danger btn-sm delete-report-btn" 
-                                                                title="Delete Report"
-                                                                data-bs-toggle="modal"
-                                                                data-bs-target="#deleteReportModal"
-                                                                data-report-id="<?php echo $report['report_id']; ?>" 
-                                                                data-report-name="<?php echo htmlspecialchars($report['report_name']); ?>">
-                                                            <i class="fas fa-trash"></i>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                        <?php else: ?>
-                            <div class="text-center text-muted py-4">
-                                <i class="fas fa-file-powerpoint fa-3x mb-3 opacity-50"></i>
-                                <p class="mb-0">No reports generated yet.</p>
-                                <small>Generated reports will appear here.</small>
-                            </div>
-                        <?php endif; ?>
-                        
-                        <!-- Auto refresh indicator -->
-                        <div id="refreshIndicator" class="text-center mt-2" style="display: none;">
-                            <small class="text-muted">
-                                <i class="fas fa-sync fa-spin"></i> Refreshing...
-                            </small>
-                        </div>
-                    </div>
-                </div>
+                    </button>                </div>
             </div>
         </div>
     </div>
@@ -511,10 +565,9 @@ $jsConfig = [
                 </button>
                 <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
                     <i class="fas fa-trash me-1"></i>Delete Report
-                </button>
-            </div>        </div>
-    </div>    </div>
-</section>
+                </button>            </div>
+        </div>
+    </div>
 </main>
 
 <?php
