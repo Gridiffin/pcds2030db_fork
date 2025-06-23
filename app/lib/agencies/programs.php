@@ -219,12 +219,19 @@ function update_program_draft_only($program_id, $data) {
     global $conn;
     if (!is_agency()) return ['success' => false, 'error' => 'Permission denied'];
     $user_id = $_SESSION['user_id'];
-    $check_stmt = $conn->prepare("SELECT program_id FROM programs WHERE program_id = ? AND owner_agency_id = ?");
-    $check_stmt->bind_param("ii", $program_id, $user_id);
-    $check_stmt->execute();
-    $result = $check_stmt->get_result();
-    if ($result->num_rows === 0) {
-        return ['success' => false, 'error' => 'Program not found or access denied'];    }
+
+    // Allow focal users to update any program draft, bypass ownership check
+    require_once dirname(__DIR__) . '/session.php';
+    if (!is_focal_user()) {
+        $check_stmt = $conn->prepare("SELECT program_id FROM programs WHERE program_id = ? AND owner_agency_id = ?");
+        $check_stmt->bind_param("ii", $program_id, $user_id);
+        $check_stmt->execute();
+        $result = $check_stmt->get_result();
+        if ($result->num_rows === 0) {
+            return ['success' => false, 'error' => 'Program not found or access denied'];
+        }
+    }
+
     $program_name = trim($data['program_name']);
     $program_number = isset($data['program_number']) ? trim($data['program_number']) : null;
     // Validate program_number format if provided (numbers and dots only)
