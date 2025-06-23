@@ -255,9 +255,14 @@ if (typeof window.ReportUI !== 'undefined') {
                 if (result.pptx_path) {
                     elements.downloadLink.href = `../../download.php?type=report&file=${result.pptx_path}`;
                 }
-                
-                // Re-enable generate button
+                  // Re-enable generate button
                 elements.generateBtn.disabled = false;
+                
+                // Track the newly generated report for NEW badge
+                if (result.report_id && typeof window.addNewReportToTracker === 'function') {
+                    window.addNewReportToTracker(result.report_id);
+                    console.log('Tracked new report for badge:', result.report_id);
+                }
 
                 // Update recent reports table with enhanced feedback
                 console.log('Refreshing recent reports table...');

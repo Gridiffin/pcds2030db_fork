@@ -90,6 +90,24 @@ function getSectors() {
 }
 
 /**
+ * Check if a report should display the "NEW" badge
+ * @param array $report Report data
+ * @return bool True if report should show NEW badge
+ */
+function shouldShowNewBadge($report) {
+    if (!$report || !isset($report['generated_at'])) {
+        return false;
+    }
+    
+    // Show badge for reports generated in the last 10 minutes
+    $generatedTime = strtotime($report['generated_at']);
+    $currentTime = time();
+    $tenMinutesAgo = $currentTime - (10 * 60); // 10 minutes in seconds
+    
+    return $generatedTime > $tenMinutesAgo;
+}
+
+/**
  * Get recently generated reports directly from database
  * @param int $limit Number of reports to retrieve
  * @return array Array of recent reports
@@ -145,7 +163,7 @@ function formatPeriod($report) {
 // Fetch data for page
 $periods = getReportingPeriods();
 $sectors = getSectors();
-$recentReports = getRecentReports(10);
+$recentReports = getRecentReports(25);
 $agencies = get_all_agencies($conn);
 
 // Additional JavaScript files required for this page (order matters!)
@@ -211,22 +229,45 @@ $jsConfig = [
         <!-- Recent Reports Dashboard - Full Width -->
         <div class="row mb-4">
             <div class="col-12">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <div class="card shadow-sm">                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">
                             <i class="fas fa-history me-2"></i>Recent Reports
                         </h5>
-                        <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-primary btn-sm" id="generateReportToggle">
-                                <i class="fas fa-plus me-1"></i>Generate New Report
-                            </button>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="search-container">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-search"></i>
+                                    </span>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="reportSearch" 
+                                           placeholder="Search reports..."
+                                           aria-label="Search reports">
+                                    <button class="btn btn-outline-secondary" 
+                                            type="button" 
+                                            id="clearSearch" 
+                                            title="Clear search"
+                                            style="display: none;">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-primary btn-sm" id="generateReportToggle">
+                                    <i class="fas fa-plus me-1"></i>Generate New Report
+                                </button>
+                            </div>
+                        </div>
                         </div>
                     </div>
                     <div class="card-body" id="recentReportsContainer">
                         <?php if (!empty($recentReports)): ?>
-                            <div class="recent-reports-grid">
-                                <?php foreach ($recentReports as $report): ?>
-                                    <div class="report-card">
+                            <div class="recent-reports-grid">                                <?php foreach ($recentReports as $report): ?>
+                                    <div class="report-card" data-report-id="<?php echo $report['report_id']; ?>">
+                                        <?php if (shouldShowNewBadge($report)): ?>
+                                            <span class="new-report-badge">NEW</span>
+                                        <?php endif; ?>
                                         <div class="report-card-body">
                                             <div class="report-info">
                                                 <h6 class="report-title" title="<?php echo htmlspecialchars($report['report_name']); ?>">

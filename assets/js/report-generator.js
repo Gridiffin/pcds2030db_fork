@@ -1297,7 +1297,220 @@ document.addEventListener('DOMContentLoaded', function() {
         // Close on successful report generation
         window.addEventListener('reportGenerated', hideGenerateForm);
     }
-      // Enhanced Recent Reports Refresh
+      // Report Search Functionality
+    function initReportSearch() {
+        const searchInput = document.getElementById('reportSearch');
+        const clearButton = document.getElementById('clearSearch');
+        const reportsContainer = document.getElementById('recentReportsContainer');
+        
+        if (!searchInput || !reportsContainer) return;
+        
+        let searchTimeout;
+        
+        // Debounced search function
+        function performSearch() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            const reportCards = reportsContainer.querySelectorAll('.report-card');
+            let visibleCount = 0;
+            
+            // Show/hide clear button
+            clearButton.style.display = searchTerm ? 'block' : 'none';
+            
+            if (!searchTerm) {
+                // Show all reports
+                reportCards.forEach(card => {
+                    card.style.display = 'block';
+                    card.classList.remove('search-highlight');
+                });
+                removeSearchInfo();
+                return;
+            }
+            
+            // Filter reports
+            reportCards.forEach(card => {
+                const reportName = card.querySelector('.report-title')?.textContent.toLowerCase() || '';
+                const periodText = card.querySelector('.period-badge')?.textContent.toLowerCase() || '';
+                const dateText = card.querySelector('.date-badge')?.textContent.toLowerCase() || '';
+                
+                const matchesSearch = reportName.includes(searchTerm) || 
+                                    periodText.includes(searchTerm) || 
+                                    dateText.includes(searchTerm);
+                
+                if (matchesSearch) {
+                    card.style.display = 'block';
+                    card.classList.add('search-highlight');
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                    card.classList.remove('search-highlight');
+                }
+            });
+            
+            // Show search results info
+            showSearchInfo(visibleCount, searchTerm);
+        }
+        
+        function showSearchInfo(count, term) {
+            removeSearchInfo();
+            
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'search-results-info';
+            infoDiv.id = 'searchResultsInfo';
+            
+            if (count === 0) {
+                infoDiv.innerHTML = `
+                    <div class="search-no-results">
+                        <i class="fas fa-search"></i>
+                        <h6>No reports found</h6>
+                        <p>No reports match "${term}". Try a different search term.</p>
+                    </div>
+                `;
+                infoDiv.className = 'search-no-results';
+            } else {
+                infoDiv.innerHTML = `
+                    <i class="fas fa-filter me-2"></i>
+                    Found ${count} report${count !== 1 ? 's' : ''} matching "${term}"
+                `;
+            }
+            
+            reportsContainer.insertBefore(infoDiv, reportsContainer.firstChild);
+        }
+        
+        function removeSearchInfo() {
+            const existingInfo = document.getElementById('searchResultsInfo');
+            if (existingInfo) {
+                existingInfo.remove();
+            }
+        }
+        
+        function clearSearch() {
+            searchInput.value = '';
+            performSearch();
+            searchInput.focus();
+        }
+        
+        // Event listeners
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(performSearch, 300); // 300ms debounce
+        });
+        
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                clearSearch();
+            }
+        });
+        
+        clearButton.addEventListener('click', clearSearch);
+        
+        // Focus search on Ctrl+F (when not in other inputs)
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'f' && !['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
+                e.preventDefault();
+                searchInput.focus();
+                searchInput.select();
+            }
+        });
+    }
+    
+    // Make search initialization globally available
+    window.initReportSearch = initReportSearch;
+
+    // NEW Badge Management
+    function initNewReportBadges() {
+        // Clean up expired new reports from localStorage
+        cleanupExpiredNewReports();
+        
+        // Apply badges to reports from localStorage
+        applyNewReportBadges();
+        
+        // Set up automatic badge cleanup
+        setTimeout(cleanupExpiredNewReports, 60000); // Check every minute
+    }
+    
+    function addNewReportToTracker(reportId) {
+        try {
+            const newReports = getNewReportsFromStorage();
+            const timestamp = Date.now();
+            
+            newReports[reportId] = timestamp;
+            localStorage.setItem('pcds_new_reports', JSON.stringify(newReports));
+            
+            console.log('Added new report to tracker:', reportId);
+        } catch (error) {
+            console.error('Error adding new report to tracker:', error);
+        }
+    }
+    
+    function getNewReportsFromStorage() {
+        try {
+            const stored = localStorage.getItem('pcds_new_reports');
+            return stored ? JSON.parse(stored) : {};
+        } catch (error) {
+            console.error('Error reading new reports from storage:', error);
+            return {};
+        }
+    }
+    
+    function cleanupExpiredNewReports() {
+        try {
+            const newReports = getNewReportsFromStorage();
+            const currentTime = Date.now();
+            const tenMinutes = 10 * 60 * 1000; // 10 minutes in milliseconds
+            
+            let hasChanges = false;
+            
+            // Remove expired entries
+            Object.keys(newReports).forEach(reportId => {
+                if (currentTime - newReports[reportId] > tenMinutes) {
+                    delete newReports[reportId];
+                    hasChanges = true;
+                    
+                    // Also remove badge from DOM if present
+                    const reportCard = document.querySelector(`[data-report-id="${reportId}"]`);
+                    if (reportCard) {
+                        const badge = reportCard.querySelector('.new-report-badge');
+                        if (badge) {
+                            badge.classList.add('fade-out');
+                            setTimeout(() => badge.remove(), 1000);
+                        }
+                    }
+                }
+            });
+            
+            if (hasChanges) {
+                localStorage.setItem('pcds_new_reports', JSON.stringify(newReports));
+                console.log('Cleaned up expired new reports');
+            }
+        } catch (error) {
+            console.error('Error cleaning up expired new reports:', error);
+        }
+    }
+    
+    function applyNewReportBadges() {
+        try {
+            const newReports = getNewReportsFromStorage();
+            
+            Object.keys(newReports).forEach(reportId => {
+                const reportCard = document.querySelector(`[data-report-id="${reportId}"]`);
+                if (reportCard && !reportCard.querySelector('.new-report-badge')) {
+                    // Create and add badge if it doesn't exist
+                    const badge = document.createElement('span');
+                    badge.className = 'new-report-badge';
+                    badge.textContent = 'NEW';
+                    reportCard.appendChild(badge);
+                }
+            });
+        } catch (error) {
+            console.error('Error applying new report badges:', error);
+        }
+    }
+    
+    // Make functions globally available
+    window.addNewReportToTracker = addNewReportToTracker;
+    window.initNewReportBadges = initNewReportBadges;
+
+    // Enhanced Recent Reports Refresh
     function refreshRecentReports() {
         // Call the proper refresh function from ReportAPI
         if (typeof ReportAPI !== 'undefined' && ReportAPI.refreshReportsTable) {
@@ -1321,11 +1534,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
       // Make function globally available for dynamic content
-    window.setupGenerateReportToggle = setupGenerateReportToggle;
-    
-    // Initialize modern dashboard features
+    window.setupGenerateReportToggle = setupGenerateReportToggle;    // Initialize modern dashboard features
     function initModernDashboard() {
         setupGenerateReportToggle();
+        initNewReportBadges(); // Initialize badge system
+        initReportSearch(); // Initialize search functionality
         
         // Add click handlers for report cards
         const reportCards = document.querySelectorAll('.report-card');

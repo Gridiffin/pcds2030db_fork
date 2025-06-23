@@ -45,6 +45,24 @@ function formatPeriod($report) {
 }
 
 /**
+ * Check if a report should display the "NEW" badge
+ * @param array $report Report data
+ * @return bool True if report should show NEW badge
+ */
+function shouldShowNewBadge($report) {
+    if (!$report || !isset($report['generated_at'])) {
+        return false;
+    }
+    
+    // Show badge for reports generated in the last 10 minutes
+    $generatedTime = strtotime($report['generated_at']);
+    $currentTime = time();
+    $tenMinutesAgo = $currentTime - (10 * 60); // 10 minutes in seconds
+    
+    return $generatedTime > $tenMinutesAgo;
+}
+
+/**
  * Get recently generated reports directly from database
  * @param int $limit Number of reports to retrieve
  * @return array Array of recent reports
@@ -74,13 +92,15 @@ function getRecentReports($limit = 10) {
 }
 
 // Get recent reports
-$recentReports = getRecentReports(10);
+$recentReports = getRecentReports(25);
 
 // Generate the card-grid HTML (matching the format in the main page)
 if (!empty($recentReports)): ?>
-    <div class="recent-reports-grid">
-        <?php foreach ($recentReports as $report): ?>
-            <div class="report-card">
+    <div class="recent-reports-grid">        <?php foreach ($recentReports as $report): ?>
+            <div class="report-card" data-report-id="<?php echo $report['report_id']; ?>">
+                <?php if (shouldShowNewBadge($report)): ?>
+                    <span class="new-report-badge">NEW</span>
+                <?php endif; ?>
                 <div class="report-card-body">
                     <div class="report-info">
                         <h6 class="report-title" title="<?php echo htmlspecialchars($report['report_name']); ?>">

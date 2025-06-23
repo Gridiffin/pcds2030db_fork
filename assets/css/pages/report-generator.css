@@ -867,6 +867,92 @@
     flex-shrink: 0;
 }
 
+/* NEW Badge Styling */
+.report-card {
+    position: relative; /* Required for absolute positioning of badge */
+}
+
+.new-report-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.2rem 0.4rem;
+    border-radius: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.4);
+    z-index: 10;
+    animation: badgePulse 2s ease-in-out;
+    border: 2px solid white;
+}
+
+.new-report-badge::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(135deg, #28a745, #20c997);
+    border-radius: 0.75rem;
+    z-index: -1;
+    animation: badgeGlow 3s ease-in-out infinite;
+}
+
+/* Badge animations */
+@keyframes badgePulse {
+    0% {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes badgeGlow {
+    0%, 100% {
+        box-shadow: 0 0 5px rgba(40, 167, 69, 0.6);
+    }
+    50% {
+        box-shadow: 0 0 15px rgba(40, 167, 69, 0.8), 0 0 25px rgba(40, 167, 69, 0.4);
+    }
+}
+
+/* Badge fade out animation */
+.new-report-badge.fade-out {
+    animation: badgeFadeOut 1s ease-out forwards;
+}
+
+@keyframes badgeFadeOut {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+}
+
+/* Responsive badge sizing */
+@media (max-width: 768px) {
+    .new-report-badge {
+        font-size: 0.6rem;
+        padding: 0.15rem 0.3rem;
+        top: -3px;
+        right: -3px;
+    }
+}
+
 /* Empty State */
 .empty-state {
     padding: 3rem 1rem;
@@ -947,4 +1033,82 @@
 .report-card.deleting {
     opacity: 0.5;
     transform: scale(0.95);
+}
+
+/* Search Bar Styling */
+.search-container {
+    min-width: 250px;
+}
+
+.search-container .input-group-sm .form-control {
+    font-size: 0.875rem;
+    border-radius: 0.375rem;
+}
+
+.search-container .input-group-text {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+    color: #6c757d;
+}
+
+.search-container .form-control:focus {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}
+
+#clearSearch {
+    border-left: none !important;
+    border-radius: 0 0.375rem 0.375rem 0 !important;
+}
+
+/* Search Results and States */
+.search-results-info {
+    padding: 0.5rem 1rem;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.search-no-results {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #6c757d;
+}
+
+.search-no-results i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+/* Report card highlighting for search */
+.report-card.search-highlight {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.1rem rgba(13, 110, 253, 0.15);
+}
+
+/* Responsive search bar */
+@media (max-width: 768px) {
+    .search-container {
+        min-width: 200px;
+    }
+    
+    .card-header.d-flex {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 1rem;
+    }
+    
+    .card-header .d-flex.align-items-center {
+        flex-direction: column;
+        align-items: stretch !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .search-container {
+        min-width: auto;
+        width: 100%;
+    }
 }

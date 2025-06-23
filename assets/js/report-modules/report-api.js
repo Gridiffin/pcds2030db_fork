@@ -231,10 +231,18 @@ if (typeof window.ReportAPI !== 'undefined') {
                         if (typeof ReportUI !== 'undefined' && ReportUI.setupDeleteModal) {
                             ReportUI.setupDeleteModal();
                         }
-                        
-                        // Re-setup generate report toggle buttons (for empty state button)
+                          // Re-setup generate report toggle buttons (for empty state button)
                         if (typeof window.setupGenerateReportToggle === 'function') {
                             window.setupGenerateReportToggle();
+                        }
+                          // Re-initialize NEW badge system
+                        if (typeof window.initNewReportBadges === 'function') {
+                            window.initNewReportBadges();
+                        }
+                        
+                        // Re-initialize search functionality
+                        if (typeof window.initReportSearch === 'function') {
+                            window.initReportSearch();
                         }
                         
                         // Show a brief success indicator
