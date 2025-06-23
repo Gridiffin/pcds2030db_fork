@@ -36,8 +36,12 @@ if (!$program_id) {
     exit;
 }
 
-// Get program details
-$program = get_program_details($program_id);
+// Include session functions to use is_focal_user()
+require_once PROJECT_ROOT_PATH . 'lib/session.php';
+
+// Get program details with cross-agency access for focal users
+$allow_cross_agency = is_focal_user();
+$program = get_program_details($program_id, $allow_cross_agency);
 
 if (!$program) {
     $_SESSION['message'] = 'Program not found.';

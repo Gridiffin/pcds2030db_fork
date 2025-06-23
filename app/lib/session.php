@@ -32,6 +32,14 @@ function get_user_role() {
 }
 
 /**
+ * Check if current user is a focal user
+ * @return bool True if user role is 'focal', false otherwise
+ */
+function is_focal_user() {
+    return get_user_role() === 'focal';
+}
+
+/**
  * Redirect if not logged in
  * @param string $redirect_url URL to redirect to
  */
