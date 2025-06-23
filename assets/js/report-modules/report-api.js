@@ -182,6 +182,17 @@ if (typeof window.ReportAPI !== 'undefined') {
      */
     function refreshReportsTable() {
         return new Promise((resolve, reject) => {
+            // Check if we have the new pagination system
+            if (typeof window.reportsPagination !== 'undefined' && window.reportsPagination.refresh) {
+                console.log('Using new pagination system for refresh');
+                window.reportsPagination.refresh();
+                resolve(true);
+                return;
+            }
+            
+            // Fallback to legacy system
+            console.log('Using legacy refresh system');
+            
             // Find the container where the table should be displayed
             const reportsTableContainer = document.getElementById('recentReportsContainer');
             

@@ -163,8 +163,13 @@ function formatPeriod($report) {
 // Fetch data for page
 $periods = getReportingPeriods();
 $sectors = getSectors();
-$recentReports = getRecentReports(25);
+// Remove the direct loading of reports - will be handled by pagination
 $agencies = get_all_agencies($conn);
+
+// Additional CSS files for this page
+$additionalStyles = [
+    asset_url('css/admin', 'reports-pagination.css')
+];
 
 // Additional JavaScript files required for this page (order matters!)
 $additionalScripts = [
@@ -178,7 +183,9 @@ $additionalScripts = [
     // Main report generator (depends on report modules)
     APP_URL . '/assets/js/report-generator.js',
     // Program ordering functionality
-    APP_URL . '/assets/js/program-ordering.js'
+    APP_URL . '/assets/js/program-ordering.js',
+    // Pagination functionality (must load after other modules)
+    APP_URL . '/assets/js/admin/reports-pagination.js'
 ];
 
 // Include header and navigation
@@ -260,64 +267,14 @@ $jsConfig = [
                             </div>
                         </div>
                         </div>
-                    </div>
-                    <div class="card-body" id="recentReportsContainer">
-                        <?php if (!empty($recentReports)): ?>
-                            <div class="recent-reports-grid">                                <?php foreach ($recentReports as $report): ?>
-                                    <div class="report-card" data-report-id="<?php echo $report['report_id']; ?>">
-                                        <?php if (shouldShowNewBadge($report)): ?>
-                                            <span class="new-report-badge">NEW</span>
-                                        <?php endif; ?>
-                                        <div class="report-card-body">
-                                            <div class="report-info">
-                                                <h6 class="report-title" title="<?php echo htmlspecialchars($report['report_name']); ?>">
-                                                    <?php echo htmlspecialchars($report['report_name']); ?>
-                                                </h6>
-                                                <div class="report-meta">
-                                                    <span class="period-badge">
-                                                        <i class="fas fa-calendar me-1"></i>
-                                                        <?php echo formatPeriod($report); ?>
-                                                    </span>
-                                                    <span class="date-badge">
-                                                        <i class="fas fa-clock me-1"></i>
-                                                        <?php echo date('M j, Y g:i A', strtotime($report['generated_at'])); ?>
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div class="report-actions">
-                                                <?php if (!empty($report['pptx_path'])): ?>
-                                                    <a href="<?php echo APP_URL; ?>/download.php?type=report&file=<?php echo urlencode($report['pptx_path']); ?>" 
-                                                       class="btn btn-success btn-sm" 
-                                                       title="Download Report">
-                                                        <i class="fas fa-download"></i>
-                                                    </a>
-                                                <?php endif; ?>
-                                                <button type="button" 
-                                                        class="btn btn-outline-danger btn-sm delete-report-btn" 
-                                                        title="Delete Report"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#deleteReportModal"
-                                                        data-report-id="<?php echo $report['report_id']; ?>" 
-                                                        data-report-name="<?php echo htmlspecialchars($report['report_name']); ?>">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                <?php endforeach; ?>
+                    </div>                    <div class="card-body" id="recentReportsContainer">
+                        <!-- Reports will be loaded here by JavaScript pagination -->
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading reports...</span>
                             </div>
-                        <?php else: ?>
-                            <div class="empty-state text-center py-5">
-                                <i class="fas fa-file-powerpoint fa-4x text-muted mb-3"></i>
-                                <h5 class="text-muted">No reports generated yet</h5>
-                                <p class="text-muted mb-3">Get started by generating your first report below.</p>
-                                <button type="button" class="btn btn-primary" id="generateReportToggleEmpty">
-                                    <i class="fas fa-plus me-1"></i>Generate First Report
-                                </button>
-                            </div>
-                        <?php endif; ?>
-                        
-                        <!-- Auto refresh indicator -->
+                            <p class="mt-3 mb-0 text-muted">Loading recent reports...</p>
+                        </div>
                         <div id="refreshIndicator" class="text-center mt-2" style="display: none;">
                             <small class="text-muted">
                                 <i class="fas fa-sync fa-spin"></i> Refreshing...

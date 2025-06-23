@@ -1508,10 +1508,13 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Make functions globally available
     window.addNewReportToTracker = addNewReportToTracker;
-    window.initNewReportBadges = initNewReportBadges;
-
-    // Enhanced Recent Reports Refresh
+    window.initNewReportBadges = initNewReportBadges;    // Enhanced Recent Reports Refresh
     function refreshRecentReports() {
+        // Use the new pagination system if available
+        if (typeof window.reportsPagination !== 'undefined' && window.reportsPagination.refresh) {
+            return Promise.resolve(window.reportsPagination.refresh());
+        }
+        
         // Call the proper refresh function from ReportAPI
         if (typeof ReportAPI !== 'undefined' && ReportAPI.refreshReportsTable) {
             return ReportAPI.refreshReportsTable();

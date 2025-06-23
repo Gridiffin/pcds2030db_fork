@@ -38,8 +38,29 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit();
 }
 
-// Get report ID from POST data
-$reportId = isset($_POST['report_id']) ? intval($_POST['report_id']) : 0;
+// Get report ID from JSON POST data or form POST data
+$reportId = 0;
+
+// Check if it's JSON data
+$contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+if (strpos($contentType, 'application/json') !== false) {
+    // Handle JSON data
+    $jsonInput = file_get_contents('php://input');
+    $data = json_decode($jsonInput, true);
+    
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        echo json_encode([
+            'success' => false,
+            'error' => 'Invalid JSON data'
+        ]);
+        exit();
+    }
+    
+    $reportId = isset($data['report_id']) ? intval($data['report_id']) : 0;
+} else {
+    // Handle form data
+    $reportId = isset($_POST['report_id']) ? intval($_POST['report_id']) : 0;
+}
 
 if ($reportId <= 0) {
     echo json_encode([
