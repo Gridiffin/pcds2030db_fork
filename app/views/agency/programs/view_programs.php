@@ -17,6 +17,7 @@ require_once PROJECT_ROOT_PATH . 'lib/session.php';
 require_once PROJECT_ROOT_PATH . 'lib/functions.php';
 require_once PROJECT_ROOT_PATH . 'lib/agencies/index.php';
 require_once PROJECT_ROOT_PATH . 'lib/rating_helpers.php';
+require_once PROJECT_ROOT_PATH . 'lib/initiative_functions.php';
 
 // Verify user is an agency
 if (!is_agency()) {
@@ -42,6 +43,9 @@ $additionalScripts = [
     APP_URL . '/assets/js/agency/view_programs.js',
     APP_URL . '/assets/js/utilities/table_sorting.js'
 ];
+
+// Get active initiatives for filtering
+$active_initiatives = get_initiatives_for_select(true);
 
 // Get programs for FOCAL user (all agencies in their group) or just their own if not FOCAL
 if (isset($_SESSION['role']) && strtolower($_SESSION['role']) === 'focal') {
@@ -178,17 +182,16 @@ require_once '../../layouts/page_header.php';
         <h5 class="card-title m-0">Draft Programs</h5>
     </div>
     
-    <!-- Draft Programs Filters -->
-    <div class="card-body pb-0">
+    <!-- Draft Programs Filters -->    <div class="card-body pb-0">
         <div class="row g-3">
-            <div class="col-md-5 col-sm-12">
+            <div class="col-md-4 col-sm-12">
                 <label for="draftProgramSearch" class="form-label">Search</label>
                 <div class="input-group">
                     <span class="input-group-text"><i class="fas fa-search"></i></span>
                     <input type="text" class="form-control" id="draftProgramSearch" placeholder="Search by program name or number">
                 </div>
             </div>
-            <div class="col-md-3 col-sm-6">
+            <div class="col-md-2 col-sm-6">
                 <label for="draftRatingFilter" class="form-label">Rating</label>
                 <select class="form-select" id="draftRatingFilter">
                     <option value="">All Ratings</option>
@@ -198,12 +201,24 @@ require_once '../../layouts/page_header.php';
                     <option value="not-started">Not Started</option>
                 </select>
             </div>
-            <div class="col-md-3 col-sm-6">
+            <div class="col-md-2 col-sm-6">
                 <label for="draftTypeFilter" class="form-label">Program Type</label>
                 <select class="form-select" id="draftTypeFilter">
                     <option value="">All Types</option>
                     <option value="assigned">Assigned</option>
                     <option value="created">Agency-Created Programs</option>
+                </select>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <label for="draftInitiativeFilter" class="form-label">Initiative</label>
+                <select class="form-select" id="draftInitiativeFilter">
+                    <option value="">All Initiatives</option>
+                    <option value="no-initiative">Not Linked to Initiative</option>
+                    <?php foreach ($active_initiatives as $initiative): ?>
+                        <option value="<?php echo $initiative['initiative_id']; ?>">
+                            <?php echo htmlspecialchars($initiative['initiative_name']); ?>
+                        </option>
+                    <?php endforeach; ?>
                 </select>
             </div>
             <div class="col-md-1 col-sm-12 d-flex align-items-end">
@@ -338,17 +353,16 @@ require_once '../../layouts/page_header.php';
         </h5>
     </div>
     
-    <!-- Finalized Programs Filters -->
-    <div class="card-body pb-0">
+    <!-- Finalized Programs Filters -->    <div class="card-body pb-0">
         <div class="row g-3">
-            <div class="col-md-5 col-sm-12">
+            <div class="col-md-4 col-sm-12">
                 <label for="finalizedProgramSearch" class="form-label">Search</label>
                 <div class="input-group">
                     <span class="input-group-text"><i class="fas fa-search"></i></span>
                     <input type="text" class="form-control" id="finalizedProgramSearch" placeholder="Search by program name or number">
                 </div>
             </div>
-            <div class="col-md-3 col-sm-6">
+            <div class="col-md-2 col-sm-6">
                 <label for="finalizedRatingFilter" class="form-label">Rating</label>                <select class="form-select" id="finalizedRatingFilter">
                     <option value="">All Ratings</option>
                     <option value="target-achieved">Monthly Target Achieved</option>
@@ -357,12 +371,24 @@ require_once '../../layouts/page_header.php';
                     <option value="not-started">Not Started</option>
                 </select>
             </div>
-            <div class="col-md-3 col-sm-6">
+            <div class="col-md-2 col-sm-6">
                 <label for="finalizedTypeFilter" class="form-label">Program Type</label>
                 <select class="form-select" id="finalizedTypeFilter">
                     <option value="">All Types</option>
                     <option value="assigned">Assigned</option>
                     <option value="created">Agency-Created Programs</option>
+                </select>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <label for="finalizedInitiativeFilter" class="form-label">Initiative</label>
+                <select class="form-select" id="finalizedInitiativeFilter">
+                    <option value="">All Initiatives</option>
+                    <option value="no-initiative">Not Linked to Initiative</option>
+                    <?php foreach ($active_initiatives as $initiative): ?>
+                        <option value="<?php echo $initiative['initiative_id']; ?>">
+                            <?php echo htmlspecialchars($initiative['initiative_name']); ?>
+                        </option>
+                    <?php endforeach; ?>
                 </select>
             </div>
             <div class="col-md-1 col-sm-12 d-flex align-items-end">

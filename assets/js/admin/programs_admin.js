@@ -50,13 +50,13 @@ document.addEventListener('DOMContentLoaded', function() {
 /**
  * Initialize filtering functionality for both program sections
  */
-function initializeFiltering() {
-    // Unsubmitted programs filters
+function initializeFiltering() {    // Unsubmitted programs filters
     const unsubmittedSearch = document.getElementById('unsubmittedProgramSearch');
     const unsubmittedRating = document.getElementById('unsubmittedRatingFilter');
     const unsubmittedType = document.getElementById('unsubmittedTypeFilter');
     const unsubmittedSector = document.getElementById('unsubmittedSectorFilter');
     const unsubmittedAgency = document.getElementById('unsubmittedAgencyFilter');
+    const unsubmittedInitiative = document.getElementById('unsubmittedInitiativeFilter');
     const resetUnsubmittedBtn = document.getElementById('resetUnsubmittedFilters');
     
     // Submitted programs filters
@@ -65,10 +65,11 @@ function initializeFiltering() {
     const submittedType = document.getElementById('submittedTypeFilter');
     const submittedSector = document.getElementById('submittedSectorFilter');
     const submittedAgency = document.getElementById('submittedAgencyFilter');
+    const submittedInitiative = document.getElementById('submittedInitiativeFilter');
     const resetSubmittedBtn = document.getElementById('resetSubmittedFilters');
     
     // Add event listeners for unsubmitted programs
-    [unsubmittedSearch, unsubmittedRating, unsubmittedType, unsubmittedSector, unsubmittedAgency].forEach(element => {
+    [unsubmittedSearch, unsubmittedRating, unsubmittedType, unsubmittedSector, unsubmittedAgency, unsubmittedInitiative].forEach(element => {
         if (element) {
             const eventType = element.type === 'text' ? 'input' : 'change';
             element.addEventListener(eventType, () => filterPrograms('unsubmitted'));
@@ -76,7 +77,7 @@ function initializeFiltering() {
     });
     
     // Add event listeners for submitted programs
-    [submittedSearch, submittedRating, submittedType, submittedSector, submittedAgency].forEach(element => {
+    [submittedSearch, submittedRating, submittedType, submittedSector, submittedAgency, submittedInitiative].forEach(element => {
         if (element) {
             const eventType = element.type === 'text' ? 'input' : 'change';
             element.addEventListener(eventType, () => filterPrograms('submitted'));
@@ -100,13 +101,13 @@ function filterPrograms(section) {
     const programs = section === 'unsubmitted' ? unsubmittedPrograms : submittedPrograms;
     const tableId = section === 'unsubmitted' ? 'unsubmittedProgramsTable' : 'submittedProgramsTable';
     const prefix = section === 'unsubmitted' ? 'unsubmitted' : 'submitted';
-    
-    // Get filter values
+      // Get filter values
     const searchValue = document.getElementById(prefix + 'ProgramSearch')?.value.toLowerCase() || '';
     const ratingValue = document.getElementById(prefix + 'RatingFilter')?.value || '';
     const typeValue = document.getElementById(prefix + 'TypeFilter')?.value || '';
     const sectorValue = document.getElementById(prefix + 'SectorFilter')?.value || '';
     const agencyValue = document.getElementById(prefix + 'AgencyFilter')?.value || '';
+    const initiativeValue = document.getElementById(prefix + 'InitiativeFilter')?.value || '';
       // Filter programs
     const filteredPrograms = programs.filter(program => {
         // Search filter - search in both program name and program number
@@ -138,19 +139,34 @@ function filterPrograms(section) {
             return false;
         }
         
+        // Initiative filter
+        if (initiativeValue) {
+            if (initiativeValue === 'no-initiative') {
+                // Show only programs without initiatives
+                if (program.initiative_id && program.initiative_id !== null) {
+                    return false;
+                }
+            } else {
+                // Show only programs with the specific initiative
+                if (String(program.initiative_id) !== initiativeValue) {
+                    return false;
+                }
+            }
+        }
+        
         return true;
     });
     
     // Update the table
     updateProgramTable(tableId, filteredPrograms, section);
-    
-    // Update filter badges
+      // Update filter badges
     updateFilterBadges(section, {
         search: searchValue,
         rating: ratingValue,
         type: typeValue,
         sector: sectorValue,
-        agency: agencyValue
+        agency: agencyValue,
+        initiative: initiativeValue
     });
 }
 
@@ -164,10 +180,13 @@ function updateProgramTable(tableId, programs, section) {
     const tbody = table.querySelector('tbody');
     tbody.innerHTML = '';
     
+    // Determine colspan based on section (unsubmitted and submitted both have initiative column now)
+    const colspan = 7;
+    
     if (programs.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="6" class="text-center py-4">No ${section} programs found.</td>
+                <td colspan="${colspan}" class="text-center py-4">No ${section} programs found.</td>
             </tr>
         `;
         return;
@@ -187,6 +206,7 @@ function createProgramRow(program, section) {
     row.setAttribute('data-program-type', program.is_assigned ? 'assigned' : 'agency');
     row.setAttribute('data-sector-id', program.sector_id);
     row.setAttribute('data-agency-id', program.owner_agency_id);
+    row.setAttribute('data-initiative-id', program.initiative_id || '');
     row.setAttribute('data-rating', program.rating || 'not-started');
     
     const ratingMap = {
@@ -238,8 +258,30 @@ function createProgramRow(program, section) {
         }
     } else {
         actionButton = '<small class="text-muted">No submissions</small>';
+    }    // Create initiative column based on section (only for unsubmitted or when data contains initiative info)
+    let initiativeColumn = '';
+    if (section === 'unsubmitted' || program.initiative_name) {
+        if (program.initiative_name) {
+            initiativeColumn = `
+                <td>
+                    <span class="badge bg-primary initiative-badge" title="Initiative">
+                        <i class="fas fa-lightbulb me-1"></i>
+                        ${escapeHtml(program.initiative_name)}
+                    </span>
+                </td>
+            `;
+        } else {
+            initiativeColumn = `
+                <td>
+                    <span class="text-muted small">
+                        <i class="fas fa-minus me-1"></i>Not Linked
+                    </span>
+                </td>
+            `;
+        }
     }
-      row.innerHTML = `
+    
+    row.innerHTML = `
         <td>
             <div class="fw-medium">
                 <a href="view_program.php?id=${program.program_id}&period_id=${periodId}">
@@ -253,6 +295,7 @@ function createProgramRow(program, section) {
                 ${program.is_assigned ? 'Assigned' : 'Agency-Created'}
             </div>
         </td>
+        ${initiativeColumn}
         <td>${escapeHtml(program.sector_name)}</td>
         <td>${escapeHtml(program.agency_name)}</td>
         <td>
@@ -290,19 +333,20 @@ function createProgramRow(program, section) {
  */
 function resetFilters(section) {
     const prefix = section === 'unsubmitted' ? 'unsubmitted' : 'submitted';
-    
-    // Reset all filter inputs
+      // Reset all filter inputs
     const searchInput = document.getElementById(prefix + 'ProgramSearch');
     const ratingSelect = document.getElementById(prefix + 'RatingFilter');
     const typeSelect = document.getElementById(prefix + 'TypeFilter');
     const sectorSelect = document.getElementById(prefix + 'SectorFilter');
     const agencySelect = document.getElementById(prefix + 'AgencyFilter');
+    const initiativeSelect = document.getElementById(prefix + 'InitiativeFilter');
     
     if (searchInput) searchInput.value = '';
     if (ratingSelect) ratingSelect.value = '';
     if (typeSelect) typeSelect.value = '';
     if (sectorSelect) sectorSelect.value = '';
     if (agencySelect) agencySelect.value = '';
+    if (initiativeSelect) initiativeSelect.value = '';
     
     // Clear filter badges
     const badgesContainer = document.getElementById(prefix + 'FilterBadges');
@@ -345,11 +389,15 @@ function updateFilterBadges(section, filters) {
                     const sectorSelect = document.getElementById(prefix + 'SectorFilter');
                     const sectorText = sectorSelect?.options[sectorSelect.selectedIndex]?.text || value;
                     label = `Sector: ${sectorText}`;
-                    break;
-                case 'agency':
+                    break;                case 'agency':
                     const agencySelect = document.getElementById(prefix + 'AgencyFilter');
                     const agencyText = agencySelect?.options[agencySelect.selectedIndex]?.text || value;
                     label = `Agency: ${agencyText}`;
+                    break;
+                case 'initiative':
+                    const initiativeSelect = document.getElementById(prefix + 'InitiativeFilter');
+                    const initiativeText = initiativeSelect?.options[initiativeSelect.selectedIndex]?.text || value;
+                    label = `Initiative: ${initiativeText}`;
                     break;
             }
             

@@ -13,6 +13,7 @@ require_once ROOT_PATH . 'app/lib/functions.php';
 require_once ROOT_PATH . 'app/lib/admins/index.php';
 require_once ROOT_PATH . 'app/lib/rating_helpers.php';
 require_once ROOT_PATH . 'app/lib/admins/statistics.php';
+require_once ROOT_PATH . 'app/lib/initiative_functions.php';
 
 // Verify user is admin
 if (!is_admin()) {
@@ -78,6 +79,9 @@ while ($row = $agencies_result->fetch_assoc()) {
     $agencies[] = $row;
 }
 
+// Get active initiatives for filtering
+$active_initiatives = get_initiatives_for_select(true);
+
 // Additional scripts
 $additionalScripts = [
     APP_URL . '/assets/js/period_selector.js',
@@ -93,6 +97,12 @@ $header_config = [
     'subtitle' => 'Monitor and manage all programs across sectors',
     'variant' => 'green',
     'actions' => [
+        [
+            'text' => 'Bulk Assign Initiatives',
+            'url' => APP_URL . '/app/views/admin/programs/bulk_assign_initiatives.php',
+            'class' => 'btn-secondary',
+            'icon' => 'fas fa-link'
+        ],
         [
             'text' => 'Assign Programs',
             'url' => APP_URL . '/app/views/admin/programs/assign_programs.php',
@@ -205,9 +215,20 @@ if (isset($_SESSION['message']) && !empty($_SESSION['message'])) {
                     <?php endforeach; ?>
                 </select>
             </div>
-        </div>
-        <div class="row mt-2">
-            <div class="col-12 d-flex justify-content-end">
+        </div>        <div class="row mt-2">
+            <div class="col-md-3 col-sm-6">
+                <label for="unsubmittedInitiativeFilter" class="form-label">Initiative</label>
+                <select class="form-select" id="unsubmittedInitiativeFilter">
+                    <option value="">All Initiatives</option>
+                    <option value="no-initiative">Not Linked to Initiative</option>
+                    <?php foreach ($active_initiatives as $initiative): ?>
+                        <option value="<?php echo $initiative['initiative_id']; ?>">
+                            <?php echo htmlspecialchars($initiative['initiative_name']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-md-9 col-sm-6 d-flex align-items-end justify-content-end">
                 <button id="resetUnsubmittedFilters" class="btn btn-outline-secondary btn-sm">
                     <i class="fas fa-undo me-1"></i> Reset Filters
                 </button>
@@ -217,11 +238,11 @@ if (isset($_SESSION['message']) && !empty($_SESSION['message'])) {
     </div>
     
     <div class="card-body pt-2 p-0">
-        <div class="table-responsive">
-            <table class="table table-hover table-custom mb-0" id="unsubmittedProgramsTable">
+        <div class="table-responsive">            <table class="table table-hover table-custom mb-0" id="unsubmittedProgramsTable">
                 <thead class="table-light">
                     <tr>
                         <th class="sortable" data-sort="name">Program Name <i class="fas fa-sort ms-1"></i></th>
+                        <th class="sortable" data-sort="initiative">Initiative <i class="fas fa-sort ms-1"></i></th>
                         <th class="sortable" data-sort="sector">Sector <i class="fas fa-sort ms-1"></i></th>
                         <th class="sortable" data-sort="agency">Agency <i class="fas fa-sort ms-1"></i></th>
                         <th class="sortable" data-sort="rating">Rating <i class="fas fa-sort ms-1"></i></th>
@@ -229,10 +250,9 @@ if (isset($_SESSION['message']) && !empty($_SESSION['message'])) {
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <?php if (empty($unsubmitted_programs)): ?>
+                <tbody>                    <?php if (empty($unsubmitted_programs)): ?>
                         <tr>
-                            <td colspan="6" class="text-center py-4">No unsubmitted programs found.</td>
+                            <td colspan="7" class="text-center py-4">No unsubmitted programs found.</td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($unsubmitted_programs as $program): 
@@ -257,11 +277,11 @@ if (isset($_SESSION['message']) && !empty($_SESSION['message'])) {
                             if (!isset($rating_map[$current_rating])) {
                                 $current_rating = 'not-started';
                             }
-                        ?>
-                            <tr data-program-type="<?php echo $is_assigned ? 'assigned' : 'agency'; ?>"
+                        ?>                            <tr data-program-type="<?php echo $is_assigned ? 'assigned' : 'agency'; ?>"
                                 data-sector-id="<?php echo $program['sector_id']; ?>"
                                 data-agency-id="<?php echo $program['owner_agency_id']; ?>"
-                                data-rating="<?php echo $current_rating; ?>">                                <td>
+                                data-initiative-id="<?php echo $program['initiative_id'] ?? ''; ?>"
+                                data-rating="<?php echo $current_rating; ?>"><td>
                                     <div class="fw-medium">
                                         <a href="view_program.php?id=<?php echo $program['program_id']; ?>&period_id=<?php echo $period_id; ?>">
                                             <?php if (!empty($program['program_number'])): ?>
@@ -270,11 +290,22 @@ if (isset($_SESSION['message']) && !empty($_SESSION['message'])) {
                                             <?php echo htmlspecialchars($program['program_name']); ?>
                                         </a>
                                         <span class="badge bg-light text-dark ms-1">Unsubmitted</span>
-                                    </div>
-                                    <div class="small text-muted program-type-indicator">
+                                    </div>                                    <div class="small text-muted program-type-indicator">
                                         <i class="fas fa-<?php echo $is_assigned ? 'tasks' : 'folder-plus'; ?> me-1"></i>
                                         <?php echo $is_assigned ? 'Assigned' : 'Agency-Created'; ?>
                                     </div>
+                                </td>
+                                <td>
+                                    <?php if (!empty($program['initiative_name'])): ?>
+                                        <span class="badge bg-primary initiative-badge" title="Initiative">
+                                            <i class="fas fa-lightbulb me-1"></i>
+                                            <?php echo htmlspecialchars($program['initiative_name']); ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="text-muted small">
+                                            <i class="fas fa-minus me-1"></i>Not Linked
+                                        </span>
+                                    <?php endif; ?>
                                 </td>
                                 <td><?php echo htmlspecialchars($program['sector_name']); ?></td>
                                 <td><?php echo htmlspecialchars($program['agency_name']); ?></td>
@@ -396,9 +427,21 @@ if (isset($_SESSION['message']) && !empty($_SESSION['message'])) {
                     <?php endforeach; ?>
                 </select>
             </div>
-        </div>
+        </div>        </div>
         <div class="row mt-2">
-            <div class="col-12 d-flex justify-content-end">
+            <div class="col-md-3 col-sm-6">
+                <label for="submittedInitiativeFilter" class="form-label">Initiative</label>
+                <select class="form-select" id="submittedInitiativeFilter">
+                    <option value="">All Initiatives</option>
+                    <option value="no-initiative">Not Linked to Initiative</option>
+                    <?php foreach ($active_initiatives as $initiative): ?>
+                        <option value="<?php echo $initiative['initiative_id']; ?>">
+                            <?php echo htmlspecialchars($initiative['initiative_name']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-md-9 col-sm-6 d-flex align-items-end justify-content-end">
                 <button id="resetSubmittedFilters" class="btn btn-outline-secondary btn-sm">
                     <i class="fas fa-undo me-1"></i> Reset Filters
                 </button>
@@ -408,22 +451,21 @@ if (isset($_SESSION['message']) && !empty($_SESSION['message'])) {
     </div>
     
     <div class="card-body pt-2 p-0">
-        <div class="table-responsive">
-            <table class="table table-hover table-custom mb-0" id="submittedProgramsTable">
+        <div class="table-responsive">            <table class="table table-hover table-custom mb-0" id="submittedProgramsTable">
                 <thead class="table-light">
                     <tr>
                         <th class="sortable" data-sort="name">Program Name <i class="fas fa-sort ms-1"></i></th>
+                        <th class="sortable" data-sort="initiative">Initiative <i class="fas fa-sort ms-1"></i></th>
                         <th class="sortable" data-sort="sector">Sector <i class="fas fa-sort ms-1"></i></th>
                         <th class="sortable" data-sort="agency">Agency <i class="fas fa-sort ms-1"></i></th>
                         <th class="sortable" data-sort="rating">Rating <i class="fas fa-sort ms-1"></i></th>
                         <th class="sortable" data-sort="date">Last Updated <i class="fas fa-sort ms-1"></i></th>
                         <th class="text-end">Actions</th>
                     </tr>
-                </thead>
-                <tbody>
+                </thead>                <tbody>
                     <?php if (empty($submitted_programs)): ?>
                         <tr>
-                            <td colspan="6" class="text-center py-4">No submitted programs found.</td>
+                            <td colspan="7" class="text-center py-4">No submitted programs found.</td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($submitted_programs as $program): 
@@ -452,7 +494,9 @@ if (isset($_SESSION['message']) && !empty($_SESSION['message'])) {
                             <tr data-program-type="<?php echo $is_assigned ? 'assigned' : 'agency'; ?>"
                                 data-sector-id="<?php echo $program['sector_id']; ?>"
                                 data-agency-id="<?php echo $program['owner_agency_id']; ?>"
-                                data-rating="<?php echo $current_rating; ?>">                                <td>
+                                data-initiative-id="<?php echo $program['initiative_id'] ?? ''; ?>"
+                                data-rating="<?php echo $current_rating; ?>">
+                                <td>
                                     <div class="fw-medium">
                                         <a href="view_program.php?id=<?php echo $program['program_id']; ?>&period_id=<?php echo $period_id; ?>">
                                             <?php if (!empty($program['program_number'])): ?>
@@ -465,6 +509,18 @@ if (isset($_SESSION['message']) && !empty($_SESSION['message'])) {
                                         <i class="fas fa-<?php echo $is_assigned ? 'tasks' : 'folder-plus'; ?> me-1"></i>
                                         <?php echo $is_assigned ? 'Assigned' : 'Agency-Created'; ?>
                                     </div>
+                                </td>
+                                <td>
+                                    <?php if (!empty($program['initiative_name'])): ?>
+                                        <span class="badge bg-primary initiative-badge" title="Initiative">
+                                            <i class="fas fa-lightbulb me-1"></i>
+                                            <?php echo htmlspecialchars($program['initiative_name']); ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="text-muted small">
+                                            <i class="fas fa-minus me-1"></i>Not Linked
+                                        </span>
+                                    <?php endif; ?>
                                 </td>
                                 <td><?php echo htmlspecialchars($program['sector_name']); ?></td>
                                 <td><?php echo htmlspecialchars($program['agency_name']); ?></td>
