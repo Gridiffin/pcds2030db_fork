@@ -16,12 +16,16 @@ require_once PROJECT_ROOT_PATH . 'lib/db_connect.php';
 require_once PROJECT_ROOT_PATH . 'lib/session.php';
 require_once PROJECT_ROOT_PATH . 'lib/functions.php';
 require_once PROJECT_ROOT_PATH . 'lib/agencies/programs.php';
+require_once PROJECT_ROOT_PATH . 'lib/initiative_functions.php';
 
 // Verify user is an agency
 if (!is_agency()) {
     header('Location: ' . APP_URL . '/login.php');
     exit;
 }
+
+// Get active initiatives for dropdown
+$active_initiatives = get_initiatives_for_select(true);
 
 // Process form submission
 $message = '';
@@ -60,8 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         if (empty($status_descriptions_combined) && isset($_POST['status_description'])) {
             $status_descriptions_combined = $_POST['status_description'];
-        }
-          $program_data = [
+        }          $program_data = [
             'program_id' => $_POST['program_id'] ?? 0,
             'program_name' => $_POST['program_name'] ?? '',
             'program_number' => $_POST['program_number'] ?? '',
@@ -69,7 +72,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'start_date' => $_POST['start_date'] ?? '',
             'end_date' => $_POST['end_date'] ?? '',
             'target' => $targets_combined,
-            'status_description' => $status_descriptions_combined
+            'status_description' => $status_descriptions_combined,
+            'initiative_id' => !empty($_POST['initiative_id']) ? intval($_POST['initiative_id']) : null
         ];
         
         $result = auto_save_program_draft($program_data);
@@ -104,15 +108,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     if (empty($status_descriptions_combined) && isset($_POST['status_description'])) {
         $status_descriptions_combined = $_POST['status_description'];
-    }      $program_data = [
-        'program_name' => $_POST['program_name'] ?? '',
-        'program_number' => $_POST['program_number'] ?? '',
-        'brief_description' => $_POST['brief_description'] ?? '',
-        'start_date' => $_POST['start_date'] ?? '',
-        'end_date' => $_POST['end_date'] ?? '',
-        'target' => $targets_combined,
-        'status_description' => $status_descriptions_combined
-    ];
+    }        $program_data = [
+            'program_name' => $_POST['program_name'] ?? '',
+            'program_number' => $_POST['program_number'] ?? '',
+            'brief_description' => $_POST['brief_description'] ?? '',
+            'start_date' => $_POST['start_date'] ?? '',
+            'end_date' => $_POST['end_date'] ?? '',
+            'target' => $targets_combined,
+            'status_description' => $status_descriptions_combined,
+            'initiative_id' => !empty($_POST['initiative_id']) ? intval($_POST['initiative_id']) : null
+        ];
     
     // Check if this is an update to existing program or new creation
     $program_id = isset($_POST['program_id']) ? intval($_POST['program_id']) : 0;
@@ -236,9 +241,7 @@ require_once '../../layouts/page_header.php';
                                         <i class="fas fa-info-circle me-1"></i>
                                         This will be the main identifier for your program
                                     </div>
-                                </div>
-
-                                <!-- Program Number -->
+                                </div>                                <!-- Program Number -->
                                 <div class="mb-4">
                                     <label for="program_number" class="form-label">
                                         Program Number
@@ -254,6 +257,30 @@ require_once '../../layouts/page_header.php';
                                     <div class="form-text">
                                         <i class="fas fa-info-circle me-1"></i>
                                         Initiative/action step number (optional) - numbers and dots only
+                                    </div>
+                                </div>
+
+                                <!-- Initiative Selection -->
+                                <div class="mb-4">
+                                    <label for="initiative_id" class="form-label">
+                                        Link to Initiative
+                                        <span class="badge bg-secondary ms-1">Optional</span>
+                                    </label>
+                                    <select class="form-select" id="initiative_id" name="initiative_id">
+                                        <option value="">Select an initiative (optional)</option>
+                                        <?php foreach ($active_initiatives as $initiative): ?>
+                                            <option value="<?php echo $initiative['initiative_id']; ?>"
+                                                    <?php echo (isset($_POST['initiative_id']) && $_POST['initiative_id'] == $initiative['initiative_id']) ? 'selected' : ''; ?>>
+                                                <?php echo htmlspecialchars($initiative['initiative_name']); ?>
+                                                <?php if ($initiative['initiative_number']): ?>
+                                                    (<?php echo htmlspecialchars($initiative['initiative_number']); ?>)
+                                                <?php endif; ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <div class="form-text">
+                                        <i class="fas fa-lightbulb me-1"></i>
+                                        Link this program to a strategic initiative for better organization and reporting
                                     </div>
                                 </div>
 

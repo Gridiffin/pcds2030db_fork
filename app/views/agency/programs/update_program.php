@@ -19,6 +19,7 @@ require_once PROJECT_ROOT_PATH . 'lib/agencies/index.php';
 require_once PROJECT_ROOT_PATH . 'lib/rating_helpers.php';
 require_once PROJECT_ROOT_PATH . 'lib/audit_log.php';
 require_once PROJECT_ROOT_PATH . 'lib/agencies/program_attachments.php';
+require_once PROJECT_ROOT_PATH . 'lib/initiative_functions.php';
 
 // Verify user is an agency
 if (!is_agency()) {
@@ -52,6 +53,9 @@ if (!$program) {
 
 // Get program edit history
 $program_history = get_program_edit_history($program_id);
+
+// Get active initiatives for dropdown
+$active_initiatives = get_initiatives_for_select(true);
 
 // Load existing attachments for this program
 $existing_attachments = get_program_attachments($program_id);
@@ -201,12 +205,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Handle save draft functionality - update both program basic info and submission content
         global $conn;
         try {
-            $conn->begin_transaction();              // Get form data
+            $conn->begin_transaction();            // Get form data
             $program_name = trim($_POST['program_name'] ?? '');
             $program_number = trim($_POST['program_number'] ?? '');
             $brief_description = trim($_POST['brief_description'] ?? '');
             $start_date = !empty($_POST['start_date']) ? $_POST['start_date'] : null;
-            $end_date = !empty($_POST['end_date']) ? $_POST['end_date'] : null;            $rating = $_POST['rating'] ?? 'not-started';
+            $end_date = !empty($_POST['end_date']) ? $_POST['end_date'] : null;
+            $initiative_id = !empty($_POST['initiative_id']) ? intval($_POST['initiative_id']) : null;$rating = $_POST['rating'] ?? 'not-started';
             $remarks = trim($_POST['remarks'] ?? '');
             $period_id = intval($_POST['period_id'] ?? 0);
             $submission_id = intval($_POST['submission_id'] ?? 0);
@@ -258,12 +263,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $update_params[] = $start_date;
                     $param_types .= 's';
                 }
-                
-                if (is_editable('end_date')) {
+                  if (is_editable('end_date')) {
                     $update_fields[] = "end_date = ?";
                     $update_params[] = $end_date;
                     $param_types .= 's';
                 }
+                
+                // Always allow editing initiative_id
+                $update_fields[] = "initiative_id = ?";
+                $update_params[] = $initiative_id;
+                $param_types .= 'i';
                 
                 if (!empty($update_fields)) {
                     $update_fields[] = "updated_at = NOW()";
@@ -746,8 +755,7 @@ require_once dirname(__DIR__, 2) . '/layouts/page_header.php';
                                             </ul>
                                         </div>                                    <?php endif; ?>
                                 <?php endif; ?>                            </div>
-                            
-                            <div class="mb-3">
+                              <div class="mb-3">
                                 <label for="program_number" class="form-label">Program Number</label>
                                 <input type="text" class="form-control" id="program_number" name="program_number" 
                                         value="<?php echo htmlspecialchars($program['program_number'] ?? ''); ?>"
@@ -757,6 +765,27 @@ require_once dirname(__DIR__, 2) . '/layouts/page_header.php';
                                 <div class="form-text">
                                     <i class="fas fa-info-circle me-1"></i>
                                     Optional program identifier for easier mapping to initiatives (numbers and dots only)
+                                </div>
+                            </div>
+
+                            <!-- Initiative Selection -->
+                            <div class="mb-3">
+                                <label for="initiative_id" class="form-label">
+                                    <i class="fas fa-link me-1"></i>
+                                    Link to Initiative
+                                </label>
+                                <select class="form-select" id="initiative_id" name="initiative_id">
+                                    <option value="">Select an initiative (optional)</option>
+                                    <?php foreach ($active_initiatives as $initiative): ?>
+                                        <option value="<?php echo $initiative['initiative_id']; ?>"
+                                                <?php echo (isset($program['initiative_id']) && $program['initiative_id'] == $initiative['initiative_id']) ? 'selected' : ''; ?>>
+                                            <?php echo htmlspecialchars($initiative['initiative_name']); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Link this program to a larger initiative for better organization and reporting
                                 </div>
                             </div>
                             

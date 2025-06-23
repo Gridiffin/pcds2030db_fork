@@ -14,6 +14,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/agencies/index.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/rating_helpers.php';
 require_once PROJECT_ROOT_PATH . 'app/controllers/DashboardController.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/audit_log.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/outcome_automation.php';
 
 if (!is_agency()) {
     // Log unauthorized access attempt
@@ -116,8 +117,25 @@ try {
     $stmt = $conn->prepare($query);
     // $period_id = $current_period['period_id']; // This line was moved up
     $stmt->bind_param("ii", $program_id, $period_id);
-    $stmt->execute();    
-    if ($stmt->affected_rows > 0) {
+    $stmt->execute();      if ($stmt->affected_rows > 0) {
+        // Get the submitted content to check status
+        $submitted_content_query = "SELECT content_json FROM program_submissions 
+                                   WHERE program_id = ? AND period_id = ? AND is_draft = 0 
+                                   ORDER BY submission_date DESC LIMIT 1";
+        $content_stmt = $conn->prepare($submitted_content_query);
+        $content_stmt->bind_param("ii", $program_id, $period_id);
+        $content_stmt->execute();
+        $content_result = $content_stmt->get_result();
+        
+        if ($content_result->num_rows > 0) {
+            $content_row = $content_result->fetch_assoc();
+            $content_data = json_decode($content_row['content_json'], true);
+            $program_status = $content_data['rating'] ?? 'not-started';
+            
+            // Trigger outcome automation if program is linked to outcomes
+            updateOutcomeDataOnProgramStatusChange($program_id, $program_status, $period_id, $_SESSION['user_id'] ?? 1);
+        }
+        
         // Log successful program submission
         log_audit_action(
             'program_submitted',
@@ -126,7 +144,7 @@ try {
             $_SESSION['user_id'] ?? null
         );
         echo json_encode(['status' => 'success', 'message' => 'Program submitted successfully']);
-    } else {
+    }else {
         // Check if submission exists
         $check_query = "SELECT submission_id FROM program_submissions WHERE program_id = ? AND period_id = ?";
         $check_stmt = $conn->prepare($check_query);
@@ -170,8 +188,14 @@ try {
                             VALUES (?, ?, 0, NOW(), ?, ?)";
             $insert_stmt = $conn->prepare($insert_query);
             $insert_stmt->bind_param("iiis", $program_id, $period_id, $submitted_by, $content_json);
-            $insert_stmt->execute();
-              if ($insert_stmt->affected_rows > 0) {
+            $insert_stmt->execute();            if ($insert_stmt->affected_rows > 0) {
+                // Check program status for outcome automation
+                $content_data = json_decode($content_json, true);
+                $program_status = $content_data['rating'] ?? 'not-started';
+                
+                // Trigger outcome automation if program is linked to outcomes
+                updateOutcomeDataOnProgramStatusChange($program_id, $program_status, $period_id, $_SESSION['user_id'] ?? 1);
+                
                 // Log successful program submission (new record)
                 log_audit_action(
                     'program_submitted',
@@ -180,7 +204,7 @@ try {
                     $_SESSION['user_id'] ?? null
                 );
                 echo json_encode(['status' => 'success', 'message' => 'Program submitted successfully']);
-            } else {
+            }else {
                 // Log failed submission creation
                 log_audit_action(
                     'program_submit_failed',

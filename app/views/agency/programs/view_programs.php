@@ -82,12 +82,15 @@ if (isset($_SESSION['role']) && strtolower($_SESSION['role']) === 'focal') {
         global $conn;
         // Fixed query to properly get the latest submission for each program
         $query = "SELECT p.*, 
+                         i.initiative_name,
+                         i.initiative_id,
                          COALESCE(latest_sub.is_draft, 1) as is_draft,
                          latest_sub.period_id,
                          COALESCE(latest_sub.submission_date, p.created_at) as updated_at,
                          latest_sub.submission_id as latest_submission_id,
                          COALESCE(JSON_UNQUOTE(JSON_EXTRACT(latest_sub.content_json, '$.rating')), 'not-started') as rating
                   FROM programs p 
+                  LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
                   LEFT JOIN (
                       SELECT ps1.*
                       FROM program_submissions ps1
@@ -213,20 +216,19 @@ require_once '../../layouts/page_header.php';
     </div>
     
     <div class="card-body pt-2 p-0">
-        <div class="table-responsive">
-            <table class="table table-hover table-custom mb-0" id="draftProgramsTable">
+        <div class="table-responsive">            <table class="table table-hover table-custom mb-0" id="draftProgramsTable">
                 <thead class="table-light">
                     <tr>
                         <th class="sortable" data-sort="name">Program Name <i class="fas fa-sort ms-1"></i></th>
+                        <th class="sortable" data-sort="initiative">Initiative <i class="fas fa-sort ms-1"></i></th>
                         <th class="sortable" data-sort="rating">Rating <i class="fas fa-sort ms-1"></i></th>
                         <th class="sortable" data-sort="date">Last Updated <i class="fas fa-sort ms-1"></i></th>
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <?php if (empty($draft_programs)): ?>
+                <tbody>                    <?php if (empty($draft_programs)): ?>
                         <tr>
-                            <td colspan="4" class="text-center py-4">No draft programs found.</td>
+                            <td colspan="5" class="text-center py-4">No draft programs found.</td>
                         </tr>
                     <?php else: ?>
                         <?php                        foreach ($draft_programs as $program): 
@@ -269,6 +271,18 @@ require_once '../../layouts/page_header.php';
                                         <i class="fas fa-<?php echo $is_assigned ? 'tasks' : 'folder-plus'; ?> me-1"></i>
                                         <?php echo $is_assigned ? 'Assigned' : 'Agency-Created'; ?>
                                     </div>
+                                </td>
+                                <td>
+                                    <?php if (!empty($program['initiative_name'])): ?>
+                                        <span class="badge bg-primary" title="Linked to Initiative">
+                                            <i class="fas fa-link me-1"></i>
+                                            <?php echo htmlspecialchars($program['initiative_name']); ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="text-muted">
+                                            <i class="fas fa-minus"></i> Not linked
+                                        </span>
+                                    <?php endif; ?>
                                 </td>
                                 <td>
                                     <span class="badge bg-<?php echo $rating_map[$current_rating]['class']; ?>">
@@ -361,20 +375,19 @@ require_once '../../layouts/page_header.php';
     </div>
     
     <div class="card-body pt-2 p-0">
-        <div class="table-responsive">
-            <table class="table table-hover table-custom mb-0" id="finalizedProgramsTable">
+        <div class="table-responsive">            <table class="table table-hover table-custom mb-0" id="finalizedProgramsTable">
                 <thead class="table-light">
                     <tr>
                         <th class="sortable" data-sort="name">Program Name <i class="fas fa-sort ms-1"></i></th>
+                        <th class="sortable" data-sort="initiative">Initiative <i class="fas fa-sort ms-1"></i></th>
                         <th class="sortable" data-sort="rating">Rating <i class="fas fa-sort ms-1"></i></th>
                         <th class="sortable" data-sort="date">Last Updated <i class="fas fa-sort ms-1"></i></th>
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if (empty($finalized_programs)): ?>
-                        <tr>
-                            <td colspan="4" class="text-center py-4">No finalized programs found.</td>
+                    <?php if (empty($finalized_programs)): ?>                        <tr>
+                            <td colspan="5" class="text-center py-4">No finalized programs found.</td>
                         </tr>
                     <?php else: ?>
                         <?php                        foreach ($finalized_programs as $program): 
@@ -411,6 +424,18 @@ require_once '../../layouts/page_header.php';
                                         <i class="fas fa-<?php echo $is_assigned ? 'tasks' : 'folder-plus'; ?> me-1"></i>
                                         <?php echo $is_assigned ? 'Assigned' : 'Agency-Created'; ?>
                                     </div>
+                                </td>
+                                <td>
+                                    <?php if (!empty($program['initiative_name'])): ?>
+                                        <span class="badge bg-primary" title="Linked to Initiative">
+                                            <i class="fas fa-link me-1"></i>
+                                            <?php echo htmlspecialchars($program['initiative_name']); ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="text-muted">
+                                            <i class="fas fa-minus"></i> Not linked
+                                        </span>
+                                    <?php endif; ?>
                                 </td>
                                 <td>
                                     <span class="badge bg-<?php echo $rating_map[$current_rating]['class']; ?>">

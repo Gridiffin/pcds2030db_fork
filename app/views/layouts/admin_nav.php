@@ -13,11 +13,13 @@ $current_uri = $_SERVER['REQUEST_URI'];
 $is_program_page = (strpos($current_uri, '/programs/') !== false);
 $is_user_page = (strpos($current_uri, '/users/') !== false);
 $is_outcome_page = (strpos($current_uri, '/outcomes/') !== false);
+$is_initiative_page = (strpos($current_uri, '/initiatives/') !== false);
 
 // Fix: Only one nav item should have 'active' at a time
 $is_programs_active = $is_program_page;
 $is_users_active = $is_user_page;
 $is_outcomes_active = $is_outcome_page;
+$is_initiatives_active = $is_initiative_page;
 
 // Check if current page is report-related
 $is_report_page = $current_page == 'generate_reports.php';
@@ -46,8 +48,7 @@ $is_settings_page = in_array($current_page, ['reporting_periods.php', 'audit_log
                         <i class="fas fa-tachometer-alt me-1"></i> Dashboard
                     </a>
                 </li>
-                
-                <!-- Programs Dropdown -->
+                  <!-- Programs Dropdown -->
                 <li class="nav-item dropdown">
                     <button class="nav-link dropdown-toggle btn <?php if ($is_programs_active) echo 'active'; ?>" data-bs-toggle="dropdown" aria-expanded="false" type="button">
                         <i class="fas fa-project-diagram me-1"></i> Programs <i class="fas fa-caret-down nav-dropdown-icon"></i>
@@ -61,6 +62,25 @@ $is_settings_page = in_array($current_page, ['reporting_periods.php', 'audit_log
                         <li>
                             <a class="dropdown-item <?php if ($current_page == 'assign_programs.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/admin/programs/assign_programs.php">
                                 <i class="fas fa-tasks me-1"></i> Assign Programs
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                
+                <!-- Initiatives Dropdown -->
+                <li class="nav-item dropdown">
+                    <button class="nav-link dropdown-toggle btn <?php if ($is_initiatives_active) echo 'active'; ?>" data-bs-toggle="dropdown" aria-expanded="false" type="button">
+                        <i class="fas fa-lightbulb me-1"></i> Initiatives <i class="fas fa-caret-down nav-dropdown-icon"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a class="dropdown-item <?php if ($current_page == 'manage_initiatives.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/admin/initiatives/manage_initiatives.php">
+                                <i class="fas fa-list me-1"></i> Manage Initiatives
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item <?php if ($current_page == 'create.php' && $is_initiative_page) echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/admin/initiatives/create.php">
+                                <i class="fas fa-plus me-1"></i> Create Initiative
                             </a>
                         </li>
                     </ul>

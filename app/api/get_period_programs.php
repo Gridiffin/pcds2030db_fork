@@ -4,10 +4,16 @@
  * 
  * Returns program data for a specific reporting period.
  * Only includes finalized (non-draft) program submissions.
+ * Now includes initiative information for initiative-based reporting.
  * 
  * Update 2025-06-18: 
  * - Modified to exclude draft programs from report generation.
  * - Fixed duplicate program issue by selecting only the latest submission for each program.
+ * 
+ * Update 2025-01-26:
+ * - Added initiative support: includes initiative_id, initiative_name, initiative_number
+ * - Added initiative_id filter parameter for filtering by specific initiative
+ * - Updated ordering to prioritize initiatives, then sectors, then agencies
  */
 
 // Prevent any output before headers
@@ -31,6 +37,7 @@ if (!is_admin()) {
 // Get period_id parameter
 $period_id = isset($_GET['period_id']) ? intval($_GET['period_id']) : null;
 $sector_id = isset($_GET['sector_id']) ? intval($_GET['sector_id']) : null;
+$initiative_id = isset($_GET['initiative_id']) ? intval($_GET['initiative_id']) : null;
 
 $agency_ids = [];
 if (isset($_GET['agency_ids']) && $_GET['agency_ids'] !== '') {
@@ -46,7 +53,10 @@ if (!$period_id) {
 }
 
 try {    // Get programs that have non-draft submissions for this period (only latest submission per program)
-    $programs_query = "SELECT DISTINCT p.program_id, p.program_name, p.program_number, s.sector_id, s.sector_name, u.agency_name, u.user_id as owner_agency_id
+    // Updated to include initiative information
+    $programs_query = "SELECT DISTINCT p.program_id, p.program_name, p.program_number, p.initiative_id,
+                      i.initiative_name, i.initiative_number, 
+                      s.sector_id, s.sector_name, u.agency_name, u.user_id as owner_agency_id
                       FROM programs p
                       LEFT JOIN (
                           SELECT ps1.program_id
@@ -61,27 +71,40 @@ try {    // Get programs that have non-draft submissions for this period (only l
                                AND ps1.submission_id = ps2.latest_submission_id
                           WHERE ps1.period_id = ? AND ps1.is_draft = 0
                       ) ps ON p.program_id = ps.program_id
+                      LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
                       LEFT JOIN sectors s ON p.sector_id = s.sector_id
-                      LEFT JOIN users u ON p.owner_agency_id = u.user_id
-                      WHERE 
+                      LEFT JOIN users u ON p.owner_agency_id = u.user_id                      WHERE 
                             (ps.program_id IS NOT NULL)
                             ". ($sector_id ? "AND p.sector_id = ? " : "") .
+                            ($initiative_id ? "AND p.initiative_id = ? " : "") .
                             (!empty($agency_ids) ? "AND p.owner_agency_id IN (" . implode(",", array_fill(0, count($agency_ids), '?')) . ") " : "") .
-                      "ORDER BY s.sector_name, u.agency_name, p.program_name";
+                      "ORDER BY i.initiative_name, s.sector_name, u.agency_name, p.program_name";
       // Add debug logging
-    error_log("Fetching programs for period_id: {$period_id}" . ($sector_id ? ", sector_id: {$sector_id}" : ", all sectors"));
-    error_log("Fixed duplicate submission query - using MAX(submission_id) for tie-breaking");// Prepare statement with dynamic params - need period_id twice for the nested subquery
-    $param_types = $sector_id ? 'iii' : 'ii';
+    error_log("Fetching programs for period_id: {$period_id}" . ($sector_id ? ", sector_id: {$sector_id}" : ", all sectors") . ($initiative_id ? ", initiative_id: {$initiative_id}" : ", all initiatives"));
+    error_log("Fixed duplicate submission query - using MAX(submission_id) for tie-breaking");
+    
+    // Prepare statement with dynamic params - need period_id twice for the nested subquery
+    $param_types = 'ii'; // Always need period_id twice
     $params = [$period_id, $period_id];
-    if ($sector_id) $params[] = $sector_id;
+    
+    if ($sector_id) {
+        $param_types .= 'i';
+        $params[] = $sector_id;
+    }
+    if ($initiative_id) {
+        $param_types .= 'i';
+        $params[] = $initiative_id;
+    }
     if (!empty($agency_ids)) {
         $param_types .= str_repeat('i', count($agency_ids));
         $params = array_merge($params, $agency_ids);
     }
+    
     $stmt = $conn->prepare($programs_query);
     $stmt->bind_param($param_types, ...$params);
 
-    $stmt->execute();    $result = $stmt->get_result();
+    $stmt->execute();
+    $result = $stmt->get_result();
     $program_count = $result->num_rows;
     
     error_log("Found {$program_count} non-draft programs matching criteria");    $programs = [];
@@ -91,10 +114,14 @@ try {    // Get programs that have non-draft submissions for this period (only l
                 'sector_name' => $program['sector_name'],
                 'programs' => []
             ];
-        }        $programs[$program['sector_id']]['programs'][] = [
+        }
+          $programs[$program['sector_id']]['programs'][] = [
             'program_id' => $program['program_id'],
             'program_name' => $program['program_name'],
             'program_number' => $program['program_number'],
+            'initiative_id' => $program['initiative_id'],
+            'initiative_name' => $program['initiative_name'],
+            'initiative_number' => $program['initiative_number'],
             'agency_name' => $program['agency_name'],
             'owner_agency_id' => $program['owner_agency_id']
         ];
@@ -107,9 +134,7 @@ try {    // Get programs that have non-draft submissions for this period (only l
         $sector_stmt = $conn->prepare($sector_query);
         $sector_stmt->bind_param("i", $sector_id);
         $sector_stmt->execute();
-        $sector_result = $sector_stmt->get_result();
-        
-        if ($sector_data = $sector_result->fetch_assoc()) {
+        $sector_result = $sector_stmt->get_result();        if ($sector_data = $sector_result->fetch_assoc()) {
             $programs[$sector_id] = [
                 'sector_name' => $sector_data['sector_name'],
                 'programs' => []

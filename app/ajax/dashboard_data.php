@@ -32,11 +32,14 @@ $include_assigned = isset($_POST['include_assigned']) ?
                      filter_var($_GET['include_assigned'], FILTER_VALIDATE_BOOLEAN) : 
                      false);  // Default to exclude assigned programs when parameter not provided
 
+$initiative_id = isset($_POST['initiative_id']) ? intval($_POST['initiative_id']) : 
+                 (isset($_GET['initiative_id']) ? intval($_GET['initiative_id']) : null);
+
 // Initialize controller
 $dashboardController = new DashboardController($conn);
 
 // Get filtered data
-$data = $dashboardController->getDashboardData($agency_id, $period_id, $include_assigned);
+$data = $dashboardController->getDashboardData($agency_id, $period_id, $include_assigned, $initiative_id);
 
 // Return JSON response
 header('Content-Type: application/json');
