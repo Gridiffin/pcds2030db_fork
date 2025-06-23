@@ -196,14 +196,7 @@ $header_config = [
     'title' => 'Generate Reports',
     'subtitle' => 'Create and manage sector progress reports in PPTX format',
     'variant' => 'green',
-    'actions' => [
-        [
-            'text' => 'View All Reports',
-            'url' => APP_URL . '/app/views/admin/reports/view_all_reports.php',
-            'class' => 'btn-light',
-            'icon' => 'fas fa-list-alt'
-        ]
-    ]
+    'actions' => []
 ];
 
 // Include the modern page header
