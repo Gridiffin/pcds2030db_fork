@@ -33,10 +33,9 @@ function get_admin_dashboard_stats() {
     // Get current period
     $current_period = get_current_reporting_period();
     $period_id = $current_period['period_id'] ?? null;
-    
-    // Get counts
+      // Get counts (including both regular agencies and focal agencies)
     $query = "SELECT 
-                (SELECT COUNT(*) FROM users WHERE role = 'agency') AS total_agencies,
+                (SELECT COUNT(*) FROM users WHERE role IN ('agency', 'focal')) AS total_agencies,
                 (SELECT COUNT(*) FROM programs) AS total_programs";
     
     $result = $conn->query($query);
@@ -44,8 +43,7 @@ function get_admin_dashboard_stats() {
     
     $stats['total_agencies'] = $counts['total_agencies'];
     $stats['total_programs'] = $counts['total_programs'];
-    
-    // If we have an active period, get submission status
+      // If we have an active period, get submission status
     if ($period_id) {
         // Get program submission counts
         $query = "SELECT 
@@ -55,7 +53,7 @@ function get_admin_dashboard_stats() {
                      JOIN programs p ON ps.program_id = p.program_id 
                      WHERE p.owner_agency_id = u.user_id AND ps.period_id = ?) AS submitted_programs
                   FROM users u
-                  WHERE u.role = 'agency'";
+                  WHERE u.role IN ('agency', 'focal')";
         
         $stmt = $conn->prepare($query);
         $stmt->bind_param("i", $period_id);
@@ -141,9 +139,8 @@ function get_period_submission_stats($period_id) {
         'total_programs' => 0,
         'completion_percentage' => 0
     ];
-    
-    // Get total agencies
-    $query = "SELECT COUNT(*) as total FROM users WHERE role = 'agency' AND is_active = 1";
+      // Get total agencies (including both regular agencies and focal agencies)
+    $query = "SELECT COUNT(*) as total FROM users WHERE role IN ('agency', 'focal') AND is_active = 1";
     $result = $conn->query($query);
     if ($result && $row = $result->fetch_assoc()) {
         $stats['total_agencies'] = $row['total'];
@@ -459,10 +456,9 @@ function get_sector_data_for_period($period_id) {
                 COUNT(DISTINCT u.user_id) as agency_count,
                 COUNT(DISTINCT p.program_id) as program_count,
                 IFNULL(ROUND((COUNT(DISTINCT CASE WHEN ps.submission_id IS NOT NULL THEN ps.program_id END) / 
-                    NULLIF(COUNT(DISTINCT p.program_id), 0)) * 100, 0), 0) as submission_pct
-            FROM 
+                    NULLIF(COUNT(DISTINCT p.program_id), 0)) * 100, 0), 0) as submission_pct            FROM 
                 sectors s
-                LEFT JOIN users u ON s.sector_id = u.sector_id AND u.role = 'agency'
+                LEFT JOIN users u ON s.sector_id = u.sector_id AND u.role IN ('agency', 'focal')
                 LEFT JOIN programs p ON u.user_id = p.owner_agency_id
                 LEFT JOIN (
                     SELECT ps1.program_id, ps1.submission_id

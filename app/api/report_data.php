@@ -98,10 +98,10 @@ $sector = $sector_result->fetch_assoc();
 // Format the quarter/year string (e.g., "Q4 2024")
 $quarter = "Q" . $period['quarter'] . " " . $period['year'];
 
-// --- 1. Get Sector Leads (agencies with this sector) ---
+// --- 1. Get Sector Leads (agencies with this sector, including focal agencies) ---
 $sector_leads_query = "SELECT GROUP_CONCAT(agency_name SEPARATOR '; ') as sector_leads 
                       FROM users 
-                      WHERE sector_id = ? AND role = 'agency' AND is_active = 1";
+                      WHERE sector_id = ? AND role IN ('agency', 'focal') AND is_active = 1";
 $stmt = $conn->prepare($sector_leads_query);
 $stmt->bind_param("i", $sector_id);
 $stmt->execute();
