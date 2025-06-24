@@ -12,7 +12,7 @@ if (ob_get_level() > 0) {
 ob_start(); // Start a new output buffer
 
 // Include necessary files
-require_once '../../config/config.php';
+require_once '../config/config.php';
 require_once ROOT_PATH . 'app/lib/db_connect.php';
 require_once ROOT_PATH . 'app/lib/session.php';
 require_once ROOT_PATH . 'app/lib/functions.php';

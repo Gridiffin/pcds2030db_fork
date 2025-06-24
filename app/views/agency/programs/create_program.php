@@ -240,25 +240,7 @@ require_once '../../layouts/page_header.php';
                                     <div class="form-text">
                                         <i class="fas fa-info-circle me-1"></i>
                                         This will be the main identifier for your program
-                                    </div>
-                                </div>                                <!-- Program Number -->
-                                <div class="mb-4">
-                                    <label for="program_number" class="form-label">
-                                        Program Number
-                                    </label>
-                                    <input type="text" 
-                                           class="form-control" 
-                                           id="program_number" 
-                                           name="program_number" 
-                                           placeholder="e.g., 31.1, 32.5"
-                                           pattern="[0-9.]*"
-                                           title="Numbers and dots only"
-                                           value="<?php echo htmlspecialchars($_POST['program_number'] ?? ''); ?>">
-                                    <div class="form-text">
-                                        <i class="fas fa-info-circle me-1"></i>
-                                        Initiative/action step number (optional) - numbers and dots only
-                                    </div>
-                                </div>
+                                    </div>                                </div>
 
                                 <!-- Initiative Selection -->
                                 <div class="mb-4">
@@ -281,6 +263,28 @@ require_once '../../layouts/page_header.php';
                                     <div class="form-text">
                                         <i class="fas fa-lightbulb me-1"></i>
                                         Link this program to a strategic initiative for better organization and reporting
+                                    </div>
+                                </div>                                <!-- Program Number -->
+                                <div class="mb-4">
+                                    <label for="program_number" class="form-label">
+                                        Program Number
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="program_number" 
+                                           name="program_number" 
+                                           placeholder="Select initiative first"
+                                           disabled
+                                           value="<?php echo htmlspecialchars($_POST['program_number'] ?? ''); ?>">
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        <span id="number-help-text">Select an initiative to enable program numbering</span>
+                                    </div>
+                                    <div id="final-number-display" class="mt-1" style="display: none;">
+                                        <small class="text-muted">Final number will be: <span id="final-number-preview"></span></small>
+                                    </div>
+                                    <div id="number-validation" class="mt-2" style="display: none;">
+                                        <small id="validation-message"></small>
                                     </div>
                                 </div>
 
@@ -1565,13 +1569,169 @@ document.addEventListener('DOMContentLoaded', function() {    // Wizard state
         // TODO: Implement AJAX call to load existing attachments
         // This would be needed for the update program functionality
     }
-    
-    // Update the review summary function to include attachments
+      // Update the review summary function to include attachments
     const originalUpdateReviewSummary = updateReviewSummary;
     updateReviewSummary = function() {
-        originalUpdateReviewSummary();
-        updateAttachmentsReview();
+        originalUpdateReviewSummary();        updateAttachmentsReview();
     };
+    
+    // ===========================
+    // MANUAL HIERARCHICAL NUMBERING
+    // ===========================
+      const initiativeSelect = document.getElementById('initiative_id');
+    const programNumberField = document.getElementById('program_number');
+    const finalNumberDisplay = document.getElementById('final-number-display');
+    const finalNumberPreview = document.getElementById('final-number-preview');
+    const numberHelpText = document.getElementById('number-help-text');
+    const numberValidation = document.getElementById('number-validation');
+    const validationMessage = document.getElementById('validation-message');
+    
+    // Initialize manual numbering system
+    if (initiativeSelect && programNumberField) {
+        setupManualNumbering();
+    }
+      function setupManualNumbering() {
+        // Handle initiative selection change
+        initiativeSelect.addEventListener('change', function() {
+            updateInitiativeDisplay();
+        });
+        
+        // Handle program number input
+        programNumberField.addEventListener('input', function() {
+            updateFinalNumberPreview();
+            validateProgramNumber();
+        });
+        
+        // Handle program number blur for validation
+        programNumberField.addEventListener('blur', function() {
+            validateProgramNumber();
+        });
+        
+        // Initialize on page load
+        updateInitiativeDisplay();
+    }    function updateInitiativeDisplay() {
+        const selectedInitiative = initiativeSelect.value;
+        
+        if (!selectedInitiative) {
+            // No initiative selected - disable everything
+            programNumberField.disabled = true;
+            programNumberField.value = '';
+            programNumberField.placeholder = 'Select initiative first';
+            finalNumberDisplay.style.display = 'none';
+            numberHelpText.textContent = 'Select an initiative to enable program numbering';
+            hideValidation();
+            return;
+        }
+        
+        // Get initiative data from the selected option
+        const selectedOption = initiativeSelect.options[initiativeSelect.selectedIndex];
+        const initiativeText = selectedOption.textContent.trim();
+        const initiativeNumber = extractInitiativeNumber(initiativeText);
+        
+        if (initiativeNumber) {
+            // Initiative has a number - enable program numbering
+            programNumberField.disabled = false;
+            programNumberField.placeholder = `Enter program number (e.g., ${initiativeNumber}.1)`;
+            finalNumberDisplay.style.display = 'block';
+            numberHelpText.innerHTML = `<strong>Initiative ${initiativeNumber} selected</strong> - Enter your program number`;
+            
+            // Update preview if field already has value
+            updateFinalNumberPreview();
+        } else {
+            // Initiative selected but has no number assigned
+            programNumberField.disabled = true;
+            programNumberField.value = '';
+            programNumberField.placeholder = 'Initiative number needed';
+            finalNumberDisplay.style.display = 'none';
+            
+            // Extract initiative name for better messaging (remove any parenthetical content)
+            const initiativeName = initiativeText.replace(/\s*\([^)]*\)\s*$/, '').trim();
+            numberHelpText.innerHTML = `<span class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i>Initiative "${initiativeName}" needs a number assigned. Please contact an administrator to assign a number (e.g., 31) to this initiative first.</span>`;
+            hideValidation();
+        }
+    }
+      function extractInitiativeNumber(initiativeText) {
+        // Extract number from text like "Initiative Name (30)" or "Initiative Name"
+        // Look for parentheses at the end containing what should be a number
+        const match = initiativeText.match(/\(([^)]+)\)$/);
+        if (match) {
+            const extracted = match[1].trim();
+            // Verify it's actually a number or alphanumeric code
+            if (extracted && extracted.length > 0) {
+                return extracted;
+            }
+        }
+        return null;
+    }
+      function updateFinalNumberPreview() {
+        const programNumber = programNumberField.value.trim();
+        
+        if (programNumber) {
+            finalNumberPreview.textContent = programNumber;
+            finalNumberDisplay.style.display = 'block';
+        } else {
+            finalNumberDisplay.style.display = 'none';
+        }
+    }
+    
+    function updateProgramNumber() {
+        // This function is kept for compatibility but now just updates the preview
+        updateFinalNumberPreview();
+    }
+      function validateProgramNumber() {
+        const programNumber = programNumberField.value.trim();
+        const initiativeId = initiativeSelect.value;
+        
+        if (!programNumber || !initiativeId) {
+            hideValidation();
+            return;
+        }
+        
+        // Show loading
+        showValidation('Checking availability...', 'text-info');
+        
+        // Validate via AJAX
+        fetch('<?php echo APP_URL; ?>/app/ajax/program_numbering.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                action: 'validate_number',
+                program_number: programNumber,
+                initiative_id: initiativeId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.valid) {
+                showValidation('✓ Number is available', 'text-success');
+            } else {
+                showValidation('✗ ' + (data.message || 'Number already in use'), 'text-danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error validating program number:', error);
+            showValidation('Error validating number', 'text-warning');
+        });
+    }
+    
+    function showValidation(message, className) {
+        validationMessage.textContent = message;
+        validationMessage.className = 'small ' + className;
+        numberValidation.style.display = 'block';
+    }
+    
+    function hideValidation() {
+        numberValidation.style.display = 'none';
+    }
+    
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeHierarchicalNumbering);
+    } else {
+        initializeHierarchicalNumbering();
+    }
 });
 </script>
 

@@ -12,6 +12,7 @@ require_once ROOT_PATH . 'app/lib/functions.php';
 require_once ROOT_PATH . 'app/lib/admins/index.php';
 require_once ROOT_PATH . 'app/lib/initiative_functions.php';
 require_once ROOT_PATH . 'app/lib/audit_log.php';
+require_once ROOT_PATH . 'app/lib/numbering_helpers.php';
 
 // Verify user is admin
 if (!is_admin()) {
@@ -29,33 +30,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $success_count = 0;
         $error_count = 0;
         $updated_programs = [];
-        
-        foreach ($program_ids as $program_id) {
+          foreach ($program_ids as $program_id) {
             $program_id = intval($program_id);
             
-            // Update the program's initiative
+            // Use hierarchical numbering system
             if ($initiative_id === 'remove') {
-                $sql = "UPDATE programs SET initiative_id = NULL WHERE program_id = ?";
-                $params = [$program_id];
-            } else {
-                $sql = "UPDATE programs SET initiative_id = ? WHERE program_id = ?";
-                $params = [$initiative_id, $program_id];
-            }
-            
-            $stmt = $conn->prepare($sql);
-            if ($stmt && $stmt->bind_param(str_repeat('i', count($params)), ...$params) && $stmt->execute()) {
-                if ($stmt->affected_rows > 0) {
+                // Remove from initiative and clear program number
+                $sql = "UPDATE programs SET initiative_id = NULL, program_number = NULL WHERE program_id = ?";
+                $stmt = $conn->prepare($sql);
+                if ($stmt && $stmt->bind_param('i', $program_id) && $stmt->execute()) {
                     $success_count++;
                     $updated_programs[] = $program_id;
                 } else {
                     $error_count++;
                 }
+                if ($stmt) $stmt->close();
             } else {
-                $error_count++;
-            }
-            
-            if ($stmt) {
-                $stmt->close();
+                // Assign to initiative (no auto-numbering - users must set numbers manually)
+                $sql = "UPDATE programs SET initiative_id = ? WHERE program_id = ?";
+                $stmt = $conn->prepare($sql);
+                if ($stmt && $stmt->bind_param('ii', $initiative_id, $program_id) && $stmt->execute()) {
+                    $success_count++;
+                    $updated_programs[] = $program_id;
+                } else {
+                    $error_count++;
+                }
+                if ($stmt) $stmt->close();
             }
         }
         

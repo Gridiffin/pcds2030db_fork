@@ -5,6 +5,9 @@
  * Helper functions for managing initiatives in the admin interface
  */
 
+// Include numbering helpers for hierarchical program numbering
+require_once __DIR__ . '/numbering_helpers.php';
+
 /**
  * Get all initiatives with optional filtering
  */
@@ -187,11 +190,20 @@ function update_initiative($initiative_id, $data) {
     $dup_stmt->bind_param($dup_types, ...$dup_params);
     $dup_stmt->execute();
     $dup_result = $dup_stmt->get_result();
-    
-    if ($dup_result->num_rows > 0) {
+      if ($dup_result->num_rows > 0) {
         return ['error' => 'Another initiative with this name or number already exists'];
     }
-      // Update initiative
+    
+    // Get current initiative number to check if it's changing
+    $current_query = "SELECT initiative_number FROM initiatives WHERE initiative_id = ?";
+    $current_stmt = $conn->prepare($current_query);
+    $current_stmt->bind_param('i', $initiative_id);
+    $current_stmt->execute();
+    $current_result = $current_stmt->get_result();
+    $current_initiative = $current_result->fetch_assoc();
+    $current_number = $current_initiative['initiative_number'];
+    
+    // Update initiative
     $sql = "UPDATE initiatives            SET initiative_name = ?, initiative_number = ?, initiative_description = ?, 
                 start_date = ?, end_date = ?, is_active = ?, 
                 updated_at = CURRENT_TIMESTAMP 
@@ -217,6 +229,26 @@ function update_initiative($initiative_id, $data) {
     );
     
     if ($stmt->execute()) {
+        // If initiative number changed and there are programs, update their numbers
+        if ($current_number !== $initiative_number && $initiative_number) {
+            $update_result = update_initiative_program_numbers($initiative_id, $initiative_number);
+            if ($update_result['success']) {
+                return [
+                    'success' => true,
+                    'cascade_update' => true,
+                    'programs_updated' => $update_result['updated_count'],
+                    'message' => $update_result['message']
+                ];
+            } else {
+                // Initiative was updated but program numbers failed
+                return [
+                    'success' => true,
+                    'cascade_error' => true,
+                    'message' => 'Initiative updated but failed to update program numbers: ' . $update_result['error']
+                ];
+            }
+        }
+        
         return ['success' => true];
     } else {
         return ['error' => 'Failed to update initiative: ' . $conn->error];
