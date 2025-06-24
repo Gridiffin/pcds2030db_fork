@@ -761,9 +761,11 @@ require_once dirname(__DIR__, 2) . '/layouts/page_header.php';
                                                 </li>
                                                 <?php endforeach; ?>
                                             </ul>
-                                        </div>                                    <?php endif; ?>
-                                <?php endif; ?>                            </div>
-                              <div class="mb-3">
+                                        </div>                                    
+                                        <?php endif; ?>
+                                <?php endif; ?>                            
+                            </div>
+                                <div class="mb-3">
                                 <label for="program_number" class="form-label">Program Number</label>
                                 <input type="text" class="form-control" id="program_number" name="program_number" 
                                         value="<?php echo htmlspecialchars($program['program_number'] ?? ''); ?>"
@@ -868,7 +870,7 @@ require_once dirname(__DIR__, 2) . '/layouts/page_header.php';
                             </div>
                         </div>
                     </div>
-                      <!-- 2. Program Targets Card -->
+                        <!-- 2. Program Targets Card -->
                     <div class="card shadow-sm mb-4">
                         <div class="card-header">
                             <h5 class="card-title m-0">Program Targets</h5>
@@ -901,7 +903,7 @@ require_once dirname(__DIR__, 2) . '/layouts/page_header.php';
                                                     if (is_array($item['value'])):
                                                         foreach($item['value'] as $target_idx => $target): 
                                                             echo '<strong>Target ' . ($target_idx + 1) . ':</strong> ' . 
-                                                                 htmlspecialchars($target['target_text'] ?? $target['text'] ?? '') . '<br>';
+                                                            htmlspecialchars($target['target_text'] ?? $target['text'] ?? '') . '<br>';
                                                         endforeach;
                                                     else:
                                                         echo htmlspecialchars($item['value']);
