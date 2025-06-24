@@ -72,7 +72,7 @@ require_once '../../layouts/header.php';
 $header_config = [
     'title' => 'Edit Initiative',
     'subtitle' => 'Modify initiative details and settings',
-    'variant' => 'purple',
+    'variant' => 'green',
     'actions' => [
         [
             'text' => 'Back to Initiatives',
@@ -100,9 +100,9 @@ if (isset($_SESSION['message']) && !empty($_SESSION['message'])) {
 }
 ?>
 
-<main class="flex-fill">
-    <?php if (!empty($message)): ?>
-        <div class="alert alert-<?php echo $message_type; ?> alert-dismissible fade show mb-4" role="alert">
+            <main class="flex-fill">
+                <?php if (!empty($message)): ?>
+                    <div class="alert alert-<?php echo $message_type; ?> alert-dismissible fade show mb-4" role="alert">
             <div class="d-flex align-items-center">
                 <i class="fas fa-<?php echo $message_type === 'success' ? 'check-circle' : ($message_type === 'danger' ? 'exclamation-circle' : 'info-circle'); ?> me-2"></i>
                 <div><?php echo htmlspecialchars($message); ?></div>
@@ -286,13 +286,13 @@ if (isset($_SESSION['message']) && !empty($_SESSION['message'])) {
                                 <?php if (count($associated_programs) > 5): ?>
                                     <div class="mt-2 text-center">
                                         <small class="text-muted">Showing first 5 programs</small>
-                                    </div>                                <?php endif; ?>
-                            <?php endif; ?>
+                                    </div>                                <?php endif; ?>                            <?php endif; ?>
                         </div>
                     </div>
-                </div>            </div>
-        </div>    </div>
-</main>
+                </div>
+                </div>
+            </div>
+            </main>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

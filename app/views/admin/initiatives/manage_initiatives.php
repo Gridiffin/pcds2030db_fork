@@ -25,7 +25,7 @@ $pageTitle = 'Manage Initiatives';
 // Handle AJAX table request
 if (isset($_GET['ajax_table']) && $_GET['ajax_table'] == '1') {
     $search = isset($_GET['search']) ? $_GET['search'] : '';
-    $is_active = isset($_GET['is_active']) ? intval($_GET['is_active']) : null;
+    $is_active = isset($_GET['is_active']) && $_GET['is_active'] !== '' ? intval($_GET['is_active']) : null;
     
     $filters = [];
     if (!empty($search)) {
@@ -37,8 +37,7 @@ if (isset($_GET['ajax_table']) && $_GET['ajax_table'] == '1') {
     
     $initiatives = get_all_initiatives($filters);
     
-    ?>
-    <div class="card shadow-sm">
+    ?>    <div class="card shadow-sm h-100 d-flex flex-column">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="card-title m-0">
                 <i class="fas fa-lightbulb me-2"></i>Initiatives
@@ -47,10 +46,8 @@ if (isset($_GET['ajax_table']) && $_GET['ajax_table'] == '1') {
             <a href="create.php" class="btn btn-primary btn-sm">
                 <i class="fas fa-plus me-1"></i>Add Initiative
             </a>
-        </div>
-        <div class="card-body p-0">
-            <?php if (empty($initiatives)): ?>
-                <div class="text-center py-5">
+        </div>        <div class="card-body p-0 flex-fill d-flex flex-column"><?php if (empty($initiatives)): ?>
+                <div class="text-center py-5 flex-fill d-flex flex-column justify-content-center" style="min-height: 60vh;">
                     <i class="fas fa-lightbulb fa-3x text-muted mb-3"></i>
                     <h5 class="text-muted">No initiatives found</h5>
                     <p class="text-muted">Get started by creating your first initiative.</p>
@@ -134,62 +131,48 @@ require_once '../../layouts/header.php';
 $header_config = [
     'title' => 'Manage Initiatives',
     'subtitle' => 'Create and manage strategic initiatives',
-    'variant' => 'purple',
-    'actions' => [
-        [
-            'text' => 'Add Initiative',
-            'url' => APP_URL . '/app/views/admin/initiatives/create.php',
-            'class' => 'btn-primary',
-            'icon' => 'fas fa-plus'
-        ]
-    ]
+    'variant' => 'green'
 ];
 
 // Include the modern page header
 require_once '../../layouts/page_header.php';
-?>
-
-<main class="flex-fill">
-
-            <!-- Filters -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-body">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label for="search" class="form-label">Search Initiatives</label>
-                            <input type="text" class="form-control" id="search" placeholder="Search by name, number, or description...">
-                        </div>
-                        <div class="col-md-3">
-                            <label for="statusFilter" class="form-label">Status</label>
-                            <select class="form-select" id="statusFilter">
-                                <option value="">All Status</option>
-                                <option value="1">Active</option>
-                                <option value="0">Inactive</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">&nbsp;</label>
-                            <div class="d-grid">
-                                <button type="button" class="btn btn-outline-secondary" id="clearFilters">
-                                    <i class="fas fa-times me-1"></i>Clear Filters
-                                </button>
+?>            <main class="flex-fill d-flex flex-column" style="min-height: calc(100vh - 200px);">
+                <!-- Filters -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="search" class="form-label">Search Initiatives</label>
+                                <input type="text" class="form-control" id="search" placeholder="Search by name, number, or description...">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="statusFilter" class="form-label">Status</label>
+                                <select class="form-select" id="statusFilter">
+                                    <option value="">All Status</option>
+                                    <option value="1">Active</option>
+                                    <option value="0">Inactive</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">&nbsp;</label>
+                                <div class="d-grid">
+                                    <button type="button" class="btn btn-outline-secondary" id="clearFilters">
+                                        <i class="fas fa-times me-1"></i>Clear Filters
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <!-- Initiatives Table Container -->
-            <div id="initiativesTableContainer">
-                <!-- Content loaded via AJAX -->
-                <div class="text-center py-5">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
+                </div>                <!-- Initiatives Table Container -->
+                <div id="initiativesTableContainer" class="flex-fill" style="min-height: 400px;">
+                    <!-- Content loaded via AJAX -->
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
                     </div>
-                </div>            </div>
-        </div>
-    </div>
-</main>
+                </div>
+            </main>
 
 <!-- Success/Error Messages -->
 <?php if (isset($_SESSION['message'])): ?>

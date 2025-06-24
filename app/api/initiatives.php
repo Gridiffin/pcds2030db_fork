@@ -136,20 +136,18 @@ function handlePost($input) {
         }
     }
     
-    // Prepare data
-    $initiative_name = trim($input['initiative_name']);
+    // Prepare data    $initiative_name = trim($input['initiative_name']);
     $initiative_description = isset($input['initiative_description']) ? trim($input['initiative_description']) : null;
-    $pillar_id = isset($input['pillar_id']) ? intval($input['pillar_id']) : null;
     $start_date = isset($input['start_date']) ? $input['start_date'] : null;
     $end_date = isset($input['end_date']) ? $input['end_date'] : null;
     $created_by = $_SESSION['user_id'];
     
     // Insert new initiative
-    $sql = "INSERT INTO initiatives (initiative_name, initiative_description, pillar_id, start_date, end_date, created_by) 
-            VALUES (?, ?, ?, ?, ?, ?)";
+    $sql = "INSERT INTO initiatives (initiative_name, initiative_description, start_date, end_date, created_by) 
+            VALUES (?, ?, ?, ?, ?)";
     
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("sssssi", $initiative_name, $initiative_description, $pillar_id, $start_date, $end_date, $created_by);
+    $stmt->bind_param("ssssi", $initiative_name, $initiative_description, $start_date, $end_date, $created_by);
     
     if ($stmt->execute()) {
         $initiative_id = $conn->insert_id;
@@ -208,17 +206,10 @@ function handlePut($input) {
         $values[] = trim($input['initiative_name']);
         $types .= "s";
     }
-    
-    if (isset($input['initiative_description'])) {
+      if (isset($input['initiative_description'])) {
         $update_fields[] = "initiative_description = ?";
         $values[] = trim($input['initiative_description']);
         $types .= "s";
-    }
-    
-    if (isset($input['pillar_id'])) {
-        $update_fields[] = "pillar_id = ?";
-        $values[] = $input['pillar_id'] ? intval($input['pillar_id']) : null;
-        $types .= "i";
     }
     
     if (isset($input['start_date'])) {
