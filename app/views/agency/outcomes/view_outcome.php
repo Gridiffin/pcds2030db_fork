@@ -219,7 +219,7 @@ require_once '../../layouts/page_header.php';
                 <div class="card-body">
                     <!-- Chart options -->
                     <div class="row mb-3">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group">
                                 <label for="chartType" class="form-label">Chart Type</label>
                                 <select class="form-select" id="chartType">
@@ -229,8 +229,9 @@ require_once '../../layouts/page_header.php';
                                 </select>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group">                                <label for="metricToChart" class="form-label">Outcomes to Display</label>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="metricToChart" class="form-label">Outcomes to Display</label>
                                 <select class="form-select" id="metricToChart" multiple>
                                     <?php foreach ($metric_names as $name): ?>
                                         <option value="<?= htmlspecialchars($name) ?>" selected>
@@ -239,6 +240,14 @@ require_once '../../layouts/page_header.php';
                                     <?php endforeach; ?>
                                 </select>
                                 <small class="text-muted">Hold Ctrl/Cmd to select multiple outcomes</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-center">
+                            <div class="form-check mt-4">
+                                <input class="form-check-input" type="checkbox" id="cumulativeToggle">
+                                <label class="form-check-label" for="cumulativeToggle">
+                                    Cumulative Display
+                                </label>
                             </div>
                         </div>
                     </div>
