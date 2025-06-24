@@ -24,8 +24,8 @@ $is_initiatives_active = $is_initiative_page;
 // Check if current page is report-related
 $is_report_page = $current_page == 'generate_reports.php';
 
-// Check if current page is settings related
-$is_settings_page = in_array($current_page, ['reporting_periods.php', 'audit_log.php', 'manage_periods.php', 'system_settings.php']);
+// Check if current page is settings related (including users)
+$is_settings_page = in_array($current_page, ['reporting_periods.php', 'audit_log.php', 'manage_periods.php', 'system_settings.php', 'manage_users.php', 'add_user.php']);
 ?>
 
 <!-- Main Navigation -->
@@ -66,8 +66,7 @@ $is_settings_page = in_array($current_page, ['reporting_periods.php', 'audit_log
                         </li>
                     </ul>
                 </li>
-                
-                <!-- Initiatives Dropdown -->
+                  <!-- Initiatives Dropdown -->
                 <li class="nav-item dropdown">
                     <button class="nav-link dropdown-toggle btn <?php if ($is_initiatives_active) echo 'active'; ?>" data-bs-toggle="dropdown" aria-expanded="false" type="button">
                         <i class="fas fa-lightbulb me-1"></i> Initiatives <i class="fas fa-caret-down nav-dropdown-icon"></i>
@@ -86,24 +85,7 @@ $is_settings_page = in_array($current_page, ['reporting_periods.php', 'audit_log
                     </ul>
                 </li>
                 
-                <!-- Users Dropdown -->
-                <li class="nav-item dropdown">
-                    <button class="nav-link dropdown-toggle btn <?php if ($is_users_active) echo 'active'; ?>" data-bs-toggle="dropdown" aria-expanded="false" type="button">
-                        <i class="fas fa-users me-1"></i> Users <i class="fas fa-caret-down nav-dropdown-icon"></i>
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li>
-                            <a class="dropdown-item <?php if ($current_page == 'manage_users.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/admin/users/manage_users.php">
-                                <i class="fas fa-user-cog me-1"></i> Manage Users
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item <?php if ($current_page == 'add_user.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/admin/users/add_user.php">
-                                <i class="fas fa-user-plus me-1"></i> Add User
-                            </a>
-                        </li>
-                    </ul>
-                </li>                <!-- Outcomes Dropdown -->
+                <!-- Outcomes Dropdown -->
                 <li class="nav-item dropdown">
                     <button class="nav-link dropdown-toggle btn <?php if ($is_outcomes_active) echo 'active'; ?>" data-bs-toggle="dropdown" aria-expanded="false" type="button">
                         <i class="fas fa-chart-line me-1"></i> Outcomes <i class="fas fa-caret-down nav-dropdown-icon"></i>
@@ -117,27 +99,25 @@ $is_settings_page = in_array($current_page, ['reporting_periods.php', 'audit_log
                         <li>
                             <a class="dropdown-item <?php if ($current_page == 'create_outcome_details.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/admin/outcomes/create_outcome_details.php">
                                 <i class="fas fa-chart-line me-1"></i> Create Outcome Details
-                            </a>
-                        </li>
+                            </a>                        </li>
                     </ul>
-                </li>
-                
-                <!-- Reports -->
-                <li class="nav-item">
-                    <a class="nav-link <?php if ($is_report_page) echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/admin/reports/generate_reports.php">
-                        <i class="fas fa-file-alt me-1"></i> Reports
-                    </a>
                 </li>
             </ul>
 
             <div class="d-flex align-items-center ms-auto">
+                <!-- Reports (Icon Only) -->
+                <div class="nav-item me-3">
+                    <a class="nav-link p-0 <?php if ($is_report_page) echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/admin/reports/generate_reports.php" title="Reports">
+                        <i class="fas fa-file-alt"></i>
+                    </a>
+                </div>
+                
                 <!-- Settings Dropdown -->
                 <div class="nav-item dropdown me-3">
                     <button class="nav-link p-0 dropdown-toggle btn text-dark <?php if ($is_settings_page) echo 'active'; ?>" data-bs-toggle="dropdown" aria-expanded="false" title="Settings" type="button">
                         <i class="fas fa-cog"></i>
                         <i class="fas fa-caret-down nav-dropdown-icon small"></i>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end">
+                    </button>                    <ul class="dropdown-menu dropdown-menu-end">
                         <li>
                             <a class="dropdown-item <?php if ($current_page == 'system_settings.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/admin/settings/system_settings.php">
                                 <i class="fas fa-sliders-h me-1"></i> System Settings
@@ -151,6 +131,17 @@ $is_settings_page = in_array($current_page, ['reporting_periods.php', 'audit_log
                         <li>
                             <a class="dropdown-item <?php if ($current_page == 'audit_log.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/admin/audit/audit_log.php">
                                 <i class="fas fa-clipboard-list me-1"></i> Audit Log
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item <?php if ($current_page == 'manage_users.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/admin/users/manage_users.php">
+                                <i class="fas fa-users me-1"></i> Manage Users
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item <?php if ($current_page == 'add_user.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/admin/users/add_user.php">
+                                <i class="fas fa-user-plus me-1"></i> Add User
                             </a>
                         </li>
                     </ul>
@@ -182,6 +173,34 @@ $is_settings_page = in_array($current_page, ['reporting_periods.php', 'audit_log
 }
 .navbar-nav .dropdown-menu { 
     margin-top: 0;
+}
+
+/* Icon-only Reports button styling */
+.nav-item .nav-link[title="Reports"] {
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    transition: background-color 0.15s ease-in-out;
+}
+
+.nav-item .nav-link[title="Reports"]:hover {
+    background-color: rgba(0,0,0,0.05);
+}
+
+.nav-item .nav-link[title="Reports"].active {
+    background-color: var(--bs-primary);
+    color: white;
+}
+
+/* Settings dropdown improvements */
+.dropdown-menu .dropdown-divider {
+    margin: 0.5rem 0;
+}
+
+/* Responsive behavior for Reports text */
+@media (max-width: 991.98px) {
+    .nav-item .nav-link[title="Reports"] {
+        padding: 0.5rem 1rem;
+    }
 }
 </style>
 
