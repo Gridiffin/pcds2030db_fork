@@ -196,7 +196,8 @@ if (!empty($program_orders) && !empty($selected_program_ids)) {
 }
 
 $programs_query = "SELECT p.program_id, p.program_name, 
-                    ps.content_json
+                    ps.content_json,
+                    i.initiative_id, i.initiative_name
                   FROM programs p
                   LEFT JOIN (
                       SELECT ps1.*
@@ -211,6 +212,7 @@ $programs_query = "SELECT p.program_id, p.program_name,
                            AND ps1.submission_id = ps2.latest_submission_id
                       WHERE ps1.period_id = ? AND ps1.is_draft = 0
                   ) ps ON p.program_id = ps.program_id
+                  LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
                   WHERE $program_filter_condition
                   ORDER BY $order_by_clause";
 
@@ -369,14 +371,15 @@ while ($program = $programs_result->fetch_assoc()) {    // Extract target from c
         'status_total_chars' => array_sum($status_chars),
         'status_wrapped_lines' => $status_wrapped_lines, // New metric for more accurate height calculation
         'name_length' => strlen($program['program_name'])
-    ];
-      $programs[] = [
+    ];      $programs[] = [
         'name' => $program['program_name'],
         'target' => $target,
         'rating' => $status_color,
         'rating_value' => $rating, // Include the actual rating value for debugging
         'status' => $status_text,
-        'text_metrics' => $text_metrics
+        'text_metrics' => $text_metrics,
+        'initiative_id' => $program['initiative_id'],
+        'initiative_name' => $program['initiative_name'] ?? 'No Initiative'
     ];
     error_log('Program name in API response: ' . $program['program_name']);
 }

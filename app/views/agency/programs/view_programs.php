@@ -17,6 +17,7 @@ require_once PROJECT_ROOT_PATH . 'lib/session.php';
 require_once PROJECT_ROOT_PATH . 'lib/functions.php';
 require_once PROJECT_ROOT_PATH . 'lib/agencies/index.php';
 require_once PROJECT_ROOT_PATH . 'lib/rating_helpers.php';
+require_once PROJECT_ROOT_PATH . 'lib/initiative_functions.php';
 
 // Verify user is an agency
 if (!is_agency()) {
@@ -42,6 +43,9 @@ $additionalScripts = [
     APP_URL . '/assets/js/agency/view_programs.js',
     APP_URL . '/assets/js/utilities/table_sorting.js'
 ];
+
+// Get active initiatives for filtering
+$active_initiatives = get_initiatives_for_select(true);
 
 // Get programs for FOCAL user (all agencies in their group) or just their own if not FOCAL
 if (isset($_SESSION['role']) && strtolower($_SESSION['role']) === 'focal') {
@@ -82,12 +86,15 @@ if (isset($_SESSION['role']) && strtolower($_SESSION['role']) === 'focal') {
         global $conn;
         // Fixed query to properly get the latest submission for each program
         $query = "SELECT p.*, 
+                         i.initiative_name,
+                         i.initiative_id,
                          COALESCE(latest_sub.is_draft, 1) as is_draft,
                          latest_sub.period_id,
                          COALESCE(latest_sub.submission_date, p.created_at) as updated_at,
                          latest_sub.submission_id as latest_submission_id,
                          COALESCE(JSON_UNQUOTE(JSON_EXTRACT(latest_sub.content_json, '$.rating')), 'not-started') as rating
                   FROM programs p 
+                  LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
                   LEFT JOIN (
                       SELECT ps1.*
                       FROM program_submissions ps1
@@ -175,17 +182,16 @@ require_once '../../layouts/page_header.php';
         <h5 class="card-title m-0">Draft Programs</h5>
     </div>
     
-    <!-- Draft Programs Filters -->
-    <div class="card-body pb-0">
+    <!-- Draft Programs Filters -->    <div class="card-body pb-0">
         <div class="row g-3">
-            <div class="col-md-5 col-sm-12">
+            <div class="col-md-4 col-sm-12">
                 <label for="draftProgramSearch" class="form-label">Search</label>
                 <div class="input-group">
                     <span class="input-group-text"><i class="fas fa-search"></i></span>
                     <input type="text" class="form-control" id="draftProgramSearch" placeholder="Search by program name or number">
                 </div>
             </div>
-            <div class="col-md-3 col-sm-6">
+            <div class="col-md-2 col-sm-6">
                 <label for="draftRatingFilter" class="form-label">Rating</label>
                 <select class="form-select" id="draftRatingFilter">
                     <option value="">All Ratings</option>
@@ -195,12 +201,24 @@ require_once '../../layouts/page_header.php';
                     <option value="not-started">Not Started</option>
                 </select>
             </div>
-            <div class="col-md-3 col-sm-6">
+            <div class="col-md-2 col-sm-6">
                 <label for="draftTypeFilter" class="form-label">Program Type</label>
                 <select class="form-select" id="draftTypeFilter">
                     <option value="">All Types</option>
                     <option value="assigned">Assigned</option>
                     <option value="created">Agency-Created Programs</option>
+                </select>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <label for="draftInitiativeFilter" class="form-label">Initiative</label>
+                <select class="form-select" id="draftInitiativeFilter">
+                    <option value="">All Initiatives</option>
+                    <option value="no-initiative">Not Linked to Initiative</option>
+                    <?php foreach ($active_initiatives as $initiative): ?>
+                        <option value="<?php echo $initiative['initiative_id']; ?>">
+                            <?php echo htmlspecialchars($initiative['initiative_name']); ?>
+                        </option>
+                    <?php endforeach; ?>
                 </select>
             </div>
             <div class="col-md-1 col-sm-12 d-flex align-items-end">
@@ -213,20 +231,19 @@ require_once '../../layouts/page_header.php';
     </div>
     
     <div class="card-body pt-2 p-0">
-        <div class="table-responsive">
-            <table class="table table-hover table-custom mb-0" id="draftProgramsTable">
+        <div class="table-responsive">            <table class="table table-hover table-custom mb-0" id="draftProgramsTable">
                 <thead class="table-light">
                     <tr>
                         <th class="sortable" data-sort="name">Program Name <i class="fas fa-sort ms-1"></i></th>
+                        <th class="sortable" data-sort="initiative">Initiative <i class="fas fa-sort ms-1"></i></th>
                         <th class="sortable" data-sort="rating">Rating <i class="fas fa-sort ms-1"></i></th>
                         <th class="sortable" data-sort="date">Last Updated <i class="fas fa-sort ms-1"></i></th>
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <?php if (empty($draft_programs)): ?>
+                <tbody>                    <?php if (empty($draft_programs)): ?>
                         <tr>
-                            <td colspan="4" class="text-center py-4">No draft programs found.</td>
+                            <td colspan="5" class="text-center py-4">No draft programs found.</td>
                         </tr>
                     <?php else: ?>
                         <?php                        foreach ($draft_programs as $program): 
@@ -269,6 +286,18 @@ require_once '../../layouts/page_header.php';
                                         <i class="fas fa-<?php echo $is_assigned ? 'tasks' : 'folder-plus'; ?> me-1"></i>
                                         <?php echo $is_assigned ? 'Assigned' : 'Agency-Created'; ?>
                                     </div>
+                                </td>
+                                <td>
+                                    <?php if (!empty($program['initiative_name'])): ?>
+                                        <span class="badge bg-primary" title="Linked to Initiative">
+                                            <i class="fas fa-link me-1"></i>
+                                            <?php echo htmlspecialchars($program['initiative_name']); ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="text-muted">
+                                            <i class="fas fa-minus"></i> Not linked
+                                        </span>
+                                    <?php endif; ?>
                                 </td>
                                 <td>
                                     <span class="badge bg-<?php echo $rating_map[$current_rating]['class']; ?>">
@@ -324,17 +353,16 @@ require_once '../../layouts/page_header.php';
         </h5>
     </div>
     
-    <!-- Finalized Programs Filters -->
-    <div class="card-body pb-0">
+    <!-- Finalized Programs Filters -->    <div class="card-body pb-0">
         <div class="row g-3">
-            <div class="col-md-5 col-sm-12">
+            <div class="col-md-4 col-sm-12">
                 <label for="finalizedProgramSearch" class="form-label">Search</label>
                 <div class="input-group">
                     <span class="input-group-text"><i class="fas fa-search"></i></span>
                     <input type="text" class="form-control" id="finalizedProgramSearch" placeholder="Search by program name or number">
                 </div>
             </div>
-            <div class="col-md-3 col-sm-6">
+            <div class="col-md-2 col-sm-6">
                 <label for="finalizedRatingFilter" class="form-label">Rating</label>                <select class="form-select" id="finalizedRatingFilter">
                     <option value="">All Ratings</option>
                     <option value="target-achieved">Monthly Target Achieved</option>
@@ -343,12 +371,24 @@ require_once '../../layouts/page_header.php';
                     <option value="not-started">Not Started</option>
                 </select>
             </div>
-            <div class="col-md-3 col-sm-6">
+            <div class="col-md-2 col-sm-6">
                 <label for="finalizedTypeFilter" class="form-label">Program Type</label>
                 <select class="form-select" id="finalizedTypeFilter">
                     <option value="">All Types</option>
                     <option value="assigned">Assigned</option>
                     <option value="created">Agency-Created Programs</option>
+                </select>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <label for="finalizedInitiativeFilter" class="form-label">Initiative</label>
+                <select class="form-select" id="finalizedInitiativeFilter">
+                    <option value="">All Initiatives</option>
+                    <option value="no-initiative">Not Linked to Initiative</option>
+                    <?php foreach ($active_initiatives as $initiative): ?>
+                        <option value="<?php echo $initiative['initiative_id']; ?>">
+                            <?php echo htmlspecialchars($initiative['initiative_name']); ?>
+                        </option>
+                    <?php endforeach; ?>
                 </select>
             </div>
             <div class="col-md-1 col-sm-12 d-flex align-items-end">
@@ -361,20 +401,19 @@ require_once '../../layouts/page_header.php';
     </div>
     
     <div class="card-body pt-2 p-0">
-        <div class="table-responsive">
-            <table class="table table-hover table-custom mb-0" id="finalizedProgramsTable">
+        <div class="table-responsive">            <table class="table table-hover table-custom mb-0" id="finalizedProgramsTable">
                 <thead class="table-light">
                     <tr>
                         <th class="sortable" data-sort="name">Program Name <i class="fas fa-sort ms-1"></i></th>
+                        <th class="sortable" data-sort="initiative">Initiative <i class="fas fa-sort ms-1"></i></th>
                         <th class="sortable" data-sort="rating">Rating <i class="fas fa-sort ms-1"></i></th>
                         <th class="sortable" data-sort="date">Last Updated <i class="fas fa-sort ms-1"></i></th>
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if (empty($finalized_programs)): ?>
-                        <tr>
-                            <td colspan="4" class="text-center py-4">No finalized programs found.</td>
+                    <?php if (empty($finalized_programs)): ?>                        <tr>
+                            <td colspan="5" class="text-center py-4">No finalized programs found.</td>
                         </tr>
                     <?php else: ?>
                         <?php                        foreach ($finalized_programs as $program): 
@@ -411,6 +450,18 @@ require_once '../../layouts/page_header.php';
                                         <i class="fas fa-<?php echo $is_assigned ? 'tasks' : 'folder-plus'; ?> me-1"></i>
                                         <?php echo $is_assigned ? 'Assigned' : 'Agency-Created'; ?>
                                     </div>
+                                </td>
+                                <td>
+                                    <?php if (!empty($program['initiative_name'])): ?>
+                                        <span class="badge bg-primary" title="Linked to Initiative">
+                                            <i class="fas fa-link me-1"></i>
+                                            <?php echo htmlspecialchars($program['initiative_name']); ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="text-muted">
+                                            <i class="fas fa-minus"></i> Not linked
+                                        </span>
+                                    <?php endif; ?>
                                 </td>
                                 <td>
                                     <span class="badge bg-<?php echo $rating_map[$current_rating]['class']; ?>">

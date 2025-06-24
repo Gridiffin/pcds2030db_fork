@@ -38,41 +38,45 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
-    
-    // Initialize draft table filters
+      // Initialize draft table filters
     const draftSearchInput = document.getElementById('draftProgramSearch');
     const draftRatingFilter = document.getElementById('draftRatingFilter');
     const draftTypeFilter = document.getElementById('draftTypeFilter');
+    const draftInitiativeFilter = document.getElementById('draftInitiativeFilter');
     const resetDraftFiltersBtn = document.getElementById('resetDraftFilters');
     
     if (draftSearchInput) draftSearchInput.addEventListener('keyup', function() { applyFilters('draft'); });
     if (draftRatingFilter) draftRatingFilter.addEventListener('change', function() { applyFilters('draft'); });
     if (draftTypeFilter) draftTypeFilter.addEventListener('change', function() { applyFilters('draft'); });
+    if (draftInitiativeFilter) draftInitiativeFilter.addEventListener('change', function() { applyFilters('draft'); });
     
     if (resetDraftFiltersBtn) {
         resetDraftFiltersBtn.addEventListener('click', function() {
             if (draftSearchInput) draftSearchInput.value = '';
             if (draftRatingFilter) draftRatingFilter.value = '';
             if (draftTypeFilter) draftTypeFilter.value = '';
+            if (draftInitiativeFilter) draftInitiativeFilter.value = '';
             applyFilters('draft');
         });
     }
-    
-    // Initialize finalized table filters
+      // Initialize finalized table filters
     const finalizedSearchInput = document.getElementById('finalizedProgramSearch');
     const finalizedRatingFilter = document.getElementById('finalizedRatingFilter');
     const finalizedTypeFilter = document.getElementById('finalizedTypeFilter');
+    const finalizedInitiativeFilter = document.getElementById('finalizedInitiativeFilter');
     const resetFinalizedFiltersBtn = document.getElementById('resetFinalizedFilters');
     
     if (finalizedSearchInput) finalizedSearchInput.addEventListener('keyup', function() { applyFilters('finalized'); });
     if (finalizedRatingFilter) finalizedRatingFilter.addEventListener('change', function() { applyFilters('finalized'); });
     if (finalizedTypeFilter) finalizedTypeFilter.addEventListener('change', function() { applyFilters('finalized'); });
+    if (finalizedInitiativeFilter) finalizedInitiativeFilter.addEventListener('change', function() { applyFilters('finalized'); });
     
     if (resetFinalizedFiltersBtn) {
         resetFinalizedFiltersBtn.addEventListener('click', function() {
             if (finalizedSearchInput) finalizedSearchInput.value = '';
             if (finalizedRatingFilter) finalizedRatingFilter.value = '';
             if (finalizedTypeFilter) finalizedTypeFilter.value = '';
+            if (finalizedInitiativeFilter) finalizedInitiativeFilter.value = '';
             applyFilters('finalized');
         });
     }
@@ -114,19 +118,20 @@ function applyFilters(tableType) {
     const searchInput = document.getElementById(tableType + 'ProgramSearch');
     const ratingFilter = document.getElementById(tableType + 'RatingFilter');
     const typeFilter = document.getElementById(tableType + 'TypeFilter');
+    const initiativeFilter = document.getElementById(tableType + 'InitiativeFilter');
     
     const searchText = searchInput ? searchInput.value.toLowerCase() : '';
     const ratingValue = ratingFilter ? ratingFilter.value : '';
     const typeValue = typeFilter ? typeFilter.value : '';
+    const initiativeValue = initiativeFilter ? initiativeFilter.value : '';
     
     // Clear existing filter badges
     const filterBadgesContainer = document.getElementById(filterBadgesId);
     if (filterBadgesContainer) {
         filterBadgesContainer.innerHTML = '';
     }
-    
-    // Create filter badges if filters are applied
-    if (searchText || ratingValue || typeValue) {
+      // Create filter badges if filters are applied
+    if (searchText || ratingValue || typeValue || initiativeValue) {
         let badgesHtml = '<span class="badge-label">Active filters:</span>';
         
         if (searchText) {
@@ -143,6 +148,11 @@ function applyFilters(tableType) {
             badgesHtml += `<span class="filter-badge">${typeLabel} <i class="fas fa-times remove-filter" data-filter="type" data-table="${tableType}"></i></span>`;
         }
         
+        if (initiativeValue) {
+            const initiativeLabel = document.getElementById(tableType + 'InitiativeFilter').options[document.getElementById(tableType + 'InitiativeFilter').selectedIndex].text;
+            badgesHtml += `<span class="filter-badge">${initiativeLabel} <i class="fas fa-times remove-filter" data-filter="initiative" data-table="${tableType}"></i></span>`;
+        }
+        
         if (filterBadgesContainer) {
             filterBadgesContainer.innerHTML = badgesHtml;
             
@@ -151,13 +161,14 @@ function applyFilters(tableType) {
                 icon.addEventListener('click', function() {
                     const filterType = this.getAttribute('data-filter');
                     const tableType = this.getAttribute('data-table');
-                    
-                    if (filterType === 'search') {
+                      if (filterType === 'search') {
                         document.getElementById(tableType + 'ProgramSearch').value = '';
                     } else if (filterType === 'rating') {
                         document.getElementById(tableType + 'RatingFilter').value = '';
                     } else if (filterType === 'type') {
                         document.getElementById(tableType + 'TypeFilter').value = '';
+                    } else if (filterType === 'initiative') {
+                        document.getElementById(tableType + 'InitiativeFilter').value = '';
                     }
                     
                     applyFilters(tableType);
@@ -170,12 +181,17 @@ function applyFilters(tableType) {
     tableRows.forEach(row => {
         const programNameElement = row.querySelector('td:first-child .fw-medium');
         const programName = programNameElement?.textContent.toLowerCase() || '';
-        
-        // Extract program number from the badge if it exists
+          // Extract program number from the badge if it exists
         const programNumberBadge = programNameElement?.querySelector('.badge.bg-info');
         const programNumber = programNumberBadge ? programNumberBadge.textContent.toLowerCase() : '';
         
-        const ratingText = row.querySelector('td:nth-child(2) .badge')?.textContent.trim().toLowerCase() || '';
+        // Get initiative information - 2nd column now
+        const initiativeElement = row.querySelector('td:nth-child(2)');
+        const initiativeText = initiativeElement?.textContent.trim().toLowerCase() || '';
+        const hasInitiative = initiativeElement?.querySelector('.badge.bg-primary') !== null;
+        
+        // Rating is now in 3rd column
+        const ratingText = row.querySelector('td:nth-child(3) .badge')?.textContent.trim().toLowerCase() || '';
         const programType = row.getAttribute('data-program-type') || '';
         
         // Map display text back to rating values for comparison
@@ -203,10 +219,28 @@ function applyFilters(tableType) {
         if (ratingValue && normalizedRating !== ratingValue) {
             showRow = false;
         }
-        
-        // Type filter
+          // Type filter
         if (typeValue && programType !== typeValue) {
             showRow = false;
+        }
+        
+        // Initiative filter
+        if (initiativeValue) {
+            if (initiativeValue === 'no-initiative') {
+                // Show only programs without initiatives
+                if (hasInitiative) {
+                    showRow = false;
+                }
+            } else {
+                // Show only programs with the specific initiative
+                // Check if the initiative text contains the selected initiative name
+                const selectedInitiativeElement = document.querySelector(`#${tableType}InitiativeFilter option[value="${initiativeValue}"]`);
+                const selectedInitiativeName = selectedInitiativeElement ? selectedInitiativeElement.textContent.toLowerCase() : '';
+                
+                if (!hasInitiative || !initiativeText.includes(selectedInitiativeName)) {
+                    showRow = false;
+                }
+            }
         }
         
         // Show or hide the row
@@ -231,11 +265,10 @@ function updateNoResultsMessage(tableId) {
     if (visibleRows.length === 0) {
         // Check if we already have a "no results" row
         let noResultsRow = tbody.querySelector('.no-results-row');
-        
-        if (!noResultsRow) {
+          if (!noResultsRow) {
             noResultsRow = document.createElement('tr');
             noResultsRow.className = 'no-results-row';
-            noResultsRow.innerHTML = '<td colspan="4" class="text-center py-4">No matching programs found.</td>';
+            noResultsRow.innerHTML = '<td colspan="5" class="text-center py-4">No matching programs found.</td>';
             tbody.appendChild(noResultsRow);
         }
     } else {

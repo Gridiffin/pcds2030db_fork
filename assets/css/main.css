@@ -23,6 +23,7 @@
 @import 'components/responsive-performance-table.css';
 @import 'components/admin-performance-table.css';
 @import 'components/period-performance.css';
+@import 'components/bulk-assignment.css';
 
 /* Pages */
 @import 'pages/style-guide.css';
