@@ -88,12 +88,35 @@ $is_current_active = $selected_period && $selected_period['status'] === 'open';
         if (periodSelector) {
             periodSelector.addEventListener('change', function() {
                 const selectedPeriodId = this.value;
-                // Get current URL parameters
-                const urlParams = new URLSearchParams(window.location.search);
-                // Set period_id parameter
-                urlParams.set('period_id', selectedPeriodId);
-                // Redirect to the same page with the new parameter
-                window.location.href = window.location.pathname + '?' + urlParams.toString();
+                const programId = (typeof PROGRAM_ID !== 'undefined') ? PROGRAM_ID : (window.programId || null);
+                if (!programId) {
+                    // fallback: try to get from hidden input or URL
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const idFromUrl = urlParams.get('id');
+                    if (idFromUrl) {
+                        window.programId = idFromUrl;
+                    }
+                }
+                // Show loading spinner
+                const spinner = document.querySelector('.selector-spinner');
+                if (spinner) spinner.style.display = 'block';
+                // AJAX fetch program data for selected period
+                fetch(APP_URL + '/app/ajax/get_program_submission.php?program_id=' + programId + '&period_id=' + selectedPeriodId)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (spinner) spinner.style.display = 'none';
+                        if (data.success && data.data) {
+                            // Dispatch custom event so update_program.php JS can update fields
+                            const event = new CustomEvent('ProgramPeriodDataLoaded', { detail: data.data });
+                            document.dispatchEvent(event);
+                        } else {
+                            alert(data.error || 'Failed to load program data for selected period.');
+                        }
+                    })
+                    .catch(() => {
+                        if (spinner) spinner.style.display = 'none';
+                        alert('Failed to load program data for selected period.');
+                    });
             });
         }
     });

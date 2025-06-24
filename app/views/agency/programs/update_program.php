@@ -5,6 +5,11 @@
  * Interface for agency users to update program information.
  */
 
+// DEBUG: Show all errors (remove after debugging)
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 // Define the root path
 if (!defined('PROJECT_ROOT_PATH')) {
     define('PROJECT_ROOT_PATH', rtrim(dirname(dirname(dirname(__DIR__))), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
@@ -133,6 +138,46 @@ function get_field_value($field, $default = '') {
     }
     
     return $default;
+}
+
+// Get selected period from query or default to current
+$selected_period_id = isset($_GET['period_id']) ? intval($_GET['period_id']) : null;
+$current_period = get_current_reporting_period();
+$all_periods = [];
+$selected_period = null;
+
+// Fetch all periods for selector
+$conn = $conn ?? (function_exists('get_db_connection') ? get_db_connection() : null);
+if ($conn) {
+    $periods_result = $conn->query("SELECT * FROM reporting_periods ORDER BY year DESC, quarter DESC");
+    if ($periods_result) {
+        while ($row = $periods_result->fetch_assoc()) {
+            $all_periods[] = $row;
+            if ($selected_period_id && $row['period_id'] == $selected_period_id) {
+                $selected_period = $row;
+            }
+        }
+    }
+}
+if (!$selected_period && $current_period) {
+    $selected_period = $current_period;
+    $selected_period_id = $current_period['period_id'];
+}
+if (!$selected_period) {
+    die('<div style="color:red">No reporting period found.</div>');
+}
+
+// Find the correct submission for the selected period
+$submission_id = null;
+$current_submission = null;
+if (isset($program['submissions']) && is_array($program['submissions'])) {
+    foreach ($program['submissions'] as $submission) {
+        if (isset($submission['period_id']) && $submission['period_id'] == $selected_period_id) {
+            $current_submission = $submission;
+            $submission_id = $submission['submission_id'] ?? null;
+            break;
+        }
+    }
 }
 
 // Process form submission
@@ -617,6 +662,10 @@ $header_config = [
 // Include modern page header
 require_once dirname(__DIR__, 2) . '/layouts/page_header.php';
 
+// Set the period selector variable for the component
+$viewing_period_id = $selected_period_id;
+// Render the period selector UI before the form
+require_once PROJECT_ROOT_PATH . 'lib/period_selector.php';
 ?>
 
 <?php
@@ -677,7 +726,7 @@ require_once dirname(__DIR__, 2) . '/layouts/page_header.php';
 
                 <!-- Program Update Form -->
                 <form id="updateProgramForm" method="post">
-                    <input type="hidden" name="period_id" value="<?php echo $current_period['period_id']; ?>">
+                    <input type="hidden" name="period_id" value="<?php echo $selected_period_id; ?>">
                     <?php if ($submission_id): ?>
                     <input type="hidden" name="submission_id" value="<?php echo $submission_id; ?>">
                     <?php endif; ?>
@@ -1560,6 +1609,61 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         return true;
+    });
+    
+    // Listen for program period data load event to update form fields
+    document.addEventListener('ProgramPeriodDataLoaded', function(e) {
+        const data = e.detail;
+        // Update program name
+        const programNameInput = document.getElementById('program_name');
+        if (programNameInput) programNameInput.value = data.program_name || '';
+        // Update program number
+        const programNumberInput = document.getElementById('program_number');
+        if (programNumberInput) programNumberInput.value = data.program_number || '';
+        // Update brief description
+        const briefDescInput = document.getElementById('brief_description');
+        if (briefDescInput) briefDescInput.value = data.brief_description || '';
+        // Update remarks
+        const remarksInput = document.getElementById('remarks');
+        if (remarksInput) remarksInput.value = data.remarks || '';
+        // Update rating
+        const ratingInput = document.getElementById('rating');
+        if (ratingInput) ratingInput.value = data.rating || 'not-started';
+        // Update rating pills UI
+        const ratingPills = document.querySelectorAll('.rating-pill');
+        ratingPills.forEach(pill => {
+            pill.classList.remove('active');
+            if (pill.getAttribute('data-rating') === data.rating) {
+                pill.classList.add('active');
+            }
+        });
+        // Update targets
+        const targetsContainer = document.getElementById('targets-container');
+        if (targetsContainer) {
+            targetsContainer.innerHTML = '';
+            (data.targets || [{target_text:'',status_description:''}]).forEach((target, idx) => {
+                const targetEntry = document.createElement('div');
+                targetEntry.className = 'target-entry';
+                targetEntry.innerHTML = `
+                    <button type="button" class="btn-close remove-target" aria-label="Remove target"></button>
+                    <div class="mb-3">
+                        <label class="form-label">Target ${idx+1} *</label>
+                        <input type="text" class="form-control target-input" name="target_text[]" value="${target.target_text||''}" placeholder="Define a measurable target (e.g., 'Plant 100 trees')">
+                        <div class="form-text">Define a specific, measurable target for this program.</div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Status Description</label>
+                        <textarea class="form-control status-description" name="target_status_description[]" rows="2" placeholder="Describe the current status or progress toward this target">${target.status_description||''}</textarea>
+                        <div class="form-text">Describe the current status or achievement toward this target.</div>
+                    </div>
+                `;
+                targetsContainer.appendChild(targetEntry);
+                // Attach remove event
+                targetEntry.querySelector('.remove-target').addEventListener('click', function() {
+                    targetEntry.remove();
+                });
+            });
+        }
     });
 });
 </script>
