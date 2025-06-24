@@ -575,10 +575,14 @@ function get_all_sectors() {
 function get_admin_program_details($program_id) {
     global $conn;
     
-    $stmt = $conn->prepare("SELECT p.*, s.sector_name, u.agency_name, u.user_id as owner_agency_id
+    $stmt = $conn->prepare("SELECT p.*, s.sector_name, u.agency_name, u.user_id as owner_agency_id,
+                                  i.initiative_id, i.initiative_name, i.initiative_number, 
+                                  i.description as initiative_description, i.start_date as initiative_start_date, 
+                                  i.end_date as initiative_end_date
                           FROM programs p
                           LEFT JOIN sectors s ON p.sector_id = s.sector_id
                           LEFT JOIN users u ON p.owner_agency_id = u.user_id
+                          LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
                           WHERE p.program_id = ?");
     $stmt->bind_param("i", $program_id);
     $stmt->execute();

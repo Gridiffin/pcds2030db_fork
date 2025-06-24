@@ -23,8 +23,15 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// Get POST data
-$input = json_decode(file_get_contents('php://input'), true);
+// Get POST data (handle both JSON and form-encoded)
+$input = [];
+$content_type = $_SERVER['CONTENT_TYPE'] ?? '';
+
+if (strpos($content_type, 'application/json') !== false) {
+    $input = json_decode(file_get_contents('php://input'), true);
+} else {
+    $input = $_POST;
+}
 
 if (!isset($input['action'])) {
     http_response_code(400);
@@ -42,6 +49,10 @@ try {
             
         case 'validate_number':
             handleValidateNumber($input);
+            break;
+            
+        case 'check_program_number_availability':
+            handleCheckProgramNumberAvailability($input);
             break;
             
         case 'preview_bulk_assignment':
@@ -129,10 +140,53 @@ function handleValidateNumber($input) {
         ]);
         return;
     }
-    
-    echo json_encode([
+      echo json_encode([
         'valid' => true,
         'message' => 'Program number is valid and available'
+    ]);
+}
+
+/**
+ * Check program number availability (for real-time validation)
+ */
+function handleCheckProgramNumberAvailability($input) {
+    if (!isset($input['program_number'])) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Program number is required']);
+        return;
+    }
+    
+    $program_number = trim($input['program_number']);
+    $initiative_id = isset($input['initiative_id']) && !empty($input['initiative_id']) ? intval($input['initiative_id']) : null;
+    $exclude_program_id = isset($input['exclude_program_id']) && !empty($input['exclude_program_id']) ? intval($input['exclude_program_id']) : null;
+    
+    // Basic format validation
+    if (!preg_match('/^[0-9.]+$/', $program_number)) {
+        echo json_encode([
+            'available' => false,
+            'message' => 'Program number can only contain numbers and dots.'
+        ]);
+        return;
+    }
+    
+    // Advanced format validation if initiative is linked
+    if ($initiative_id) {
+        $format_validation = validate_program_number_format($program_number, $initiative_id);
+        if (!$format_validation['valid']) {
+            echo json_encode([
+                'available' => false,
+                'message' => $format_validation['message']
+            ]);
+            return;
+        }
+    }
+    
+    // Check availability
+    $is_available = is_program_number_available($program_number, $exclude_program_id);
+    
+    echo json_encode([
+        'available' => $is_available,
+        'message' => $is_available ? 'Program number is available' : 'This program number is already in use.'
     ]);
 }
 

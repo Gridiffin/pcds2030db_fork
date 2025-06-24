@@ -184,11 +184,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_program'])) {
     }
 }
 
-// Get all agencies with their sector information
+// Get all agencies with their sector information (including both agency and focal users)
 $agency_query = "SELECT u.user_id, u.agency_name, s.sector_id, s.sector_name 
                 FROM users u 
                 JOIN sectors s ON u.sector_id = s.sector_id 
-                WHERE u.role = 'agency' 
+                WHERE u.role IN ('agency', 'focal') 
                 ORDER BY u.agency_name";
 $agencies_result = $conn->query($agency_query);
 $agencies = [];

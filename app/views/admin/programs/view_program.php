@@ -13,6 +13,7 @@ require_once ROOT_PATH . 'app/lib/functions.php';
 require_once ROOT_PATH . 'app/lib/admins/index.php';
 require_once ROOT_PATH . 'app/lib/rating_helpers.php';
 require_once ROOT_PATH . 'app/lib/agencies/program_attachments.php';
+require_once ROOT_PATH . 'app/lib/initiative_functions.php';
 
 // Verify user is admin
 if (!is_admin()) {
@@ -304,9 +305,79 @@ require_once '../../layouts/page_header.php';
                         </div>
                     </div>
                 </div>
+            </div>        </div>
+    </div>
+
+    <!-- Initiative Details Card -->
+    <?php if (!empty($program['initiative_id'])): ?>
+    <div class="col-lg-12 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="card-title m-0">
+                    <i class="fas fa-lightbulb me-2"></i>Initiative Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Initiative Basic Info -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="initiative-header mb-3">
+                            <?php if (!empty($program['initiative_number'])): ?>
+                                <span class="badge bg-primary initiative-number me-2" 
+                                      title="Initiative Number">
+                                    <?php echo htmlspecialchars($program['initiative_number']); ?>
+                                </span>
+                            <?php endif; ?>
+                            <span class="initiative-name fw-bold text-primary" style="font-size: 1.2em;">
+                                <?php echo htmlspecialchars($program['initiative_name']); ?>
+                            </span>
+                        </div>
+
+                        <?php if (!empty($program['initiative_description'])): ?>
+                        <div class="initiative-description mb-3">
+                            <h6 class="text-muted mb-2">
+                                <i class="fas fa-align-left me-1"></i>Description
+                            </h6>
+                            <p class="mb-0">
+                                <?php echo nl2br(htmlspecialchars($program['initiative_description'])); ?>
+                            </p>
+                        </div>
+                        <?php endif; ?>
+
+                        <div class="initiative-timeline">
+                            <h6 class="text-muted mb-2">
+                                <i class="fas fa-calendar-alt me-1"></i>Initiative Timeline
+                            </h6>
+                            <div class="timeline-info">
+                                <?php if (!empty($program['initiative_start_date']) || !empty($program['initiative_end_date'])): ?>
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-calendar-check me-2 text-success"></i>
+                                        <span>
+                                            <?php 
+                                            if (!empty($program['initiative_start_date']) && !empty($program['initiative_end_date'])) {
+                                                echo date('M j, Y', strtotime($program['initiative_start_date'])) . ' - ' . date('M j, Y', strtotime($program['initiative_end_date']));
+                                            } elseif (!empty($program['initiative_start_date'])) {
+                                                echo 'Started: ' . date('M j, Y', strtotime($program['initiative_start_date']));
+                                            } elseif (!empty($program['initiative_end_date'])) {
+                                                echo 'Due: ' . date('M j, Y', strtotime($program['initiative_end_date']));
+                                            }
+                                            ?>
+                                        </span>
+                                    </div>
+                                <?php else: ?>
+                                    <div class="text-muted">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        No timeline information available
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+    <?php endif; ?>
       <!-- Current Submission Details -->
     <?php if (isset($program['current_submission']) && !empty($program['current_submission'])): ?>
     <div class="col-lg-12 mb-4">

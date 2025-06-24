@@ -71,9 +71,9 @@ foreach ($programs as $program) {
 // Get all sectors for filter dropdown
 $sectors = get_all_sectors();
 
-// Get all agencies for filter dropdown
+// Get all agencies for filter dropdown (including both agency and focal users)
 $agencies = [];
-$agencies_query = "SELECT user_id, agency_name FROM users WHERE role = 'agency' ORDER BY agency_name";
+$agencies_query = "SELECT user_id, agency_name FROM users WHERE role IN ('agency', 'focal') ORDER BY agency_name";
 $agencies_result = $conn->query($agencies_query);
 while ($row = $agencies_result->fetch_assoc()) {
     $agencies[] = $row;

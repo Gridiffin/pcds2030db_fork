@@ -41,10 +41,32 @@ $messageType = 'info';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {    // Validate inputs
     $program_name_form = trim($_POST['program_name'] ?? '');
     $program_number_form = trim($_POST['program_number'] ?? '');
+    $initiative_id = !empty($_POST['initiative_id']) ? intval($_POST['initiative_id']) : null;
     $owner_agency_id = intval($_POST['owner_agency_id'] ?? 0);
-    $sector_id = intval($_POST['sector_id'] ?? 0);
-    $start_date_form = !empty($_POST['start_date']) ? $_POST['start_date'] : null;
+    $sector_id = intval($_POST['sector_id'] ?? 0);    $start_date_form = !empty($_POST['start_date']) ? $_POST['start_date'] : null;
     $end_date_form = !empty($_POST['end_date']) ? $_POST['end_date'] : null;
+    
+    // Validate date formats
+    if ($start_date_form && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $start_date_form)) {
+        $message = 'Invalid start date format. Please use a valid date.';
+        $messageType = 'danger';
+    }
+    
+    if ($end_date_form && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $end_date_form)) {
+        $message = 'Invalid end date format. Please use a valid date.';
+        $messageType = 'danger';
+    }
+    
+    // Validate that dates are actual valid dates
+    if ($start_date_form && !strtotime($start_date_form)) {
+        $message = 'Invalid start date. Please enter a valid date.';
+        $messageType = 'danger';
+    }
+    
+    if ($end_date_form && !strtotime($end_date_form)) {
+        $message = 'Invalid end date. Please enter a valid date.';
+        $messageType = 'danger';
+    }
     $is_assigned = isset($_POST['is_assigned']) ? 1 : 0;
     $rating_form = isset($_POST['rating']) ? $_POST['rating'] : 'not-started'; // This is the overall program rating/status
     $remarks_form = trim($_POST['remarks'] ?? '');
@@ -53,6 +75,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {    // Validate inputs
     if (!empty($program_number_form) && !preg_match('/^[0-9.]+$/', $program_number_form)) {
         $message = 'Program number can only contain numbers and dots.';
         $messageType = 'danger';
+    }
+    
+    // Additional validation for hierarchical format if initiative is linked
+    if ($program_number_form && $initiative_id) {
+        $format_validation = validate_program_number_format($program_number_form, $initiative_id);
+        if (!$format_validation['valid']) {
+            $message = $format_validation['message'];
+            $messageType = 'danger';
+        }
+    }
+    
+    // Check for duplicate program numbers
+    if ($program_number_form && empty($message)) {
+        if (!is_program_number_available($program_number_form, $program_id)) {
+            $message = 'This program number is already in use. Please choose a different number.';
+            $messageType = 'danger';
+        }
     }
     $targets_form = [];
     if (isset($_POST['target_text']) && is_array($_POST['target_text'])) {
@@ -82,36 +121,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {    // Validate inputs
     } elseif ($sector_id <= 0) {
         $message = 'Valid sector is required.';
         $messageType = 'danger';
-    } else {
-        $conn->begin_transaction();
-        try {            // Update program in programs table
+    } else {        $conn->begin_transaction();        try {            
+            // Update program in programs table
             $query_update_program = "UPDATE programs SET 
                       program_name = ?, 
                       program_number = ?,
+                      initiative_id = ?,
                       owner_agency_id = ?, 
                       sector_id = ?,
                       start_date = ?, 
-                      end_date = ?, 
+                      end_date = ?,
                       is_assigned = ?,
                       edit_permissions = ?,
                       updated_at = NOW()
                       WHERE program_id = ?";
                       
             $stmt_update_program = $conn->prepare($query_update_program);
-            $stmt_update_program->bind_param('ssiissisi', 
+            $stmt_update_program->bind_param('ssiissisii', 
                 $program_name_form, 
                 $program_number_form,
-                $owner_agency_id, 
-                $sector_id, 
-                $start_date_form, 
-                $end_date_form, 
-                $is_assigned, 
+                $initiative_id,
+                $owner_agency_id,
+                $sector_id,
+                $start_date_form,
+                $end_date_form,
+                $is_assigned,
                 $edit_permissions_json,
                 $program_id
-            );
-
-            if (!$stmt_update_program->execute()) {
-                throw new Exception('Failed to update program details: ' . $stmt_update_program->error);
+            );            if (!$stmt_update_program->execute()) {
+                $error_info = $stmt_update_program->error;
+                throw new Exception('Failed to update program details: ' . $error_info);
             }
             $stmt_update_program->close();
 
@@ -142,12 +181,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {    // Validate inputs
                 // For consistency, let's assume a submission should be created. If period_id is crucial, this needs a policy.
                 // For now, let\'s throw an error if no period can be determined, as submissions are tied to periods.
                 throw new Exception("Could not determine a valid reporting period for submission history.");
-            }
-              // Content for program_submissions.content_json
+            }              // Content for program_submissions.content_json
             // This snapshot includes the program name and description AS THEY ARE NOW in the \'programs\' table (just updated)
             $content_for_history = [
                 'program_name' => $program_name_form, // Name as submitted in this form
                 'program_number' => $program_number_form, // Program number as submitted in this form
+                'initiative_id' => $initiative_id, // Initiative ID as submitted in this form
                 'rating'       => $rating_form,       // Rating/status from the form
                 'targets'      => $targets_form,      // Targets from the form
                 'remarks'      => $remarks_form       // Remarks from the form
@@ -204,9 +243,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {    // Validate inputs
 }
 
 // Fetch program data for form
-$query = "SELECT p.*, s.sector_name 
+$query = "SELECT p.*, s.sector_name, i.initiative_name, i.initiative_number
           FROM programs p
           LEFT JOIN sectors s ON p.sector_id = s.sector_id
+          LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
           WHERE p.program_id = ?";
 $stmt = $conn->prepare($query);
 $stmt->bind_param('i', $program_id);
@@ -221,6 +261,9 @@ if (!$program) {
     header('Location: programs.php');
     exit;
 }
+
+// Get active initiatives for dropdown
+$active_initiatives = get_initiatives_for_select(true);
 
 // Get program attachments
 $program_attachments = get_program_attachments($program_id);
@@ -276,9 +319,9 @@ if ($submission_result->num_rows > 0) {
     }
 }
 
-// Fetch list of agencies for owner selection
+// Fetch list of agencies for owner selection (including both agency and focal users)
 $agencies_query = "SELECT user_id AS agency_id, agency_name FROM users 
-                  WHERE role = 'agency' AND is_active = 1 
+                  WHERE role IN ('agency', 'focal') AND is_active = 1 
                   ORDER BY agency_name ASC";
 $agencies_result = $conn->query($agencies_query);
 $agencies = [];
@@ -503,22 +546,20 @@ require_once '../../layouts/page_header.php';
                             </div>
                         </div>
 
-                        <div class="row g-3">
-                            <div class="col-md-6">
+                        <div class="row g-3">                            <div class="col-md-6">
                                 <label for="start_date" class="form-label">Start Date</label>
                                 <input type="date" class="form-control" id="start_date" name="start_date" 
-                                       value="<?php echo isset($program['start_date']) ? date('Y-m-d', strtotime($program['start_date'])) : ''; ?>">
+                                       value="<?php echo htmlspecialchars($program['start_date'] ?? ''); ?>">
                             </div>
                             
                             <div class="col-md-6">
                                 <label for="end_date" class="form-label">End Date</label>
                                 <input type="date" class="form-control" id="end_date" name="end_date"
-                                       value="<?php echo isset($program['end_date']) ? date('Y-m-d', strtotime($program['end_date'])) : ''; ?>">
+                                       value="<?php echo htmlspecialchars($program['end_date'] ?? ''); ?>">
                             </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="program_number" class="form-label">Program Number</label>
+                        <div class="mb-3">                            <label for="program_number" class="form-label">Program Number</label>
                             <input type="text" class="form-control" id="program_number" name="program_number" 
                                    value="<?php echo htmlspecialchars($program['program_number'] ?? ''); ?>"
                                    pattern="[0-9.]+" 
@@ -529,8 +570,36 @@ require_once '../../layouts/page_header.php';
                                 Optional program identifier for easier mapping to initiatives (numbers and dots only)
                             </div>
                         </div>
+
+                        <!-- Initiative Selection -->
+                        <div class="col-md-6">
+                            <label for="initiative_id" class="form-label">
+                                <i class="fas fa-lightbulb me-1"></i>
+                                Link to Initiative
+                            </label>
+                            <select class="form-select" id="initiative_id" name="initiative_id">
+                                <option value="">Select an initiative (optional)</option>
+                                <?php foreach ($active_initiatives as $initiative): ?>
+                                    <option value="<?php echo $initiative['initiative_id']; ?>" 
+                                            <?php echo (isset($program['initiative_id']) && $program['initiative_id'] == $initiative['initiative_id']) ? 'selected' : ''; ?>>
+                                        <?php 
+                                        $display_text = '';
+                                        if (!empty($initiative['initiative_number'])) {
+                                            $display_text .= $initiative['initiative_number'] . ' - ';
+                                        }
+                                        $display_text .= $initiative['initiative_name'];
+                                        echo htmlspecialchars($display_text);
+                                        ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Link this program to a specific initiative for better organization and reporting
+                            </div>
+                        </div>
                     </div>
-                </div>                <!-- 2. Program Targets Card -->
+                </div><!-- 2. Program Targets Card -->
                 <div class="card shadow-sm mb-4">
                     <div class="card-header">
                         <h5 class="card-title m-0">Program Targets</h5>
@@ -866,9 +935,7 @@ document.addEventListener('DOMContentLoaded', function() {
     togglePermissionsVisibility();
     
     // Listen for changes
-    isAssignedCheckbox.addEventListener('change', togglePermissionsVisibility);
-    
-    // Handle date validation
+    isAssignedCheckbox.addEventListener('change', togglePermissionsVisibility);    // Handle date validation
     const startDateField = document.getElementById('start_date');
     const endDateField = document.getElementById('end_date');
     
@@ -893,12 +960,12 @@ document.addEventListener('DOMContentLoaded', function() {
             programHistoryPanel.style.display = isVisible ? 'none' : 'block';
             this.innerHTML = isVisible ? '<i class="fas fa-history"></i> Show History' : '<i class="fas fa-history"></i> Hide History';
         });
-    }
-    
-    // Form validation
+    }    // Form validation
     document.getElementById('editProgramForm').addEventListener('submit', function(e) {
         const programName = document.getElementById('program_name').value;
         const targetInputs = document.querySelectorAll('.target-input');
+        const startDateField = document.getElementById('start_date');
+        const endDateField = document.getElementById('end_date');
         let hasFilledTarget = false;
         
         // Validate program name
@@ -906,6 +973,28 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Please enter a program name.');
             e.preventDefault();
             return false;
+        }
+        
+        // Validate date fields
+        if (startDateField.value && !isValidDate(startDateField.value)) {
+            alert('Please enter a valid start date in YYYY-MM-DD format.');
+            e.preventDefault();
+            return false;
+        }
+        
+        if (endDateField.value && !isValidDate(endDateField.value)) {
+            alert('Please enter a valid end date in YYYY-MM-DD format.');
+            e.preventDefault();
+            return false;
+        }
+        
+        // Validate date logic
+        if (startDateField.value && endDateField.value) {
+            if (new Date(endDateField.value) < new Date(startDateField.value)) {
+                alert('End date cannot be before start date.');
+                e.preventDefault();
+                return false;
+            }
         }
         
         // Validate at least one target
@@ -923,6 +1012,101 @@ document.addEventListener('DOMContentLoaded', function() {
         
         return true;
     });
+
+    // Helper function to validate date format
+    function isValidDate(dateString) {
+        // Check format YYYY-MM-DD
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(dateString)) {
+            return false;
+        }
+        
+        // Check if it's a valid date
+        const date = new Date(dateString);
+        const timestamp = date.getTime();
+        
+        if (typeof timestamp !== 'number' || Number.isNaN(timestamp)) {
+            return false;
+        }
+        
+        // Check if the date components match (to catch invalid dates like 2025-02-30)
+        return date.toISOString().slice(0, 10) === dateString;
+    }
+
+    // Program number validation (real-time checking)
+    const programNumberInput = document.getElementById('program_number');
+    const initiativeSelect = document.getElementById('initiative_id');
+    let validationTimeout;
+
+    function validateProgramNumber() {
+        const programNumber = programNumberInput.value.trim();
+        const initiativeId = initiativeSelect.value;
+        
+        // Clear previous validation styling
+        programNumberInput.classList.remove('is-valid', 'is-invalid');
+        
+        if (!programNumber) {
+            return; // Empty is valid (optional field)
+        }
+
+        // Basic format validation
+        if (!/^[0-9.]+$/.test(programNumber)) {
+            programNumberInput.classList.add('is-invalid');
+            showProgramNumberError('Program number can only contain numbers and dots.');
+            return;
+        }
+
+        // Clear timeout for previous validation request
+        clearTimeout(validationTimeout);
+        
+        // Debounce the validation request
+        validationTimeout = setTimeout(() => {
+            // Check for duplicates via AJAX
+            fetch('<?php echo APP_URL; ?>/app/ajax/numbering.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `action=check_program_number_availability&program_number=${encodeURIComponent(programNumber)}&exclude_program_id=<?php echo $program_id; ?>&initiative_id=${encodeURIComponent(initiativeId)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.available) {
+                    programNumberInput.classList.add('is-valid');
+                    hideProgramNumberError();
+                } else {
+                    programNumberInput.classList.add('is-invalid');
+                    showProgramNumberError(data.message || 'This program number is already in use.');
+                }
+            })
+            .catch(error => {
+                console.error('Error validating program number:', error);
+            });
+        }, 500);
+    }
+
+    function showProgramNumberError(message) {
+        let errorDiv = document.getElementById('program-number-error');
+        if (!errorDiv) {
+            errorDiv = document.createElement('div');
+            errorDiv.id = 'program-number-error';
+            errorDiv.className = 'invalid-feedback';
+            programNumberInput.parentNode.appendChild(errorDiv);
+        }
+        errorDiv.textContent = message;
+    }
+
+    function hideProgramNumberError() {
+        const errorDiv = document.getElementById('program-number-error');
+        if (errorDiv) {
+            errorDiv.remove();
+        }
+    }
+
+    if (programNumberInput) {
+        programNumberInput.addEventListener('input', validateProgramNumber);
+        initiativeSelect.addEventListener('change', validateProgramNumber);
+    }
 });
 </script>
 </main>
