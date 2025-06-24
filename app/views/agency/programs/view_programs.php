@@ -430,6 +430,9 @@ require_once '../../layouts/page_header.php';
                                 </td>
                                 <td>
                                     <div class="btn-group btn-group-sm" role="group" aria-label="Program actions">
+                                        <a href="update_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-secondary" title="Edit Program">
+                                            <i class="fas fa-sync-alt"></i>
+                                        </a>
                                         <a href="program_details.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="View Program Details">
                                             <i class="fas fa-eye"></i>
                                         </a>
