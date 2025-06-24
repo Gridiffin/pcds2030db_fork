@@ -110,23 +110,29 @@ function create_initiative($data) {
     
     if ($check_result->num_rows > 0) {
         return ['error' => 'Initiative with this name or number already exists'];
-    }
-    
-    // Insert new initiative
+    }    // Insert new initiative
     $sql = "INSERT INTO initiatives (initiative_name, initiative_number, initiative_description, 
-                                   pillar_id, start_date, end_date, is_active, created_by) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                                   start_date, end_date, is_active, created_by) 
+            VALUES (?, ?, ?, ?, ?, ?, ?)";
+    
+    // Prepare variables for bind_param (must be actual variables, not expressions)
+    $initiative_name = $data['initiative_name'];
+    $initiative_number = $data['initiative_number'] ?? null;
+    $initiative_description = $data['initiative_description'] ?? null;
+    $start_date = $data['start_date'] ?? null;
+    $end_date = $data['end_date'] ?? null;
+    $is_active = $data['is_active'] ?? 1;
+    $created_by = $_SESSION['user_id'] ?? 1;
     
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param('sssissii', 
-        $data['initiative_name'],
-        $data['initiative_number'] ?? null,
-        $data['initiative_description'] ?? null,
-        $data['pillar_id'] ?? null,
-        $data['start_date'] ?? null,
-        $data['end_date'] ?? null,
-        $data['is_active'] ?? 1,
-        $_SESSION['user_id'] ?? 1
+    $stmt->bind_param('sssssii', 
+        $initiative_name,
+        $initiative_number,
+        $initiative_description,
+        $start_date,
+        $end_date,
+        $is_active,
+        $created_by
     );
     
     if ($stmt->execute()) {
@@ -185,23 +191,28 @@ function update_initiative($initiative_id, $data) {
     if ($dup_result->num_rows > 0) {
         return ['error' => 'Another initiative with this name or number already exists'];
     }
-    
-    // Update initiative
-    $sql = "UPDATE initiatives 
-            SET initiative_name = ?, initiative_number = ?, initiative_description = ?, 
-                pillar_id = ?, start_date = ?, end_date = ?, is_active = ?, 
+      // Update initiative
+    $sql = "UPDATE initiatives            SET initiative_name = ?, initiative_number = ?, initiative_description = ?, 
+                start_date = ?, end_date = ?, is_active = ?, 
                 updated_at = CURRENT_TIMESTAMP 
             WHERE initiative_id = ?";
     
+    // Prepare variables for bind_param (must be actual variables, not expressions)
+    $initiative_name = $data['initiative_name'];
+    $initiative_number = $data['initiative_number'] ?? null;
+    $initiative_description = $data['initiative_description'] ?? null;
+    $start_date = $data['start_date'] ?? null;
+    $end_date = $data['end_date'] ?? null;
+    $is_active = $data['is_active'] ?? 1;
+    
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param('sssissii', 
-        $data['initiative_name'],
-        $data['initiative_number'] ?? null,
-        $data['initiative_description'] ?? null,
-        $data['pillar_id'] ?? null,
-        $data['start_date'] ?? null,
-        $data['end_date'] ?? null,
-        $data['is_active'] ?? 1,
+    $stmt->bind_param('sssssii', 
+        $initiative_name,
+        $initiative_number,
+        $initiative_description,
+        $start_date,
+        $end_date,
+        $is_active,
         $initiative_id
     );
     
