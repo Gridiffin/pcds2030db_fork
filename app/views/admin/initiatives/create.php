@@ -43,44 +43,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Include header
-require_once ROOT_PATH . 'app/views/layouts/header.php';
+require_once '../../layouts/header.php';
+
+// Configure the modern page header
+$header_config = [
+    'title' => 'Create Initiative',
+    'subtitle' => 'Create a new strategic initiative',
+    'variant' => 'purple',
+    'actions' => [
+        [
+            'text' => 'Back to Initiatives',
+            'url' => APP_URL . '/app/views/admin/initiatives/manage_initiatives.php',
+            'class' => 'btn-light',
+            'icon' => 'fas fa-arrow-left'
+        ]
+    ]
+];
+
+// Include the modern page header
+require_once '../../layouts/page_header.php';
+
+// Check for session messages
+$message = '';
+$message_type = '';
+
+if (isset($_SESSION['message']) && !empty($_SESSION['message'])) {
+    $message = $_SESSION['message'];
+    $message_type = $_SESSION['message_type'] ?? 'info';
+    
+    // Clear the message from session after using it
+    unset($_SESSION['message']);
+    unset($_SESSION['message_type']);
+}
 ?>
 
-<div class="container-fluid px-4">
-    <div class="row">
-        <div class="col-12">
-            <!-- Page Header -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h1 class="h3 mb-0"><?php echo $pageTitle; ?></h1>
-                    <p class="text-muted mb-0">Create a new strategic initiative</p>
-                </div>
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb mb-0">
-                        <li class="breadcrumb-item"><a href="<?php echo APP_URL; ?>/app/views/admin/dashboard/dashboard.php">Dashboard</a></li>
-                        <li class="breadcrumb-item"><a href="manage_initiatives.php">Initiatives</a></li>
-                        <li class="breadcrumb-item active" aria-current="page">Create</li>
-                    </ol>
-                </nav>
+<main class="flex-fill">
+    <?php if (!empty($message)): ?>
+        <div class="alert alert-<?php echo $message_type; ?> alert-dismissible fade show mb-4" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-<?php echo $message_type === 'success' ? 'check-circle' : ($message_type === 'danger' ? 'exclamation-circle' : 'info-circle'); ?> me-2"></i>
+                <div><?php echo htmlspecialchars($message); ?></div>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
-
-            <div class="row">
-                <div class="col-xl-8 col-lg-10">
-                    <!-- Error Message -->
-                    <?php if (!empty($message)): ?>
-                        <div class="alert alert-<?php echo $message_type; ?> alert-dismissible fade show" role="alert">
-                            <?php echo htmlspecialchars($message); ?>
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    <?php endif; ?>
-
-                    <!-- Initiative Form -->
-                    <div class="card shadow-sm">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">
-                                <i class="fas fa-lightbulb me-2"></i>Initiative Details
-                            </h5>
-                        </div>
+        </div>
+    <?php endif; ?><div class="row">
+        <div class="col-xl-8 col-lg-10">
+            <!-- Initiative Form -->
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>Initiative Details
+                    </h5>
+                </div>
                         <div class="card-body">
                             <form method="POST" action="" id="initiativeForm">
                                 <div class="row">
@@ -176,8 +190,7 @@ require_once ROOT_PATH . 'app/views/layouts/header.php';
                                             <i class="fas fa-save me-1"></i>Create Initiative
                                         </button>
                                     </div>
-                                </div>
-                            </form>
+                                </div>                            </form>
                         </div>
                     </div>
                 </div>
@@ -210,13 +223,12 @@ require_once ROOT_PATH . 'app/views/layouts/header.php';
                                     <li>Biodiversity Protection Strategy</li>
                                 </ul>
                             </div>
-                        </div>
-                    </div>
+                        </div>                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
+</main>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -255,5 +267,5 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <?php
 // Include footer
-require_once ROOT_PATH . 'app/views/layouts/footer.php';
+require_once '../../layouts/footer.php';
 ?>

@@ -128,25 +128,28 @@ if (isset($_GET['ajax_table']) && $_GET['ajax_table'] == '1') {
 }
 
 // Include header
-require_once ROOT_PATH . 'app/views/layouts/header.php';
+require_once '../../layouts/header.php';
+
+// Configure the modern page header
+$header_config = [
+    'title' => 'Manage Initiatives',
+    'subtitle' => 'Create and manage strategic initiatives',
+    'variant' => 'purple',
+    'actions' => [
+        [
+            'text' => 'Add Initiative',
+            'url' => APP_URL . '/app/views/admin/initiatives/create.php',
+            'class' => 'btn-primary',
+            'icon' => 'fas fa-plus'
+        ]
+    ]
+];
+
+// Include the modern page header
+require_once '../../layouts/page_header.php';
 ?>
 
-<div class="container-fluid px-4">
-    <div class="row">
-        <div class="col-12">
-            <!-- Page Header -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h1 class="h3 mb-0"><?php echo $pageTitle; ?></h1>
-                    <p class="text-muted mb-0">Create and manage strategic initiatives</p>
-                </div>
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb mb-0">
-                        <li class="breadcrumb-item"><a href="<?php echo APP_URL; ?>/app/views/admin/dashboard/dashboard.php">Dashboard</a></li>
-                        <li class="breadcrumb-item active" aria-current="page">Initiatives</li>
-                    </ol>
-                </nav>
-            </div>
+<main class="flex-fill">
 
             <!-- Filters -->
             <div class="card shadow-sm mb-4">
@@ -183,11 +186,10 @@ require_once ROOT_PATH . 'app/views/layouts/header.php';
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Loading...</span>
                     </div>
-                </div>
-            </div>
+                </div>            </div>
         </div>
     </div>
-</div>
+</main>
 
 <!-- Success/Error Messages -->
 <?php if (isset($_SESSION['message'])): ?>
@@ -325,5 +327,5 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <?php
 // Include footer
-require_once ROOT_PATH . 'app/views/layouts/footer.php';
+require_once '../../layouts/footer.php';
 ?>
