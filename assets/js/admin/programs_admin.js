@@ -54,7 +54,6 @@ function initializeFiltering() {    // Unsubmitted programs filters
     const unsubmittedSearch = document.getElementById('unsubmittedProgramSearch');
     const unsubmittedRating = document.getElementById('unsubmittedRatingFilter');
     const unsubmittedType = document.getElementById('unsubmittedTypeFilter');
-    const unsubmittedSector = document.getElementById('unsubmittedSectorFilter');
     const unsubmittedAgency = document.getElementById('unsubmittedAgencyFilter');
     const unsubmittedInitiative = document.getElementById('unsubmittedInitiativeFilter');
     const resetUnsubmittedBtn = document.getElementById('resetUnsubmittedFilters');
@@ -63,13 +62,11 @@ function initializeFiltering() {    // Unsubmitted programs filters
     const submittedSearch = document.getElementById('submittedProgramSearch');
     const submittedRating = document.getElementById('submittedRatingFilter');
     const submittedType = document.getElementById('submittedTypeFilter');
-    const submittedSector = document.getElementById('submittedSectorFilter');
     const submittedAgency = document.getElementById('submittedAgencyFilter');
     const submittedInitiative = document.getElementById('submittedInitiativeFilter');
     const resetSubmittedBtn = document.getElementById('resetSubmittedFilters');
-    
-    // Add event listeners for unsubmitted programs
-    [unsubmittedSearch, unsubmittedRating, unsubmittedType, unsubmittedSector, unsubmittedAgency, unsubmittedInitiative].forEach(element => {
+      // Add event listeners for unsubmitted programs
+    [unsubmittedSearch, unsubmittedRating, unsubmittedType, unsubmittedAgency, unsubmittedInitiative].forEach(element => {
         if (element) {
             const eventType = element.type === 'text' ? 'input' : 'change';
             element.addEventListener(eventType, () => filterPrograms('unsubmitted'));
@@ -77,7 +74,7 @@ function initializeFiltering() {    // Unsubmitted programs filters
     });
     
     // Add event listeners for submitted programs
-    [submittedSearch, submittedRating, submittedType, submittedSector, submittedAgency, submittedInitiative].forEach(element => {
+    [submittedSearch, submittedRating, submittedType, submittedAgency, submittedInitiative].forEach(element => {
         if (element) {
             const eventType = element.type === 'text' ? 'input' : 'change';
             element.addEventListener(eventType, () => filterPrograms('submitted'));
@@ -100,12 +97,10 @@ function initializeFiltering() {    // Unsubmitted programs filters
 function filterPrograms(section) {
     const programs = section === 'unsubmitted' ? unsubmittedPrograms : submittedPrograms;
     const tableId = section === 'unsubmitted' ? 'unsubmittedProgramsTable' : 'submittedProgramsTable';
-    const prefix = section === 'unsubmitted' ? 'unsubmitted' : 'submitted';
-      // Get filter values
+    const prefix = section === 'unsubmitted' ? 'unsubmitted' : 'submitted';    // Get filter values
     const searchValue = document.getElementById(prefix + 'ProgramSearch')?.value.toLowerCase() || '';
     const ratingValue = document.getElementById(prefix + 'RatingFilter')?.value || '';
     const typeValue = document.getElementById(prefix + 'TypeFilter')?.value || '';
-    const sectorValue = document.getElementById(prefix + 'SectorFilter')?.value || '';
     const agencyValue = document.getElementById(prefix + 'AgencyFilter')?.value || '';
     const initiativeValue = document.getElementById(prefix + 'InitiativeFilter')?.value || '';
       // Filter programs
@@ -121,17 +116,11 @@ function filterPrograms(section) {
         if (ratingValue && program.rating !== ratingValue) {
             return false;
         }
-        
-        // Type filter
+          // Type filter
         if (typeValue) {
             const isAssigned = program.is_assigned == 1;
             if (typeValue === 'assigned' && !isAssigned) return false;
             if (typeValue === 'agency' && isAssigned) return false;
-        }
-        
-        // Sector filter
-        if (sectorValue && String(program.sector_id) !== sectorValue) {
-            return false;
         }
         
         // Agency filter
@@ -158,13 +147,11 @@ function filterPrograms(section) {
     });
     
     // Update the table
-    updateProgramTable(tableId, filteredPrograms, section);
-      // Update filter badges
+    updateProgramTable(tableId, filteredPrograms, section);    // Update filter badges
     updateFilterBadges(section, {
         search: searchValue,
         rating: ratingValue,
         type: typeValue,
-        sector: sectorValue,
         agency: agencyValue,
         initiative: initiativeValue
     });
@@ -337,14 +324,12 @@ function resetFilters(section) {
     const searchInput = document.getElementById(prefix + 'ProgramSearch');
     const ratingSelect = document.getElementById(prefix + 'RatingFilter');
     const typeSelect = document.getElementById(prefix + 'TypeFilter');
-    const sectorSelect = document.getElementById(prefix + 'SectorFilter');
     const agencySelect = document.getElementById(prefix + 'AgencyFilter');
     const initiativeSelect = document.getElementById(prefix + 'InitiativeFilter');
     
     if (searchInput) searchInput.value = '';
     if (ratingSelect) ratingSelect.value = '';
     if (typeSelect) typeSelect.value = '';
-    if (sectorSelect) sectorSelect.value = '';
     if (agencySelect) agencySelect.value = '';
     if (initiativeSelect) initiativeSelect.value = '';
     
@@ -373,8 +358,7 @@ function updateFilterBadges(section, filters) {
         if (value) {
             const badge = document.createElement('span');
             badge.className = 'badge bg-primary me-2 mb-1';
-            
-            let label = '';
+              let label = '';
             switch (key) {
                 case 'search':
                     label = `Search: ${value}`;
@@ -385,11 +369,7 @@ function updateFilterBadges(section, filters) {
                 case 'type':
                     label = `Type: ${value}`;
                     break;
-                case 'sector':
-                    const sectorSelect = document.getElementById(prefix + 'SectorFilter');
-                    const sectorText = sectorSelect?.options[sectorSelect.selectedIndex]?.text || value;
-                    label = `Sector: ${sectorText}`;
-                    break;                case 'agency':
+                case 'agency':
                     const agencySelect = document.getElementById(prefix + 'AgencyFilter');
                     const agencyText = agencySelect?.options[agencySelect.selectedIndex]?.text || value;
                     label = `Agency: ${agencyText}`;

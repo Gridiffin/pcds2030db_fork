@@ -167,37 +167,55 @@ The **View All Sectors** page uses a more robust approach for handling long prog
 
 ---
 
-## ✅ IMPLEMENTATION COMPLETE
+## ✅ IMPLEMENTATION COMPLETE - FINAL VERSION
 
 ### Final Solution Applied
-The **View Programs** page now uses the **exact same display method** as the **View All Sectors** page for both program names and initiative information:
+The **View Programs** page now has **proper text truncation and white box hover expansion** for both program names and initiative names, achieving perfect consistency with the **View All Sectors** page behavior.
 
-#### Unified Approach:
+#### Current Implementation:
 ```php
-// Both columns now use this simple, consistent pattern:
-<td class="text-truncate" style="max-width: XXXpx;">
-    <span class="text-truncate" title="Full Text Here">
-        Display Text Here
+// Program Name Column (300px max-width)
+<td class="text-truncate" style="max-width: 300px;">
+    <span class="program-name" title="Full Program Name">
+        [Badge] Program Name Text
     </span>
+</td>
+
+// Initiative Column (250px max-width) 
+<td class="text-truncate" style="max-width: 250px;">
+    <div class="d-flex align-items-center" title="Full Initiative Name">
+        <span class="badge">[INI001]</span>
+        <span class="initiative-name">Initiative Name Text</span>
+    </div>
 </td>
 ```
 
-#### Column Specifications:
-- **Program Name Column**: `max-width: 300px`
-- **Initiative Column**: `max-width: 250px`
+#### CSS Components Created:
+**File**: `assets/css/components/table-text-truncation.css`
+- `.program-name` - Handles program name truncation and white box hover expansion
+- `.initiative-name` - Handles initiative name truncation and white box hover expansion  
+- Both classes provide identical hover behavior with white overlay, shadow, and full text display
 
-#### Key Achievements:
-1. ✅ **Complete Consistency**: Both pages now handle long text identically
-2. ✅ **Simplified Code**: Removed complex conditional logic from initiatives
-3. ✅ **Better UX**: Uniform tooltips and truncation behavior
-4. ✅ **Balanced Layout**: Proper space distribution across columns
-5. ✅ **Clean Design**: Professional, organized table appearance
+#### Modular CSS Organization:
+- ✅ **Separated from base.css**: Moved table-specific styles to dedicated component file
+- ✅ **Proper Import**: Added to `main.css` imports for centralized CSS management
+- ✅ **Reusable Components**: Can be used across any table in the application
+
+#### Column Specifications:
+- **Program Name Column**: `max-width: 300px` with truncation and hover expansion
+- **Initiative Column**: `max-width: 250px` with truncation and hover expansion
+
+#### Final Achievements:
+1. ✅ **Perfect Text Truncation**: Both columns truncate long text with ellipsis
+2. ✅ **White Box Hover Expansion**: Both columns show full text in white overlay on hover
+3. ✅ **Visual Consistency**: Initiative badges preserved while adding truncation behavior
+4. ✅ **Balanced Layout**: Proper space distribution (300px + 250px)
+5. ✅ **Modular CSS**: Organized components properly separated from base styles
+6. ✅ **Reusable Components**: Table text truncation can be used throughout the app
 
 #### Benefits:
-- **For Users**: Consistent experience across all program-related pages
-- **For Developers**: Single pattern to maintain, easier updates
-- **For Performance**: Less DOM complexity, cleaner CSS
+- **For Users**: Consistent hover expansion behavior across all text columns
+- **For Developers**: Modular CSS components, easy to maintain and extend
+- **For Performance**: Clean CSS organization and optimized hover effects
 
-The initiative column now displays as simple text (e.g., "INI001 - Initiative Name") with the same truncation and tooltip behavior as program names, creating perfect consistency throughout the application.
-
-🎉 **Task Complete**: All program name and initiative display issues have been resolved with a unified, consistent approach!
+🎉 **Task Complete**: Program names and initiative names now have identical text truncation and white box hover expansion behavior, with properly organized modular CSS components!

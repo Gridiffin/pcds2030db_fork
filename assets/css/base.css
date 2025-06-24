@@ -262,52 +262,6 @@ a.btn:hover {
     background-color: rgba(var(--primary-rgb), 0.05);
 }
 
-/* Program name styling for truncated text in tables */
-.program-name {
-    display: inline-block;
-    max-width: 100%;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    vertical-align: middle;
-}
-
-/* Ensure tooltips work properly for truncated program names */
-.program-name:hover {
-    overflow: visible;
-    white-space: normal;
-    word-break: break-word;
-    background: white;
-    z-index: 1000;
-    position: relative;
-    box-shadow: 0 0 5px rgba(0,0,0,0.2);
-    padding: 0.5rem;
-    border-radius: 4px;
-}
-
-/* Initiative name styling for truncated text in tables (matches program-name behavior) */
-.initiative-name {
-    display: inline-block;
-    max-width: 100%;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    vertical-align: middle;
-}
-
-/* Ensure hover expansion works for truncated initiative names */
-.initiative-name:hover {
-    overflow: visible;
-    white-space: normal;
-    word-break: break-word;
-    background: white;
-    z-index: 1000;
-    position: relative;
-    box-shadow: 0 0 5px rgba(0,0,0,0.2);
-    padding: 0.5rem;
-    border-radius: 4px;
-}
-
 
 /* Nav link hover effects */
 .nav-link {

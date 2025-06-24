@@ -18,6 +18,7 @@
 @import 'components/cards.css';
 @import 'components/forms.css';
 @import 'components/tables.css';
+@import 'components/table-text-truncation.css';
 @import 'components/alerts.css';
 @import 'components/badges.css';
 @import 'components/responsive-performance-table.css';

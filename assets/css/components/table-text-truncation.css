@@ -1,0 +1,157 @@
+/**
+ * Table Text Truncation Components
+ * Handles text truncation and hover expansion for program names and initiative names in tables
+ */
+
+/* Program name styling for truncated text in tables */
+.program-name {
+    display: inline-block;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+}
+
+/* Ensure hover expansion works for truncated program names */
+.program-name:hover {
+    overflow: visible;
+    white-space: normal;
+    word-break: break-word;
+    background: white;
+    z-index: 1000;
+    position: relative;
+    box-shadow: 0 0 5px rgba(0,0,0,0.2);
+    padding: 0.5rem;
+    border-radius: 4px;
+}
+
+/* Initiative name styling for truncated text in tables (matches program-name behavior) */
+.initiative-name {
+    display: inline-block;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+}
+
+/* Ensure hover expansion works for truncated initiative names */
+.initiative-name:hover {
+    overflow: visible;
+    white-space: normal;
+    word-break: break-word;
+    background: white;
+    z-index: 1000;
+    position: relative;
+    box-shadow: 0 0 5px rgba(0,0,0,0.2);
+    padding: 0.5rem;
+    border-radius: 4px;
+}
+
+/* Initiative badge specific styling - prevents white box conflict */
+.initiative-badge-hover {
+    display: inline-block;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+    transition: all 0.3s ease;
+}
+
+/* Option A: Enhanced Badge - Darker background with shadow */
+.initiative-badge-hover:hover {
+    overflow: visible;
+    white-space: normal;
+    word-break: break-word;
+    position: relative;
+    z-index: 1000;
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    /* Keep original badge colors but make them slightly darker for better contrast */
+    background: var(--bs-primary-dark, #0056b3) !important;
+    color: white !important;
+}
+
+/* Option B: Expanded Badge with Gradient */
+.initiative-badge-gradient {
+    display: inline-block;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+    transition: all 0.3s ease;
+}
+
+.initiative-badge-gradient:hover {
+    overflow: visible;
+    white-space: normal;
+    word-break: break-word;
+    position: relative;
+    z-index: 1000;
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(13, 110, 253, 0.3);
+    padding: 0.6rem 0.8rem;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #0d6efd 0%, #0056b3 100%) !important;
+    color: white !important;
+    border: 2px solid rgba(255,255,255,0.2);
+}
+
+/* Option C: Subtle Glow Effect */
+.initiative-badge-glow {
+    display: inline-block;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+    transition: all 0.3s ease;
+}
+
+.initiative-badge-glow:hover {
+    overflow: visible;
+    white-space: normal;
+    word-break: break-word;
+    position: relative;
+    z-index: 1000;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    background: #0d6efd !important;
+    color: white !important;
+    box-shadow: 
+        0 0 0 3px rgba(13, 110, 253, 0.2),
+        0 4px 12px rgba(13, 110, 253, 0.3);
+    transform: translateY(-2px);
+}
+
+/* Option D: Modern Card Style */
+.initiative-badge-card {
+    display: inline-block;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+    transition: all 0.3s ease;
+}
+
+.initiative-badge-card:hover {
+    overflow: visible;
+    white-space: normal;
+    word-break: break-word;
+    position: relative;
+    z-index: 1000;
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    background: white !important;
+    color: #0d6efd !important;
+    border: 2px solid #0d6efd;
+    box-shadow: 0 8px 25px rgba(13, 110, 253, 0.15);
+    transform: translateY(-3px);
+    font-weight: 600;
+}
