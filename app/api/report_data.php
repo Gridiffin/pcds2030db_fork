@@ -488,12 +488,18 @@ if (empty($outcomes_details)) {// First, try to find a "TPA Protection" metric s
     }
 }
 
-// Initialize degraded area data for 2022, 2023, 2024
-$degraded_area_data = [
-    '2022' => array_fill(0, 12, 0),
-    '2023' => array_fill(0, 12, 0),
-    '2024' => array_fill(0, 12, 0)
+// Calculate the latest 3 years dynamically
+$degraded_area_years = [
+    strval($year_before_previous), // 2023
+    strval($previous_year),        // 2024
+    strval($current_year)          // 2025
 ];
+
+// Initialize degraded area data for the latest 3 years dynamically
+$degraded_area_data = [];
+foreach ($degraded_area_years as $year) {
+    $degraded_area_data[$year] = array_fill(0, 12, 0);
+}
 $degraded_area_units = '';
 
 // Query to find Total Degraded Area records
@@ -526,22 +532,25 @@ if ($stmt_degraded) {
                         $full_month_name = $json_month_key;
                         break;
                     }
-                }
-
-                if ($full_month_name && isset($monthly_data_rows[$full_month_name])) {
+                }                if ($full_month_name && isset($monthly_data_rows[$full_month_name])) {
                     $month_values = $monthly_data_rows[$full_month_name];
-                    foreach (['2022', '2023', '2024'] as $year) {
+                    foreach ($degraded_area_years as $year) {
+                        // Always process each year, even if not in database columns
                         if (in_array($year, $year_columns) && isset($month_values[$year]) && is_numeric($month_values[$year])) {
+                            // Use actual data from database
                             $degraded_area_data[$year][$month_index] = floatval($month_values[$year]);
                         }
+                        // If year not in database or no data, keep the initialized zero value
+                        // This ensures all requested years appear in the chart
                     }
                 }
-            }
-            // Extract units. Assuming units are consistent or pick one if varied by year.
+            }            // Extract units. Assuming units are consistent or pick one if varied by year.
             if(isset($data_json_degraded['units'])) {
                 if(is_array($data_json_degraded['units'])) {
-                    // If units is an array, try to get for a specific year or the first one
-                    $degraded_area_units = $data_json_degraded['units']['2022'] ?? $data_json_degraded['units'][array_key_first($data_json_degraded['units'])] ?? 'Ha';
+                    // If units is an array, try to get for current year, previous year, or the first available
+                    $degraded_area_units = $data_json_degraded['units'][$current_year] ?? 
+                                         $data_json_degraded['units'][$previous_year] ?? 
+                                         $data_json_degraded['units'][array_key_first($data_json_degraded['units'])] ?? 'Ha';
                 } else {
                     $degraded_area_units = $data_json_degraded['units'];
                 }
@@ -649,17 +658,18 @@ $main_chart_data = [
     'total' . $current_year => array_sum($timber_export_data[$current_year])
 ];
 
-// Add degraded area chart data
+// Add degraded area chart data using dynamic years
 $degraded_area_chart_data_prepared = [
     'labels' => $monthly_labels,
-    'data2022' => $degraded_area_data['2022'],
-    'data2023' => $degraded_area_data['2023'],
-    'data2024' => $degraded_area_data['2024'],
-    'total2022' => array_sum($degraded_area_data['2022']),
-    'total2023' => array_sum($degraded_area_data['2023']),
-    'total2024' => array_sum($degraded_area_data['2024']),
+    'years' => $degraded_area_years, // Add years array for frontend reference
     'units' => $degraded_area_units ?: 'Ha' // Default to 'Ha' if not found
 ];
+
+// Add data and totals for each year dynamically
+foreach ($degraded_area_years as $year) {
+    $degraded_area_chart_data_prepared['data' . $year] = $degraded_area_data[$year];
+    $degraded_area_chart_data_prepared['total' . $year] = array_sum($degraded_area_data[$year]);
+}
 
 // Default secondary chart data - still using placeholder data
 $secondary_chart_data = [

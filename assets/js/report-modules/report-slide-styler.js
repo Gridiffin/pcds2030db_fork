@@ -1070,46 +1070,59 @@ if (typeof window.ReportStyler !== 'undefined') {
                 align: 'center', valign: 'middle' 
             });
             return;
-        }
-
-        const degradedAreaMetricData = chartApiData.data;
+        }        const degradedAreaMetricData = chartApiData.data;
         const chartTitle = chartApiData.title || 'Total Degraded Area';
         const chartUnit = degradedAreaMetricData.units || 'Ha';
 
-        const yearsToShow = ['2022', '2023', '2024'];
+        // Use dynamic years from API if available, otherwise calculate current latest 3 years
+        let yearsToShow;
+        if (degradedAreaMetricData.years && Array.isArray(degradedAreaMetricData.years)) {
+            yearsToShow = degradedAreaMetricData.years;
+        } else {
+            // Fallback: calculate latest 3 years dynamically
+            const currentYear = new Date().getFullYear();
+            yearsToShow = [
+                String(currentYear - 2), // 2023
+                String(currentYear - 1), // 2024
+                String(currentYear)      // 2025
+            ];
+        }
+        
         const monthLabels = degradedAreaMetricData.labels || ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
         
         const chartDataSeries = [];
 
         // Define colors for the series
         const seriesColors = getChartSeriesColors(yearsToShow.length);
-        let colorIndex = 0;
-
-        yearsToShow.forEach(year => {
+        let colorIndex = 0;        yearsToShow.forEach(year => {
             const yearDataKey = `data${year}`;
+            let yearValues;
+            
             if (degradedAreaMetricData.hasOwnProperty(yearDataKey)) {
-                const yearValues = degradedAreaMetricData[yearDataKey] || Array(12).fill(0);
-                
-                // Ensure yearValues is an array of 12 numbers
-                const fullYearValues = [...yearValues];
-                while (fullYearValues.length < 12) fullYearValues.push(0);
-                const clippedYearValues = fullYearValues.slice(0, 12);
-
-                chartDataSeries.push({
-                    name: year, // Legend entry for the year
-                    labels: monthLabels, // X-axis labels (months)
-                    values: clippedYearValues, // Y-axis values for this year
-                    opts: { color: seriesColors[colorIndex % seriesColors.length] } // Series-specific color
-                });
-                colorIndex++;
+                // Use actual data from API
+                yearValues = degradedAreaMetricData[yearDataKey] || Array(12).fill(0);
             } else {
-                console.warn(`Data for year ${year} not found in degraded_area_chart data.`);
+                // Create zero values for missing years to ensure all requested years appear
+                yearValues = Array(12).fill(0);
+                console.info(`No data found for year ${year}, showing zero values to maintain chart consistency.`);
             }
-        });
+            
+            // Ensure yearValues is an array of exactly 12 numbers
+            const fullYearValues = [...yearValues];
+            while (fullYearValues.length < 12) fullYearValues.push(0);
+            const clippedYearValues = fullYearValues.slice(0, 12);
 
+            chartDataSeries.push({
+                name: year, // Legend entry for the year
+                labels: monthLabels, // X-axis labels (months)
+                values: clippedYearValues, // Y-axis values for this year (zeros if no data)
+                opts: { color: seriesColors[colorIndex % seriesColors.length] } // Series-specific color
+            });
+            colorIndex++;
+        });        // This should rarely happen now since we guarantee all years are included
         if (chartDataSeries.length === 0) {
-            console.error('No data series to plot for Total Degraded Area chart.');
-            createTextBox(slide, 'No data series for Total Degraded Area.', { 
+            console.error('No data series to plot for Total Degraded Area chart - this should not happen with zero value support.');
+            createTextBox(slide, 'Unable to generate Total Degraded Area chart.', { 
                 x: position.x, y: position.y, w: position.w, h: 0.5, 
                 fontFace: defaultFont, fontSize: 10, color: themeColors.text || '000000', 
                 align: 'center', valign: 'middle' 
