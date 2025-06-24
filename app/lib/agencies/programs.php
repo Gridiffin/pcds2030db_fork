@@ -149,17 +149,18 @@ function create_wizard_program_draft($data) {
     // Validate program_number format if provided (numbers and dots only)
     if ($program_number && !preg_match('/^[0-9.]+$/', $program_number)) {
         return ['error' => 'Program number must contain only numbers and dots'];
-    }
-    $brief_description = isset($data['brief_description']) ? trim($data['brief_description']) : '';
+    }    $brief_description = isset($data['brief_description']) ? trim($data['brief_description']) : '';
     $start_date = isset($data['start_date']) && !empty($data['start_date']) ? $data['start_date'] : null;
     $end_date = isset($data['end_date']) && !empty($data['end_date']) ? $data['end_date'] : null;
     $target = isset($data['target']) ? trim($data['target']) : '';
     $status_description = isset($data['status_description']) ? trim($data['status_description']) : '';
+    $initiative_id = isset($data['initiative_id']) && !empty($data['initiative_id']) ? intval($data['initiative_id']) : null;
+    
     $user_id = $_SESSION['user_id'];
     $sector_id = FORESTRY_SECTOR_ID;
     try {
-        $conn->begin_transaction();        $stmt = $conn->prepare("INSERT INTO programs (program_name, program_number, start_date, end_date, owner_agency_id, sector_id, is_assigned, created_at) VALUES (?, ?, ?, ?, ?, ?, 0, NOW())");
-        $stmt->bind_param("ssssii", $program_name, $program_number, $start_date, $end_date, $user_id, $sector_id);
+        $conn->begin_transaction();        $stmt = $conn->prepare("INSERT INTO programs (program_name, program_number, start_date, end_date, owner_agency_id, sector_id, initiative_id, is_assigned, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, 0, NOW())");
+        $stmt->bind_param("ssssiii", $program_name, $program_number, $start_date, $end_date, $user_id, $sector_id, $initiative_id);
         if (!$stmt->execute()) throw new Exception('Failed to create program: ' . $stmt->error);
         $program_id = $conn->insert_id;
         if (!empty($target) || !empty($status_description) || !empty($brief_description)) {
@@ -237,12 +238,14 @@ function update_program_draft_only($program_id, $data) {
     // Validate program_number format if provided (numbers and dots only)
     if ($program_number && !preg_match('/^[0-9.]+$/', $program_number)) {
         return ['success' => false, 'error' => 'Program number must contain only numbers and dots'];
-    }
-    $start_date = isset($data['start_date']) && !empty($data['start_date']) ? $data['start_date'] : null;
-    $end_date = isset($data['end_date']) && !empty($data['end_date']) ? $data['end_date'] : null;    try {
+    }    $start_date = isset($data['start_date']) && !empty($data['start_date']) ? $data['start_date'] : null;
+    $end_date = isset($data['end_date']) && !empty($data['end_date']) ? $data['end_date'] : null;
+    $initiative_id = isset($data['initiative_id']) && !empty($data['initiative_id']) ? intval($data['initiative_id']) : null;
+    
+    try {
         $conn->begin_transaction();
-        $stmt = $conn->prepare("UPDATE programs SET program_name = ?, program_number = ?, start_date = ?, end_date = ?, updated_at = NOW() WHERE program_id = ? AND owner_agency_id = ?");
-        $stmt->bind_param("ssssii", $program_name, $program_number, $start_date, $end_date, $program_id, $user_id);
+        $stmt = $conn->prepare("UPDATE programs SET program_name = ?, program_number = ?, start_date = ?, end_date = ?, initiative_id = ?, updated_at = NOW() WHERE program_id = ? AND owner_agency_id = ?");
+        $stmt->bind_param("sssssii", $program_name, $program_number, $start_date, $end_date, $initiative_id, $program_id, $user_id);
         if (!$stmt->execute()) throw new Exception('Failed to update program: ' . $stmt->error);
         $conn->commit();
         return [
@@ -269,17 +272,18 @@ function update_wizard_program_draft($program_id, $data) {
     $result = $check_stmt->get_result();
     if ($result->num_rows === 0) {
         return ['error' => 'Program not found or access denied'];
-    }
-    $program_name = trim($data['program_name']);
+    }    $program_name = trim($data['program_name']);
     $brief_description = isset($data['brief_description']) ? trim($data['brief_description']) : '';
     $start_date = isset($data['start_date']) && !empty($data['start_date']) ? $data['start_date'] : null;
     $end_date = isset($data['end_date']) && !empty($data['end_date']) ? $data['end_date'] : null;
     $target = isset($data['target']) ? trim($data['target']) : '';
     $status_description = isset($data['status_description']) ? trim($data['status_description']) : '';
+    $initiative_id = isset($data['initiative_id']) && !empty($data['initiative_id']) ? intval($data['initiative_id']) : null;
+    
     try {
         $conn->begin_transaction();
-        $stmt = $conn->prepare("UPDATE programs SET program_name = ?, start_date = ?, end_date = ?, updated_at = NOW() WHERE program_id = ? AND owner_agency_id = ?");
-        $stmt->bind_param("sssii", $program_name, $start_date, $end_date, $program_id, $user_id);
+        $stmt = $conn->prepare("UPDATE programs SET program_name = ?, start_date = ?, end_date = ?, initiative_id = ?, updated_at = NOW() WHERE program_id = ? AND owner_agency_id = ?");
+        $stmt->bind_param("ssssii", $program_name, $start_date, $end_date, $initiative_id, $program_id, $user_id);
         if (!$stmt->execute()) throw new Exception('Failed to update program: ' . $stmt->error);
         if (!empty($target) || !empty($status_description) || !empty($brief_description)) {
             $check_stmt = $conn->prepare("SELECT submission_id FROM program_submissions WHERE program_id = ?");

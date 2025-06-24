@@ -226,6 +226,7 @@ function get_admin_programs_list($period_id = null, $filters = []) {
         }    }    // Construct the main query with subquery to get latest submission per program
     $sql = "SELECT 
                 p.program_id, p.program_name, p.program_number, p.owner_agency_id, p.sector_id, p.created_at, p.is_assigned,
+                p.initiative_id, i.initiative_name,
                 s.sector_name, 
                 u.agency_name,
                 latest_sub.submission_id, latest_sub.is_draft, latest_sub.submission_date, latest_sub.updated_at, latest_sub.period_id AS submission_period_id,
@@ -233,6 +234,7 @@ function get_admin_programs_list($period_id = null, $filters = []) {
             FROM programs p
             JOIN sectors s ON p.sector_id = s.sector_id
             JOIN users u ON p.owner_agency_id = u.user_id
+            LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
             LEFT JOIN (
                 SELECT ps1.*
                 FROM program_submissions ps1

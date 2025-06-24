@@ -16,34 +16,33 @@ class DashboardController {
     public function __construct($db) {
         $this->db = $db;
     }
-    
-    /**
+      /**
      * Get dashboard data with filter options
      * 
      * @param int $agency_id Current agency ID
      * @param int $period_id Current reporting period ID
      * @param bool $include_assigned Whether to include assigned programs
+     * @param int|null $initiative_id Optional initiative filter
      * @return array Dashboard data
      */
-    public function getDashboardData($agency_id, $period_id, $include_assigned = true) {
+    public function getDashboardData($agency_id, $period_id, $include_assigned = true, $initiative_id = null) {
         $data = [
-            'stats' => $this->getStatsData($agency_id, $period_id, $include_assigned),
-            'chart_data' => $this->getChartData($agency_id, $period_id, $include_assigned),
-            'recent_updates' => $this->getRecentUpdates($agency_id, $period_id)
+            'stats' => $this->getStatsData($agency_id, $period_id, $include_assigned, $initiative_id),
+            'chart_data' => $this->getChartData($agency_id, $period_id, $include_assigned, $initiative_id),
+            'recent_updates' => $this->getRecentUpdates($agency_id, $period_id, $initiative_id)
         ];
         
         return $data;
     }
-    
-    /**
+      /**
      * Get stats card data (filtered)
      * 
      * @param int $agency_id Current agency ID
      * @param int $period_id Current reporting period ID
      * @param bool $include_assigned Whether to include assigned programs
+     * @param int|null $initiative_id Optional initiative filter
      * @return array Stats data
-     */    private function getStatsData($agency_id, $period_id, $include_assigned) {
-        // Build query with filters - this new query properly handles programs with no submissions
+     */    private function getStatsData($agency_id, $period_id, $include_assigned, $initiative_id = null) {        // Build query with filters - this new query properly handles programs with no submissions
         $query = "SELECT 
                     p.program_id,
                     p.program_name,
@@ -77,8 +76,17 @@ class DashboardController {
             $types .= "i";
         }
         
+        $query .= ")";
+        
+        // Add initiative filter if provided
+        if ($initiative_id !== null) {
+            $query .= " AND p.initiative_id = ?";
+            $params[] = $initiative_id;
+            $types .= "i";
+        }
+        
         // Important: Only count finalized programs, NOT drafts
-        $query .= ") AND (ps.is_draft = 0 OR ps.submission_id IS NULL)";
+        $query .= " AND (ps.is_draft = 0 OR ps.submission_id IS NULL)";
         
         $stmt = $this->db->prepare($query);
         $stmt->bind_param($types, ...$params);
@@ -117,18 +125,18 @@ class DashboardController {
         
         return $stats;
     }
-    
-    /**
+      /**
      * Get chart data (filtered)
      * 
      * @param int $agency_id Current agency ID
      * @param int $period_id Current reporting period ID
      * @param bool $include_assigned Whether to include assigned programs
+     * @param int|null $initiative_id Optional initiative filter
      * @return array Chart data formatted for Chart.js
      */
-    private function getChartData($agency_id, $period_id, $include_assigned) {
+    private function getChartData($agency_id, $period_id, $include_assigned, $initiative_id = null) {
         // Reuse stats data for chart
-        $stats = $this->getStatsData($agency_id, $period_id, $include_assigned);
+        $stats = $this->getStatsData($agency_id, $period_id, $include_assigned, $initiative_id);
         
         // Format data for Chart.js
         return [
@@ -141,17 +149,16 @@ class DashboardController {
             ]
         ];
     }
-    
-    /**
+      /**
      * Get recent program updates (unfiltered for recent updates section)
      * Always include both assigned and agency-created programs
      * Show draft and newly assigned programs in Recent Updates section
      * 
      * @param int $agency_id Current agency ID
      * @param int $period_id Current reporting period ID
+     * @param int|null $initiative_id Optional initiative filter
      * @return array Recent program updates
-     */    private function getRecentUpdates($agency_id, $period_id) {
-        // This query gets both finalized and draft submissions for the Recent Updates section
+     */    private function getRecentUpdates($agency_id, $period_id, $initiative_id = null) {        // This query gets both finalized and draft submissions for the Recent Updates section
         $query = "SELECT 
                     p.program_id, 
                     p.program_name,
@@ -172,11 +179,22 @@ class DashboardController {
                         GROUP BY program_id
                     ) ps2 ON ps1.program_id = ps2.program_id AND ps1.submission_id = ps2.max_id
                   ) ps ON p.program_id = ps.program_id
-                  WHERE (p.owner_agency_id = ? OR (p.is_assigned = 1 AND p.owner_agency_id = ?))                  ORDER BY COALESCE(ps.submission_date, p.updated_at, p.created_at) DESC
-                  LIMIT 5";
+                  WHERE (p.owner_agency_id = ? OR (p.is_assigned = 1 AND p.owner_agency_id = ?))";
+        
+        $params = [$period_id, $agency_id, $agency_id];
+        $types = "iii";
+        
+        // Add initiative filter if provided
+        if ($initiative_id !== null) {
+            $query .= " AND p.initiative_id = ?";
+            $params[] = $initiative_id;
+            $types .= "i";
+        }
+        
+        $query .= " ORDER BY COALESCE(ps.submission_date, p.updated_at, p.created_at) DESC LIMIT 5";
         
         $stmt = $this->db->prepare($query);
-        $stmt->bind_param("iii", $period_id, $agency_id, $agency_id);
+        $stmt->bind_param($types, ...$params);
         $stmt->execute();
         $result = $stmt->get_result();
           $programs = [];
