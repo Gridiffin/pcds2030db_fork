@@ -64,6 +64,16 @@ if (!$program || (!$allow_view)) {
 // Get program attachments (permission check is handled by the function)
 $program_attachments = get_program_attachments($program_id);
 
+// Get related programs if this program is linked to an initiative
+$related_programs = [];
+if (!empty($program['initiative_id'])) {
+    $related_programs = get_related_programs_by_initiative(
+        $program['initiative_id'], 
+        $program_id, 
+        $source === 'all_sectors'
+    );
+}
+
 // Get current submission if available
 $current_submission = $program['current_submission'] ?? null;
 $is_draft = isset($current_submission['is_draft']) && $current_submission['is_draft'];
@@ -327,11 +337,136 @@ $showNoTargetsAlert = empty($targets) && $is_owner; // Only show no targets aler
                         <?php echo nl2br(htmlspecialchars($program['description'])); ?>
                     </div>
                 </div>
+                <?php endif; ?>            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Initiative Details Card -->
+<?php if (!empty($program['initiative_id'])): ?>
+<div class="card shadow-sm mb-4">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-lightbulb me-2"></i>Initiative Information
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <!-- Initiative Basic Info -->
+            <div class="col-lg-8 mb-4">
+                <div class="initiative-header mb-3">
+                    <?php if (!empty($program['initiative_number'])): ?>
+                        <span class="badge bg-primary initiative-number me-2" 
+                              style="font-family: 'Courier New', monospace; font-size: 1.1em; font-weight: 700;">
+                            <i class="fas fa-hashtag me-1"></i>
+                            <?php echo htmlspecialchars($program['initiative_number']); ?>
+                        </span>
+                    <?php endif; ?>
+                    <span class="initiative-name fw-bold text-primary" style="font-size: 1.2em;">
+                        <?php echo htmlspecialchars($program['initiative_name']); ?>
+                    </span>
+                </div>
+                
+                <?php if (!empty($program['initiative_description'])): ?>
+                <div class="initiative-description mb-3">
+                    <h6 class="text-muted mb-2">
+                        <i class="fas fa-info-circle me-1"></i>Description
+                    </h6>
+                    <div class="p-3 bg-light rounded border" style="max-height: 200px; overflow-y: auto;">
+                        <?php echo nl2br(htmlspecialchars($program['initiative_description'])); ?>
+                    </div>
+                </div>
+                <?php endif; ?>
+                
+                <div class="initiative-timeline">
+                    <h6 class="text-muted mb-2">
+                        <i class="fas fa-calendar-alt me-1"></i>Initiative Timeline
+                    </h6>
+                    <div class="timeline-info">
+                        <?php if (!empty($program['initiative_start_date']) || !empty($program['initiative_end_date'])): ?>
+                            <span class="text-muted">
+                                <?php if (!empty($program['initiative_start_date'])): ?>
+                                    <i class="far fa-calendar-alt me-1"></i>
+                                    Started: <?php echo date('M j, Y', strtotime($program['initiative_start_date'])); ?>
+                                <?php endif; ?>
+                                <?php if (!empty($program['initiative_end_date'])): ?>
+                                    <?php if (!empty($program['initiative_start_date'])): ?>
+                                        <span class="mx-2">•</span>
+                                    <?php endif; ?>
+                                    <i class="far fa-calendar-check me-1"></i>
+                                    Target End: <?php echo date('M j, Y', strtotime($program['initiative_end_date'])); ?>
+                                <?php endif; ?>
+                            </span>
+                        <?php else: ?>
+                            <span class="text-muted fst-italic">Timeline not specified</span>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Related Programs -->
+            <div class="col-lg-4">
+                <h6 class="text-muted mb-3">
+                    <i class="fas fa-project-diagram me-1"></i>Related Programs
+                    <span class="badge bg-secondary ms-1"><?php echo count($related_programs); ?></span>
+                </h6>
+                
+                <?php if (!empty($related_programs)): ?>
+                    <div class="related-programs-list" style="max-height: 300px; overflow-y: auto;">
+                        <?php foreach ($related_programs as $related): ?>
+                            <div class="related-program-item p-2 mb-2 border rounded bg-white" style="border-left: 3px solid #0d6efd !important;">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <div class="fw-medium" style="font-size: 0.9em;">
+                                            <?php if (!empty($related['program_number'])): ?>
+                                                <span class="badge bg-info me-1" style="font-size: 0.7em;">
+                                                    <?php echo htmlspecialchars($related['program_number']); ?>
+                                                </span>
+                                            <?php endif; ?>
+                                            <?php echo htmlspecialchars($related['program_name']); ?>
+                                        </div>
+                                        <div class="small text-muted">
+                                            <?php echo htmlspecialchars($related['agency_name']); ?>
+                                        </div>
+                                    </div>
+                                    <div class="ms-2">
+                                        <?php
+                                        $status = convert_legacy_rating($related['rating']);
+                                        $status_colors = [
+                                            'target-achieved' => 'success',
+                                            'on-track-yearly' => 'warning',
+                                            'severe-delay' => 'danger',
+                                            'not-started' => 'secondary'
+                                        ];
+                                        $color_class = $status_colors[$status] ?? 'secondary';
+                                        ?>
+                                        <span class="badge bg-<?php echo $color_class; ?>" style="font-size: 0.6em;">
+                                            <?php echo $related['is_draft'] ? 'Draft' : 'Final'; ?>
+                                        </span>
+                                    </div>
+                                </div>
+                                <?php if ($allow_view): ?>
+                                    <div class="mt-1">
+                                        <a href="program_details.php?id=<?php echo $related['program_id']; ?>&source=<?php echo htmlspecialchars($source); ?>" 
+                                           class="btn btn-outline-primary btn-sm" style="font-size: 0.7em;">
+                                            <i class="fas fa-eye me-1"></i>View Details
+                                        </a>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php else: ?>
+                    <div class="text-muted fst-italic small">
+                        <i class="fas fa-info-circle me-1"></i>
+                        No other programs found under this initiative.
+                    </div>
                 <?php endif; ?>
             </div>
         </div>
     </div>
 </div>
+<?php endif; ?>
 
 <!-- Program Targets and Status Card -->
 <div class="card shadow-sm mb-4">
@@ -474,6 +609,8 @@ $showNoTargetsAlert = empty($targets) && $is_owner; // Only show no targets aler
         <?php endif; ?>
     </div>
 </div>
+
+
 
 <?php if (!$is_owner): ?>
 <div class="alert alert-info">

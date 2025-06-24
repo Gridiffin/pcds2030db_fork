@@ -51,14 +51,17 @@ $active_initiatives = get_initiatives_for_select(true);
 if (isset($_SESSION['role']) && strtolower($_SESSION['role']) === 'focal') {
     $agency_group_id = $_SESSION['agency_group_id'];
     $programs = [];
-    if ($agency_group_id !== null) {
-        $query = "SELECT p.*, 
+    if ($agency_group_id !== null) {        $query = "SELECT p.*, 
+                         i.initiative_name,
+                         i.initiative_number,
+                         i.initiative_id,
                          COALESCE(latest_sub.is_draft, 1) as is_draft,
                          latest_sub.period_id,
                          COALESCE(latest_sub.submission_date, p.created_at) as updated_at,
                          latest_sub.submission_id as latest_submission_id,
                          COALESCE(JSON_UNQUOTE(JSON_EXTRACT(latest_sub.content_json, '$.rating')), 'not-started') as rating
                   FROM programs p 
+                  LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
                   LEFT JOIN (
                       SELECT ps1.*
                       FROM program_submissions ps1
@@ -87,6 +90,7 @@ if (isset($_SESSION['role']) && strtolower($_SESSION['role']) === 'focal') {
         // Fixed query to properly get the latest submission for each program
         $query = "SELECT p.*, 
                          i.initiative_name,
+                         i.initiative_number,
                          i.initiative_id,
                          COALESCE(latest_sub.is_draft, 1) as is_draft,
                          latest_sub.period_id,
@@ -235,7 +239,7 @@ require_once '../../layouts/page_header.php';
                 <thead class="table-light">
                     <tr>
                         <th class="sortable" data-sort="name">Program Name <i class="fas fa-sort ms-1"></i></th>
-                        <th class="sortable" data-sort="initiative">Initiative <i class="fas fa-sort ms-1"></i></th>
+                        <th class="sortable initiative-display" data-sort="initiative">Initiative <i class="fas fa-sort ms-1"></i></th>
                         <th class="sortable" data-sort="rating">Rating <i class="fas fa-sort ms-1"></i></th>
                         <th class="sortable" data-sort="date">Last Updated <i class="fas fa-sort ms-1"></i></th>
                         <th class="text-end">Actions</th>
@@ -270,9 +274,9 @@ require_once '../../layouts/page_header.php';
                             
                             // Check if this is a draft
                             $is_draft = isset($program['is_draft']) && $program['is_draft'] ? true : false;
-                        ?>
-                            <tr class="<?php echo $is_draft ? 'draft-program' : ''; ?>" 
-                                data-program-type="<?php echo $is_assigned ? 'assigned' : 'created'; ?>">                                <td>
+                        ?>                            <tr class="<?php echo $is_draft ? 'draft-program' : ''; ?>" 
+                                data-program-type="<?php echo $is_assigned ? 'assigned' : 'created'; ?>">                                <!-- Draft programs initiative column -->
+                                <td>
                                     <div class="fw-medium">
                                         <?php if (!empty($program['program_number'])): ?>
                                             <span class="badge bg-info me-2" title="Program Number"><?php echo htmlspecialchars($program['program_number']); ?></span>
@@ -288,11 +292,26 @@ require_once '../../layouts/page_header.php';
                                     </div>
                                 </td>
                                 <td>
-                                    <?php if (!empty($program['initiative_name'])): ?>
-                                        <span class="badge bg-primary" title="Linked to Initiative">
-                                            <i class="fas fa-link me-1"></i>
-                                            <?php echo htmlspecialchars($program['initiative_name']); ?>
-                                        </span>
+                                    <?php if (!empty($program['initiative_number']) || !empty($program['initiative_name'])): ?>
+                                        <div class="initiative-display">
+                                            <?php if (!empty($program['initiative_number'])): ?>
+                                                <span class="badge bg-primary initiative-number" 
+                                                      title="<?php echo htmlspecialchars($program['initiative_name'] ?? 'Initiative ' . $program['initiative_number']); ?>">
+                                                    <i class="fas fa-hashtag me-1"></i>
+                                                    <?php echo htmlspecialchars($program['initiative_number']); ?>
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="badge bg-primary" title="Linked to Initiative">
+                                                    <i class="fas fa-link me-1"></i>
+                                                    <?php echo htmlspecialchars($program['initiative_name']); ?>
+                                                </span>
+                                            <?php endif; ?>
+                                            <?php if (!empty($program['initiative_number']) && !empty($program['initiative_name'])): ?>
+                                                <div class="small text-muted mt-1 initiative-name">
+                                                    <?php echo htmlspecialchars($program['initiative_name']); ?>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
                                     <?php else: ?>
                                         <span class="text-muted">
                                             <i class="fas fa-minus"></i> Not linked
@@ -405,7 +424,7 @@ require_once '../../layouts/page_header.php';
                 <thead class="table-light">
                     <tr>
                         <th class="sortable" data-sort="name">Program Name <i class="fas fa-sort ms-1"></i></th>
-                        <th class="sortable" data-sort="initiative">Initiative <i class="fas fa-sort ms-1"></i></th>
+                        <th class="sortable initiative-display" data-sort="initiative">Initiative <i class="fas fa-sort ms-1"></i></th>
                         <th class="sortable" data-sort="rating">Rating <i class="fas fa-sort ms-1"></i></th>
                         <th class="sortable" data-sort="date">Last Updated <i class="fas fa-sort ms-1"></i></th>
                         <th class="text-end">Actions</th>
@@ -439,7 +458,8 @@ require_once '../../layouts/page_header.php';
                                 $current_rating = 'not-started';
                             }
                         ?>
-                            <tr data-program-type="<?php echo $is_assigned ? 'assigned' : 'created'; ?>">                                <td>
+                            <tr data-program-type="<?php echo $is_assigned ? 'assigned' : 'created'; ?>">                                <!-- Finalized programs initiative column -->
+                                <td>
                                     <div class="fw-medium">
                                         <?php if (!empty($program['program_number'])): ?>
                                             <span class="badge bg-info me-2" title="Program Number"><?php echo htmlspecialchars($program['program_number']); ?></span>
@@ -452,11 +472,26 @@ require_once '../../layouts/page_header.php';
                                     </div>
                                 </td>
                                 <td>
-                                    <?php if (!empty($program['initiative_name'])): ?>
-                                        <span class="badge bg-primary" title="Linked to Initiative">
-                                            <i class="fas fa-link me-1"></i>
-                                            <?php echo htmlspecialchars($program['initiative_name']); ?>
-                                        </span>
+                                    <?php if (!empty($program['initiative_number']) || !empty($program['initiative_name'])): ?>
+                                        <div class="initiative-display">
+                                            <?php if (!empty($program['initiative_number'])): ?>
+                                                <span class="badge bg-primary initiative-number" 
+                                                      title="<?php echo htmlspecialchars($program['initiative_name'] ?? 'Initiative ' . $program['initiative_number']); ?>">
+                                                    <i class="fas fa-hashtag me-1"></i>
+                                                    <?php echo htmlspecialchars($program['initiative_number']); ?>
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="badge bg-primary" title="Linked to Initiative">
+                                                    <i class="fas fa-link me-1"></i>
+                                                    <?php echo htmlspecialchars($program['initiative_name']); ?>
+                                                </span>
+                                            <?php endif; ?>
+                                            <?php if (!empty($program['initiative_number']) && !empty($program['initiative_name'])): ?>
+                                                <div class="small text-muted mt-1 initiative-name">
+                                                    <?php echo htmlspecialchars($program['initiative_name']); ?>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
                                     <?php else: ?>
                                         <span class="text-muted">
                                             <i class="fas fa-minus"></i> Not linked
@@ -555,6 +590,71 @@ require_once '../../layouts/page_header.php';
     </div>
 </div>
 
+<style>
+/* Initiative Column Styles */
+.initiative-display {
+    min-width: 120px;
+}
+
+.initiative-number {
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.initiative-name {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 1.2;
+}
+
+.initiative-display .badge {
+    position: relative;
+}
+
+/* Tooltip enhancements */
+.initiative-display [title] {
+    cursor: help;
+}
+
+.initiative-display .badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s ease;
+}
+
+/* Additional styles for better initiative display */
+.initiative-display .badge.initiative-number {
+    font-family: 'Courier New', monospace;
+    font-size: 0.85em;
+    font-weight: 700;
+    letter-spacing: 1px;
+    background: linear-gradient(135deg, #0d6efd, #0a58ca) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.initiative-display .badge.initiative-number:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(13, 110, 253, 0.3);
+    transition: all 0.2s ease;
+}
+
+.initiative-name {
+    font-style: italic;
+    opacity: 0.8;
+}
+
+@media (max-width: 768px) {
+    .initiative-display {
+        min-width: auto;
+    }
+    
+    .initiative-name {
+        display: none;
+    }
+}
+</style>
 
 <?php
 // Include footer

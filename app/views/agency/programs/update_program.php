@@ -25,6 +25,7 @@ require_once PROJECT_ROOT_PATH . 'lib/rating_helpers.php';
 require_once PROJECT_ROOT_PATH . 'lib/audit_log.php';
 require_once PROJECT_ROOT_PATH . 'lib/agencies/program_attachments.php';
 require_once PROJECT_ROOT_PATH . 'lib/initiative_functions.php';
+require_once PROJECT_ROOT_PATH . 'lib/numbering_helpers.php'; // Added for program number validation
 
 // Verify user is an agency
 if (!is_agency()) {
@@ -147,7 +148,6 @@ $all_periods = [];
 $selected_period = null;
 
 // Fetch all periods for selector
-$conn = $conn ?? (function_exists('get_db_connection') ? get_db_connection() : null);
 if ($conn) {
     $periods_result = $conn->query("SELECT * FROM reporting_periods ORDER BY year DESC, quarter DESC");
     if ($periods_result) {
@@ -269,13 +269,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $period_id = intval($_POST['period_id'] ?? 0);
             $submission_id = intval($_POST['submission_id'] ?? 0);
             $current_user_id = $_SESSION['user_id'];
-            
-            // Validate program_number format if provided
+              // Validate program_number format if provided
             if (!empty($program_number) && !preg_match('/^[0-9.]+$/', $program_number)) {
                 $_SESSION['message'] = 'Program number can only contain numbers and dots.';
                 $_SESSION['message_type'] = 'danger';
                 header('Location: update_program.php?id=' . $program_id);
                 exit;
+            }
+            
+            // Additional validation for hierarchical format if initiative is linked
+            if ($program_number && $initiative_id) {
+                $format_validation = validate_program_number_format($program_number, $initiative_id);
+                if (!$format_validation['valid']) {
+                    $_SESSION['message'] = $format_validation['message'];
+                    $_SESSION['message_type'] = 'danger';
+                    header('Location: update_program.php?id=' . $program_id);
+                    exit;
+                }
+                
+                // Check if number is already in use (excluding current program)
+                if (!is_program_number_available($program_number, $program_id)) {
+                    $_SESSION['message'] = 'Program number is already in use.';
+                    $_SESSION['message_type'] = 'danger';
+                    header('Location: update_program.php?id=' . $program_id);
+                    exit;
+                }
             }
             
             // Process targets array

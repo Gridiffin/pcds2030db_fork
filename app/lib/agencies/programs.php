@@ -450,12 +450,15 @@ function get_program_details($program_id, $allow_cross_agency = false) {
     }
     
     $current_user_id = $_SESSION['user_id'];
-    
-    // Base query to get program details
-    $stmt = $conn->prepare("SELECT p.*, s.sector_name, u.agency_name, u.user_id as owner_agency_id
+      // Base query to get program details with initiative information
+    $stmt = $conn->prepare("SELECT p.*, s.sector_name, u.agency_name, u.user_id as owner_agency_id,
+                                   i.initiative_id, i.initiative_name, i.initiative_number,
+                                   i.initiative_description, i.start_date as initiative_start_date,
+                                   i.end_date as initiative_end_date, i.created_at as initiative_created_at
                           FROM programs p
                           LEFT JOIN sectors s ON p.sector_id = s.sector_id
                           LEFT JOIN users u ON p.owner_agency_id = u.user_id
+                          LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
                           WHERE p.program_id = ?");
     $stmt->bind_param("i", $program_id);
     $stmt->execute();
@@ -656,4 +659,70 @@ function get_field_edit_history($submissions, $field_name) {
     }
 
     return $history;
+}
+
+/**
+ * Get related programs under the same initiative
+ * Returns programs that share the same initiative_id, excluding the current program
+ */
+function get_related_programs_by_initiative($initiative_id, $current_program_id = null, $allow_cross_agency = false) {
+    global $conn;
+    
+    if (!$initiative_id) {
+        return [];
+    }
+    
+    $current_user_id = $_SESSION['user_id'];
+    
+    // Base query for related programs
+    $where_conditions = ["p.initiative_id = ?"];
+    $params = [$initiative_id];
+    $param_types = "i";
+    
+    // Exclude current program if specified
+    if ($current_program_id) {
+        $where_conditions[] = "p.program_id != ?";
+        $params[] = $current_program_id;
+        $param_types .= "i";
+    }
+    
+    // Access control - only show programs user can access
+    if (!$allow_cross_agency) {
+        $where_conditions[] = "p.owner_agency_id = ?";
+        $params[] = $current_user_id;
+        $param_types .= "i";
+    }
+    
+    $sql = "SELECT p.program_id, p.program_name, p.program_number, p.owner_agency_id,
+                   u.agency_name, 
+                   COALESCE(latest_sub.is_draft, 1) as is_draft,
+                   COALESCE(JSON_UNQUOTE(JSON_EXTRACT(latest_sub.content_json, '$.rating')), 'not-started') as rating
+            FROM programs p
+            LEFT JOIN users u ON p.owner_agency_id = u.user_id
+            LEFT JOIN (
+                SELECT ps1.*
+                FROM program_submissions ps1
+                INNER JOIN (
+                    SELECT program_id, MAX(submission_id) as max_submission_id
+                    FROM program_submissions
+                    GROUP BY program_id
+                ) ps2 ON ps1.program_id = ps2.program_id AND ps1.submission_id = ps2.max_submission_id
+            ) latest_sub ON p.program_id = latest_sub.program_id
+            WHERE " . implode(' AND ', $where_conditions) . "
+            ORDER BY p.program_name";
+    
+    $stmt = $conn->prepare($sql);
+    if (!empty($params)) {
+        $stmt->bind_param($param_types, ...$params);
+    }
+    
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    $related_programs = [];
+    while ($row = $result->fetch_assoc()) {
+        $related_programs[] = $row;
+    }
+    
+    return $related_programs;
 }
