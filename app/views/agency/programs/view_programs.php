@@ -274,15 +274,15 @@ require_once '../../layouts/page_header.php';
                             
                             // Check if this is a draft
                             $is_draft = isset($program['is_draft']) && $program['is_draft'] ? true : false;
-                        ?>                            <tr class="<?php echo $is_draft ? 'draft-program' : ''; ?>" 
-                                data-program-type="<?php echo $is_assigned ? 'assigned' : 'created'; ?>">                                <!-- Draft programs initiative column -->
-                                <td>
+                        ?>                            <tr class="<?php echo $is_draft ? 'draft-program' : ''; ?>"                                data-program-type="<?php echo $is_assigned ? 'assigned' : 'created'; ?>">                                <!-- Draft programs initiative column -->
+                                <td class="text-truncate" style="max-width: 300px;">
                                     <div class="fw-medium">
-                                        <?php if (!empty($program['program_number'])): ?>
-                                            <span class="badge bg-info me-2" title="Program Number"><?php echo htmlspecialchars($program['program_number']); ?></span>
-                                        <?php endif; ?>
-                                        <?php echo htmlspecialchars($program['program_name']); ?>
-                                        <?php if ($is_draft): ?>
+                                        <span class="program-name" title="<?php echo htmlspecialchars($program['program_name']); ?>">
+                                            <?php if (!empty($program['program_number'])): ?>
+                                                <span class="badge bg-info me-2" title="Program Number"><?php echo htmlspecialchars($program['program_number']); ?></span>
+                                            <?php endif; ?>
+                                            <?php echo htmlspecialchars($program['program_name']); ?>
+                                        </span>                                        <?php if ($is_draft): ?>
                                             <span class="draft-indicator" title="Draft"></span>
                                         <?php endif; ?>
                                     </div>
@@ -291,25 +291,24 @@ require_once '../../layouts/page_header.php';
                                         <?php echo $is_assigned ? 'Assigned' : 'Agency-Created'; ?>
                                     </div>
                                 </td>
-                                <td>
+                                <td class="text-truncate" style="max-width: 250px;">
                                     <?php if (!empty($program['initiative_number']) || !empty($program['initiative_name'])): ?>
-                                        <div class="initiative-display">
+                                        <div class="d-flex align-items-center" title="<?php echo htmlspecialchars($program['initiative_name'] ?? 'Initiative ' . ($program['initiative_number'] ?? '')); ?>">
                                             <?php if (!empty($program['initiative_number'])): ?>
-                                                <span class="badge bg-primary initiative-number" 
-                                                      title="<?php echo htmlspecialchars($program['initiative_name'] ?? 'Initiative ' . $program['initiative_number']); ?>">
+                                                <span class="badge bg-primary me-2 flex-shrink-0">
                                                     <i class="fas fa-hashtag me-1"></i>
                                                     <?php echo htmlspecialchars($program['initiative_number']); ?>
                                                 </span>
-                                            <?php else: ?>
-                                                <span class="badge bg-primary" title="Linked to Initiative">
-                                                    <i class="fas fa-link me-1"></i>
+                                            <?php endif; ?>
+                                            <?php if (!empty($program['initiative_name'])): ?>
+                                                <span class="initiative-name">
                                                     <?php echo htmlspecialchars($program['initiative_name']); ?>
                                                 </span>
-                                            <?php endif; ?>
-                                            <?php if (!empty($program['initiative_number']) && !empty($program['initiative_name'])): ?>
-                                                <div class="small text-muted mt-1 initiative-name">
-                                                    <?php echo htmlspecialchars($program['initiative_name']); ?>
-                                                </div>
+                                            <?php elseif (empty($program['initiative_number'])): ?>
+                                                <span class="badge bg-primary">
+                                                    <i class="fas fa-link me-1"></i>
+                                                    No name
+                                                </span>
                                             <?php endif; ?>
                                         </div>
                                     <?php else: ?>
@@ -456,40 +455,37 @@ require_once '../../layouts/page_header.php';
                             // Set default if rating is not in our map
                             if (!isset($rating_map[$current_rating])) {
                                 $current_rating = 'not-started';
-                            }
-                        ?>
-                            <tr data-program-type="<?php echo $is_assigned ? 'assigned' : 'created'; ?>">                                <!-- Finalized programs initiative column -->
-                                <td>
+                            }                        ?>                            <tr data-program-type="<?php echo $is_assigned ? 'assigned' : 'created'; ?>">                                <!-- Finalized programs initiative column -->
+                                <td class="text-truncate" style="max-width: 300px;">
                                     <div class="fw-medium">
-                                        <?php if (!empty($program['program_number'])): ?>
-                                            <span class="badge bg-info me-2" title="Program Number"><?php echo htmlspecialchars($program['program_number']); ?></span>
-                                        <?php endif; ?>
-                                        <?php echo htmlspecialchars($program['program_name']); ?>
+                                        <span class="program-name" title="<?php echo htmlspecialchars($program['program_name']); ?>">
+                                            <?php if (!empty($program['program_number'])): ?>
+                                                <span class="badge bg-info me-2" title="Program Number"><?php echo htmlspecialchars($program['program_number']); ?></span>
+                                            <?php endif; ?>                                            <?php echo htmlspecialchars($program['program_name']); ?>                                        </span>
                                     </div>
                                     <div class="small text-muted program-type-indicator">
                                         <i class="fas fa-<?php echo $is_assigned ? 'tasks' : 'folder-plus'; ?> me-1"></i>
                                         <?php echo $is_assigned ? 'Assigned' : 'Agency-Created'; ?>
                                     </div>
                                 </td>
-                                <td>
+                                <td class="text-truncate" style="max-width: 250px;">
                                     <?php if (!empty($program['initiative_number']) || !empty($program['initiative_name'])): ?>
-                                        <div class="initiative-display">
+                                        <div class="d-flex align-items-center" title="<?php echo htmlspecialchars($program['initiative_name'] ?? 'Initiative ' . ($program['initiative_number'] ?? '')); ?>">
                                             <?php if (!empty($program['initiative_number'])): ?>
-                                                <span class="badge bg-primary initiative-number" 
-                                                      title="<?php echo htmlspecialchars($program['initiative_name'] ?? 'Initiative ' . $program['initiative_number']); ?>">
+                                                <span class="badge bg-primary me-2 flex-shrink-0">
                                                     <i class="fas fa-hashtag me-1"></i>
                                                     <?php echo htmlspecialchars($program['initiative_number']); ?>
                                                 </span>
-                                            <?php else: ?>
-                                                <span class="badge bg-primary" title="Linked to Initiative">
-                                                    <i class="fas fa-link me-1"></i>
+                                            <?php endif; ?>
+                                            <?php if (!empty($program['initiative_name'])): ?>
+                                                <span class="initiative-name">
                                                     <?php echo htmlspecialchars($program['initiative_name']); ?>
                                                 </span>
-                                            <?php endif; ?>
-                                            <?php if (!empty($program['initiative_number']) && !empty($program['initiative_name'])): ?>
-                                                <div class="small text-muted mt-1 initiative-name">
-                                                    <?php echo htmlspecialchars($program['initiative_name']); ?>
-                                                </div>
+                                            <?php elseif (empty($program['initiative_number'])): ?>
+                                                <span class="badge bg-primary">
+                                                    <i class="fas fa-link me-1"></i>
+                                                    No name
+                                                </span>
                                             <?php endif; ?>
                                         </div>
                                     <?php else: ?>
@@ -591,26 +587,86 @@ require_once '../../layouts/page_header.php';
 </div>
 
 <style>
-/* Initiative Column Styles */
-.initiative-display {
-    min-width: 120px;
+/* Program Name Truncation Styles */
+.program-name {
+    cursor: help;
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.initiative-number {
-    font-weight: 600;
-    letter-spacing: 0.5px;
+.program-name:hover {
+    color: #0d6efd;
+    transition: color 0.2s ease;
+}
+
+.text-truncate td,
+.text-truncate .fw-medium {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Ensure program type indicator doesn't interfere with truncation */
+.program-type-indicator {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+/* Initiative Column Enhanced Styles */
+.initiative-display {
+    min-width: 120px;
+    max-width: 100%;
+}
+
+.initiative-name-truncate {
+    display: inline-block;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: top;
 }
 
 .initiative-name {
-    max-width: 200px;
+    max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     line-height: 1.2;
+    cursor: help;
 }
 
-.initiative-display .badge {
-    position: relative;
+.initiative-name:hover {
+    color: #0d6efd;
+    transition: color 0.2s ease;
+}
+
+/* Balanced Table Layout */
+.table td:nth-child(1) { /* Program Name Column */
+    max-width: 300px;
+    width: 30%;
+}
+
+.table td:nth-child(2) { /* Initiative Column */
+    max-width: 250px;
+    width: 25%;
+}
+
+.table td:nth-child(3) { /* Rating Column */
+    width: 15%;
+}
+
+.table td:nth-child(4) { /* Last Updated Column */
+    width: 20%;
+}
+
+.table td:nth-child(5) { /* Actions Column */
+    width: 10%;
 }
 
 /* Tooltip enhancements */
