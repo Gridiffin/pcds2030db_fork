@@ -951,11 +951,7 @@ require_once dirname(__DIR__, 2) . '/layouts/page_header.php';
                                     <div class="mb-2">
                                         <label class="form-label">Status Description</label>
                                         <textarea class="form-control status-description" name="target_status_description[]" rows="2" 
-                                                    placeholder="Describe the current status or progress toward this target"
-                                                    <?php echo (is_editable('status_text')) ? '' : 'readonly'; ?>><?php echo htmlspecialchars($status_description); ?></textarea>
-                                        <?php if (!is_editable('status_text') && $index === 0): ?>
-                                        <div class="form-text">Status descriptions were set by an administrator and cannot be changed.</div>
-                                        <?php endif; ?>
+                                                    placeholder="Describe the current status or progress toward this target"><?php echo htmlspecialchars($status_description); ?></textarea>
                                     </div>
                                 </div>
                                 <?php endforeach; ?>
