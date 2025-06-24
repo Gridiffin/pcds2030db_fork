@@ -15,6 +15,8 @@ require_once ROOT_PATH . 'app/lib/rating_helpers.php';
 require_once ROOT_PATH . 'app/lib/agencies/programs.php'; // Added for program history feature
 require_once ROOT_PATH . 'app/lib/audit_log.php';
 require_once ROOT_PATH . 'app/lib/agencies/program_attachments.php';
+require_once ROOT_PATH . 'app/lib/numbering_helpers.php'; // Added for hierarchical numbering
+require_once ROOT_PATH . 'app/lib/initiative_functions.php'; // Added for initiative data
 
 // Verify user is admin
 if (!is_admin()) {
@@ -444,8 +446,6 @@ require_once '../../layouts/page_header.php';
                                         </button>
                                     </div>
                                     
-                                    <div id="programNameHistory" class="history-complete" style="display: none;">
-                                        <h6 class="small text-muted mb-2">Program Name History</h6>
                                         <ul class="history-list">
                                             <?php foreach($name_history as $idx => $item): ?>
                                             <li class="history-list-item">

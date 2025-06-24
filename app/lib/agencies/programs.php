@@ -17,6 +17,9 @@ if (file_exists(dirname(__FILE__) . '/core.php')) {
 // Include audit logging
 require_once dirname(__DIR__) . '/audit_log.php';
 
+// Include numbering helpers for hierarchical program numbering
+require_once dirname(__DIR__) . '/numbering_helpers.php';
+
 /**
  * Get programs owned by current agency, separated by type
  */
@@ -143,18 +146,32 @@ function create_wizard_program_draft($data) {
     global $conn;
     if (!is_agency()) return ['error' => 'Permission denied'];    if (empty($data['program_name']) || trim($data['program_name']) === '') {
         return ['error' => 'Program name is required'];
-    }
-    $program_name = trim($data['program_name']);
+    }    $program_name = trim($data['program_name']);
     $program_number = isset($data['program_number']) ? trim($data['program_number']) : null;
-    // Validate program_number format if provided (numbers and dots only)
-    if ($program_number && !preg_match('/^[0-9.]+$/', $program_number)) {
-        return ['error' => 'Program number must contain only numbers and dots'];
-    }    $brief_description = isset($data['brief_description']) ? trim($data['brief_description']) : '';
+    $brief_description = isset($data['brief_description']) ? trim($data['brief_description']) : '';
     $start_date = isset($data['start_date']) && !empty($data['start_date']) ? $data['start_date'] : null;
     $end_date = isset($data['end_date']) && !empty($data['end_date']) ? $data['end_date'] : null;
     $target = isset($data['target']) ? trim($data['target']) : '';
     $status_description = isset($data['status_description']) ? trim($data['status_description']) : '';
     $initiative_id = isset($data['initiative_id']) && !empty($data['initiative_id']) ? intval($data['initiative_id']) : null;
+    
+    // Validate program_number format if provided (numbers and dots only)
+    if ($program_number && !preg_match('/^[0-9.]+$/', $program_number)) {
+        return ['error' => 'Program number must contain only numbers and dots'];
+    }
+    
+    // Additional validation for hierarchical format if initiative is linked
+    if ($program_number && $initiative_id) {
+        $format_validation = validate_program_number_format($program_number, $initiative_id);
+        if (!$format_validation['valid']) {
+            return ['error' => $format_validation['message']];
+        }
+        
+        // Check if number is already in use
+        if (!is_program_number_available($program_number)) {
+            return ['error' => 'Program number is already in use'];
+        }
+    }
     
     $user_id = $_SESSION['user_id'];
     $sector_id = FORESTRY_SECTOR_ID;
@@ -273,6 +290,7 @@ function update_wizard_program_draft($program_id, $data) {
     if ($result->num_rows === 0) {
         return ['error' => 'Program not found or access denied'];
     }    $program_name = trim($data['program_name']);
+    $program_number = isset($data['program_number']) ? trim($data['program_number']) : null;
     $brief_description = isset($data['brief_description']) ? trim($data['brief_description']) : '';
     $start_date = isset($data['start_date']) && !empty($data['start_date']) ? $data['start_date'] : null;
     $end_date = isset($data['end_date']) && !empty($data['end_date']) ? $data['end_date'] : null;
@@ -280,10 +298,52 @@ function update_wizard_program_draft($program_id, $data) {
     $status_description = isset($data['status_description']) ? trim($data['status_description']) : '';
     $initiative_id = isset($data['initiative_id']) && !empty($data['initiative_id']) ? intval($data['initiative_id']) : null;
     
+    // Validate program_number format if provided
+    if ($program_number && !preg_match('/^[0-9.]+$/', $program_number)) {
+        return ['error' => 'Program number must contain only numbers and dots'];
+    }
+    
+    // Additional validation for hierarchical format if initiative is linked
+    if ($program_number && $initiative_id) {
+        $format_validation = validate_program_number_format($program_number, $initiative_id);
+        if (!$format_validation['valid']) {
+            return ['error' => $format_validation['message']];
+        }
+        
+        // Check if number is already in use (excluding current program)
+        if (!is_program_number_available($program_number, $program_id)) {
+            return ['error' => 'Program number is already in use'];
+        }
+    }
+    
     try {
         $conn->begin_transaction();
-        $stmt = $conn->prepare("UPDATE programs SET program_name = ?, start_date = ?, end_date = ?, initiative_id = ?, updated_at = NOW() WHERE program_id = ? AND owner_agency_id = ?");
-        $stmt->bind_param("ssssii", $program_name, $start_date, $end_date, $initiative_id, $program_id, $user_id);
+          // Get current program data to check if initiative changed
+        $current_query = "SELECT initiative_id, program_number FROM programs WHERE program_id = ?";
+        $current_stmt = $conn->prepare($current_query);
+        $current_stmt->bind_param("i", $program_id);
+        $current_stmt->execute();
+        $current_result = $current_stmt->get_result();
+        $current_program = $current_result->fetch_assoc();
+        
+        $old_initiative_id = $current_program['initiative_id'];
+        $current_program_number = $current_program['program_number'];
+        
+        // Use the provided program number (no auto-generation)
+        // If no program_number provided, keep existing number unless initiative is being removed
+        $new_program_number = $program_number;
+        if (!$new_program_number && $old_initiative_id != $initiative_id) {
+            if (!$initiative_id) {
+                // Remove from initiative - clear program number
+                $new_program_number = null;
+            } else {
+                // Keep existing number when changing initiatives
+                $new_program_number = $current_program_number;
+            }
+        }
+        
+        $stmt = $conn->prepare("UPDATE programs SET program_name = ?, program_number = ?, start_date = ?, end_date = ?, initiative_id = ?, updated_at = NOW() WHERE program_id = ? AND owner_agency_id = ?");
+        $stmt->bind_param("sssssii", $program_name, $new_program_number, $start_date, $end_date, $initiative_id, $program_id, $user_id);
         if (!$stmt->execute()) throw new Exception('Failed to update program: ' . $stmt->error);
         if (!empty($target) || !empty($status_description) || !empty($brief_description)) {
             $check_stmt = $conn->prepare("SELECT submission_id FROM program_submissions WHERE program_id = ?");
