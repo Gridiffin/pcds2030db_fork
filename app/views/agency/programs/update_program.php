@@ -1097,9 +1097,9 @@ require_once dirname(__DIR__, 2) . '/layouts/page_header.php';
                                     <i class="fas fa-save me-1"></i> Save Draft
                                 </button>
                             <?php else: ?>
-                                <button type="submit" name="save_draft" class="btn btn-secondary me-2">
+                                <!-- <button type="submit" name="save_draft" class="btn btn-secondary me-2">
                                     <i class="fas fa-save me-1"></i> Save as Draft
-                                </button>
+                                </button> -->
                                 <button type="submit" name="submit_program" class="btn btn-primary">
                                     <i class="fas fa-check-circle me-1"></i> Update Program
                                 </button>
