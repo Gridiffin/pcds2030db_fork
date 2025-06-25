@@ -564,9 +564,9 @@ function get_program_edit_history($program_id) {
             }
         }
         
-        // Format the date for display
+        // Format the date for display with both date and time
         if ($row['effective_date']) {
-            $row['formatted_date'] = date('M j, Y', strtotime($row['effective_date']));
+            $row['formatted_date'] = date('M j, Y g:i A', strtotime($row['effective_date']));
         } else {
             $row['formatted_date'] = 'Unknown date';
         }
@@ -640,16 +640,16 @@ function get_field_edit_history($submissions, $field_name) {
         }
         $seen_values[] = $value_hash;
 
-        // Format timestamp
+        // Format timestamp with date and time
         $timestamp = 'Unknown date';
         if (isset($submission['formatted_date'])) {
             $timestamp = $submission['formatted_date'];
         } elseif (isset($submission['effective_date'])) {
-            $timestamp = date('M j, Y', strtotime($submission['effective_date']));
+            $timestamp = date('M j, Y g:i A', strtotime($submission['effective_date']));
         } elseif (isset($submission['submission_date'])) {
-            $timestamp = date('M j, Y', strtotime($submission['submission_date']));
+            $timestamp = date('M j, Y g:i A', strtotime($submission['submission_date']));
         } elseif (isset($submission['created_at'])) {
-            $timestamp = date('M j, Y', strtotime($submission['created_at']));
+            $timestamp = date('M j, Y g:i A', strtotime($submission['created_at']));
         }
 
         $history[] = [
@@ -788,6 +788,28 @@ function get_current_program_state($program_id) {
         }
     }
     
+    // Get current outcome links
+    $outcome_links_stmt = $conn->prepare("
+        SELECT outcome_id 
+        FROM program_outcome_links 
+        WHERE program_id = ? 
+        ORDER BY outcome_id
+    ");
+    
+    if ($outcome_links_stmt) {
+        $outcome_links_stmt->bind_param("i", $program_id);
+        $outcome_links_stmt->execute();
+        $outcome_result = $outcome_links_stmt->get_result();
+        
+        $linked_outcomes = array();
+        while ($row = $outcome_result->fetch_assoc()) {
+            $linked_outcomes[] = $row['outcome_id'];
+        }
+        $outcome_links_stmt->close();
+        
+        $program_data['linked_outcomes'] = $linked_outcomes;
+    }
+
     return $program_data;
 }
 
@@ -847,6 +869,41 @@ function generate_field_changes($before_state, $after_state) {
     if (!is_array($before_targets)) $before_targets = array();
     if (!is_array($after_targets)) $after_targets = array();
     
+    // Check outcome links for changes
+    $before_outcomes = isset($before_state['linked_outcomes']) ? $before_state['linked_outcomes'] : array();
+    $after_outcomes = isset($after_state['linked_outcomes']) ? $after_state['linked_outcomes'] : array();
+    
+    if (!is_array($before_outcomes)) $before_outcomes = array();
+    if (!is_array($after_outcomes)) $after_outcomes = array();
+    
+    // Compare outcome lists
+    $added_outcomes = array_diff($after_outcomes, $before_outcomes);
+    $removed_outcomes = array_diff($before_outcomes, $after_outcomes);
+    
+    // Track added outcomes
+    foreach ($added_outcomes as $outcome_id) {
+        $outcome_name = get_outcome_name_by_id($outcome_id);
+        $changes[] = array(
+            'field' => 'outcome_links',
+            'field_label' => 'Linked Outcomes',
+            'before' => null,
+            'after' => $outcome_name,
+            'change_type' => 'added'
+        );
+    }
+    
+    // Track removed outcomes
+    foreach ($removed_outcomes as $outcome_id) {
+        $outcome_name = get_outcome_name_by_id($outcome_id);
+        $changes[] = array(
+            'field' => 'outcome_links',
+            'field_label' => 'Linked Outcomes',
+            'before' => $outcome_name,
+            'after' => null,
+            'change_type' => 'removed'
+        );
+    }
+
     // Check for target changes
     $max_targets = max(count($before_targets), count($after_targets));
     
@@ -943,4 +1000,25 @@ function display_before_after_changes($changes_made) {
     $output .= '</div>';
     
     return $output;
+}
+
+/**
+ * Get outcome name by outcome ID
+ * Helper function for change tracking
+ */
+function get_outcome_name_by_id($outcome_id) {
+    global $conn;
+    
+    $stmt = $conn->prepare("SELECT detail_name FROM outcomes_details WHERE detail_id = ?");
+    $stmt->bind_param("i", $outcome_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($row = $result->fetch_assoc()) {
+        $stmt->close();
+        return $row['detail_name'];
+    }
+    
+    $stmt->close();
+    return "Unknown Outcome (ID: $outcome_id)";
 }
