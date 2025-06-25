@@ -181,6 +181,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $conn->begin_transaction();
             
+            // STEP 1: Capture current state before making any changes
+            $before_state = get_current_program_state($program_id);
+            
             // Get form data with proper sanitization
             $program_name = trim($_POST['program_name'] ?? '');
             $program_number = trim($_POST['program_number'] ?? '');
@@ -297,6 +300,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new Exception('Failed to update program: ' . $program_stmt->error);
             }
             
+            // STEP 2: Build new state and generate changes
+            // Get agency and sector names for comparison
+            $agency_name = '';
+            $sector_name = '';
+            if ($owner_agency_id) {
+                $agency_query = $conn->prepare("SELECT agency_name FROM users WHERE user_id = ?");
+                $agency_query->bind_param("i", $owner_agency_id);
+                $agency_query->execute();
+                $agency_result = $agency_query->get_result();
+                if ($agency_row = $agency_result->fetch_assoc()) {
+                    $agency_name = $agency_row['agency_name'];
+                }
+            }
+            if ($sector_id) {
+                $sector_query = $conn->prepare("SELECT sector_name FROM sectors WHERE sector_id = ?");
+                $sector_query->bind_param("i", $sector_id);
+                $sector_query->execute();
+                $sector_result = $sector_query->get_result();
+                if ($sector_row = $sector_result->fetch_assoc()) {
+                    $sector_name = $sector_row['sector_name'];
+                }
+            }
+            
+            // Build after state
+            $after_state = [
+                'program_name' => $program_name,
+                'program_number' => $program_number,
+                'brief_description' => $brief_description,
+                'owner_agency_name' => $agency_name,
+                'sector_name' => $sector_name,
+                'start_date' => $start_date,
+                'end_date' => $end_date,
+                'is_assigned' => $is_assigned,
+                'rating' => $rating,
+                'remarks' => $remarks,
+                'targets' => $targets,
+                'edit_permissions' => $edit_permissions_json
+            ];
+            
+            // Generate changes made during this save session
+            $changes_made = generate_field_changes($before_state, $after_state);
+            
             // 2. Handle program submission data
             $content_data = [
                 'rating' => $rating,
@@ -304,7 +349,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'remarks' => $remarks,
                 'brief_description' => $brief_description,
                 'program_name' => $program_name,
-                'program_number' => $program_number
+                'program_number' => $program_number,
+                'changes_made' => $changes_made  // Add the before/after changes
             ];
             $content_json = json_encode($content_data);
             
@@ -749,9 +795,10 @@ require_once '../../layouts/page_header.php';
             <!-- Program History (Admin View) -->
             <?php if (!empty($program_history['submissions'])): ?>
                 <div class="card mt-4">
-                    <div class="card-header">
+                    <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0">
                             <i class="fas fa-history me-1"></i> Edit History
+                            <small class="text-muted">(<?php echo count($program_history['submissions']); ?> total entries)</small>
                         </h5>
                     </div>
                     <div class="card-body">
@@ -759,42 +806,80 @@ require_once '../../layouts/page_header.php';
                             <table class="table table-sm">
                                 <thead>
                                     <tr>
-                                        <th>Date</th>
-                                        <th>Period</th>
-                                        <th>Submitted By</th>
-                                        <th>Status</th>
-                                        <th>Changes</th>
+                                        <th width="15%">Date</th>
+                                        <th width="12%">Period</th>
+                                        <th width="15%">Submitted By</th>
+                                        <th width="8%">Status</th>
+                                        <th width="50%">Changes</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php foreach ($program_history['submissions'] as $submission): ?>
                                         <tr>
-                                            <td><?php echo date('M j, Y g:i A', strtotime($submission['submission_date'])); ?></td>
-                                            <td><?php echo htmlspecialchars($submission['period_name'] ?? 'Unknown'); ?></td>
-                                            <td><?php echo htmlspecialchars($submission['submitted_by_name'] ?? 'Unknown'); ?></td>
                                             <td>
-                                                <?php if ($submission['is_draft']): ?>
-                                                    <span class="badge bg-warning">Draft</span>
-                                                <?php else: ?>
-                                                    <span class="badge bg-success">Final</span>
-                                                <?php endif; ?>
+                                                <small><?php echo $submission['formatted_date']; ?></small>
                                             </td>
                                             <td>
-                                                <?php if (!empty($submission['content_json'])): ?>
-                                                    <?php $content = json_decode($submission['content_json'], true); ?>
-                                                    <?php if ($content): ?>
-                                                        <small class="text-muted">
-                                                            Rating: <?php echo htmlspecialchars($content['rating'] ?? 'N/A'); ?> |
-                                                            Targets: <?php echo count($content['targets'] ?? []); ?>
-                                                        </small>
+                                                <small><?php echo htmlspecialchars($submission['period_display']); ?></small>
+                                            </td>
+                                            <td>
+                                                <small>
+                                                    <?php echo htmlspecialchars($submission['submitted_by_name'] ?? 'Unknown'); ?>
+                                                    <?php if (!empty($submission['submitted_by_agency'])): ?>
+                                                        <br><span class="text-muted"><?php echo htmlspecialchars($submission['submitted_by_agency']); ?></span>
                                                     <?php endif; ?>
-                                                <?php endif; ?>
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <span class="badge <?php echo ($submission['is_draft'] ?? 0) ? 'bg-warning' : 'bg-success'; ?>">
+                                                    <?php echo $submission['is_draft_label']; ?>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <?php 
+                                                // Check if this submission has the new changes_made format
+                                                if (isset($submission['content_json']) && !empty($submission['content_json'])) {
+                                                    $content = json_decode($submission['content_json'], true);
+                                                    if (json_last_error() === JSON_ERROR_NONE && isset($content['changes_made'])) {
+                                                        // Display new before/after format
+                                                        echo display_before_after_changes($content['changes_made']);
+                                                    } else {
+                                                        // Fallback: show general submission info
+                                                        $changes_summary = [];
+                                                        if (isset($content['rating'])) $changes_summary[] = 'Rating: ' . htmlspecialchars($content['rating']);
+                                                        if (isset($content['targets']) && is_array($content['targets'])) {
+                                                            $changes_summary[] = 'Targets: ' . count($content['targets']) . ' target(s)';
+                                                        }
+                                                        if (isset($content['remarks']) && !empty($content['remarks'])) {
+                                                            $changes_summary[] = 'Remarks updated';
+                                                        }
+                                                        echo !empty($changes_summary) ? implode('<br>', $changes_summary) : '<span class="text-muted">Legacy submission</span>';
+                                                    }
+                                                } else {
+                                                    // No content available
+                                                    echo '<span class="text-muted">No change details available</span>';
+                                                }
+                                                ?>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
                                 </tbody>
                             </table>
                         </div>
+                    </div>
+                </div>
+            <?php elseif (isset($program_history)): ?>
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-history me-1"></i> Edit History
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-0">
+                            <i class="fas fa-info-circle me-1"></i>
+                            No edit history available for this program yet.
+                        </p>
                     </div>
                 </div>
             <?php endif; ?>

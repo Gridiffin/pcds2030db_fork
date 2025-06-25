@@ -728,3 +728,218 @@ function get_related_programs_by_initiative($initiative_id, $current_program_id 
     
     return $related_programs;
 }
+
+/**
+ * Capture current program state before making changes
+ * Returns complete state including program table data and latest submission content
+ */
+function get_current_program_state($program_id) {
+    global $conn;
+    
+    // Get program table data
+    $stmt = $conn->prepare("
+        SELECT p.program_name, p.program_number, p.owner_agency_id, p.sector_id, 
+               p.start_date, p.end_date, p.is_assigned, p.edit_permissions,
+               u.agency_name as owner_agency_name,
+               s.sector_name
+        FROM programs p
+        LEFT JOIN users u ON p.owner_agency_id = u.user_id
+        LEFT JOIN sectors s ON p.sector_id = s.sector_id
+        WHERE p.program_id = ?
+    ");
+    
+    if (!$stmt) {
+        error_log("Error preparing query in get_current_program_state: " . $conn->error);
+        return array();
+    }
+    
+    $stmt->bind_param("i", $program_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $program_data = $result->fetch_assoc();
+    if (!$program_data) {
+        $program_data = array();
+    }
+    $stmt->close();
+    
+    // Get latest submission content
+    $submission_stmt = $conn->prepare("
+        SELECT content_json 
+        FROM program_submissions 
+        WHERE program_id = ? 
+        ORDER BY submission_id DESC 
+        LIMIT 1
+    ");
+    
+    if ($submission_stmt) {
+        $submission_stmt->bind_param("i", $program_id);
+        $submission_stmt->execute();
+        $submission_result = $submission_stmt->get_result();
+        $submission_data = $submission_result->fetch_assoc();
+        $submission_stmt->close();
+        
+        if ($submission_data && !empty($submission_data['content_json'])) {
+            $content = json_decode($submission_data['content_json'], true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($content)) {
+                // Merge submission content with program data
+                $program_data = array_merge($program_data, $content);
+            }
+        }
+    }
+    
+    return $program_data;
+}
+
+/**
+ * Generate before/after changes by comparing current state with new state
+ */
+function generate_field_changes($before_state, $after_state) {
+    $changes = array();
+    
+    // Define trackable fields with their labels
+    $trackable_fields = array(
+        'program_name' => 'Program Name',
+        'program_number' => 'Program Number',
+        'brief_description' => 'Brief Description',
+        'owner_agency_name' => 'Owner Agency',
+        'sector_name' => 'Sector',
+        'start_date' => 'Start Date',
+        'end_date' => 'End Date',
+        'is_assigned' => 'Assignment Status',
+        'rating' => 'Rating/Status',
+        'remarks' => 'Remarks'
+    );
+    
+    // Check basic fields for changes
+    foreach ($trackable_fields as $field => $label) {
+        $before_value = trim(isset($before_state[$field]) ? $before_state[$field] : '');
+        $after_value = trim(isset($after_state[$field]) ? $after_state[$field] : '');
+        
+        // Special handling for assignment status
+        if ($field === 'is_assigned') {
+            $before_value = $before_value ? 'Assigned' : 'Not Assigned';
+            $after_value = $after_value ? 'Assigned' : 'Not Assigned';
+        }
+        
+        // Special handling for dates
+        if (in_array($field, array('start_date', 'end_date'))) {
+            if ($before_value) $before_value = date('Y-m-d', strtotime($before_value));
+            if ($after_value) $after_value = date('Y-m-d', strtotime($after_value));
+        }
+        
+        // Check if values are different
+        if ($before_value !== $after_value) {
+            $changes[] = array(
+                'field' => $field,
+                'field_label' => $label,
+                'before' => $before_value ? $before_value : '(empty)',
+                'after' => $after_value ? $after_value : '(empty)',
+                'change_type' => 'modified'
+            );
+        }
+    }
+    
+    // Check targets for changes
+    $before_targets = isset($before_state['targets']) ? $before_state['targets'] : array();
+    $after_targets = isset($after_state['targets']) ? $after_state['targets'] : array();
+    
+    if (!is_array($before_targets)) $before_targets = array();
+    if (!is_array($after_targets)) $after_targets = array();
+    
+    // Check for target changes
+    $max_targets = max(count($before_targets), count($after_targets));
+    
+    for ($i = 0; $i < $max_targets; $i++) {
+        $target_num = $i + 1;
+        $before_target = isset($before_targets[$i]) ? $before_targets[$i] : array();
+        $after_target = isset($after_targets[$i]) ? $after_targets[$i] : array();
+        
+        $before_text = trim(isset($before_target['target']) ? $before_target['target'] : (isset($before_target['target_text']) ? $before_target['target_text'] : ''));
+        $after_text = trim(isset($after_target['target']) ? $after_target['target'] : (isset($after_target['target_text']) ? $after_target['target_text'] : ''));
+        $before_status = trim(isset($before_target['status_description']) ? $before_target['status_description'] : '');
+        $after_status = trim(isset($after_target['status_description']) ? $after_target['status_description'] : '');
+        
+        // Check target text changes
+        if ($before_text !== $after_text) {
+            if (empty($before_text) && !empty($after_text)) {
+                // New target added
+                $changes[] = array(
+                    'field' => "target_{$target_num}",
+                    'field_label' => "Target {$target_num}",
+                    'before' => null,
+                    'after' => $after_text,
+                    'change_type' => 'added'
+                );
+            } elseif (!empty($before_text) && empty($after_text)) {
+                // Target removed
+                $changes[] = array(
+                    'field' => "target_{$target_num}",
+                    'field_label' => "Target {$target_num}",
+                    'before' => $before_text,
+                    'after' => null,
+                    'change_type' => 'removed'
+                );
+            } else {
+                // Target modified
+                $changes[] = array(
+                    'field' => "target_{$target_num}",
+                    'field_label' => "Target {$target_num}",
+                    'before' => $before_text ? $before_text : '(empty)',
+                    'after' => $after_text ? $after_text : '(empty)',
+                    'change_type' => 'modified'
+                );
+            }
+        }
+        
+        // Check target status changes
+        if ($before_status !== $after_status && (!empty($before_text) || !empty($after_text))) {
+            $changes[] = array(
+                'field' => "target_{$target_num}_status",
+                'field_label' => "Target {$target_num} Status",
+                'before' => $before_status ? $before_status : '(empty)',
+                'after' => $after_status ? $after_status : '(empty)',
+                'change_type' => 'modified'
+            );
+        }
+    }
+    
+    return $changes;
+}
+
+/**
+ * Display before/after changes in a readable format for the history table
+ */
+function display_before_after_changes($changes_made) {
+    if (empty($changes_made) || !is_array($changes_made)) {
+        return '<span class="text-muted">No changes recorded</span>';
+    }
+    
+    $output = '<div class="changes-detail">';
+    
+    foreach ($changes_made as $change) {
+        $field_label = htmlspecialchars(isset($change['field_label']) ? $change['field_label'] : 'Unknown Field');
+        $change_type = isset($change['change_type']) ? $change['change_type'] : 'modified';
+        $before = htmlspecialchars(isset($change['before']) ? $change['before'] : '');
+        $after = htmlspecialchars(isset($change['after']) ? $change['after'] : '');
+        
+        $output .= '<div class="change-item mb-2">';
+        
+        if ($change_type === 'added') {
+            $output .= '<strong class="text-success">' . $field_label . ':</strong><br>';
+            $output .= '<span class="text-success">Added:</span> "' . $after . '"';
+        } elseif ($change_type === 'removed') {
+            $output .= '<strong class="text-danger">' . $field_label . ':</strong><br>';
+            $output .= '<span class="text-danger">Removed:</span> "' . $before . '"';
+        } else {
+            $output .= '<strong>' . $field_label . ':</strong><br>';
+            $output .= '<span class="text-muted">From:</span> "' . $before . '"<br>';
+            $output .= '<span class="text-muted">To:</span> "' . $after . '"';
+        }
+        
+        $output .= '</div>';
+    }
+    
+    $output .= '</div>';
+    
+    return $output;
+}
