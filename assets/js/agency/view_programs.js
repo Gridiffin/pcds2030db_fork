@@ -96,8 +96,10 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.status === 'success') {
-                    alert(data.message);
-                    location.reload();
+                    showToast('Success', data.message, 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else if (data.status === 'info') {
+                    showToast('Info', data.message, 'info');
                 } else {
                     showToast('Error', data.message, 'danger');
                 }

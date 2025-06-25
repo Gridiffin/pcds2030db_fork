@@ -27,8 +27,8 @@ require_once PROJECT_ROOT_PATH . 'lib/agencies/program_attachments.php';
 require_once PROJECT_ROOT_PATH . 'lib/initiative_functions.php';
 require_once PROJECT_ROOT_PATH . 'lib/numbering_helpers.php'; // Added for program number validation
 
-// Verify user is an agency
-if (!is_agency()) {
+// Verify user is an agency or focal user
+if (!is_agency() && !is_focal_user()) {
     header('Location: ' . APP_URL . '/login.php');
     exit;
 }
@@ -106,7 +106,10 @@ if (!$current_period) {
 // Helper function to check if a field is editable for assigned programs
 function is_editable($field) {
     global $program, $is_draft, $current_submission;
-    
+    // Allow focal users to edit any field
+    if (is_focal_user()) {
+        return true;
+    }
     // If program has a finalized submission, nothing is editable unless reopened by admin
     if (isset($current_submission) && 
         !empty($current_submission) && 
