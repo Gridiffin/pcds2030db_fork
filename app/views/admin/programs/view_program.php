@@ -14,6 +14,7 @@ require_once ROOT_PATH . 'app/lib/admins/index.php';
 require_once ROOT_PATH . 'app/lib/rating_helpers.php';
 require_once ROOT_PATH . 'app/lib/agencies/program_attachments.php';
 require_once ROOT_PATH . 'app/lib/initiative_functions.php';
+require_once ROOT_PATH . 'app/lib/agencies/programs.php';
 
 // Verify user is admin
 if (!is_admin()) {
@@ -44,6 +45,16 @@ if (!$program) {
 
 // Get program attachments
 $program_attachments = get_program_attachments($program_id);
+
+// Get related programs if this program is linked to an initiative
+$related_programs = [];
+if (!empty($program['initiative_id'])) {
+    $related_programs = get_related_programs_by_initiative(
+        $program['initiative_id'], 
+        $program_id, 
+        true // Allow cross-agency viewing for admin
+    );
+}
 
 // Process content_json for better data access
 $content = [];
@@ -320,7 +331,7 @@ require_once '../../layouts/page_header.php';
             <div class="card-body">
                 <!-- Initiative Basic Info -->
                 <div class="row">
-                    <div class="col-12">
+                    <div class="col-lg-8">
                         <div class="initiative-header mb-3">
                             <?php if (!empty($program['initiative_number'])): ?>
                                 <span class="badge bg-primary initiative-number me-2" 
@@ -372,6 +383,67 @@ require_once '../../layouts/page_header.php';
                                 <?php endif; ?>
                             </div>
                         </div>
+                    </div>
+                    
+                    <!-- Related Programs -->
+                    <div class="col-lg-4">
+                        <h6 class="text-muted mb-3">
+                            <i class="fas fa-project-diagram me-1"></i>Related Programs
+                            <span class="badge bg-secondary ms-1"><?php echo count($related_programs); ?></span>
+                        </h6>
+                        
+                        <?php if (!empty($related_programs)): ?>
+                            <div class="related-programs-list" style="max-height: 300px; overflow-y: auto;">
+                                <?php foreach ($related_programs as $related): ?>
+                                    <div class="related-program-item p-2 mb-2 border rounded bg-light" style="border-left: 3px solid #0d6efd !important;">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="flex-grow-1">
+                                                <div class="fw-medium" style="font-size: 0.9em;">
+                                                    <?php if (!empty($related['program_number'])): ?>
+                                                        <span class="badge bg-info me-1" style="font-size: 0.7em;">
+                                                            <?php echo htmlspecialchars($related['program_number']); ?>
+                                                        </span>
+                                                    <?php endif; ?>
+                                                    <a href="view_program.php?id=<?php echo $related['program_id']; ?>" 
+                                                       class="text-decoration-none">
+                                                        <?php echo htmlspecialchars($related['program_name']); ?>
+                                                    </a>
+                                                </div>
+                                                <div class="small text-muted">
+                                                    <?php echo htmlspecialchars($related['agency_name']); ?>
+                                                </div>
+                                            </div>
+                                            <div class="ms-2">
+                                                <?php
+                                                $status = convert_legacy_rating($related['rating']);
+                                                $status_colors = [
+                                                    'target-achieved' => 'success',
+                                                    'on-track-yearly' => 'warning',
+                                                    'severe-delay' => 'danger',
+                                                    'not-started' => 'secondary'
+                                                ];
+                                                $color_class = $status_colors[$status] ?? 'secondary';
+                                                ?>
+                                                <span class="badge bg-<?php echo $color_class; ?>" style="font-size: 0.6em;">
+                                                    <?php echo $related['is_draft'] ? 'Draft' : 'Final'; ?>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="mt-1">
+                                            <a href="view_program.php?id=<?php echo $related['program_id']; ?>" 
+                                               class="btn btn-outline-primary btn-sm" style="font-size: 0.7em;">
+                                                <i class="fas fa-eye me-1"></i>View Details
+                                            </a>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php else: ?>
+                            <div class="text-muted fst-italic small">
+                                <i class="fas fa-info-circle me-1"></i>
+                                No other programs found under this initiative.
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
