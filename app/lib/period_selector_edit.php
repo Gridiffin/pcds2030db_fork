@@ -1,12 +1,13 @@
 <?php
 /**
- * Period Selector Component
+ * Period Selector Component (Editing Version)
  * 
  * This component shows a dropdown to select different reporting periods
- * for reports and program views.
+ * for editing a program. It uses program_id and fetches program data for the selected period.
  */
 
 // Get all periods for the selector
+require_once __DIR__ . '/functions.php';
 $periods_query = "SELECT * FROM reporting_periods ORDER BY year DESC, quarter DESC";
 $periods_result = $conn->query($periods_query);
 
@@ -20,11 +21,6 @@ if ($periods_result) {
 // Determine the selected period
 $selected_period = $viewing_period ?? $current_period ?? null;
 $selected_period_id = $selected_period ? $selected_period['period_id'] : null;
-
-// Include functions to get display name
-require_once __DIR__ . '/functions.php';
-
-// Determine if this is the current active period
 $is_current_active = $selected_period && $selected_period['status'] === 'open';
 ?>
 
@@ -58,9 +54,9 @@ $is_current_active = $selected_period && $selected_period['status'] === 'open';
             </div>
             <div class="col-md-6">
                 <div class="d-flex align-items-center justify-content-md-end mt-3 mt-md-0">
-                    <label for="periodSelector" class="me-2 mb-0">Editing Period:</label>
+                    <label for="periodSelectorEdit" class="me-2 mb-0">Editing Period:</label>
                     <div class="position-relative">
-                        <select class="form-select form-select-sm" id="periodSelector" style="max-width: 200px;">
+                        <select class="form-select form-select-sm" id="periodSelectorEdit" style="max-width: 200px;">
                             <?php foreach ($periods as $period): ?>
                                 <option value="<?php echo $period['period_id']; ?>" 
                                 <?php echo ($selected_period_id == $period['period_id']) ? 'selected' : ''; ?>>
@@ -82,9 +78,9 @@ $is_current_active = $selected_period && $selected_period['status'] === 'open';
 </div>
 
 <script>
-    // Initialize the period selector
+    // Editing period selector: handles program_id and AJAX fetch
     document.addEventListener('DOMContentLoaded', function() {
-        const periodSelector = document.getElementById('periodSelector');
+        const periodSelector = document.getElementById('periodSelectorEdit');
         if (periodSelector) {
             periodSelector.addEventListener('change', function() {
                 const selectedPeriodId = this.value;

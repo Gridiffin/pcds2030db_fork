@@ -154,7 +154,7 @@ if (isset($_SESSION['message']) && !empty($_SESSION['message'])) {
     <?php endif; ?>
 
     <!-- Period Selector Component -->
-    <?php require_once ROOT_PATH . 'app/lib/period_selector.php'; ?>
+    <?php require_once ROOT_PATH . 'app/lib/period_selector_dashboard.php'; ?>
 
 <!-- Unsubmitted Programs Card -->
 <div class="card shadow-sm mb-4 w-100">

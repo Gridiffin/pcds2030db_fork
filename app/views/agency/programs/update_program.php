@@ -686,7 +686,7 @@ require_once dirname(__DIR__, 2) . '/layouts/page_header.php';
 // Set the period selector variable for the component
 $viewing_period_id = $selected_period_id;
 // Render the period selector UI before the form
-require_once PROJECT_ROOT_PATH . 'lib/period_selector.php';
+require_once PROJECT_ROOT_PATH . 'lib/period_selector_edit.php';
 ?>
 
 <?php

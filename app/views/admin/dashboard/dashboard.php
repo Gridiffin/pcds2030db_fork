@@ -97,7 +97,7 @@ const hasActivePeriod = <?php echo $hasActivePeriod ? 'true' : 'false'; ?>;
     <section class="section">
         <div class="container-fluid">
             <!-- Period Selector Component -->
-            <?php require_once ROOT_PATH . 'app/lib/period_selector.php'; ?>
+            <?php require_once ROOT_PATH . 'app/lib/period_selector_dashboard.php'; ?>
 
         <!-- Quick Actions Section - Optimized for high-value admin actions -->
         <div class="row mb-4">
