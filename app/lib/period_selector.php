@@ -41,7 +41,7 @@ $is_current_active = $selected_period && $selected_period['status'] === 'open';
                             <?php if ($selected_period): ?>
                                 <?php echo get_period_display_name($selected_period); ?> 
                                 <span class="badge ms-2 <?php echo $is_current_active ? 'bg-success' : 'bg-secondary'; ?>">
-                                    <?php echo $is_current_active ? 'Active Period' : 'Closed'; ?>
+                                    <?php echo $is_current_active ? 'Currently Editing a program in a ACTIVE period' : 'Currently editing a program in a CLOSED period.'; ?>
                                 </span>
                             <?php else: ?>
                                 Select Reporting Period
@@ -58,15 +58,15 @@ $is_current_active = $selected_period && $selected_period['status'] === 'open';
             </div>
             <div class="col-md-6">
                 <div class="d-flex align-items-center justify-content-md-end mt-3 mt-md-0">
-                    <label for="periodSelector" class="me-2 mb-0">Viewing Period:</label>
+                    <label for="periodSelector" class="me-2 mb-0">Editing Period:</label>
                     <div class="position-relative">
                         <select class="form-select form-select-sm" id="periodSelector" style="max-width: 200px;">
                             <?php foreach ($periods as $period): ?>
                                 <option value="<?php echo $period['period_id']; ?>" 
-                                        <?php echo ($selected_period_id == $period['period_id']) ? 'selected' : ''; ?>>
-                                    <?php echo get_period_display_name($period); ?>
-                                    <?php echo $period['status'] === 'open' ? ' (Open)' : ''; ?>
-                                </option>
+                                <?php echo ($selected_period_id == $period['period_id']) ? 'selected' : ''; ?>>
+                                <?php echo get_period_display_name($period); ?>
+                                <?php echo $period['status'] === 'open' ? ' (Open)' : ''; ?>
+                            </option>
                             <?php endforeach; ?>
                         </select>
                         <div class="selector-spinner position-absolute" style="display: none;">
@@ -124,6 +124,21 @@ $is_current_active = $selected_period && $selected_period['status'] === 'open';
                             // Dispatch custom event so update_program.php JS can update fields
                             const event = new CustomEvent('ProgramPeriodDataLoaded', { detail: data.data });
                             document.dispatchEvent(event);
+
+                            // --- Update the period label and badge dynamically ---
+                            // Find the selected option's text
+                            const selectedOption = periodSelector.options[periodSelector.selectedIndex];
+                            const periodName = selectedOption.text.replace(/\s*\(Open\)$/, '');
+                            const isOpen = selectedOption.text.includes('(Open)');
+                            // Update the label and badge
+                            const h5 = document.querySelector('.period-selector-info h5');
+                            if (h5) {
+                                h5.innerHTML =
+                                    periodName +
+                                    ' <span class="badge ms-2 ' + (isOpen ? 'bg-success' : 'bg-secondary') + '">' +
+                                    (isOpen ? 'Currently Editing a program in a ACTIVE period' : 'Currently editing a program in a CLOSED period.') +
+                                    '</span>';
+                            }
                         } else {
                             alert(data.error || 'Failed to load program data for selected period.');
                         }
