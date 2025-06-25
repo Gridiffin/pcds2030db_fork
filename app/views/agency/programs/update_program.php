@@ -299,18 +299,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
             
-            // Process targets array
+            // Process targets array with enhanced structure
             $targets = [];
             if (isset($_POST['target_text']) && is_array($_POST['target_text'])) {
                 $target_texts = $_POST['target_text'];
                 $target_status_descriptions = $_POST['target_status_description'] ?? [];
+                $target_numbers = $_POST['target_number'] ?? [];
+                $target_statuses = $_POST['target_status'] ?? [];
+                $target_start_dates = $_POST['target_start_date'] ?? [];
+                $target_end_dates = $_POST['target_end_date'] ?? [];
                 
                 for ($i = 0; $i < count($target_texts); $i++) {
                     $target_text = trim($target_texts[$i]);
                     if (!empty($target_text)) {
+                        $target_number = trim($target_numbers[$i] ?? '');
+                        
+                        // Validate target number format if provided
+                        if (!empty($target_number)) {
+                            if (!is_valid_target_number_format($target_number, $program_number)) {
+                                $_SESSION['message'] = get_target_number_format_error($program_number);
+                                $_SESSION['message_type'] = 'danger';
+                                header('Location: update_program.php?id=' . $program_id);
+                                exit;
+                            }
+                            
+                            // Check target number hierarchy
+                            $hierarchy_validation = validate_target_number_hierarchy($target_number, $program_number);
+                            if (!$hierarchy_validation['valid']) {
+                                $_SESSION['message'] = $hierarchy_validation['message'];
+                                $_SESSION['message_type'] = 'danger';
+                                header('Location: update_program.php?id=' . $program_id);
+                                exit;
+                            }
+                            
+                            // Check if target number is available (excluding current submission)
+                            if (!is_target_number_available($target_number, $program_id, $submission_id)) {
+                                $_SESSION['message'] = "Target number '{$target_number}' is already in use in this program.";
+                                $_SESSION['message_type'] = 'danger';
+                                header('Location: update_program.php?id=' . $program_id);
+                                exit;
+                            }
+                        }
+                        
+                        // Validate date range if both dates provided
+                        $start_date = !empty($target_start_dates[$i]) ? trim($target_start_dates[$i]) : null;
+                        $end_date = !empty($target_end_dates[$i]) ? trim($target_end_dates[$i]) : null;
+                        
+                        if ($start_date && $end_date && strtotime($start_date) > strtotime($end_date)) {
+                            $_SESSION['message'] = "Target " . ($i + 1) . ": End date cannot be before start date.";
+                            $_SESSION['message_type'] = 'danger';
+                            header('Location: update_program.php?id=' . $program_id);
+                            exit;
+                        }
+                        
                         $targets[] = [
+                            'target_number' => $target_number,
                             'target_text' => $target_text,
-                            'status_description' => trim($target_status_descriptions[$i] ?? '')
+                            'status_description' => trim($target_status_descriptions[$i] ?? ''),
+                            'target_status' => trim($target_statuses[$i] ?? 'not-started'),
+                            'start_date' => $start_date,
+                            'end_date' => $end_date
                         ];
                     }
                 }
@@ -455,7 +503,18 @@ if (isset($program['current_submission'])) {
         $content = json_decode($current_submission['content_json'], true);
           // If we have the new structure with targets array, use it
         if (isset($content['targets']) && is_array($content['targets'])) {
-            $targets = $content['targets'];
+            $targets = [];
+            foreach ($content['targets'] as $target_data) {
+                // Handle both new enhanced structure and legacy structure
+                $targets[] = [
+                    'target_number' => $target_data['target_number'] ?? '',
+                    'target_text' => $target_data['target_text'] ?? '',
+                    'status_description' => $target_data['status_description'] ?? '',
+                    'target_status' => $target_data['target_status'] ?? 'not-started',
+                    'start_date' => $target_data['start_date'] ?? null,
+                    'end_date' => $target_data['end_date'] ?? null
+                ];
+            }
             $rating = $content['rating'] ?? 'not-started';
             $remarks = $content['remarks'] ?? '';
             $brief_description = $content['brief_description'] ?? '';} else {
@@ -473,24 +532,38 @@ if (isset($program['current_submission'])) {
                 foreach ($target_parts as $index => $target_part) {
                     if (!empty($target_part)) {
                         $targets[] = [
+                            'target_number' => '', // Legacy data doesn't have target numbers
                             'target_text' => $target_part,
-                            'status_description' => isset($status_parts[$index]) ? $status_parts[$index] : ''
+                            'status_description' => isset($status_parts[$index]) ? $status_parts[$index] : '',
+                            'target_status' => 'not-started', // Default status for legacy data
+                            'start_date' => null,
+                            'end_date' => null
                         ];
                     }
                 }
                 
                 // Ensure we have at least one target
                 if (empty($targets)) {
-                    $targets = [['target_text' => '', 'status_description' => '']];
+                    $targets = [[
+                        'target_number' => '',
+                        'target_text' => '',
+                        'status_description' => '',
+                        'target_status' => 'not-started',
+                        'start_date' => null,
+                        'end_date' => null
+                    ]];
                 }
-            } else {
-                // Single target - create a single target from old structure
-                $targets = [
-                    [
-                        'target_text' => $target_text,
-                        'status_description' => $status_description
-                    ]
-                ];
+            } else {            // Single target - create a single target from old structure
+            $targets = [
+                [
+                    'target_number' => '',
+                    'target_text' => $target_text,
+                    'status_description' => $status_description,
+                    'target_status' => 'not-started',
+                    'start_date' => null,
+                    'end_date' => null
+                ]
+            ];
             }
             
             $rating = $current_submission['status'] ?? 'not-started';
@@ -510,32 +583,53 @@ if (isset($program['current_submission'])) {
             foreach ($target_parts as $index => $target_part) {
                 if (!empty($target_part)) {
                     $targets[] = [
+                        'target_number' => '',
                         'target_text' => $target_part,
-                        'status_description' => isset($status_parts[$index]) ? $status_parts[$index] : ''
+                        'status_description' => isset($status_parts[$index]) ? $status_parts[$index] : '',
+                        'target_status' => 'not-started',
+                        'start_date' => null,
+                        'end_date' => null
                     ];
                 }
             }
             
             // Ensure we have at least one target
             if (empty($targets)) {
-                $targets = [['target_text' => '', 'status_description' => '']];
+                $targets = [[
+                    'target_number' => '',
+                    'target_text' => '',
+                    'status_description' => '',
+                    'target_status' => 'not-started',
+                    'start_date' => null,
+                    'end_date' => null
+                ]];
             }
-        } else {
-            // Single target
-            $targets = [
-                [
-                    'target_text' => $target_text,
-                    'status_description' => $status_description
-                ]
-            ];        }
+        } else {        // Single target
+        $targets = [
+            [
+                'target_number' => '',
+                'target_text' => $target_text,
+                'status_description' => $status_description,
+                'target_status' => 'not-started',
+                'start_date' => null,
+                'end_date' => null
+            ]
+        ];}
         
         $rating = $current_submission['status'] ?? 'not-started';
         $remarks = $current_submission['remarks'] ?? '';
         $brief_description = $content['brief_description'] ?? '';
     }
 } else {
-    // No current submission, initialize empty targets
-    $targets = [['target_text' => '', 'status_description' => '']];
+    // No current submission, initialize empty targets with new structure
+    $targets = [[
+        'target_number' => '',
+        'target_text' => '',
+        'status_description' => '',
+        'target_status' => 'not-started',
+        'start_date' => null,
+        'end_date' => null
+    ]];
     $rating = 'not-started';
     $remarks = '';
     $brief_description = '';
@@ -579,87 +673,6 @@ $additionalScripts = [
 // Additional styles
 $additionalStyles = '
 <link rel="stylesheet" href="' . APP_URL . '/assets/css/components/program-history.css">
-<style>
-/* Attachment Upload Styles */
-.upload-dropzone {
-    border: 2px dashed #dee2e6;
-    border-radius: 8px;
-    padding: 50px 20px;
-    text-align: center;
-    transition: all 0.3s ease;
-    cursor: pointer;
-    background: #f8f9fa;
-    min-height: 200px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
-
-.upload-dropzone:hover,
-.upload-dropzone.dragover {
-    border-color: #0d6efd;
-    background-color: rgba(13, 110, 253, 0.1);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.upload-dropzone-content {
-    pointer-events: none;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
-
-.upload-info {
-    border-top: 1px solid #e9ecef;
-    padding-top: 15px;
-    margin-top: 15px;
-}
-
-.attachment-item {
-    transition: all 0.2s ease;
-    border-radius: 6px;
-    padding: 12px;
-}
-
-.attachment-item:hover {
-    background-color: #f8f9fa;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.attachment-item .fw-medium {
-    word-break: break-word;
-    max-width: 400px;
-    overflow-wrap: break-word;
-}
-
-.attachment-actions .btn {
-    min-width: 80px;
-}
-
-.upload-instructions {
-    background: #f8f9fa;
-    border-radius: 6px;
-    padding: 12px;
-}
-
-.draft-banner {
-    background: linear-gradient(135deg, #fff3cd, #fef7e3);
-    border: 1px solid #ffc107;
-    border-radius: 8px;
-    padding: 12px 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #856404;
-}
-
-.draft-banner i {
-    color: #ffc107;
-}
-</style>
 ';
 
 // Include header (which contains the DOCTYPE declaration)
@@ -942,8 +955,13 @@ require_once PROJECT_ROOT_PATH . 'lib/period_selector_edit.php';
                     </div>
                         <!-- 2. Program Targets Card -->
                     <div class="card shadow-sm mb-4">
-                        <div class="card-header">
+                        <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="card-title m-0">Program Targets</h5>
+                            <span id="target-counter" class="badge bg-primary fs-6">
+                                <i class="fas fa-bullseye me-1"></i>
+                                <span id="target-count"><?php echo count($targets); ?></span> 
+                                <?php echo count($targets) === 1 ? 'target' : 'targets'; ?>
+                            </span>
                         </div>
                         <div class="card-body">
                             <p class="text-muted mb-3">
@@ -1000,24 +1018,77 @@ require_once PROJECT_ROOT_PATH . 'lib/period_selector_edit.php';
                                 $canEditTargets = is_editable('targets');
                                 
                                 foreach ($targets as $index => $target): 
+                                    $target_number = $target['target_number'] ?? '';
                                     $target_text = $target['target_text'] ?? '';
                                     $status_description = $target['status_description'] ?? '';
+                                    $target_status = $target['target_status'] ?? 'not-started';
+                                    $start_date = $target['start_date'] ?? null;
+                                    $end_date = $target['end_date'] ?? null;
                                     $canDelete = $index > 0; // Only allow deleting additional targets
                                 ?>
                                 <div class="target-entry">
                                     <?php if ($canDelete && $canEditTargets): ?>
                                     <button type="button" class="btn-close remove-target" aria-label="Remove target"></button>
                                     <?php endif; ?>
+                                    
+                                    <!-- Target Counter -->
+                                    <div class="target-counter-header mb-2">
+                                        <h6 class="text-primary fw-bold mb-0">
+                                            <i class="fas fa-bullseye me-1"></i>Target #<?php echo $index + 1; ?>
+                                        </h6>
+                                    </div>
+                                    
+                                    <!-- Target Number and Status Row -->
+                                    <div class="row g-3 mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Target Number (Optional)</label>
+                                            <input type="text" class="form-control target-number-input" name="target_number[]" 
+                                                    value="<?php echo htmlspecialchars($target_number); ?>" 
+                                                    placeholder="e.g., <?php echo htmlspecialchars($program['program_number'] ?? '30.1A'); ?>.1"
+                                                    <?php echo ($canEditTargets) ? '' : 'readonly'; ?>>
+                                            <div class="form-text">Format: {program_number}.{target_counter}</div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Target Status</label>
+                                            <select class="form-select target-status-select" name="target_status[]" 
+                                                    <?php echo ($canEditTargets) ? '' : 'disabled'; ?>>
+                                                <option value="not-started" <?php echo ($target_status === 'not-started') ? 'selected' : ''; ?>>Not Started</option>
+                                                <option value="in-progress" <?php echo ($target_status === 'in-progress') ? 'selected' : ''; ?>>In Progress</option>
+                                                <option value="completed" <?php echo ($target_status === 'completed') ? 'selected' : ''; ?>>Completed</option>
+                                                <option value="delayed" <?php echo ($target_status === 'delayed') ? 'selected' : ''; ?>>Delayed</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Target Text -->
                                     <div class="mb-3">
-                                        <label class="form-label">Target <?php echo $index + 1; ?> *</label>
-                                        <input type="text" class="form-control target-input" name="target_text[]" 
-                                                value="<?php echo htmlspecialchars($target_text); ?>" 
+                                        <label class="form-label target-text-label">Target *</label>
+                                        <textarea class="form-control target-input" name="target_text[]" 
+                                                rows="3"
                                                 placeholder="Define a measurable target (e.g., 'Plant 100 trees')"
-                                                <?php echo ($canEditTargets) ? '' : 'readonly'; ?>>
+                                                <?php echo ($canEditTargets) ? '' : 'readonly'; ?>><?php echo htmlspecialchars($target_text); ?></textarea>
                                         <?php if (!$canEditTargets && $index === 0): ?>
                                         <div class="form-text">Targets were set by an administrator and cannot be changed.</div>
                                         <?php endif; ?>
                                     </div>
+                                    
+                                    <!-- Timeline Row -->
+                                    <div class="row g-3 mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Start Date (Optional)</label>
+                                            <input type="date" class="form-control target-start-date" name="target_start_date[]" 
+                                                    value="<?php echo $start_date ? date('Y-m-d', strtotime($start_date)) : ''; ?>"
+                                                    <?php echo ($canEditTargets) ? '' : 'readonly'; ?>>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">End Date (Optional)</label>
+                                            <input type="date" class="form-control target-end-date" name="target_end_date[]" 
+                                                    value="<?php echo $end_date ? date('Y-m-d', strtotime($end_date)) : ''; ?>"
+                                                    <?php echo ($canEditTargets) ? '' : 'readonly'; ?>>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Status Description -->
                                     <div class="mb-2">
                                         <label class="form-label">Status Description</label>
                                         <textarea class="form-control status-description" name="target_status_description[]" rows="2" 
@@ -1543,15 +1614,42 @@ document.addEventListener('DOMContentLoaded', function() {
         // Keep track of the highest target number
         let highestTargetNumber = document.querySelectorAll('.target-entry').length;
         
-        // Function to update target numbers sequentially
+        // Initialize target counter on page load
+        updateTargetCounter(highestTargetNumber);
+        
+        // Function to update target numbers sequentially and counter
         function updateTargetNumbers() {
             const targetEntries = document.querySelectorAll('.target-entry');
+            const targetCount = targetEntries.length;
+            
+            // Update target counter headers only (not form labels)
             targetEntries.forEach((entry, index) => {
-                const label = entry.querySelector('.form-label');
-                if (label && label.textContent.includes('Target')) {
-                    label.textContent = `Target ${index + 1} *`;
+                const counterHeader = entry.querySelector('.target-counter-header h6');
+                if (counterHeader) {
+                    counterHeader.innerHTML = `<i class="fas fa-bullseye me-1"></i>Target #${index + 1}`;
                 }
             });
+            
+            // Update target counter in header
+            updateTargetCounter(targetCount);
+        }
+        
+        // Function to update the target counter badge
+        function updateTargetCounter(count) {
+            const targetCountElement = document.getElementById('target-count');
+            const targetCounter = document.getElementById('target-counter');
+            
+            if (targetCountElement && targetCounter) {
+                targetCountElement.textContent = count;
+                
+                // Update the text (singular/plural)
+                const targetText = count === 1 ? 'target' : 'targets';
+                const badgeContent = `<i class="fas fa-bullseye me-1"></i><span id="target-count">${count}</span> ${targetText}`;
+                targetCounter.innerHTML = badgeContent;
+                
+                // Update badge color based on count
+                targetCounter.className = 'badge fs-6 ' + (count === 0 ? 'bg-secondary' : count === 1 ? 'bg-primary' : 'bg-success');
+            }
         }
         
         addTargetBtn.addEventListener('click', function() {
@@ -1563,12 +1661,55 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const html = `
                 <button type="button" class="btn-close remove-target" aria-label="Remove target"></button>
+                
+                <!-- Target Counter -->
+                <div class="target-counter-header mb-2">
+                    <h6 class="text-primary fw-bold mb-0">
+                        <i class="fas fa-bullseye me-1"></i>Target #${highestTargetNumber}
+                    </h6>
+                </div>
+                
+                <!-- Target Number and Status Row -->
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Target Number (Optional)</label>
+                        <input type="text" class="form-control target-number-input" name="target_number[]" 
+                               placeholder="e.g., <?php echo htmlspecialchars($program['program_number'] ?? '30.1A'); ?>.${highestTargetNumber}">
+                        <div class="form-text">Format: {program_number}.{target_counter}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Target Status</label>
+                        <select class="form-select target-status-select" name="target_status[]">
+                            <option value="not-started" selected>Not Started</option>
+                            <option value="in-progress">In Progress</option>
+                            <option value="completed">Completed</option>
+                            <option value="delayed">Delayed</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Target Text -->
                 <div class="mb-3">
-                    <label class="form-label">Target ${highestTargetNumber} *</label>
-                    <input type="text" class="form-control target-input" name="target_text[]" 
-                           placeholder="Define a measurable target (e.g., 'Plant 100 trees')">
+                    <label class="form-label target-text-label">Target *</label>
+                    <textarea class="form-control target-input" name="target_text[]" 
+                             rows="3"
+                             placeholder="Define a measurable target (e.g., 'Plant 100 trees')"></textarea>
                     <div class="form-text">Define a specific, measurable target for this program.</div>
                 </div>
+                
+                <!-- Timeline Row -->
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Start Date (Optional)</label>
+                        <input type="date" class="form-control target-start-date" name="target_start_date[]">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">End Date (Optional)</label>
+                        <input type="date" class="form-control target-end-date" name="target_end_date[]">
+                    </div>
+                </div>
+                
+                <!-- Status Description -->
                 <div class="mb-2">
                     <label class="form-label">Status Description</label>
                     <textarea class="form-control status-description" name="target_status_description[]" rows="2" 
@@ -1580,6 +1721,9 @@ document.addEventListener('DOMContentLoaded', function() {
             targetEntry.innerHTML = html;
             targetsContainer.appendChild(targetEntry);
             
+            // Update target numbers and counter
+            updateTargetNumbers();
+            
             // Attach remove event listener to the new target
             const removeBtn = targetEntry.querySelector('.remove-target');
             if (removeBtn) {
@@ -1589,10 +1733,32 @@ document.addEventListener('DOMContentLoaded', function() {
                     updateTargetNumbers();
                 });
             }
+            
+            // Attach date validation listeners
+            const startDateInput = targetEntry.querySelector('.target-start-date');
+            const endDateInput = targetEntry.querySelector('.target-end-date');
+            
+            if (startDateInput && endDateInput) {
+                endDateInput.addEventListener('change', function() {
+                    validateTargetDates(startDateInput, endDateInput);
+                });
+                
+                startDateInput.addEventListener('change', function() {
+                    validateTargetDates(startDateInput, endDateInput);
+                });
+            }
+            
+            // Attach target number validation
+            const targetNumberInput = targetEntry.querySelector('.target-number-input');
+            if (targetNumberInput) {
+                targetNumberInput.addEventListener('blur', function() {
+                    validateTargetNumber(this);
+                });
+            }
         });
     }
     
-    // Initialize existing remove buttons
+    // Initialize existing remove buttons and validation
     document.querySelectorAll('.remove-target').forEach(btn => {
         btn.addEventListener('click', function() {
             this.closest('.target-entry').remove();
@@ -1601,17 +1767,137 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
+    // Initialize date validation for existing targets
+    document.querySelectorAll('.target-entry').forEach(targetEntry => {
+        const startDateInput = targetEntry.querySelector('.target-start-date');
+        const endDateInput = targetEntry.querySelector('.target-end-date');
+        
+        if (startDateInput && endDateInput) {
+            endDateInput.addEventListener('change', function() {
+                validateTargetDates(startDateInput, endDateInput);
+            });
+            
+            startDateInput.addEventListener('change', function() {
+                validateTargetDates(startDateInput, endDateInput);
+            });
+        }
+        
+        // Initialize target number validation
+        const targetNumberInput = targetEntry.querySelector('.target-number-input');
+        if (targetNumberInput) {
+            targetNumberInput.addEventListener('blur', function() {
+                validateTargetNumber(this);
+            });
+        }
+    });
+    
+    // Validation functions
+    function validateTargetDates(startInput, endInput) {
+        if (startInput.value && endInput.value) {
+            const startDate = new Date(startInput.value);
+            const endDate = new Date(endInput.value);
+            
+            if (startDate > endDate) {
+                endInput.classList.add('is-invalid');
+                showValidationError('target_dates', 'End date cannot be before start date');
+                return false;
+            } else {
+                endInput.classList.remove('is-invalid');
+                endInput.classList.add('is-valid');
+                return true;
+            }
+        }
+        
+        // Clear validation if dates are empty
+        endInput.classList.remove('is-invalid', 'is-valid');
+        return true;
+    }
+    
+    function validateTargetNumber(input) {
+        const targetNumber = input.value.trim();
+        const programNumber = document.getElementById('program_number').value.trim();
+        
+        if (!targetNumber) {
+            input.classList.remove('is-invalid', 'is-valid');
+            return true; // Empty is allowed
+        }
+        
+        // Basic format validation
+        const formatPattern = /^\d+\.[\w\.]+$/;
+        if (!formatPattern.test(targetNumber)) {
+            input.classList.add('is-invalid');
+            input.classList.remove('is-valid');
+            showValidationError('target_number', 'Target number format is invalid');
+            return false;
+        }
+        
+        // Check if it starts with program number
+        if (programNumber && !targetNumber.startsWith(programNumber + '.')) {
+            input.classList.add('is-invalid');
+            input.classList.remove('is-valid');
+            showValidationError('target_number', `Target number must start with ${programNumber}.`);
+            return false;
+        }
+        
+        // Check for duplicates within the current form
+        const allTargetNumbers = Array.from(document.querySelectorAll('.target-number-input'))
+            .map(inp => inp.value.trim().toLowerCase())
+            .filter(num => num !== '');
+        
+        const duplicates = allTargetNumbers.filter(num => num === targetNumber.toLowerCase());
+        if (duplicates.length > 1) {
+            input.classList.add('is-invalid');
+            input.classList.remove('is-valid');
+            showValidationError('target_number', 'Target number is already used in this form');
+            return false;
+        }
+        
+        input.classList.remove('is-invalid');
+        input.classList.add('is-valid');
+        return true;
+    }
+    
     // Form validation
     document.getElementById('updateProgramForm').addEventListener('submit', function(e) {
         const programName = document.getElementById('program_name').value;
         const targetInputs = document.querySelectorAll('.target-input');
+        const targetNumberInputs = document.querySelectorAll('.target-number-input');
         let hasFilledTarget = false;
+        let validationErrors = [];
         
         // Validate program name
         if (!programName.trim()) {
-            showToast('Validation Error', 'Please enter a program name.', 'danger');
+            validationErrors.push('Please enter a program name.');
             e.preventDefault();
-            return false;
+        }
+        
+        // Validate target numbers
+        let validTargetNumbers = true;
+        targetNumberInputs.forEach(input => {
+            if (!validateTargetNumber(input)) {
+                validTargetNumbers = false;
+            }
+        });
+        
+        if (!validTargetNumbers) {
+            validationErrors.push('Please fix target number format errors.');
+            e.preventDefault();
+        }
+        
+        // Validate target dates
+        let validDates = true;
+        document.querySelectorAll('.target-entry').forEach(targetEntry => {
+            const startInput = targetEntry.querySelector('.target-start-date');
+            const endInput = targetEntry.querySelector('.target-end-date');
+            
+            if (startInput && endInput && !validateTargetDates(startInput, endInput)) {
+                validDates = false;
+            }
+        });
+        
+        if (!validDates) {
+            validationErrors.push('Please fix target date errors.');
+            e.preventDefault();
         }
         
         // For finalize/submit actions, validate at least one target
@@ -1623,10 +1909,15 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             if (!hasFilledTarget) {
-                showToast('Validation Error', 'Please add at least one target for this program.', 'danger');
+                validationErrors.push('Please add at least one target for this program.');
                 e.preventDefault();
-                return false;
             }
+        }
+        
+        // Show consolidated error message
+        if (validationErrors.length > 0) {
+            showToast('Validation Error', validationErrors.join('<br>'), 'danger');
+            return false;
         }
         
         return true;
@@ -1669,7 +1960,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <button type="button" class="btn-close remove-target" aria-label="Remove target"></button>
                     <div class="mb-3">
                         <label class="form-label">Target ${idx+1} *</label>
-                        <input type="text" class="form-control target-input" name="target_text[]" value="${target.target_text||''}" placeholder="Define a measurable target (e.g., 'Plant 100 trees')">
+                        <textarea class="form-control target-input" name="target_text[]" rows="3" placeholder="Define a measurable target (e.g., 'Plant 100 trees')">${target.target_text||''}</textarea>
                         <div class="form-text">Define a specific, measurable target for this program.</div>
                     </div>
                     <div class="mb-2">

@@ -483,4 +483,218 @@ function get_available_program_number($initiative_number, $desired_sequence = nu
     
     return null;
 }
+
+/**
+ * Target Number Validation Functions
+ * 
+ * These functions handle validation and management of hierarchical target numbers
+ * that follow the format: {initiative}.{program}.{target} (e.g., 30.1A.1, 30.1A.2)
+ */
+
+/**
+ * Validate target number format
+ * 
+ * @param string $target_number The target number to validate
+ * @param string $program_number The parent program number
+ * @return bool True if valid, false if invalid
+ */
+function is_valid_target_number_format($target_number, $program_number = null) {
+    if (empty($target_number)) {
+        return true; // Empty target numbers are allowed
+    }
+    
+    // Basic format validation - should contain at least 2 dots for initiative.program.target
+    if (substr_count($target_number, '.') < 2) {
+        return false;
+    }
+    
+    // If program number is provided, validate that target number starts with program number
+    if ($program_number && !empty($program_number)) {
+        if (!str_starts_with($target_number, $program_number . '.')) {
+            return false;
+        }
+    }
+    
+    // Validate using flexible regex pattern
+    return preg_match('/^\d+\.[\w\.]+$/', $target_number) === 1;
+}
+
+/**
+ * Get target number validation error message
+ * 
+ * @param string $program_number The parent program number for context
+ * @return string Error message for invalid target number format
+ */
+function get_target_number_format_error($program_number = null) {
+    if ($program_number) {
+        return "Target number must follow format {$program_number}.X (e.g., {$program_number}.1, {$program_number}.2)";
+    }
+    return 'Target number must follow format: initiative.program.target (e.g., 30.1A.1, 30.1A.2)';
+}
+
+/**
+ * Generate the next available target number for a program
+ * 
+ * @param int $program_id The program ID
+ * @param string $program_number The program number
+ * @return string|null The next target number or null if program number is invalid
+ */
+function generate_next_target_number($program_id, $program_number) {
+    global $conn;
+    
+    if (empty($program_number) || !$program_id) {
+        return null;
+    }
+    
+    // Find the highest target number for this program from content_json
+    $query = "SELECT content_json FROM program_submissions 
+              WHERE program_id = ? AND content_json IS NOT NULL 
+              ORDER BY submission_id DESC";
+    
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("i", $program_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    $highest_target_counter = 0;
+    $program_prefix = $program_number . '.';
+    
+    while ($row = $result->fetch_assoc()) {
+        $content = json_decode($row['content_json'], true);
+        if (isset($content['targets']) && is_array($content['targets'])) {
+            foreach ($content['targets'] as $target) {
+                $target_number = $target['target_number'] ?? '';
+                if (!empty($target_number) && str_starts_with($target_number, $program_prefix)) {
+                    // Extract the target counter (last part after final dot)
+                    $counter_part = substr($target_number, strlen($program_prefix));
+                    if (is_numeric($counter_part)) {
+                        $highest_target_counter = max($highest_target_counter, intval($counter_part));
+                    }
+                }
+            }
+        }
+    }
+    
+    return $program_prefix . ($highest_target_counter + 1);
+}
+
+/**
+ * Check if target number is available within a program
+ * 
+ * @param string $target_number The target number to check
+ * @param int $program_id The program ID
+ * @param int $exclude_submission_id Optional submission ID to exclude from check
+ * @return bool True if available, false if already in use
+ */
+function is_target_number_available($target_number, $program_id, $exclude_submission_id = null) {
+    global $conn;
+    
+    if (empty($target_number) || !$program_id) {
+        return true; // Empty numbers are always available
+    }
+    
+    $query = "SELECT submission_id, content_json FROM program_submissions 
+              WHERE program_id = ? AND content_json IS NOT NULL";
+    
+    if ($exclude_submission_id) {
+        $query .= " AND submission_id != ?";
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("ii", $program_id, $exclude_submission_id);
+    } else {
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("i", $program_id);
+    }
+    
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    while ($row = $result->fetch_assoc()) {
+        $content = json_decode($row['content_json'], true);
+        if (isset($content['targets']) && is_array($content['targets'])) {
+            foreach ($content['targets'] as $target) {
+                if (isset($target['target_number']) && 
+                    strtolower(trim($target['target_number'])) === strtolower(trim($target_number))) {
+                    return false; // Number is already in use
+                }
+            }
+        }
+    }
+    
+    return true; // Number is available
+}
+
+/**
+ * Parse target number into components
+ * 
+ * @param string $target_number The target number to parse
+ * @return array Array with components: initiative, program_suffix, target_counter
+ */
+function parse_target_number($target_number) {
+    $result = [
+        'initiative' => null,
+        'program_suffix' => null,
+        'target_counter' => null,
+        'full_program' => null
+    ];
+    
+    if (empty($target_number)) {
+        return $result;
+    }
+    
+    $parts = explode('.', $target_number);
+    if (count($parts) >= 3) {
+        $result['initiative'] = $parts[0];
+        $result['target_counter'] = end($parts);
+        
+        // Program suffix is everything between initiative and target counter
+        $program_parts = array_slice($parts, 1, -1);
+        $result['program_suffix'] = implode('.', $program_parts);
+        $result['full_program'] = $result['initiative'] . '.' . $result['program_suffix'];
+    }
+    
+    return $result;
+}
+
+/**
+ * Validate target number hierarchy against program number
+ * 
+ * @param string $target_number The target number to validate
+ * @param string $program_number The parent program number
+ * @return array Validation result with 'valid' boolean and 'message' string
+ */
+function validate_target_number_hierarchy($target_number, $program_number) {
+    if (empty($target_number)) {
+        return ['valid' => true, 'message' => ''];
+    }
+    
+    if (empty($program_number)) {
+        return ['valid' => false, 'message' => 'Program number is required to validate target number'];
+    }
+    
+    if (!is_valid_target_number_format($target_number, $program_number)) {
+        return [
+            'valid' => false, 
+            'message' => get_target_number_format_error($program_number)
+        ];
+    }
+    
+    $target_parsed = parse_target_number($target_number);
+    $program_parsed = parse_program_number($program_number);
+    
+    if ($target_parsed['initiative'] !== $program_parsed['initiative']) {
+        return [
+            'valid' => false,
+            'message' => "Target number initiative ({$target_parsed['initiative']}) must match program initiative ({$program_parsed['initiative']})"
+        ];
+    }
+    
+    if ($target_parsed['full_program'] !== $program_number) {
+        return [
+            'valid' => false,
+            'message' => "Target number must start with program number: {$program_number}"
+        ];
+    }
+    
+    return ['valid' => true, 'message' => ''];
+}
 ?>
