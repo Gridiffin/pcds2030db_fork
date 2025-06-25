@@ -1,8 +1,9 @@
 <?php
 /**
- * Admin Edit Program
+ * Admin Edit Program - Rewritten to match agency pattern with admin functions
  * 
- * Allows admin users to edit program details.
+ * Allows admin users to edit program details with proper date handling
+ * Based on agency update_program.php pattern with admin-specific features
  */
 
 // Include necessary files
@@ -12,11 +13,12 @@ require_once ROOT_PATH . 'app/lib/session.php';
 require_once ROOT_PATH . 'app/lib/functions.php';
 require_once ROOT_PATH . 'app/lib/admin_functions.php';
 require_once ROOT_PATH . 'app/lib/rating_helpers.php';
-require_once ROOT_PATH . 'app/lib/agencies/programs.php'; // Added for program history feature
+require_once ROOT_PATH . 'app/lib/agencies/programs.php';
 require_once ROOT_PATH . 'app/lib/audit_log.php';
 require_once ROOT_PATH . 'app/lib/agencies/program_attachments.php';
-require_once ROOT_PATH . 'app/lib/numbering_helpers.php'; // Added for hierarchical numbering
-require_once ROOT_PATH . 'app/lib/initiative_functions.php'; // Added for initiative data
+require_once ROOT_PATH . 'app/lib/numbering_helpers.php';
+require_once ROOT_PATH . 'app/lib/initiative_functions.php';
+require_once ROOT_PATH . 'app/lib/admins/statistics.php'; // Added for admin program functions
 
 // Verify user is admin
 if (!is_admin()) {
@@ -33,227 +35,11 @@ if ($program_id <= 0) {
     exit;
 }
 
-// Initialize variables
-$message = '';
-$messageType = 'info';
+// Initialize result variable for AJAX responses
+$result = null;
 
-// Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {    // Validate inputs
-    $program_name_form = trim($_POST['program_name'] ?? '');
-    $program_number_form = trim($_POST['program_number'] ?? '');
-    $initiative_id = !empty($_POST['initiative_id']) ? intval($_POST['initiative_id']) : null;
-    $owner_agency_id = intval($_POST['owner_agency_id'] ?? 0);
-    $sector_id = intval($_POST['sector_id'] ?? 0);    $start_date_form = !empty($_POST['start_date']) ? $_POST['start_date'] : null;
-    $end_date_form = !empty($_POST['end_date']) ? $_POST['end_date'] : null;
-    
-    // Validate date formats
-    if ($start_date_form && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $start_date_form)) {
-        $message = 'Invalid start date format. Please use a valid date.';
-        $messageType = 'danger';
-    }
-    
-    if ($end_date_form && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $end_date_form)) {
-        $message = 'Invalid end date format. Please use a valid date.';
-        $messageType = 'danger';
-    }
-    
-    // Validate that dates are actual valid dates
-    if ($start_date_form && !strtotime($start_date_form)) {
-        $message = 'Invalid start date. Please enter a valid date.';
-        $messageType = 'danger';
-    }
-    
-    if ($end_date_form && !strtotime($end_date_form)) {
-        $message = 'Invalid end date. Please enter a valid date.';
-        $messageType = 'danger';
-    }
-    $is_assigned = isset($_POST['is_assigned']) ? 1 : 0;
-    $rating_form = isset($_POST['rating']) ? $_POST['rating'] : 'not-started'; // This is the overall program rating/status
-    $remarks_form = trim($_POST['remarks'] ?? '');
-    
-    // Validate program_number format if provided
-    if (!empty($program_number_form) && !preg_match('/^[0-9.]+$/', $program_number_form)) {
-        $message = 'Program number can only contain numbers and dots.';
-        $messageType = 'danger';
-    }
-    
-    // Additional validation for hierarchical format if initiative is linked
-    if ($program_number_form && $initiative_id) {
-        $format_validation = validate_program_number_format($program_number_form, $initiative_id);
-        if (!$format_validation['valid']) {
-            $message = $format_validation['message'];
-            $messageType = 'danger';
-        }
-    }
-    
-    // Check for duplicate program numbers
-    if ($program_number_form && empty($message)) {
-        if (!is_program_number_available($program_number_form, $program_id)) {
-            $message = 'This program number is already in use. Please choose a different number.';
-            $messageType = 'danger';
-        }
-    }
-    $targets_form = [];
-    if (isset($_POST['target_text']) && is_array($_POST['target_text'])) {
-        foreach ($_POST['target_text'] as $key => $target_text_item) {
-            if (!empty($target_text_item)) {
-                $targets_form[] = [
-                    'target_text' => $target_text_item,
-                    'status_description' => $_POST['status_description'][$key] ?? '',
-                    // Individual target status might be part of a more complex setup, not directly in this simplified rating
-                ];
-            }
-        }
-    }
-    
-    $edit_permissions = isset($_POST['edit_permissions']) ? $_POST['edit_permissions'] : [];
-    $program_settings = [
-        'edit_permissions' => $edit_permissions
-    ];
-    $edit_permissions_json = json_encode($program_settings);
-
-    if (empty($program_name_form)) {
-        $message = 'Program name is required.';
-        $messageType = 'danger';
-    } elseif ($owner_agency_id <= 0) {
-        $message = 'Valid owner agency is required.';
-        $messageType = 'danger';
-    } elseif ($sector_id <= 0) {
-        $message = 'Valid sector is required.';
-        $messageType = 'danger';
-    } else {        $conn->begin_transaction();        try {            
-            // Update program in programs table
-            $query_update_program = "UPDATE programs SET 
-                      program_name = ?, 
-                      program_number = ?,
-                      initiative_id = ?,
-                      owner_agency_id = ?, 
-                      sector_id = ?,
-                      start_date = ?, 
-                      end_date = ?,
-                      is_assigned = ?,
-                      edit_permissions = ?,
-                      updated_at = NOW()
-                      WHERE program_id = ?";
-                      
-            $stmt_update_program = $conn->prepare($query_update_program);
-            $stmt_update_program->bind_param('ssiissisii', 
-                $program_name_form, 
-                $program_number_form,
-                $initiative_id,
-                $owner_agency_id,
-                $sector_id,
-                $start_date_form,
-                $end_date_form,
-                $is_assigned,
-                $edit_permissions_json,
-                $program_id
-            );            if (!$stmt_update_program->execute()) {
-                $error_info = $stmt_update_program->error;
-                throw new Exception('Failed to update program details: ' . $error_info);
-            }
-            $stmt_update_program->close();
-
-            // Program details successfully updated in \'programs\' table.
-            // Now, create a new submission entry for history.
-
-            // Get the current reporting period
-            $current_period_id = null;
-            $current_period_data = get_current_reporting_period(); // Assumes this function is robust
-            if ($current_period_data && isset($current_period_data['period_id'])) {
-                $current_period_id = $current_period_data['period_id'];
-            } else {
-                // Fallback: Get the latest period if no current active one
-                $latest_period_query = "SELECT period_id FROM reporting_periods ORDER BY year DESC, quarter DESC LIMIT 1";
-                $latest_stmt = $conn->prepare($latest_period_query);
-                if (!$latest_stmt) throw new Exception("Failed to prepare latest period query: " . $conn->error);
-                $latest_stmt->execute();
-                $latest_result = $latest_stmt->get_result();
-                if ($latest_result->num_rows > 0) {
-                    $current_period_id = $latest_result->fetch_assoc()['period_id'];
-                }
-                $latest_stmt->close();
-            }
-
-            if (!$current_period_id) {
-                // If still no period ID, this is a problem. For now, we might have to skip submission or use a placeholder.
-                // Or, decide if admin edits outside a period context should still create a submission.
-                // For consistency, let's assume a submission should be created. If period_id is crucial, this needs a policy.
-                // For now, let\'s throw an error if no period can be determined, as submissions are tied to periods.
-                throw new Exception("Could not determine a valid reporting period for submission history.");
-            }              // Content for program_submissions.content_json
-            // This snapshot includes the program name and description AS THEY ARE NOW in the \'programs\' table (just updated)
-            $content_for_history = [
-                'program_name' => $program_name_form, // Name as submitted in this form
-                'program_number' => $program_number_form, // Program number as submitted in this form
-                'initiative_id' => $initiative_id, // Initiative ID as submitted in this form
-                'rating'       => $rating_form,       // Rating/status from the form
-                'targets'      => $targets_form,      // Targets from the form
-                'remarks'      => $remarks_form       // Remarks from the form
-            ];
-            $content_json_history = json_encode($content_for_history);
-            $admin_id = $_SESSION['user_id'];
-            $is_draft_history = 0; // Admin edits are final            // Insert new submission for history
-            $query_insert_submission = "INSERT INTO program_submissions (program_id, period_id, submitted_by, 
-                                         content_json, is_draft, submission_date) 
-                                         VALUES (?, ?, ?, ?, ?, NOW())";
-            $stmt_insert_submission = $conn->prepare($query_insert_submission);
-            if (!$stmt_insert_submission) {
-                 throw new Exception('Failed to prepare submission insert: ' . $conn->error);
-            }
-            // Note: status column removed as it's no longer used
-            $stmt_insert_submission->bind_param('iiisi', 
-                $program_id, 
-                $current_period_id, 
-                $admin_id, 
-                $content_json_history, 
-                $is_draft_history
-            );
-
-            if (!$stmt_insert_submission->execute()) {
-                throw new Exception('Failed to insert program submission history: ' . $stmt_insert_submission->error);
-            }
-            $stmt_insert_submission->close();
-              $conn->commit();
-            $message = 'Program updated successfully and history recorded.';
-            $messageType = 'success';
-            
-            // Log successful program edit
-            log_audit_action(
-                'admin_program_edited',
-                "Admin edited program '{$program_name_form}' (ID: {$program_id}) - Owner: Agency {$owner_agency_id}, Sector: {$sector_id}",
-                'success',
-                $_SESSION['user_id']
-            );
-
-        } catch (Exception $e) {
-            $conn->rollback();
-            $message = 'Operation failed: ' . $e->getMessage();
-            $messageType = 'danger';
-            
-            // Log program edit failure
-            log_audit_action(
-                'admin_program_edit_failed',
-                "Admin failed to edit program (ID: {$program_id}): " . $e->getMessage(),
-                'failure',
-                $_SESSION['user_id']
-            );
-        }
-    }
-}
-
-// Fetch program data for form
-$query = "SELECT p.*, s.sector_name, i.initiative_name, i.initiative_number
-          FROM programs p
-          LEFT JOIN sectors s ON p.sector_id = s.sector_id
-          LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
-          WHERE p.program_id = ?";
-$stmt = $conn->prepare($query);
-$stmt->bind_param('i', $program_id);
-$stmt->execute();
-$result = $stmt->get_result();
-$program = $result->fetch_assoc();
-$stmt->close();
+// Admin users can edit any program (cross-agency access)
+$program = get_admin_program_details($program_id);
 
 if (!$program) {
     $_SESSION['message'] = 'Program not found.';
@@ -262,13 +48,375 @@ if (!$program) {
     exit;
 }
 
+// Get program edit history
+$program_history = get_program_edit_history($program_id);
+
 // Get active initiatives for dropdown
 $active_initiatives = get_initiatives_for_select(true);
 
-// Get program attachments
-$program_attachments = get_program_attachments($program_id);
+// Load existing attachments for this program
+$existing_attachments = get_program_attachments($program_id);
 
-// Extract edit permissions
+// Get current reporting period for submissions
+$current_period = get_current_reporting_period();
+
+// If no current period, use the latest period
+if (!$current_period) {
+    $latest_period_query = "SELECT * FROM reporting_periods ORDER BY year DESC, quarter DESC LIMIT 1";
+    $latest_result = $conn->query($latest_period_query);
+    if ($latest_result && $latest_result->num_rows > 0) {
+        $current_period = $latest_result->fetch_assoc();
+    }
+}
+
+// Admin function: check if field is editable (admins can edit most fields)
+function is_admin_editable($field) {
+    // Admins can edit most fields, with some restrictions for finalized programs
+    return true;
+}
+
+// Get selected period from query or default to current
+$selected_period_id = isset($_GET['period_id']) ? intval($_GET['period_id']) : null;
+$all_periods = [];
+$selected_period = null;
+
+// Fetch all periods for selector
+if ($conn) {
+    $periods_result = $conn->query("SELECT * FROM reporting_periods ORDER BY year DESC, quarter DESC");
+    if ($periods_result) {
+        while ($row = $periods_result->fetch_assoc()) {
+            $all_periods[] = $row;
+            if ($selected_period_id && $row['period_id'] == $selected_period_id) {
+                $selected_period = $row;
+            }
+        }
+    }
+}
+
+if (!$selected_period && $current_period) {
+    $selected_period = $current_period;
+    $selected_period_id = $current_period['period_id'];
+}
+
+if (!$selected_period && !empty($all_periods)) {
+    $selected_period = $all_periods[0];
+    $selected_period_id = $selected_period['period_id'];
+}
+
+// Find the correct submission for the selected period
+$submission_id = null;
+$current_submission = null;
+if (isset($program['submissions']) && is_array($program['submissions'])) {
+    foreach ($program['submissions'] as $submission) {
+        if (isset($submission['period_id']) && $submission['period_id'] == $selected_period_id) {
+            $current_submission = $submission;
+            $submission_id = $submission['submission_id'] ?? null;
+            break;
+        }
+    }
+}
+
+// Process form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Ensure no output has been sent before processing
+    if (ob_get_level()) {
+        ob_clean();
+    }
+    
+    // Determine submission type and redirection preference
+    $is_draft = isset($_POST['save_draft']);
+    $save_and_continue = isset($_POST['save_and_continue']);
+    $save_and_exit = isset($_POST['save_and_exit']);
+    $finalize_draft = isset($_POST['finalize_draft']);
+    
+    // Determine if this should be a final submission
+    $is_final_submission = $save_and_continue || $save_and_exit || $finalize_draft;
+    
+    // Determine redirection behavior
+    $should_redirect_to_list = $save_and_exit;
+    
+    if ($finalize_draft && $submission_id) {
+        // Handle finalize draft (admin specific)
+        if ($selected_period) {
+            $content_check = $conn->prepare("SELECT content_json FROM program_submissions WHERE submission_id = ? AND program_id = ? AND period_id = ?");
+            $content_check->bind_param("iii", $submission_id, $program_id, $selected_period['period_id']);
+            $content_check->execute();
+            $content_result = $content_check->get_result();
+            
+            if ($content_result->num_rows > 0) {
+                $content_row = $content_result->fetch_assoc();
+                $content_json = $content_row['content_json'];
+                
+                // Validate content
+                if (empty($content_json) || $content_json === 'null') {
+                    $result = ['error' => 'Cannot finalize submission without content. Please add targets and rating first.'];
+                    log_audit_action('admin_program_finalization_failed', "Admin failed to finalize program (ID: {$program_id}) - no content", 'failure', $_SESSION['user_id']);
+                } else {
+                    $content_data = json_decode($content_json, true);
+                    if (!$content_data || (empty($content_data['targets']) && empty($content_data['target'])) || empty($content_data['rating'])) {
+                        $result = ['error' => 'Cannot finalize submission without targets and rating. Please complete the program details first.'];
+                        log_audit_action('admin_program_finalization_failed', "Admin failed to finalize program (ID: {$program_id}) - missing targets or rating", 'failure', $_SESSION['user_id']);
+                    } else {
+                        // Content is valid, proceed with finalization
+                        $stmt = $conn->prepare("UPDATE program_submissions SET is_draft = 0, submission_date = NOW() WHERE submission_id = ? AND program_id = ? AND period_id = ?");
+                        $stmt->bind_param("iii", $submission_id, $program_id, $selected_period['period_id']);
+                        
+                        if ($stmt->execute() && $stmt->affected_rows > 0) {
+                            $result = ['success' => true, 'message' => 'Draft has been finalized successfully. The program is now marked as final.'];
+                            log_audit_action('admin_program_finalized', "Admin finalized program '{$program['program_name']}' (ID: {$program_id}) for period {$selected_period['period_id']}", 'success', $_SESSION['user_id']);
+                        } else {
+                            $result = ['error' => 'Failed to finalize draft. Submission may not exist for selected period.'];
+                            log_audit_action('admin_program_finalization_failed', "Admin failed to finalize program (ID: {$program_id}) - database error", 'failure', $_SESSION['user_id']);
+                        }
+                    }
+                }
+            } else {
+                $result = ['error' => 'Submission not found.'];
+            }
+        } else {
+            $result = ['error' => 'No reporting period selected.'];
+        }
+    } else {
+        // Handle save/update program data (admin version with enhanced permissions)
+        try {
+            $conn->begin_transaction();
+            
+            // Get form data with proper sanitization
+            $program_name = trim($_POST['program_name'] ?? '');
+            $program_number = trim($_POST['program_number'] ?? '');
+            $brief_description = trim($_POST['brief_description'] ?? '');
+            $start_date = !empty($_POST['start_date']) ? $_POST['start_date'] : null;
+            $end_date = !empty($_POST['end_date']) ? $_POST['end_date'] : null;
+            $initiative_id = !empty($_POST['initiative_id']) ? intval($_POST['initiative_id']) : null;
+            $owner_agency_id = intval($_POST['owner_agency_id'] ?? 0);
+            $sector_id = intval($_POST['sector_id'] ?? 0);
+            $is_assigned = isset($_POST['is_assigned']) ? 1 : 0;
+            $rating = $_POST['rating'] ?? 'not-started';
+            $remarks = trim($_POST['remarks'] ?? '');
+            $period_id = intval($_POST['period_id'] ?? $selected_period_id);
+            $submission_id = intval($_POST['submission_id'] ?? 0);
+            $current_user_id = $_SESSION['user_id'];
+            
+            // Admin-specific: Handle edit permissions
+            $edit_permissions = isset($_POST['edit_permissions']) ? $_POST['edit_permissions'] : [];
+            $program_settings = ['edit_permissions' => $edit_permissions];
+            $edit_permissions_json = json_encode($program_settings);
+            
+            // Validate required fields
+            if (empty($program_name)) {
+                throw new Exception('Program name is required.');
+            }
+            if ($owner_agency_id <= 0) {
+                throw new Exception('Valid owner agency is required.');
+            }
+            if ($sector_id <= 0) {
+                throw new Exception('Valid sector is required.');
+            }
+            
+            // Validate date formats if provided
+            if ($start_date && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $start_date)) {
+                throw new Exception('Invalid start date format. Please use YYYY-MM-DD format.');
+            }
+            if ($end_date && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $end_date)) {
+                throw new Exception('Invalid end date format. Please use YYYY-MM-DD format.');
+            }
+            
+            // Validate that dates are actual valid dates
+            if ($start_date && !strtotime($start_date)) {
+                throw new Exception('Invalid start date. Please enter a valid date.');
+            }
+            if ($end_date && !strtotime($end_date)) {
+                throw new Exception('Invalid end date. Please enter a valid date.');
+            }
+            
+            // Validate program_number format if provided
+            if (!empty($program_number) && !preg_match('/^[0-9.]+$/', $program_number)) {
+                throw new Exception('Program number can only contain numbers and dots.');
+            }
+            
+            // Additional validation for hierarchical format if initiative is linked
+            if ($program_number && $initiative_id) {
+                $format_validation = validate_program_number_format($program_number, $initiative_id);
+                if (!$format_validation['valid']) {
+                    throw new Exception($format_validation['message']);
+                }
+                
+                // Check if number is already in use (excluding current program)
+                if (!is_program_number_available($program_number, $program_id)) {
+                    throw new Exception('Program number is already in use.');
+                }
+            }
+            
+            // Process targets array
+            $targets = [];
+            if (isset($_POST['target_text']) && is_array($_POST['target_text'])) {
+                $target_texts = $_POST['target_text'];
+                $target_status_descriptions = $_POST['target_status_description'] ?? [];
+                
+                for ($i = 0; $i < count($target_texts); $i++) {
+                    $target_text = trim($target_texts[$i]);
+                    if (!empty($target_text)) {
+                        $targets[] = [
+                            'target_text' => $target_text,
+                            'status_description' => trim($target_status_descriptions[$i] ?? '')
+                        ];
+                    }
+                }
+            }
+            
+            // 1. Update program basic information (admin can edit all fields)
+            $program_query = "UPDATE programs SET 
+                             program_name = ?, 
+                             program_number = ?,
+                             initiative_id = ?,
+                             owner_agency_id = ?, 
+                             sector_id = ?,
+                             start_date = ?, 
+                             end_date = ?,
+                             is_assigned = ?,
+                             edit_permissions = ?,
+                             updated_at = NOW()
+                             WHERE program_id = ?";
+                             
+            $program_stmt = $conn->prepare($program_query);
+            // FIXED: Correct parameter binding types: s,s,i,i,i,s,s,i,s,i
+            $program_stmt->bind_param('ssiisssisi', 
+                $program_name, 
+                $program_number,
+                $initiative_id,
+                $owner_agency_id,
+                $sector_id,
+                $start_date,
+                $end_date,
+                $is_assigned,
+                $edit_permissions_json,
+                $program_id
+            );
+            
+            if (!$program_stmt->execute()) {
+                throw new Exception('Failed to update program: ' . $program_stmt->error);
+            }
+            
+            // 2. Handle program submission data
+            $content_data = [
+                'rating' => $rating,
+                'targets' => $targets,
+                'remarks' => $remarks,
+                'brief_description' => $brief_description,
+                'program_name' => $program_name,
+                'program_number' => $program_number
+            ];
+            $content_json = json_encode($content_data);
+            
+            // Create submission record for history tracking
+            if ($period_id > 0) {
+                $submission_query = "INSERT INTO program_submissions 
+                                   (program_id, period_id, submitted_by, content_json, is_draft, submission_date, updated_at) 
+                                   VALUES (?, ?, ?, ?, ?, NOW(), NOW())";
+                $submission_stmt = $conn->prepare($submission_query);
+                $is_draft_value = $is_draft ? 1 : 0;  // Draft only if specifically save_draft
+                $submission_stmt->bind_param("iiisi", $program_id, $period_id, $current_user_id, $content_json, $is_draft_value);
+                
+                if (!$submission_stmt->execute()) {
+                    throw new Exception('Failed to create submission record: ' . $submission_stmt->error);
+                }
+            }
+            
+            $conn->commit();
+            
+            // Create appropriate success message based on action
+            if ($is_draft) {
+                $result = ['success' => true, 'message' => 'Program saved as draft successfully. You can continue editing anytime.'];
+            } elseif ($save_and_continue) {
+                $result = ['success' => true, 'message' => 'Program saved as final version successfully. You can continue editing if needed.'];
+            } elseif ($save_and_exit) {
+                $result = ['success' => true, 'message' => 'Program saved as final version successfully.'];
+            } else {
+                $result = ['success' => true, 'message' => 'Program updated successfully.'];
+            }
+            
+            // Log successful update
+            log_audit_action(
+                'admin_program_edited',
+                "Admin edited program '{$program_name}' (ID: {$program_id}) - Owner: Agency {$owner_agency_id}, Sector: {$sector_id}",
+                'success',
+                $_SESSION['user_id']
+            );
+            
+        } catch (Exception $e) {
+            $conn->rollback();
+            $result = ['error' => 'Operation failed: ' . $e->getMessage()];
+            
+            // Log failure
+            log_audit_action(
+                'admin_program_edit_failed',
+                "Admin failed to edit program (ID: {$program_id}): " . $e->getMessage(),
+                'failure',
+                $_SESSION['user_id']
+            );
+        }
+    }
+    
+    // Handle AJAX responses
+    if (isset($_POST['ajax']) && $_POST['ajax'] == '1') {
+        header('Content-Type: application/json');
+        echo json_encode($result);
+        exit;
+    }
+    
+    // Handle regular form responses - set session messages
+    if ($result) {
+        if (isset($result['success'])) {
+            $_SESSION['message'] = $result['message'];
+            $_SESSION['message_type'] = 'success';
+        } else {
+            $_SESSION['message'] = $result['error'];
+            $_SESSION['message_type'] = 'danger';
+        }
+    }
+    
+    // Force redirection based on user choice
+    if ($should_redirect_to_list && isset($result['success'])) {
+        // Redirect to programs list for "Save & Exit"
+        $full_redirect_url = APP_URL . '/app/views/admin/programs/programs.php';
+    } else {
+        // Stay on edit page for drafts and "Save & Continue"
+        $redirect_url = 'edit_program.php?id=' . $program_id;
+        if ($selected_period_id) {
+            $redirect_url .= '&period_id=' . $selected_period_id;
+        }
+        $full_redirect_url = APP_URL . '/app/views/admin/programs/' . $redirect_url;
+    }
+    
+    // Check if headers can be sent
+    if (!headers_sent()) {
+        header('Location: ' . $full_redirect_url);
+        exit;
+    } else {
+        // Fallback: JavaScript redirect if headers already sent
+        echo '<script>window.location.href = "' . htmlspecialchars($full_redirect_url) . '";</script>';
+        exit;
+    }
+}
+
+// Get agencies and sectors for dropdowns (including focal users)
+$agencies = [];
+$agencies_result = $conn->query("SELECT user_id as agency_id, agency_name FROM users WHERE role IN ('agency', 'focal') AND is_active = 1 ORDER BY agency_name");
+if ($agencies_result) {
+    while ($row = $agencies_result->fetch_assoc()) {
+        $agencies[] = $row;
+    }
+}
+
+$sectors = [];
+$sectors_result = $conn->query("SELECT sector_id, sector_name FROM sectors ORDER BY sector_name");
+if ($sectors_result) {
+    while ($row = $sectors_result->fetch_assoc()) {
+        $sectors[] = $row;
+    }
+}
+
+// Extract edit permissions for admin interface
 $edit_permissions = [];
 if (!empty($program['edit_permissions'])) {
     $permissions_data = json_decode($program['edit_permissions'], true);
@@ -277,102 +425,40 @@ if (!empty($program['edit_permissions'])) {
     }
 }
 
-// Get program edit history
-$program_history = get_program_edit_history($program_id);
-
-// Get program submission content
-$submission_query = "SELECT content_json, submission_id FROM program_submissions 
-                WHERE program_id = ? 
-                ORDER BY submission_date DESC LIMIT 1";
-$submission_stmt = $conn->prepare($submission_query);
-$submission_stmt->bind_param('i', $program_id);
-$submission_stmt->execute();
-$submission_result = $submission_stmt->get_result();
-$current_status = 'not-started';
+// Get current submission content for form population
+$current_rating = 'not-started';
 $current_targets = [];
-$submission_id = null;
-$remarks = '';
+$current_remarks = '';
+$current_brief_description = $program['brief_description'] ?? '';
 
-if ($submission_result->num_rows > 0) {
-    $submission = $submission_result->fetch_assoc();
-    $submission_id = $submission['submission_id'];
-    // Process content_json to extract status, targets, remarks
-    if (!empty($submission['content_json'])) {
-        $content = json_decode($submission['content_json'], true);
-        if (isset($content['rating'])) {
-            $current_status = $content['rating'];
-        }
-        if (isset($content['targets']) && is_array($content['targets'])) {
-            $current_targets = $content['targets'];
-        } else {
-            // Legacy format
-            $current_targets = [
-                [
-                    'target_text' => $content['target'] ?? '',
-                    // ...other legacy fields...
-                ]
-            ];
-        }
-        if (isset($content['remarks'])) {
-            $remarks = $content['remarks'];
+if ($current_submission && !empty($current_submission['content_json'])) {
+    $content_data = json_decode($current_submission['content_json'], true);
+    if ($content_data) {
+        $current_rating = $content_data['rating'] ?? 'not-started';
+        $current_targets = $content_data['targets'] ?? [];
+        $current_remarks = $content_data['remarks'] ?? '';
+        if (isset($content_data['brief_description'])) {
+            $current_brief_description = $content_data['brief_description'];
         }
     }
 }
 
-// Fetch list of agencies for owner selection (including both agency and focal users)
-$agencies_query = "SELECT user_id AS agency_id, agency_name FROM users 
-                  WHERE role IN ('agency', 'focal') AND is_active = 1 
-                  ORDER BY agency_name ASC";
-$agencies_result = $conn->query($agencies_query);
-$agencies = [];
+// Page title and breadcrumbs
+$page_title = 'Edit Program - ' . htmlspecialchars($program['program_name']);
 
-if ($agencies_result) {
-    while ($row = $agencies_result->fetch_assoc()) {
-        $agencies[] = $row;
-    }
-}
-
-// Fetch list of sectors
-$sectors_query = "SELECT sector_id, sector_name FROM sectors ORDER BY sector_name ASC";
-$sectors_result = $conn->query($sectors_query);
-$sectors = [];
-
-if ($sectors_result) {
-    while ($row = $sectors_result->fetch_assoc()) {
-        $sectors[] = $row;
-    }
-}
-
-// Create hidden input for rating
-$hidden_rating_input = '<input type="hidden" id="rating" name="rating" value="' . htmlspecialchars($current_status) . '">';
-
-// Additional scripts
-$additionalScripts = [
-    APP_URL . '/assets/js/utilities/rating_utils.js',
-    APP_URL . '/assets/js/utilities/program-history.js'
-];
-
-// Additional styles
-$additionalStyles = '
-<link rel="stylesheet" href="' . APP_URL . '/assets/css/components/program-history.css">
-<link rel="stylesheet" href="' . APP_URL . '/assets/css/admin/programs.css">
-';
-
-// Set page title
-$pageTitle = 'Edit Program';
-
+// Include header
 require_once '../../layouts/header.php';
 
 // Configure the modern page header
 $header_config = [
     'title' => 'Edit Program',
-    'subtitle' => (!empty($program['program_number']) ? '#' . htmlspecialchars($program['program_number']) . ' - ' : '') . htmlspecialchars($program['program_name']),
-    'variant' => 'white',
+    'subtitle' => 'Administrative program editing with enhanced permissions',
+    'variant' => 'blue',
     'actions' => [
         [
             'text' => 'Back to Programs',
-            'url' => APP_URL . '/app/views/admin/programs/programs.php',
-            'class' => 'btn-outline-primary',
+            'url' => 'programs.php',
+            'class' => 'btn-light',
             'icon' => 'fas fa-arrow-left'
         ]
     ]
@@ -382,738 +468,403 @@ $header_config = [
 require_once '../../layouts/page_header.php';
 ?>
 
-<main class="flex-fill">
-<?php if (!empty($message)): ?>
-    <div class="alert alert-<?php echo htmlspecialchars($messageType); ?> alert-dismissible fade show" role="alert">
-        <div class="d-flex align-items-center">
-            <i class="fas fa-<?php echo $messageType === 'success' ? 'check-circle' : 'exclamation-circle'; ?> me-2"></i>
-            <div><?php echo htmlspecialchars($message); ?></div>
-            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    </div>
-<?php endif; ?>
+<style>
+/* Override the circular target number styling for admin edit form */
+#edit-program-form .target-number {
+    display: block !important;
+    width: auto !important;
+    height: auto !important;
+    background: none !important;
+    color: var(--bs-dark) !important;
+    border-radius: 0 !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+</style>
 
-<div class="card shadow-sm mb-4">
-    <div class="card-header">
-        <h5 class="card-title m-0">Edit Program: <?php echo htmlspecialchars($program['program_name']); ?></h5>
-    </div>
-    
-    <div class="card-body">
-        <form method="post" action="<?php echo view_url('admin/programs', 'edit_program.php?id=' . $program_id); ?>" id="editProgramForm">
-            <?php if (isset($program_history['submissions']) && count($program_history['submissions']) > 1): ?>
-            <!-- Program History Panel -->
-            <div class="mb-4">
-                <div class="history-panel-title">
-                    <h6 class="fw-bold"><i class="fas fa-history me-2"></i> Program Edit History</h6>
-                    <button type="button" class="history-toggle-btn" data-target="programHistoryPanel">
-                        <i class="fas fa-history"></i> Show History
-                    </button>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <?php if (isset($_SESSION['message'])): ?>
+                <div class="alert alert-<?php echo $_SESSION['message_type']; ?> alert-dismissible alert-permanent show" role="alert">
+                    <?php echo htmlspecialchars($_SESSION['message']); ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
-                
-                <div id="programHistoryPanel" class="history-panel" style="display: none;">                        <?php foreach($program_history['submissions'] as $idx => $submission): ?>
-                        <div class="history-version">
-                            <div class="history-version-info">
-                                <strong><?php echo $submission['formatted_date']; ?></strong>
-                                <span class="history-version-label"><?php echo $submission['is_draft_label']; ?></span>
-                            </div>
-                            <?php if ($idx === 0): ?>
-                                <div><em>Current version</em></div>
-                            <?php else: ?>
-                                <div class="small text-muted mb-1">
-                                    <?php echo isset($submission['submission_date']) ? 
-                                        date('M j, Y g:i A', strtotime($submission['submission_date'])) : 
-                                        $submission['formatted_date']; ?>
-                                </div>
-                                <?php if (isset($submission['period_name'])): ?>
-                                <div>Period: <?php echo htmlspecialchars($submission['period_name']); ?></div>
-                                <?php endif; ?>
-                                <?php if (isset($submission['program_name'])): ?>
-                                <div>Name: <?php echo htmlspecialchars($submission['program_name']); ?></div>
-                                <?php endif; ?>
-                                <?php if (isset($submission['status'])): ?>
-                                <div>Status: <?php echo ucfirst($submission['status']); ?></div>
-                                <?php endif; ?>
-                            <?php endif; ?>
-                        </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
-        <?php endif; ?>
-        
-            <div class="row g-3">                <!-- Rating Section -->
-                <div class="rating-section mb-4">
-                    <h6 class="fw-bold mb-3">Program Rating</h6>
-                    <p class="text-muted mb-3">
-                        How would you rate the overall progress of this program?
-                    </p>
-                    
-                    <input type="hidden" id="rating" name="rating" value="<?php echo $current_status; ?>">
-                    
-                    <div class="rating-pills">
-                        <div class="rating-pill target-achieved <?php echo ($current_status == 'target-achieved') ? 'active' : ''; ?>" data-rating="target-achieved">
-                            <i class="fas fa-check-circle me-2"></i> Monthly Target Achieved
-                        </div>
-                        <div class="rating-pill on-track-yearly <?php echo ($current_status == 'on-track-yearly') ? 'active' : ''; ?>" data-rating="on-track-yearly">
-                            <i class="fas fa-calendar-check me-2"></i> On Track for Year
-                        </div>
-                        <div class="rating-pill severe-delay <?php echo ($current_status == 'severe-delay') ? 'active' : ''; ?>" data-rating="severe-delay">
-                            <i class="fas fa-exclamation-triangle me-2"></i> Severe Delays
-                        </div>
-                        <div class="rating-pill not-started <?php echo ($current_status == 'not-started' || !$current_status) ? 'active' : ''; ?>" data-rating="not-started">
-                            <i class="fas fa-clock me-2"></i> Not Started
-                        </div>
-                    </div>
+                <?php unset($_SESSION['message'], $_SESSION['message_type']); ?>
+            <?php endif; ?>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        Program Details
+                        <span class="badge bg-primary ms-2">Admin Edit Mode</span>
+                    </h5>
                 </div>
-                    
-                <!-- 1. Basic Information Card -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header">
-                        <h5 class="card-title m-0">Basic Information</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label for="program_name" class="form-label">Program Name <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="program_name" name="program_name" 
-                                   value="<?php echo htmlspecialchars($program['program_name']); ?>" required>
-                            <?php if (isset($program_history['submissions']) && count($program_history['submissions']) > 1): ?>
-                                <?php
-                                // Get complete history of program name changes
-                                $name_history = get_field_edit_history($program_history['submissions'], 'program_name');
-                                
-                                if (!empty($name_history)):
-                                ?>
-                                    <div class="d-flex align-items-center mt-2">
-                                        <button type="button" class="btn btn-sm btn-outline-secondary field-history-toggle" 
-                                                data-history-target="programNameHistory">
-                                            <i class="fas fa-history"></i> Show Name History
-                                        </button>
-                                    </div>
-                                    
-                                        <ul class="history-list">
-                                            <?php foreach($name_history as $idx => $item): ?>
-                                            <li class="history-list-item">
-                                                <div class="history-list-value">
-                                                    <?php echo htmlspecialchars($item['value']); ?>
-                                                </div>
-                                                <div class="history-list-meta">
-                                                    <?php echo $item['timestamp']; ?>
-                                                    <?php if (isset($item['submission_id']) && $item['submission_id'] > 0): ?>
-                                                        <span class="<?php echo ($item['is_draft'] ?? 0) ? 'history-draft-badge' : 'history-final-badge'; ?>">
-                                                            <?php echo ($item['is_draft'] ?? 0) ? 'Draft' : 'Final'; ?>
-                                                        </span>
-                                                    <?php endif; ?>
-                                                </div>
-                                            </li>
-                                            <?php endforeach; ?>
-                                        </ul>
-                                    </div>
-                                <?php endif; ?>
-                            <?php endif; ?>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="owner_agency_id" class="form-label">Owner Agency <span class="text-danger">*</span></label>
-                            <select class="form-select" id="owner_agency_id" name="owner_agency_id" required>
-                                <option value="">Select Agency</option>
-                                <?php foreach ($agencies as $agency): ?>
-                                    <option value="<?php echo $agency['agency_id']; ?>" <?php echo ($agency['agency_id'] == $program['owner_agency_id']) ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($agency['agency_name']); ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="sector_id" class="form-label">Sector <span class="text-danger">*</span></label>
-                            <select class="form-select" id="sector_id" name="sector_id" required>
-                                <option value="">Select Sector</option>
-                                <?php foreach ($sectors as $sector): ?>
-                                    <option value="<?php echo $sector['sector_id']; ?>" <?php echo ($sector['sector_id'] == $program['sector_id']) ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($sector['sector_name']); ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-
-                        <div class="mb-3">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="is_assigned" name="is_assigned" 
-                                      <?php echo ($program['is_assigned'] == 1) ? 'checked' : ''; ?>>
-                                <label class="form-check-label" for="is_assigned">
-                                    Mark as Assigned Program
-                                </label>
-                                <div class="form-text">Assigned programs are created by admins for agencies.</div>
-                            </div>
-                        </div>
-
-                        <div class="row g-3">                            <div class="col-md-6">
-                                <label for="start_date" class="form-label">Start Date</label>
-                                <input type="date" class="form-control" id="start_date" name="start_date" 
-                                       value="<?php echo htmlspecialchars($program['start_date'] ?? ''); ?>">
-                            </div>
-                            
+                <div class="card-body">
+                    <form method="POST" id="edit-program-form">
+                        <input type="hidden" name="period_id" value="<?php echo $selected_period_id; ?>">
+                        <input type="hidden" name="submission_id" value="<?php echo $submission_id; ?>">
+                        
+                        <!-- Period Selector for Admin -->
+                        <?php if (!empty($all_periods)): ?>
+                        <div class="row mb-4">
                             <div class="col-md-6">
-                                <label for="end_date" class="form-label">End Date</label>
-                                <input type="date" class="form-control" id="end_date" name="end_date"
-                                       value="<?php echo htmlspecialchars($program['end_date'] ?? ''); ?>">
+                                <label for="period_selector" class="form-label">
+                                    <i class="fas fa-calendar-alt me-1"></i> Reporting Period
+                                </label>
+                                <select class="form-select" id="period_selector" onchange="changePeriod()">
+                                    <?php foreach ($all_periods as $period): ?>
+                                        <option value="<?php echo $period['period_id']; ?>" 
+                                                <?php echo ($period['period_id'] == $selected_period_id) ? 'selected' : ''; ?>>
+                                            <?php echo htmlspecialchars($period['year'] . ' Q' . $period['quarter']); ?>
+                                            <?php if (isset($period['status']) && $period['status'] === 'active'): ?>
+                                                <span class="text-success">(Active)</span>
+                                            <?php endif; ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
                             </div>
                         </div>
-
-                        <div class="mb-3">                            <label for="program_number" class="form-label">Program Number</label>
-                            <input type="text" class="form-control" id="program_number" name="program_number" 
-                                   value="<?php echo htmlspecialchars($program['program_number'] ?? ''); ?>"
-                                   pattern="[0-9.]+" 
-                                   title="Program number can only contain numbers and dots"
-                                   placeholder="e.g., 31.1, 2.5.3">
-                            <div class="form-text">
-                                <i class="fas fa-info-circle me-1"></i>
-                                Optional program identifier for easier mapping to initiatives (numbers and dots only)
-                            </div>
-                        </div>
-
-                        <!-- Initiative Selection -->
-                        <div class="col-md-6">
-                            <label for="initiative_id" class="form-label">
-                                <i class="fas fa-lightbulb me-1"></i>
-                                Link to Initiative
-                            </label>
-                            <select class="form-select" id="initiative_id" name="initiative_id">
-                                <option value="">Select an initiative (optional)</option>
-                                <?php foreach ($active_initiatives as $initiative): ?>
-                                    <option value="<?php echo $initiative['initiative_id']; ?>" 
-                                            <?php echo (isset($program['initiative_id']) && $program['initiative_id'] == $initiative['initiative_id']) ? 'selected' : ''; ?>>
-                                        <?php 
-                                        $display_text = '';
-                                        if (!empty($initiative['initiative_number'])) {
-                                            $display_text .= $initiative['initiative_number'] . ' - ';
-                                        }
-                                        $display_text .= $initiative['initiative_name'];
-                                        echo htmlspecialchars($display_text);
-                                        ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                            <div class="form-text">
-                                <i class="fas fa-info-circle me-1"></i>
-                                Link this program to a specific initiative for better organization and reporting
-                            </div>
-                        </div>
-                    </div>
-                </div><!-- 2. Program Targets Card -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header">
-                        <h5 class="card-title m-0">Program Targets</h5>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted mb-3">
-                            Define one or more targets for this program, each with its own status description.
-                        </p>
-                        
-                        <?php if (isset($program_history['submissions']) && count($program_history['submissions']) > 1): ?>
-                            <div class="d-flex align-items-center mt-2 mb-3">
-                                <button type="button" class="btn btn-sm btn-outline-secondary field-history-toggle" 
-                                        data-history-target="programTargetsHistory">
-                                    <i class="fas fa-history"></i> Show Target History
-                                </button>
-                            </div>
-                            <div id="programTargetsHistory" class="history-complete" style="display: none;">
-                                <h6 class="small text-muted mb-2">Program Target History</h6>
-                                <?php foreach($program_history['submissions'] as $idx => $submission): ?>
-                                    <?php if ($idx > 0 && isset($submission['targets']) && !empty($submission['targets'])): ?>
-                                        <div class="target-history-item">
-                                            <div class="target-history-header">
-                                                <strong><?php echo $submission['formatted_date']; ?></strong>
-                                                <span><?php echo $submission['period_name'] ?? ''; ?></span>
-                                            </div>
-                                            
-                                            <?php foreach($submission['targets'] as $t_idx => $target): ?>
-                                                <div class="mb-1">
-                                                    <strong>Target #<?php echo ($t_idx + 1); ?>:</strong> 
-                                                    <?php echo htmlspecialchars($target['target_text'] ?? ''); ?>
-                                                </div>
-                                                <?php if (!empty($target['status_description'])): ?>
-                                                    <div class="mb-1 ps-3">
-                                                        <em>Status:</em> <?php echo htmlspecialchars($target['status_description']); ?>
-                                                    </div>
-                                                <?php endif; ?>
-                                            <?php endforeach; ?>
-                                        </div>
-                                    <?php endif; ?>
-                                <?php endforeach; ?>
-                            </div>
                         <?php endif; ?>
                         
-                        <div id="targets-container">
-                            <?php if (!empty($current_targets)): ?>
-                                <?php foreach ($current_targets as $index => $target): ?>
-                                    <div class="target-entry">
-                                        <?php if ($index > 0): ?>
-                                        <button type="button" class="btn-close remove-target" aria-label="Remove target"></button>
-                                        <?php endif; ?>
-                                        <div class="mb-3">
-                                            <label class="form-label">Target <?php echo $index + 1; ?> *</label>
-                                            <input type="text" class="form-control target-input" name="target_text[]" 
-                                                    value="<?php echo htmlspecialchars($target['target_text'] ?? ''); ?>" 
-                                                    placeholder="Define a measurable target (e.g., 'Plant 100 trees')">
-                                        </div>
-                                        <div class="mb-2">
-                                            <label class="form-label">Status Description</label>
-                                            <textarea class="form-control status-description" name="status_description[]" rows="2" 
-                                                        placeholder="Describe the current status or progress toward this target"><?php echo htmlspecialchars($target['status_description'] ?? ''); ?></textarea>
-                                        </div>
-                                    </div>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <!-- Default empty target when no targets exist -->
-                                <div class="target-entry">
-                                    <div class="mb-3">
-                                        <label class="form-label">Target 1 *</label>
-                                        <input type="text" class="form-control target-input" name="target_text[]" 
-                                                placeholder="Define a measurable target (e.g., 'Plant 100 trees')">
-                                    </div>
-                                    <div class="mb-2">
-                                        <label class="form-label">Status Description</label>
-                                        <textarea class="form-control status-description" name="status_description[]" rows="2" 
-                                                    placeholder="Describe the current status or progress toward this target"></textarea>
-                                    </div>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                        
-                        <button type="button" id="add-target-btn" class="btn btn-outline-secondary add-target-btn">
-                            <i class="fas fa-plus-circle me-1"></i> Add Another Target
-                        </button>
-                    </div>
-                </div>
-                  <!-- 3. Remarks and Comments Card -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header">
-                        <h5 class="card-title m-0">Remarks and Comments</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label for="remarks" class="form-label">Additional Remarks</label>
-                            <textarea class="form-control" id="remarks" name="remarks" rows="4" 
-                                      placeholder="Add any additional remarks, challenges, or observations about this program..."><?php echo htmlspecialchars($remarks); ?></textarea>
-                            <div class="form-text">
-                                Optional additional notes or context about this program for the reporting period.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                  <!-- 4. Edit Permissions Card -->
-                <div class="card shadow-sm mb-4" id="permissions-section">
-                    <div class="card-header">
-                        <h5 class="card-title m-0">Agency Edit Permissions</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle me-2"></i>
-                            These settings control what parts of the program the owning agency can edit.
-                        </div>
-                        
-                        <div class="mb-3">
-                            <div class="form-check form-switch mb-2">
-                                <input class="form-check-input" type="checkbox" id="edit_program_name" name="edit_permissions[]" value="program_name" 
-                                      <?php echo in_array('program_name', $edit_permissions) ? 'checked' : ''; ?>>
-                                <label class="form-check-label" for="edit_program_name">Agency can edit Program Name</label>
-                            </div>
-                            
-                            <div class="form-check form-switch mb-2">
-                                <input class="form-check-input" type="checkbox" id="edit_brief_description" name="edit_permissions[]" value="brief_description" 
-                                      <?php echo in_array('brief_description', $edit_permissions) ? 'checked' : ''; ?>>
-                                <label class="form-check-label" for="edit_brief_description">Agency can edit Brief Description</label>
-                            </div>
-                            
-                            <div class="form-check form-switch mb-2">
-                                <input class="form-check-input" type="checkbox" id="edit_targets" name="edit_permissions[]" value="targets" 
-                                      <?php echo in_array('targets', $edit_permissions) ? 'checked' : ''; ?>>
-                                <label class="form-check-label" for="edit_targets">Agency can edit Targets</label>
-                            </div>
-                            
-                            <div class="form-check form-switch mb-2">
-                                <input class="form-check-input" type="checkbox" id="edit_status_text" name="edit_permissions[]" value="status_text" 
-                                      <?php echo in_array('status_text', $edit_permissions) ? 'checked' : ''; ?>>
-                                <label class="form-check-label" for="edit_status_text">Agency can edit Status Descriptions</label>
-                            </div>
-                            
-                            <div class="form-check form-switch mb-2">
-                                <input class="form-check-input" type="checkbox" id="edit_rating" name="edit_permissions[]" value="rating" 
-                                      <?php echo in_array('rating', $edit_permissions) ? 'checked' : ''; ?>>
-                                <label class="form-check-label" for="edit_rating">Agency can edit Rating</label>
-                            </div>
-                            
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="edit_timeline" name="edit_permissions[]" value="timeline" 
-                                      <?php echo in_array('timeline', $edit_permissions) ? 'checked' : ''; ?>>
-                                <label class="form-check-label" for="edit_timeline">Agency can edit Timeline (Start/End Dates)</label>
-                            </div>                        </div>
-                    </div>
-                </div>
-                
-                <!-- Program Attachments Section -->
-                <div class="card mb-4">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h6 class="card-title m-0">
-                            <i class="fas fa-paperclip me-2"></i>Program Attachments
-                        </h6>
-                        <span class="badge bg-secondary">
-                            <?php echo count($program_attachments); ?> 
-                            <?php echo count($program_attachments) === 1 ? 'file' : 'files'; ?>
-                        </span>
-                    </div>
-                    <div class="card-body">
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle me-2"></i>
-                            <strong>View Only:</strong> This section displays attachments uploaded by the agency. 
-                            Admin users can view and download these files but cannot upload or delete them through this interface.
-                        </div>
-                        
-                        <?php if (!empty($program_attachments)): ?>
-                            <div class="attachments-list">
-                                <?php foreach ($program_attachments as $attachment): ?>
-                                    <div class="attachment-item d-flex justify-content-between align-items-center border rounded p-3 mb-3">
-                                        <div class="attachment-info d-flex align-items-center">
-                                            <div class="attachment-icon me-3">
-                                                <i class="fas <?php echo get_file_icon($attachment['mime_type']); ?> fa-2x text-primary"></i>
-                                            </div>
-                                            <div class="attachment-details">
-                                                <h6 class="mb-1 fw-bold"><?php echo htmlspecialchars($attachment['original_filename']); ?></h6>
-                                                <div class="attachment-meta text-muted small">
-                                                    <span class="me-3">
-                                                        <i class="fas fa-hdd me-1"></i>
-                                                        <?php echo $attachment['file_size_formatted']; ?>
-                                                    </span>
-                                                    <span class="me-3">
-                                                        <i class="fas fa-calendar me-1"></i>
-                                                        <?php echo date('M j, Y \a\t g:i A', strtotime($attachment['upload_date'])); ?>
-                                                    </span>
-                                                    <span>
-                                                        <i class="fas fa-user me-1"></i>
-                                                        <?php echo htmlspecialchars($attachment['uploaded_by'] ?? 'Unknown'); ?>
-                                                    </span>
-                                                </div>
-                                                <?php if (!empty($attachment['description'])): ?>
-                                                    <div class="attachment-description mt-2">
-                                                        <small class="text-muted">
-                                                            <i class="fas fa-comment me-1"></i>
-                                                            <?php echo htmlspecialchars($attachment['description']); ?>
-                                                        </small>
-                                                    </div>
-                                                <?php endif; ?>
-                                            </div>
-                                        </div>
-                                        <div class="attachment-actions">
-                                            <a href="<?php echo APP_URL; ?>/app/ajax/download_program_attachment.php?id=<?php echo $attachment['attachment_id']; ?>" 
-                                               class="btn btn-sm btn-outline-primary" 
-                                               target="_blank"
-                                               title="Download <?php echo htmlspecialchars($attachment['original_filename']); ?>">
-                                                <i class="fas fa-download me-1"></i> Download
-                                            </a>
-                                        </div>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
-                        <?php else: ?>
-                            <div class="text-center py-4">
+                        <!-- Basic Program Information -->
+                        <div class="row">
+                            <div class="col-md-6">
                                 <div class="mb-3">
-                                    <i class="fas fa-folder-open fa-3x text-muted"></i>
+                                    <label for="program_name" class="form-label">Program Name *</label>
+                                    <input type="text" class="form-control" id="program_name" name="program_name" 
+                                           value="<?php echo htmlspecialchars($program['program_name']); ?>" required>
                                 </div>
-                                <h6 class="text-muted">No Attachments</h6>
-                                <p class="text-muted mb-0">This program doesn't have any supporting documents uploaded.</p>
                             </div>
-                        <?php endif; ?>
-                    </div>
-                </div>
-                
-                <!-- Form Actions -->
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save me-1"></i> Update Program
-                    </button>
-                    <div>
-                        <a href="programs.php" class="btn btn-outline-secondary">
-                            <i class="fas fa-times me-1"></i> Cancel
-                        </a>
-                    </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="program_number" class="form-label">Program Number</label>
+                                    <input type="text" class="form-control" id="program_number" name="program_number" 
+                                           value="<?php echo htmlspecialchars($program['program_number'] ?? ''); ?>"
+                                           placeholder="e.g., 1.1.1">
+                                    <div class="form-text">Optional. Use hierarchical numbering (e.g., 1.1.1) if linked to an initiative.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="initiative_id" class="form-label">Linked Initiative</label>
+                                    <select class="form-select" id="initiative_id" name="initiative_id">
+                                        <option value="">Select Initiative (Optional)</option>
+                                        <?php foreach ($active_initiatives as $initiative): ?>
+                                            <option value="<?php echo $initiative['initiative_id']; ?>" 
+                                                    <?php echo ($program['initiative_id'] == $initiative['initiative_id']) ? 'selected' : ''; ?>>
+                                                <?php echo htmlspecialchars($initiative['initiative_number'] . ' - ' . $initiative['initiative_name']); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="owner_agency_id" class="form-label">Owner Agency *</label>
+                                    <select class="form-select" id="owner_agency_id" name="owner_agency_id" required>
+                                        <option value="">Select Agency</option>
+                                        <?php foreach ($agencies as $agency): ?>
+                                            <option value="<?php echo $agency['agency_id']; ?>" 
+                                                    <?php echo ($program['owner_agency_id'] == $agency['agency_id']) ? 'selected' : ''; ?>>
+                                                <?php echo htmlspecialchars($agency['agency_name']); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="sector_id" class="form-label">Sector *</label>
+                                    <select class="form-select" id="sector_id" name="sector_id" required>
+                                        <option value="">Select Sector</option>
+                                        <?php foreach ($sectors as $sector): ?>
+                                            <option value="<?php echo $sector['sector_id']; ?>" 
+                                                    <?php echo ($program['sector_id'] == $sector['sector_id']) ? 'selected' : ''; ?>>
+                                                <?php echo htmlspecialchars($sector['sector_name']); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="start_date" class="form-label">Start Date</label>
+                                    <input type="date" class="form-control" id="start_date" name="start_date" 
+                                           value="<?php echo $program['start_date']; ?>">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="end_date" class="form-label">End Date</label>
+                                    <input type="date" class="form-control" id="end_date" name="end_date" 
+                                           value="<?php echo $program['end_date']; ?>">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Admin-specific settings -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="is_assigned" name="is_assigned" 
+                                               <?php echo $program['is_assigned'] ? 'checked' : ''; ?>>
+                                        <label class="form-check-label" for="is_assigned">
+                                            Assigned Program
+                                        </label>
+                                    </div>
+                                    <div class="form-text">Assigned programs have restricted edit permissions for agencies.</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Agency Edit Permissions</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="edit_permissions[]" value="program_name" 
+                                               <?php echo in_array('program_name', $edit_permissions) ? 'checked' : ''; ?>>
+                                        <label class="form-check-label">Program Name</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="edit_permissions[]" value="start_date" 
+                                               <?php echo in_array('start_date', $edit_permissions) ? 'checked' : ''; ?>>
+                                        <label class="form-check-label">Start Date</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="edit_permissions[]" value="end_date" 
+                                               <?php echo in_array('end_date', $edit_permissions) ? 'checked' : ''; ?>>
+                                        <label class="form-check-label">End Date</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Program Content -->
+                        <div class="mb-3">
+                            <label for="brief_description" class="form-label">Brief Description</label>
+                            <textarea class="form-control" id="brief_description" name="brief_description" rows="3"><?php echo htmlspecialchars($current_brief_description); ?></textarea>
+                        </div>
+
+                        <!-- Targets Section -->
+                        <div class="mb-4">
+                            <label class="form-label">Program Targets</label>
+                            <div id="targets-container">
+                                <?php if (!empty($current_targets)): ?>
+                                    <?php foreach ($current_targets as $index => $target): ?>
+                                        <div class="mb-4">
+                                            <h6 class="mb-2 fw-bold target-number text-primary">Target <?php echo ($index + 1); ?></h6>
+                                            <div class="target-item border rounded p-3">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label small text-muted">Target Description</label>
+                                                        <textarea class="form-control" name="target_text[]" rows="2"
+                                                               placeholder="Target description"><?php echo htmlspecialchars($target['target_text']); ?></textarea>
+                                                    </div>
+                                                    <div class="col-md-5">
+                                                        <label class="form-label small text-muted">Status Description</label>
+                                                        <textarea class="form-control" name="target_status_description[]" rows="2"
+                                                               placeholder="Status/Progress description"><?php echo htmlspecialchars($target['status_description'] ?? ''); ?></textarea>
+                                                    </div>
+                                                    <div class="col-md-1 d-flex align-items-end">
+                                                        <button type="button" class="btn btn-outline-danger btn-sm remove-target">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </div>
+                            <button type="button" class="btn btn-outline-primary" id="add-target">
+                                <i class="fas fa-plus me-1"></i> Add Target
+                            </button>
+                        </div>
+
+                        <!-- Rating -->
+                        <div class="mb-3">
+                            <label for="rating" class="form-label">Program Status/Rating</label>
+                            <select class="form-select" id="rating" name="rating">
+                                <option value="not-started" <?php echo ($current_rating === 'not-started') ? 'selected' : ''; ?>>Not Started</option>
+                                <option value="on-track" <?php echo ($current_rating === 'on-track') ? 'selected' : ''; ?>>On Track</option>
+                                <option value="delayed" <?php echo ($current_rating === 'delayed') ? 'selected' : ''; ?>>Delayed</option>
+                                <option value="completed" <?php echo ($current_rating === 'completed') ? 'selected' : ''; ?>>Completed</option>
+                                <option value="cancelled" <?php echo ($current_rating === 'cancelled') ? 'selected' : ''; ?>>Cancelled</option>
+                            </select>
+                        </div>
+
+                        <!-- Remarks -->
+                        <div class="mb-4">
+                            <label for="remarks" class="form-label">Remarks</label>
+                            <textarea class="form-control" id="remarks" name="remarks" rows="3"><?php echo htmlspecialchars($current_remarks); ?></textarea>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="alert alert-info alert-dismissible alert-permanent mb-3">
+                            <h6 class="alert-heading"><i class="fas fa-info-circle me-1"></i> Save Options Explained</h6>
+                            <small>
+                                <strong>Save as Draft:</strong> Save your progress without finalizing. You can continue editing later.<br>
+                                <strong>Save & Continue:</strong> Save as final version but stay on this page to make more changes.<br>
+                                <strong>Save & Exit:</strong> Save as final version and return to the programs list.<br>
+                                <strong>Finalize Draft:</strong> Convert an existing draft to final status.
+                            </small>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        
+                        <div class="d-flex gap-2 flex-wrap">
+                            <button type="submit" name="save_draft" class="btn btn-outline-primary" 
+                                    title="Save progress without finalizing - can be edited later">
+                                <i class="fas fa-save me-1"></i> Save as Draft
+                            </button>
+                            <button type="submit" name="save_and_continue" class="btn btn-primary" 
+                                    title="Save as final version and continue editing">
+                                <i class="fas fa-check me-1"></i> Save & Continue
+                            </button>
+                            <button type="submit" name="save_and_exit" class="btn btn-success" 
+                                    title="Save as final version and return to programs list">
+                                <i class="fas fa-check-circle me-1"></i> Save & Exit
+                            </button>
+                            <?php if ($submission_id && $current_submission && ($current_submission['is_draft'] ?? 1)): ?>
+                                <button type="submit" name="finalize_draft" class="btn btn-warning" 
+                                        title="Convert current draft to final version">
+                                    <i class="fas fa-lock me-1"></i> Finalize This Draft
+                                </button>
+                            <?php endif; ?>
+                            <a href="programs.php" class="btn btn-secondary">
+                                <i class="fas fa-times me-1"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
                 </div>
             </div>
-        </form>
+
+            <!-- Program History (Admin View) -->
+            <?php if (!empty($program_history['submissions'])): ?>
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-history me-1"></i> Edit History
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Period</th>
+                                        <th>Submitted By</th>
+                                        <th>Status</th>
+                                        <th>Changes</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($program_history['submissions'] as $submission): ?>
+                                        <tr>
+                                            <td><?php echo date('M j, Y g:i A', strtotime($submission['submission_date'])); ?></td>
+                                            <td><?php echo htmlspecialchars($submission['period_name'] ?? 'Unknown'); ?></td>
+                                            <td><?php echo htmlspecialchars($submission['submitted_by_name'] ?? 'Unknown'); ?></td>
+                                            <td>
+                                                <?php if ($submission['is_draft']): ?>
+                                                    <span class="badge bg-warning">Draft</span>
+                                                <?php else: ?>
+                                                    <span class="badge bg-success">Final</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td>
+                                                <?php if (!empty($submission['content_json'])): ?>
+                                                    <?php $content = json_decode($submission['content_json'], true); ?>
+                                                    <?php if ($content): ?>
+                                                        <small class="text-muted">
+                                                            Rating: <?php echo htmlspecialchars($content['rating'] ?? 'N/A'); ?> |
+                                                            Targets: <?php echo count($content['targets'] ?? []); ?>
+                                                        </small>
+                                                    <?php endif; ?>
+                                                <?php endif; ?>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            <?php endif; ?>
+        </div>
     </div>
 </div>
 
 <script>
+// Period selector change handler
+function changePeriod() {
+    const periodId = document.getElementById('period_selector').value;
+    window.location.href = `edit_program.php?id=<?php echo $program_id; ?>&period_id=${periodId}`;
+}
+
+// Target management
 document.addEventListener('DOMContentLoaded', function() {
-    // Rating pills selection
-    const ratingPills = document.querySelectorAll('.rating-pill');
-    const ratingInput = document.getElementById('rating');
+    const targetsContainer = document.getElementById('targets-container');
+    const addTargetBtn = document.getElementById('add-target');
     
-    ratingPills.forEach(pill => {
-        pill.addEventListener('click', function() {
-            // Remove active class from all pills
-            ratingPills.forEach(p => p.classList.remove('active'));
+    // Function to update target numbers
+    function updateTargetNumbers() {
+        const targetContainers = targetsContainer.children;
+        Array.from(targetContainers).forEach((container, index) => {
+            const numberElement = container.querySelector('.target-number');
+            const targetNumber = index + 1;
             
-            // Add active class to clicked pill
-            this.classList.add('active');
-            
-            // Update hidden input
-            ratingInput.value = this.getAttribute('data-rating');
+            if (numberElement) {
+                numberElement.textContent = `Target ${targetNumber}`;
+            }
         });
-    });
-      // Add target functionality
-    const addTargetBtn = document.getElementById('add-target-btn');
-    if (addTargetBtn) {
-        const targetsContainer = document.getElementById('targets-container');
-        
-        // Keep track of the highest target number
-        let highestTargetNumber = document.querySelectorAll('.target-entry').length;
-        
-        // Function to update target numbers sequentially
-        function updateTargetNumbers() {
-            const targetEntries = document.querySelectorAll('.target-entry');
-            targetEntries.forEach((entry, index) => {
-                const label = entry.querySelector('.form-label');
-                if (label && label.textContent.includes('Target')) {
-                    label.textContent = `Target ${index + 1} *`;
-                }
-            });
-        }
-        
-        addTargetBtn.addEventListener('click', function() {
-            // Increment the highest target number
-            highestTargetNumber++;
-            
-            const targetEntry = document.createElement('div');
-            targetEntry.className = 'target-entry';
-            
-            const html = `
-                <button type="button" class="btn-close remove-target" aria-label="Remove target"></button>
-                <div class="mb-3">
-                    <label class="form-label">Target ${highestTargetNumber} *</label>
-                    <input type="text" class="form-control target-input" name="target_text[]" 
-                           placeholder="Define a measurable target (e.g., 'Plant 100 trees')">
+    }
+    
+    addTargetBtn.addEventListener('click', function() {
+        const targetCount = targetsContainer.children.length + 1;
+        const targetItem = document.createElement('div');
+        targetItem.className = 'mb-4';
+        targetItem.innerHTML = `
+            <h6 class="mb-2 fw-bold target-number text-primary">Target ${targetCount}</h6>
+            <div class="target-item border rounded p-3">
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label small text-muted">Target Description</label>
+                        <textarea class="form-control" name="target_text[]" rows="2" placeholder="Target description"></textarea>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label small text-muted">Status Description</label>
+                        <textarea class="form-control" name="target_status_description[]" rows="2" placeholder="Status/Progress description"></textarea>
+                    </div>
+                    <div class="col-md-1 d-flex align-items-end">
+                        <button type="button" class="btn btn-outline-danger btn-sm remove-target">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
                 </div>
-                <div class="mb-2">
-                    <label class="form-label">Status Description</label>
-                    <textarea class="form-control status-description" name="status_description[]" rows="2" 
-                              placeholder="Describe the current status or progress toward this target"></textarea>
-                </div>
-            `;
-            
-            targetEntry.innerHTML = html;
-            targetsContainer.appendChild(targetEntry);
-            
-            // Attach remove event listener to the new target
-            const removeBtn = targetEntry.querySelector('.remove-target');
-            if (removeBtn) {
-                removeBtn.addEventListener('click', function() {
-                    targetEntry.remove();
-                    // Update target numbers after removing
-                    updateTargetNumbers();
-                });
-            }
-        });
-        
-        // Initialize existing remove buttons
-        document.querySelectorAll('.remove-target').forEach(btn => {
-            btn.addEventListener('click', function() {
-                this.closest('.target-entry').remove();
-                // Update target numbers after removing
-                updateTargetNumbers();
-            });
-        });
-    }
-      // Toggle permissions section based on assigned status
-    const isAssignedCheckbox = document.getElementById('is_assigned');
-    const permissionsSection = document.getElementById('permissions-section');
-    
-    function togglePermissionsVisibility() {
-        permissionsSection.style.display = isAssignedCheckbox.checked ? 'block' : 'none';
-    }
-    
-    // Set initial state
-    togglePermissionsVisibility();
-    
-    // Listen for changes
-    isAssignedCheckbox.addEventListener('change', togglePermissionsVisibility);    // Handle date validation
-    const startDateField = document.getElementById('start_date');
-    const endDateField = document.getElementById('end_date');
-    
-    if (startDateField && endDateField) {
-        endDateField.addEventListener('change', function() {
-            if (startDateField.value && this.value) {
-                if (new Date(this.value) < new Date(startDateField.value)) {
-                    alert('End date cannot be before start date');
-                    this.value = '';
-                }
-            }
-        });
-    }
-    
-    // History panel toggle
-    const historyToggleBtn = document.querySelector('.history-toggle-btn');
-    const programHistoryPanel = document.getElementById('programHistoryPanel');
-    
-    if (historyToggleBtn && programHistoryPanel) {
-        historyToggleBtn.addEventListener('click', function() {
-            const isVisible = programHistoryPanel.style.display === 'block';
-            programHistoryPanel.style.display = isVisible ? 'none' : 'block';
-            this.innerHTML = isVisible ? '<i class="fas fa-history"></i> Show History' : '<i class="fas fa-history"></i> Hide History';
-        });
-    }    // Form validation
-    document.getElementById('editProgramForm').addEventListener('submit', function(e) {
-        const programName = document.getElementById('program_name').value;
-        const targetInputs = document.querySelectorAll('.target-input');
-        const startDateField = document.getElementById('start_date');
-        const endDateField = document.getElementById('end_date');
-        let hasFilledTarget = false;
-        
-        // Validate program name
-        if (!programName.trim()) {
-            alert('Please enter a program name.');
-            e.preventDefault();
-            return false;
-        }
-        
-        // Validate date fields
-        if (startDateField.value && !isValidDate(startDateField.value)) {
-            alert('Please enter a valid start date in YYYY-MM-DD format.');
-            e.preventDefault();
-            return false;
-        }
-        
-        if (endDateField.value && !isValidDate(endDateField.value)) {
-            alert('Please enter a valid end date in YYYY-MM-DD format.');
-            e.preventDefault();
-            return false;
-        }
-        
-        // Validate date logic
-        if (startDateField.value && endDateField.value) {
-            if (new Date(endDateField.value) < new Date(startDateField.value)) {
-                alert('End date cannot be before start date.');
-                e.preventDefault();
-                return false;
-            }
-        }
-        
-        // Validate at least one target
-        targetInputs.forEach(input => {
-            if (input.value.trim()) {
-                hasFilledTarget = true;
-            }
-        });
-        
-        if (!hasFilledTarget) {
-            alert('Please add at least one target for this program.');
-            e.preventDefault();
-            return false;
-        }
-        
-        return true;
+            </div>
+        `;
+        targetsContainer.appendChild(targetItem);
     });
-
-    // Helper function to validate date format
-    function isValidDate(dateString) {
-        // Check format YYYY-MM-DD
-        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-        if (!dateRegex.test(dateString)) {
-            return false;
+    
+    targetsContainer.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-target')) {
+            // Remove the entire container (mb-4 div) that contains both the counter and target-item
+            const containerToRemove = e.target.closest('.mb-4') || e.target.closest('.target-item').parentElement;
+            if (containerToRemove) {
+                containerToRemove.remove();
+                updateTargetNumbers(); // Renumber after removal
+            }
         }
-        
-        // Check if it's a valid date
-        const date = new Date(dateString);
-        const timestamp = date.getTime();
-        
-        if (typeof timestamp !== 'number' || Number.isNaN(timestamp)) {
-            return false;
-        }
-        
-        // Check if the date components match (to catch invalid dates like 2025-02-30)
-        return date.toISOString().slice(0, 10) === dateString;
-    }
-
-    // Program number validation (real-time checking)
-    const programNumberInput = document.getElementById('program_number');
-    const initiativeSelect = document.getElementById('initiative_id');
-    let validationTimeout;
-
-    function validateProgramNumber() {
-        const programNumber = programNumberInput.value.trim();
-        const initiativeId = initiativeSelect.value;
-        
-        // Clear previous validation styling
-        programNumberInput.classList.remove('is-valid', 'is-invalid');
-        
-        if (!programNumber) {
-            return; // Empty is valid (optional field)
-        }
-
-        // Basic format validation
-        if (!/^[0-9.]+$/.test(programNumber)) {
-            programNumberInput.classList.add('is-invalid');
-            showProgramNumberError('Program number can only contain numbers and dots.');
-            return;
-        }
-
-        // Clear timeout for previous validation request
-        clearTimeout(validationTimeout);
-        
-        // Debounce the validation request
-        validationTimeout = setTimeout(() => {
-            // Check for duplicates via AJAX
-            fetch('<?php echo APP_URL; ?>/app/ajax/numbering.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: `action=check_program_number_availability&program_number=${encodeURIComponent(programNumber)}&exclude_program_id=<?php echo $program_id; ?>&initiative_id=${encodeURIComponent(initiativeId)}`
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.available) {
-                    programNumberInput.classList.add('is-valid');
-                    hideProgramNumberError();
-                } else {
-                    programNumberInput.classList.add('is-invalid');
-                    showProgramNumberError(data.message || 'This program number is already in use.');
-                }
-            })
-            .catch(error => {
-                console.error('Error validating program number:', error);
-            });
-        }, 500);
-    }
-
-    function showProgramNumberError(message) {
-        let errorDiv = document.getElementById('program-number-error');
-        if (!errorDiv) {
-            errorDiv = document.createElement('div');
-            errorDiv.id = 'program-number-error';
-            errorDiv.className = 'invalid-feedback';
-            programNumberInput.parentNode.appendChild(errorDiv);
-        }
-        errorDiv.textContent = message;
-    }
-
-    function hideProgramNumberError() {
-        const errorDiv = document.getElementById('program-number-error');
-        if (errorDiv) {
-            errorDiv.remove();
-        }
-    }
-
-    if (programNumberInput) {
-        programNumberInput.addEventListener('input', validateProgramNumber);
-        initiativeSelect.addEventListener('change', validateProgramNumber);
-    }
+    });
 });
 </script>
-</main>
 
-<?php
-require_once '../../layouts/footer.php';
-?>
-
-
-
+<?php require_once '../../layouts/footer.php'; ?>

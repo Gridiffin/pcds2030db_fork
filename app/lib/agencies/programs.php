@@ -529,9 +529,11 @@ function get_program_edit_history($program_id) {
     $stmt = $conn->prepare("
         SELECT ps.*, rp.year, rp.quarter,
                CONCAT('Q', rp.quarter, ' ', rp.year) as period_name,
-               ps.submission_date as effective_date
+               ps.submission_date as effective_date,
+               u.username as submitted_by_name
         FROM program_submissions ps 
         LEFT JOIN reporting_periods rp ON ps.period_id = rp.period_id
+        LEFT JOIN users u ON ps.submitted_by = u.user_id
         WHERE ps.program_id = ? 
         ORDER BY ps.submission_id DESC, ps.submission_date DESC
     ");

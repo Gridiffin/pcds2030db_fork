@@ -274,10 +274,9 @@ function get_admin_programs_list($period_id = null, $filters = []) {
         
         if (isset($filters['search']) && !empty($filters['search'])) {
             $search_term = '%' . $filters['search'] . '%';
-            $conditions[] = "(p.program_name LIKE ? OR p.description LIKE ?)";
+            $conditions[] = "p.program_name LIKE ?";
             $params[] = $search_term;
-            $params[] = $search_term;
-            $param_types .= "ss";
+            $param_types .= "s";
         }
     }
       // Add program creation date filtering based on the viewing_period_id's start and end dates
@@ -577,7 +576,7 @@ function get_admin_program_details($program_id) {
     
     $stmt = $conn->prepare("SELECT p.*, s.sector_name, u.agency_name, u.user_id as owner_agency_id,
                                   i.initiative_id, i.initiative_name, i.initiative_number, 
-                                  i.description as initiative_description, i.start_date as initiative_start_date, 
+                                  i.initiative_description, i.start_date as initiative_start_date, 
                                   i.end_date as initiative_end_date
                           FROM programs p
                           LEFT JOIN sectors s ON p.sector_id = s.sector_id
