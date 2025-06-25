@@ -744,6 +744,7 @@ require_once PROJECT_ROOT_PATH . 'lib/period_selector.php';
 
                 <!-- Program Update Form -->
                 <form id="updateProgramForm" method="post">
+                    <input type="hidden" name="program_id" value="<?php echo $program_id; ?>">
                     <input type="hidden" name="period_id" value="<?php echo $selected_period_id; ?>">
                     <?php if ($submission_id): ?>
                     <input type="hidden" name="submission_id" value="<?php echo $submission_id; ?>">

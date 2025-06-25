@@ -88,14 +88,29 @@ $is_current_active = $selected_period && $selected_period['status'] === 'open';
         if (periodSelector) {
             periodSelector.addEventListener('change', function() {
                 const selectedPeriodId = this.value;
-                const programId = (typeof PROGRAM_ID !== 'undefined') ? PROGRAM_ID : (window.programId || null);
+                // Update the hidden period_id input in the form if it exists
+                const periodInput = document.querySelector('form input[name="period_id"]');
+                if (periodInput) {
+                    periodInput.value = selectedPeriodId;
+                }
+                // Try to get programId from hidden input, JS global, or URL
+                let programId = (typeof PROGRAM_ID !== 'undefined') ? PROGRAM_ID : (window.programId || null);
                 if (!programId) {
                     // fallback: try to get from hidden input or URL
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const idFromUrl = urlParams.get('id');
-                    if (idFromUrl) {
-                        window.programId = idFromUrl;
+                    const hiddenInput = document.querySelector('input[name="program_id"]');
+                    if (hiddenInput) {
+                        programId = hiddenInput.value;
+                    } else {
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const idFromUrl = urlParams.get('id');
+                        if (idFromUrl) {
+                            programId = idFromUrl;
+                        }
                     }
+                }
+                if (!programId) {
+                    alert('Missing program ID.');
+                    return;
                 }
                 // Show loading spinner
                 const spinner = document.querySelector('.selector-spinner');
