@@ -432,6 +432,10 @@ require_once '../../layouts/page_header.php';
                                                 <p class="mb-0" id="review-program-number">-</p>
                                             </div>
                                             <div class="review-section mb-3">
+                                                <h6 class="text-muted mb-2">Linked Initiative</h6>
+                                                <p class="mb-0" id="review-initiative">-</p>
+                                            </div>
+                                            <div class="review-section mb-3">
                                                 <h6 class="text-muted mb-2">Timeline</h6>
                                                 <p class="mb-0" id="review-timeline">-</p>
                                             </div>
@@ -716,6 +720,17 @@ document.addEventListener('DOMContentLoaded', function() {    // Wizard state
         // Program Number
         document.getElementById('review-program-number').textContent = data.program_number || 'Not specified';
 
+        // Linked Initiative
+        let initiativeDisplay = 'No initiative linked';
+        if (data.initiative_id) {
+            const initiativeSelect = document.getElementById('initiative_id');
+            const selectedOption = initiativeSelect.options[initiativeSelect.selectedIndex];
+            if (selectedOption && selectedOption.value) {
+                initiativeDisplay = selectedOption.textContent.trim();
+            }
+        }
+        document.getElementById('review-initiative').textContent = initiativeDisplay;
+
         // Timeline
         let timeline = '-';
         if (data.start_date && data.end_date) {
@@ -864,6 +879,17 @@ document.addEventListener('DOMContentLoaded', function() {    // Wizard state
         
         // Initial setup
         addAutoSaveToInputs();
+        
+        // Add specific listener for initiative dropdown to update review immediately
+        const initiativeSelect = document.getElementById('initiative_id');
+        if (initiativeSelect) {
+            initiativeSelect.addEventListener('change', function() {
+                // Update review if we're currently on step 4
+                if (currentStep === 4) {
+                    updateReviewSummary();
+                }
+            });
+        }
         
         // Re-setup auto-save when new targets are added
         const addTargetButton = document.getElementById('add-target-button');
