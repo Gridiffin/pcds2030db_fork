@@ -41,7 +41,7 @@ $is_current_active = $selected_period && $selected_period['status'] === 'open';
                             <?php if ($selected_period): ?>
                                 <?php echo get_period_display_name($selected_period); ?> 
                                 <span class="badge ms-2 <?php echo $is_current_active ? 'bg-success' : 'bg-secondary'; ?>">
-                                    <?php echo $is_current_active ? 'Currently Editing a program in a ACTIVE period' : 'Currently editing a program in a CLOSED period.'; ?>
+                                    <?php echo $is_current_active ? 'Active Period' : 'Closed Period'; ?>
                                 </span>
                             <?php else: ?>
                                 Select Reporting Period
