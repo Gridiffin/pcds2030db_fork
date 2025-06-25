@@ -560,6 +560,9 @@ if (empty($brief_description)) {
     }
 }
 
+// Determine if current user is focal
+$is_focal_user = is_focal_user();
+
 // Set page title
 $pageTitle = 'Update Program';
 
@@ -749,7 +752,7 @@ require_once PROJECT_ROOT_PATH . 'lib/period_selector.php';
                     <?php if ($submission_id): ?>
                     <input type="hidden" name="submission_id" value="<?php echo $submission_id; ?>">
                     <?php endif; ?>
-                    
+                    <?php if ($is_focal_user): ?>
                     <!-- Rating Section -->
                     <div class="rating-section mb-4">
                         <h6 class="fw-bold mb-3">Program Rating</h6>
@@ -760,25 +763,21 @@ require_once PROJECT_ROOT_PATH . 'lib/period_selector.php';
                         <input type="hidden" id="rating" name="rating" value="<?php echo $rating; ?>">
                         
                         <div class="rating-pills">
-                            <div class="rating-pill target-achieved <?php echo ($rating == 'target-achieved') ? 'active' : ''; ?> <?php echo (!is_editable('rating')) ? 'disabled' : ''; ?>" data-rating="target-achieved">
+                            <div class="rating-pill target-achieved <?php echo ($rating == 'target-achieved') ? 'active' : ''; ?>" data-rating="target-achieved">
                                 <i class="fas fa-check-circle me-2"></i> Monthly Target Achieved
                             </div>
-                            <div class="rating-pill on-track-yearly <?php echo ($rating == 'on-track-yearly') ? 'active' : ''; ?> <?php echo (!is_editable('rating')) ? 'disabled' : ''; ?>" data-rating="on-track-yearly">
+                            <div class="rating-pill on-track-yearly <?php echo ($rating == 'on-track-yearly') ? 'active' : ''; ?>" data-rating="on-track-yearly">
                                 <i class="fas fa-calendar-check me-2"></i> On Track for Year
                             </div>
-                            <div class="rating-pill severe-delay <?php echo ($rating == 'severe-delay') ? 'active' : ''; ?> <?php echo (!is_editable('rating')) ? 'disabled' : ''; ?>" data-rating="severe-delay">
+                            <div class="rating-pill severe-delay <?php echo ($rating == 'severe-delay') ? 'active' : ''; ?>" data-rating="severe-delay">
                                 <i class="fas fa-exclamation-triangle me-2"></i> Severe Delays
                             </div>
-                            <div class="rating-pill not-started <?php echo ($rating == 'not-started' || !$rating) ? 'active' : ''; ?> <?php echo (!is_editable('rating')) ? 'disabled' : ''; ?>" data-rating="not-started">
+                            <div class="rating-pill not-started <?php echo ($rating == 'not-started' || !$rating) ? 'active' : ''; ?>" data-rating="not-started">
                                 <i class="fas fa-clock me-2"></i> Not Started
                             </div>
                         </div>
-                        
-                        <?php if ($program['is_assigned'] && !is_editable('rating')): ?>
-                            <div class="form-text">Rating was set by an administrator and cannot be changed.</div>
-                        <?php endif; ?>
                     </div>
-                    
+                    <?php endif; ?>
                     <!-- 1. Basic Information Card -->
                     <div class="card shadow-sm mb-4">
                         <div class="card-header">
