@@ -592,6 +592,116 @@ function get_program_edit_history($program_id) {
 }
 
 /**
+ * Get program edit history with pagination support
+ * Returns formatted submission history with pagination info
+ */
+function get_program_edit_history_paginated($program_id, $page = 1, $per_page = 10) {
+    global $conn;
+    
+    // Calculate offset
+    $offset = ($page - 1) * $per_page;
+    
+    // Get total count
+    $count_stmt = $conn->prepare("SELECT COUNT(*) as total FROM program_submissions WHERE program_id = ?");
+    if (!$count_stmt) {
+        error_log("Database error in get_program_edit_history_paginated count: " . $conn->error);
+        return ['submissions' => [], 'pagination' => ['total' => 0, 'pages' => 0, 'current_page' => 1]];
+    }
+    
+    $count_stmt->bind_param("i", $program_id);
+    $count_stmt->execute();
+    $count_result = $count_stmt->get_result();
+    $total_entries = $count_result->fetch_assoc()['total'];
+    $count_stmt->close();
+    
+    // Calculate pagination info
+    $total_pages = ceil($total_entries / $per_page);
+    $current_page = max(1, min($page, $total_pages));
+    
+    // Get paginated submissions
+    $stmt = $conn->prepare("
+        SELECT ps.*, rp.year, rp.quarter,
+               CONCAT('Q', rp.quarter, ' ', rp.year) as period_name,
+               ps.submission_date as effective_date,
+               u.username as submitted_by_name,
+               u.agency_name as submitted_by_agency
+        FROM program_submissions ps 
+        LEFT JOIN reporting_periods rp ON ps.period_id = rp.period_id
+        LEFT JOIN users u ON ps.submitted_by = u.user_id
+        WHERE ps.program_id = ? 
+        ORDER BY ps.submission_id DESC, ps.submission_date DESC
+        LIMIT ? OFFSET ?
+    ");
+    
+    if (!$stmt) {
+        error_log("Database error in get_program_edit_history_paginated: " . $conn->error);
+        return ['submissions' => [], 'pagination' => ['total' => 0, 'pages' => 0, 'current_page' => 1]];
+    }
+    
+    $stmt->bind_param("iii", $program_id, $per_page, $offset);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    $submissions = [];
+    
+    while ($row = $result->fetch_assoc()) {
+        // Process content_json if it exists
+        if (isset($row['content_json']) && is_string($row['content_json'])) {
+            $content = json_decode($row['content_json'], true);
+            if ($content) {
+                // Extract fields from content JSON
+                foreach ($content as $key => $value) {
+                    if (!isset($row[$key])) {
+                        $row[$key] = $value;
+                    }
+                }
+            }
+        }
+        
+        // Format the date for display with both date and time
+        if ($row['effective_date']) {
+            $row['formatted_date'] = date('M j, Y g:i A', strtotime($row['effective_date']));
+        } else {
+            $row['formatted_date'] = 'Unknown date';
+        }
+        
+        // Set draft/final label
+        $row['is_draft_label'] = ($row['is_draft'] ?? 0) ? 'Draft' : 'Final';
+        
+        // Format period name if available
+        if (isset($row['year']) && isset($row['quarter'])) {
+            $row['period_display'] = "Q{$row['quarter']}-{$row['year']}";
+        } elseif (isset($row['period_name'])) {
+            $row['period_display'] = $row['period_name'];
+        } else {
+            $row['period_display'] = 'Unknown period';
+        }
+        
+        $submissions[] = $row;
+    }
+    
+    $stmt->close();
+    
+    // Calculate display range
+    $start_entry = $offset + 1;
+    $end_entry = min($offset + $per_page, $total_entries);
+    
+    return [
+        'submissions' => $submissions,
+        'pagination' => [
+            'total' => $total_entries,
+            'pages' => $total_pages,
+            'current_page' => $current_page,
+            'per_page' => $per_page,
+            'start_entry' => $start_entry,
+            'end_entry' => $end_entry,
+            'has_previous' => $current_page > 1,
+            'has_next' => $current_page < $total_pages
+        ]
+    ];
+}
+
+/**
  * Get field edit history for a specific field from program submissions
  * Used to show how specific fields have changed over time
  */

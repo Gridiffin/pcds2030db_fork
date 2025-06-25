@@ -48,8 +48,9 @@ if (!$program) {
     exit;
 }
 
-// Get program edit history
-$program_history = get_program_edit_history($program_id);
+// Get program edit history with pagination
+$history_page = isset($_GET['history_page']) ? max(1, intval($_GET['history_page'])) : 1;
+$program_history = get_program_edit_history_paginated($program_id, $history_page, 5); // 5 entries per page
 
 // Get active initiatives for dropdown
 $active_initiatives = get_initiatives_for_select(true);
@@ -1021,8 +1022,14 @@ require_once '../../layouts/page_header.php';
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0">
                             <i class="fas fa-history me-1"></i> Edit History
-                            <small class="text-muted">(<?php echo count($program_history['submissions']); ?> total entries)</small>
+                            <small class="text-muted">(<?php echo $program_history['pagination']['total']; ?> total entries)</small>
                         </h5>
+                        <?php if ($program_history['pagination']['total'] > 5): ?>
+                            <small class="text-muted">
+                                Showing <?php echo $program_history['pagination']['start_entry']; ?>-<?php echo $program_history['pagination']['end_entry']; ?> 
+                                of <?php echo $program_history['pagination']['total']; ?>
+                            </small>
+                        <?php endif; ?>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
@@ -1089,6 +1096,86 @@ require_once '../../layouts/page_header.php';
                                 </tbody>
                             </table>
                         </div>
+                        
+                        <!-- Pagination Controls -->
+                        <?php if ($program_history['pagination']['pages'] > 1): ?>
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <div class="text-muted small">
+                                    Page <?php echo $program_history['pagination']['current_page']; ?> of <?php echo $program_history['pagination']['pages']; ?>
+                                </div>
+                                <nav aria-label="Edit history pagination">
+                                    <ul class="pagination pagination-sm mb-0">
+                                        <!-- Previous Page -->
+                                        <?php if ($program_history['pagination']['has_previous']): ?>
+                                            <li class="page-item">
+                                                <a class="page-link" href="?id=<?php echo $program_id; ?>&period_id=<?php echo $selected_period_id; ?>&history_page=<?php echo $program_history['pagination']['current_page'] - 1; ?>">
+                                                    <i class="fas fa-chevron-left"></i> Previous
+                                                </a>
+                                            </li>
+                                        <?php else: ?>
+                                            <li class="page-item disabled">
+                                                <span class="page-link"><i class="fas fa-chevron-left"></i> Previous</span>
+                                            </li>
+                                        <?php endif; ?>
+                                        
+                                        <!-- Page Numbers -->
+                                        <?php 
+                                        $current_page = $program_history['pagination']['current_page'];
+                                        $total_pages = $program_history['pagination']['pages'];
+                                        
+                                        // Calculate page range to display
+                                        $start_page = max(1, $current_page - 2);
+                                        $end_page = min($total_pages, $current_page + 2);
+                                        
+                                        // Show first page if not in range
+                                        if ($start_page > 1): ?>
+                                            <li class="page-item">
+                                                <a class="page-link" href="?id=<?php echo $program_id; ?>&period_id=<?php echo $selected_period_id; ?>&history_page=1">1</a>
+                                            </li>
+                                            <?php if ($start_page > 2): ?>
+                                                <li class="page-item disabled">
+                                                    <span class="page-link">...</span>
+                                                </li>
+                                            <?php endif; ?>
+                                        <?php endif; ?>
+                                        
+                                        <!-- Page range -->
+                                        <?php for ($page = $start_page; $page <= $end_page; $page++): ?>
+                                            <li class="page-item <?php echo ($page == $current_page) ? 'active' : ''; ?>">
+                                                <a class="page-link" href="?id=<?php echo $program_id; ?>&period_id=<?php echo $selected_period_id; ?>&history_page=<?php echo $page; ?>">
+                                                    <?php echo $page; ?>
+                                                </a>
+                                            </li>
+                                        <?php endfor; ?>
+                                        
+                                        <!-- Show last page if not in range -->
+                                        <?php if ($end_page < $total_pages): ?>
+                                            <?php if ($end_page < $total_pages - 1): ?>
+                                                <li class="page-item disabled">
+                                                    <span class="page-link">...</span>
+                                                </li>
+                                            <?php endif; ?>
+                                            <li class="page-item">
+                                                <a class="page-link" href="?id=<?php echo $program_id; ?>&period_id=<?php echo $selected_period_id; ?>&history_page=<?php echo $total_pages; ?>"><?php echo $total_pages; ?></a>
+                                            </li>
+                                        <?php endif; ?>
+                                        
+                                        <!-- Next Page -->
+                                        <?php if ($program_history['pagination']['has_next']): ?>
+                                            <li class="page-item">
+                                                <a class="page-link" href="?id=<?php echo $program_id; ?>&period_id=<?php echo $selected_period_id; ?>&history_page=<?php echo $program_history['pagination']['current_page'] + 1; ?>">
+                                                    Next <i class="fas fa-chevron-right"></i>
+                                                </a>
+                                            </li>
+                                        <?php else: ?>
+                                            <li class="page-item disabled">
+                                                <span class="page-link">Next <i class="fas fa-chevron-right"></i></span>
+                                            </li>
+                                        <?php endif; ?>
+                                    </ul>
+                                </nav>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             <?php elseif (isset($program_history)): ?>
