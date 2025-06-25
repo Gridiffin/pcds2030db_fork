@@ -6,6 +6,7 @@
  */
 
 require_once dirname(__DIR__) . '/utilities.php';
+require_once dirname(__DIR__) . '/numbering_helpers.php';
 
 if (file_exists(dirname(__FILE__) . '/core.php')) {
     require_once 'core.php';
@@ -77,9 +78,9 @@ function create_agency_program($data) {
     $validated = validate_agency_program_input($data, ['program_name', 'rating']);
     if (isset($validated['error'])) return $validated;    $program_name = $validated['program_name'];
     $program_number = $validated['program_number'] ?? null;
-    // Validate program_number format if provided (numbers and dots only)
-    if ($program_number && !preg_match('/^[0-9.]+$/', $program_number)) {
-        return format_error('Program number must contain only numbers and dots', 400);
+    // Validate program_number format if provided
+    if ($program_number && !is_valid_program_number_format($program_number, false)) {
+        return format_error(get_program_number_format_error(false), 400);
     }
     $start_date = $validated['start_date'] ?? null;
     $end_date = $validated['end_date'] ?? null;
@@ -155,9 +156,9 @@ function create_wizard_program_draft($data) {
     $status_description = isset($data['status_description']) ? trim($data['status_description']) : '';
     $initiative_id = isset($data['initiative_id']) && !empty($data['initiative_id']) ? intval($data['initiative_id']) : null;
     
-    // Validate program_number format if provided (numbers and dots only)
-    if ($program_number && !preg_match('/^[0-9.]+$/', $program_number)) {
-        return ['error' => 'Program number must contain only numbers and dots'];
+    // Validate program_number format if provided
+    if ($program_number && !is_valid_program_number_format($program_number, false)) {
+        return ['error' => get_program_number_format_error(false)];
     }
     
     // Additional validation for hierarchical format if initiative is linked
@@ -252,9 +253,9 @@ function update_program_draft_only($program_id, $data) {
 
     $program_name = trim($data['program_name']);
     $program_number = isset($data['program_number']) ? trim($data['program_number']) : null;
-    // Validate program_number format if provided (numbers and dots only)
-    if ($program_number && !preg_match('/^[0-9.]+$/', $program_number)) {
-        return ['success' => false, 'error' => 'Program number must contain only numbers and dots'];
+    // Validate program_number format if provided
+    if ($program_number && !is_valid_program_number_format($program_number, false)) {
+        return ['success' => false, 'error' => get_program_number_format_error(false)];
     }    $start_date = isset($data['start_date']) && !empty($data['start_date']) ? $data['start_date'] : null;
     $end_date = isset($data['end_date']) && !empty($data['end_date']) ? $data['end_date'] : null;
     $initiative_id = isset($data['initiative_id']) && !empty($data['initiative_id']) ? intval($data['initiative_id']) : null;
@@ -299,8 +300,8 @@ function update_wizard_program_draft($program_id, $data) {
     $initiative_id = isset($data['initiative_id']) && !empty($data['initiative_id']) ? intval($data['initiative_id']) : null;
     
     // Validate program_number format if provided
-    if ($program_number && !preg_match('/^[0-9.]+$/', $program_number)) {
-        return ['error' => 'Program number must contain only numbers and dots'];
+    if ($program_number && !is_valid_program_number_format($program_number, false)) {
+        return ['error' => get_program_number_format_error(false)];
     }
     
     // Additional validation for hierarchical format if initiative is linked

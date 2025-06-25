@@ -233,8 +233,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             // Validate program_number format if provided
-            if (!empty($program_number) && !preg_match('/^[0-9.]+$/', $program_number)) {
-                throw new Exception('Program number can only contain numbers and dots.');
+            if (!empty($program_number) && !is_valid_program_number_format($program_number, false)) {
+                throw new Exception(get_program_number_format_error(false));
             }
             
             // Additional validation for hierarchical format if initiative is linked
@@ -589,8 +589,10 @@ require_once '../../layouts/page_header.php';
                                     <label for="program_number" class="form-label">Program Number</label>
                                     <input type="text" class="form-control" id="program_number" name="program_number" 
                                            value="<?php echo htmlspecialchars($program['program_number'] ?? ''); ?>"
-                                           placeholder="e.g., 1.1.1">
-                                    <div class="form-text">Optional. Use hierarchical numbering (e.g., 1.1.1) if linked to an initiative.</div>
+                                           pattern="[\w.]+"
+                                           title="Program number can contain letters, numbers, and dots"
+                                           placeholder="e.g., 31.1, 31.2A, 31.25.6, 31.2A.3B">
+                                    <div class="form-text">Optional. Flexible format supporting letters, numbers, and dots.</div>
                                 </div>
                             </div>
                         </div>

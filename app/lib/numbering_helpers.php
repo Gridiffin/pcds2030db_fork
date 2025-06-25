@@ -7,6 +7,115 @@
  * Format: Initiative.Sequence (e.g., 30.1, 30.2, 30.3)
  */
 
+// Program Number Format Configuration
+const PROGRAM_NUMBER_SEPARATOR = '.';
+const PROGRAM_NUMBER_MAX_SEQUENCE = 1000;            // Safety limit for sequence generation only
+
+// Flexible regex patterns - supports unlimited sub-levels
+const PROGRAM_NUMBER_REGEX_INITIATIVE_PREFIX = '/^\d+\./';              // Must start with initiative number + dot
+const PROGRAM_NUMBER_REGEX_FLEXIBLE = '/^\d+\.[\w\.]+$/';               // Initiative.anything (letters, numbers, dots)
+const PROGRAM_NUMBER_REGEX_BASIC = '/^[\w\.]+$/';                       // Most permissive: letters, numbers, dots, but at least one dot
+
+/**
+ * Centralized program number validation function
+ * 
+ * @param string $program_number The program number to validate
+ * @param bool $strict_format Whether to use strict format validation (default: false)
+ * @return bool True if valid, false if invalid
+ */
+function is_valid_program_number_format($program_number, $strict_format = false) {
+    if (empty($program_number)) {
+        return true; // Empty numbers are allowed
+    }
+    
+    // For strict format, ensure it starts with initiative number followed by dot
+    if ($strict_format) {
+        return preg_match(PROGRAM_NUMBER_REGEX_INITIATIVE_PREFIX, $program_number) === 1 &&
+               preg_match(PROGRAM_NUMBER_REGEX_FLEXIBLE, $program_number) === 1;
+    } else {
+        // Basic validation - check for valid characters and at least one dot
+        return preg_match(PROGRAM_NUMBER_REGEX_BASIC, $program_number) === 1 && 
+               strpos($program_number, '.') !== false;
+    }
+}
+
+/**
+ * Get program number validation error message
+ * 
+ * @param bool $strict_format Whether strict format was used
+ * @return string Error message for invalid format
+ */
+function get_program_number_format_error($strict_format = false) {
+    if ($strict_format) {
+        return 'Program number must start with initiative number followed by dot (e.g., 31.2, 31.25.6, 31.2A.3B)';
+    } else {
+        return 'Program number can only contain numbers, letters, and dots.';
+    }
+}
+
+/**
+ * Extract initiative number from a program number
+ * 
+ * @param string $program_number The program number to analyze
+ * @return string|null Initiative number or null if invalid
+ */
+function get_initiative_from_program_number($program_number) {
+    if (empty($program_number) || !preg_match(PROGRAM_NUMBER_REGEX_INITIATIVE_PREFIX, $program_number)) {
+        return null;
+    }
+    
+    $parts = explode(PROGRAM_NUMBER_SEPARATOR, $program_number);
+    return $parts[0];
+}
+
+/**
+ * Parse a program number into its components (flexible parsing)
+ * 
+ * @param string $program_number The program number to parse
+ * @return array Array with components: initiative, suffix_parts
+ */
+function parse_program_number($program_number) {
+    $result = [
+        'initiative' => null,
+        'suffix_parts' => []
+    ];
+    
+    if (empty($program_number)) {
+        return $result;
+    }
+    
+    $parts = explode(PROGRAM_NUMBER_SEPARATOR, $program_number);
+    if (count($parts) >= 2) {
+        $result['initiative'] = $parts[0];
+        $result['suffix_parts'] = array_slice($parts, 1); // Everything after initiative
+    }
+    
+    return $result;
+}
+
+/**
+ * Build a program number from components
+ * 
+ * @param string $initiative Initiative number
+ * @param int $sequence Sequence number
+ * @param string $letter Optional letter (for level 2 and 3)
+ * @param int $subsequence Optional sub-sequence (for level 3)
+ * @return string Formatted program number
+ */
+function build_program_number($initiative, $sequence, $letter = null, $subsequence = null) {
+    $number = $initiative . PROGRAM_NUMBER_SEPARATOR . $sequence;
+    
+    if ($letter) {
+        $number .= $letter;
+        
+        if ($subsequence) {
+            $number .= PROGRAM_NUMBER_SEPARATOR . $subsequence;
+        }
+    }
+    
+    return $number;
+}
+
 /**
  * Generate the next available program number for an initiative
  * 
@@ -34,13 +143,15 @@ function generate_next_program_number($initiative_id) {
     
     $initiative_number = $initiative['initiative_number'];
     
-    // Find the highest sequence number for this initiative
+    // Find the highest numeric sequence for this initiative
+    // Use a simpler approach - just find next available integer
     $sequence_query = "SELECT program_number FROM programs 
-                       WHERE initiative_id = ? AND program_number LIKE ? 
-                       ORDER BY CAST(SUBSTRING_INDEX(program_number, '.', -1) AS UNSIGNED) DESC 
+                       WHERE initiative_id = ? AND program_number REGEXP ? 
+                       ORDER BY CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(program_number, '.', 2), '.', -1) AS UNSIGNED) DESC 
                        LIMIT 1";
     
-    $pattern = $initiative_number . '.%';
+    // Pattern to match initiative.number (like 31.2, but not 31.2A or 31.25.6)
+    $pattern = '^' . $initiative_number . '\\.[0-9]+$';
     $stmt = $conn->prepare($sequence_query);
     $stmt->bind_param("is", $initiative_id, $pattern);
     $stmt->execute();
@@ -49,12 +160,14 @@ function generate_next_program_number($initiative_id) {
     $next_sequence = 1;
     if ($row = $result->fetch_assoc()) {
         $last_number = $row['program_number'];
-        if (preg_match('/\.(\d+)$/', $last_number, $matches)) {
-            $next_sequence = intval($matches[1]) + 1;
+        // Extract the numeric part after the first dot
+        $parts = explode(PROGRAM_NUMBER_SEPARATOR, $last_number);
+        if (count($parts) >= 2 && is_numeric($parts[1])) {
+            $next_sequence = intval($parts[1]) + 1;
         }
     }
     
-    return $initiative_number . '.' . $next_sequence;
+    return $initiative_number . PROGRAM_NUMBER_SEPARATOR . $next_sequence;
 }
 
 /**
@@ -73,7 +186,15 @@ function update_initiative_program_numbers($initiative_id, $new_initiative_numbe
         // Get all programs for this initiative ordered by their current sequence
         $programs_query = "SELECT program_id, program_number FROM programs 
                           WHERE initiative_id = ? AND program_number IS NOT NULL 
-                          ORDER BY CAST(SUBSTRING_INDEX(program_number, '.', -1) AS UNSIGNED)";
+                          ORDER BY 
+                              CAST(SUBSTRING_INDEX(program_number, '.', 1) AS UNSIGNED),
+                              CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(program_number, '.', 2), '.', -1) AS UNSIGNED),
+                              CASE WHEN program_number REGEXP '[A-Z]' THEN 
+                                  SUBSTRING(program_number, LOCATE('.', program_number) + LENGTH(SUBSTRING_INDEX(program_number, '.', 1)) + 1, 1)
+                              ELSE '' END,
+                              CASE WHEN program_number REGEXP '[A-Z]\\.[0-9]+$' THEN 
+                                  CAST(SUBSTRING_INDEX(program_number, '.', -1) AS UNSIGNED)
+                              ELSE 0 END";
         
         $stmt = $conn->prepare($programs_query);
         $stmt->bind_param("i", $initiative_id);
@@ -84,7 +205,7 @@ function update_initiative_program_numbers($initiative_id, $new_initiative_numbe
         $updated_count = 0;
         
         while ($program = $result->fetch_assoc()) {
-            $new_program_number = $new_initiative_number . '.' . $sequence;
+            $new_program_number = $new_initiative_number . PROGRAM_NUMBER_SEPARATOR . $sequence;
             
             // Update the program number
             $update_query = "UPDATE programs SET program_number = ? WHERE program_id = ?";
@@ -137,7 +258,7 @@ function assign_hierarchical_program_number($program_id, $initiative_id) {
         }
     }
     
-    $new_number = generate_next_program_number($initiative_id);
+    $new_number = generate_next_program_number($initiative_id, 1); // Default to Level 1
     
     if (!$new_number) {
         return ['success' => false, 'error' => 'Could not generate program number'];
@@ -174,11 +295,11 @@ function validate_program_number_format($program_number, $initiative_id = null) 
         return ['valid' => true, 'message' => 'Empty number is allowed'];
     }
     
-    // Check basic format: number.number
-    if (!preg_match('/^\d+\.\d+$/', $program_number)) {
+    // Check basic format using centralized validation
+    if (!is_valid_program_number_format($program_number, true)) {
         return [
             'valid' => false,
-            'message' => 'Program number must be in format: initiative.sequence (e.g., 30.1)'
+            'message' => get_program_number_format_error(true)
         ];
     }
     
@@ -194,7 +315,7 @@ function validate_program_number_format($program_number, $initiative_id = null) 
         $initiative = $result->fetch_assoc();
         
         if ($initiative && $initiative['initiative_number']) {
-            $expected_prefix = $initiative['initiative_number'] . '.';
+            $expected_prefix = $initiative['initiative_number'] . PROGRAM_NUMBER_SEPARATOR;
             if (!str_starts_with($program_number, $expected_prefix)) {
                 return [
                     'valid' => false,
@@ -274,7 +395,7 @@ function renumber_initiative_programs($initiative_id) {
         $updated_count = 0;
         
         while ($program = $result->fetch_assoc()) {
-            $new_program_number = $initiative_number . '.' . $sequence;
+            $new_program_number = $initiative_number . PROGRAM_NUMBER_SEPARATOR . $sequence;
             
             $update_query = "UPDATE programs SET program_number = ? WHERE program_id = ?";
             $update_stmt = $conn->prepare($update_query);
@@ -344,7 +465,7 @@ function get_available_program_number($initiative_number, $desired_sequence = nu
     global $conn;
     
     if ($desired_sequence) {
-        $test_number = $initiative_number . '.' . $desired_sequence;
+        $test_number = $initiative_number . PROGRAM_NUMBER_SEPARATOR . $desired_sequence;
         if (is_program_number_available($test_number)) {
             return $test_number;
         }
@@ -353,12 +474,12 @@ function get_available_program_number($initiative_number, $desired_sequence = nu
     // Find the next available sequence number
     $sequence = 1;
     do {
-        $test_number = $initiative_number . '.' . $sequence;
+        $test_number = $initiative_number . PROGRAM_NUMBER_SEPARATOR . $sequence;
         if (is_program_number_available($test_number)) {
             return $test_number;
         }
         $sequence++;
-    } while ($sequence <= 1000); // Safety limit
+    } while ($sequence <= PROGRAM_NUMBER_MAX_SEQUENCE); // Safety limit
     
     return null;
 }

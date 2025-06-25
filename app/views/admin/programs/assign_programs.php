@@ -12,6 +12,7 @@ require_once ROOT_PATH . 'app/lib/session.php';
 require_once ROOT_PATH . 'app/lib/functions.php';
 require_once ROOT_PATH . 'app/lib/admins/index.php';
 require_once ROOT_PATH . 'app/lib/rating_helpers.php';
+require_once ROOT_PATH . 'app/lib/numbering_helpers.php';
 require_once ROOT_PATH . 'app/lib/audit_log.php';
 
 // Verify user is admin
@@ -38,8 +39,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_program'])) {
     }
     
     // Validate program_number format if provided
-    if (!empty($program_number) && !preg_match('/^[0-9.]+$/', $program_number)) {
-        $errors[] = "Program number can only contain numbers and dots";
+    if (!empty($program_number) && !is_valid_program_number_format($program_number, false)) {
+        $errors[] = get_program_number_format_error(false);
     }
     
     if (empty($agency_id)) {
@@ -287,10 +288,10 @@ require_once '../../layouts/page_header.php';
                             <label for="program_number" class="form-label">Program Number</label>
                             <input type="text" class="form-control" id="program_number" name="program_number" 
                                   value="<?php echo isset($_POST['program_number']) ? htmlspecialchars($_POST['program_number']) : ''; ?>"
-                                  pattern="[0-9.]+" 
-                                  title="Program number can only contain numbers and dots"
-                                  placeholder="e.g., 31.1, 2.5.3">
-                            <div class="form-text">Optional program identifier for easier mapping to initiatives (numbers and dots only).</div>
+                                  pattern="[\w.]+" 
+                                  title="Program number can contain letters, numbers, and dots"
+                                  placeholder="e.g., 31.1, 31.2A, 31.25.6, 31.2A.3B">
+                            <div class="form-text">Optional program identifier with flexible format (letters, numbers, dots).</div>
                         </div>
                         
                         <div class="row g-3">

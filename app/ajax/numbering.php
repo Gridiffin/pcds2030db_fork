@@ -160,11 +160,11 @@ function handleCheckProgramNumberAvailability($input) {
     $initiative_id = isset($input['initiative_id']) && !empty($input['initiative_id']) ? intval($input['initiative_id']) : null;
     $exclude_program_id = isset($input['exclude_program_id']) && !empty($input['exclude_program_id']) ? intval($input['exclude_program_id']) : null;
     
-    // Basic format validation
-    if (!preg_match('/^[0-9.]+$/', $program_number)) {
+    // Basic format validation using centralized function
+    if (!is_valid_program_number_format($program_number, false)) {
         echo json_encode([
             'available' => false,
-            'message' => 'Program number can only contain numbers and dots.'
+            'message' => get_program_number_format_error(false)
         ]);
         return;
     }

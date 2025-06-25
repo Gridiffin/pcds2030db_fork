@@ -270,8 +270,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $submission_id = intval($_POST['submission_id'] ?? 0);
             $current_user_id = $_SESSION['user_id'];
               // Validate program_number format if provided
-            if (!empty($program_number) && !preg_match('/^[0-9.]+$/', $program_number)) {
-                $_SESSION['message'] = 'Program number can only contain numbers and dots.';
+            if (!empty($program_number) && !is_valid_program_number_format($program_number, false)) {
+                $_SESSION['message'] = get_program_number_format_error(false);
                 $_SESSION['message_type'] = 'danger';
                 header('Location: update_program.php?id=' . $program_id);
                 exit;
@@ -836,12 +836,12 @@ require_once PROJECT_ROOT_PATH . 'lib/period_selector_edit.php';
                                 <label for="program_number" class="form-label">Program Number</label>
                                 <input type="text" class="form-control" id="program_number" name="program_number" 
                                         value="<?php echo htmlspecialchars($program['program_number'] ?? ''); ?>"
-                                        pattern="[0-9.]+" 
-                                        title="Program number can only contain numbers and dots"
-                                        placeholder="e.g., 31.1, 2.5.3">
+                                        pattern="[\w.]+" 
+                                        title="Program number can contain letters, numbers, and dots"
+                                        placeholder="e.g., 31.1, 31.2A, 31.25.6, 31.2A.3B">
                                 <div class="form-text">
                                     <i class="fas fa-info-circle me-1"></i>
-                                    Optional program identifier for easier mapping to initiatives (numbers and dots only)
+                                    Optional program identifier with flexible format (letters, numbers, dots)
                                 </div>
                             </div>
 
