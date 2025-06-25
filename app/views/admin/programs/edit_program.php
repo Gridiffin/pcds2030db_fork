@@ -300,7 +300,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new Exception('Failed to update program: ' . $program_stmt->error);
             }
             
-            // STEP 2: Build new state and generate changes
+            // STEP 2: Handle Program-Outcome Links
+            // Get new outcome IDs from form
+            $new_outcome_ids = isset($_POST['outcome_id']) ? array_filter($_POST['outcome_id']) : [];
+            
+            // First, delete existing links for this program
+            $delete_links_query = $conn->prepare("DELETE FROM program_outcome_links WHERE program_id = ?");
+            $delete_links_query->bind_param("i", $program_id);
+            if (!$delete_links_query->execute()) {
+                throw new Exception('Failed to remove existing outcome links: ' . $delete_links_query->error);
+            }
+            
+            // Then, insert new links
+            if (!empty($new_outcome_ids)) {
+                $insert_link_query = $conn->prepare("INSERT INTO program_outcome_links (program_id, outcome_id, created_by, created_at) VALUES (?, ?, ?, NOW())");
+                foreach ($new_outcome_ids as $outcome_id) {
+                    if (!empty($outcome_id) && is_numeric($outcome_id)) {
+                        $insert_link_query->bind_param("iii", $program_id, $outcome_id, $current_user_id);
+                        if (!$insert_link_query->execute()) {
+                            throw new Exception('Failed to create outcome link: ' . $insert_link_query->error);
+                        }
+                    }
+                }
+            }
+
+            // STEP 3: Build new state and generate changes
             // Get agency and sector names for comparison
             $agency_name = '';
             $sector_name = '';
@@ -336,7 +360,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'rating' => $rating,
                 'remarks' => $remarks,
                 'targets' => $targets,
-                'edit_permissions' => $edit_permissions_json
+                'edit_permissions' => $edit_permissions_json,
+                'linked_outcomes' => $new_outcome_ids
             ];
             
             // Generate changes made during this save session
@@ -487,6 +512,28 @@ if ($current_submission && !empty($current_submission['content_json'])) {
             $current_brief_description = $content_data['brief_description'];
         }
     }
+}
+
+// Get available outcomes and existing program-outcome links
+$available_outcomes = [];
+$outcomes_result = $conn->query("SELECT detail_id, detail_name FROM outcomes_details ORDER BY detail_name");
+if ($outcomes_result) {
+    while ($row = $outcomes_result->fetch_assoc()) {
+        $available_outcomes[] = $row;
+    }
+}
+
+// Get currently linked outcomes for this program
+$linked_outcomes = [];
+$linked_query = $conn->prepare("SELECT pol.outcome_id, od.detail_name 
+                               FROM program_outcome_links pol
+                               JOIN outcomes_details od ON pol.outcome_id = od.detail_id
+                               WHERE pol.program_id = ?");
+$linked_query->bind_param("i", $program_id);
+$linked_query->execute();
+$linked_result = $linked_query->get_result();
+while ($row = $linked_result->fetch_assoc()) {
+    $linked_outcomes[] = $row['outcome_id'];
 }
 
 // Page title and breadcrumbs
@@ -755,6 +802,44 @@ require_once '../../layouts/page_header.php';
                             <textarea class="form-control" id="remarks" name="remarks" rows="3"><?php echo htmlspecialchars($current_remarks); ?></textarea>
                         </div>
 
+                        <!-- Outcomes Section -->
+                        <div class="mb-4">
+                            <label class="form-label">Program Outcomes</label>
+                            <div id="outcomes-container">
+                                <?php if (!empty($linked_outcomes)): ?>
+                                    <?php foreach ($linked_outcomes as $index => $outcome_id): ?>
+                                        <div class="mb-4">
+                                            <h6 class="mb-2 fw-bold target-number text-primary">Outcome <?php echo ($index + 1); ?></h6>
+                                            <div class="target-item border rounded p-3">
+                                                <div class="row">
+                                                    <div class="col-md-10">
+                                                        <label class="form-label small text-muted">Outcome</label>
+                                                        <select class="form-select" name="outcome_id[]">
+                                                            <option value="">Select Outcome</option>
+                                                            <?php foreach ($available_outcomes as $outcome): ?>
+                                                                <option value="<?php echo $outcome['detail_id']; ?>" 
+                                                                        <?php echo ($outcome['detail_id'] == $outcome_id) ? 'selected' : ''; ?>>
+                                                                    <?php echo htmlspecialchars($outcome['detail_name']); ?>
+                                                                </option>
+                                                            <?php endforeach; ?>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-2 d-flex align-items-end">
+                                                        <button type="button" class="btn btn-outline-danger btn-sm remove-outcome">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </div>
+                            <button type="button" class="btn btn-outline-primary" id="add-outcome">
+                                <i class="fas fa-plus me-1"></i> Add Outcome
+                            </button>
+                        </div>
+
                         <!-- Form Actions -->
                         <div class="alert alert-info alert-dismissible alert-permanent mb-3">
                             <h6 class="alert-heading"><i class="fas fa-info-circle me-1"></i> Save Options Explained</h6>
@@ -948,6 +1033,66 @@ document.addEventListener('DOMContentLoaded', function() {
             if (containerToRemove) {
                 containerToRemove.remove();
                 updateTargetNumbers(); // Renumber after removal
+            }
+        }
+    });
+});
+
+// Outcome management
+document.addEventListener('DOMContentLoaded', function() {
+    const outcomesContainer = document.getElementById('outcomes-container');
+    const addOutcomeBtn = document.getElementById('add-outcome');
+    
+    // Function to update outcome numbers
+    function updateOutcomeNumbers() {
+        const outcomeContainers = outcomesContainer.children;
+        Array.from(outcomeContainers).forEach((container, index) => {
+            const numberElement = container.querySelector('.target-number');
+            const outcomeNumber = index + 1;
+            
+            if (numberElement) {
+                numberElement.textContent = `Outcome ${outcomeNumber}`;
+            }
+        });
+    }
+    
+    addOutcomeBtn.addEventListener('click', function() {
+        const outcomeCount = outcomesContainer.children.length + 1;
+        const outcomeItem = document.createElement('div');
+        outcomeItem.className = 'mb-4';
+        outcomeItem.innerHTML = `
+            <h6 class="mb-2 fw-bold target-number text-primary">Outcome ${outcomeCount}</h6>
+            <div class="target-item border rounded p-3">
+                <div class="row">
+                    <div class="col-md-10">
+                        <label class="form-label small text-muted">Outcome</label>
+                        <select class="form-select" name="outcome_id[]">
+                            <option value="">Select Outcome</option>
+                            <?php foreach ($available_outcomes as $outcome): ?>
+                                <option value="<?php echo $outcome['detail_id']; ?>">
+                                    <?php echo htmlspecialchars($outcome['detail_name']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="button" class="btn btn-outline-danger btn-sm remove-outcome">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        outcomesContainer.appendChild(outcomeItem);
+    });
+    
+    outcomesContainer.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-outcome')) {
+            // Remove the entire container (mb-4 div) that contains both the counter and target-item
+            const containerToRemove = e.target.closest('.mb-4') || e.target.closest('.target-item').parentElement;
+            if (containerToRemove) {
+                containerToRemove.remove();
+                updateOutcomeNumbers(); // Renumber after removal
             }
         }
     });

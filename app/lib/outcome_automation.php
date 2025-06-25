@@ -9,7 +9,12 @@ require_once 'db_connect.php';
 require_once 'audit_log.php';
 
 /**
- * Update outcome data when a linked program status changes
+ * Track program completion for linked outcomes (value updates disabled)
+ * 
+ * When a program status changes to completed, this function:
+ * - Adds the program to the completed_programs array in linked outcomes
+ * - Does NOT automatically update outcome values (automation disabled)
+ * - Logs the tracking action for audit purposes
  * 
  * @param int $program_id The program that changed status
  * @param string $new_status The new status of the program
@@ -96,10 +101,14 @@ function updateOutcomeDataOnProgramStatusChange($program_id, $new_status, $perio
                             'period_id' => $period_id
                         ];
                         
-                        // For cumulative metrics, increment the total
-                        if ($is_cumulative && isset($data_json['total_value'])) {
-                            $data_json['total_value'] = ($data_json['total_value'] ?? 0) + 1;
-                        }
+                        // AUTOMATION DISABLED: Value updates are currently disabled
+                        // Programs are tracked but values are not automatically updated
+                        // This allows for future implementation of sophisticated impact calculation
+                        
+                        // COMMENTED OUT: For cumulative metrics, increment the total
+                        // if ($is_cumulative && isset($data_json['total_value'])) {
+                        //     $data_json['total_value'] = ($data_json['total_value'] ?? 0) + 1;
+                        // }
                         
                         // Update the database record
                         $update_query = "UPDATE sector_outcomes_data 
@@ -113,15 +122,16 @@ function updateOutcomeDataOnProgramStatusChange($program_id, $new_status, $perio
                         
                         $update_count++;
                         
-                        // Log the automated update
-                        log_audit_action($user_id, 'outcome_auto_update', 
-                                      "Automatically updated outcome '$outcome_name' due to program completion: {$program_data['program_name']}", 
+                        // Log the automated tracking (not value update)
+                        log_audit_action($user_id, 'outcome_program_tracked', 
+                                      "Tracked program completion for outcome '$outcome_name': {$program_data['program_name']} (value updates disabled)", 
                                       'success');
                     }
                 } else {
                     // Create new outcome data record
+                    // AUTOMATION DISABLED: Only tracking programs, not updating values
                     $data_json = [
-                        'total_value' => $is_cumulative ? 1 : 0,
+                        'total_value' => 0, // Start at 0, no auto-increment
                         'completed_programs' => [
                             [
                                 'program_id' => $program_id,
@@ -131,7 +141,9 @@ function updateOutcomeDataOnProgramStatusChange($program_id, $new_status, $perio
                             ]
                         ],
                         'auto_generated' => true,
-                        'source' => 'program_completion'
+                        'source' => 'program_completion',
+                        'automation_disabled' => true, // Flag to indicate automation is disabled
+                        'note' => 'Program tracking only - values not auto-updated'
                     ];
                     
                     $insert_query = "INSERT INTO sector_outcomes_data 
@@ -148,9 +160,9 @@ function updateOutcomeDataOnProgramStatusChange($program_id, $new_status, $perio
                     
                     $update_count++;
                     
-                    // Log the automated creation
-                    log_audit_action($user_id, 'outcome_auto_create', 
-                                  "Automatically created outcome data for '$outcome_name' due to program completion: {$program_data['program_name']}", 
+                    // Log the automated tracking (not value creation)
+                    log_audit_action($user_id, 'outcome_program_tracked', 
+                                  "Created outcome tracking for '$outcome_name' due to program completion: {$program_data['program_name']} (value updates disabled)", 
                                   'success');
                 }
             }
