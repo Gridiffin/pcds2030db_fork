@@ -112,7 +112,7 @@ require_once '../../layouts/page_header.php';
 
 <div class="container-fluid px-4">
     <!-- Period Selector Component -->
-    <?php require_once PROJECT_ROOT_PATH . 'app/lib/period_selector.php'; ?>
+    <?php require_once PROJECT_ROOT_PATH . 'app/lib/period_selector_dashboard.php'; ?>
 
     <?php if (!MULTI_SECTOR_ENABLED): ?>
     <div class="alert alert-info mb-4">

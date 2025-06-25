@@ -90,7 +90,7 @@ require_once PROJECT_ROOT_PATH . 'app/views/layouts/page_header.php';
 <section class="section">
     <div class="container-fluid">
         <!-- Period Selector Component -->
-        <?php require_once PROJECT_ROOT_PATH . 'app/lib/period_selector.php'; ?>
+        <?php require_once PROJECT_ROOT_PATH . 'app/lib/period_selector_dashboard.php'; ?>
         
         <!-- Dashboard Controls Bar -->
         <div class="card shadow-sm mb-4">
