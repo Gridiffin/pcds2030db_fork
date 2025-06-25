@@ -282,7 +282,8 @@ require_once '../../layouts/page_header.php';
                                                 <span class="badge bg-info me-2" title="Program Number"><?php echo htmlspecialchars($program['program_number']); ?></span>
                                             <?php endif; ?>
                                             <?php echo htmlspecialchars($program['program_name']); ?>
-                                        </span>                                        <?php if ($is_draft): ?>
+                                        </span>
+                                        <?php if ($is_draft): ?>
                                             <span class="draft-indicator" title="Draft"></span>
                                         <?php endif; ?>
                                     </div>
@@ -292,28 +293,24 @@ require_once '../../layouts/page_header.php';
                                     </div>
                                 </td>
                                 <td class="text-truncate" style="max-width: 250px;">
-                                    <?php if (!empty($program['initiative_number']) || !empty($program['initiative_name'])): ?>
-                                        <div class="d-flex align-items-center" title="<?php echo htmlspecialchars($program['initiative_name'] ?? 'Initiative ' . ($program['initiative_number'] ?? '')); ?>">
-                                            <?php if (!empty($program['initiative_number'])): ?>
-                                                <span class="badge bg-primary me-2 flex-shrink-0">
-                                                    <i class="fas fa-hashtag me-1"></i>
-                                                    <?php echo htmlspecialchars($program['initiative_number']); ?>
-                                                </span>
-                                            <?php endif; ?>
-                                            <?php if (!empty($program['initiative_name'])): ?>
-                                                <span class="initiative-name">
-                                                    <?php echo htmlspecialchars($program['initiative_name']); ?>
-                                                </span>
-                                            <?php elseif (empty($program['initiative_number'])): ?>
-                                                <span class="badge bg-primary">
-                                                    <i class="fas fa-link me-1"></i>
-                                                    No name
-                                                </span>
-                                            <?php endif; ?>
-                                        </div>
+                                    <?php if (!empty($program['initiative_name'])): ?>
+                                        <span class="badge bg-primary initiative-badge" title="Initiative">
+                                            <i class="fas fa-lightbulb me-1"></i>
+                                            <span class="initiative-badge-card" title="<?php 
+                                                echo !empty($program['initiative_number']) ? 
+                                                    htmlspecialchars($program['initiative_number'] . ' - ' . $program['initiative_name']) : 
+                                                    htmlspecialchars($program['initiative_name']); 
+                                            ?>">
+                                                <?php 
+                                                echo !empty($program['initiative_number']) ? 
+                                                    htmlspecialchars($program['initiative_number'] . ' - ' . $program['initiative_name']) : 
+                                                    htmlspecialchars($program['initiative_name']); 
+                                                ?>
+                                            </span>
+                                        </span>
                                     <?php else: ?>
-                                        <span class="text-muted">
-                                            <i class="fas fa-minus"></i> Not linked
+                                        <span class="text-muted small">
+                                            <i class="fas fa-minus me-1"></i>Not Linked
                                         </span>
                                     <?php endif; ?>
                                 </td>
@@ -455,13 +452,16 @@ require_once '../../layouts/page_header.php';
                             // Set default if rating is not in our map
                             if (!isset($rating_map[$current_rating])) {
                                 $current_rating = 'not-started';
-                            }                        ?>                            <tr data-program-type="<?php echo $is_assigned ? 'assigned' : 'created'; ?>">                                <!-- Finalized programs initiative column -->
+                            }                        ?>                            <tr data-program-type="<?php echo $is_assigned ? 'assigned' : 'created'; ?>">
+                                <!-- Finalized programs initiative column -->
                                 <td class="text-truncate" style="max-width: 300px;">
                                     <div class="fw-medium">
                                         <span class="program-name" title="<?php echo htmlspecialchars($program['program_name']); ?>">
                                             <?php if (!empty($program['program_number'])): ?>
                                                 <span class="badge bg-info me-2" title="Program Number"><?php echo htmlspecialchars($program['program_number']); ?></span>
-                                            <?php endif; ?>                                            <?php echo htmlspecialchars($program['program_name']); ?>                                        </span>
+                                            <?php endif; ?>
+                                            <?php echo htmlspecialchars($program['program_name']); ?>
+                                        </span>
                                     </div>
                                     <div class="small text-muted program-type-indicator">
                                         <i class="fas fa-<?php echo $is_assigned ? 'tasks' : 'folder-plus'; ?> me-1"></i>
@@ -469,28 +469,24 @@ require_once '../../layouts/page_header.php';
                                     </div>
                                 </td>
                                 <td class="text-truncate" style="max-width: 250px;">
-                                    <?php if (!empty($program['initiative_number']) || !empty($program['initiative_name'])): ?>
-                                        <div class="d-flex align-items-center" title="<?php echo htmlspecialchars($program['initiative_name'] ?? 'Initiative ' . ($program['initiative_number'] ?? '')); ?>">
-                                            <?php if (!empty($program['initiative_number'])): ?>
-                                                <span class="badge bg-primary me-2 flex-shrink-0">
-                                                    <i class="fas fa-hashtag me-1"></i>
-                                                    <?php echo htmlspecialchars($program['initiative_number']); ?>
-                                                </span>
-                                            <?php endif; ?>
-                                            <?php if (!empty($program['initiative_name'])): ?>
-                                                <span class="initiative-name">
-                                                    <?php echo htmlspecialchars($program['initiative_name']); ?>
-                                                </span>
-                                            <?php elseif (empty($program['initiative_number'])): ?>
-                                                <span class="badge bg-primary">
-                                                    <i class="fas fa-link me-1"></i>
-                                                    No name
-                                                </span>
-                                            <?php endif; ?>
-                                        </div>
+                                    <?php if (!empty($program['initiative_name'])): ?>
+                                        <span class="badge bg-primary initiative-badge" title="Initiative">
+                                            <i class="fas fa-lightbulb me-1"></i>
+                                            <span class="initiative-badge-card" title="<?php 
+                                                echo !empty($program['initiative_number']) ? 
+                                                    htmlspecialchars($program['initiative_number'] . ' - ' . $program['initiative_name']) : 
+                                                    htmlspecialchars($program['initiative_name']); 
+                                            ?>">
+                                                <?php 
+                                                echo !empty($program['initiative_number']) ? 
+                                                    htmlspecialchars($program['initiative_number'] . ' - ' . $program['initiative_name']) : 
+                                                    htmlspecialchars($program['initiative_name']); 
+                                                ?>
+                                            </span>
+                                        </span>
                                     <?php else: ?>
-                                        <span class="text-muted">
-                                            <i class="fas fa-minus"></i> Not linked
+                                        <span class="text-muted small">
+                                            <i class="fas fa-minus me-1"></i>Not Linked
                                         </span>
                                     <?php endif; ?>
                                 </td>
@@ -623,29 +619,6 @@ require_once '../../layouts/page_header.php';
     max-width: 100%;
 }
 
-.initiative-name-truncate {
-    display: inline-block;
-    max-width: 150px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    vertical-align: top;
-}
-
-.initiative-name {
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    line-height: 1.2;
-    cursor: help;
-}
-
-.initiative-name:hover {
-    color: #0d6efd;
-    transition: color 0.2s ease;
-}
-
 /* Balanced Table Layout */
 .table td:nth-child(1) { /* Program Name Column */
     max-width: 300px;
@@ -680,34 +653,9 @@ require_once '../../layouts/page_header.php';
     transition: all 0.2s ease;
 }
 
-/* Additional styles for better initiative display */
-.initiative-display .badge.initiative-number {
-    font-family: 'Courier New', monospace;
-    font-size: 0.85em;
-    font-weight: 700;
-    letter-spacing: 1px;
-    background: linear-gradient(135deg, #0d6efd, #0a58ca) !important;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.initiative-display .badge.initiative-number:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(13, 110, 253, 0.3);
-    transition: all 0.2s ease;
-}
-
-.initiative-name {
-    font-style: italic;
-    opacity: 0.8;
-}
-
 @media (max-width: 768px) {
     .initiative-display {
         min-width: auto;
-    }
-    
-    .initiative-name {
-        display: none;
     }
 }
 </style>
