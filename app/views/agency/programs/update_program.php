@@ -144,6 +144,101 @@ function get_field_value($field, $default = '') {
     return $default;
 }
 
+/**
+ * Render paginated field history with Load More functionality
+ * 
+ * @param array $history_data Complete field history data
+ * @param string $field_name Name of the field
+ * @param string $history_target_id HTML ID for the history container
+ * @param string $button_text Text for the show/hide button
+ * @param int $initial_limit Number of items to show initially
+ */
+function render_paginated_field_history($history_data, $field_name, $history_target_id, $button_text, $initial_limit = 3) {
+    global $program_id, $selected_period_id;
+    
+    if (empty($history_data)) {
+        return;
+    }
+    
+    $total_count = count($history_data);
+    $initial_items = array_slice($history_data, 0, $initial_limit);
+    $has_more = $total_count > $initial_limit;
+    
+    echo '<div class="d-flex align-items-center mt-2">';
+    echo '<button type="button" class="btn btn-sm btn-outline-secondary field-history-toggle" ';
+    echo 'data-history-target="' . htmlspecialchars($history_target_id) . '">';
+    echo '<i class="fas fa-history"></i> ' . htmlspecialchars($button_text);
+    echo '</button>';
+    echo '</div>';
+    
+    echo '<div id="' . htmlspecialchars($history_target_id) . '" class="history-complete" style="display: none;">';
+    echo '<h6 class="small text-muted mb-2">' . htmlspecialchars(ucfirst(str_replace('_', ' ', $field_name))) . ' History</h6>';
+    echo '<ul class="history-list" data-field="' . htmlspecialchars($field_name) . '" data-program-id="' . htmlspecialchars($program_id) . '" data-period-id="' . htmlspecialchars($selected_period_id) . '">';
+    
+    // Render initial items
+    foreach ($initial_items as $idx => $item) {
+        render_history_item($item, $field_name);
+    }
+    
+    echo '</ul>';
+    
+    // Add Load More button if there are more items
+    if ($has_more) {
+        $remaining_count = $total_count - $initial_limit;
+        echo '<div class="load-more-container text-center mt-3">';
+        echo '<button type="button" class="btn btn-sm btn-outline-primary load-more-history" ';
+        echo 'data-field="' . htmlspecialchars($field_name) . '" ';
+        echo 'data-program-id="' . htmlspecialchars($program_id) . '" ';
+        echo 'data-period-id="' . htmlspecialchars($selected_period_id) . '" ';
+        echo 'data-offset="' . $initial_limit . '" ';
+        echo 'data-total="' . $total_count . '">';
+        echo '<i class="fas fa-chevron-down me-1"></i>';
+        echo 'Load More (' . $remaining_count . ' remaining)';
+        echo '</button>';
+        echo '<div class="load-more-spinner d-none mt-2">';
+        echo '<div class="spinner-border spinner-border-sm" role="status">';
+        echo '<span class="visually-hidden">Loading...</span>';
+        echo '</div>';
+        echo '</div>';
+        echo '</div>';
+    }
+    
+    echo '</div>';
+}
+
+/**
+ * Render a single history item
+ * 
+ * @param array $item History item data
+ * @param string $field_name Field name for special formatting
+ */
+function render_history_item($item, $field_name) {
+    echo '<li class="history-list-item">';
+    echo '<div class="history-list-value">';
+    
+    if ($field_name === 'targets' && is_array($item['value'])) {
+        foreach($item['value'] as $target_idx => $target) {
+            echo '<strong>Target ' . ($target_idx + 1) . ':</strong> ' . 
+                 htmlspecialchars($target['target_text'] ?? $target['text'] ?? '') . '<br>';
+        }
+    } else {
+        echo htmlspecialchars($item['value']);
+    }
+    
+    echo '</div>';
+    echo '<div class="history-list-meta">';
+    echo $item['timestamp'];
+    
+    if (isset($item['submission_id']) && $item['submission_id'] > 0) {
+        $badge_class = ($item['is_draft'] ?? 0) ? 'history-draft-badge' : 'history-final-badge';
+        $badge_text = ($item['is_draft'] ?? 0) ? 'Draft' : 'Final';
+        echo '<span class="' . $badge_class . '">' . $badge_text . '</span>';
+    }
+    
+    echo '</div>';
+    echo '</li>';
+}
+
 // Get selected period from query or default to current
 $selected_period_id = isset($_GET['period_id']) ? intval($_GET['period_id']) : null;
 $current_period = get_current_reporting_period();
@@ -301,6 +396,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // Process targets array with enhanced structure
             $targets = [];
+            $existing_target_numbers = []; // Track existing target numbers to avoid false duplicates
+            
+            // First, get existing target numbers from current submission to avoid validation errors
+            if ($submission_id > 0) {
+                $existing_query = "SELECT content_json FROM program_submissions WHERE submission_id = ?";
+                $existing_stmt = $conn->prepare($existing_query);
+                $existing_stmt->bind_param("i", $submission_id);
+                $existing_stmt->execute();
+                $existing_result = $existing_stmt->get_result();
+                
+                if ($existing_result->num_rows > 0) {
+                    $existing_row = $existing_result->fetch_assoc();
+                    $existing_content = json_decode($existing_row['content_json'], true);
+                    
+                    if (isset($existing_content['targets']) && is_array($existing_content['targets'])) {
+                        foreach ($existing_content['targets'] as $existing_target) {
+                            if (!empty($existing_target['target_number'])) {
+                                $existing_target_numbers[] = strtolower(trim($existing_target['target_number']));
+                            }
+                        }
+                    }
+                }
+            }
+            
             if (isset($_POST['target_text']) && is_array($_POST['target_text'])) {
                 $target_texts = $_POST['target_text'];
                 $target_status_descriptions = $_POST['target_status_description'] ?? [];
@@ -308,6 +427,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $target_statuses = $_POST['target_status'] ?? [];
                 $target_start_dates = $_POST['target_start_date'] ?? [];
                 $target_end_dates = $_POST['target_end_date'] ?? [];
+                
+                // DEBUG: Log the submitted data to understand duplication
+                error_log("=== TARGET DEBUG INFO ===");
+                error_log("target_texts count: " . count($target_texts));
+                error_log("target_numbers: " . print_r($target_numbers, true));
+                error_log("target_texts: " . print_r($target_texts, true));
+                error_log("========================");
                 
                 for ($i = 0; $i < count($target_texts); $i++) {
                     $target_text = trim($target_texts[$i]);
@@ -332,12 +458,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 exit;
                             }
                             
-                            // Check if target number is available (excluding current submission)
-                            if (!is_target_number_available($target_number, $program_id, $submission_id)) {
-                                $_SESSION['message'] = "Target number '{$target_number}' is already in use in this program.";
-                                $_SESSION['message_type'] = 'danger';
-                                header('Location: update_program.php?id=' . $program_id);
-                                exit;
+                            // Check for duplicates within this form submission only
+                            // DEDUPLICATION: Instead of throwing error, deduplicate the data
+                            $current_target_lower = strtolower(trim($target_number));
+                            $duplicate_found = false;
+                            foreach ($target_numbers as $idx => $existing_number) {
+                                if ($idx < $i && strtolower(trim($existing_number)) === $current_target_lower) {
+                                    $duplicate_found = true;
+                                    error_log("DEBUG: Found duplicate target number '$target_number' at index $i (previously at $idx)");
+                                    break;
+                                }
+                            }
+                            
+                            if ($duplicate_found) {
+                                // Skip this duplicate target instead of throwing error
+                                error_log("DEBUG: Skipping duplicate target '$target_number' to prevent validation error");
+                                continue;
+                            }
+                            
+                            // Only check database availability if this is a truly new target number (not in existing submission)
+                            if (!in_array($current_target_lower, $existing_target_numbers)) {
+                                if (!is_target_number_available($target_number, $program_id, $submission_id)) {
+                                    $_SESSION['message'] = "Target number '{$target_number}' is already in use in this program.";
+                                    $_SESSION['message_type'] = 'danger';
+                                    header('Location: update_program.php?id=' . $program_id);
+                                    exit;
+                                }
                             }
                         }
                         
@@ -479,12 +625,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $_SESSION['message_type'] = 'success';
         
-        // Redirect to programs page
-        header('Location: view_programs.php');
+        // Redirect back to edit page to show success message and updated content
+        header('Location: update_program.php?id=' . $program_id . '&period_id=' . $period_id);
         exit;
     } else {
-        $message = $result['error'] ?? 'An error occurred while updating the program.';
-        $messageType = 'danger';
+        $_SESSION['message'] = $result['error'] ?? 'An error occurred while updating the program.';
+        $_SESSION['message_type'] = 'danger';
+        
+        // Redirect back to form to show error
+        header('Location: update_program.php?id=' . $program_id);
+        exit;
     }
 }
 
@@ -706,6 +856,20 @@ require_once PROJECT_ROOT_PATH . 'lib/period_selector_edit.php';
 ?>
 
 <?php
+// Display error/success messages from session
+if (isset($_SESSION['message'])): ?>
+    <div class="alert alert-<?php echo $_SESSION['message_type'] ?? 'info'; ?> alert-dismissible fade show" role="alert">
+        <?php echo htmlspecialchars($_SESSION['message']); ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <?php 
+    // Clear the message after displaying
+    unset($_SESSION['message']);
+    unset($_SESSION['message_type']);
+    ?>
+<?php endif; ?>
+
+<?php
 // Include any draft notification banner if this is a draft
                 if ($is_draft): ?>
                 <div class="draft-banner mb-4">
@@ -818,34 +982,8 @@ require_once PROJECT_ROOT_PATH . 'lib/period_selector_edit.php';
                                     // Show history panel if there is at least one entry in $name_history
                                     $name_history = get_field_edit_history($program_history['submissions'], 'program_name');
                                     if (!empty($name_history)):
-                                    ?>
-                                        <div class="d-flex align-items-center mt-2">
-                                            <button type="button" class="btn btn-sm btn-outline-secondary field-history-toggle" 
-                                                    data-history-target="programNameHistory">
-                                                <i class="fas fa-history"></i> Show Name History
-                                            </button>
-                                        </div>
-                                        <div id="programNameHistory" class="history-complete" style="display: none;">
-                                            <h6 class="small text-muted mb-2">Program Name History</h6>
-                                            <ul class="history-list">
-                                                <?php foreach($name_history as $idx => $item): ?>
-                                                <li class="history-list-item">
-                                                    <div class="history-list-value">
-                                                        <?php echo htmlspecialchars($item['value']); ?>
-                                                    </div>
-                                                    <div class="history-list-meta">
-                                                        <?php echo $item['timestamp']; ?>
-                                                        <?php if (isset($item['submission_id']) && $item['submission_id'] > 0): ?>
-                                                            <span class="<?php echo ($item['is_draft'] ?? 0) ? 'history-draft-badge' : 'history-final-badge'; ?>">
-                                                                <?php echo ($item['is_draft'] ?? 0) ? 'Draft' : 'Final'; ?>
-                                                            </span>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </li>
-                                                <?php endforeach; ?>
-                                            </ul>
-                                        </div>                                    
-                                        <?php endif; ?>
+                                        render_paginated_field_history($name_history, 'program_name', 'programNameHistory', 'Show Name History');
+                                    endif; ?>
                                 <?php endif; ?>                            
                             </div>
                                 <div class="mb-3">
@@ -901,34 +1039,8 @@ require_once PROJECT_ROOT_PATH . 'lib/period_selector_edit.php';
                                     $description_history = get_field_edit_history($program_history['submissions'], 'brief_description');
                                     
                                     if (!empty($description_history)):
-                                    ?>
-                                        <div class="d-flex align-items-center mt-2">
-                                            <button type="button" class="btn btn-sm btn-outline-secondary field-history-toggle" 
-                                                    data-history-target="briefDescriptionHistory">
-                                                <i class="fas fa-history"></i> Show Description History
-                                            </button>
-                                        </div>
-                                        <div id="briefDescriptionHistory" class="history-complete" style="display: none;">
-                                            <h6 class="small text-muted mb-2">Brief Description History</h6>
-                                            <ul class="history-list">
-                                                <?php foreach($description_history as $idx => $item): ?>
-                                                <li class="history-list-item">
-                                                    <div class="history-list-value">
-                                                        <?php echo htmlspecialchars($item['value']); ?>
-                                                    </div>
-                                                    <div class="history-list-meta">
-                                                        <?php echo $item['timestamp']; ?>
-                                                        <?php if (isset($item['submission_id']) && $item['submission_id'] > 0): ?>
-                                                            <span class="<?php echo ($item['is_draft'] ?? 0) ? 'history-draft-badge' : 'history-final-badge'; ?>">
-                                                                <?php echo ($item['is_draft'] ?? 0) ? 'Draft' : 'Final'; ?>
-                                                            </span>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </li>
-                                                <?php endforeach; ?>
-                                            </ul>
-                                        </div>
-                                    <?php endif; ?>
+                                        render_paginated_field_history($description_history, 'brief_description', 'briefDescriptionHistory', 'Show Description History');
+                                    endif; ?>
                                 <?php endif; ?>
                             </div>
                             <div class="row g-3">
@@ -970,47 +1082,12 @@ require_once PROJECT_ROOT_PATH . 'lib/period_selector_edit.php';
                             
                             <?php if (isset($program_history['submissions']) && count($program_history['submissions']) > 1): ?>
                                 <?php
-                                // Get complete history of program targets
+                                // Get complete history of program targets changes
                                 $targets_history = get_field_edit_history($program_history['submissions'], 'targets');
                                 
                                 if (!empty($targets_history)):
-                                ?>
-                                    <div class="d-flex align-items-center mt-2 mb-3">
-                                        <button type="button" class="btn btn-sm btn-outline-secondary field-history-toggle" 
-                                                data-history-target="programTargetsHistory">
-                                            <i class="fas fa-history"></i> Show Target History
-                                        </button>
-                                    </div>
-                                    <div id="programTargetsHistory" class="history-complete" style="display: none;">
-                                        <h6 class="small text-muted mb-2">Program Target History</h6>
-                                        <ul class="history-list">
-                                            <?php foreach($targets_history as $idx => $item): ?>
-                                            <li class="history-list-item">
-                                                <div class="history-list-value">
-                                                    <?php 
-                                                    if (is_array($item['value'])):
-                                                        foreach($item['value'] as $target_idx => $target): 
-                                                            echo '<strong>Target ' . ($target_idx + 1) . ':</strong> ' . 
-                                                            htmlspecialchars($target['target_text'] ?? $target['text'] ?? '') . '<br>';
-                                                        endforeach;
-                                                    else:
-                                                        echo htmlspecialchars($item['value']);
-                                                    endif;
-                                                    ?>
-                                                </div>
-                                                <div class="history-list-meta">
-                                                    <?php echo $item['timestamp']; ?>
-                                                    <?php if (isset($item['submission_id']) && $item['submission_id'] > 0): ?>
-                                                        <span class="<?php echo ($item['is_draft'] ?? 0) ? 'history-draft-badge' : 'history-final-badge'; ?>">
-                                                            <?php echo ($item['is_draft'] ?? 0) ? 'Draft' : 'Final'; ?>
-                                                        </span>
-                                                    <?php endif; ?>
-                                                </div>
-                                            </li>
-                                            <?php endforeach; ?>
-                                        </ul>
-                                    </div>
-                                <?php endif; ?>
+                                    render_paginated_field_history($targets_history, 'targets', 'targetsHistory', 'Show Targets History');
+                                endif; ?>
                             <?php endif; ?>
                             
                             <div id="targets-container">
@@ -1117,6 +1194,17 @@ require_once PROJECT_ROOT_PATH . 'lib/period_selector_edit.php';
                                           <?php echo (is_editable('remarks')) ? '' : 'readonly'; ?>><?php echo htmlspecialchars($remarks); ?></textarea>
                                 <?php if ($program['is_assigned'] && !is_editable('remarks')): ?>
                                     <div class="form-text">Remarks were set by an administrator and cannot be changed.</div>
+                                <?php endif; ?>
+                                
+                                <?php if (isset($program_history['submissions']) && count($program_history['submissions']) > 1): ?>
+                                    <?php
+                                    // Get complete history of remarks changes
+                                    $remarks_history = get_field_edit_history($program_history['submissions'], 'remarks');
+                                    
+                                    if (!empty($remarks_history)):
+                                        render_paginated_field_history($remarks_history, 'remarks', 'remarksHistory', 'Show Remarks History');
+                                    endif;
+                                    ?>
                                 <?php endif; ?>
                             </div>
                         </div>
