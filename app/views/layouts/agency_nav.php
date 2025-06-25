@@ -88,6 +88,11 @@ if (!function_exists('format_time_ago')) {
                         <i class="fas fa-project-diagram me-1"></i> My Programs
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link <?php if ($current_page == 'view_initiatives.php' || $current_page == 'view_initiative.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/agency/initiatives/view_initiatives.php">
+                        <i class="fas fa-lightbulb me-1"></i> Initiatives
+                    </a>
+                </li>
                 <?php $is_placeholder_page = ($current_page == 'submit_outcomes.php'); ?>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle <?php if ($is_placeholder_page) echo 'active'; ?>" href="javascript:void(0)" id="placeholderDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="<?php echo $is_placeholder_page ? 'true' : 'false'; ?>">
