@@ -1,0 +1,467 @@
+/* Table Structure Designer Styles */
+
+.structure-type-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.structure-type-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.structure-type-card input[type="radio"]:checked ~ * {
+    color: var(--bs-primary) !important;
+}
+
+.structure-type-card:has(input[type="radio"]:checked) {
+    border-color: var(--bs-primary);
+    background: linear-gradient(135deg, rgba(var(--bs-primary-rgb), 0.05) 0%, rgba(var(--bs-primary-rgb), 0.1) 100%);
+}
+
+.row-item, .column-item {
+    transition: background-color 0.2s ease;
+}
+
+.row-item:hover, .column-item:hover {
+    background-color: rgba(0,0,0,0.05);
+}
+
+.row-badge {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.875em;
+    font-weight: 500;
+}
+
+.row-badge.calculated {
+    background: linear-gradient(135deg, #ffc107, #fd7e14);
+    color: #000;
+}
+
+.preview-cell {
+    background: rgba(var(--bs-info-rgb), 0.05);
+    font-family: 'Courier New', monospace;
+    font-size: 0.875em;
+}
+
+.table-designer-container {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.table-preview-container {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    border: 1px solid #dee2e6;
+}
+
+.add-row-form, .add-column-form {
+    background: rgba(var(--bs-light-rgb), 0.5);
+    border-radius: 8px;
+    padding: 15px;
+    border: 1px solid #dee2e6;
+}
+
+.structure-selector .card {
+    min-height: 120px;
+}
+
+.structure-selector .card i {
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+}
+
+.structure-selector .card:hover i {
+    opacity: 1;
+}
+
+.row-actions .btn-group, .column-actions .btn-group {
+    box-shadow: none;
+}
+
+.row-actions .btn, .column-actions .btn {
+    border-radius: 4px;
+    margin: 0 1px;
+}
+
+#rows-list, #columns-list {
+    min-height: 200px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+#rows-list:empty, #columns-list:empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .structure-selector .col-md-3 {
+        margin-bottom: 15px;
+    }
+    
+    .row-designer .col-md-8, 
+    .column-designer .col-md-8 {
+        margin-bottom: 15px;
+    }
+    
+    .row-actions .btn-group, 
+    .column-actions .btn-group {
+        flex-direction: column;
+    }
+    
+    .row-info, .column-info {
+        margin-bottom: 10px;
+    }
+    
+    .row-item, .column-item {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+}
+
+/* Animation for adding/removing items */
+.row-item, .column-item {
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Badge styles for different column types */
+.badge.bg-info { background: linear-gradient(135deg, #17a2b8, #138496) !important; }
+.badge.bg-secondary { background: linear-gradient(135deg, #6c757d, #5a6268) !important; }
+
+/* Table preview enhancements */
+.table-preview-container .table {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.table-preview-container .table thead th {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef) !important;
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+}
+
+.table-preview-container .table tbody tr:nth-child(even) {
+    background-color: rgba(0,0,0,0.02);
+}
+
+.table-preview-container .table tbody tr:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.05);
+}
+
+/* Loading states */
+.table-designer-loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.table-designer-loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255,255,255,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Focus states for accessibility */
+.structure-type-card:focus-within {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: 2px;
+}
+
+.btn:focus {
+    box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .table-designer-container {
+        background: #343a40;
+        color: #f8f9fa;
+    }
+    
+    .table-preview-container {
+        background: #495057;
+        border-color: #6c757d;
+        color: #f8f9fa;
+    }
+    
+    .add-row-form, .add-column-form {
+        background: rgba(108, 117, 125, 0.3);
+        border-color: #6c757d;
+    }
+    
+    .preview-cell {
+        background: rgba(255, 255, 255, 0.1);
+    }
+}
+
+/* Print styles */
+@media print {
+    .row-actions, .column-actions,
+    .add-row-form, .add-column-form,
+    .structure-selector {
+        display: none !important;
+    }
+    
+    .table-preview-container {
+        box-shadow: none;
+        border: 1px solid #000;
+    }
+}
+
+/* Column Configuration Specific Styles */
+.column-designer #columns-list,
+.row-designer #rows-list {
+    background-color: #fff !important;
+    color: #212529 !important;
+    border-color: #dee2e6 !important;
+    min-height: 200px;
+}
+
+/* Empty state styling */
+.column-designer #columns-list:empty::before,
+.row-designer #rows-list:empty::before {
+    content: "No columns defined. Add columns to store your data.";
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 180px;
+    color: #6c757d;
+    font-style: italic;
+    text-align: center;
+}
+
+.row-designer #rows-list:empty::before {
+    content: "No custom rows defined. Add rows to customize your table structure.";
+}
+
+.column-designer,
+.row-designer {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.column-designer h5,
+.row-designer h5 {
+    color: #495057;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+/* Ensure column and row list items have proper styling */
+#columns-list .column-item,
+#rows-list .row-item {
+    background-color: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    padding: 10px;
+    color: #212529;
+}
+
+#columns-list .column-item:hover,
+#rows-list .row-item:hover {
+    background-color: #f8f9fa !important;
+    border-color: #dee2e6;
+}
+
+/* Column and row type badges */
+.column-item .badge,
+.row-item .badge {
+    background-color: #6c757d !important;
+    color: #fff;
+}
+
+/* Form styling within designer */
+.add-column-form,
+.add-row-form {
+    background-color: #fff !important;
+    border: 1px solid #dee2e6 !important;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 15px;
+}
+
+.add-column-form .form-label,
+.add-row-form .form-label {
+    color: #495057;
+    font-weight: 500;
+}
+
+/* Force light theme for table designer regardless of global theme */
+.table-structure-designer,
+.table-structure-designer * {
+    color-scheme: light !important;
+}
+
+/* Override any potential Bootstrap dark theme classes */
+.column-designer,
+.row-designer,
+.calculation-designer {
+    background-color: #f8f9fa !important;
+    color: #212529 !important;
+}
+
+.column-designer *,
+.row-designer *,
+.calculation-designer * {
+    color: inherit !important;
+}
+
+/* Specific overrides for potential dark Bootstrap classes */
+.table-designer-container .bg-dark,
+.table-designer-container [data-bs-theme="dark"],
+.table-designer-container .text-bg-dark {
+    background-color: #f8f9fa !important;
+    color: #212529 !important;
+}
+
+/* Override Bootstrap dark utilities if they're being applied */
+.column-designer .border,
+.row-designer .border,
+.calculation-designer .border {
+    border-color: #dee2e6 !important;
+}
+
+.column-designer .rounded,
+.row-designer .rounded,
+.calculation-designer .rounded {
+    background-color: #fff !important;
+}
+
+/* Very specific targeting for the columns list dark background issue */
+#table-designer-container #columns-list,
+#table-designer-container #rows-list {
+    background-color: #ffffff !important;
+    color: #212529 !important;
+    border: 1px solid #dee2e6 !important;
+}
+
+/* Ensure the column designer section specifically has light background */
+#table-designer-container .column-designer {
+    background-color: #f8f9fa !important;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+/* Target the empty state text specifically */
+#table-designer-container #columns-list p.text-muted,
+#table-designer-container #rows-list p.text-muted {
+    color: #6c757d !important;
+    background-color: transparent !important;
+}
+
+/* Make sure no Bootstrap dark theme classes override our styling */
+.card-body .table-designer-container,
+.card-body .table-designer-container *:not(.btn):not(.badge) {
+    background-color: inherit !important;
+}
+
+.card-body .table-designer-container #columns-list,
+.card-body .table-designer-container #rows-list {
+    background-color: #ffffff !important;
+}
+
+/* Row Designer Specific Styles */
+.row-designer {
+    background-color: #f0f8ff !important;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid #b3d9ff;
+}
+
+.row-designer h5 {
+    color: #0066cc;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.row-designer #rows-list {
+    background-color: #ffffff !important;
+    color: #212529 !important;
+    border-color: #b3d9ff !important;
+    min-height: 200px;
+}
+
+.row-designer #rows-list:empty::before {
+    content: "No custom rows defined. Add rows to customize your table structure.";
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 180px;
+    color: #6c757d;
+    font-style: italic;
+    text-align: center;
+}
+
+.row-designer .add-row-form {
+    background-color: #fff !important;
+    border: 1px solid #b3d9ff !important;
+    border-radius: 8px;
+    padding: 15px;
+}
+
+.row-designer .add-row-form .form-label {
+    color: #0066cc;
+    font-weight: 500;
+}
+
+/* Row item styling */
+.row-item {
+    background-color: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    padding: 10px;
+    color: #212529;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.row-item:hover {
+    background-color: #f0f8ff !important;
+    border-color: #b3d9ff;
+}
+
+.row-item .badge {
+    background-color: #0066cc !important;
+    color: #fff;
+}
+
+.row-item .badge.calculated {
+    background-color: #28a745 !important;
+}
+
+.row-item .badge.separator {
+    background-color: #6c757d !important;
+}

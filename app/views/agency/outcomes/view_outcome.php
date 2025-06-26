@@ -34,8 +34,9 @@ if (!isset($_GET['outcome_id']) || !is_numeric($_GET['outcome_id'])) {
 
 $outcome_id = (int) $_GET['outcome_id'];
 
-// Get outcome data using JSON-based storage
-$query = "SELECT data_json, table_name, created_at, updated_at, is_draft FROM sector_outcomes_data 
+// Get outcome data using JSON-based storage with flexible structure detection
+$query = "SELECT data_json, table_name, created_at, updated_at, is_draft, table_structure_type, row_config, column_config 
+          FROM sector_outcomes_data 
           WHERE metric_id = ? AND sector_id = ? LIMIT 1";
 $stmt = $conn->prepare($query);
 $stmt->bind_param("ii", $outcome_id, $sector_id);
@@ -54,6 +55,14 @@ $created_at = new DateTime($row['created_at']);
 $updated_at = new DateTime($row['updated_at']);
 $outcome_data = json_decode($row['data_json'], true);
 $is_draft = (bool)$row['is_draft'];
+
+// Check if this is a flexible table structure and redirect if needed
+$table_structure_type = $row['table_structure_type'] ?? 'classic';
+if ($table_structure_type === 'flexible') {
+    // Redirect to the flexible outcome viewer
+    header('Location: view_outcome_flexible.php?outcome_id=' . $outcome_id);
+    exit;
+}
 
 // Get column names
 $metric_names = $outcome_data['columns'] ?? [];
@@ -231,15 +240,11 @@ require_once '../../layouts/page_header.php';
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label for="metricToChart" class="form-label">Outcomes to Display</label>
-                                <select class="form-select" id="metricToChart" multiple>
-                                    <?php foreach ($metric_names as $name): ?>
-                                        <option value="<?= htmlspecialchars($name) ?>" selected>
-                                            <?= htmlspecialchars($name) ?>
-                                        </option>
-                                    <?php endforeach; ?>
+                                <label for="chartColumnSelect" class="form-label">Outcomes to Display</label>
+                                <select class="form-select" id="chartColumnSelect">
+                                    <!-- Options will be populated by JavaScript -->
                                 </select>
-                                <small class="text-muted">Hold Ctrl/Cmd to select multiple outcomes</small>
+                                <small class="text-muted">Select which outcomes to display in the chart</small>
                             </div>
                         </div>
                         <div class="col-md-4 d-flex align-items-center">
@@ -285,18 +290,24 @@ require_once '../../layouts/page_header.php';
     </div>
 </div>
 
-<!-- Load required scripts -->
-<script src="<?= APP_URL ?>/assets/js/charts/metrics-chart.js"></script>
+<!-- Load enhanced charting script -->
+<script src="<?= APP_URL ?>/assets/js/charts/enhanced-outcomes-chart.js"></script>
 
-<!-- Initialize the metrics chart with PHP data -->
+<!-- Initialize the enhanced chart with classic structure data -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize chart with data from PHP
-        initMetricsChart(
+        // Prepare structure data for chart (classic monthly format)
+        const structure = {
+            rows: <?= json_encode(array_map(function($month) { return ['label' => $month, 'type' => 'text']; }, $month_names)) ?>,
+            columns: <?= json_encode(array_map(function($col) { return ['name' => $col, 'type' => 'number']; }, $metric_names)) ?>
+        };
+        
+        // Initialize enhanced chart with classic data
+        initEnhancedOutcomesChart(
             <?= json_encode($outcome_data) ?>, 
-            <?= json_encode($table_data) ?>, 
-            <?= json_encode($month_names) ?>,
-            "<?= addslashes($table_name) ?>"
+            structure,
+            "<?= addslashes($table_name) ?>",
+            "classic"
         );
     });
 </script>

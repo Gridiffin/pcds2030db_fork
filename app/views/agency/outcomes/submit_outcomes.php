@@ -96,8 +96,20 @@ require_once '../../layouts/page_header.php';
 
     <?php if (!empty($settings['allow_create_outcome']) && $settings['allow_create_outcome']): ?>
     <div class="mb-3">
-        <a href="<?php echo APP_URL; ?>/app/views/agency/outcomes/create_outcome.php" class="btn btn-success">
-            <i class="fas fa-plus me-1"></i> Create Outcome
+        <div class="btn-group" role="group">
+            <a href="<?php echo APP_URL; ?>/app/views/agency/outcomes/create_outcome.php" class="btn btn-success">
+                <i class="fas fa-plus me-1"></i> Create Outcome (Classic)
+            </a>
+            <a href="<?php echo APP_URL; ?>/app/views/agency/outcomes/create_outcome_flexible.php" class="btn btn-primary">
+                <i class="fas fa-cogs me-1"></i> Create Flexible Outcome
+            </a>
+        </div>
+        <div class="mt-2">
+            <small class="text-muted">
+                <i class="fas fa-info-circle me-1"></i>
+                Use <strong>Classic</strong> for traditional monthly data tables, or <strong>Flexible</strong> to design custom table structures.
+            </small>
+        </div>
         </a>
     </div>
 

@@ -50,6 +50,15 @@ $reporting_period_name = "Q{$quarter} {$year}"; // Construct proper period name
 $status = $outcome_details['status'] ?? 'submitted'; // Default to submitted if not present
 $overall_rating = $outcome_details['overall_rating'] ?? null;
 
+// Check if this is a flexible table structure and redirect if needed
+$table_structure_type = $outcome_details['table_structure_type'] ?? 'classic';
+if ($table_structure_type === 'flexible') {
+    // Create an admin flexible viewer or redirect to a flexible admin view
+    // For now, we'll create a flexible admin outcome view
+    header('Location: view_outcome_flexible.php?metric_id=' . $metric_id);
+    exit;
+}
+
 $created_at = new DateTime($outcome_details['created_at']);
 $updated_at = new DateTime($outcome_details['updated_at']);
 
@@ -237,14 +246,9 @@ require_once '../../layouts/page_header.php';
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="outcomeSelect" class="form-label">Outcomes to Display</label>
-                                <select class="form-select" id="outcomeSelect">
-                                    <option value="all">All Outcomes</option>
-                                    <?php foreach ($metric_names as $name): ?>
-                                        <option value="<?= htmlspecialchars($name) ?>">
-                                            <?= htmlspecialchars($name) ?>
-                                        </option>
-                                    <?php endforeach; ?>
+                                <label for="chartColumnSelect" class="form-label">Columns to Display</label>
+                                <select class="form-select" id="chartColumnSelect">
+                                    <!-- Options will be populated by JavaScript -->
                                 </select>
                             </div>
                         </div>
@@ -252,7 +256,7 @@ require_once '../../layouts/page_header.php';
                     
                     <!-- Chart Canvas -->
                     <div class="chart-container" style="position: relative; height:400px;">
-                        <canvas id="outcomesChart"></canvas>
+                        <canvas id="metricChart"></canvas>
                     </div>
                     
                     <!-- Download Options -->
@@ -272,77 +276,29 @@ require_once '../../layouts/page_header.php';
     </div>
 </div>
 
-<?php 
-// Include JS specific to this page (e.g., for charts if implemented)
-$additionalScripts = [
-    // Chart.js is already included in footer.php via CDN
-    APP_URL . '/assets/js/charts/outcomes-chart.js'
-];
+<!-- Load enhanced charting script -->
+<script src="<?= APP_URL ?>/assets/js/charts/enhanced-outcomes-chart.js"></script>
 
-// Add inline JavaScript to initialize chart with the data from PHP
-$inlineScripts = "
-// Parse PHP data for use in chart
-const outcomeData = " . json_encode($outcome_metrics_data) . ";
-const tableData = " . json_encode($table_data) . ";
-const monthNames = " . json_encode(array_column($table_data, 'month_name')) . ";
-const tableName = " . json_encode($table_name) . ";
-
-// Wait for document to be fully loaded
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize chart when the chart tab is shown
-    document.getElementById('chart-tab').addEventListener('shown.bs.tab', function (e) {
-        if (typeof initOutcomesChart === 'function') {
-            initOutcomesChart(outcomeData, tableData, monthNames, tableName);
-        }
+<!-- Initialize the enhanced chart with classic structure data -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Prepare structure data for chart (classic monthly format)
+        const structure = {
+            rows: <?= json_encode(array_map(function($month) { return ['label' => $month, 'type' => 'text']; }, $month_names)) ?>,
+            columns: <?= json_encode(array_map(function($col) { return ['name' => $col, 'type' => 'number']; }, $metric_names)) ?>
+        };
+        
+        // Initialize enhanced chart with classic data
+        initEnhancedOutcomesChart(
+            <?= json_encode($outcome_metrics_data) ?>, 
+            structure,
+            "<?= addslashes($table_name) ?>",
+            "classic"
+        );
     });
-    
-    // Set up download buttons
-    if (document.getElementById('downloadChartImage')) {
-        document.getElementById('downloadChartImage').addEventListener('click', function() {
-            if (window.outcomesChart) {
-                const link = document.createElement('a');
-                link.download = 'outcome-chart-" . $metric_id . ".png';
-                link.href = document.getElementById('outcomesChart').toDataURL('image/png');
-                link.click();
-            }
-        });
-    }
-    
-    if (document.getElementById('downloadDataCSV')) {
-        document.getElementById('downloadDataCSV').addEventListener('click', function() {
-            // Create CSV content from the data
-            let csvContent = 'data:text/csv;charset=utf-8,Month';
-            const metrics = " . json_encode($metric_names) . ";
-            
-            // Add headers
-            metrics.forEach(metric => {
-                csvContent += ',' + metric;
-            });
-            csvContent += '\\n';
-            
-            // Add data rows
-            tableData.forEach(row => {
-                csvContent += row.month_name;
-                metrics.forEach(metric => {
-                    const value = row.metrics && row.metrics[metric] !== undefined ? row.metrics[metric] : '';
-                    csvContent += ',' + value;
-                });
-                csvContent += '\\n';
-            });
-            
-            // Create download link
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement('a');
-            link.setAttribute('href', encodedUri);
-            link.setAttribute('download', 'outcome-data-" . $metric_id . ".csv');
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        });
-    }
-});
-";
+</script>
 
+<?php 
 // Include footer
 require_once ROOT_PATH . 'app/views/layouts/footer.php';
 ?>

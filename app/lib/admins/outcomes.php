@@ -156,7 +156,20 @@ function get_outcome_data($metric_id) {
     $result = $stmt->get_result();
     
     if ($result && $result->num_rows > 0) {
-        return $result->fetch_assoc();
+        $data = $result->fetch_assoc();
+        
+        // Handle flexible structure data
+        if (!empty($data['table_structure_type']) && $data['table_structure_type'] === 'flexible') {
+            // Parse row and column configurations for flexible structures
+            if (!empty($data['row_config'])) {
+                $data['parsed_row_config'] = json_decode($data['row_config'], true);
+            }
+            if (!empty($data['column_config'])) {
+                $data['parsed_column_config'] = json_decode($data['column_config'], true);
+            }
+        }
+        
+        return $data;
     }
     
     return null;
