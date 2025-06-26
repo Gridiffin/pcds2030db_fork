@@ -78,8 +78,11 @@ function sortTable(table, sortBy, direction) {
             return direction === 'asc' ? aRank - bRank : bRank - aRank;
         }
         else if (sortBy === 'date') {
-            const aDate = new Date(a.querySelector('td:nth-child(3)')?.textContent.trim() || 0);
-            const bDate = new Date(b.querySelector('td:nth-child(3)')?.textContent.trim() || 0);
+            // Use data-date attribute if available for reliable sorting
+            const aDateCell = a.querySelector('td:nth-child(4) span[data-date]');
+            const bDateCell = b.querySelector('td:nth-child(4) span[data-date]');
+            const aDate = aDateCell ? new Date(aDateCell.getAttribute('data-date')) : new Date(0);
+            const bDate = bDateCell ? new Date(bDateCell.getAttribute('data-date')) : new Date(0);
             return direction === 'asc' ? aDate - bDate : bDate - aDate;
         }
         return 0;

@@ -321,14 +321,18 @@ require_once '../../layouts/page_header.php';
                                 </td>
                                 <td>
                                     <?php 
+                                    $date_iso = '';
                                     if (isset($program['updated_at']) && $program['updated_at']) {
-                                        echo date('M j, Y', strtotime($program['updated_at']));
+                                        $date_iso = date('Y-m-d', strtotime($program['updated_at']));
+                                        $date_display = date('M j, Y', strtotime($program['updated_at']));
                                     } elseif (isset($program['created_at']) && $program['created_at']) {
-                                        echo date('M j, Y', strtotime($program['created_at']));
+                                        $date_iso = date('Y-m-d', strtotime($program['created_at']));
+                                        $date_display = date('M j, Y', strtotime($program['created_at']));
                                     } else {
-                                        echo 'Not set';
+                                        $date_display = 'Not set';
                                     }
                                     ?>
+                                    <span <?php if ($date_iso) echo 'data-date="' . $date_iso . '"'; ?>><?php echo $date_display; ?></span>
                                 </td>
                                 <td>
                                     <div class="btn-group btn-group-sm" role="group" aria-label="Program actions">
@@ -497,14 +501,18 @@ require_once '../../layouts/page_header.php';
                                 </td>
                                 <td>
                                     <?php 
+                                    $date_iso = '';
                                     if (isset($program['updated_at']) && $program['updated_at']) {
-                                        echo date('M j, Y', strtotime($program['updated_at']));
+                                        $date_iso = date('Y-m-d', strtotime($program['updated_at']));
+                                        $date_display = date('M j, Y', strtotime($program['updated_at']));
                                     } elseif (isset($program['created_at']) && $program['created_at']) {
-                                        echo date('M j, Y', strtotime($program['created_at']));
+                                        $date_iso = date('Y-m-d', strtotime($program['created_at']));
+                                        $date_display = date('M j, Y', strtotime($program['created_at']));
                                     } else {
-                                        echo 'Not set';
+                                        $date_display = 'Not set';
                                     }
                                     ?>
+                                    <span <?php if ($date_iso) echo 'data-date="' . $date_iso . '"'; ?>><?php echo $date_display; ?></span>
                                 </td>
                                 <td>
                                     <div class="btn-group btn-group-sm" role="group" aria-label="Program actions">
