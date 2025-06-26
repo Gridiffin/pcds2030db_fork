@@ -152,8 +152,7 @@ function create_wizard_program_draft($data) {
     $brief_description = isset($data['brief_description']) ? trim($data['brief_description']) : '';
     $start_date = isset($data['start_date']) && !empty($data['start_date']) ? $data['start_date'] : null;
     $end_date = isset($data['end_date']) && !empty($data['end_date']) ? $data['end_date'] : null;
-    $target = isset($data['target']) ? trim($data['target']) : '';
-    $status_description = isset($data['status_description']) ? trim($data['status_description']) : '';
+    $targets = isset($data['targets']) && is_array($data['targets']) ? $data['targets'] : [];
     $initiative_id = isset($data['initiative_id']) && !empty($data['initiative_id']) ? intval($data['initiative_id']) : null;
     
     // Validate program_number format if provided
@@ -181,13 +180,12 @@ function create_wizard_program_draft($data) {
         $stmt->bind_param("ssssiii", $program_name, $program_number, $start_date, $end_date, $user_id, $sector_id, $initiative_id);
         if (!$stmt->execute()) throw new Exception('Failed to create program: ' . $stmt->error);
         $program_id = $conn->insert_id;
-        if (!empty($target) || !empty($status_description) || !empty($brief_description)) {
+        if (!empty($targets) || !empty($brief_description)) {
             $period_query = "SELECT period_id FROM reporting_periods WHERE status = 'open' ORDER BY year DESC, quarter DESC LIMIT 1";
             $period_result = $conn->query($period_query);
             $current_period_id = $period_result && $period_result->num_rows > 0 ? $period_result->fetch_assoc()['period_id'] : 1;
             $content_json = [];
-            if (!empty($target)) $content_json['target'] = $target;
-            if (!empty($status_description)) $content_json['status_description'] = $status_description;
+            if (!empty($targets)) $content_json['targets'] = $targets;
             if (!empty($brief_description)) $content_json['brief_description'] = $brief_description;
             $content_json_string = json_encode($content_json);
             // status column removed from insert
@@ -256,15 +254,61 @@ function update_program_draft_only($program_id, $data) {
     // Validate program_number format if provided
     if ($program_number && !is_valid_program_number_format($program_number, false)) {
         return ['success' => false, 'error' => get_program_number_format_error(false)];
-    }    $start_date = isset($data['start_date']) && !empty($data['start_date']) ? $data['start_date'] : null;
-    $end_date = isset($data['end_date']) && !empty($data['end_date']) ? $data['end_date'] : null;
+    }
+    
+    // Additional validation for hierarchical format if initiative is linked
     $initiative_id = isset($data['initiative_id']) && !empty($data['initiative_id']) ? intval($data['initiative_id']) : null;
+    if ($program_number && $initiative_id) {
+        $format_validation = validate_program_number_format($program_number, $initiative_id);
+        if (!$format_validation['valid']) {
+            return ['success' => false, 'error' => $format_validation['message']];
+        }
+        
+        // Check if number is already in use (excluding current program)
+        if (!is_program_number_available($program_number, $program_id)) {
+            return ['success' => false, 'error' => 'Program number is already in use'];
+        }
+    }
+    
+    $start_date = isset($data['start_date']) && !empty($data['start_date']) ? $data['start_date'] : null;
+    $end_date = isset($data['end_date']) && !empty($data['end_date']) ? $data['end_date'] : null;
+    $targets = isset($data['targets']) && is_array($data['targets']) ? $data['targets'] : [];
+    $brief_description = isset($data['brief_description']) ? trim($data['brief_description']) : '';
     
     try {
         $conn->begin_transaction();
         $stmt = $conn->prepare("UPDATE programs SET program_name = ?, program_number = ?, start_date = ?, end_date = ?, initiative_id = ?, updated_at = NOW() WHERE program_id = ? AND owner_agency_id = ?");
         $stmt->bind_param("sssssii", $program_name, $program_number, $start_date, $end_date, $initiative_id, $program_id, $user_id);
         if (!$stmt->execute()) throw new Exception('Failed to update program: ' . $stmt->error);
+        
+        // Handle content submission for auto-save
+        if (!empty($targets) || !empty($brief_description)) {
+            $check_stmt = $conn->prepare("SELECT submission_id FROM program_submissions WHERE program_id = ?");
+            $check_stmt->bind_param("i", $program_id);
+            $check_stmt->execute();
+            $submission_result = $check_stmt->get_result();
+            
+            $content_json = [];
+            if (!empty($targets)) $content_json['targets'] = $targets;
+            if (!empty($brief_description)) $content_json['brief_description'] = $brief_description;
+            $content_json_string = json_encode($content_json);
+            
+            if ($submission_result->num_rows > 0) {
+                $submission = $submission_result->fetch_assoc();
+                $submission_id = $submission['submission_id'];
+                $update_stmt = $conn->prepare("UPDATE program_submissions SET content_json = ?, updated_at = NOW() WHERE submission_id = ?");
+                $update_stmt->bind_param("si", $content_json_string, $submission_id);
+                if (!$update_stmt->execute()) throw new Exception('Failed to update program submission: ' . $update_stmt->error);
+            } else {
+                $period_query = "SELECT period_id FROM reporting_periods WHERE status = 'open' ORDER BY year DESC, quarter DESC LIMIT 1";
+                $period_result = $conn->query($period_query);
+                $current_period_id = $period_result && $period_result->num_rows > 0 ? $period_result->fetch_assoc()['period_id'] : 1;
+                $insert_stmt = $conn->prepare("INSERT INTO program_submissions (program_id, period_id, submitted_by, content_json, is_draft, submission_date, updated_at) VALUES (?, ?, ?, ?, 1, NOW(), NOW())");
+                $insert_stmt->bind_param("iiis", $program_id, $current_period_id, $user_id, $content_json_string);
+                if (!$insert_stmt->execute()) throw new Exception('Failed to create program submission: ' . $insert_stmt->error);
+            }
+        }
+        
         $conn->commit();
         return [
             'success' => true,
@@ -295,8 +339,7 @@ function update_wizard_program_draft($program_id, $data) {
     $brief_description = isset($data['brief_description']) ? trim($data['brief_description']) : '';
     $start_date = isset($data['start_date']) && !empty($data['start_date']) ? $data['start_date'] : null;
     $end_date = isset($data['end_date']) && !empty($data['end_date']) ? $data['end_date'] : null;
-    $target = isset($data['target']) ? trim($data['target']) : '';
-    $status_description = isset($data['status_description']) ? trim($data['status_description']) : '';
+    $targets = isset($data['targets']) && is_array($data['targets']) ? $data['targets'] : [];
     $initiative_id = isset($data['initiative_id']) && !empty($data['initiative_id']) ? intval($data['initiative_id']) : null;
     
     // Validate program_number format if provided
@@ -346,14 +389,13 @@ function update_wizard_program_draft($program_id, $data) {
         $stmt = $conn->prepare("UPDATE programs SET program_name = ?, program_number = ?, start_date = ?, end_date = ?, initiative_id = ?, updated_at = NOW() WHERE program_id = ? AND owner_agency_id = ?");
         $stmt->bind_param("sssssii", $program_name, $new_program_number, $start_date, $end_date, $initiative_id, $program_id, $user_id);
         if (!$stmt->execute()) throw new Exception('Failed to update program: ' . $stmt->error);
-        if (!empty($target) || !empty($status_description) || !empty($brief_description)) {
+        if (!empty($targets) || !empty($brief_description)) {
             $check_stmt = $conn->prepare("SELECT submission_id FROM program_submissions WHERE program_id = ?");
             $check_stmt->bind_param("i", $program_id);
             $check_stmt->execute();
             $submission_result = $check_stmt->get_result();
             $content_json = [];
-            if (!empty($target)) $content_json['target'] = $target;
-            if (!empty($status_description)) $content_json['status_description'] = $status_description;
+            if (!empty($targets)) $content_json['targets'] = $targets;
             if (!empty($brief_description)) $content_json['brief_description'] = $brief_description;
             $content_json_string = json_encode($content_json);
             if ($submission_result->num_rows > 0) {

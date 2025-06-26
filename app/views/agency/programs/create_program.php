@@ -17,6 +17,7 @@ require_once PROJECT_ROOT_PATH . 'lib/session.php';
 require_once PROJECT_ROOT_PATH . 'lib/functions.php';
 require_once PROJECT_ROOT_PATH . 'lib/agencies/programs.php';
 require_once PROJECT_ROOT_PATH . 'lib/initiative_functions.php';
+require_once PROJECT_ROOT_PATH . 'lib/numbering_helpers.php';
 
 // Verify user is an agency
 if (!is_agency()) {
@@ -37,33 +38,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Handle auto-save via AJAX
         header('Content-Type: application/json');
         
-        // Handle targets array data - collect all targets into single strings
-        $targets_combined = '';
-        $status_descriptions_combined = '';
-        
-        if (isset($_POST['targets']) && is_array($_POST['targets'])) {
-            $target_parts = [];
-            $status_parts = [];
+        // Handle targets array data - collect all targets (matching edit program logic)
+        $targets = [];
+        if (isset($_POST['target_text']) && is_array($_POST['target_text'])) {
+            $target_texts = $_POST['target_text'];
+            $target_numbers = $_POST['target_number'] ?? [];
+            $target_statuses = $_POST['target_status'] ?? [];
+            $target_status_descriptions = $_POST['target_status_description'] ?? [];
+            $target_start_dates = $_POST['target_start_date'] ?? [];
+            $target_end_dates = $_POST['target_end_date'] ?? [];
             
-            foreach ($_POST['targets'] as $target_data) {
-                if (isset($target_data['target']) && !empty(trim($target_data['target']))) {
-                    $target_parts[] = trim($target_data['target']);
-                }
-                if (isset($target_data['status_description']) && !empty(trim($target_data['status_description']))) {
-                    $status_parts[] = trim($target_data['status_description']);
+            for ($i = 0; $i < count($target_texts); $i++) {
+                $target_text = trim($target_texts[$i] ?? '');
+                if (!empty($target_text)) {
+                    $targets[] = [
+                        'target_number' => trim($target_numbers[$i] ?? ''),
+                        'target_text' => $target_text,
+                        'target_status' => trim($target_statuses[$i] ?? 'not-started'),
+                        'status_description' => trim($target_status_descriptions[$i] ?? ''),
+                        'start_date' => !empty($target_start_dates[$i]) ? $target_start_dates[$i] : null,
+                        'end_date' => !empty($target_end_dates[$i]) ? $target_end_dates[$i] : null
+                    ];
                 }
             }
-            
-            $targets_combined = implode('; ', $target_parts);
-            $status_descriptions_combined = implode('; ', $status_parts);
-        }
-        
-        // Fall back to simple fields if no array data
-        if (empty($targets_combined) && isset($_POST['target'])) {
-            $targets_combined = $_POST['target'];
-        }
-        if (empty($status_descriptions_combined) && isset($_POST['status_description'])) {
-            $status_descriptions_combined = $_POST['status_description'];
         }          $program_data = [
             'program_id' => $_POST['program_id'] ?? 0,
             'program_name' => $_POST['program_name'] ?? '',
@@ -71,8 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'brief_description' => $_POST['brief_description'] ?? '',
             'start_date' => $_POST['start_date'] ?? '',
             'end_date' => $_POST['end_date'] ?? '',
-            'target' => $targets_combined,
-            'status_description' => $status_descriptions_combined,
+            'targets' => $targets,
             'initiative_id' => !empty($_POST['initiative_id']) ? intval($_POST['initiative_id']) : null
         ];
         
@@ -81,41 +77,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
       // Handle full form submission
-    // Handle targets array data - collect all targets into single strings
-    $targets_combined = '';
-    $status_descriptions_combined = '';
-    
-    if (isset($_POST['targets']) && is_array($_POST['targets'])) {
-        $target_parts = [];
-        $status_parts = [];
+    // Handle targets array data - collect all targets (matching edit program logic)
+    $targets = [];
+    if (isset($_POST['target_text']) && is_array($_POST['target_text'])) {
+        $target_texts = $_POST['target_text'];
+        $target_numbers = $_POST['target_number'] ?? [];
+        $target_statuses = $_POST['target_status'] ?? [];
+        $target_status_descriptions = $_POST['target_status_description'] ?? [];
+        $target_start_dates = $_POST['target_start_date'] ?? [];
+        $target_end_dates = $_POST['target_end_date'] ?? [];
         
-        foreach ($_POST['targets'] as $target_data) {
-            if (isset($target_data['target']) && !empty(trim($target_data['target']))) {
-                $target_parts[] = trim($target_data['target']);
-            }
-            if (isset($target_data['status_description']) && !empty(trim($target_data['status_description']))) {
-                $status_parts[] = trim($target_data['status_description']);
+        for ($i = 0; $i < count($target_texts); $i++) {
+            $target_text = trim($target_texts[$i] ?? '');
+            if (!empty($target_text)) {
+                $targets[] = [
+                    'target_number' => trim($target_numbers[$i] ?? ''),
+                    'target_text' => $target_text,
+                    'target_status' => trim($target_statuses[$i] ?? 'not-started'),
+                    'status_description' => trim($target_status_descriptions[$i] ?? ''),
+                    'start_date' => !empty($target_start_dates[$i]) ? $target_start_dates[$i] : null,
+                    'end_date' => !empty($target_end_dates[$i]) ? $target_end_dates[$i] : null
+                ];
             }
         }
-        
-        $targets_combined = implode('; ', $target_parts);
-        $status_descriptions_combined = implode('; ', $status_parts);
-    }
-    
-    // Fall back to simple fields if no array data
-    if (empty($targets_combined) && isset($_POST['target'])) {
-        $targets_combined = $_POST['target'];
-    }
-    if (empty($status_descriptions_combined) && isset($_POST['status_description'])) {
-        $status_descriptions_combined = $_POST['status_description'];
     }        $program_data = [
             'program_name' => $_POST['program_name'] ?? '',
             'program_number' => $_POST['program_number'] ?? '',
             'brief_description' => $_POST['brief_description'] ?? '',
             'start_date' => $_POST['start_date'] ?? '',
             'end_date' => $_POST['end_date'] ?? '',
-            'target' => $targets_combined,
-            'status_description' => $status_descriptions_combined,
+            'targets' => $targets,
             'initiative_id' => !empty($_POST['initiative_id']) ? intval($_POST['initiative_id']) : null
         ];
     
@@ -275,6 +266,8 @@ require_once '../../layouts/page_header.php';
                                            name="program_number" 
                                            placeholder="Select initiative first"
                                            disabled
+                                           pattern="[\w.]+"
+                                           title="Program number can contain letters, numbers, and dots"
                                            value="<?php echo htmlspecialchars($_POST['program_number'] ?? ''); ?>">
                                     <div class="form-text">
                                         <i class="fas fa-info-circle me-1"></i>
@@ -337,15 +330,30 @@ require_once '../../layouts/page_header.php';
                                     <i class="fas fa-bullseye me-2"></i>
                                     Targets
                                 </h6>
-                                
-                                <!-- Dynamic Targets and Status Descriptions -->
-                                <div id="targets-container">
-                                    <!-- Initial target group will be added by JavaScript -->
+                                <div class="card shadow-sm mb-4">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h5 class="card-title m-0">Program Targets</h5>
+                                        <span id="target-counter" class="badge bg-primary fs-6">
+                                            <i class="fas fa-bullseye me-1"></i>
+                                            <span id="target-count">0</span> targets
+                                        </span>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="text-muted mb-3">
+                                            Define one or more targets for this program, each with its own status and timeline.
+                                        </p>
+                                        <div id="targets-container">
+                                            <!-- Targets will be added here by JavaScript -->
+                                        </div>
+                                        <button type="button" id="add-target-btn" class="btn btn-outline-secondary add-target-btn">
+                                            <i class="fas fa-plus-circle me-1"></i> Add Another Target
+                                        </button>
+                                    </div>
                                 </div>
-
-                                <button type="button" id="add-target-button" class="btn btn-secondary">Add Another Target</button>
                             </div>
-                        </div>                        <!-- Step 3: Attachments -->
+                        </div>
+
+                        <!-- Step 3: Attachments -->
                         <div class="wizard-step" id="step-3">
                             <div class="step-content">
                                 <h6 class="fw-bold mb-3">
@@ -454,8 +462,12 @@ require_once '../../layouts/page_header.php';
                                             <table class="review-target-table">
                                                 <thead>
                                                     <tr>
-                                                        <th>Target</th>
+                                                        <th>Target #</th>
+                                                        <th>Number</th>
+                                                        <th>Description</th>
                                                         <th>Status</th>
+                                                        <th>Status Description</th>
+                                                        <th>Timeline</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -507,11 +519,359 @@ require_once '../../layouts/page_header.php';
                         <!-- Auto-save Status -->
                         <div class="auto-save-status mt-2 text-center" id="autoSaveStatus" style="display: none;">
                             <small class="text-muted">
-                                <i class="fas fa-check-circle text-success me-1"></i>
-                                Changes saved automatically
                             </small>
                         </div>
                     </form>
+
+                    <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const targetsContainer = document.getElementById('targets-container');
+                        const addTargetBtn = document.getElementById('add-target-btn');
+                        const programNumberInput = document.getElementById('program_number');
+
+                        const updateTargetUI = () => {
+                            const targetEntries = targetsContainer.querySelectorAll('.target-entry');
+                            const targetCount = targetEntries.length;
+
+                            // Update counter
+                            const targetCountElement = document.getElementById('target-count');
+                            const targetCounter = document.getElementById('target-counter');
+                            if (targetCountElement && targetCounter) {
+                                targetCountElement.textContent = targetCount;
+                                const targetText = targetCount === 1 ? 'target' : 'targets';
+                                targetCounter.innerHTML = `<i class="fas fa-bullseye me-1"></i><span id="target-count">${targetCount}</span> ${targetText}`;
+                                targetCounter.className = 'badge fs-6 ' + (targetCount === 0 ? 'bg-secondary' : targetCount === 1 ? 'bg-primary' : 'bg-success');
+                            }
+
+                            // Update numbering and remove buttons
+                            targetEntries.forEach((entry, index) => {
+                                // Update header
+                                const counterHeader = entry.querySelector('.target-counter-header h6');
+                                if (counterHeader) {
+                                    counterHeader.innerHTML = `<i class="fas fa-bullseye me-1"></i>Target #${index + 1}`;
+                                }
+
+                                // Show/hide remove button
+                                const removeBtn = entry.querySelector('.remove-target');
+                                if (removeBtn) {
+                                    removeBtn.style.display = targetCount > 1 ? 'block' : 'none';
+                                }
+                            });
+                        };
+
+                        const addNewTarget = () => {
+                            const targetIndex = targetsContainer.querySelectorAll('.target-entry').length;
+                            const targetEntry = document.createElement('div');
+                            targetEntry.className = 'target-entry border rounded p-3 mb-3 position-relative';
+
+                            const programNumber = programNumberInput.value || 'X.Y';
+
+                            const html = `
+                                <button type="button" class="btn-close remove-target" aria-label="Remove target" style="display: none;"></button>
+                                <div class="target-counter-header mb-2">
+                                    <h6 class="text-primary fw-bold mb-0"><i class="fas fa-bullseye me-1"></i>Target #${targetIndex + 1}</h6>
+                                </div>
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Target Number (Optional)</label>
+                                        <input type="text" class="form-control target-number-input" name="target_number[]" placeholder="e.g., ${programNumber}.${targetIndex + 1}">
+                                        <div class="form-text">Format: {program_number}.{target_counter}</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Target Status</label>
+                                        <select class="form-select target-status-select" name="target_status[]">
+                                            <option value="not-started" selected>Not Started</option>
+                                            <option value="in-progress">In Progress</option>
+                                            <option value="completed">Completed</option>
+                                            <option value="delayed">Delayed</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label target-text-label">Target *</label>
+                                    <textarea class="form-control target-input" name="target_text[]" rows="3" required placeholder="Define a measurable target (e.g., '''Plant 100 trees''')"></textarea>
+                                </div>
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Start Date (Optional)</label>
+                                        <input type="date" class="form-control target-start-date" name="target_start_date[]">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">End Date (Optional)</label>
+                                        <input type="date" class="form-control target-end-date" name="target_end_date[]">
+                                    </div>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label">Status Description</label>
+                                    <textarea class="form-control status-description" name="target_status_description[]" rows="2" placeholder="Describe the current status or progress toward this target"></textarea>
+                                </div>
+                            `;
+                            targetEntry.innerHTML = html;
+                            targetsContainer.appendChild(targetEntry);
+
+                            // Add event listener for the remove button
+                            targetEntry.querySelector('.remove-target').addEventListener('click', function() {
+                                targetEntry.remove();
+                                updateTargetUI();
+                            });
+
+                            // Add date validation
+                            const startDateInput = targetEntry.querySelector('.target-start-date');
+                            const endDateInput = targetEntry.querySelector('.target-end-date');
+                            const validateDates = () => {
+                                if (startDateInput.value && endDateInput.value && new Date(endDateInput.value) < new Date(startDateInput.value)) {
+                                    endDateInput.setCustomValidity('End date must be after start date.');
+                                    endDateInput.reportValidity();
+                                } else {
+                                    endDateInput.setCustomValidity('');
+                                }
+                            };
+                            startDateInput.addEventListener('change', validateDates);
+                            endDateInput.addEventListener('change', validateDates);
+
+                            // Add target number validation
+                            const targetNumberInput = targetEntry.querySelector('.target-number-input');
+                            if (targetNumberInput) {
+                                targetNumberInput.addEventListener('blur', function() {
+                                    validateTargetNumber(this);
+                                });
+                            }
+
+                            updateTargetUI();
+                        };
+
+                        if (addTargetBtn) {
+                            addTargetBtn.addEventListener('click', addNewTarget);
+                        }
+
+                        // Add the first target when the page loads
+                        addNewTarget();
+
+                        // Enable/disable program number input based on initiative selection
+                        const initiativeSelect = document.getElementById('initiative_id');
+                        const numberHelpText = document.getElementById('number-help-text');
+
+                        if (initiativeSelect && programNumberInput && numberHelpText) {
+                            const toggleProgramNumberInput = () => {
+                                if (initiativeSelect.value) {
+                                    programNumberInput.disabled = false;
+                                    programNumberInput.placeholder = 'Enter program number (e.g., 31.1, 31.2A, 31.25.6)';
+                                    numberHelpText.textContent = 'Flexible format supporting letters, numbers, and dots.';
+                                } else {
+                                    programNumberInput.disabled = true;
+                                    programNumberInput.placeholder = 'Select initiative first';
+                                    programNumberInput.value = '';
+                                    numberHelpText.textContent = 'Select an initiative to enable program numbering.';
+                                }
+                            };
+
+                            initiativeSelect.addEventListener('change', toggleProgramNumberInput);
+
+                            // Run on page load to check initial state
+                            toggleProgramNumberInput();
+                        }
+
+                        // Add program number validation
+                        const validationMessage = document.getElementById('validation-message');
+                        const numberValidationDiv = document.getElementById('number-validation');
+
+                        if (programNumberInput && validationMessage && numberValidationDiv) {
+                            programNumberInput.addEventListener('blur', function() {
+                                const programNumber = this.value.trim();
+                                const initiativeId = initiativeSelect.value;
+
+                                if (programNumber === '') {
+                                    numberValidationDiv.style.display = 'none';
+                                    return;
+                                }
+
+                                // Basic format validation first
+                                if (!/^[\w.]+$/.test(programNumber)) {
+                                    validationMessage.textContent = 'Program number can only contain letters, numbers, and dots.';
+                                    validationMessage.className = 'text-danger';
+                                    numberValidationDiv.style.display = 'block';
+                                    return;
+                                }
+
+                                // AJAX call to validation script
+                                fetch('<?php echo APP_URL; ?>/app/ajax/program_numbering.php', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/x-www-form-urlencoded',
+                                    },
+                                    body: `action=validate_number&program_number=${encodeURIComponent(programNumber)}&initiative_id=${encodeURIComponent(initiativeId)}`
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.valid) {
+                                        validationMessage.textContent = data.message || 'Program number is valid and available.';
+                                        validationMessage.className = 'text-success';
+                                    } else {
+                                        validationMessage.textContent = data.message || 'Program number is not valid.';
+                                        validationMessage.className = 'text-danger';
+                                    }
+                                    numberValidationDiv.style.display = 'block';
+                                })
+                                .catch(error => {
+                                    console.error('Error validating program number:', error);
+                                    validationMessage.textContent = 'Unable to validate program number. Please try again.';
+                                    validationMessage.className = 'text-warning';
+                                    numberValidationDiv.style.display = 'block';
+                                });                                });
+                        }
+
+                        // Target number validation function
+                        function validateTargetNumber(input) {
+                            const value = input.value.trim();
+                            if (value) {
+                                // Basic format validation
+                                const programNumber = programNumberInput.value || '';
+                                if (programNumber && !value.startsWith(programNumber + '.')) {
+                                    input.setCustomValidity(`Target number must start with ${programNumber}.`);
+                                    input.classList.add('is-invalid');
+                                    
+                                    // Show validation message below the input
+                                    let validationDiv = input.parentElement.querySelector('.target-validation');
+                                    if (!validationDiv) {
+                                        validationDiv = document.createElement('div');
+                                        validationDiv.className = 'target-validation mt-1';
+                                        input.parentElement.appendChild(validationDiv);
+                                    }
+                                    validationDiv.innerHTML = `<small class="text-danger">Target number must start with ${programNumber}.</small>`;
+                                } else if (value && !/^[\w.]+$/.test(value)) {
+                                    input.setCustomValidity('Target number can only contain letters, numbers, and dots.');
+                                    input.classList.add('is-invalid');
+                                    
+                                    // Show validation message below the input
+                                    let validationDiv = input.parentElement.querySelector('.target-validation');
+                                    if (!validationDiv) {
+                                        validationDiv = document.createElement('div');
+                                        validationDiv.className = 'target-validation mt-1';
+                                        input.parentElement.appendChild(validationDiv);
+                                    }
+                                    validationDiv.innerHTML = '<small class="text-danger">Target number can only contain letters, numbers, and dots.</small>';
+                                } else {
+                                    input.setCustomValidity('');
+                                    input.classList.remove('is-invalid');
+                                    input.classList.add('is-valid');
+                                    
+                                    // Remove validation message
+                                    const validationDiv = input.parentElement.querySelector('.target-validation');
+                                    if (validationDiv) {
+                                        validationDiv.remove();
+                                    }
+                                }
+                            } else {
+                                input.setCustomValidity('');
+                                input.classList.remove('is-invalid', 'is-valid');
+                                
+                                // Remove validation message
+                                const validationDiv = input.parentElement.querySelector('.target-validation');
+                                if (validationDiv) {
+                                    validationDiv.remove();
+                                }
+                            }
+                        }
+
+                        // Update target number placeholders when program number changes
+                        programNumberInput.addEventListener('input', function() {
+                            const programNumber = this.value || 'X.Y';
+                            document.querySelectorAll('.target-number-input').forEach((input, index) => {
+                                input.placeholder = `e.g., ${programNumber}.${index + 1}`;
+                            });
+                        });
+
+                        // Function to update review section with target data
+                        function updateReviewTargets() {
+                            const reviewTargetsDiv = document.getElementById('review-targets');
+                            const targetEntries = document.querySelectorAll('.target-entry');
+                            
+                            if (targetEntries.length === 0) {
+                                reviewTargetsDiv.innerHTML = '<div class="text-muted">No targets defined</div>';
+                                return;
+                            }
+
+                            let targetsHtml = '<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Target #</th><th>Number</th><th>Description</th><th>Status</th><th>Status Description</th><th>Timeline</th></tr></thead><tbody>';
+                            
+                            targetEntries.forEach((entry, index) => {
+                                const targetNumber = entry.querySelector('.target-number-input')?.value || '-';
+                                const targetText = entry.querySelector('.target-input')?.value || '-';
+                                const targetStatus = entry.querySelector('.target-status-select')?.value || 'not-started';
+                                const statusDescription = entry.querySelector('.target-status-description')?.value || '-';
+                                const startDate = entry.querySelector('.target-start-date')?.value || '';
+                                const endDate = entry.querySelector('.target-end-date')?.value || '';
+                                
+                                // Format status with badge
+                                let statusBadge = '';
+                                switch(targetStatus) {
+                                    case 'completed':
+                                        statusBadge = '<span class="badge bg-success">Completed</span>';
+                                        break;
+                                    case 'in-progress':
+                                        statusBadge = '<span class="badge bg-warning">In Progress</span>';
+                                        break;
+                                    case 'delayed':
+                                        statusBadge = '<span class="badge bg-danger">Delayed</span>';
+                                        break;
+                                    default:
+                                        statusBadge = '<span class="badge bg-secondary">Not Started</span>';
+                                }
+                                
+                                // Format timeline
+                                let timeline = '-';
+                                if (startDate && endDate) {
+                                    timeline = `${startDate} to ${endDate}`;
+                                } else if (startDate) {
+                                    timeline = `From ${startDate}`;
+                                } else if (endDate) {
+                                    timeline = `Until ${endDate}`;
+                                }
+                                
+                                targetsHtml += `
+                                    <tr>
+                                        <td><strong>#${index + 1}</strong></td>
+                                        <td><code>${escapeHtml(targetNumber)}</code></td>
+                                        <td>${escapeHtml(targetText)}</td>
+                                        <td>${statusBadge}</td>
+                                        <td><small class="text-muted">${escapeHtml(statusDescription)}</small></td>
+                                        <td><small>${timeline}</small></td>
+                                    </tr>
+                                `;
+                            });
+                            
+                            targetsHtml += '</tbody></table></div>';
+                            reviewTargetsDiv.innerHTML = targetsHtml;
+                        }
+
+                        // Function to update all review data
+                        function updateReviewData() {
+                            // Update basic information
+                            document.getElementById('review-program-name').textContent = document.getElementById('program_name').value || '-';
+                            document.getElementById('review-program-number').textContent = document.getElementById('program_number').value || '-';
+                            
+                            // Update initiative
+                            const initiativeSelect = document.getElementById('initiative_id');
+                            const selectedInitiative = initiativeSelect.options[initiativeSelect.selectedIndex];
+                            document.getElementById('review-initiative').textContent = selectedInitiative.value ? selectedInitiative.textContent : '-';
+                            
+                            // Update timeline
+                            const startDate = document.getElementById('start_date').value;
+                            const endDate = document.getElementById('end_date').value;
+                            let timeline = '-';
+                            if (startDate && endDate) {
+                                timeline = `${startDate} to ${endDate}`;
+                            } else if (startDate) {
+                                timeline = `From ${startDate}`;
+                            } else if (endDate) {
+                                timeline = `Until ${endDate}`;
+                            }
+                            document.getElementById('review-timeline').textContent = timeline;
+                            
+                            // Update targets
+                            updateReviewTargets();
+                        }
+                    });
+                    </script>
                 </div>
             </div>
 
@@ -746,28 +1106,54 @@ document.addEventListener('DOMContentLoaded', function() {    // Wizard state
         document.getElementById('review-description').textContent =
             data.brief_description || 'No description provided';
         // Targets
-        const tbody = [];
-        if (data.targets && data.targets.length) {
-            data.targets.forEach(t => {
-                const tgt = escapeHtml(t.target || '');
-                const st  = escapeHtml(t.status_description || '');
-                if (tgt || st) {
-                    tbody.push(`
-                        <tr>
-                        <td>${tgt || '-'}</td>
-                        <td>${st  || '-'}</td>
-                        </tr>
-                    `);
+        const reviewTargetsDiv = document.getElementById('review-targets');
+        if (data.targets && data.targets.length > 0) {
+            let targetsHtml = '<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Target #</th><th>Number</th><th>Target Description</th><th>Status</th><th>Status Description</th><th>Timeline</th></tr></thead><tbody>';
+            
+            data.targets.forEach((target, index) => {
+                // Format status with badge
+                let statusBadge = '';
+                switch(target.target_status) {
+                    case 'completed':
+                        statusBadge = '<span class="badge bg-success">Completed</span>';
+                        break;
+                    case 'in-progress':
+                        statusBadge = '<span class="badge bg-warning">In Progress</span>';
+                        break;
+                    case 'delayed':
+                        statusBadge = '<span class="badge bg-danger">Delayed</span>';
+                        break;
+                    default:
+                        statusBadge = '<span class="badge bg-secondary">Not Started</span>';
                 }
+                
+                // Format timeline
+                let timeline = '-';
+                if (target.start_date && target.end_date) {
+                    timeline = `${formatDate(target.start_date)} to ${formatDate(target.end_date)}`;
+                } else if (target.start_date) {
+                    timeline = `From ${formatDate(target.start_date)}`;
+                } else if (target.end_date) {
+                    timeline = `Until ${formatDate(target.end_date)}`;
+                }
+                
+                targetsHtml += `
+                    <tr>
+                        <td><strong>#${index + 1}</strong></td>
+                        <td><code>${escapeHtml(target.target_number || '-')}</code></td>
+                        <td>${escapeHtml(target.target_text)}</td>
+                        <td>${statusBadge}</td>
+                        <td><small class="text-muted">${escapeHtml(target.status_description || '-')}</small></td>
+                        <td><small>${timeline}</small></td>
+                    </tr>
+                `;
             });
+            
+            targetsHtml += '</tbody></table></div>';
+            reviewTargetsDiv.innerHTML = targetsHtml;
+        } else {
+            reviewTargetsDiv.innerHTML = '<div class="text-muted">No targets defined</div>';
         }
-        const tableBody = tbody.length
-            ? tbody.join('')
-            : `<tr><td colspan="2" class="text-muted">No targets added yet</td></tr>`;
-
-        document
-        .querySelector('#review-targets tbody')
-        .innerHTML = tableBody;
     }
 
         function formatDate(dateStr) {
@@ -794,28 +1180,38 @@ document.addEventListener('DOMContentLoaded', function() {    // Wizard state
             const data = {};
             
             // Collect basic form inputs
-            formInputs.forEach(input => {
-                if (input.name && input.name !== 'targets' && !input.name.startsWith('targets[')) {
-                    data[input.name] = input.value;
+            const basicInputs = ['program_id', 'program_name', 'program_number', 'initiative_id', 'brief_description', 'start_date', 'end_date'];
+            basicInputs.forEach(inputName => {
+                const input = document.getElementById(inputName);
+                if (input) {
+                    data[inputName] = input.value;
                 }
             });
             
-            // Collect targets data specifically
-            const targetGroups = document.querySelectorAll('.target-group');
-            if (targetGroups.length > 0) {
-                data.targets = [];
-                targetGroups.forEach(group => {
-                    const targetInput = group.querySelector('input[name*="[target]"]');
-                    const statusInput = group.querySelector('input[name*="[status_description]"]');
-                    
-                    if (targetInput || statusInput) {
-                        data.targets.push({
-                            target: targetInput ? targetInput.value : '',
-                            status_description: statusInput ? statusInput.value : ''
-                        });
-                    }
-                });
-            }
+            // Collect targets data from our new structure
+            const targetEntries = document.querySelectorAll('.target-entry');
+            data.targets = [];
+            
+            targetEntries.forEach(entry => {
+                const targetNumber = entry.querySelector('.target-number-input')?.value || '';
+                const targetText = entry.querySelector('.target-input')?.value || '';
+                const targetStatus = entry.querySelector('.target-status-select')?.value || 'not-started';
+                const statusDescription = entry.querySelector('.status-description')?.value || '';
+                const startDate = entry.querySelector('.target-start-date')?.value || '';
+                const endDate = entry.querySelector('.target-end-date')?.value || '';
+                
+                // Only add target if there's actual content
+                if (targetText.trim()) {
+                    data.targets.push({
+                        target_number: targetNumber,
+                        target_text: targetText,
+                        target_status: targetStatus,
+                        status_description: statusDescription,
+                        start_date: startDate,
+                        end_date: endDate
+                    });
+                }
+            });
             
             return data;
         }
@@ -924,14 +1320,26 @@ document.addEventListener('DOMContentLoaded', function() {    // Wizard state
                 }
             });
             
-            // Add targets array data
+            // Add targets array data (using new format that matches backend)
             if (data.targets && data.targets.length > 0) {
                 data.targets.forEach((target, index) => {
-                    if (target.target) {
-                        formData.append(`targets[${index}][target]`, target.target);
+                    if (target.target_text) {
+                        formData.append('target_text[]', target.target_text);
+                    }
+                    if (target.target_number) {
+                        formData.append('target_number[]', target.target_number);
+                    }
+                    if (target.target_status) {
+                        formData.append('target_status[]', target.target_status);
                     }
                     if (target.status_description) {
-                        formData.append(`targets[${index}][status_description]`, target.status_description);
+                        formData.append('target_status_description[]', target.status_description);
+                    }
+                    if (target.start_date) {
+                        formData.append('target_start_date[]', target.start_date);
+                    }
+                    if (target.end_date) {
+                        formData.append('target_end_date[]', target.end_date);
                     }
                 });
             }
