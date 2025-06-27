@@ -93,14 +93,14 @@ if (!function_exists('format_time_ago')) {
                         <i class="fas fa-lightbulb me-1"></i> Initiatives
                     </a>
                 </li>
-                <?php $is_placeholder_page = ($current_page == 'submit_outcomes.php'); ?>
+                <?php $is_placeholder_page = ($current_page == 'submit_outcomes.php' || $current_page == 'create_outcome_flexible.php'); ?>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle <?php if ($is_placeholder_page) echo 'active'; ?>" href="javascript:void(0)" id="placeholderDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="<?php echo $is_placeholder_page ? 'true' : 'false'; ?>">
                         <i class="fas fa-chart-line me-1"></i> Outcomes<i class="fas fa-caret-down nav-dropdown-icon"></i>
                     </a>
                     <ul class="dropdown-menu" aria-labelledby="-">
                         <li>
-                            <a class="dropdown-item <?php if ($current_page == 'submit_outcomes.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/agency/outcomes/submit_outcomes.php">
+                            <a class="dropdown-item <?php if ($current_page == 'submit_outcomes.php' || $current_page == 'create_outcome_flexible.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/agency/outcomes/submit_outcomes.php">
                                 <i class="fas fa-chart-line me-1"></i> Outcomes
                             </a>
                         </li>

@@ -461,6 +461,59 @@ document.addEventListener('DOMContentLoaded', function() {
     pointer-events: auto !important;
     z-index: 10000 !important;
 }
+
+/* Highlight the radio button circle when checked */
+.structure-type-card input[type="radio"]:checked {
+    outline: none;
+    box-shadow: 0 0 8px 3px var(--bs-primary);
+    border-radius: 50%;
+}
+
+/* Optional: enhance the label color when selected */
+.structure-type-card:has(input[type="radio"]:checked) .card-body {
+    background-color: rgba(var(--bs-primary-rgb), 0.1);
+    border-radius: 8px;
+    transition: background-color 0.3s ease;
+}
+
+/* Highlight the auto-calculation rows radio buttons when checked */
+input.calculation-type-radio:checked {
+    outline: none;
+    box-shadow: 0 0 8px 3px var(--bs-primary);
+    border-radius: 50%;
+}
+
+/* Optional: enhance the container color when selected */
+input.calculation-type-radio:checked + label {
+    background-color: rgba(var(--bs-primary-rgb), 0.1);
+    border-radius: 8px;
+    transition: background-color 0.3s ease;
+    cursor: pointer;
+}
+
+/* Style for Add Row button text color and hover */
+#add-row-btn {
+    color: white !important;
+    background-color: var(--bs-primary) !important;
+    transition: background-color 0.3s ease;
+}
+
+#add-row-btn:hover {
+    background-color: #0056b3 !important; /* lighter blue for hover */
+    color: white !important;
+}
+
+/* Style for Add Column button text color and hover */
+#add-column-btn {
+    color: white !important;
+    background-color: var(--bs-primary) !important;
+    transition: background-color 0.3s ease;
+}
+
+#add-column-btn:hover {
+    background-color: #0056b3 !important; /* lighter blue for hover */
+    color: white !important;
+}
 </style>
 <?php
 // Include footer
