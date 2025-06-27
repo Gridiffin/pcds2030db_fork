@@ -225,9 +225,9 @@ require_once '../../layouts/page_header.php';
                 </h5>
             </div>
             <div class="card-body">
-                <div id="table-designer-container" class="table-designer-container">
-                    <!-- Table structure designer will be rendered here -->
-                </div>
+<div id="table-designer-container" class="table-designer-container" style="position: relative; z-index: 10000; background-color: #f0f8ff !important;">
+    <!-- Table structure designer will be rendered here -->
+</div>
             </div>
         </div>
 
@@ -260,7 +260,7 @@ require_once '../../layouts/page_header.php';
         </div>
 
         <!-- Hidden Inputs -->
-        <input type="hidden" name="structure_type" id="structure_type" value="monthly">
+        <input type="hidden" name="structure_type" id="structure_type" value="custom">
         <input type="hidden" name="row_config" id="row_config" value="">
         <input type="hidden" name="column_config" id="column_config" value="">
         <input type="hidden" name="data_json" id="data_json" value="">
@@ -288,11 +288,13 @@ require_once '../../layouts/page_header.php';
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize the table structure designer
+    console.log('Initializing Table Structure Designer...');
     const designer = initTableStructureDesigner({
         container: '#table-designer-container',
         previewContainer: '#table-preview-container',
-        structureType: 'monthly',
+        structureType: 'custom',
         onStructureChange: function(structureData) {
+            console.log('Structure changed:', structureData);
             updateHiddenFields(structureData);
             renderDataEntryTable(structureData);
         }
@@ -442,6 +444,24 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+<style>
+/* Temporary CSS to force visibility of row action buttons */
+.row-actions {
+    display: flex !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    z-index: 10000 !important;
+}
+
+.row-actions .btn {
+    display: inline-flex !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    z-index: 10000 !important;
+}
+</style>
 <?php
 // Include footer
 require_once '../../layouts/footer.php';
