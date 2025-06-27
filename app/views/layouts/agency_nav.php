@@ -93,24 +93,10 @@ if (!function_exists('format_time_ago')) {
                         <i class="fas fa-lightbulb me-1"></i> Initiatives
                     </a>
                 </li>
-                <?php $is_placeholder_page = ($current_page == 'submit_outcomes.php' || $current_page == 'create_outcome_flexible.php'); ?>
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle <?php if ($is_placeholder_page) echo 'active'; ?>" href="javascript:void(0)" id="placeholderDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="<?php echo $is_placeholder_page ? 'true' : 'false'; ?>">
-                        <i class="fas fa-chart-line me-1"></i> Outcomes<i class="fas fa-caret-down nav-dropdown-icon"></i>
+                <li class="nav-item">
+                    <a class="nav-link <?php if ($current_page == 'submit_outcomes.php' || $current_page == 'create_outcome_flexible.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/agency/outcomes/submit_outcomes.php">
+                        <i class="fas fa-chart-line me-1"></i> Outcomes
                     </a>
-                    <ul class="dropdown-menu" aria-labelledby="-">
-                        <li>
-                            <a class="dropdown-item <?php if ($current_page == 'submit_outcomes.php' || $current_page == 'create_outcome_flexible.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/agency/outcomes/submit_outcomes.php">
-                                <i class="fas fa-chart-line me-1"></i> Outcomes
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item <?php if ($current_page == 'create_outcomes_detail.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/agency/outcomes/create_outcomes_detail.php">
-                                <i class="fas fa-chart-line me-1"></i> Create Outcome Details
-                            </a>
-                        </li>
-                        <!-- Add more dropdown items here if needed -->
-                    </ul>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link <?php if ($current_page == 'view_all_sectors.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/agency/sectors/view_all_sectors.php">
