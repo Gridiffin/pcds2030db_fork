@@ -222,6 +222,14 @@ if ($result) {
         const map = {'&': '&amp;','<': '&lt;','>': '&gt;','"': '&quot;','\'': '&#039;'};
         return text.replace(/[&<>"']/g, function(m) { return map[m]; });
     }
+    function showAlert(message, type) {
+        const container = document.getElementById(`${type}Container`);
+        if (container) {
+            container.textContent = message;
+            container.style.display = 'block';
+            setTimeout(() => { container.style.display = 'none'; }, 5000);
+        }
+    }
     function deleteMetricDetail(id) {
         if (!confirm('Are you sure you want to delete this outcome detail? This action cannot be undone.')) return;
         const deleteBtn = document.querySelector(`button[onclick="deleteMetricDetail(${id})"]`);
@@ -256,7 +264,7 @@ if ($result) {
                 if (document.querySelectorAll('#metricDetailsContainer .card').length === 0) {
                     document.getElementById('metricDetailsContainer').innerHTML = '<p>No metric details found.</p>';
                 }
-                const index = metricDetails.findIndex(d => d.id === id);
+                const index = metricDetails.findIndex(d => d.id == id);
                 if (index !== -1) metricDetails.splice(index, 1);
             } else {
                 showAlert(data.message || 'Failed to delete metric detail', 'error');
@@ -271,17 +279,107 @@ if ($result) {
         });
     }
     function editMetricDetail(id) {
-        // ...existing code for edit popup/modal...
-        showAlert('Edit functionality coming soon.', 'info');
+        // Ensure id is compared as number
+        const detail = metricDetails.find(d => Number(d.id) === Number(id));
+        if (!detail) return showAlert('Detail not found', 'error');
+        editingDetailId = id;
+        const items = detail.items || [];
+        const container = document.getElementById('editItemsContainer');
+        if (!container) return showAlert('Edit modal not found', 'error');
+        container.innerHTML = '';
+        items.forEach((item, idx) => {
+            container.appendChild(createItemRow(item, idx));
+        });
+        if (items.length === 0) container.appendChild(createItemRow({}, 0));
+        // Show modal
+        const modalEl = document.getElementById('editOutcomeDetailModal');
+        if (!modalEl) return showAlert('Edit modal not found', 'error');
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
     }
-    function showAlert(message, type) {
-        const container = document.getElementById(`${type}Container`);
-        if (container) {
-            container.textContent = message;
-            container.style.display = 'block';
-            setTimeout(() => { container.style.display = 'none'; }, 5000);
+    function createItemRow(item, idx) {
+        const div = document.createElement('div');
+        div.className = 'row g-2 align-items-end mb-2';
+        div.innerHTML = `
+          <div class="col-md-3">
+            <label class="form-label">Value</label>
+            <input type="text" class="form-control" name="value" value="${item.value ? escapeHtml(item.value) : ''}" />
+          </div>
+          <div class="col-md-5">
+            <label class="form-label">Description</label>
+            <input type="text" class="form-control" name="description" value="${item.description ? escapeHtml(item.description) : ''}" />
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Label <span class="text-muted small">(optional)</span></label>
+            <input type="text" class="form-control" name="label" value="${item.label ? escapeHtml(item.label) : ''}" />
+          </div>
+          <div class="col-md-1">
+            <button type="button" class="btn btn-danger btn-sm remove-item-btn" title="Remove"><i class="fas fa-trash"></i></button>
+          </div>
+        `;
+        div.querySelector('.remove-item-btn').onclick = function() {
+            div.remove();
+        };
+        return div;
+    }
+    // Ensure DOM is ready before assigning event handlers
+    window.addEventListener('DOMContentLoaded', function() {
+        const addItemBtn = document.getElementById('addItemBtn');
+        if (addItemBtn) {
+            addItemBtn.onclick = function() {
+                const container = document.getElementById('editItemsContainer');
+                container.appendChild(createItemRow({}, container.children.length));
+            };
         }
-    }
+        const saveBtn = document.getElementById('saveOutcomeDetailBtn');
+        if (saveBtn) {
+            saveBtn.onclick = function() {
+                const container = document.getElementById('editItemsContainer');
+                if (!container) return showAlert('Edit modal not found', 'error');
+                const rows = container.querySelectorAll('.row');
+                const items = [];
+                rows.forEach(row => {
+                    const value = row.querySelector('input[name="value"]').value.trim();
+                    const description = row.querySelector('input[name="description"]').value.trim();
+                    const label = row.querySelector('input[name="label"]').value.trim();
+                    if (value || description || label) {
+                        const item = { value, description };
+                        if (label) item.label = label;
+                        items.push(item);
+                    }
+                });
+                if (items.length === 0) {
+                    showAlert('At least one item is required.', 'error');
+                    return;
+                }
+                // Save via AJAX
+                fetch('update_metric_detail.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: editingDetailId, items })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        const idx = metricDetails.findIndex(d => Number(d.id) === Number(editingDetailId));
+                        if (idx !== -1) {
+                            metricDetails[idx].items = items;
+                            metricDetails[idx].value = items.map(i => i.value).join(';');
+                            metricDetails[idx].description = items.map(i => i.description).join(';');
+                        }
+                        // Hide modal
+                        const modalEl = document.getElementById('editOutcomeDetailModal');
+                        if (modalEl) bootstrap.Modal.getInstance(modalEl).hide();
+                        showAlert('Outcome detail updated successfully.', 'success');
+                        location.reload();
+                    } else {
+                        showAlert(data.message || 'Failed to update outcome detail.', 'error');
+                    }
+                })
+                .catch(() => showAlert('Failed to update outcome detail.', 'error'));
+            };
+        }
+    });
     </script>
 
     <!-- Submitted Outcomes Section (remains below) -->
@@ -450,5 +548,27 @@ if ($result) {
     </div>
 </div>
 <?php endif; ?>
+
+<!-- Edit Outcome Detail Modal -->
+<div class="modal fade" id="editOutcomeDetailModal" tabindex="-1" aria-labelledby="editOutcomeDetailModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editOutcomeDetailModalLabel">Edit Outcome Detail</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="editOutcomeDetailForm">
+          <div id="editItemsContainer"></div>
+          <button type="button" class="btn btn-outline-secondary mt-2" id="addItemBtn">Add Item</button>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="saveOutcomeDetailBtn">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <?php require_once dirname(__DIR__, 2) . '/layouts/footer.php'; ?>
