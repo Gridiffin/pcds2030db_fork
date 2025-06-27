@@ -214,151 +214,54 @@ require_once '../../layouts/page_header.php';
     <link href="<?php echo APP_URL; ?>/assets/css/custom/agency.css" rel="stylesheet">
 </head>
 <body>
-    <div class="main-content">        <div class="container-fluid p-4">
+    <div class="main-content">
+        <div class="container-fluid p-4">
             <!-- Alert Messages -->
             <div id="errorContainer" class="alert alert-danger" style="display: none;"></div>
             <div id="successContainer" class="alert alert-success" style="display: none;"></div>
 
             <!-- Form Section -->
-            <div class="card mb-4">
+            <div class="card">
                 <div class="card-header">
-                    <h5 class="card-title mb-0">Outcome Detail Configuration</h5>
+                    <h5 class="card-title mb-0">Create Outcome Detail</h5>
+                    <small class="text-muted">Define the structure and components of your outcome metrics</small>
                 </div>
-                <div class="card-body">                <div class="card-body">
-                    <form id="metricDetailForm" method="post" action="<?php echo view_url('$ViewType', '$currentFileName'); ?>">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="title" class="form-label">Title</label>
-                                    <input type="text" class="form-control" id="title" name="title" required>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="layout_type" class="form-label">Layout Type</label>
-                                    <select class="form-control" id="layout_type" name="layout_type" required>
-                                        <option value="simple">Simple (Default)</option>
-                                        <option value="detailed_list">Detailed List</option>
-                                        <option value="comparison">Comparison</option>
-                                    </select>
-                                    <small class="text-muted">Select the visual presentation style for this KPI.</small>
-                                </div>
-                            </div>
+                <div class="card-body">
+                    <form id="metricDetailForm">
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Detail Title</label>
+                            <input type="text" class="form-control" id="title" name="title" required>
                         </div>
-                        
-                        <div class="mb-4">
-                            <h6 class="mb-2">KPI Values and Descriptions</h6>
-                            <p class="text-muted small">Add the values and descriptions for this KPI. For simple layout, only the first item will be used. For detailed list, each item represents a row. For comparison layout, items are shown side by side.</p>
+
+                        <div class="mb-3">
+                            <label for="layout_type" class="form-label">Layout Type</label>
+                            <select class="form-select" id="layout_type" name="layout_type">
+                                <option value="simple">Simple</option>
+                                <option value="detailed">Detailed</option>
+                            </select>
                         </div>
-                        
+
                         <div id="itemsContainer">
-                            <div class="item-container border rounded p-3 mb-3 position-relative" data-index="0">
-                                <span class="remove-item position-absolute top-0 end-0 bg-danger text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 25px; height: 25px; cursor: pointer; margin: 5px;" onclick="removeItem(this)">×</span>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="value_0" class="form-label">Value</label>
-                                            <input type="text" class="form-control" id="value_0" name="value_0" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="description_0" class="form-label">Description</label>
-                                            <textarea class="form-control" id="description_0" name="description_0" rows="3" required></textarea>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            <!-- Dynamic item fields will be injected here -->
                         </div>
-                        
-                        <div class="d-flex gap-2 mb-3">
-                            <button type="button" class="btn btn-outline-secondary" onclick="addItem()">
-                                <i class="fas fa-plus me-1"></i> Add Another Value
+
+                        <div class="mb-3">
+                            <button type="button" class="btn btn-primary" onclick="addItem()">
+                                <i class="fas fa-plus me-1"></i> Add Item
                             </button>
                         </div>
-                        
-                        <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary" id="submitBtn">
+
+                        <div class="mb-3">
+                            <button type="submit" class="btn btn-success" id="submitBtn">
                                 <i class="fas fa-save me-1"></i> Create
                             </button>
-                            <a href="<?php echo APP_URL; ?>/app/views/agency/outcomes/submit_outcomes.php" class="btn btn-outline-secondary">
-                                <i class="fas fa-arrow-left me-1"></i> Cancel
-                            </a>
                         </div>
                     </form>
                 </div>
             </div>
-
-            <!-- Existing Details Section -->
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Created Outcome Details</h5>
-                    <small class="text-muted">Manage your existing outcome detail configurations</small>
-                </div>
-                <div class="card-body">
-                    <div id="metricDetailsContainer">                    <div id="metricDetailsContainer">
-                        <?php if (empty($detailsArray)): ?>
-                            <div class="text-center py-4">
-                                <i class="fas fa-list-alt fa-3x text-muted mb-3"></i>
-                                <p class="text-muted">No outcome details found.</p>
-                                <p class="small text-muted">Create your first outcome detail using the form above.</p>
-                            </div>
-                        <?php else: ?>
-                            <div class="row">
-                                <?php foreach ($detailsArray as $detail): ?>
-                                    <div class="col-lg-6 col-xl-4 mb-4">
-                                        <div class="card h-100">
-                                            <div class="card-header d-flex justify-content-between align-items-center">
-                                                <h6 class="card-title mb-0"><?= htmlspecialchars($detail['title']) ?></h6>
-                                                <span class="badge bg-secondary"><?= ucfirst($detail['layout_type'] ?? 'simple') ?></span>
-                                            </div>
-                                            <div class="card-body">
-                                                <?php
-                                                $values = explode(';', $detail['value']);
-                                                $descriptions = explode(';', $detail['description']);
-                                                
-                                                if (count($values) === 1): ?>
-                                                    <div class="d-flex align-items-center gap-3">
-                                                        <div class="text-primary fw-bold fs-3"><?= htmlspecialchars($values[0]) ?></div>
-                                                        <div class="text-muted small"><?= htmlspecialchars($descriptions[0] ?? '') ?></div>
-                                                    </div>
-                                                <?php else: ?>
-                                                    <div class="row">
-                                                        <?php foreach ($values as $index => $val): ?>
-                                                            <div class="col-6 mb-2">
-                                                                <div class="text-primary fw-bold"><?= htmlspecialchars($val) ?></div>
-                                                                <div class="text-muted small"><?= htmlspecialchars($descriptions[$index] ?? '') ?></div>
-                                                            </div>
-                                                        <?php endforeach; ?>
-                                                    </div>
-                                                <?php endif; ?>
-                                            </div>
-                                            <div class="card-footer bg-transparent">
-                                                <div class="d-flex gap-2">
-                                                    <button class="btn btn-sm btn-outline-primary flex-fill" onclick="editMetricDetail(<?= $detail['id'] ?>)">
-                                                        <i class="fas fa-edit me-1"></i> Edit
-                                                    </button>
-                                                    <?php if (isset($_SESSION['role']) && strtolower($_SESSION['role']) === 'focal'): ?>
-                                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteMetricDetail(<?= $detail['id'] ?>)">
-                                                        <i class="fas fa-trash me-1"></i> Delete
-                                                    </button>
-                                                    <?php endif; ?>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            </div>
         </div>
-    </div>    <script>
-        // Embed detailsArray as JS object for edit lookup
-        const metricDetails = <?= json_encode($detailsArray) ?>;
-        let editingDetailId = null;
-
+    </div>
+    <script>
         // Helper function to escape HTML
         function escapeHtml(text) {
             const map = {
@@ -369,252 +272,46 @@ require_once '../../layouts/page_header.php';
                 "'": '&#039;'
             };
             return text.replace(/[&<>"']/g, function(m) { return map[m]; });
-        }// Function to add a new item
-        function addItem() {
+        }
+
+        // Function to add a new item field
+        function addItem(value = '', description = '') {
             const container = document.getElementById('itemsContainer');
-            const itemCount = container.children.length;
-            const newIndex = itemCount;
+            const index = container.children.length; // New index based on current children count
             
             const newItem = document.createElement('div');
             newItem.className = 'item-container border rounded p-3 mb-3 position-relative';
-            newItem.dataset.index = newIndex;
-            
+            newItem.dataset.index = index;
             newItem.innerHTML = `
                 <span class="remove-item position-absolute top-0 end-0 bg-danger text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 25px; height: 25px; cursor: pointer; margin: 5px;" onclick="removeItem(this)">×</span>
                 <div class="row">
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="value_${newIndex}" class="form-label">Value</label>
-                            <input type="text" class="form-control" id="value_${newIndex}" name="value_${newIndex}" required>
+                            <label for="value_${index}" class="form-label">Value</label>
+                            <input type="text" class="form-control" id="value_${index}" name="value_${index}" required value="${escapeHtml(value)}">
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="description_${newIndex}" class="form-label">Description</label>
-                            <textarea class="form-control" id="description_${newIndex}" name="description_${newIndex}" rows="3" required></textarea>
+                            <label for="description_${index}" class="form-label">Description</label>
+                            <textarea class="form-control" id="description_${index}" name="description_${index}" rows="3" required>${escapeHtml(description)}</textarea>
                         </div>
                     </div>
                 </div>
             `;
-            
             container.appendChild(newItem);
         }
-        
-        // Function to remove an item
-        function removeItem(element) {
-            const container = document.getElementById('itemsContainer');
-            if (container.children.length > 1) {
-                element.parentElement.remove();
-                // Reindex remaining items
-                Array.from(container.children).forEach((child, index) => {
-                    child.dataset.index = index;
-                    const valueInput = child.querySelector('input[type="text"]');
-                    const descriptionInput = child.querySelector('textarea');
-                    valueInput.id = `value_${index}`;
-                    valueInput.name = `value_${index}`;
-                    descriptionInput.id = `description_${index}`;
-                    descriptionInput.name = `description_${index}`;
-                });
-            } else {
-                alert('You need at least one value-description pair.');
-            }
-        }        // Function to delete metric detail
-        function deleteMetricDetail(id) {
-            if (!confirm('Are you sure you want to delete this outcome detail? This action cannot be undone.')) {
-                return;
-            }
-            
-            const deleteBtn = document.querySelector(`button[onclick="deleteMetricDetail(${id})"]`);
-            if (!deleteBtn) {
-                console.error('Delete button not found');
-                showAlert('Error finding delete button', 'error');
-                return;
-            }
 
-            const originalText = deleteBtn.textContent;
-            deleteBtn.textContent = 'Deleting...';
-            deleteBtn.disabled = true;
+        // Function to remove an item field
+        function removeItem(button) {
+            const container = document.getElementById('itemsContainer');
+            container.removeChild(button.closest('.item-container'));
             
-            fetch(`delete_metric_detail.php?detail_id=${id}`, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                    'Cache-Control': 'no-cache'
-                }
-            })
-            .then(async response => {
-                const contentType = response.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    const text = await response.text();
-                    console.error('Invalid response:', text);
-                    throw new TypeError("Expected JSON response but received: " + contentType);
-                }
-                if (!response.ok) {
-                    const text = await response.text();
-                    console.error('Server response:', text);
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    // Remove the deleted item from the UI
-                    const itemToRemove = deleteBtn.closest('li');
-                    if (itemToRemove) {
-                        itemToRemove.remove();
-                    }
-                    // Show success message
-                    showAlert(data.message || 'Metric detail deleted successfully', 'success');
-                    // Update UI if no items left
-                    if (document.querySelectorAll('#metricDetailsContainer li').length === 0) {
-                        document.getElementById('metricDetailsContainer').innerHTML = '<p>No metric details found.</p>';
-                    }
-                    // Also update the metricDetails array
-                    const index = metricDetails.findIndex(d => d.id === id);
-                    if (index !== -1) {
-                        metricDetails.splice(index, 1);
-                    }
-                } else {
-                    showAlert(data.message || 'Failed to delete metric detail', 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Delete error:', error);
-                showAlert('Failed to delete metric detail. Please try again.', 'error');
-            })
-            .finally(() => {
-                deleteBtn.textContent = originalText;
-                deleteBtn.disabled = false;
+            // Reindex items
+            container.querySelectorAll('.item-container').forEach((item, index) => {
+                item.dataset.index = index;
+                item.querySelector('input, textarea').id = `value_${index}, description_${index}`;
             });
-        }
-
-        // Function to load metric detail into form for editing
-        function editMetricDetail(id) {
-            const detail = metricDetails.find(d => d.id == id);
-            if (!detail) {
-                showAlert('Metric detail not found.', 'error');
-                return;
-            }
-            editingDetailId = id;
-
-            // Set title
-            document.getElementById('title').value = detail.title;
-            
-            // Set layout type
-            const layoutSelect = document.getElementById('layout_type');
-            if (layoutSelect) {
-                layoutSelect.value = detail.layout_type || 'simple';
-            }
-
-            // Clear existing items
-            const container = document.getElementById('itemsContainer');
-            container.innerHTML = '';            // Handle both legacy format and new format
-            if (detail.items && Array.isArray(detail.items)) {
-                // New format with items array
-                detail.items.forEach((item, i) => {
-                    const newItem = document.createElement('div');
-                    newItem.className = 'item-container border rounded p-3 mb-3 position-relative';
-                    newItem.dataset.index = i;
-                    newItem.innerHTML = `
-                        <span class="remove-item position-absolute top-0 end-0 bg-danger text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 25px; height: 25px; cursor: pointer; margin: 5px;" onclick="removeItem(this)">×</span>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="value_${i}" class="form-label">Value</label>
-                                    <input type="text" class="form-control" id="value_${i}" name="value_${i}" required value="${escapeHtml(item.value)}">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="description_${i}" class="form-label">Description</label>
-                                    <textarea class="form-control" id="description_${i}" name="description_${i}" rows="3" required>${escapeHtml(item.description)}</textarea>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    container.appendChild(newItem);
-                });
-            } else {
-                // Legacy format with value and description as semicolon-separated strings
-                const values = detail.value.split(';');
-                const descriptions = detail.description.split(';');
-
-                for (let i = 0; i < values.length; i++) {
-                    const newItem = document.createElement('div');
-                    newItem.className = 'item-container border rounded p-3 mb-3 position-relative';
-                    newItem.dataset.index = i;
-                    newItem.innerHTML = `
-                        <span class="remove-item position-absolute top-0 end-0 bg-danger text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 25px; height: 25px; cursor: pointer; margin: 5px;" onclick="removeItem(this)">×</span>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="value_${i}" class="form-label">Value</label>
-                                    <input type="text" class="form-control" id="value_${i}" name="value_${i}" required value="${escapeHtml(values[i])}">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="description_${i}" class="form-label">Description</label>
-                                    <textarea class="form-control" id="description_${i}" name="description_${i}" rows="3" required>${escapeHtml(descriptions[i] || '')}</textarea>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    container.appendChild(newItem);
-                }
-            }            // Change submit button text and icon to Update
-            const submitBtn = document.getElementById('submitBtn');
-            submitBtn.innerHTML = '<i class="fas fa-save me-1"></i> Update';
-            
-            // Scroll to the form
-            document.getElementById('metricDetailForm').scrollIntoView({ behavior: 'smooth' });
-        }        // Function to update metric detail in UI without reloading
-        function updateMetricDetailInUI(id, title, items) {
-            // Find the existing item in the UI
-            const itemElement = document.querySelector(`button[onclick="editMetricDetail(${id})"]`)?.closest('.col-lg-6');
-            
-            if (!itemElement) return;
-            
-            // Update the title
-            const titleElement = itemElement.querySelector('.card-title');
-            if (titleElement) titleElement.textContent = title;
-            
-            // Update the card body content
-            const cardBody = itemElement.querySelector('.card-body');
-            if (cardBody) {
-                if (items.length === 1) {
-                    cardBody.innerHTML = `
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="text-primary fw-bold fs-3">${escapeHtml(items[0].value)}</div>
-                            <div class="text-muted small">${escapeHtml(items[0].description)}</div>
-                        </div>
-                    `;
-                } else {
-                    let itemsHTML = '';
-                    items.forEach(item => {
-                        itemsHTML += `
-                            <div class="col-6 mb-2">
-                                <div class="text-primary fw-bold">${escapeHtml(item.value)}</div>
-                                <div class="text-muted small">${escapeHtml(item.description)}</div>
-                            </div>
-                        `;
-                    });
-                    
-                    cardBody.innerHTML = `<div class="row">${itemsHTML}</div>`;
-                }
-            }
-            
-            // Update the metricDetails array for future edits
-            const detailIndex = metricDetails.findIndex(d => d.id == id);
-            if (detailIndex !== -1) {
-                metricDetails[detailIndex] = {
-                    id: id,
-                    title: title,
-                    items: items,
-                    value: items.map(i => i.value).join(';'),
-                    description: items.map(i => i.description).join(';')
-                };
-            }
         }
 
         // Function to show alert messages
