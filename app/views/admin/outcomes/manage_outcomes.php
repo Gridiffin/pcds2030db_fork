@@ -252,11 +252,6 @@ require_once '../../layouts/page_header.php';
                                                class="btn btn-sm btn-outline-primary" title="Edit">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <button class="btn btn-sm btn-outline-warning" 
-                                                    onclick="unsubmitOutcome(<?= $outcome['metric_id'] ?>)" 
-                                                    title="Unsubmit">
-                                                <i class="fas fa-undo"></i>
-                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -302,11 +297,6 @@ require_once '../../layouts/page_header.php';
                                                class="btn btn-sm btn-outline-primary" title="Edit">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <button class="btn btn-sm btn-outline-success" 
-                                                    onclick="submitOutcome(<?= $outcome['metric_id'] ?>)" 
-                                                    title="Submit">
-                                                <i class="fas fa-check"></i>
-                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -790,47 +780,6 @@ require_once '../../layouts/page_header.php';
                 .catch(() => showAlert('Failed to update outcome detail.', 'error'));
             };
         }
-
-        // Submit/Unsubmit functions for outcomes
-        window.submitOutcome = function(metricId) {
-            if (!confirm('Are you sure you want to submit this outcome?')) return;
-            
-            fetch('<?php echo APP_URL; ?>/app/ajax/submit_outcome.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ metric_id: metricId, action: 'submit' })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    showAlert('Outcome submitted successfully.', 'success');
-                    location.reload();
-                } else {
-                    showAlert(data.message || 'Failed to submit outcome.', 'error');
-                }
-            })
-            .catch(() => showAlert('Failed to submit outcome.', 'error'));
-        };
-
-        window.unsubmitOutcome = function(metricId) {
-            if (!confirm('Are you sure you want to unsubmit this outcome? This will mark it as draft.')) return;
-            
-            fetch('<?php echo APP_URL; ?>/app/ajax/submit_outcome.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ metric_id: metricId, action: 'unsubmit' })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    showAlert('Outcome unsubmitted successfully.', 'success');
-                    location.reload();
-                } else {
-                    showAlert(data.message || 'Failed to unsubmit outcome.', 'error');
-                }
-            })
-            .catch(() => showAlert('Failed to unsubmit outcome.', 'error'));
-        };
     });
 </script>
 

@@ -382,8 +382,8 @@ const hasActivePeriod = <?php echo $hasActivePeriod ? 'true' : 'false'; ?>;
                                 <div class="card bg-success text-white h-100">
                                     <div class="card-body text-center">
                                         <i class="fas fa-check-square fa-3x mb-3"></i>
-                                        <h4><?php echo $outcomes_stats['submitted_outcomes']; ?></h4>
-                                        <p class="mb-0">Submitted</p>
+                                        <h4><?php echo $outcomes_stats['total_outcomes']; ?></h4>
+                                        <p class="mb-0">Total Outcomes</p>
                                     </div>
                                 </div>
                             </div>

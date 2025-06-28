@@ -171,8 +171,7 @@ require_once '../../layouts/page_header.php';
 
                 <div class="mt-3">
                     <input type="hidden" name="is_draft" id="isDraftInput" value="0" />
-                    <button type="submit" class="btn btn-success" id="saveBtn" onclick="document.getElementById('isDraftInput').value='0';">Save Outcome</button>
-                    <button type="submit" class="btn btn-warning ms-2" id="saveDraftBtn" onclick="document.getElementById('isDraftInput').value='1';">Save as Draft</button>
+                    <button type="submit" class="btn btn-success" id="saveBtn">Save Outcome</button>
                     <a href="submit_outcomes.php" class="btn btn-secondary ms-2">Cancel</a>
                 </div>
             </form>
