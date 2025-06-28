@@ -506,7 +506,6 @@ $degraded_area_units = '';
 $degraded_area_query = "SELECT m.data_json, m.table_name 
                         FROM sector_outcomes_data m 
                         WHERE m.sector_id = ? 
-                        AND m.is_draft = 0 
                         AND m.table_name = 'TOTAL DEGRADED AREA'
                         ORDER BY m.updated_at DESC LIMIT 1"; // Assuming one relevant record
 
@@ -573,8 +572,7 @@ $timber_export_data = [
 $timber_query = "SELECT m.data_json, m.table_name 
                 FROM sector_outcomes_data m 
                 WHERE m.sector_id = ? 
-                AND m.is_draft = 0 
-                AND (m.table_name LIKE '%Timber Export%' OR m.table_name LIKE '%Export Value%')
+                AND m.table_name = 'TIMBER EXPORT VALUE'
                 ORDER BY m.updated_at DESC";
                 
 $stmt = $conn->prepare($timber_query);
