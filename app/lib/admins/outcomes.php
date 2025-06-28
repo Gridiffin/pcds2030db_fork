@@ -91,8 +91,8 @@ function get_outcome_history($metric_id) {
 function get_all_outcomes_data($period_id = null, $include_drafts = true) {
     global $conn;
     
-    $query = "SELECT sod.metric_id, sod.sector_id, sod.period_id, sod.table_name, s.sector_name, 
-              rp.year, rp.quarter, sod.created_at, sod.updated_at 
+    $query = "SELECT sod.metric_id, sod.sector_id, sod.period_id, sod.table_name, sod.is_draft, sod.is_important,
+              s.sector_name, rp.year, rp.quarter, sod.created_at, sod.updated_at 
               FROM sector_outcomes_data sod
               LEFT JOIN sectors s ON sod.sector_id = s.sector_id
               LEFT JOIN reporting_periods rp ON sod.period_id = rp.period_id";
@@ -118,7 +118,7 @@ function get_all_outcomes_data($period_id = null, $include_drafts = true) {
             $outcomes[] = $row;
         }
     }
-    
+
     return $outcomes;
 }
 
