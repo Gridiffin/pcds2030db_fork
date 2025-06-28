@@ -94,7 +94,7 @@ if (!function_exists('format_time_ago')) {
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <?php if ($current_page == 'submit_outcomes.php' || $current_page == 'create_outcome_flexible.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/agency/outcomes/submit_outcomes.php">
+                    <a class="nav-link <?php if (in_array($current_page, ['submit_outcomes.php', 'create_outcome_flexible.php', 'create_outcome.php', 'view_outcome.php', 'view_outcome_flexible.php', 'edit_outcomes.php', 'create_outcomes_detail.php', 'submit_draft_outcome.php', 'update_metric_detail.php'])) echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/agency/outcomes/submit_outcomes.php">
                         <i class="fas fa-chart-line me-1"></i> Outcomes
                     </a>
                 </li>

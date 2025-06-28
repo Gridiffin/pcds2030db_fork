@@ -241,16 +241,10 @@ if ($result) {
                                     <td><?= htmlspecialchars($outcome['table_name']) ?></td>
                                     <td><span class="badge bg-success">Submitted</span></td>
                                     <td>
-                                        <div class="btn-group" role="group">
-                                            <a href="<?php echo APP_URL; ?>/app/views/agency/outcomes/view_outcome.php?outcome_id=<?= $outcome['metric_id'] ?>" 
-                                               class="btn btn-sm btn-outline-primary" title="View">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                            <a href="<?php echo APP_URL; ?>/app/views/agency/outcomes/edit_outcomes.php?outcome_id=<?= $outcome['metric_id'] ?>" 
-                                               class="btn btn-sm btn-outline-secondary" title="Edit">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                        </div>
+                                        <a href="<?php echo APP_URL; ?>/app/views/agency/outcomes/view_outcome.php?outcome_id=<?= $outcome['metric_id'] ?>" 
+                                           class="btn btn-sm btn-outline-primary" title="View Details">
+                                            <i class="fas fa-eye me-1"></i> View & Edit
+                                        </a>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -278,16 +272,10 @@ if ($result) {
                                     <td><?= htmlspecialchars($outcome['table_name']) ?></td>
                                     <td><span class="badge bg-warning text-dark">Draft</span></td>
                                     <td>
-                                        <div class="btn-group" role="group">
-                                            <a href="<?php echo APP_URL; ?>/app/views/agency/outcomes/view_outcome.php?outcome_id=<?= $outcome['metric_id'] ?>" 
-                                               class="btn btn-sm btn-outline-primary" title="View">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                            <a href="<?php echo APP_URL; ?>/app/views/agency/outcomes/edit_outcomes.php?outcome_id=<?= $outcome['metric_id'] ?>" 
-                                               class="btn btn-sm btn-outline-secondary" title="Edit">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                        </div>
+                                        <a href="<?php echo APP_URL; ?>/app/views/agency/outcomes/view_outcome.php?outcome_id=<?= $outcome['metric_id'] ?>" 
+                                           class="btn btn-sm btn-outline-primary" title="View Details">
+                                            <i class="fas fa-eye me-1"></i> View & Edit
+                                        </a>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -460,7 +448,7 @@ if ($result) {
                                 <td><strong><?= htmlspecialchars($outcome['table_name']) ?></strong></td>
                                 <td class="text-center">
                                     <a href="view_outcome.php?outcome_id=<?= $outcome['metric_id'] ?>" class="btn btn-sm btn-outline-primary">
-                                        <i class="fas fa-eye me-1"></i> View Details
+                                        <i class="fas fa-eye me-1"></i> View & Edit
                                     </a>
                                 </td>
                             </tr>
@@ -505,10 +493,7 @@ if ($result) {
                                 <td>
                                     <div class="d-flex justify-content-center gap-2">
                                         <a href="<?php echo APP_URL; ?>/app/views/agency/outcomes/view_outcome.php?outcome_id=<?= $draft['metric_id'] ?>" class="btn btn-sm btn-outline-primary">
-                                            <i class="fas fa-eye me-1"></i> View Details
-                                        </a>
-                                        <a href="<?php echo APP_URL; ?>/app/views/agency/outcomes/edit_outcomes.php?outcome_id=<?= $draft['metric_id'] ?>" class="btn btn-sm btn-outline-primary">
-                                            <i class="fas fa-edit me-1"></i> Edit
+                                            <i class="fas fa-eye me-1"></i> View & Edit
                                         </a>
                                         <a href="submit_draft_outcome.php?outcome_id=<?= $draft['metric_id'] ?>" class="btn btn-sm btn-outline-success" onclick="return confirm('Are you sure you want to submit this draft outcome?');">
                                             <i class="fas fa-check me-1"></i> Submit
