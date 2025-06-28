@@ -15,7 +15,7 @@ function get_agency_sector_outcomes($sector_id) {
     global $conn;
 
     $sector_id = intval($sector_id);
-    $query = "SELECT sod.metric_id, sod.sector_id, sod.table_name, sod.data_json, sod.submitted_by, 
+    $query = "SELECT sod.metric_id, sod.sector_id, sod.table_name, sod.data_json, sod.submitted_by, sod.is_important,
                      COALESCE(u.username, 'Unknown') AS submitted_by_username
               FROM sector_outcomes_data sod
               LEFT JOIN users u ON sod.submitted_by = u.user_id
@@ -35,7 +35,8 @@ function get_agency_sector_outcomes($sector_id) {
                 'table_name' => $row['table_name'],
                 'is_submitted' => true,
                 'submitted_by' => $row['submitted_by'],
-                'submitted_by_username' => $row['submitted_by_username']
+                'submitted_by_username' => $row['submitted_by_username'],
+                'is_important' => $row['is_important'] ?? 0
             ];
             
             // Add to outcomes array
@@ -53,7 +54,7 @@ function get_draft_outcome($sector_id) {
     global $conn;
 
     $sector_id = intval($sector_id);
-    $query = "SELECT metric_id, sector_id, table_name, data_json 
+    $query = "SELECT metric_id, sector_id, table_name, data_json, is_important 
               FROM sector_outcomes_data 
               WHERE sector_id = ? AND is_draft = 1";
     $stmt = $conn->prepare($query);
@@ -68,7 +69,8 @@ function get_draft_outcome($sector_id) {
             $outcome_base = [
                 'metric_id' => $row['metric_id'],
                 'sector_id' => $row['sector_id'],                'table_name' => $row['table_name'],
-                'is_draft' => true
+                'is_draft' => true,
+                'is_important' => $row['is_important'] ?? 0
             ];
             
             // Add to outcomes array

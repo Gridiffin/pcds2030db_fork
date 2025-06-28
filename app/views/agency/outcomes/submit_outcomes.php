@@ -44,6 +44,24 @@ if (!is_array($draft_outcomes)) {
     $draft_outcomes = [];
 }
 
+// Separate important outcomes from both submitted and draft outcomes
+$important_submitted_outcomes = array_filter($outcomes, function($outcome) {
+    return isset($outcome['is_important']) && $outcome['is_important'] == 1;
+});
+
+$important_draft_outcomes = array_filter($draft_outcomes, function($outcome) {
+    return isset($outcome['is_important']) && $outcome['is_important'] == 1;
+});
+
+// Remove important outcomes from regular submitted and draft lists
+$outcomes = array_filter($outcomes, function($outcome) {
+    return !isset($outcome['is_important']) || $outcome['is_important'] != 1;
+});
+
+$draft_outcomes = array_filter($draft_outcomes, function($outcome) {
+    return !isset($outcome['is_important']) || $outcome['is_important'] != 1;
+});
+
 $additionalScripts = [];
 
 // Include header
@@ -153,60 +171,143 @@ if ($result) {
             <h5 class="card-title m-0">
                 <i class="fas fa-star me-2"></i>Important Outcomes
             </h5>
-            <span class="badge bg-light text-dark"><?= count($detailsArray) ?> Details</span>
+            <span class="badge bg-dark text-warning">
+                <?= count($detailsArray) + count($important_submitted_outcomes) + count($important_draft_outcomes) ?> Items
+            </span>
         </div>
         <div class="card-body">
-            <div id="errorContainer" class="alert alert-danger" style="display: none;"></div>
-            <div id="successContainer" class="alert alert-success" style="display: none;"></div>
-            <div id="metricDetailsContainer">
-                <?php if (empty($detailsArray)): ?>
-                    <div class="text-center py-4">
-                        <i class="fas fa-list-alt fa-3x text-muted mb-3"></i>
-                        <p class="text-muted">No outcome details found.</p>
-                        <p class="small text-muted">Outcome details can be managed here.</p>
-                    </div>
-                <?php else: ?>
-                    <div class="row">
-                        <?php foreach ($detailsArray as $detail): ?>
-                            <div class="col-lg-6 col-xl-4 mb-4">
-                                <div class="card h-100">
-                                    <div class="card-header d-flex justify-content-between align-items-center">
-                                        <h6 class="card-title mb-0"><?= htmlspecialchars($detail['title']) ?></h6>
-                                        <span class="badge bg-secondary"><?= ucfirst($detail['layout_type'] ?? 'simple') ?></span>
-                                    </div>
-                                    <div class="card-body">
-                                        <?php
-                                        $values = explode(';', $detail['value']);
-                                        $descriptions = explode(';', $detail['description']);
-                                        if (count($values) === 1): ?>
-                                            <div class="d-flex align-items-center gap-3">
-                                                <div class="text-primary fw-bold fs-3"><?= htmlspecialchars($values[0]) ?></div>
-                                                <div class="text-muted small"><?= htmlspecialchars($descriptions[0] ?? '') ?></div>
-                                            </div>
-                                        <?php else: ?>
-                                            <div class="row">
-                                                <?php foreach ($values as $index => $val): ?>
-                                                    <div class="col-6 mb-2">
-                                                        <div class="text-primary fw-bold"><?= htmlspecialchars($val) ?></div>
-                                                        <div class="text-muted small"><?= htmlspecialchars($descriptions[$index] ?? '') ?></div>
-                                                    </div>
-                                                <?php endforeach; ?>
-                                            </div>
-                                        <?php endif; ?>
-                                    </div>
-                                    <div class="card-footer bg-transparent">
-                                        <div class="d-flex gap-2">
-                                            <button class="btn btn-sm btn-outline-primary flex-fill" onclick="editMetricDetail(<?= $detail['id'] ?>)">
-                                                <i class="fas fa-edit me-1"></i> Edit
-                                            </button>
+            <!-- Outcome Details Section -->
+            <?php if (!empty($detailsArray)): ?>
+                <div class="row mb-4">
+                    <?php foreach ($detailsArray as $detail): ?>
+                        <div class="col-lg-6 col-xl-4 mb-4">
+                            <div class="card h-100 border-primary">
+                                <div class="card-header d-flex justify-content-between align-items-center bg-light">
+                                    <h6 class="card-title mb-0"><?= htmlspecialchars($detail['title']) ?></h6>
+                                    <span class="badge bg-secondary"><?= ucfirst($detail['layout_type'] ?? 'simple') ?></span>
+                                </div>
+                                <div class="card-body">
+                                    <?php
+                                    $values = explode(';', $detail['value']);
+                                    $descriptions = explode(';', $detail['description']);
+                                    if (count($values) === 1): ?>
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="text-primary fw-bold fs-3"><?= htmlspecialchars($values[0]) ?></div>
+                                            <div class="text-muted small"><?= htmlspecialchars($descriptions[0] ?? '') ?></div>
                                         </div>
+                                    <?php else: ?>
+                                        <div class="row">
+                                            <?php foreach ($values as $index => $val): ?>
+                                                <div class="col-6 mb-2">
+                                                    <div class="text-primary fw-bold"><?= htmlspecialchars($val) ?></div>
+                                                    <div class="text-muted small"><?= htmlspecialchars($descriptions[$index] ?? '') ?></div>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-sm btn-outline-primary flex-fill" onclick="editMetricDetail(<?= $detail['id'] ?>)">
+                                            <i class="fas fa-edit me-1"></i> Edit
+                                        </button>
                                     </div>
                                 </div>
                             </div>
-                        <?php endforeach; ?>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+            <!-- Important Outcomes from Database -->
+            <?php if (!empty($important_submitted_outcomes) || !empty($important_draft_outcomes)): ?>
+                
+                <?php if (!empty($important_submitted_outcomes)): ?>
+    
+                    <div class="table-responsive mb-4">
+                        <table class="table table-hover border">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Outcome ID</th>
+                                    <th>Table Name</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($important_submitted_outcomes as $outcome): ?>
+                                <tr>
+                                    <td><span class="badge bg-primary"><?= htmlspecialchars($outcome['metric_id']) ?></span></td>
+                                    <td><?= htmlspecialchars($outcome['table_name']) ?></td>
+                                    <td><span class="badge bg-success">Submitted</span></td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="<?php echo APP_URL; ?>/app/views/agency/outcomes/view_outcome.php?outcome_id=<?= $outcome['metric_id'] ?>" 
+                                               class="btn btn-sm btn-outline-primary" title="View">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="<?php echo APP_URL; ?>/app/views/agency/outcomes/edit_outcomes.php?outcome_id=<?= $outcome['metric_id'] ?>" 
+                                               class="btn btn-sm btn-outline-secondary" title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
                     </div>
                 <?php endif; ?>
-            </div>
+
+                <?php if (!empty($important_draft_outcomes)): ?>
+                    <h6 class="text-secondary mb-3 ms-3"><i class="fas fa-edit me-1"></i> Draft Important Outcomes</h6>
+                    <div class="table-responsive mb-4">
+                        <table class="table table-hover border">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Outcome ID</th>
+                                    <th>Table Name</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($important_draft_outcomes as $outcome): ?>
+                                <tr>
+                                    <td><span class="badge bg-secondary"><?= htmlspecialchars($outcome['metric_id']) ?></span></td>
+                                    <td><?= htmlspecialchars($outcome['table_name']) ?></td>
+                                    <td><span class="badge bg-warning text-dark">Draft</span></td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="<?php echo APP_URL; ?>/app/views/agency/outcomes/view_outcome.php?outcome_id=<?= $outcome['metric_id'] ?>" 
+                                               class="btn btn-sm btn-outline-primary" title="View">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="<?php echo APP_URL; ?>/app/views/agency/outcomes/edit_outcomes.php?outcome_id=<?= $outcome['metric_id'] ?>" 
+                                               class="btn btn-sm btn-outline-secondary" title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php endif; ?>
+            <?php endif; ?>
+
+            <!-- Empty State -->
+            <?php if (empty($detailsArray) && empty($important_submitted_outcomes) && empty($important_draft_outcomes)): ?>
+                <div class="text-center py-4">
+                    <i class="fas fa-star fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No important outcomes found.</p>
+                    <p class="small text-muted">Important outcome details and outcomes marked as important will appear here.</p>
+                </div>
+            <?php endif; ?>
+
+            <div id="errorContainer" class="alert alert-danger" style="display: none;"></div>
+            <div id="successContainer" class="alert alert-success" style="display: none;"></div>
         </div>
     </div>
     <script>

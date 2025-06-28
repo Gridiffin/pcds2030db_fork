@@ -33,14 +33,15 @@ if ($outcome_id === 0) {
     exit;
 }
 
-// Load existing outcome data
-$query = "SELECT table_name, data_json FROM sector_outcomes_data WHERE metric_id = ? AND sector_id = ? AND is_draft = 1 LIMIT 1";
+// Load existing outcome data - don't filter by is_draft to allow editing both draft and submitted outcomes
+$query = "SELECT table_name, data_json, is_draft FROM sector_outcomes_data WHERE metric_id = ? AND sector_id = ? LIMIT 1";
 $stmt = $conn->prepare($query);
 $stmt->bind_param("ii", $outcome_id, $sector_id);
 $stmt->execute();
 $result = $stmt->get_result();
 
 $table_name = '';
+$is_outcome_draft = 1; // Default to draft
 $data_array = [
     'columns' => [],
     'data' => []
@@ -49,6 +50,7 @@ $data_array = [
 if ($result->num_rows > 0) {
     $row = $result->fetch_assoc();
     $table_name = $row['table_name'];
+    $is_outcome_draft = $row['is_draft']; // Store the current draft status
     $data_array = json_decode($row['data_json'], true);
     if (!is_array($data_array)) {
         $data_array = ['columns' => [], 'data' => []];
@@ -117,7 +119,7 @@ require_once '../../layouts/header.php';
 // Configure modern page header
 $header_config = [
     'title' => 'Edit Outcome',
-    'subtitle' => 'Edit an existing outcome with monthly data',
+    'subtitle' => 'Edit an existing outcome with monthly data' . ($is_outcome_draft ? ' (Draft)' : ' (Submitted)'),
     'variant' => 'white',
     'actions' => [
         [
@@ -125,6 +127,9 @@ $header_config = [
             'text' => 'Back to Submit Outcomes',
             'icon' => 'fa-arrow-left',
             'class' => 'btn-outline-primary'
+        ],
+        [
+            'html' => '<span class="badge ' . ($is_outcome_draft ? 'bg-warning text-dark' : 'bg-success') . '"><i class="fas ' . ($is_outcome_draft ? 'fa-edit' : 'fa-check') . ' me-1"></i>' . ($is_outcome_draft ? 'Draft' : 'Submitted') . '</span>'
         ]
     ]
 ];
