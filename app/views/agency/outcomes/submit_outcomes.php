@@ -199,11 +199,6 @@ if ($result) {
                                             <button class="btn btn-sm btn-outline-primary flex-fill" onclick="editMetricDetail(<?= $detail['id'] ?>)">
                                                 <i class="fas fa-edit me-1"></i> Edit
                                             </button>
-                                            <?php if (isset($_SESSION['role']) && strtolower($_SESSION['role']) === 'focal'): ?>
-                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteMetricDetail(<?= $detail['id'] ?>)">
-                                                <i class="fas fa-trash me-1"></i> Delete
-                                            </button>
-                                            <?php endif; ?>
                                         </div>
                                     </div>
                                 </div>
@@ -229,54 +224,6 @@ if ($result) {
             container.style.display = 'block';
             setTimeout(() => { container.style.display = 'none'; }, 5000);
         }
-    }
-    function deleteMetricDetail(id) {
-        if (!confirm('Are you sure you want to delete this outcome detail? This action cannot be undone.')) return;
-        const deleteBtn = document.querySelector(`button[onclick="deleteMetricDetail(${id})"]`);
-        if (!deleteBtn) { showAlert('Error finding delete button', 'error'); return; }
-        const originalText = deleteBtn.textContent;
-        deleteBtn.textContent = 'Deleting...';
-        deleteBtn.disabled = true;
-        fetch(`delete_metric_detail.php?detail_id=${id}`, {
-            method: 'GET',
-            headers: { 'Accept': 'application/json', 'Cache-Control': 'no-cache' }
-        })
-        .then(async response => {
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                const text = await response.text();
-                throw new TypeError("Expected JSON response but received: " + contentType);
-            }
-            if (!response.ok) {
-                const text = await response.text();
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                // Remove the deleted card from the UI (works for both li and card)
-                let itemToRemove = deleteBtn.closest('.card');
-                if (!itemToRemove) itemToRemove = deleteBtn.closest('li');
-                if (itemToRemove) itemToRemove.remove();
-                showAlert(data.message || 'Metric detail deleted successfully', 'success');
-                // If no cards left, show empty message
-                if (document.querySelectorAll('#metricDetailsContainer .card').length === 0) {
-                    document.getElementById('metricDetailsContainer').innerHTML = '<p>No metric details found.</p>';
-                }
-                const index = metricDetails.findIndex(d => d.id == id);
-                if (index !== -1) metricDetails.splice(index, 1);
-            } else {
-                showAlert(data.message || 'Failed to delete metric detail', 'error');
-            }
-        })
-        .catch(error => {
-            showAlert('Failed to delete metric detail. Please try again.', 'error');
-        })
-        .finally(() => {
-            deleteBtn.textContent = originalText;
-            deleteBtn.disabled = false;
-        });
     }
     function editMetricDetail(id) {
         // Ensure id is compared as number
@@ -307,19 +254,13 @@ if ($result) {
           </div>
           <div class="col-md-5">
             <label class="form-label">Description</label>
-            <input type="text" class="form-control" name="description" value="${item.description ? escapeHtml(item.description) : ''}" />
+            <textarea class="form-control" name="description" rows="2">${item.description ? escapeHtml(item.description) : ''}</textarea>
           </div>
           <div class="col-md-3">
             <label class="form-label">Label <span class="text-muted small">(optional)</span></label>
-            <input type="text" class="form-control" name="label" value="${item.label ? escapeHtml(item.label) : ''}" />
-          </div>
-          <div class="col-md-1">
-            <button type="button" class="btn btn-danger btn-sm remove-item-btn" title="Remove"><i class="fas fa-trash"></i></button>
+            <textarea class="form-control" name="label" rows="2">${item.label ? escapeHtml(item.label) : ''}</textarea>
           </div>
         `;
-        div.querySelector('.remove-item-btn').onclick = function() {
-            div.remove();
-        };
         return div;
     }
     // Ensure DOM is ready before assigning event handlers
@@ -340,8 +281,8 @@ if ($result) {
                 const items = [];
                 rows.forEach(row => {
                     const value = row.querySelector('input[name="value"]').value.trim();
-                    const description = row.querySelector('input[name="description"]').value.trim();
-                    const label = row.querySelector('input[name="label"]').value.trim();
+                    const description = row.querySelector('textarea[name="description"]').value.trim();
+                    const label = row.querySelector('textarea[name="label"]').value.trim();
                     if (value || description || label) {
                         const item = { value, description };
                         if (label) item.label = label;
