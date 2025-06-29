@@ -1,8 +1,8 @@
 <?php
 /**
- * Create Outcome with Flexible Table Structure for Agency
+ * Create Outcome for Agency
  * 
- * Enhanced version that supports flexible row and column configurations
+ * Unified outcome creation with custom table structures
  */
 
 // Include necessary files
@@ -25,7 +25,7 @@ $message_type = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $table_name = trim($_POST['table_name'] ?? '');
-    $structure_type = $_POST['structure_type'] ?? 'monthly';
+    $structure_type = 'custom'; // Always use custom structure
     $row_config_json = $_POST['row_config'] ?? '';
     $column_config_json = $_POST['column_config'] ?? '';
     $data_json = $_POST['data_json'] ?? '';
@@ -133,8 +133,8 @@ require_once '../../layouts/header.php';
 
 // Configure modern page header
 $header_config = [
-    'title' => 'Create Flexible Outcome',
-    'subtitle' => 'Design your own data table structure with custom rows and columns',
+    'title' => 'Create New Outcome',
+    'subtitle' => 'Design custom data tables with flexible rows and columns to track your outcomes',
     'variant' => 'white',
     'actions' => [
         [
@@ -314,15 +314,14 @@ document.addEventListener('DOMContentLoaded', function() {
         // Collect all data
         const tableData = collectTableData(structureData);
         
-        // Update hidden fields
-        document.getElementById('structure_type').value = structureData.structureType;
+        // Update hidden fields (structure type is always custom)
         document.getElementById('row_config').value = JSON.stringify(structureData.rowConfig);
         document.getElementById('column_config').value = JSON.stringify(structureData.columnConfig);
         document.getElementById('data_json').value = JSON.stringify(tableData);
     });
 
     function updateHiddenFields(structureData) {
-        document.getElementById('structure_type').value = structureData.structureType;
+        // Structure type is always custom, no need to update
         document.getElementById('row_config').value = JSON.stringify(structureData.rowConfig);
         document.getElementById('column_config').value = JSON.stringify(structureData.columnConfig);
     }
@@ -412,7 +411,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function collectTableData(structureData) {
         const data = {
-            structure_type: structureData.structureType,
+            structure_type: 'custom', // Always custom structure
             columns: structureData.columns.map(col => col.id),
             data: {}
         };

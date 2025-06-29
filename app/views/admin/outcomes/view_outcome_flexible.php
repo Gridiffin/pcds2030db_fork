@@ -168,7 +168,7 @@ require_once '../../layouts/page_header.php';
                                     <div class="list-group-item d-flex justify-content-between align-items-center">
                                         <div>
                                             <span class="badge bg-secondary me-2"><?= $index + 1 ?></span>
-                                            <strong><?= htmlspecialchars($column['name']) ?></strong>
+                                            <strong><?= htmlspecialchars($column['label']) ?></strong>
                                             <small class="text-muted ms-2">(<?= htmlspecialchars($column['type']) ?>)</small>
                                             <?php if (!empty($column['unit'])): ?>
                                                 <span class="badge bg-light text-dark ms-1"><?= htmlspecialchars($column['unit']) ?></span>
@@ -209,7 +209,7 @@ require_once '../../layouts/page_header.php';
                                         <?php foreach ($column_config as $column): ?>
                                             <td class="text-center">
                                                 <?php
-                                                $value = $outcome_data['data'][$row['label']][$column['name']] ?? '';
+                                                $value = $outcome_data[$row['label']][$column['id']] ?? '';
                                                 if (is_numeric($value)) {
                                                     echo number_format((float)$value, 2);
                                                 } else {
@@ -242,8 +242,8 @@ require_once '../../layouts/page_header.php';
                                                     <?php
                                                     $total = 0;
                                                     foreach ($row_config as $row) {
-                                                        if (isset($outcome_data['data'][$row['label']][$column['name']])) {
-                                                            $total += floatval($outcome_data['data'][$row['label']][$column['name']]);
+                                                        if (isset($outcome_data[$row['label']][$column['id']])) {
+                                                            $total += floatval($outcome_data[$row['label']][$column['id']]);
                                                         }
                                                     }
                                                     echo number_format($total, 2);

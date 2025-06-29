@@ -93,8 +93,8 @@ foreach ($rows as $row_def) {
     $row_data = ['row' => $row_def, 'metrics' => []];
     
     // Add data for each metric in this row
-    if (isset($outcome_data['data'][$row_def['id']])) {
-        $row_data['metrics'] = $outcome_data['data'][$row_def['id']];
+    if (isset($outcome_data[$row_def['id']])) {
+        $row_data['metrics'] = $outcome_data[$row_def['id']];
     }
     
     $table_data[] = $row_data;
@@ -124,13 +124,13 @@ $header_config = [
         [
             'url' => 'edit_outcome.php?outcome_id=' . $outcome_id,
             'text' => 'Edit Outcome',
-            'icon' => 'fa-edit',
+            'icon' => 'fas fa-edit',
             'class' => 'btn-outline-primary'
         ],
         [
             'url' => 'submit_outcomes.php',
             'text' => 'Back to Outcomes',
-            'icon' => 'fa-arrow-left',
+            'icon' => 'fas fa-arrow-left',
             'class' => 'btn-outline-secondary'
         ]
     ]
@@ -210,7 +210,7 @@ require_once '../../layouts/page_header.php';
                             </div>
                             <div class="mb-3">
                                 <strong>Structure Type:</strong> 
-                                <span class="badge bg-secondary"><?= ucfirst($table_structure_type) ?></span>
+                                <span class="badge bg-primary">Custom Table</span>
                             </div>
                             <div class="mb-3">
                                 <strong>Submitted:</strong> <?= $created_at->format('F j, Y g:i A') ?>
@@ -446,13 +446,8 @@ require_once '../../layouts/page_header.php';
                     <i class="fas fa-info-circle me-1"></i> This outcome supports flexible table structures beyond monthly data
                 </small>
                 <div>
-                    <?php if ($is_flexible): ?>
-                        <a href="create_outcome_flexible.php" class="btn btn-primary btn-sm me-2">
-                            <i class="fas fa-plus me-1"></i> Create New Flexible
-                        </a>
-                    <?php endif; ?>
-                    <a href="create_outcome.php" class="btn btn-success btn-sm">
-                        <i class="fas fa-plus me-1"></i> Create New Classic
+                    <a href="create_outcome_flexible.php" class="btn btn-success btn-sm">
+                        <i class="fas fa-plus me-1"></i> Create New Outcome
                     </a>
                 </div>
             </div>

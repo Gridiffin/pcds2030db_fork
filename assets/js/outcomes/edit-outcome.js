@@ -442,7 +442,7 @@ function saveFlexibleOutcome() {
         const outcomeData = {
             data: data,
             columns: currentColumnConfig.map(col => col.id),
-            structure_type: 'flexible'
+            structure_type: 'custom'
         };
         
         // Set the JSON data in the hidden field

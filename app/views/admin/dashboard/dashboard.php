@@ -421,7 +421,7 @@ const hasActivePeriod = <?php echo $hasActivePeriod ? 'true' : 'false'; ?>;
                                         <a href="<?php echo view_url('admin', 'outcomes/manage_outcomes.php'); ?>" class="btn btn-sm btn-outline-primary">
                                             <i class="fas fa-cogs me-1"></i> Manage Outcomes
                                         </a>
-                                        <a href="<?php echo view_url('admin', 'outcomes/create_outcome.php'); ?>" class="btn btn-sm btn-outline-success">
+                                        <a href="<?php echo view_url('admin', 'outcomes/create_outcome_flexible.php'); ?>" class="btn btn-sm btn-outline-success">
                                             <i class="fas fa-plus-circle me-1"></i> Create New
                                         </a>
                                     </div>

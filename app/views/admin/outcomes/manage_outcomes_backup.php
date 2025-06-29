@@ -75,7 +75,7 @@ $header_config = [
 if ($allow_outcome_creation) {
     $header_config['actions'][] = [
         'text' => 'Create New Outcome',
-        'url' => APP_URL . '/app/views/admin/outcomes/create_outcome.php',
+        'url' => APP_URL . '/app/views/admin/outcomes/create_outcome_flexible.php',
         'class' => 'btn-primary',
         'icon' => 'fas fa-plus-circle',
         'id' => 'createMetricBtn'

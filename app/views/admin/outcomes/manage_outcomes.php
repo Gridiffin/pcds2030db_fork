@@ -118,7 +118,7 @@ $header_config = [
 if ($allow_outcome_creation) {
     $header_config['actions'][] = [
         'text' => 'Create New Outcome',
-        'url' => APP_URL . '/app/views/admin/outcomes/create_outcome.php',
+        'url' => APP_URL . '/app/views/admin/outcomes/create_outcome_flexible.php',
         'class' => 'btn-primary',
         'icon' => 'fas fa-plus-circle',
         'id' => 'createMetricBtn'
@@ -483,7 +483,7 @@ require_once '../../layouts/page_header.php';
                 No outcomes have been created in the system yet.
             </p>
             <?php if ($allow_outcome_creation): ?>
-            <a href="<?php echo APP_URL; ?>/app/views/admin/outcomes/create_outcome.php" class="btn btn-primary">
+            <a href="<?php echo APP_URL; ?>/app/views/admin/outcomes/create_outcome_flexible.php" class="btn btn-primary">
                 <i class="fas fa-plus me-1"></i> Create First Outcome
             </a>
             <?php endif; ?>

@@ -23,6 +23,11 @@ function initializeOutcomeChart(data, config = {}) {
 
     const ctx = canvas.getContext('2d');
     
+    // Check if this is cumulative data
+    const isCumulative = data.datasets && data.datasets.some(dataset => 
+        dataset.label && dataset.label.includes('(Cumulative)')
+    );
+    
     // Default chart configuration
     const defaultConfig = {
         type: 'line',
@@ -32,7 +37,17 @@ function initializeOutcomeChart(data, config = {}) {
             maintainAspectRatio: false,
             scales: {
                 y: {
-                    beginAtZero: true
+                    beginAtZero: true,
+                    title: {
+                        display: isCumulative,
+                        text: isCumulative ? 'Cumulative Values' : 'Values'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Categories'
+                    }
                 }
             },
             plugins: {
@@ -41,7 +56,24 @@ function initializeOutcomeChart(data, config = {}) {
                 },
                 title: {
                     display: true,
-                    text: 'Outcome Data Chart'
+                    text: isCumulative ? 'Outcome Data Chart (Cumulative View)' : 'Outcome Data Chart'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.dataset.label || '';
+                            const value = context.parsed.y;
+                            
+                            // Format based on data type - this could be enhanced to detect column type
+                            const formattedValue = typeof value === 'number' ? 
+                                value.toLocaleString(undefined, {
+                                    minimumFractionDigits: 0,
+                                    maximumFractionDigits: 2
+                                }) : value;
+                            
+                            return label + ': ' + formattedValue;
+                        }
+                    }
                 }
             }
         }
@@ -96,17 +128,23 @@ function downloadChart() {
 /**
  * Prepare chart data from table data
  */
-function prepareChartData(tableData, columns, rows) {
+function prepareChartData(tableData, columns, rows, options = {}) {
     const datasets = [];
     const labels = rows.filter(row => row.type === 'data').map(row => row.label);
+    const isCumulative = options.cumulative || false;
 
     columns.forEach((column, index) => {
-        const data = rows.filter(row => row.type === 'data').map(row => {
+        let data = rows.filter(row => row.type === 'data').map(row => {
             return tableData[row.id] ? (tableData[row.id][column.id] || 0) : 0;
         });
 
+        // Apply cumulative transformation if requested
+        if (isCumulative) {
+            data = calculateCumulativeData(data);
+        }
+
         datasets.push({
-            label: column.label,
+            label: column.label + (isCumulative ? ' (Cumulative)' : ''),
             data: data,
             borderColor: `hsl(${index * 60}, 70%, 50%)`,
             backgroundColor: `hsla(${index * 60}, 70%, 50%, 0.1)`,
@@ -120,9 +158,25 @@ function prepareChartData(tableData, columns, rows) {
     };
 }
 
+/**
+ * Calculate cumulative data from regular data array
+ */
+function calculateCumulativeData(data) {
+    const cumulative = [];
+    let runningTotal = 0;
+    
+    data.forEach(value => {
+        runningTotal += parseFloat(value) || 0;
+        cumulative.push(runningTotal);
+    });
+    
+    return cumulative;
+}
+
 // Export functions for global access
 window.initializeOutcomeChart = initializeOutcomeChart;
 window.updateChart = updateChart;
 window.changeChartType = changeChartType;
 window.downloadChart = downloadChart;
 window.prepareChartData = prepareChartData;
+window.calculateCumulativeData = calculateCumulativeData;

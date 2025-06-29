@@ -359,7 +359,7 @@ require_once PROJECT_ROOT_PATH . 'app/views/layouts/page_header.php';
                                         <a href="../outcomes/submit_outcomes.php" class="btn btn-sm btn-outline-success">
                                             <i class="fas fa-upload me-1"></i> Submit Outcomes
                                         </a>
-                                        <a href="../outcomes/create_outcome.php" class="btn btn-sm btn-outline-primary">
+                                        <a href="../outcomes/create_outcome_flexible.php" class="btn btn-sm btn-outline-primary">
                                             <i class="fas fa-plus-circle me-1"></i> Create New
                                         </a>
                                     </div>

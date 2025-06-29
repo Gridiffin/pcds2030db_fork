@@ -93,8 +93,8 @@ foreach ($rows as $row_def) {
     $row_data = ['row' => $row_def, 'metrics' => []];
     
     // Add data for each metric in this row
-    if (isset($outcome_data['data'][$row_def['id']])) {
-        $row_data['metrics'] = $outcome_data['data'][$row_def['id']];
+    if (isset($outcome_data[$row_def['id']])) {
+        $row_data['metrics'] = $outcome_data[$row_def['id']];
     }
     
     $table_data[] = $row_data;
@@ -124,13 +124,13 @@ $header_config = [
         [
             'url' => 'edit_outcome.php?outcome_id=' . $outcome_id,
             'text' => 'Edit Outcome',
-            'icon' => 'fa-edit',
+            'icon' => 'fas fa-edit',
             'class' => 'btn-outline-primary'
         ],
         [
             'url' => 'submit_outcomes.php',
             'text' => 'Back to Outcomes',
-            'icon' => 'fa-arrow-left',
+            'icon' => 'fas fa-arrow-left',
             'class' => 'btn-outline-secondary'
         ]
     ]
@@ -210,7 +210,7 @@ require_once '../../layouts/page_header.php';
                             </div>
                             <div class="mb-3">
                                 <strong>Structure Type:</strong> 
-                                <span class="badge bg-secondary"><?= ucfirst($table_structure_type) ?></span>
+                                <span class="badge bg-primary">Custom Table</span>
                             </div>
                             <div class="mb-3">
                                 <strong>Submitted:</strong> <?= $created_at->format('F j, Y g:i A') ?>
@@ -395,11 +395,19 @@ require_once '../../layouts/page_header.php';
                             </div>
                         </div>
                         <div class="col-md-3 d-flex align-items-center">
-                            <div class="form-check mt-4">
-                                <input class="form-check-input" type="checkbox" id="showTotals" checked>
-                                <label class="form-check-label" for="showTotals">
-                                    Include Totals
-                                </label>
+                            <div class="mt-4">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="showTotals" checked>
+                                    <label class="form-check-label" for="showTotals">
+                                        Include Totals
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="cumulativeView">
+                                    <label class="form-check-label" for="cumulativeView">
+                                        <i class="fas fa-chart-line me-1"></i>Cumulative View
+                                    </label>
+                                </div>
                             </div>
                         </div>
                         <div class="col-md-2 d-flex align-items-center justify-content-end">
@@ -425,7 +433,7 @@ require_once '../../layouts/page_header.php';
                             <h6><i class="fas fa-info-circle me-2"></i>Chart Information</h6>
                             <div class="row">
                                 <div class="col-md-6">
-                                    <small><strong>Structure Type:</strong> <?= ucfirst($table_structure_type) ?></small><br>
+                                    <small><strong>Structure Type:</strong> Custom Table</small><br>
                                     <small><strong>Rows:</strong> <?= count($rows) ?> categories</small>
                                 </div>
                                 <div class="col-md-6">
@@ -446,13 +454,8 @@ require_once '../../layouts/page_header.php';
                     <i class="fas fa-info-circle me-1"></i> This outcome supports flexible table structures beyond monthly data
                 </small>
                 <div>
-                    <?php if ($is_flexible): ?>
-                        <a href="create_outcome_flexible.php" class="btn btn-primary btn-sm me-2">
-                            <i class="fas fa-plus me-1"></i> Create New Flexible
-                        </a>
-                    <?php endif; ?>
-                    <a href="create_outcome.php" class="btn btn-success btn-sm">
-                        <i class="fas fa-plus me-1"></i> Create New Classic
+                    <a href="create_outcome_flexible.php" class="btn btn-success btn-sm">
+                        <i class="fas fa-plus me-1"></i> Create New Outcome
                     </a>
                 </div>
             </div>
@@ -462,66 +465,26 @@ require_once '../../layouts/page_header.php';
 
 <!-- Pass data to JavaScript -->
 <script>
-// Prepare data for chart
-const outcomeData = <?= json_encode($outcome_data) ?>;
-const rowsConfig = <?= json_encode($rows) ?>;
-const columnsConfig = <?= json_encode($columns) ?>;
-const tableData = <?= json_encode($table_data) ?>;
+// Prepare data for chart and make it globally available
+window.tableData = <?= json_encode($outcome_data ?? []) ?>;
+window.tableColumns = <?= json_encode($columns) ?>;
+window.tableRows = <?= json_encode($rows) ?>;
 
-// Initialize chart when chart tab is activated
-document.addEventListener('DOMContentLoaded', function() {
-    const chartTab = document.getElementById('chart-tab');
-    if (chartTab) {
-        chartTab.addEventListener('shown.bs.tab', function() {
-            if (typeof prepareChartData === 'function' && typeof initializeOutcomeChart === 'function') {
-                const chartData = prepareChartData(outcomeData.data || {}, columnsConfig, rowsConfig);
-                initializeOutcomeChart(chartData);
-            }
-        });
-    }
-    
-    // Setup download buttons
-    const downloadChartBtn = document.getElementById('downloadChartImage');
-    if (downloadChartBtn) {
-        downloadChartBtn.addEventListener('click', function() {
-            if (typeof downloadChart === 'function') {
-                downloadChart();
-            }
-        });
-    }
-    
-    const downloadCSVBtn = document.getElementById('downloadDataCSV');
-    if (downloadCSVBtn) {
-        downloadCSVBtn.addEventListener('click', function() {
-            // CSV download functionality
-            downloadDataAsCSV();
-        });
-    }
+// Additional data for context
+const outcomeInfo = {
+    id: <?= $outcome_id ?>,
+    tableName: <?= json_encode($table_name) ?>,
+    isFlexible: <?= json_encode($is_flexible) ?>,
+    structureType: <?= json_encode($table_structure_type) ?>
+};
+
+console.log('Data passed to JavaScript:', {
+    tableData: window.tableData,
+    columns: window.tableColumns,
+    rows: window.tableRows,
+    info: outcomeInfo
 });
-
-// CSV download function
-function downloadDataAsCSV() {
-    const csv = [];
-    const headers = ['Row', ...columnsConfig.map(col => col.label)];
-    csv.push(headers.join(','));
-    
-    tableData.forEach(rowData => {
-        const row = [rowData.row.label];
-        columnsConfig.forEach(col => {
-            const value = rowData.metrics[col.id] || 0;
-            row.push(value);
-        });
-        csv.push(row.join(','));
-    });
-    
-    const blob = new Blob([csv.join('\n')], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'outcome-data.csv';
-    a.click();
-    window.URL.revokeObjectURL(url);
-}
+</script>
 </script>
 
 <?php

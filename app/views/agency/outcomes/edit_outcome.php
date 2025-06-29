@@ -148,8 +148,8 @@ foreach ($rows as $row_def) {
     $row_data = ['row' => $row_def, 'metrics' => []];
     
     // Add data for each metric in this row
-    if (isset($outcome_data['data'][$row_def['id']])) {
-        $row_data['metrics'] = $outcome_data['data'][$row_def['id']];
+    if (isset($outcome_data[$row_def['id']])) {
+        $row_data['metrics'] = $outcome_data[$row_def['id']];
     }
     
     $table_data[] = $row_data;
@@ -185,7 +185,7 @@ $header_config = [
         [
             'url' => 'view_outcome.php?outcome_id=' . $outcome_id,
             'text' => 'Cancel',
-            'icon' => 'fa-times',
+            'icon' => 'fas fa-times',
             'class' => 'btn-outline-secondary'
         ]
     ]
