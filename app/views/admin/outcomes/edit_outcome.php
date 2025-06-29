@@ -61,7 +61,38 @@ if ($outcome_id > 0) {
         $period_id = $outcome_data['period_id'];
         $table_name = $outcome_data['table_name'];
         $sector_name = $outcome_data['sector_name']; // Assuming get_outcome_data returns this
-        $data_json_structure = json_decode($outcome_data['data_json'], true);
+        
+        // Handle flexible structure data properly
+        $raw_data_json = json_decode($outcome_data['data_json'], true) ?? [];
+        $row_config = json_decode($outcome_data['row_config'] ?? '{}', true);
+        $column_config = json_decode($outcome_data['column_config'] ?? '{}', true);
+        
+        // Check if this uses flexible structure
+        $is_flexible = !empty($row_config) && !empty($column_config);
+        
+        if ($is_flexible) {
+            // Convert flexible structure to legacy format for the editor
+            $columns = $column_config['columns'] ?? [];
+            $rows = $row_config['rows'] ?? [];
+            
+            // Create data structure expected by editor
+            $data_json_structure = [
+                'columns' => array_map(function($col) { return $col['label']; }, $columns),
+                'data' => $raw_data_json,
+                'units' => []
+            ];
+            
+            // Extract units from columns
+            foreach ($columns as $col) {
+                if (!empty($col['unit'])) {
+                    $data_json_structure['units'][$col['label']] = $col['unit'];
+                }
+            }
+        } else {
+            // Legacy structure
+            $data_json_structure = $raw_data_json;
+        }
+        
         $pageTitle = 'Edit Outcome: ' . htmlspecialchars($table_name ?: 'ID ' . $outcome_id);
     } else {
         $_SESSION['error_message'] = "Outcome with ID {$outcome_id} not found.";
@@ -129,7 +160,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_outcome_metadata
                 $sector_id = $new_sector_id;
                 $period_id = $new_period_id;
                 $outcome_data = get_outcome_data($outcome_id); // Re-fetch to get fresh data
-                if($outcome_data) $data_json_structure = json_decode($outcome_data['data_json'], true);
+                if($outcome_data) {
+                    // Handle flexible structure data properly (same logic as above)
+                    $raw_data_json = json_decode($outcome_data['data_json'], true) ?? [];
+                    $row_config = json_decode($outcome_data['row_config'] ?? '{}', true);
+                    $column_config = json_decode($outcome_data['column_config'] ?? '{}', true);
+                    
+                    // Check if this uses flexible structure
+                    $is_flexible = !empty($row_config) && !empty($column_config);
+                    
+                    if ($is_flexible) {
+                        // Convert flexible structure to legacy format for the editor
+                        $columns = $column_config['columns'] ?? [];
+                        
+                        // Create data structure expected by editor
+                        $data_json_structure = [
+                            'columns' => array_map(function($col) { return $col['label']; }, $columns),
+                            'data' => $raw_data_json,
+                            'units' => []
+                        ];
+                        
+                        // Extract units from columns
+                        foreach ($columns as $col) {
+                            if (!empty($col['unit'])) {
+                                $data_json_structure['units'][$col['label']] = $col['unit'];
+                            }
+                        }
+                    } else {
+                        // Legacy structure
+                        $data_json_structure = $raw_data_json;
+                    }
+                }
             } else {
                 $message = "Error updating outcome metadata: " . $stmt->error;
                 $message_type = "danger";

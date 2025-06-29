@@ -50,39 +50,56 @@ $reporting_period_name = "Q{$quarter} {$year}"; // Construct proper period name
 $status = $outcome_details['status'] ?? 'submitted'; // Default to submitted if not present
 $overall_rating = $outcome_details['overall_rating'] ?? null;
 
-// Check if this is a flexible table structure and redirect if needed
-$table_structure_type = $outcome_details['table_structure_type'] ?? 'classic';
-if ($table_structure_type === 'flexible') {
-    // Create an admin flexible viewer or redirect to a flexible admin view
-    // For now, we'll create a flexible admin outcome view
-    header('Location: view_outcome_flexible.php?metric_id=' . $metric_id);
-    exit;
-}
-
 $created_at = new DateTime($outcome_details['created_at']);
 $updated_at = new DateTime($outcome_details['updated_at']);
 
-// Use parsed data if available, otherwise parse manually
-$outcome_metrics_data = $outcome_details['parsed_data'] ?? [];
-if (empty($outcome_metrics_data) && !empty($outcome_details['data_json'])) {
-    $outcome_metrics_data = json_decode($outcome_details['data_json'], true) ?? [];
+// Get flexible structure configuration (same logic as agency side)
+$table_structure_type = $outcome_details['table_structure_type'] ?? 'monthly';
+$row_config = json_decode($outcome_details['row_config'] ?? '{}', true);
+$column_config = json_decode($outcome_details['column_config'] ?? '{}', true);
+
+// Parse the outcome data
+$outcome_data = json_decode($outcome_details['data_json'] ?? '{}', true) ?? [];
+
+// Determine if this is a flexible structure or legacy
+$is_flexible = !empty($row_config) && !empty($column_config);
+
+if ($is_flexible) {
+    // New flexible structure
+    $rows = $row_config['rows'] ?? [];
+    $columns = $column_config['columns'] ?? [];
+} else {
+    // Legacy structure - convert to flexible format using parsed data
+    $outcome_metrics_data = $outcome_details['parsed_data'] ?? [];
+    if (empty($outcome_metrics_data) && !empty($outcome_details['data_json'])) {
+        $outcome_metrics_data = json_decode($outcome_details['data_json'], true) ?? [];
+    }
+    
+    $metric_names = $outcome_metrics_data['columns'] ?? [];
+    
+    // Create default monthly rows
+    $month_names = ['January', 'February', 'March', 'April', 'May', 'June', 
+                    'July', 'August', 'September', 'October', 'November', 'December'];
+    $rows = array_map(function($month) {
+        return ['id' => $month, 'label' => $month, 'type' => 'data'];
+    }, $month_names);
+    
+    $columns = array_map(function($col) {
+        return ['id' => $col, 'label' => $col, 'type' => 'number', 'unit' => ''];
+    }, $metric_names);
 }
 
-// Get column names (metric names within the outcome)
-$metric_names = $outcome_metrics_data['columns'] ?? [];
-$metric_units = $outcome_metrics_data['units'] ?? [];
-
 // Organize data for display
-$month_names = ['January', 'February', 'March', 'April', 'May', 'June', 
-                'July', 'August', 'September', 'October', 'November', 'December'];
 $table_data = [];
-
-foreach ($month_names as $month_name) {
-    $month_data_row = ['month_name' => $month_name, 'metrics' => []];
-    if (isset($outcome_metrics_data['data'][$month_name])) {
-        $month_data_row['metrics'] = $outcome_metrics_data['data'][$month_name];
+foreach ($rows as $row_def) {
+    $row_data = ['row' => $row_def, 'metrics' => []];
+    
+    // Add data for each metric in this row
+    if (isset($outcome_data[$row_def['id']])) {
+        $row_data['metrics'] = $outcome_data[$row_def['id']];
     }
-    $table_data[] = $month_data_row;
+    
+    $table_data[] = $row_data;
 }
 
 // Add CSS references (if any specific to outcome viewing)
@@ -178,31 +195,31 @@ require_once '../../layouts/page_header.php';
                         </div>
                     </div>
 
-                    <?php if (!empty($metric_names)): ?>
+                    <?php if (!empty($columns)): ?>
                     <div class="table-responsive">
                         <table class="table table-bordered table-hover data-table">
                             <thead class="table-light">
                                 <tr>
                                     <th style="width: 150px;">Month</th>
-                                    <?php foreach ($metric_names as $name): ?>
+                                    <?php foreach ($columns as $column): ?>
                                         <th>
-                                            <?= htmlspecialchars($name) ?>
-                                            <?php if (isset($metric_units[$name]) && !empty($metric_units[$name])): ?>
-                                                <span class="text-muted small">(<?= htmlspecialchars($metric_units[$name]) ?>)</span>
+                                            <?= htmlspecialchars($column['label']) ?>
+                                            <?php if (!empty($column['unit'])): ?>
+                                                <span class="text-muted small">(<?= htmlspecialchars($column['unit']) ?>)</span>
                                             <?php endif; ?>
                                         </th>
                                     <?php endforeach; ?>
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($table_data as $month_data_row): ?>
+                                <?php foreach ($table_data as $row_data): ?>
                                     <tr>
                                         <td>
-                                            <span class="month-badge"><?= $month_data_row['month_name'] ?></span>
+                                            <span class="month-badge"><?= htmlspecialchars($row_data['row']['label']) ?></span>
                                         </td>
-                                        <?php foreach ($metric_names as $name): ?>
+                                        <?php foreach ($columns as $col_idx => $column): ?>
                                             <td class="text-end">
-                                                <?= isset($month_data_row['metrics'][$name]) && $month_data_row['metrics'][$name] !== '' ? number_format((float)$month_data_row['metrics'][$name], 2) : '—' ?>
+                                                <?= isset($row_data['metrics'][$col_idx]) && $row_data['metrics'][$col_idx] !== null && $row_data['metrics'][$col_idx] !== '' ? number_format((float)$row_data['metrics'][$col_idx], 2) : '—' ?>
                                             </td>
                                         <?php endforeach; ?>
                                     </tr>
@@ -211,11 +228,11 @@ require_once '../../layouts/page_header.php';
                                 <!-- Optional: Total Row (calculate if needed) -->
                                 <tr class="table-light fw-bold">
                                     <td><span class="total-badge">TOTAL</span></td>
-                                    <?php foreach ($metric_names as $name): 
+                                    <?php foreach ($columns as $col_idx => $column): 
                                         $total = 0;
-                                        foreach ($table_data as $month_data_row) {
-                                            if (isset($month_data_row['metrics'][$name]) && is_numeric($month_data_row['metrics'][$name])) {
-                                                $total += (float)$month_data_row['metrics'][$name];
+                                        foreach ($table_data as $row_data) {
+                                            if (isset($row_data['metrics'][$col_idx]) && is_numeric($row_data['metrics'][$col_idx])) {
+                                                $total += (float)$row_data['metrics'][$col_idx];
                                             }
                                         }
                                     ?>
@@ -282,18 +299,21 @@ require_once '../../layouts/page_header.php';
 <!-- Initialize the enhanced chart with classic structure data -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Prepare structure data for chart (classic monthly format)
+        // Prepare structure data for chart (flexible format)
         const structure = {
-            rows: <?= json_encode(array_map(function($month) { return ['label' => $month, 'type' => 'text']; }, $month_names)) ?>,
-            columns: <?= json_encode(array_map(function($col) { return ['name' => $col, 'type' => 'number']; }, $metric_names)) ?>
+            rows: <?= json_encode($rows) ?>,
+            columns: <?= json_encode($columns) ?>
         };
         
-        // Initialize enhanced chart with classic data
+        // Prepare data for chart (flexible format)
+        const chartData = <?= json_encode($outcome_data) ?>;
+        
+        // Initialize enhanced chart with flexible data
         initEnhancedOutcomesChart(
-            <?= json_encode($outcome_metrics_data) ?>, 
+            chartData, 
             structure,
             "<?= addslashes($table_name) ?>",
-            "classic"
+            "<?= $is_flexible ? 'flexible' : 'classic' ?>"
         );
     });
 </script>
