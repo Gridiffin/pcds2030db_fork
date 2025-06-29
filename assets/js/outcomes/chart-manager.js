@@ -10,23 +10,29 @@ let outcomeChart = null;
  * Initialize chart with data
  */
 function initializeOutcomeChart(data, config = {}) {
+    console.log('initializeOutcomeChart called with:', { data, config });
+    
+    // Check if Chart.js is available
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js library is not loaded');
+        return;
+    }
+    
     const canvas = document.getElementById('metricChart');
     if (!canvas) {
         console.warn('Chart canvas not found');
         return;
     }
 
+    console.log('Chart canvas found:', canvas);
+
     // Destroy existing chart
     if (outcomeChart) {
+        console.log('Destroying existing chart');
         outcomeChart.destroy();
     }
 
     const ctx = canvas.getContext('2d');
-    
-    // Check if this is cumulative data
-    const isCumulative = data.datasets && data.datasets.some(dataset => 
-        dataset.label && dataset.label.includes('(Cumulative)')
-    );
     
     // Default chart configuration
     const defaultConfig = {
@@ -39,8 +45,8 @@ function initializeOutcomeChart(data, config = {}) {
                 y: {
                     beginAtZero: true,
                     title: {
-                        display: isCumulative,
-                        text: isCumulative ? 'Cumulative Values' : 'Values'
+                        display: true,
+                        text: 'Values'
                     }
                 },
                 x: {
@@ -56,7 +62,7 @@ function initializeOutcomeChart(data, config = {}) {
                 },
                 title: {
                     display: true,
-                    text: isCumulative ? 'Outcome Data Chart (Cumulative View)' : 'Outcome Data Chart'
+                    text: 'Outcome Data Chart'
                 },
                 tooltip: {
                     callbacks: {
@@ -81,15 +87,20 @@ function initializeOutcomeChart(data, config = {}) {
 
     // Merge with provided config
     const chartConfig = { ...defaultConfig, ...config };
+    
+    console.log('Final chart config:', chartConfig);
 
     try {
-        if (typeof Chart !== 'undefined') {
-            outcomeChart = new Chart(ctx, chartConfig);
-        } else {
-            console.warn('Chart.js library not loaded');
-        }
+        console.log('Creating Chart.js chart with Chart version:', Chart.version || 'unknown');
+        outcomeChart = new Chart(ctx, chartConfig);
+        console.log('Chart created successfully:', outcomeChart);
+        
+        // Force update to ensure the chart renders
+        outcomeChart.update('active');
+        
     } catch (error) {
         console.error('Error creating chart:', error);
+        console.error('Error stack:', error.stack);
     }
 }
 
@@ -129,22 +140,34 @@ function downloadChart() {
  * Prepare chart data from table data
  */
 function prepareChartData(tableData, columns, rows, options = {}) {
+    console.log('prepareChartData called with:', { tableData, columns, rows, options });
+    
     const datasets = [];
     const labels = rows.filter(row => row.type === 'data').map(row => row.label);
-    const isCumulative = options.cumulative || false;
+
+    console.log('Chart labels:', labels);
 
     columns.forEach((column, index) => {
         let data = rows.filter(row => row.type === 'data').map(row => {
             return tableData[row.id] ? (tableData[row.id][column.id] || 0) : 0;
         });
 
-        // Apply cumulative transformation if requested
-        if (isCumulative) {
-            data = calculateCumulativeData(data);
+        // Apply cumulative transformation if enabled
+        if (options.cumulativeView) {
+            data = data.reduce((acc, value, index) => {
+                if (index === 0) {
+                    acc.push(value);
+                } else {
+                    acc.push(acc[index - 1] + value);
+                }
+                return acc;
+            }, []);
         }
 
+        console.log(`Data for column ${column.label} (cumulative: ${options.cumulativeView}):`, data);
+
         datasets.push({
-            label: column.label + (isCumulative ? ' (Cumulative)' : ''),
+            label: column.label + (options.cumulativeView ? ' (Cumulative)' : ''),
             data: data,
             borderColor: `hsl(${index * 60}, 70%, 50%)`,
             backgroundColor: `hsla(${index * 60}, 70%, 50%, 0.1)`,
@@ -152,25 +175,13 @@ function prepareChartData(tableData, columns, rows, options = {}) {
         });
     });
 
-    return {
+    const result = {
         labels: labels,
         datasets: datasets
     };
-}
-
-/**
- * Calculate cumulative data from regular data array
- */
-function calculateCumulativeData(data) {
-    const cumulative = [];
-    let runningTotal = 0;
     
-    data.forEach(value => {
-        runningTotal += parseFloat(value) || 0;
-        cumulative.push(runningTotal);
-    });
-    
-    return cumulative;
+    console.log('prepareChartData result:', result);
+    return result;
 }
 
 // Export functions for global access
@@ -179,4 +190,3 @@ window.updateChart = updateChart;
 window.changeChartType = changeChartType;
 window.downloadChart = downloadChart;
 window.prepareChartData = prepareChartData;
-window.calculateCumulativeData = calculateCumulativeData;

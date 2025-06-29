@@ -108,8 +108,9 @@ $additionalStyles = [
 
 // Add JS references for view mode
 $additionalScripts = [
-    APP_URL . '/assets/js/outcomes/view-outcome.js',
-    APP_URL . '/assets/js/outcomes/chart-manager.js'
+    'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js',
+    APP_URL . '/assets/js/outcomes/chart-manager.js',  // Load chart-manager.js first
+    APP_URL . '/assets/js/outcomes/view-outcome.js'    // Then view-outcome.js
 ];
 
 // Include header
@@ -397,15 +398,9 @@ require_once '../../layouts/page_header.php';
                         <div class="col-md-3 d-flex align-items-center">
                             <div class="mt-4">
                                 <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" id="showTotals" checked>
-                                    <label class="form-check-label" for="showTotals">
-                                        Include Totals
-                                    </label>
-                                </div>
-                                <div class="form-check">
                                     <input class="form-check-input" type="checkbox" id="cumulativeView">
                                     <label class="form-check-label" for="cumulativeView">
-                                        <i class="fas fa-chart-line me-1"></i>Cumulative View
+                                        Cumulative View
                                     </label>
                                 </div>
                             </div>
@@ -465,8 +460,35 @@ require_once '../../layouts/page_header.php';
 
 <!-- Pass data to JavaScript -->
 <script>
+// Prepare data for chart in the format expected by prepareChartData function
+<?php
+// Transform data to the format expected by chart functions
+$chart_ready_data = [];
+if ($is_flexible && !empty($rows) && !empty($columns)) {
+    // For flexible outcomes, map data correctly
+    foreach ($rows as $row) {
+        if ($row['type'] === 'data') {
+            $chart_ready_data[$row['id']] = [];
+            foreach ($columns as $col_index => $column) {
+                // Get value from outcome_data using row id and column index
+                $value = 0;
+                if (isset($outcome_data[$row['id']]) && isset($outcome_data[$row['id']][$col_index])) {
+                    $value = $outcome_data[$row['id']][$col_index];
+                } elseif (isset($outcome_data[$row['id']]) && isset($outcome_data[$row['id']][$column['id']])) {
+                    $value = $outcome_data[$row['id']][$column['id']];
+                }
+                $chart_ready_data[$row['id']][$column['id']] = $value;
+            }
+        }
+    }
+} else {
+    // For legacy format, create compatible structure
+    $chart_ready_data = $outcome_data ?? [];
+}
+?>
+
 // Prepare data for chart and make it globally available
-window.tableData = <?= json_encode($outcome_data ?? []) ?>;
+window.tableData = <?= json_encode($chart_ready_data) ?>;
 window.tableColumns = <?= json_encode($columns) ?>;
 window.tableRows = <?= json_encode($rows) ?>;
 
@@ -484,7 +506,24 @@ console.log('Data passed to JavaScript:', {
     rows: window.tableRows,
     info: outcomeInfo
 });
-</script>
+
+// Initialize the view outcome functionality after Chart.js is loaded
+function waitForChart() {
+    if (typeof Chart !== 'undefined') {
+        console.log('Chart.js loaded, initializing view outcome');
+        if (typeof initializeViewOutcome === 'function') {
+            initializeViewOutcome();
+        } else {
+            console.warn('initializeViewOutcome function not found');
+        }
+    } else {
+        console.log('Waiting for Chart.js to load...');
+        setTimeout(waitForChart, 100);
+    }
+}
+
+// Start waiting for Chart.js after DOM is ready
+document.addEventListener('DOMContentLoaded', waitForChart);
 </script>
 
 <?php
