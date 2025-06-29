@@ -18,6 +18,10 @@ if (!is_admin()) {
     exit;
 }
 
+// Get outcome creation setting
+require_once ROOT_PATH . 'app/lib/admins/settings.php';
+$allow_outcome_creation = get_outcome_creation_setting();
+
 // Set page title
 $pageTitle = 'Manage Outcomes';
 
@@ -32,42 +36,21 @@ if (!is_array($outcomes)) {
 // Get current reporting period for display purposes
 $current_period = get_current_reporting_period();
 
-// Separate outcomes into submitted and drafts
-$submitted_outcomes = array_filter($outcomes, function($outcome) {
-    return !isset($outcome['is_draft']) || $outcome['is_draft'] != 1;
-});
-
-$draft_outcomes = array_filter($outcomes, function($outcome) {
-    return isset($outcome['is_draft']) && $outcome['is_draft'] == 1;
-});
-
-// Separate important outcomes from both submitted and draft outcomes
-$important_submitted_outcomes = array_filter($submitted_outcomes, function($outcome) {
+// Separate important outcomes from all outcomes (like agency side)
+$important_outcomes = array_filter($outcomes, function($outcome) {
     return isset($outcome['is_important']) && $outcome['is_important'] == 1;
 });
 
-$important_draft_outcomes = array_filter($draft_outcomes, function($outcome) {
-    return isset($outcome['is_important']) && $outcome['is_important'] == 1;
-});
-
-// Remove important outcomes from regular submitted and draft lists
-$submitted_outcomes = array_filter($submitted_outcomes, function($outcome) {
-    return !isset($outcome['is_important']) || $outcome['is_important'] != 1;
-});
-
-$draft_outcomes = array_filter($draft_outcomes, function($outcome) {
+// Get regular (non-important) outcomes
+$regular_outcomes = array_filter($outcomes, function($outcome) {
     return !isset($outcome['is_important']) || $outcome['is_important'] != 1;
 });
 
 // Include header
 require_once '../../layouts/header.php';
 
-// Get outcome creation setting
-require_once ROOT_PATH . 'app/lib/admins/settings.php';
-$allow_outcome_creation = get_outcome_creation_setting();
-
 // Fetch existing outcome details for display (similar to agency side)
-$result = $conn->query("SELECT detail_id, detail_name, detail_json FROM outcomes_details WHERE is_draft = 0 ORDER BY created_at DESC");
+$result = $conn->query("SELECT detail_id, detail_name, detail_json FROM outcomes_details ORDER BY created_at DESC");
 $detailsArray = [];
 if ($result) {
     while ($row = $result->fetch_assoc()) {
@@ -143,9 +126,6 @@ if ($current_period) {
 require_once '../../layouts/page_header.php';
 ?>
 
-<!-- Ensure Bootstrap JS is included -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
 <div class="container-fluid px-4 py-4">
     <?php if (!$allow_outcome_creation): ?>
     <!-- Outcome Creation Notice -->
@@ -167,7 +147,7 @@ require_once '../../layouts/page_header.php';
                 <i class="fas fa-star me-2"></i>Important Outcomes
             </h5>
             <span class="badge bg-dark text-warning">
-                <?= count($detailsArray) + count($important_submitted_outcomes) + count($important_draft_outcomes) ?> Items
+                <?= count($detailsArray) + count($important_outcomes) ?> Items
             </span>
         </div>
         <div class="card-body">
@@ -215,100 +195,50 @@ require_once '../../layouts/page_header.php';
             <?php endif; ?>
 
             <!-- Important Outcomes from Database -->
-            <?php if (!empty($important_submitted_outcomes) || !empty($important_draft_outcomes)): ?>
-                
-                <?php if (!empty($important_submitted_outcomes)): ?>
-                    <div class="table-responsive mb-4">
-                        <table class="table table-hover border">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Outcome ID</th>
-                                    <th>Sector</th>
-                                    <th>Table Name</th>
-                                    <th>Reporting Period</th>
-                                    <th>Created</th>
-                                    <th>Last Updated</th>
-                                    <th class="text-center">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($important_submitted_outcomes as $outcome): ?>
-                                <tr>
-                                    <td><span class="badge bg-primary"><?= htmlspecialchars($outcome['metric_id']) ?></span></td>
-                                    <td><?= htmlspecialchars($outcome['sector_name'] ?? 'Unknown') ?></td>
-                                    <td><?= htmlspecialchars($outcome['table_name']) ?></td>
-                                    <td>
-                                        <?php if ($outcome['year'] && $outcome['quarter']): ?>
-                                            <span class="badge bg-success">Q<?= $outcome['quarter'] ?>-<?= $outcome['year'] ?></span>
-                                        <?php else: ?>
-                                            <span class="badge bg-secondary">Not set</span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td class="text-muted small"><?= date('M j, Y', strtotime($outcome['created_at'])) ?></td>
-                                    <td class="text-muted small"><?= date('M j, Y', strtotime($outcome['updated_at'])) ?></td>
-                                    <td class="text-center">
-                                        <div class="btn-group" role="group">
-                                            <a href="<?= APP_URL ?>/app/views/admin/outcomes/edit_outcome.php?metric_id=<?= $outcome['metric_id'] ?>" 
-                                               class="btn btn-sm btn-outline-primary" title="Edit">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                <?php endif; ?>
-
-                <?php if (!empty($important_draft_outcomes)): ?>
-                    <h6 class="text-secondary mb-3 ms-3"><i class="fas fa-edit me-1"></i> Draft Important Outcomes</h6>
-                    <div class="table-responsive mb-4">
-                        <table class="table table-hover border">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Outcome ID</th>
-                                    <th>Sector</th>
-                                    <th>Table Name</th>
-                                    <th>Reporting Period</th>
-                                    <th>Created</th>
-                                    <th>Last Updated</th>
-                                    <th class="text-center">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($important_draft_outcomes as $outcome): ?>
-                                <tr>
-                                    <td><span class="badge bg-secondary"><?= htmlspecialchars($outcome['metric_id']) ?></span></td>
-                                    <td><?= htmlspecialchars($outcome['sector_name'] ?? 'Unknown') ?></td>
-                                    <td><?= htmlspecialchars($outcome['table_name']) ?></td>
-                                    <td>
-                                        <?php if ($outcome['year'] && $outcome['quarter']): ?>
-                                            <span class="badge bg-success">Q<?= $outcome['quarter'] ?>-<?= $outcome['year'] ?></span>
-                                        <?php else: ?>
-                                            <span class="badge bg-secondary">Not set</span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td class="text-muted small"><?= date('M j, Y', strtotime($outcome['created_at'])) ?></td>
-                                    <td class="text-muted small"><?= date('M j, Y', strtotime($outcome['updated_at'])) ?></td>
-                                    <td class="text-center">
-                                        <div class="btn-group" role="group">
-                                            <a href="<?= APP_URL ?>/app/views/admin/outcomes/edit_outcome.php?metric_id=<?= $outcome['metric_id'] ?>" 
-                                               class="btn btn-sm btn-outline-primary" title="Edit">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                <?php endif; ?>
+            <?php if (!empty($important_outcomes)): ?>
+                <div class="table-responsive mb-4">
+                    <table class="table table-hover border">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Outcome ID</th>
+                                <th>Table Name</th>
+                                <th>Created</th>
+                                <th>Last Updated</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($important_outcomes as $outcome): ?>
+                            <tr>
+                                <td><span class="badge bg-primary"><?= htmlspecialchars($outcome['metric_id']) ?></span></td>
+                                <td><?= htmlspecialchars($outcome['table_name']) ?></td>
+                                <td class="text-muted small"><?= date('M j, Y', strtotime($outcome['created_at'])) ?></td>
+                                <td class="text-muted small"><?= date('M j, Y', strtotime($outcome['updated_at'])) ?></td>
+                                <td class="text-center">
+                                    <div class="btn-group" role="group">
+                                        <a href="<?= APP_URL ?>/app/views/admin/outcomes/view_outcome.php?metric_id=<?= $outcome['metric_id'] ?>" 
+                                           class="btn btn-sm btn-outline-primary" title="View">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="<?= APP_URL ?>/app/views/admin/outcomes/edit_outcome.php?metric_id=<?= $outcome['metric_id'] ?>" 
+                                           class="btn btn-sm btn-outline-secondary" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="<?= APP_URL ?>/app/views/admin/outcomes/outcome_history.php?metric_id=<?= $outcome['metric_id'] ?>" 
+                                           class="btn btn-sm btn-outline-info" title="History">
+                                            <i class="fas fa-history"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
             <?php endif; ?>
 
             <!-- Empty State -->
-            <?php if (empty($detailsArray) && empty($important_submitted_outcomes) && empty($important_draft_outcomes)): ?>
+            <?php if (empty($detailsArray) && empty($important_outcomes)): ?>
                 <div class="text-center py-4">
                     <i class="fas fa-star fa-3x text-muted mb-3"></i>
                     <p class="text-muted">No important outcomes found.</p>
@@ -321,14 +251,14 @@ require_once '../../layouts/page_header.php';
         </div>
     </div>
 
-    <!-- Submitted Outcomes Section -->
-    <?php if (!empty($submitted_outcomes)): ?>
+    <!-- Other Outcomes Section -->
+    <?php if (!empty($regular_outcomes)): ?>
     <div class="card shadow-sm mb-4">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h5 class="card-title m-0">
-                <i class="fas fa-chart-bar me-2"></i>Submitted Outcomes
+                <i class="fas fa-chart-bar me-2"></i>Other Outcomes
             </h5>
-            <span class="badge bg-light text-primary"><?= count($submitted_outcomes) ?> Outcomes</span>
+            <span class="badge bg-light text-primary"><?= count($regular_outcomes) ?> Outcomes</span>
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -336,29 +266,17 @@ require_once '../../layouts/page_header.php';
                     <thead class="table-light">
                         <tr>
                             <th>Outcome ID</th>
-                            <th>Sector</th>
                             <th>Table Name</th>
-                            <th>Reporting Period</th>
                             <th>Created</th>
                             <th>Last Updated</th>
                             <th class="text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($submitted_outcomes as $outcome): ?>
+                        <?php foreach ($regular_outcomes as $outcome): ?>
                             <tr data-metric-id="<?php echo $outcome['metric_id']; ?>">
                                 <td><?php echo $outcome['metric_id']; ?></td>
-                                <td><?php echo htmlspecialchars($outcome['sector_name'] ?? 'No Sector'); ?></td>
                                 <td><?php echo htmlspecialchars($outcome['table_name']); ?></td>
-                                <td>
-                                    <?php if (isset($outcome['quarter']) && isset($outcome['year'])): ?>
-                                        <span class="status-indicator <?= ($current_period && $outcome['period_id'] == $current_period['period_id']) ? 'status-success' : 'status-info' ?>">
-                                            Q<?= $outcome['quarter'] ?>-<?= $outcome['year'] ?>
-                                        </span>
-                                    <?php else: ?>
-                                        <span class="status-indicator status-warning">Not Specified</span>
-                                    <?php endif; ?>
-                                </td>
                                 <td><?php echo date('M j, Y', strtotime($outcome['created_at'])); ?></td>
                                 <td><?php echo date('M j, Y', strtotime($outcome['updated_at'])); ?></td>
                                 <td class="text-center">
@@ -379,90 +297,6 @@ require_once '../../layouts/page_header.php';
                                             <i class="fas fa-history"></i>
                                         </a>
                                     </div>
-                                    <div class="mt-1 d-grid status-action-container" data-metric-id="<?php echo $outcome['metric_id']; ?>">
-                                        <button type="button" 
-                                                class="btn btn-outline-warning btn-sm w-100 unsubmit-outcome" 
-                                                data-metric-id="<?php echo $outcome['metric_id']; ?>"
-                                                title="Unsubmit Outcome">
-                                            <i class="fas fa-undo"></i> Unsubmit
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-    <?php endif; ?>
-
-    <!-- Draft Outcomes Section -->
-    <?php if (!empty($draft_outcomes)): ?>
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
-            <h5 class="card-title m-0">
-                <i class="fas fa-edit me-2"></i>Draft Outcomes
-            </h5>
-            <span class="badge bg-light text-secondary"><?= count($draft_outcomes) ?> Drafts</span>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover border">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Outcome ID</th>
-                            <th>Sector</th>
-                            <th>Table Name</th>
-                            <th>Reporting Period</th>
-                            <th>Created</th>
-                            <th>Last Updated</th>
-                            <th class="text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($draft_outcomes as $draft): ?>
-                            <tr data-metric-id="<?php echo $draft['metric_id']; ?>">
-                                <td><?php echo $draft['metric_id']; ?></td>
-                                <td><?php echo htmlspecialchars($draft['sector_name'] ?? 'No Sector'); ?></td>
-                                <td><?php echo htmlspecialchars($draft['table_name']); ?></td>
-                                <td>
-                                    <?php if (isset($draft['quarter']) && isset($draft['year'])): ?>
-                                        <span class="status-indicator status-info">
-                                            Q<?= $draft['quarter'] ?>-<?= $draft['year'] ?>
-                                        </span>
-                                    <?php else: ?>
-                                        <span class="status-indicator status-warning">Not Specified</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td><?php echo date('M j, Y', strtotime($draft['created_at'])); ?></td>
-                                <td><?php echo date('M j, Y', strtotime($draft['updated_at'])); ?></td>
-                                <td class="text-center">
-                                    <div class="btn-group btn-group-sm" role="group" aria-label="Primary outcome actions">
-                                        <a href="<?php echo APP_URL; ?>/app/views/admin/outcomes/view_outcome.php?metric_id=<?php echo $draft['metric_id']; ?>" 
-                                           class="btn btn-outline-primary" 
-                                           title="View Outcome Details">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                        <a href="<?php echo APP_URL; ?>/app/views/admin/outcomes/edit_outcome.php?metric_id=<?php echo $draft['metric_id']; ?>" 
-                                           class="btn btn-outline-secondary" 
-                                           title="Edit Outcome">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <a href="<?php echo APP_URL; ?>/app/views/admin/outcomes/outcome_history.php?metric_id=<?php echo $draft['metric_id']; ?>" 
-                                           class="btn btn-outline-info" 
-                                           title="View Change History">
-                                            <i class="fas fa-history"></i>
-                                        </a>
-                                    </div>
-                                    <div class="mt-1 d-grid status-action-container" data-metric-id="<?php echo $draft['metric_id']; ?>">
-                                        <button type="button" 
-                                                class="btn btn-outline-success btn-sm w-100 submit-outcome" 
-                                                data-metric-id="<?php echo $draft['metric_id']; ?>"
-                                                title="Submit Outcome">
-                                            <i class="fas fa-redo"></i> Submit
-                                        </button>
-                                    </div>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -474,7 +308,7 @@ require_once '../../layouts/page_header.php';
     <?php endif; ?>
 
     <!-- No Outcomes Message -->
-    <?php if (empty($submitted_outcomes) && empty($draft_outcomes)): ?>
+    <?php if (empty($regular_outcomes)): ?>
     <div class="card shadow-sm mb-4">
         <div class="card-body text-center py-5">
             <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
@@ -510,9 +344,9 @@ require_once '../../layouts/page_header.php';
 
                 <div class="col-md-3">
                     <div class="h-100 p-3 border rounded bg-light-subtle">
-                        <h6><i class="fas fa-toggle-on me-2 text-success"></i>Submit/Unsubmit Control</h6>
-                        <p class="small mb-1">You can submit draft outcomes or unsubmit already submitted outcomes.</p>
-                        <div class="alert alert-light py-2 px-3 mb-0 small">Use this to help agencies manage their submission workflow.</div>
+                        <h6><i class="fas fa-edit me-2 text-success"></i>Direct Editing</h6>
+                        <p class="small mb-1">You can directly edit outcome data and structure for any agency.</p>
+                        <div class="alert alert-light py-2 px-3 mb-0 small">Use this to help agencies correct or update their outcomes.</div>
                     </div>
                 </div>
 
@@ -563,97 +397,6 @@ require_once '../../layouts/page_header.php';
         const refreshBtn = document.getElementById('refreshPage');
         if (refreshBtn) {
             refreshBtn.addEventListener('click', () => window.location.reload());
-        }
-
-        const outcomesTableBody = document.querySelectorAll('tbody');
-
-        outcomesTableBody.forEach(tbody => {
-            tbody.addEventListener('click', function(event) {
-                const targetButton = event.target.closest('.submit-outcome, .unsubmit-outcome');
-                if (!targetButton) {
-                    return; // Click was not on a relevant button
-                }
-                
-                event.preventDefault();
-                handleOutcomeAction(targetButton);
-            });
-        });
-
-        function updateButtonAppearance(button, is_draft) {
-            button.disabled = false; // Re-enable button
-            if (is_draft == 1) { // Now a draft, show "Submit"
-                button.classList.remove('unsubmit-outcome', 'btn-outline-warning');
-                button.classList.add('submit-outcome', 'btn-outline-success');
-                button.innerHTML = '<i class="fas fa-redo"></i> Submit';
-                button.title = 'Submit Outcome';
-            } else { // Now submitted, show "Unsubmit"
-                button.classList.remove('submit-outcome', 'btn-outline-success');
-                button.classList.add('unsubmit-outcome', 'btn-outline-warning');
-                button.innerHTML = '<i class="fas fa-undo"></i> Unsubmit';
-                button.title = 'Unsubmit Outcome';
-            }
-        }
-
-        async function handleOutcomeAction(button) {
-            const metricId = button.dataset.metricId;
-            const action = button.classList.contains('submit-outcome') ? 'submit' : 'unsubmit';
-            const originalButtonText = button.innerHTML;
-            const originalButtonTitle = button.title;
-
-            if (!confirm(`Are you sure you want to ${action} this outcome?`)) {
-                return;
-            }
-
-            // Disable button and show loading state
-            button.disabled = true;
-            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-
-            const formData = new FormData();
-            formData.append('metric_id', metricId);
-            formData.append('action', action);
-
-            try {
-                const response = await fetch('<?php echo APP_URL; ?>/app/views/admin/outcomes/handle_outcome_status.php', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json' // Ensure server knows we expect JSON
-                    }
-                });
-
-                if (!response.ok) {
-                    // Attempt to get error message from server if JSON, otherwise use status text
-                    let errorMsg = `HTTP error ${response.status}: ${response.statusText}`;
-                    try {
-                        const errorData = await response.json();
-                        errorMsg = errorData.message || errorMsg;
-                    } catch (e) {
-                        // Failed to parse JSON, stick with HTTP status
-                    }
-                    throw new Error(errorMsg);
-                }
-
-                const data = await response.json();
-
-                if (data.success) {
-                    updateButtonAppearance(button, data.is_draft);
-                    alert(data.message); // Or use a more sophisticated notification
-                    
-                    // Move the row to the appropriate section if needed
-                    location.reload(); // Reload to update the section placement
-                } else {
-                    throw new Error(data.message || 'An unknown error occurred.');
-                }
-
-            } catch (error) {
-                console.error('Error handling outcome action:', error);
-                alert('Error: ' + error.message);
-                // Restore button to its original state on error
-                button.disabled = false;
-                button.innerHTML = originalButtonText;
-                button.title = originalButtonTitle;
-            }
         }
 
         // Important Outcomes editing functionality (from agency side)

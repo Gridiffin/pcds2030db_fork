@@ -104,7 +104,7 @@ require_once '../../layouts/page_header.php';
 
 <?php
 // Fetch existing outcome details for display
-$result = $conn->query("SELECT detail_id, detail_name, detail_json FROM outcomes_details WHERE is_draft = 0 ORDER BY created_at DESC");
+$result = $conn->query("SELECT detail_id, detail_name, detail_json FROM outcomes_details ORDER BY created_at DESC");
 $detailsArray = [];
 if ($result) {
     while ($row = $result->fetch_assoc()) {
