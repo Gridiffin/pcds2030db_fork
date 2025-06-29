@@ -11,7 +11,8 @@ if (typeof TableStructureDesigner === 'undefined') {
         constructor(options = {}) {
             this.container = options.container || '#table-designer-container';
             this.previewContainer = options.previewContainer || '#table-preview-container';
-            this.structureType = options.structureType || 'monthly';
+        // Set default structure type to custom (only option now)
+        this.structureType = 'custom';
             this.rows = options.rows || [];
             this.columns = options.columns || [];
             this.onStructureChange = options.onStructureChange || function() {};
@@ -23,71 +24,41 @@ if (typeof TableStructureDesigner === 'undefined') {
         }
     
     init() {
-        this.renderStructureSelector();
+        this.renderCustomGuide();
         this.renderRowDesigner();
         this.renderColumnDesigner();
         this.renderCalculationDesigner();
-        this.populatePresetRows(); // Initialize with preset rows based on structure type
-        this.updateRowDesignerVisibility(); // Set initial visibility
+        this.populatePresetRows(); // Initialize with one sample row for custom structure
         this.renderPreview();
         this.bindEvents();
     }
     
-    renderStructureSelector() {
+    renderCustomGuide() {
         const container = document.querySelector(this.container);
         if (!container) return;
         
-        const selectorHTML = `
-            <div class="structure-selector mb-4">
-                <h5 class="mb-3">
-                    <i class="fas fa-table me-2"></i>Choose Table Structure
-                </h5>
-                <div class="row">
-                    <div class="col-md-3">
-                        <div class="card structure-type-card" data-type="monthly">
-                            <div class="card-body text-center">
-                                <input type="radio" class="form-check-input" name="structureType" value="monthly" ${this.structureType === 'monthly' ? 'checked' : ''}>
-                                <i class="fas fa-calendar-alt fa-2x mb-2 d-block text-primary"></i>
-                                <h6>Monthly</h6>
-                                <small class="text-muted">12 months as rows</small>
-                            </div>
-                        </div>
+        // Always use custom structure - show helpful guide with permanent alert
+        const customGuideHTML = `
+            <div class="custom-structure-guide mb-4">
+                <div class="alert alert-info border-0 shadow-sm" role="alert">
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fas fa-cogs me-3 fs-4 text-primary"></i>
+                        <h5 class="mb-0 text-primary">Custom Table Designer</h5>
                     </div>
-                    <div class="col-md-3">
-                        <div class="card structure-type-card" data-type="quarterly">
-                            <div class="card-body text-center">
-                                <input type="radio" class="form-check-input" name="structureType" value="quarterly" ${this.structureType === 'quarterly' ? 'checked' : ''}>
-                                <i class="fas fa-chart-bar fa-2x mb-2 d-block text-success"></i>
-                                <h6>Quarterly</h6>
-                                <small class="text-muted">4 quarters as rows</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card structure-type-card" data-type="yearly">
-                            <div class="card-body text-center">
-                                <input type="radio" class="form-check-input" name="structureType" value="yearly" ${this.structureType === 'yearly' ? 'checked' : ''}>
-                                <i class="fas fa-chart-line fa-2x mb-2 d-block text-warning"></i>
-                                <h6>Yearly</h6>
-                                <small class="text-muted">Years as rows</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card structure-type-card" data-type="custom">
-                            <div class="card-body text-center">
-                                <input type="radio" class="form-check-input" name="structureType" value="custom" ${this.structureType === 'custom' ? 'checked' : ''}>
-                                <i class="fas fa-cogs fa-2x mb-2 d-block text-info"></i>
-                                <h6>Custom</h6>
-                                <small class="text-muted">Define your own rows</small>
-                            </div>
-                        </div>
-                    </div>
+                    <p class="mb-3">
+                        <strong>Design your outcome table with complete flexibility:</strong>
+                    </p>
+                    <ul class="mb-0 ps-4">
+                        <li class="mb-2">Create custom rows to organize your data (e.g., metrics, categories, time periods)</li>
+                        <li class="mb-2">Add columns for different measurements, targets, or data types</li>
+                        <li class="mb-2">Choose data types: Numbers, Currency, Percentages, or Text</li>
+                        <li class="mb-0">Build calculated rows that automatically sum or compute values</li>
+                    </ul>
                 </div>
             </div>
         `;
         
-        container.innerHTML = selectorHTML;
+        container.innerHTML = customGuideHTML;
     }
     
     renderRowDesigner() {
@@ -95,7 +66,7 @@ if (typeof TableStructureDesigner === 'undefined') {
         if (!container) return;
         
         const rowDesignerHTML = `
-            <div class="row-designer mb-4" style="display: none">
+            <div class="row-designer mb-4">
                 <h5 class="mb-3">
                     <i class="fas fa-list me-2"></i>Row Configuration
                 </h5>
@@ -400,30 +371,8 @@ if (typeof TableStructureDesigner === 'undefined') {
     }
     
     bindEvents() {
-        // Structure type change
-        document.addEventListener('change', (e) => {
-            if (e.target.name === 'structureType') {
-                this.structureType = e.target.value;
-                this.populatePresetRows(); // First populate rows based on new structure
-                this.updateRowDesignerVisibility(); // Then update UI visibility
-                this.renderPreview();
-                this.onStructureChange(this.getStructureData());
-            }
-        });
-        
-        // Structure type card clicks
-        document.addEventListener('click', (e) => {
-            const card = e.target.closest('.structure-type-card');
-            if (card) {
-                const radio = card.querySelector('input[type="radio"]');
-                if (radio && !radio.checked) {
-                    radio.checked = true;
-                    // Trigger change event with proper event details
-                    const changeEvent = new Event('change', { bubbles: true });
-                    radio.dispatchEvent(changeEvent);
-                }
-            }
-        });
+        // Structure type is now fixed to custom - remove structure type change handlers
+        // Custom structure is always active, no need for switching logic
         
         // Add row button
         document.addEventListener('click', (e) => {
@@ -466,65 +415,16 @@ if (typeof TableStructureDesigner === 'undefined') {
         });
     }
     
-    updateRowDesignerVisibility() {
-        const rowDesigner = document.querySelector('.row-designer');
-        if (rowDesigner) {
-            if (this.structureType === 'custom') {
-                // Show row designer only for custom structure
-                rowDesigner.style.display = 'block';
-            } else {
-                // Hide row designer completely for preset structures
-                rowDesigner.style.display = 'none';
-            }
-        }
-    }
     
+    // Custom structure only - no preset row population needed
     populatePresetRows() {
-        // Always clear existing rows when switching structure types
-        // This ensures clean state transitions
-        this.rows = [];
-        
-        // Auto-populate rows for preset structure types
-        switch (this.structureType) {
-            case 'quarterly':
-                this.rows = [
-                    { id: 'Q1', label: 'Quarter 1', type: 'data' },
-                    { id: 'Q2', label: 'Quarter 2', type: 'data' },
-                    { id: 'Q3', label: 'Quarter 3', type: 'data' },
-                    { id: 'Q4', label: 'Quarter 4', type: 'data' }
-                ];
-                break;
-            case 'yearly':
-                const currentYear = new Date().getFullYear();
-                this.rows = [
-                    { id: `Y${currentYear-2}`, label: `${currentYear-2}`, type: 'data' },
-                    { id: `Y${currentYear-1}`, label: `${currentYear-1}`, type: 'data' },
-                    { id: `Y${currentYear}`, label: `${currentYear}`, type: 'data' },
-                    { id: `Y${currentYear+1}`, label: `${currentYear+1}`, type: 'data' },
-                    { id: `Y${currentYear+2}`, label: `${currentYear+2}`, type: 'data' }
-                ];
-                break;
-            case 'monthly':
-                this.rows = [
-                    { id: 'January', label: 'January', type: 'data' },
-                    { id: 'February', label: 'February', type: 'data' },
-                    { id: 'March', label: 'March', type: 'data' },
-                    { id: 'April', label: 'April', type: 'data' },
-                    { id: 'May', label: 'May', type: 'data' },
-                    { id: 'June', label: 'June', type: 'data' },
-                    { id: 'July', label: 'July', type: 'data' },
-                    { id: 'August', label: 'August', type: 'data' },
-                    { id: 'September', label: 'September', type: 'data' },
-                    { id: 'October', label: 'October', type: 'data' },
-                    { id: 'November', label: 'November', type: 'data' },
-                    { id: 'December', label: 'December', type: 'data' }
-                ];
-                break;
-            case 'custom':
-                // For custom, start with empty rows array
-                // User will define their own structure
-                this.rows = [];
-                break;
+        // Custom structure starts with empty rows - user will add their own
+        // No preset rows needed since we only support custom structure
+        if (this.rows.length === 0) {
+            // Add one sample row to get started
+            this.rows = [
+                { id: 'sample_row', label: 'Sample Row', type: 'data' }
+            ];
         }
         
         // Update rows list display if it exists
@@ -713,12 +613,12 @@ if (typeof TableStructureDesigner === 'undefined') {
     }
     
     setStructureData(data) {
-        this.structureType = data.structureType || 'monthly';
+        this.structureType = 'custom'; // Always use custom structure
         this.rows = data.rows || [];
         this.columns = data.columns || [];
         
         // Re-render everything
-        this.renderStructureSelector();
+        this.renderCustomGuide();
         this.renderRowDesigner();
         this.renderColumnDesigner();
         this.renderCalculationDesigner();

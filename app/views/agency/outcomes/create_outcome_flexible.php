@@ -29,7 +29,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $row_config_json = $_POST['row_config'] ?? '';
     $column_config_json = $_POST['column_config'] ?? '';
     $data_json = $_POST['data_json'] ?? '';
-    $is_draft = isset($_POST['is_draft']) ? intval($_POST['is_draft']) : 0;
 
     if ($table_name === '' || $data_json === '') {
         $message = 'Table name and data are required.';
@@ -61,11 +60,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 // Insert new record into sector_outcomes_data with flexible structure
                 $query = "INSERT INTO sector_outcomes_data 
-                         (metric_id, sector_id, table_name, data_json, table_structure_type, row_config, column_config, is_draft, submitted_by) 
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                         (metric_id, sector_id, table_name, data_json, table_structure_type, row_config, column_config, submitted_by) 
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
                 
                 $stmt = $conn->prepare($query);
-                $stmt->bind_param("iisssssii", 
+                $stmt->bind_param("iissssi", 
                     $metric_id, 
                     $sector_id, 
                     $table_name, 
@@ -73,7 +72,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $structure_type,
                     $row_config_json,
                     $column_config_json,
-                    $is_draft, 
                     $_SESSION['user_id']
                 );
 
@@ -88,13 +86,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $_SESSION['user_id']
                     );
 
-                    if ($is_draft) {
-                        $message = "Outcome '{$table_name}' saved as draft successfully!";
-                        $message_type = 'warning';
-                    } else {
-                        $message = "Outcome '{$table_name}' created successfully!";
-                        $message_type = 'success';
-                    }
+                    $message = "Outcome '{$table_name}' created successfully!";
+                    $message_type = 'success';
                     
                     // Redirect to avoid resubmission
                     $_SESSION['success_message'] = $message;
@@ -140,7 +133,7 @@ $header_config = [
         [
             'url' => 'submit_outcomes.php',
             'text' => 'Back to Submit Outcomes',
-            'icon' => 'fa-arrow-left',
+            'icon' => 'fas fa-arrow-left',
             'class' => 'btn-outline-primary'
         ]
     ]
@@ -169,26 +162,26 @@ require_once '../../layouts/page_header.php';
             <div class="row">
                 <div class="col-md-3">
                     <div class="h-100 p-3 border rounded bg-light-subtle">
-                        <h6><i class="fas fa-table me-2 text-primary"></i>1. Choose Structure</h6>
-                        <p class="small mb-0">Select your table structure: Monthly, Quarterly, Yearly, or Custom.</p>
+                        <h6><i class="fas fa-cogs me-2 text-primary"></i>1. Design Structure</h6>
+                        <p class="small mb-0">Create your own custom table structure with complete flexibility.</p>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="h-100 p-3 border rounded bg-light-subtle">
-                        <h6><i class="fas fa-list me-2 text-success"></i>2. Define Rows</h6>
-                        <p class="small mb-0">For custom structure, add your own row labels and types.</p>
+                        <h6><i class="fas fa-list me-2 text-success"></i>2. Add Rows</h6>
+                        <p class="small mb-0">Add row labels for your data categories (metrics, time periods, etc.).</p>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="h-100 p-3 border rounded bg-light-subtle">
-                        <h6><i class="fas fa-columns me-2 text-warning"></i>3. Add Columns</h6>
-                        <p class="small mb-0">Define columns with data types (number, currency, percentage, text) and units.</p>
+                        <h6><i class="fas fa-columns me-2 text-warning"></i>3. Define Columns</h6>
+                        <p class="small mb-0">Create columns with specific data types (number, currency, percentage, text).</p>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="h-100 p-3 border rounded bg-light-subtle">
-                        <h6><i class="fas fa-database me-2 text-info"></i>4. Enter Data</h6>
-                        <p class="small mb-0">Fill in your data and save as draft or final submission.</p>
+                        <h6><i class="fas fa-edit me-2 text-info"></i>4. Enter Data</h6>
+                        <p class="small mb-0">Fill in your data and save your outcome.</p>
                     </div>
                 </div>
             </div>
@@ -268,14 +261,8 @@ require_once '../../layouts/page_header.php';
         <!-- Action Buttons -->
         <div class="card shadow-sm">
             <div class="card-body text-center">
-                <input type="hidden" name="is_draft" id="isDraftInput" value="0">
-                <button type="submit" class="btn btn-success btn-lg me-3" id="saveBtn" 
-                        onclick="document.getElementById('isDraftInput').value='0';">
+                <button type="submit" class="btn btn-success btn-lg me-3" id="saveBtn">
                     <i class="fas fa-save me-2"></i>Save Outcome
-                </button>
-                <button type="submit" class="btn btn-warning btn-lg me-3" id="saveDraftBtn" 
-                        onclick="document.getElementById('isDraftInput').value='1';">
-                    <i class="fas fa-file-alt me-2"></i>Save as Draft
                 </button>
                 <a href="submit_outcomes.php" class="btn btn-secondary btn-lg">
                     <i class="fas fa-times me-2"></i>Cancel

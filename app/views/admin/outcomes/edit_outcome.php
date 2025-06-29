@@ -240,7 +240,7 @@ $header_config = [
         [
             'url' => 'manage_outcomes.php',
             'text' => 'Back to Manage Outcomes',
-            'icon' => 'fa-arrow-left',
+            'icon' => 'fas fa-arrow-left',
             'class' => 'btn-outline-primary'
         ]
     ]

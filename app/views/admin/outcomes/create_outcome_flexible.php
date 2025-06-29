@@ -29,7 +29,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $row_config_json = $_POST['row_config'] ?? '';
     $column_config_json = $_POST['column_config'] ?? '';
     $data_json = $_POST['data_json'] ?? '';
-    $is_draft = isset($_POST['is_draft']) ? intval($_POST['is_draft']) : 0;
     $sector_id = intval($_POST['sector_id'] ?? 0);
 
     if ($table_name === '' || $data_json === '' || $sector_id === 0) {
@@ -53,8 +52,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Insert the new outcome with custom structure
             $query = "INSERT INTO sector_outcomes_data 
-                         (metric_id, sector_id, table_name, data_json, table_structure_type, row_config, column_config, is_draft, submitted_by) 
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                         (metric_id, sector_id, table_name, data_json, table_structure_type, row_config, column_config, submitted_by) 
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
             
             $stmt = $conn->prepare($query);
             if (!$stmt) {
@@ -63,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $submitted_by = $_SESSION['username'] ?? 'admin';
             $stmt->bind_param(
-                "iisssssss",
+                "iissssss",
                 $metric_id,
                 $sector_id,
                 $table_name,
@@ -71,7 +70,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $structure_type,
                 $row_config_json,
                 $column_config_json,
-                $is_draft,
                 $submitted_by
             );
 
@@ -222,6 +220,43 @@ include ROOT_PATH . 'app/views/layouts/admin_header.php';
         </div>
     <?php endif; ?>
 
+    <!-- Instructions Card -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-info text-white">
+            <h6 class="card-title m-0">
+                <i class="fas fa-lightbulb me-2"></i>How to Use the Flexible Table Designer
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="h-100 p-3 border rounded bg-light-subtle">
+                        <h6><i class="fas fa-cogs me-2 text-primary"></i>1. Design Structure</h6>
+                        <p class="small mb-0">Create your own custom table structure with complete flexibility.</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="h-100 p-3 border rounded bg-light-subtle">
+                        <h6><i class="fas fa-list me-2 text-success"></i>2. Add Rows</h6>
+                        <p class="small mb-0">Add row labels for your data categories (metrics, time periods, etc.).</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="h-100 p-3 border rounded bg-light-subtle">
+                        <h6><i class="fas fa-columns me-2 text-warning"></i>3. Define Columns</h6>
+                        <p class="small mb-0">Create columns with specific data types (number, currency, percentage, text).</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="h-100 p-3 border rounded bg-light-subtle">
+                        <h6><i class="fas fa-edit me-2 text-info"></i>4. Enter Data</h6>
+                        <p class="small mb-0">Fill in your data and save your outcome.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row">
         <div class="col-lg-8">
             <div class="card shadow">
@@ -246,7 +281,7 @@ include ROOT_PATH . 'app/views/layouts/admin_header.php';
             <div class="card shadow">
                 <div class="card-header">
                     <h6 class="m-0 font-weight-bold text-primary">
-                        <i class="fas fa-cog me-2"></i>Outcome Settings
+                        <i class="fas fa-cogs me-2"></i>Outcome Settings
                     </h6>
                 </div>
                 <div class="card-body">
@@ -337,25 +372,9 @@ include ROOT_PATH . 'app/views/layouts/admin_header.php';
 
     // Auto-save functionality (optional)
     let autoSaveTimer;
-    function autoSave() {
-        clearTimeout(autoSaveTimer);
-        autoSaveTimer = setTimeout(() => {
-            const structureData = designer.getStructureData();
-            if (structureData.isValid) {
-                // Store in localStorage for recovery
-                localStorage.setItem('outcomeStructureDraft', JSON.stringify({
-                    tableName: document.getElementById('table_name').value,
-                    sectorId: document.getElementById('sector_id').value,
-                    structureData: structureData,
-                    timestamp: Date.now()
-                }));
-            }
-        }, 2000);
-    }
-
-    // Bind auto-save to form changes
-    document.getElementById('table_name').addEventListener('input', autoSave);
-    document.getElementById('sector_id').addEventListener('change', autoSave);
+    // Bind form changes for real-time updates
+    document.getElementById('table_name').addEventListener('input', updatePreview);
+    document.getElementById('sector_id').addEventListener('change', updatePreview);
 
     // Preview update function
     function updatePreview() {
@@ -387,24 +406,6 @@ include ROOT_PATH . 'app/views/layouts/admin_header.php';
             if (previewContainer) {
                 previewContainer.innerHTML = previewHTML;
             }
-        }
-    }
-
-    // Check for draft recovery
-    const draft = localStorage.getItem('outcomeStructureDraft');
-    if (draft) {
-        try {
-            const draftData = JSON.parse(draft);
-            // Only recover if less than 24 hours old
-            if (Date.now() - draftData.timestamp < 24 * 60 * 60 * 1000) {
-                if (confirm('A draft outcome was found. Would you like to restore it?')) {
-                    document.getElementById('table_name').value = draftData.tableName || '';
-                    document.getElementById('sector_id').value = draftData.sectorId || '';
-                    designer.loadStructureData(draftData.structureData);
-                }
-            }
-        } catch (e) {
-            console.warn('Failed to parse draft data:', e);
         }
     }
 

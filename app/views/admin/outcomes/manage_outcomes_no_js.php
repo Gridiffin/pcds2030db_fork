@@ -59,7 +59,7 @@ $header_config = [
         [
             'url' => 'edit_metric.php',
             'text' => 'Create New Outcome',
-            'icon' => 'fa-plus-circle',
+            'icon' => 'fas fa-plus-circle',
             'class' => 'btn-primary'
         ],
         [

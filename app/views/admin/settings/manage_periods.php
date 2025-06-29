@@ -40,7 +40,7 @@ $header_config = [
         [
             'url' => '#',
             'text' => 'Refresh',
-            'icon' => 'fa-sync-alt',
+            'icon' => 'fas fa-sync-alt',
             'class' => 'btn-outline-primary',
             'id' => 'refreshPage'
         ]

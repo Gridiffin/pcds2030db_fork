@@ -125,7 +125,7 @@ $header_config = [
         [
             'url' => 'submit_outcomes.php',
             'text' => 'Back to Submit Outcomes',
-            'icon' => 'fa-arrow-left',
+            'icon' => 'fas fa-arrow-left',
             'class' => 'btn-outline-primary'
         ],
         [

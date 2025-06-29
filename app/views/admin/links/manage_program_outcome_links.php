@@ -32,7 +32,7 @@ $header_config = [
         [
             'url' => 'bulk_link_programs.php',
             'text' => 'Bulk Link Programs',
-            'icon' => 'fa-link',
+            'icon' => 'fas fa-link',
             'class' => 'btn-success'
         ]
     ]
