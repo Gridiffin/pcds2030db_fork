@@ -5,20 +5,22 @@
  * beyond the traditional monthly format.
  */
 
-class TableStructureDesigner {
-    constructor(options = {}) {
-        this.container = options.container || '#table-designer-container';
-        this.previewContainer = options.previewContainer || '#table-preview-container';
-        this.structureType = options.structureType || 'monthly';
-        this.rows = options.rows || [];
-        this.columns = options.columns || [];
-        this.onStructureChange = options.onStructureChange || function() {};
-        
-        // Initialize calculation engine
-        this.calculationEngine = new TableCalculationEngine();
-        
-        this.init();
-    }
+// Prevent redeclaration
+if (typeof TableStructureDesigner === 'undefined') {
+    class TableStructureDesigner {
+        constructor(options = {}) {
+            this.container = options.container || '#table-designer-container';
+            this.previewContainer = options.previewContainer || '#table-preview-container';
+            this.structureType = options.structureType || 'monthly';
+            this.rows = options.rows || [];
+            this.columns = options.columns || [];
+            this.onStructureChange = options.onStructureChange || function() {};
+            
+            // Initialize calculation engine
+            this.calculationEngine = new TableCalculationEngine();
+            
+            this.init();
+        }
     
     init() {
         this.renderStructureSelector();
@@ -272,17 +274,17 @@ class TableStructureDesigner {
                     ${column.unit ? `<small class="text-muted ms-2">(${column.unit})</small>` : ''}
                 </div>
                 <div class="column-actions">
-                    <button type="button" class="btn btn-sm btn-outline-primary me-1" onclick="tableDesigner.editColumn(${index})">
+                    <button type="button" class="btn btn-sm btn-outline-primary me-1" onclick="window.handleTableDesignerAction('editColumn', ${index})">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="tableDesigner.removeColumn(${index})">
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="window.handleTableDesignerAction('removeColumn', ${index})">
                         <i class="fas fa-trash"></i>
                     </button>
                     <div class="btn-group ms-1">
-                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="tableDesigner.moveColumnLeft(${index})" ${index === 0 ? 'disabled' : ''}>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.handleTableDesignerAction('moveColumnLeft', ${index})" ${index === 0 ? 'disabled' : ''}>
                             <i class="fas fa-arrow-left"></i>
                         </button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="tableDesigner.moveColumnRight(${index})" ${index === this.columns.length - 1 ? 'disabled' : ''}>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.handleTableDesignerAction('moveColumnRight', ${index})" ${index === this.columns.length - 1 ? 'disabled' : ''}>
                             <i class="fas fa-arrow-right"></i>
                         </button>
                     </div>
@@ -927,3 +929,5 @@ function initTableStructureDesigner(options = {}) {
     tableDesigner = new TableStructureDesigner(options);
     return tableDesigner;
 }
+
+} // End of TableStructureDesigner class check

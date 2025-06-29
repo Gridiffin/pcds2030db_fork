@@ -145,6 +145,127 @@
     }
 }
 
+/* Live Preview Animations */
+.editable-table-column {
+    opacity: 1;
+    transform: translateX(0);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.editable-table-column.column-entering {
+    opacity: 0;
+    transform: translateX(-20px);
+    animation: columnSlideIn 0.4s ease-out forwards;
+}
+
+.editable-table-column.column-removing {
+    opacity: 1;
+    transform: translateX(0);
+    animation: columnSlideOut 0.3s ease-in forwards;
+}
+
+@keyframes columnSlideIn {
+    0% {
+        opacity: 0;
+        transform: translateX(-20px) scale(0.95);
+    }
+    50% {
+        opacity: 0.7;
+        transform: translateX(-5px) scale(1.02);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+@keyframes columnSlideOut {
+    0% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(20px) scale(0.95);
+    }
+}
+
+/* Table cell transitions */
+#editableDataTable td {
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+#editableDataTable .data-input {
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+#editableDataTable .data-input:focus {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
+}
+
+/* New column highlight */
+.new-column-highlight {
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.1), rgba(32, 201, 151, 0.1)) !important;
+    border: 2px solid rgba(40, 167, 69, 0.3) !important;
+    animation: newColumnPulse 2s ease-in-out;
+}
+
+@keyframes newColumnPulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
+    }
+    50% {
+        box-shadow: 0 0 0 10px rgba(40, 167, 69, 0);
+    }
+}
+
+/* Progress indicators */
+.table-update-progress {
+    animation: slideInFromRight 0.3s ease-out;
+}
+
+@keyframes slideInFromRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Quick presets styling */
+.quick-presets .btn {
+    transition: all 0.2s ease;
+}
+
+.quick-presets .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+/* Enhanced feedback styling */
+.column-added-feedback {
+    animation: bounceInDown 0.5s ease-out;
+}
+
+@keyframes bounceInDown {
+    0% {
+        opacity: 0;
+        transform: translateY(-100px) scale(0.8);
+    }
+    60% {
+        opacity: 1;
+        transform: translateY(10px) scale(1.1);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
 /* Badge styles for different column types */
 .badge.bg-info { background: linear-gradient(135deg, #17a2b8, #138496) !important; }
 .badge.bg-secondary { background: linear-gradient(135deg, #6c757d, #5a6268) !important; }
@@ -464,4 +585,142 @@
 
 .row-item .badge.separator {
     background-color: #6c757d !important;
+}
+
+/* ===== FLEXIBLE OUTCOME EDITOR STYLES ===== */
+
+/* Editable data table styling */
+#editableDataTable .data-input {
+    border: 1px solid #e0e6ed;
+    border-radius: 4px;
+    padding: 6px 8px;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+}
+
+#editableDataTable .data-input:focus {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
+    outline: 0;
+}
+
+#editableDataTable .data-input:hover {
+    border-color: #c5cdd6;
+}
+
+/* Row badges in edit mode */
+.row-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.875em;
+    font-weight: 500;
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+}
+
+.row-badge.calculated {
+    background: linear-gradient(135deg, #6f42c1, #e83e8c);
+    color: white;
+}
+
+/* Total row styling */
+.total-row {
+    background-color: rgba(var(--bs-success-rgb), 0.1) !important;
+    border-top: 2px solid var(--bs-success);
+}
+
+.total-badge {
+    background: linear-gradient(135deg, #17a2b8, #20c997);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.875em;
+    font-weight: 600;
+}
+
+.total-value {
+    font-weight: 600;
+    color: var(--bs-success);
+}
+
+/* Calculated values styling */
+.calculated-value {
+    color: var(--bs-purple);
+    font-weight: 500;
+    font-style: italic;
+}
+
+/* Edit mode indicators */
+.edit-mode-indicator {
+    position: relative;
+}
+
+.edit-mode-indicator::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    border: 2px dashed var(--bs-primary);
+    border-radius: 6px;
+    opacity: 0.3;
+    pointer-events: none;
+}
+
+/* Loading states */
+.saving-indicator {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.saving-indicator .data-input {
+    background-color: #f8f9fa;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    #editableDataTable .data-input {
+        font-size: 0.8rem;
+        padding: 4px 6px;
+    }
+    
+    .row-badge, .total-badge {
+        font-size: 0.75em;
+        padding: 2px 6px;
+    }
+}
+
+/* Validation error states */
+.data-input.is-invalid {
+    border-color: var(--bs-danger);
+    box-shadow: 0 0 0 0.2rem rgba(var(--bs-danger-rgb), 0.25);
+}
+
+.data-input.is-invalid:focus {
+    border-color: var(--bs-danger);
+    box-shadow: 0 0 0 0.2rem rgba(var(--bs-danger-rgb), 0.25);
+}
+
+/* Success states */
+.data-input.is-valid {
+    border-color: var(--bs-success);
+}
+
+.data-input.is-valid:focus {
+    border-color: var(--bs-success);
+    box-shadow: 0 0 0 0.2rem rgba(var(--bs-success-rgb), 0.25);
+}
+
+/* Column headers in edit mode */
+#editableDataTable th[data-column-id] {
+    position: relative;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+}
+
+/* Auto-calculation indicator */
+.auto-calculated {
+    background: linear-gradient(135deg, rgba(111, 66, 193, 0.1), rgba(232, 62, 140, 0.1));
+    border: 1px solid rgba(111, 66, 193, 0.2);
 }

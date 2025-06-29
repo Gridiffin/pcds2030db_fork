@@ -246,8 +246,12 @@ if ($result) {
                                 <td><?= htmlspecialchars($outcome['table_name']) ?></td>
                                 <td>
                                     <a href="<?php echo APP_URL; ?>/app/views/agency/outcomes/view_outcome.php?outcome_id=<?= $outcome['metric_id'] ?>" 
-                                       class="btn btn-sm btn-outline-primary" title="View Details">
-                                        <i class="fas fa-eye me-1"></i> View & Edit
+                                       class="btn btn-sm btn-outline-info" title="View Details">
+                                        <i class="fas fa-eye me-1"></i> View
+                                    </a>
+                                    <a href="<?php echo APP_URL; ?>/app/views/agency/outcomes/edit_outcome.php?outcome_id=<?= $outcome['metric_id'] ?>" 
+                                       class="btn btn-sm btn-outline-primary" title="Edit Outcome">
+                                        <i class="fas fa-edit me-1"></i> Edit
                                     </a>
                                 </td>
                             </tr>
@@ -415,8 +419,11 @@ if ($result) {
                                 <td><strong><?= htmlspecialchars($outcome['table_name']) ?></strong></td>
                                 <td class="text-center">
                                     <div class="d-flex justify-content-center gap-2">
-                                        <a href="view_outcome.php?outcome_id=<?= $outcome['metric_id'] ?>" class="btn btn-sm btn-outline-primary">
-                                            <i class="fas fa-eye me-1"></i> View & Edit
+                                        <a href="view_outcome.php?outcome_id=<?= $outcome['metric_id'] ?>" class="btn btn-sm btn-outline-info">
+                                            <i class="fas fa-eye me-1"></i> View
+                                        </a>
+                                        <a href="edit_outcome.php?outcome_id=<?= $outcome['metric_id'] ?>" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-edit me-1"></i> Edit
                                         </a>
                                         <a href="<?php echo APP_URL; ?>/app/views/admin/outcomes/delete_outcome.php?outcome_id=<?= $outcome['metric_id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this outcome?');">
                                             <i class="fas fa-trash-alt me-1"></i> Delete
