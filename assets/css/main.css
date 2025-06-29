@@ -68,6 +68,7 @@
 @import 'components/notifications.css'; /* Notifications component styling */
 @import 'components/metric-create.css'; /* Metric create/edit component styling */
 @import 'components/admin-common.css'; /* Common admin interface components ionbuttons */
+@import 'components/outcomes.css'; /* Outcomes edit interface styling */
 
 /* Layout */
 @import 'layout/navigation.css';

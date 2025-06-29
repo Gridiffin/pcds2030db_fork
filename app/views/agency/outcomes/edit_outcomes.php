@@ -204,34 +204,68 @@ require_once '../../layouts/page_header.php';
     const monthNames = <?= json_encode($month_names) ?>;
     let columns = <?= json_encode($data_array['columns'] ?? []) ?>;
     let data = <?= json_encode($data_array['data'] ?? []) ?>;    function addColumn() {
-        const columnName = prompt('Enter column title:');
+        // Show enhanced input modal instead of basic prompt
+        const columnName = prompt('Enter column title:', 'New Column');
         if (!columnName || columnName.trim() === '') return;
-        if (columns.includes(columnName)) {
-            alert('Column title already exists.');
+        
+        const trimmedName = columnName.trim();
+        
+        if (columns.includes(trimmedName)) {
+            alert('Column title already exists. Please choose a different name.');
             return;
         }
+        
+        // Show loading state
+        const addBtn = document.getElementById('addColumnBtn');
+        const originalText = addBtn.innerHTML;
+        addBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Adding...';
+        addBtn.disabled = true;
         
         // Collect current data from DOM before adding column
         collectCurrentData();
         
-        columns.push(columnName);
+        // Add column to array
+        columns.push(trimmedName);
+        
+        // Re-render table with new structure
         renderTable();
+        
+        // Reset button state
+        setTimeout(() => {
+            addBtn.innerHTML = originalText;
+            addBtn.disabled = false;
+        }, 500);
+        
+        console.log(`Column "${trimmedName}" added successfully`);
     }
 
     function removeColumn(columnName) {
+        // Show loading state on table
+        const table = document.querySelector('.metrics-table');
+        table.classList.add('table-loading');
+        
         // Collect current data from DOM before removing column
         collectCurrentData();
         
+        // Remove column from array
         columns = columns.filter(c => c !== columnName);
         
-        // Remove data for the deleted column
+        // Remove data for the deleted column from all months
         monthNames.forEach(month => {
             if (data[month]) {
                 delete data[month][columnName];
             }
         });
         
+        // Re-render table
         renderTable();
+        
+        // Remove loading state
+        setTimeout(() => {
+            table.classList.remove('table-loading');
+        }, 300);
+        
+        console.log(`Column "${columnName}" removed successfully`);
     }
 
     function collectCurrentData() {
@@ -258,18 +292,24 @@ require_once '../../layouts/page_header.php';
     }
 
     function renderTable() {
+        // Always collect current data before rebuilding table structure
+        collectCurrentData();
+        
         const theadRow = document.querySelector('.metrics-table thead tr');
         // Remove all columns except the first (Month)
         while (theadRow.children.length > 1) {
             theadRow.removeChild(theadRow.lastChild);
         }
+        
+        // Add column headers with enhanced styling and edit functionality
         columns.forEach(col => {
             const th = document.createElement('th');
+            th.classList.add('position-relative');
             th.innerHTML = `
                 <div class="metric-header">
-                    <div class="metric-title" contenteditable="true" data-column="${col}">${col}</div>
+                    <div class="metric-title editable-hint" contenteditable="true" data-column="${col}">${col}</div>
                     <div class="metric-actions">
-                        <button type="button" class="btn btn-sm btn-danger delete-column-btn" data-column="${col}">
+                        <button type="button" class="btn btn-sm btn-danger delete-column-btn" data-column="${col}" title="Delete column">
                             <i class="fas fa-trash-alt"></i>
                         </button>
                     </div>
@@ -277,136 +317,191 @@ require_once '../../layouts/page_header.php';
             theadRow.appendChild(th);
         });
 
+        // Rebuild table body with preserved data
         const tbody = document.querySelector('.metrics-table tbody');
         tbody.querySelectorAll('tr').forEach(row => {
             // Remove all cells except the first (Month)
             while (row.children.length > 1) {
                 row.removeChild(row.lastChild);
             }
+            
+            const month = row.querySelector('.month-badge').textContent;
             columns.forEach(col => {
-                const month = row.querySelector('.month-badge').textContent;
+                // Get preserved data value or default to empty
                 const cellValue = (data[month] && data[month][col] !== undefined) ? data[month][col] : '';
                 const td = document.createElement('td');
-                td.innerHTML = `<div class="metric-cell" contenteditable="true" data-column="${col}" data-month="${month}">${cellValue}</div>`;
+                td.innerHTML = `<div class="metric-cell editable-hint" contenteditable="true" data-column="${col}" data-month="${month}">${cellValue}</div>`;
                 row.appendChild(td);
             });
         });
 
-        // Attach delete handlers
+        // Reattach all event handlers
+        attachEventHandlers();
+    }
+
+    function attachEventHandlers() {
+        // Delete column button handlers
         document.querySelectorAll('.delete-column-btn').forEach(btn => {
-            btn.onclick = () => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
                 const col = btn.getAttribute('data-column');
-                if (confirm('Delete column "' + col + '"?')) {
+                if (confirm(`Delete column "${col}"? This action cannot be undone.`)) {
                     removeColumn(col);
                 }
             };
-        });        // Attach contenteditable change handlers for column titles
-        document.querySelectorAll('.metric-title').forEach(el => {
-            el.addEventListener('input', () => {
-                const oldCol = el.getAttribute('data-column');
-                const newCol = el.textContent.trim();
-                if (newCol && newCol !== oldCol) {
-                    if (columns.includes(newCol)) {
-                        alert('Column title already exists.');
-                        el.textContent = oldCol;
-                        return;
-                    }
-                    
-                    // Collect current data before renaming column
-                    collectCurrentData();
-                    
-                    const index = columns.indexOf(oldCol);
-                    if (index !== -1) {
-                        columns[index] = newCol;
-                        el.setAttribute('data-column', newCol);
-                        
-                        // Update data object with new column name
-                        monthNames.forEach(month => {
-                            if (data[month] && data[month][oldCol] !== undefined) {
-                                data[month][newCol] = data[month][oldCol];
-                                delete data[month][oldCol];
-                            }
-                        });
-                        
-                        // Update all cells data-column attribute
-                        document.querySelectorAll(`[data-column="${oldCol}"]`).forEach(cell => {
-                            cell.setAttribute('data-column', newCol);
-                        });
-                    }
-                }
-            });
         });
 
-        // Make entire header th clickable to focus the contenteditable div inside
+        // Column title edit handlers
+        document.querySelectorAll('.metric-title').forEach(el => {
+            // Remove existing listeners first
+            el.removeEventListener('input', handleColumnTitleEdit);
+            el.removeEventListener('blur', handleColumnTitleBlur);
+            el.removeEventListener('keydown', handleColumnTitleKeydown);
+            
+            // Add new listeners
+            el.addEventListener('input', handleColumnTitleEdit);
+            el.addEventListener('blur', handleColumnTitleBlur);
+            el.addEventListener('keydown', handleColumnTitleKeydown);
+        });
+
+        // Data cell edit handlers
+        document.querySelectorAll('.metric-cell').forEach(cell => {
+            // Remove existing listeners first
+            cell.removeEventListener('input', handleDataCellEdit);
+            cell.removeEventListener('blur', handleDataCellBlur);
+            
+            // Add new listeners
+            cell.addEventListener('input', handleDataCellEdit);
+            cell.addEventListener('blur', handleDataCellBlur);
+        });
+
+        // Make header cells clickable (excluding delete button area)
         document.querySelectorAll('.metrics-table thead th').forEach(th => {
             th.style.cursor = 'text';
             th.addEventListener('click', (e) => {
-                // Prevent focusing if clicking on delete button
                 if (e.target.closest('.delete-column-btn')) return;
                 const editableDiv = th.querySelector('.metric-title');
                 if (editableDiv) {
                     editableDiv.focus();
-                    // Place cursor at end
-                    const range = document.createRange();
-                    range.selectNodeContents(editableDiv);
-                    range.collapse(false);
-                    const sel = window.getSelection();
-                    sel.removeAllRanges();
-                    sel.addRange(range);
-                }
-            });
-        });        // Make entire body td clickable to focus the contenteditable div inside
-        document.querySelectorAll('.metrics-table tbody td').forEach(td => {
-            td.style.cursor = 'text';
-            td.addEventListener('click', (e) => {
-                // Prevent focusing if clicking inside the div itself to avoid double focus
-                if (e.target.classList.contains('metric-cell')) return;
-                const editableDiv = td.querySelector('.metric-cell');
-                if (editableDiv) {
-                    editableDiv.focus();
-                    // Place cursor at end
-                    const range = document.createRange();
-                    range.selectNodeContents(editableDiv);
-                    range.collapse(false);
-                    const sel = window.getSelection();
-                    sel.removeAllRanges();
-                    sel.addRange(range);
+                    selectAllText(editableDiv);
                 }
             });
         });
 
-        // Add real-time data updating for cell edits
-        document.querySelectorAll('.metric-cell').forEach(cell => {
-            cell.addEventListener('input', () => {
-                const month = cell.getAttribute('data-month');
-                const column = cell.getAttribute('data-column');
-                if (month && column) {
-                    if (!data[month]) {
-                        data[month] = {};
-                    }
-                    let val = parseFloat(cell.textContent.trim());
-                    if (isNaN(val)) val = 0;
-                    data[month][column] = val;
-                }
-            });
-            
-            // Also update on blur (when user leaves the cell)
-            cell.addEventListener('blur', () => {
-                const month = cell.getAttribute('data-month');
-                const column = cell.getAttribute('data-column');
-                if (month && column) {
-                    if (!data[month]) {
-                        data[month] = {};
-                    }
-                    let val = parseFloat(cell.textContent.trim());
-                    if (isNaN(val)) val = 0;
-                    data[month][column] = val;
+        // Make data cells clickable
+        document.querySelectorAll('.metrics-table tbody td').forEach(td => {
+            td.style.cursor = 'text';
+            td.addEventListener('click', (e) => {
+                if (e.target.classList.contains('metric-cell')) return;
+                const editableDiv = td.querySelector('.metric-cell');
+                if (editableDiv) {
+                    editableDiv.focus();
+                    selectAllText(editableDiv);
                 }
             });
         });
     }
 
-    document.getElementById('addColumnBtn').addEventListener('click', addColumn);    document.getElementById('editOutcomeForm').addEventListener('submit', function(e) {
+    function handleColumnTitleEdit() {
+        const oldCol = this.getAttribute('data-column');
+        const newCol = this.textContent.trim();
+        
+        if (newCol && newCol !== oldCol) {
+            if (columns.includes(newCol)) {
+                alert('Column title already exists.');
+                this.textContent = oldCol;
+                return;
+            }
+            
+            // Update column name in array
+            const index = columns.indexOf(oldCol);
+            if (index !== -1) {
+                columns[index] = newCol;
+                this.setAttribute('data-column', newCol);
+                
+                // Update data object with new column name
+                monthNames.forEach(month => {
+                    if (data[month] && data[month][oldCol] !== undefined) {
+                        data[month][newCol] = data[month][oldCol];
+                        delete data[month][oldCol];
+                    }
+                });
+                
+                // Update all cells data-column attribute
+                document.querySelectorAll(`[data-column="${oldCol}"]`).forEach(cell => {
+                    cell.setAttribute('data-column', newCol);
+                });
+                
+                // Update delete button
+                const deleteBtn = this.closest('th').querySelector('.delete-column-btn');
+                if (deleteBtn) {
+                    deleteBtn.setAttribute('data-column', newCol);
+                }
+                
+                console.log(`Column renamed from "${oldCol}" to "${newCol}"`);
+            }
+        }
+    }
+
+    function handleColumnTitleBlur() {
+        // Ensure the column name is not empty
+        if (!this.textContent.trim()) {
+            this.textContent = this.getAttribute('data-column');
+        }
+    }
+
+    function handleColumnTitleKeydown(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            this.blur();
+        }
+        if (e.key === 'Escape') {
+            this.textContent = this.getAttribute('data-column');
+            this.blur();
+        }
+    }
+
+    function handleDataCellEdit() {
+        const month = this.getAttribute('data-month');
+        const column = this.getAttribute('data-column');
+        
+        if (month && column) {
+            if (!data[month]) {
+                data[month] = {};
+            }
+            let val = parseFloat(this.textContent.trim());
+            if (isNaN(val)) val = 0;
+            data[month][column] = val;
+        }
+    }
+
+    function handleDataCellBlur() {
+        // Format the number for display
+        const value = parseFloat(this.textContent.trim());
+        if (!isNaN(value)) {
+            this.textContent = value.toString();
+        } else {
+            this.textContent = '0';
+        }
+        
+        // Trigger data update
+        handleDataCellEdit.call(this);
+    }
+
+    function selectAllText(element) {
+        const range = document.createRange();
+        range.selectNodeContents(element);
+        range.collapse(false);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+    }
+
+    // Initialize event handlers for add column button
+    document.getElementById('addColumnBtn').addEventListener('click', addColumn);
+
+    // Handle form submission
+    document.getElementById('editOutcomeForm').addEventListener('submit', function(e) {
         // Collect any final changes from DOM before submission
         collectCurrentData();
         
@@ -419,7 +514,7 @@ require_once '../../layouts/page_header.php';
         document.getElementById('dataJsonInput').value = JSON.stringify(collectedData);
     });
 
-    // Initial render
+    // Initial render when page loads
     document.addEventListener('DOMContentLoaded', () => {
         renderTable();
     });

@@ -1,0 +1,318 @@
+/**
+ * Outcomes Edit Interface Styling
+ * Enhanced styling for outcomes editing components
+ */
+
+/* Outcomes Table Styling */
+.metrics-table {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.metrics-table th {
+    background: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    vertical-align: middle;
+    padding: 12px 8px;
+}
+
+.metrics-table td {
+    padding: 8px;
+    vertical-align: middle;
+}
+
+/* Enhanced Column Header */
+.metric-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 45px;
+    gap: 8px;
+}
+
+.metric-title {
+    flex: 1;
+    min-height: 32px;
+    padding: 6px 8px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    font-weight: 500;
+    cursor: text;
+    transition: all 0.2s ease;
+    word-wrap: break-word;
+    max-width: 150px;
+}
+
+.metric-title:hover {
+    background: rgba(255, 255, 255, 0.8);
+    border-color: #007bff;
+}
+
+.metric-title:focus {
+    outline: none;
+    background: white;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+/* Enhanced Data Cells */
+.metric-cell {
+    min-height: 36px;
+    padding: 8px 12px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    text-align: center;
+    cursor: text;
+    transition: all 0.2s ease;
+    word-wrap: break-word;
+    min-width: 80px;
+}
+
+.metric-cell:hover {
+    background: rgba(248, 249, 250, 0.8);
+    border-color: #ced4da;
+}
+
+.metric-cell:focus {
+    outline: none;
+    background: white;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+/* Month Badge Styling */
+.month-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    background: #e9ecef;
+    border-radius: 20px;
+    font-weight: 500;
+    color: #495057;
+    min-width: 100px;
+    text-align: center;
+}
+
+/* Action Buttons */
+.metric-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.delete-column-btn {
+    padding: 4px 8px;
+    border: none;
+    background: #dc3545;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 12px;
+}
+
+.delete-column-btn:hover {
+    background: #c82333;
+    transform: scale(1.05);
+}
+
+/* Add Column Button Enhancement */
+#addColumnBtn {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    color: white;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+}
+
+#addColumnBtn:hover {
+    background: linear-gradient(135deg, #218838, #1ea085);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.4);
+}
+
+/* Flexible Outcomes Specific Styling */
+#editableDataTable .data-input {
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    padding: 8px 12px;
+    text-align: right;
+    font-size: 14px;
+    width: 100%;
+    min-width: 100px;
+    background: white;
+    transition: all 0.2s ease;
+}
+
+#editableDataTable .data-input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+    outline: none;
+}
+
+/* Row Badge Styling */
+.row-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    background: #e7f3ff;
+    border: 1px solid #b8daff;
+    border-radius: 4px;
+    font-weight: 500;
+    color: #004085;
+    min-width: 120px;
+}
+
+.row-badge.calculated {
+    background: #fff3cd;
+    border-color: #ffeaa7;
+    color: #856404;
+}
+
+/* Total Row Styling */
+.total-row {
+    background: #f8f9fa !important;
+    border-top: 2px solid #dee2e6;
+}
+
+.total-badge {
+    background: #6c757d;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-weight: 600;
+    display: inline-block;
+    min-width: 120px;
+    text-align: center;
+}
+
+/* Structure Designer Enhancements */
+.simple-controls .card {
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.simple-controls .card-header {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* Form Control Enhancements */
+.simple-controls .form-control,
+.simple-controls .form-select {
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.simple-controls .form-control:focus,
+.simple-controls .form-select:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+/* Loading States */
+.table-loading {
+    position: relative;
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.table-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 30px;
+    height: 30px;
+    margin: -15px 0 0 -15px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive Improvements */
+@media (max-width: 768px) {
+    .metric-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 4px;
+    }
+    
+    .metric-title {
+        max-width: none;
+        text-align: center;
+    }
+    
+    .metric-actions {
+        justify-content: center;
+    }
+    
+    .metrics-table {
+        font-size: 14px;
+    }
+    
+    .metric-cell {
+        min-width: 60px;
+        padding: 6px 8px;
+    }
+}
+
+/* Success/Error States */
+.cell-success {
+    background: #d4edda !important;
+    border-color: #c3e6cb !important;
+}
+
+.cell-error {
+    background: #f8d7da !important;
+    border-color: #f5c6cb !important;
+}
+
+/* Edit Mode Indicators */
+.editing-mode .metric-title,
+.editing-mode .metric-cell {
+    background: #fff3cd;
+    border-color: #ffeaa7;
+}
+
+/* Tooltip Styling for Better UX */
+.editable-hint {
+    position: relative;
+}
+
+.editable-hint::after {
+    content: 'Click to edit';
+    position: absolute;
+    bottom: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    white-space: nowrap;
+    z-index: 1000;
+}
+
+.editable-hint:hover::after {
+    opacity: 1;
+}

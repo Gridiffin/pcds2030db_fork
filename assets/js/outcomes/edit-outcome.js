@@ -170,7 +170,7 @@ function createFallbackDesignerContainer() {
 }
 
 /**
- * Populate existing columns and rows in the controls
+ * Populate existing columns and rows in the controls with edit functionality
  */
 function populateSimpleControls() {
     const columnsList = document.getElementById('columnsList');
@@ -178,45 +178,75 @@ function populateSimpleControls() {
     
     if (columnsList && currentColumnConfig) {
         columnsList.innerHTML = currentColumnConfig.map((col, index) => `
-            <div class="d-flex align-items-center justify-content-between mb-2 p-2 border rounded">
-                <span class="text-success">${col.label} (${col.type})</span>
-                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeColumn(${index})">
-                    <i class="fas fa-times"></i>
-                </button>
+            <div class="d-flex align-items-center justify-content-between mb-2 p-3 border rounded bg-light">
+                <div class="flex-grow-1">
+                    <span class="text-success fw-bold">${col.label}</span>
+                    <small class="text-muted d-block">${col.type}</small>
+                </div>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="editColumn(${index})" title="Edit column">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeColumn(${index})" title="Remove column">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
             </div>
         `).join('');
     }
     
     if (rowsList && currentRowConfig) {
         rowsList.innerHTML = currentRowConfig.map((row, index) => `
-            <div class="d-flex align-items-center justify-content-between mb-2 p-2 border rounded">
-                <span class="text-primary">${row.label} (${row.type})</span>
-                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeRow(${index})">
-                    <i class="fas fa-times"></i>
-                </button>
+            <div class="d-flex align-items-center justify-content-between mb-2 p-3 border rounded bg-light">
+                <div class="flex-grow-1">
+                    <span class="text-primary fw-bold">${row.label}</span>
+                    <small class="text-muted d-block">${row.type}</small>
+                </div>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="editRow(${index})" title="Edit row">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeRow(${index})" title="Remove row">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
             </div>
         `).join('');
     }
 }
 
 /**
- * Add new column
+ * Add new column with enhanced UX
  */
 function addNewColumn() {
     const nameInput = document.getElementById('newColumnName');
     const typeSelect = document.getElementById('newColumnType');
     
     if (!nameInput || !typeSelect || !nameInput.value.trim()) {
-        alert('Please enter a column name');
+        showToast('Please enter a column name', 'warning');
+        nameInput?.focus();
+        return;
+    }
+    
+    const columnName = nameInput.value.trim();
+    
+    // Check for duplicate names
+    if (currentColumnConfig.some(col => col.label.toLowerCase() === columnName.toLowerCase())) {
+        showToast('Column name already exists', 'error');
+        nameInput.focus();
+        nameInput.select();
         return;
     }
     
     const newColumn = {
-        id: nameInput.value.toLowerCase().replace(/\s+/g, '_'),
-        label: nameInput.value.trim(),
+        id: columnName.toLowerCase().replace(/\s+/g, '_'),
+        label: columnName,
         type: typeSelect.value,
         unit: ''
     };
+    
+    // Collect current data before structure change
+    collectCurrentTableData();
     
     currentColumnConfig.push(newColumn);
     
@@ -227,25 +257,41 @@ function addNewColumn() {
     // Refresh controls and table
     populateSimpleControls();
     updateTableStructure();
+    
+    showToast(`Column "${columnName}" added successfully`, 'success');
 }
 
 /**
- * Add new row
+ * Add new row with enhanced UX
  */
 function addNewRow() {
     const nameInput = document.getElementById('newRowName');
     const typeSelect = document.getElementById('newRowType');
     
     if (!nameInput || !typeSelect || !nameInput.value.trim()) {
-        alert('Please enter a row name');
+        showToast('Please enter a row name', 'warning');
+        nameInput?.focus();
+        return;
+    }
+    
+    const rowName = nameInput.value.trim();
+    
+    // Check for duplicate names
+    if (currentRowConfig.some(row => row.label.toLowerCase() === rowName.toLowerCase())) {
+        showToast('Row name already exists', 'error');
+        nameInput.focus();
+        nameInput.select();
         return;
     }
     
     const newRow = {
-        id: nameInput.value.toLowerCase().replace(/\s+/g, '_'),
-        label: nameInput.value.trim(),
+        id: rowName.toLowerCase().replace(/\s+/g, '_'),
+        label: rowName,
         type: typeSelect.value
     };
+    
+    // Collect current data before structure change
+    collectCurrentTableData();
     
     currentRowConfig.push(newRow);
     
@@ -256,28 +302,145 @@ function addNewRow() {
     // Refresh controls and table
     populateSimpleControls();
     updateTableStructure();
+    
+    showToast(`Row "${rowName}" added successfully`, 'success');
 }
 
 /**
- * Remove column by index
+ * Remove column by index with enhanced UX
  */
 function removeColumn(index) {
-    if (confirm('Are you sure you want to remove this column?')) {
+    if (index < 0 || index >= currentColumnConfig.length) {
+        showToast('Invalid column index', 'error');
+        return;
+    }
+    
+    const columnName = currentColumnConfig[index].label;
+    
+    if (confirm(`Are you sure you want to remove column "${columnName}"? This action cannot be undone and all data in this column will be lost.`)) {
+        // Collect current data before structure change
+        collectCurrentTableData();
+        
         currentColumnConfig.splice(index, 1);
         populateSimpleControls();
         updateTableStructure();
+        
+        showToast(`Column "${columnName}" removed successfully`, 'success');
     }
 }
 
 /**
- * Remove row by index
+ * Remove row by index with enhanced UX
  */
 function removeRow(index) {
-    if (confirm('Are you sure you want to remove this row?')) {
+    if (index < 0 || index >= currentRowConfig.length) {
+        showToast('Invalid row index', 'error');
+        return;
+    }
+    
+    const rowName = currentRowConfig[index].label;
+    
+    if (confirm(`Are you sure you want to remove row "${rowName}"? This action cannot be undone and all data in this row will be lost.`)) {
+        // Collect current data before structure change
+        collectCurrentTableData();
+        
         currentRowConfig.splice(index, 1);
         populateSimpleControls();
         updateTableStructure();
+        
+        showToast(`Row "${rowName}" removed successfully`, 'success');
     }
+}
+
+/**
+ * Edit column inline
+ */
+function editColumn(index) {
+    if (index < 0 || index >= currentColumnConfig.length) return;
+    
+    const column = currentColumnConfig[index];
+    const newLabel = prompt('Enter new column name:', column.label);
+    
+    if (newLabel && newLabel.trim() && newLabel !== column.label) {
+        const trimmedLabel = newLabel.trim();
+        
+        // Check for duplicates
+        if (currentColumnConfig.some((col, i) => i !== index && col.label.toLowerCase() === trimmedLabel.toLowerCase())) {
+            showToast('Column name already exists', 'error');
+            return;
+        }
+        
+        // Collect current data before change
+        collectCurrentTableData();
+        
+        // Update column
+        currentColumnConfig[index].label = trimmedLabel;
+        currentColumnConfig[index].id = trimmedLabel.toLowerCase().replace(/\s+/g, '_');
+        
+        // Refresh controls and table
+        populateSimpleControls();
+        updateTableStructure();
+        
+        showToast(`Column renamed to "${trimmedLabel}"`, 'success');
+    }
+}
+
+/**
+ * Edit row inline
+ */
+function editRow(index) {
+    if (index < 0 || index >= currentRowConfig.length) return;
+    
+    const row = currentRowConfig[index];
+    const newLabel = prompt('Enter new row name:', row.label);
+    
+    if (newLabel && newLabel.trim() && newLabel !== row.label) {
+        const trimmedLabel = newLabel.trim();
+        
+        // Check for duplicates
+        if (currentRowConfig.some((r, i) => i !== index && r.label.toLowerCase() === trimmedLabel.toLowerCase())) {
+            showToast('Row name already exists', 'error');
+            return;
+        }
+        
+        // Collect current data before change
+        collectCurrentTableData();
+        
+        // Update row
+        currentRowConfig[index].label = trimmedLabel;
+        currentRowConfig[index].id = trimmedLabel.toLowerCase().replace(/\s+/g, '_');
+        
+        // Refresh controls and table
+        populateSimpleControls();
+        updateTableStructure();
+        
+        showToast(`Row renamed to "${trimmedLabel}"`, 'success');
+    }
+}
+
+/**
+ * Collect current table data before structure changes
+ */
+function collectCurrentTableData() {
+    const data = {};
+    
+    // Collect data from input fields
+    document.querySelectorAll('.data-input').forEach(input => {
+        const rowId = input.dataset.row;
+        const columnId = input.dataset.column;
+        
+        if (rowId && columnId) {
+            if (!data[rowId]) {
+                data[rowId] = {};
+            }
+            data[rowId][columnId] = parseFloat(input.value) || 0;
+        }
+    });
+    
+    // Store data globally for preservation
+    window.currentTableData = data;
+    
+    return data;
 }
 
 /**
@@ -303,42 +466,56 @@ function updateTableStructure() {
 }
 
 /**
- * Rebuild the editable table with current structure
+ * Rebuild the editable table with current structure and preserve data
  */
 function rebuildEditableTable() {
     const table = document.getElementById('editableDataTable');
     if (!table) return;
     
-    // Rebuild header
+    // Get preserved data
+    const preservedData = window.currentTableData || {};
+    
+    // Rebuild header with enhanced styling
     const thead = table.querySelector('thead');
     if (thead) {
         thead.innerHTML = `
             <tr>
-                <th style="width: 150px;">Row</th>
+                <th style="width: 180px; background: #f8f9fa;">
+                    <div class="fw-bold text-primary">
+                        <i class="fas fa-list me-2"></i>Row
+                    </div>
+                </th>
                 ${currentColumnConfig.map(col => `
-                    <th class="text-center" data-column-id="${col.id}">
-                        <div>${col.label}</div>
+                    <th class="text-center" data-column-id="${col.id}" style="min-width: 120px; background: #f8f9fa;">
+                        <div class="fw-bold text-success">${col.label}</div>
                         ${col.unit ? `<small class="text-muted">(${col.unit})</small>` : ''}
+                        <small class="text-muted d-block">${col.type}</small>
                     </th>
                 `).join('')}
             </tr>
         `;
     }
     
-    // Rebuild body
+    // Rebuild body with preserved data
     const tbody = table.querySelector('tbody');
     if (tbody) {
         tbody.innerHTML = currentRowConfig.map(row => `
             <tr data-row-id="${row.id}" class="${row.type === 'separator' ? 'table-secondary' : ''}">
-                <td>
+                <td class="fw-bold position-sticky start-0 bg-light">
                     <span class="row-badge ${row.type === 'calculated' ? 'calculated' : ''}">${row.label}</span>
+                    <small class="text-muted d-block">${row.type}</small>
                 </td>
                 ${currentColumnConfig.map(col => `
                     <td class="text-center">
                         ${row.type === 'separator' ? '—' : 
-                          row.type === 'calculated' ? '<span class="calculated-value">0</span>' :
-                          `<input type="number" class="form-control form-control-sm data-input text-end" 
-                                  data-row="${row.id}" data-column="${col.id}" value="0" step="0.01">`}
+                          row.type === 'calculated' ? '<span class="calculated-value fw-bold text-info">0</span>' :
+                          `<input type="number" 
+                                  class="form-control form-control-sm data-input text-end" 
+                                  data-row="${row.id}" 
+                                  data-column="${col.id}" 
+                                  value="${preservedData[row.id] && preservedData[row.id][col.id] !== undefined ? preservedData[row.id][col.id] : 0}" 
+                                  step="0.01"
+                                  style="min-width: 100px;">`}
                     </td>
                 `).join('')}
             </tr>
@@ -348,13 +525,13 @@ function rebuildEditableTable() {
         const numericColumns = currentColumnConfig.filter(col => ['number', 'currency'].includes(col.type));
         if (numericColumns.length > 0) {
             tbody.innerHTML += `
-                <tr class="table-light total-row">
-                    <td class="fw-bold">
+                <tr class="table-light total-row border-top border-2">
+                    <td class="fw-bold position-sticky start-0 bg-light">
                         <span class="total-badge">TOTAL</span>
                     </td>
                     ${currentColumnConfig.map(col => `
-                        <td class="fw-bold text-end" data-column="${col.id}">
-                            ${['number', 'currency'].includes(col.type) ? '0' : '—'}
+                        <td class="fw-bold text-end text-primary" data-column="${col.id}">
+                            ${['number', 'currency'].includes(col.type) ? '0.00' : '—'}
                         </td>
                     `).join('')}
                 </tr>
@@ -364,6 +541,12 @@ function rebuildEditableTable() {
     
     // Reattach event listeners
     attachInputListeners();
+    
+    // Update calculations and totals
+    updateCalculations();
+    updateTotals();
+    
+    console.log('Table rebuilt with preserved data:', preservedData);
 }
 
 /**
@@ -465,6 +648,41 @@ function saveFlexibleOutcome() {
         saveBtn.innerHTML = originalText;
         saveBtn.disabled = false;
     }
+}
+
+/**
+ * Show toast notification
+ */
+function showToast(message, type = 'info') {
+    // Remove existing toasts
+    const existingToasts = document.querySelectorAll('.outcome-toast');
+    existingToasts.forEach(toast => toast.remove());
+    
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = `outcome-toast alert alert-${type === 'error' ? 'danger' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info'} alert-dismissible fade show`;
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        min-width: 300px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    `;
+    
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.remove();
+        }
+    }, 5000);
 }
 
 /**
