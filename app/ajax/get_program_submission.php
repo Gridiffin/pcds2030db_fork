@@ -34,11 +34,22 @@ if (!$program) {
 
 // Find the correct submission for the selected period
 $current_submission = null;
+$previous_submission = null;
 if (isset($program['submissions']) && is_array($program['submissions'])) {
+    // Sort submissions by period_id descending to find previous period easily
+    usort($program['submissions'], function($a, $b) {
+        return $b['period_id'] <=> $a['period_id'];
+    });
     foreach ($program['submissions'] as $submission) {
         if (isset($submission['period_id']) && $submission['period_id'] == $period_id) {
             $current_submission = $submission;
             break;
+        }
+        // Track the most recent submission before the requested period
+        if (isset($submission['period_id']) && $submission['period_id'] < $period_id) {
+            if ($previous_submission === null || $submission['period_id'] > $previous_submission['period_id']) {
+                $previous_submission = $submission;
+            }
         }
     }
 }
@@ -56,8 +67,11 @@ $response = [
     ]
 ];
 
-if ($current_submission && isset($current_submission['content_json']) && is_string($current_submission['content_json'])) {
-    $content = json_decode($current_submission['content_json'], true);
+// Use current submission if exists, else fallback to previous submission if exists
+$submission_to_use = $current_submission ?? $previous_submission;
+
+if ($submission_to_use && isset($submission_to_use['content_json']) && is_string($submission_to_use['content_json'])) {
+    $content = json_decode($submission_to_use['content_json'], true);
     if (isset($content['targets']) && is_array($content['targets'])) {
         $response['data']['targets'] = $content['targets'];
         $response['data']['rating'] = $content['rating'] ?? 'not-started';
@@ -67,13 +81,13 @@ if ($current_submission && isset($current_submission['content_json']) && is_stri
 }
 
 // Legacy fallback for old structure
-if (!$current_submission && isset($program['brief_description'])) {
+if (!$submission_to_use && isset($program['brief_description'])) {
     $response['data']['brief_description'] = $program['brief_description'];
 }
 
 // Add submission_id if available
-if ($current_submission && isset($current_submission['submission_id'])) {
-    $response['data']['submission_id'] = $current_submission['submission_id'];
+if ($submission_to_use && isset($submission_to_use['submission_id'])) {
+    $response['data']['submission_id'] = $submission_to_use['submission_id'];
 }
 
 echo json_encode($response);

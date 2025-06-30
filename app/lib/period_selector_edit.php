@@ -89,6 +89,11 @@ $is_current_active = $selected_period && $selected_period['status'] === 'open';
                 if (periodInput) {
                     periodInput.value = selectedPeriodId;
                 }
+                // Update the URL query parameter period_id without reloading the page
+                const url = new URL(window.location.href);
+                url.searchParams.set('period_id', selectedPeriodId);
+                window.history.replaceState({}, '', url.toString());
+
                 // Try to get programId from hidden input, JS global, or URL
                 let programId = (typeof PROGRAM_ID !== 'undefined') ? PROGRAM_ID : (window.programId || null);
                 if (!programId) {
