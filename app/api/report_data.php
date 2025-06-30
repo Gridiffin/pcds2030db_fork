@@ -129,8 +129,8 @@ $sector_leads = $dept_prefix . $sector_leads;
 // Process selected program IDs if provided
 $selected_program_ids = [];
 $program_filter_condition = "p.sector_id = ?"; // Default filter by sector only
-$program_params = [$period_id, $sector_id]; // Default parameters
-$program_param_types = "ii"; // Default parameter types
+$program_params = [$period_id, $period_id, $sector_id]; // period_id appears twice in subquery
+$program_param_types = "iii"; // Three parameters: period_id, period_id, sector_id
 
 if (!empty($selected_program_ids_raw)) {
     error_log("Selected program IDs raw: {$selected_program_ids_raw}");
@@ -507,6 +507,7 @@ $degraded_area_query = "SELECT m.data_json, m.table_name, m.row_config, m.column
                         FROM sector_outcomes_data m 
                         WHERE m.sector_id = ? 
                         AND m.table_name = 'TOTAL DEGRADED AREA'
+                        AND m.is_draft = 0
                         ORDER BY m.updated_at DESC LIMIT 1"; // Assuming one relevant record
 
 $stmt_degraded = $conn->prepare($degraded_area_query);
@@ -521,13 +522,9 @@ if ($stmt_degraded) {
         $row_config = json_decode($row_degraded['row_config'], true);
         $column_config = json_decode($row_degraded['column_config'], true);
 
-        // Check if we have the new custom structure or fallback to old format
-        if (!empty($row_config) && !empty($column_config)) {
-            // New custom structure format
-            $year_columns = array_map(function($col) { return $col['label']; }, $column_config['columns']);
-            $monthly_data_rows = $data_json_degraded; // Direct access to month data
-        } elseif (isset($data_json_degraded['data']) && isset($data_json_degraded['columns'])) {
-            // Legacy format fallback
+        // Check the actual data structure to determine the correct parsing approach
+        if (isset($data_json_degraded['data']) && isset($data_json_degraded['columns'])) {
+            // Standard format: {columns: [years], data: {month: {year: value}}}
             $year_columns = $data_json_degraded['columns'];
             $monthly_data_rows = $data_json_degraded['data'];
         } else {
@@ -549,47 +546,33 @@ if ($stmt_degraded) {
                 }                if ($full_month_name && isset($monthly_data_rows[$full_month_name])) {
                     $month_values = $monthly_data_rows[$full_month_name];
                     foreach ($degraded_area_years as $year) {
-                        if (!empty($column_config)) {
-                            // New custom structure - use column index
-                            $year_column_index = array_search($year, $year_columns);
-                            if ($year_column_index !== false && isset($month_values[$year_column_index]) && is_numeric($month_values[$year_column_index])) {
-                                $degraded_area_data[$year][$month_index] = floatval($month_values[$year_column_index]);
-                            }
-                        } else {
-                            // Legacy format - use year as key
-                            if (in_array($year, $year_columns) && isset($month_values[$year]) && is_numeric($month_values[$year])) {
-                                $degraded_area_data[$year][$month_index] = floatval($month_values[$year]);
-                            }
+                        // Standard format - use year as string key
+                        if (in_array($year, $year_columns) && isset($month_values[$year]) && is_numeric($month_values[$year])) {
+                            $degraded_area_data[$year][$month_index] = floatval($month_values[$year]);
                         }
                     }
                 }
             }
 
-            // Extract units based on data format
-            if (!empty($column_config)) {
-                // New custom structure - get units from column config
-                $degraded_area_units = '';
+            // Extract units - check column_config first, then data_json, then default
+            $degraded_area_units = 'Ha'; // Default
+            
+            if (!empty($column_config) && isset($column_config['columns'])) {
+                // Try to get units from column config
                 foreach ($column_config['columns'] as $col) {
                     if (!empty($col['unit'])) {
                         $degraded_area_units = $col['unit'];
                         break;
                     }
                 }
-                if (empty($degraded_area_units)) {
-                    $degraded_area_units = 'Ha'; // Default unit
-                }
-            } else {
-                // Legacy format - extract units from data_json
-                if(isset($data_json_degraded['units'])) {
-                    if(is_array($data_json_degraded['units'])) {
-                        $degraded_area_units = $data_json_degraded['units'][$current_year] ?? 
-                                             $data_json_degraded['units'][$previous_year] ?? 
-                                             $data_json_degraded['units'][array_key_first($data_json_degraded['units'])] ?? 'Ha';
-                    } else {
-                        $degraded_area_units = $data_json_degraded['units'];
-                    }
+            } elseif (isset($data_json_degraded['units'])) {
+                // Try to get units from data_json
+                if (is_array($data_json_degraded['units'])) {
+                    $degraded_area_units = $data_json_degraded['units'][$current_year] ?? 
+                                         $data_json_degraded['units'][$previous_year] ?? 
+                                         $data_json_degraded['units'][array_key_first($data_json_degraded['units'])] ?? 'Ha';
                 } else {
-                    $degraded_area_units = 'Ha';
+                    $degraded_area_units = $data_json_degraded['units'];
                 }
             }
         }
@@ -611,7 +594,8 @@ $timber_query = "SELECT m.data_json, m.table_name, m.row_config, m.column_config
                 FROM sector_outcomes_data m 
                 WHERE m.sector_id = ? 
                 AND m.table_name = 'TIMBER EXPORT VALUE'
-                ORDER BY m.updated_at DESC";
+                AND m.is_draft = 0
+                ORDER BY m.updated_at DESC LIMIT 1";
                 
 $stmt = $conn->prepare($timber_query);
 $stmt->bind_param("i", $sector_id);
@@ -625,35 +609,44 @@ if ($timber_result->num_rows > 0) {
         $row_config = json_decode($row['row_config'], true);
         $column_config = json_decode($row['column_config'], true);
         
-        // Check if we have the new custom structure or fallback to legacy
-        if (!empty($row_config) && !empty($column_config)) {
-            // New custom structure format
-            $year_columns = array_map(function($col) { return $col['label']; }, $column_config['columns']);
+        error_log("Processing TIMBER EXPORT data structure: " . json_encode([
+            'has_columns' => isset($data['columns']),
+            'has_data' => isset($data['data']), 
+            'columns' => $data['columns'] ?? null,
+            'data_keys' => isset($data['data']) ? array_keys($data['data']) : null
+        ]));
+        
+        // Process the standard format: {columns: [years], data: {month: {year: value}}}
+        if (isset($data['columns']) && isset($data['data'])) {
             $current_year_str = (string)$current_year;
             $previous_year_str = (string)$previous_year;
             
-            // Check if the data contains current or previous year columns
-            if (in_array($current_year_str, $year_columns) || in_array($previous_year_str, $year_columns)) {
-                foreach ($data as $month => $values) {
+            // Check if the data follows the format where years are columns
+            if (in_array($current_year_str, $data['columns']) || in_array($previous_year_str, $data['columns'])) {
+                // Direct year-based structure with months as keys
+                foreach ($data['data'] as $month => $values) {
+                    // Get month index (0-based)
                     $month_index = array_search(strtoupper(substr($month, 0, 3)), array_map('strtoupper', $monthly_labels));
                     if ($month_index !== false) {
-                        // Find column indices for years
-                        $current_year_index = array_search($current_year_str, $year_columns);
-                        $previous_year_index = array_search($previous_year_str, $year_columns);
-                        
                         // Store values for current year if available
-                        if ($current_year_index !== false && isset($values[$current_year_index]) && is_numeric($values[$current_year_index])) {
-                            $timber_export_data[$current_year][$month_index] = floatval($values[$current_year_index]);
+                        if (isset($values[$current_year_str]) && is_numeric($values[$current_year_str])) {
+                            $timber_export_data[$current_year][$month_index] = floatval($values[$current_year_str]);
+                            error_log("Set timber data for {$current_year} month {$month_index}: " . $values[$current_year_str]);
                         }
-                        
                         // Store values for previous year if available
-                        if ($previous_year_index !== false && isset($values[$previous_year_index]) && is_numeric($values[$previous_year_index])) {
-                            $timber_export_data[$previous_year][$month_index] = floatval($values[$previous_year_index]);
+                        if (isset($values[$previous_year_str]) && is_numeric($values[$previous_year_str])) {
+                            $timber_export_data[$previous_year][$month_index] = floatval($values[$previous_year_str]);
+                            error_log("Set timber data for {$previous_year} month {$month_index}: " . $values[$previous_year_str]);
                         }
                     }
                 }
+                // We found the data, no need to look further
+                break;
             }
-        } elseif (isset($data['columns']) && isset($data['data'])) {
+        }
+        
+        // Alternative structure checks (keep existing logic as fallback)
+        if (isset($data['columns']) && isset($data['data'])) {
             // Legacy format fallback
             $current_year_str = (string)$current_year;
             $previous_year_str = (string)$previous_year;
