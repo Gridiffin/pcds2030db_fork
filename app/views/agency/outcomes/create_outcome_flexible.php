@@ -76,38 +76,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $_SESSION['user_id']
                     );
 
-                if ($stmt->execute()) {
-                    $outcome_id = $conn->insert_id;
-                    
-                    // Log successful outcome creation
+                    if ($stmt->execute()) {
+                        $outcome_id = $conn->insert_id;
+                        // Log successful outcome creation
+                        log_audit_action(
+                            'outcome_created',
+                            "Created flexible outcome '{$table_name}' (ID: {$outcome_id}) for sector {$sector_id}",
+                            'success',
+                            $_SESSION['user_id']
+                        );
+
+                        $message = "Outcome '{$table_name}' created successfully!";
+                        $message_type = 'success';
+                        // Redirect to avoid resubmission
+                        $_SESSION['success_message'] = $message;
+                        header('Location: submit_outcomes.php');
+                        exit;
+                    } else {
+                        throw new Exception($conn->error);
+                    }
+                } catch (Exception $e) {
+                    $message = 'Error creating outcome: ' . $e->getMessage();
+                    $message_type = 'danger';
+                    // Log outcome creation failure
                     log_audit_action(
-                        'outcome_created',
-                        "Created flexible outcome '{$table_name}' (ID: {$outcome_id}) for sector {$sector_id}",
-                        'success',
+                        'outcome_creation_failed',
+                        "Failed to create flexible outcome '{$table_name}' for sector {$sector_id}: " . $e->getMessage(),
+                        'failure',
                         $_SESSION['user_id']
                     );
-
-                    $message = "Outcome '{$table_name}' created successfully!";
-                    $message_type = 'success';
-                    
-                    // Redirect to avoid resubmission
-                    $_SESSION['success_message'] = $message;
-                    header('Location: submit_outcomes.php');
-                    exit;
-                } else {
-                    throw new Exception($conn->error);
                 }
-            } catch (Exception $e) {
-                $message = 'Error creating outcome: ' . $e->getMessage();
-                $message_type = 'danger';
-                
-                // Log outcome creation failure
-                log_audit_action(
-                    'outcome_creation_failed',
-                    "Failed to create flexible outcome '{$table_name}' for sector {$sector_id}: " . $e->getMessage(),
-                    'failure',
-                    $_SESSION['user_id']
-                );
             }
         }
     }
