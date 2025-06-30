@@ -50,23 +50,49 @@ $overall_rating = $outcome_details['overall_rating'] ?? null;
 $created_at = new DateTime($outcome_details['created_at']);
 $updated_at = new DateTime($outcome_details['updated_at']);
 
-// Get flexible structure configuration (same logic as agency side)
-$table_structure_type = $outcome_details['table_structure_type'] ?? 'monthly';
-$row_config = json_decode($outcome_details['row_config'] ?? '{}', true);
-$column_config = json_decode($outcome_details['column_config'] ?? '{}', true);
+// Get flexible structure configuration (updated to match agency side format)
+// All outcomes now use flexible format
 
-// Parse the outcome data
+// Parse the outcome data (new flexible format)
 $outcome_data = json_decode($outcome_details['data_json'] ?? '{}', true) ?? [];
 
-// Determine if this is a flexible structure or legacy
-$is_flexible = !empty($row_config) && !empty($column_config);
+// Check if data is in new flexible format
+$is_flexible = isset($outcome_data['columns']) && isset($outcome_data['data']);
 
 if ($is_flexible) {
-    // New flexible structure
-    $rows = $row_config['rows'] ?? [];
-    $columns = $column_config['columns'] ?? [];
+    // New flexible structure (same as agency side)
+    $columns = $outcome_data['columns'] ?? [];
+    $data = $outcome_data['data'] ?? [];
+    
+    // Get row labels from the data
+    $row_labels = [];
+    if (!empty($data) && is_array($data)) {
+        $row_labels = array_keys($data);
+    }
+    
+    // Convert to admin display format for compatibility
+    $rows = array_map(function($row_label) {
+        return ['id' => $row_label, 'label' => $row_label, 'type' => 'data'];
+    }, $row_labels);
+    
+    $columns_formatted = array_map(function($col) {
+        return ['id' => $col, 'label' => $col, 'type' => 'number', 'unit' => ''];
+    }, $columns);
+    
+    // Organize data for display (compatible with existing admin template)
+    $table_data = [];
+    foreach ($row_labels as $row_label) {
+        $row_data = ['row' => ['id' => $row_label, 'label' => $row_label, 'type' => 'data'], 'metrics' => []];
+        
+        // Add data for each column in this row
+        if (isset($data[$row_label])) {
+            $row_data['metrics'] = $data[$row_label];
+        }
+        
+        $table_data[] = $row_data;
+    }
 } else {
-    // Legacy structure - convert to flexible format using parsed data
+    // Legacy fallback - shouldn't happen after migration
     $outcome_metrics_data = $outcome_details['parsed_data'] ?? [];
     if (empty($outcome_metrics_data) && !empty($outcome_details['data_json'])) {
         $outcome_metrics_data = json_decode($outcome_details['data_json'], true) ?? [];
@@ -81,23 +107,16 @@ if ($is_flexible) {
         return ['id' => $month, 'label' => $month, 'type' => 'data'];
     }, $month_names);
     
-    $columns = array_map(function($col) {
+    $columns_formatted = array_map(function($col) {
         return ['id' => $col, 'label' => $col, 'type' => 'number', 'unit' => ''];
     }, $metric_names);
+    
+    $table_data = [];
+    // Legacy data organization would go here
 }
 
-// Organize data for display
-$table_data = [];
-foreach ($rows as $row_def) {
-    $row_data = ['row' => $row_def, 'metrics' => []];
-    
-    // Add data for each metric in this row
-    if (isset($outcome_data[$row_def['id']])) {
-        $row_data['metrics'] = $outcome_data[$row_def['id']];
-    }
-    
-    $table_data[] = $row_data;
-}
+// For backward compatibility with existing admin template
+$columns = $columns_formatted ?? [];
 
 // Add CSS references (if any specific to outcome viewing)
 $additionalStyles = [
@@ -188,7 +207,68 @@ require_once '../../layouts/page_header.php';
                         </div>
                     </div>
 
-                    <?php if (!empty($columns)): ?>
+                    <?php if (!empty($columns) && $is_flexible): ?>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover data-table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 150px;">Row</th>
+                                    <?php foreach ($columns as $column): ?>
+                                        <th class="text-center">
+                                            <?= htmlspecialchars($column['label']) ?>
+                                            <?php if (!empty($column['unit'])): ?>
+                                                <span class="text-muted small">(<?= htmlspecialchars($column['unit']) ?>)</span>
+                                            <?php endif; ?>
+                                        </th>
+                                    <?php endforeach; ?>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($row_labels as $row_label): ?>
+                                    <tr>
+                                        <td>
+                                            <span class="month-badge"><?= htmlspecialchars($row_label) ?></span>
+                                        </td>
+                                        <?php foreach ($columns as $column): ?>
+                                            <td class="text-end">
+                                                <?php 
+                                                $value = $data[$row_label][$column['id']] ?? 0;
+                                                // Handle empty strings and non-numeric values safely
+                                                if (is_numeric($value) && $value !== '') {
+                                                    echo number_format((float)$value, 2);
+                                                } else {
+                                                    echo '0.00';
+                                                }
+                                                ?>
+                                            </td>
+                                        <?php endforeach; ?>
+                                    </tr>
+                                <?php endforeach; ?>
+                                
+                                <!-- Total Row -->
+                                <tr class="table-light fw-bold">
+                                    <td><span class="total-badge">TOTAL</span></td>
+                                    <?php foreach ($columns as $column): ?>
+                                        <td class="text-end">
+                                            <?php
+                                            $total = 0;
+                                            foreach ($row_labels as $row_label) {
+                                                $cell_value = $data[$row_label][$column['id']] ?? 0;
+                                                // Only add numeric values to total
+                                                if (is_numeric($cell_value) && $cell_value !== '') {
+                                                    $total += (float)$cell_value;
+                                                }
+                                            }
+                                            echo number_format($total, 2);
+                                            ?>
+                                        </td>
+                                    <?php endforeach; ?>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <?php elseif (!empty($columns)): ?>
+                    <!-- Legacy format display (fallback) -->
                     <div class="table-responsive">
                         <table class="table table-bordered table-hover data-table">
                             <thead class="table-light">
@@ -360,30 +440,215 @@ require_once '../../layouts/page_header.php';
     </div>
 </div>
 
-<!-- Load enhanced charting script -->
-<script src="<?= APP_URL ?>/assets/js/charts/enhanced-outcomes-chart.js"></script>
-
-<!-- Initialize the enhanced chart with classic structure data -->
+<!-- Pass data to JavaScript (same format as agency side) -->
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Prepare structure data for chart (flexible format)
-        const structure = {
-            rows: <?= json_encode($rows) ?>,
-            columns: <?= json_encode($columns) ?>
-        };
+// Prepare data for chart in a simple, compatible format
+window.tableData = <?= json_encode($data ?? []) ?>;
+window.tableColumns = <?= json_encode(array_column($columns, 'id')) ?>;
+window.tableRows = <?= json_encode($row_labels ?? []) ?>;
+
+// Additional data for context
+const outcomeInfo = {
+    id: <?= $metric_id ?>,
+    tableName: <?= json_encode($table_name) ?>,
+    hasData: <?= json_encode($is_flexible && !empty($columns) && !empty($row_labels)) ?>
+};
+
+// Initialize chart functionality if Chart.js is available (same as agency side)
+function initializeChart() {
+    if (typeof Chart !== 'undefined' && window.tableData && window.tableColumns && window.tableRows) {
+        // Simple chart initialization
+        const ctx = document.getElementById('metricChart');
         
-        // Prepare data for chart (flexible format)
-        const chartData = <?= json_encode($outcome_data) ?>;
-        
-        // Initialize enhanced chart with flexible data
-        initEnhancedOutcomesChart(
-            chartData, 
-            structure,
-            "<?= addslashes($table_name) ?>",
-            "<?= $is_flexible ? 'flexible' : 'classic' ?>"
-        );
-    });
+        if (ctx && Object.keys(window.tableData).length > 0) {
+            // Destroy existing chart if present
+            const existingChart = Chart.getChart(ctx);
+            if (existingChart) {
+                existingChart.destroy();
+            }
+            
+            const chartType = document.getElementById('chartType')?.value || 'bar';
+            const cumulativeView = document.getElementById('cumulativeView')?.checked || false;
+            
+            // Create chart data - ensure all values are numeric
+            const labels = window.tableRows;
+            const datasets = window.tableColumns.map((column, index) => {
+                let data = labels.map(row => {
+                    const cellValue = window.tableData[row] ? window.tableData[row][column] : null;
+                    // Convert to number, handle empty strings and null values
+                    let numericValue = 0;
+                    if (cellValue !== null && cellValue !== '' && cellValue !== undefined) {
+                        numericValue = parseFloat(cellValue) || 0;
+                    }
+                    return numericValue;
+                });
+                
+                // Apply cumulative calculation if enabled
+                if (cumulativeView) {
+                    const cumulativeData = [];
+                    let runningTotal = 0;
+                    for (let i = 0; i < data.length; i++) {
+                        runningTotal += data[i];
+                        cumulativeData.push(runningTotal);
+                    }
+                    data = cumulativeData;
+                }
+                
+                const colors = [
+                    'rgba(54, 162, 235, 0.8)',
+                    'rgba(255, 99, 132, 0.8)',
+                    'rgba(75, 192, 192, 0.8)',
+                    'rgba(255, 205, 86, 0.8)',
+                    'rgba(153, 102, 255, 0.8)',
+                    'rgba(255, 159, 64, 0.8)'
+                ];
+                
+                return {
+                    label: column + (cumulativeView ? ' (Cumulative)' : ''),
+                    data: data,
+                    backgroundColor: colors[index % colors.length],
+                    borderColor: colors[index % colors.length].replace('0.8', '1'),
+                    borderWidth: 2,
+                    fill: chartType === 'area'
+                };
+            });
+            
+            // Create chart with improved configuration for financial data
+            const chartInstance = new Chart(ctx, {
+                type: chartType === 'area' ? 'line' : chartType,
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    // Format large numbers (millions, billions)
+                                    if (value >= 1000000000) {
+                                        return 'RM ' + (value / 1000000000).toFixed(1) + 'B';
+                                    } else if (value >= 1000000) {
+                                        return 'RM ' + (value / 1000000).toFixed(1) + 'M';
+                                    } else if (value >= 1000) {
+                                        return 'RM ' + (value / 1000).toFixed(1) + 'K';
+                                    }
+                                    return 'RM ' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed.y;
+                                    return context.dataset.label + ': RM ' + value.toLocaleString();
+                                }
+                            }
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+            
+            // Store chart instance globally for download functionality
+            window.currentChart = chartInstance;
+        }
+    }
+}
+
+// Wait for Chart.js to load and initialize
+function waitForChart() {
+    if (typeof Chart !== 'undefined') {
+        // Chart.js loaded, initialize chart
+        initializeChart();
+    } else {
+        // Waiting for Chart.js to load
+        setTimeout(waitForChart, 100);
+    }
+}
+
+// Initialize everything when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Start chart initialization
+    waitForChart();
+    
+    // Handle chart tab activation
+    const chartTab = document.getElementById('chart-tab');
+    if (chartTab) {
+        chartTab.addEventListener('shown.bs.tab', function () {
+            setTimeout(initializeChart, 100);
+        });
+    }
+    
+    // Chart type change handler
+    const chartTypeSelect = document.getElementById('chartType');
+    if (chartTypeSelect) {
+        chartTypeSelect.addEventListener('change', function() {
+            initializeChart();
+        });
+    }
+    
+    // Cumulative view toggle handler
+    const cumulativeToggle = document.getElementById('cumulativeView');
+    if (cumulativeToggle) {
+        cumulativeToggle.addEventListener('change', function() {
+            initializeChart();
+        });
+    }
+    
+    // Download chart image handler
+    const downloadImageBtn = document.getElementById('downloadChartImage');
+    if (downloadImageBtn) {
+        downloadImageBtn.addEventListener('click', function() {
+            if (window.currentChart) {
+                const url = window.currentChart.toBase64Image();
+                const link = document.createElement('a');
+                link.download = 'outcome-chart.png';
+                link.href = url;
+                link.click();
+            }
+        });
+    }
+
+    // Download CSV handler
+    const downloadBtn = document.getElementById('downloadDataCSV');
+    if (downloadBtn) {
+        downloadBtn.addEventListener('click', function() {
+            if (window.tableData && window.tableColumns && window.tableRows) {
+                let csv = 'Row,' + window.tableColumns.join(',') + '\n';
+                
+                window.tableRows.forEach(row => {
+                    const rowData = [row];
+                    window.tableColumns.forEach(col => {
+                        const value = window.tableData[row] && window.tableData[row][col] ? window.tableData[row][col] : 0;
+                        rowData.push(value);
+                    });
+                    csv += rowData.join(',') + '\n';
+                });
+                
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.download = 'outcome-data.csv';
+                link.href = url;
+                link.click();
+                window.URL.revokeObjectURL(url);
+            }
+        });
+    }
+});
 </script>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
 
 <?php 
 // Include footer

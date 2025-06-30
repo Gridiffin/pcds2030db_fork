@@ -25,9 +25,6 @@ $message_type = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $table_name = trim($_POST['table_name'] ?? '');
-    $structure_type = 'custom'; // Always use custom structure
-    $row_config_json = $_POST['row_config'] ?? '';
-    $column_config_json = $_POST['column_config'] ?? '';
     $data_json = $_POST['data_json'] ?? '';
     $sector_id = intval($_POST['sector_id'] ?? 0);
 
@@ -35,64 +32,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $message = 'Table name, sector, and data are required.';
         $message_type = 'danger';
     } else {
-        // Get max metric_id for this sector
-        $max_metric_id = 0;
-        $query = "SELECT MAX(metric_id) AS max_metric_id FROM sector_outcomes_data WHERE sector_id = ?";
-        $stmt_max = $conn->prepare($query);
-        $stmt_max->bind_param("i", $sector_id);
-        $stmt_max->execute();
-        $result_max = $stmt_max->get_result();
-        if ($row = $result_max->fetch_assoc()) {
-            $max_metric_id = intval($row['max_metric_id']);
-        }
-        $metric_id = $max_metric_id + 1;
-
-        try {
-            $conn->begin_transaction();
-
-            // Insert the new outcome with custom structure
-            $query = "INSERT INTO sector_outcomes_data 
-                         (metric_id, sector_id, table_name, data_json, table_structure_type, row_config, column_config, submitted_by) 
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-            
-            $stmt = $conn->prepare($query);
-            if (!$stmt) {
-                throw new Exception("Prepare statement failed: " . $conn->error);
+        // Validate JSON data is in flexible format
+        $data_check = json_decode($data_json, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $message = 'Invalid JSON data format.';
+            $message_type = 'danger';
+        } elseif (!isset($data_check['columns']) || !isset($data_check['data'])) {
+            $message = 'Data must be in flexible format with "columns" and "data" properties.';
+            $message_type = 'danger';
+        } else {
+            // Get max metric_id for this sector
+            $max_metric_id = 0;
+            $query = "SELECT MAX(metric_id) AS max_metric_id FROM sector_outcomes_data WHERE sector_id = ?";
+            $stmt_max = $conn->prepare($query);
+            $stmt_max->bind_param("i", $sector_id);
+            $stmt_max->execute();
+            $result_max = $stmt_max->get_result();
+            if ($row = $result_max->fetch_assoc()) {
+                $max_metric_id = intval($row['max_metric_id']);
             }
+            $metric_id = $max_metric_id + 1;
 
-            $submitted_by = $_SESSION['username'] ?? 'admin';
-            $stmt->bind_param(
-                "iissssss",
-                $metric_id,
-                $sector_id,
-                $table_name,
-                $data_json,
-                $structure_type,
-                $row_config_json,
-                $column_config_json,
-                $submitted_by
-            );
+            try {
+                $conn->begin_transaction();
 
-            if ($stmt->execute()) {
-                $outcome_id = $conn->insert_id;
+                // Insert the new outcome with flexible structure (only table_name and data_json)
+                $query = "INSERT INTO sector_outcomes_data 
+                             (metric_id, sector_id, table_name, data_json, submitted_by) 
+                             VALUES (?, ?, ?, ?, ?)";
                 
-                // Log the creation
-                log_audit_action(
-                    'outcome_created',
-                    "Created outcome '{$table_name}' (ID: {$outcome_id}) with structure type '{$structure_type}' for sector {$sector_id}",
-                    'success',
-                    $_SESSION['user_id']
+                $stmt = $conn->prepare($query);
+                if (!$stmt) {
+                    throw new Exception("Prepare statement failed: " . $conn->error);
+                }
+
+                $submitted_by = $_SESSION['user_id'] ?? 0;
+                $stmt->bind_param(
+                    "iissi",
+                    $metric_id,
+                    $sector_id,
+                    $table_name,
+                    $data_json,
+                    $submitted_by
                 );
 
-                $conn->commit();
-                $message = "Outcome '{$table_name}' created successfully!";
-                $message_type = 'success';
-                
-                // Clear form data on success
-                $_POST = [];
-            } else {
-                throw new Exception("Execute failed: " . $stmt->error);
-            }
+                if ($stmt->execute()) {
+                    $outcome_id = $conn->insert_id;
+                    
+                    // Log the creation
+                    log_audit_action(
+                        'outcome_created',
+                        "Created flexible outcome '{$table_name}' (ID: {$outcome_id}) for sector {$sector_id}",
+                        'success',
+                        $_SESSION['user_id']
+                    );
+
+                    $conn->commit();
+                    $message = "Outcome '{$table_name}' created successfully!";
+                    $message_type = 'success';
+                    
+                    // Clear form data on success
+                    $_POST = [];
+                } else {
+                    throw new Exception("Execute failed: " . $stmt->error);
+                }
         } catch (Exception $e) {
             $conn->rollback();
             

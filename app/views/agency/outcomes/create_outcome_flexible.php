@@ -25,9 +25,6 @@ $message_type = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $table_name = trim($_POST['table_name'] ?? '');
-    $structure_type = 'custom'; // Always use custom structure
-    $row_config_json = $_POST['row_config'] ?? '';
-    $column_config_json = $_POST['column_config'] ?? '';
     $data_json = $_POST['data_json'] ?? '';
 
     if ($table_name === '' || $data_json === '') {
@@ -36,44 +33,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $sector_id = $_SESSION['sector_id'] ?? 0;
 
-        // Get max metric_id for this sector
-        $max_metric_id = 0;
-        $query = "SELECT MAX(metric_id) AS max_metric_id FROM sector_outcomes_data WHERE sector_id = ?";
-        $stmt_max = $conn->prepare($query);
-        $stmt_max->bind_param("i", $sector_id);
-        $stmt_max->execute();
-        $result_max = $stmt_max->get_result();
-        if ($row = $result_max->fetch_assoc()) {
-            $max_metric_id = intval($row['max_metric_id']);
-        }
-        $metric_id = $max_metric_id + 1;
-
-        // Decode JSON data
-        $data_array = json_decode($data_json, true);
-        $row_config_array = json_decode($row_config_json, true);
-        $column_config_array = json_decode($column_config_json, true);
-        
-        if ($data_array === null) {
-            $message = 'Invalid JSON data.';
+        // Validate JSON data is in flexible format
+        $data_check = json_decode($data_json, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $message = 'Invalid JSON data format.';
+            $message_type = 'danger';
+        } elseif (!isset($data_check['columns']) || !isset($data_check['data'])) {
+            $message = 'Data must be in flexible format with "columns" and "data" properties.';
             $message_type = 'danger';
         } else {
-            try {
-                // Insert new record into sector_outcomes_data with flexible structure
-                $query = "INSERT INTO sector_outcomes_data 
-                         (metric_id, sector_id, table_name, data_json, table_structure_type, row_config, column_config, submitted_by) 
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-                
-                $stmt = $conn->prepare($query);
-                $stmt->bind_param("iisssssi", 
-                    $metric_id, 
-                    $sector_id, 
-                    $table_name, 
-                    $data_json,
-                    $structure_type,
-                    $row_config_json,
-                    $column_config_json,
-                    $_SESSION['user_id']
-                );
+            // Get max metric_id for this sector
+            $max_metric_id = 0;
+            $query = "SELECT MAX(metric_id) AS max_metric_id FROM sector_outcomes_data WHERE sector_id = ?";
+            $stmt_max = $conn->prepare($query);
+            $stmt_max->bind_param("i", $sector_id);
+            $stmt_max->execute();
+            $result_max = $stmt_max->get_result();
+            if ($row = $result_max->fetch_assoc()) {
+                $max_metric_id = intval($row['max_metric_id']);
+            }
+            $metric_id = $max_metric_id + 1;
+
+            // Decode JSON data
+            $data_array = json_decode($data_json, true);
+            
+            if ($data_array === null) {
+                $message = 'Invalid JSON data.';
+                $message_type = 'danger';
+            } else {
+                try {
+                    // Insert new record into sector_outcomes_data with flexible structure
+                    $query = "INSERT INTO sector_outcomes_data 
+                             (metric_id, sector_id, table_name, data_json, submitted_by) 
+                             VALUES (?, ?, ?, ?, ?)";
+                    
+                    $stmt = $conn->prepare($query);
+                    $stmt->bind_param("iissi", 
+                        $metric_id, 
+                        $sector_id, 
+                        $table_name, 
+                        $data_json,
+                        $_SESSION['user_id']
+                    );
 
                 if ($stmt->execute()) {
                     $outcome_id = $conn->insert_id;
@@ -81,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Log successful outcome creation
                     log_audit_action(
                         'outcome_created',
-                        "Created flexible outcome '{$table_name}' (ID: {$outcome_id}) with structure type '{$structure_type}' for sector {$sector_id}",
+                        "Created flexible outcome '{$table_name}' (ID: {$outcome_id}) for sector {$sector_id}",
                         'success',
                         $_SESSION['user_id']
                     );

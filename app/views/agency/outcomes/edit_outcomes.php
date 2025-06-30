@@ -164,6 +164,9 @@ require_once '../../layouts/page_header.php';
                     <button type="button" class="btn btn-primary" id="addColumnBtn">
                         <i class="fas fa-plus me-1"></i> Add Column
                     </button>
+                    <button type="button" class="btn btn-primary ms-2" id="addRowBtn">
+                        <i class="fas fa-plus me-1"></i> Add Row
+                    </button>
                 </div>
 
                 <div class="table-responsive">
@@ -189,7 +192,14 @@ require_once '../../layouts/page_header.php';
                             
                             foreach ($row_labels as $row_label): ?>
                                 <tr>
-                                    <td><span class="row-badge"><?= htmlspecialchars($row_label) ?></span></td>
+                                    <td>
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <span class="row-badge editable-hint" contenteditable="true" data-row="<?= htmlspecialchars($row_label) ?>"><?= htmlspecialchars($row_label) ?></span>
+                                            <button type="button" class="btn btn-sm btn-outline-danger delete-row-btn ms-2" data-row="<?= htmlspecialchars($row_label) ?>" title="Delete row">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
+                                    </td>
                                     <!-- Dynamic cells will be added here -->
                                 </tr>
                             <?php endforeach; ?>
@@ -222,6 +232,37 @@ require_once '../../layouts/page_header.php';
     
     // Initialize table with loaded data
     
+    function addRow() {
+        const rowName = prompt('Enter row name:');
+        if (rowName && rowName.trim() !== '') {
+            const trimmedName = rowName.trim();
+            if (data[trimmedName] !== undefined) {
+                alert('Row already exists!');
+                return;
+            }
+            
+            // Initialize data for this row with all existing columns
+            data[trimmedName] = {};
+            columns.forEach(col => {
+                data[trimmedName][col] = 0;
+            });
+            
+            renderTable();
+        }
+    }
+
+    function removeRow(rowName) {
+        if (Object.keys(data).length <= 1) {
+            alert('Cannot delete the last row. At least one row is required.');
+            return;
+        }
+        
+        if (data[rowName] !== undefined) {
+            delete data[rowName];
+            renderTable();
+        }
+    }
+
     function addColumn() {
         // Show enhanced input modal instead of basic prompt
         const columnName = prompt('Enter column title:', 'New Column');
@@ -288,26 +329,29 @@ require_once '../../layouts/page_header.php';
     }
 
     function collectCurrentData() {
-        // Initialize data structure if needed
-        if (!data || typeof data !== 'object') {
-            data = {};
-        }
+        // Collect data from table DOM elements
+        const rowElements = document.querySelectorAll('.metrics-table tbody tr');
+        const currentData = {};
         
-        // Collect all current values from DOM
-        rowLabels.forEach(rowLabel => {
-            if (!data[rowLabel]) {
-                data[rowLabel] = {};
+        rowElements.forEach(row => {
+            const rowBadge = row.querySelector('.row-badge');
+            if (rowBadge) {
+                const rowLabel = rowBadge.textContent.trim();
+                currentData[rowLabel] = {};
+                
+                columns.forEach(col => {
+                    const cell = row.querySelector(`.metric-cell[data-row="${rowLabel}"][data-column="${col}"]`);
+                    if (cell) {
+                        let val = parseFloat(cell.textContent.trim());
+                        if (isNaN(val)) val = 0;
+                        currentData[rowLabel][col] = val;
+                    }
+                });
             }
-            
-            columns.forEach(col => {
-                const cell = document.querySelector(`.metric-cell[data-row="${rowLabel}"][data-column="${col}"]`);
-                if (cell) {
-                    let val = parseFloat(cell.textContent.trim());
-                    if (isNaN(val)) val = 0;
-                    data[rowLabel][col] = val;
-                }
-            });
         });
+        
+        // Update the global data object
+        data = currentData;
     }
 
     function renderTable(skipDataCollection = false) {
@@ -340,22 +384,32 @@ require_once '../../layouts/page_header.php';
 
         // Rebuild table body with preserved data
         const tbody = document.querySelector('.metrics-table tbody');
-        tbody.querySelectorAll('tr').forEach(row => {
-            // Remove all cells except the first (Row)
-            while (row.children.length > 1) {
-                row.removeChild(row.lastChild);
-            }
+        tbody.innerHTML = ''; // Clear all rows
+        
+        // Create rows dynamically from data object
+        Object.keys(data).forEach(rowLabel => {
+            const tr = document.createElement('tr');
             
-            const rowLabel = row.querySelector('.row-badge').textContent;
+            // Create row header cell with editable name and delete button
+            const rowHeaderTd = document.createElement('td');
+            rowHeaderTd.innerHTML = `
+                <div class="d-flex align-items-center justify-content-between">
+                    <span class="row-badge editable-hint" contenteditable="true" data-row="${rowLabel}">${rowLabel}</span>
+                    <button type="button" class="btn btn-sm btn-outline-danger delete-row-btn ms-2" data-row="${rowLabel}" title="Delete row">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>`;
+            tr.appendChild(rowHeaderTd);
             
+            // Create data cells for each column
             columns.forEach(col => {
-                // Get preserved data value or default to empty
                 const cellValue = (data[rowLabel] && data[rowLabel][col] !== undefined) ? data[rowLabel][col] : '';
-                
                 const td = document.createElement('td');
                 td.innerHTML = `<div class="metric-cell editable-hint" contenteditable="true" data-column="${col}" data-row="${rowLabel}">${cellValue}</div>`;
-                row.appendChild(td);
+                tr.appendChild(td);
             });
+            
+            tbody.appendChild(tr);
         });
 
         // Reattach all event handlers
@@ -363,6 +417,30 @@ require_once '../../layouts/page_header.php';
     }
 
     function attachEventHandlers() {
+        // Delete row button handlers
+        document.querySelectorAll('.delete-row-btn').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const row = btn.getAttribute('data-row');
+                if (confirm(`Delete row "${row}"? This action cannot be undone.`)) {
+                    removeRow(row);
+                }
+            };
+        });
+
+        // Row title edit handlers
+        document.querySelectorAll('.row-badge').forEach(el => {
+            // Remove existing listeners first
+            el.removeEventListener('input', handleRowTitleEdit);
+            el.removeEventListener('blur', handleRowTitleBlur);
+            el.removeEventListener('keydown', handleRowTitleKeydown);
+            
+            // Add new listeners
+            el.addEventListener('input', handleRowTitleEdit);
+            el.addEventListener('blur', handleRowTitleBlur);
+            el.addEventListener('keydown', handleRowTitleKeydown);
+        });
+
         // Delete column button handlers
         document.querySelectorAll('.delete-column-btn').forEach(btn => {
             btn.onclick = (e) => {
@@ -423,6 +501,57 @@ require_once '../../layouts/page_header.php';
                 }
             });
         });
+    }
+
+    function handleRowTitleEdit() {
+        const oldRow = this.getAttribute('data-row');
+        const newRow = this.textContent.trim();
+        
+        if (newRow !== oldRow && newRow !== '') {
+            if (data[newRow] !== undefined) {
+                alert('Row name already exists!');
+                this.textContent = oldRow;
+                return;
+            }
+            
+            // Update data object keys
+            if (data[oldRow] !== undefined) {
+                data[newRow] = data[oldRow];
+                delete data[oldRow];
+                
+                // Update the data attribute
+                this.setAttribute('data-row', newRow);
+                
+                // Update all related DOM elements
+                const row = this.closest('tr');
+                const deleteBtn = row.querySelector('.delete-row-btn');
+                if (deleteBtn) {
+                    deleteBtn.setAttribute('data-row', newRow);
+                }
+                
+                // Update all metric cells in this row
+                const metricCells = row.querySelectorAll('.metric-cell');
+                metricCells.forEach(cell => {
+                    cell.setAttribute('data-row', newRow);
+                });
+            }
+        }
+    }
+
+    function handleRowTitleBlur() {
+        // Validate row name
+        const rowName = this.textContent.trim();
+        if (rowName === '') {
+            const oldRow = this.getAttribute('data-row');
+            this.textContent = oldRow;
+        }
+    }
+
+    function handleRowTitleKeydown(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            this.blur();
+        }
     }
 
     function handleColumnTitleEdit() {
@@ -520,8 +649,9 @@ require_once '../../layouts/page_header.php';
         sel.addRange(range);
     }
 
-    // Initialize event handlers for add column button
+    // Initialize event handlers for add column and add row buttons
     document.getElementById('addColumnBtn').addEventListener('click', addColumn);
+    document.getElementById('addRowBtn').addEventListener('click', addRow);
 
     // Handle button clicks to set draft status
     document.getElementById('saveBtn').addEventListener('click', function(e) {
@@ -556,6 +686,12 @@ require_once '../../layouts/page_header.php';
         if (columns.length === 0) {
             e.preventDefault();
             alert('Please add at least one column.');
+            return false;
+        }
+        
+        if (Object.keys(data).length === 0) {
+            e.preventDefault();
+            alert('Please add at least one row.');
             return false;
         }
         
