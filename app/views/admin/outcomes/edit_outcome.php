@@ -330,7 +330,7 @@ require_once '../../layouts/page_header.php';
                     <a href="view_outcome.php?metric_id=<?= $metric_id ?>" class="btn btn-outline-secondary me-2">
                         <i class="fas fa-times me-1"></i> Cancel
                     </a>
-                    <button type="submit" class="btn btn-success" id="submitBtn">
+                    <button type="submit" class="btn btn-success" id="saveOutcomeBtn">
                         <i class="fas fa-save me-1"></i> Save Changes
                     </button>
                 </div>
@@ -354,7 +354,7 @@ window.tableName = "<?= addslashes($table_name) ?>";
 // Set up save button functionality to work with external JS
 document.addEventListener('DOMContentLoaded', function() {
     // Set up save button to work with the main form
-    const saveBtn = document.getElementById('submitBtn');
+    const saveBtn = document.getElementById('saveOutcomeBtn');
     if (saveBtn) {
         saveBtn.addEventListener('click', function(e) {
             e.preventDefault();

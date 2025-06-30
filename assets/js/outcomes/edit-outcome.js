@@ -602,48 +602,44 @@ function updateTotals() {
 function saveFlexibleOutcome() {
     const saveBtn = document.getElementById('saveOutcomeBtn');
     if (!saveBtn) return;
-    
     const originalText = saveBtn.innerHTML;
     saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Saving...';
     saveBtn.disabled = true;
-    
     try {
-        // Collect data from inputs
+        // Collect data from inputs and serialize as PHP expects
         const data = {};
-        
         currentRowConfig.forEach(row => {
             if (row.type === 'data') {
-                data[row.id] = {};
-                document.querySelectorAll(`[data-row="${row.id}"].data-input`).forEach(input => {
-                    const columnId = input.dataset.column;
-                    data[row.id][columnId] = parseFloat(input.value) || 0;
+                // Build array of values in column order
+                const rowValues = [];
+                currentColumnConfig.forEach(col => {
+                    const input = document.querySelector(
+                        `[data-row-id="${row.id}"][data-column-id="${col.id}"]`
+                    );
+                    let value = '';
+                    if (input) {
+                        value = input.value !== '' ? parseFloat(input.value) : '';
+                    }
+                    rowValues.push(value);
                 });
+                data[row.id] = rowValues;
             }
         });
-        
-        // Update the outcome data structure
-        const outcomeData = {
-            data: data,
-            columns: currentColumnConfig.map(col => col.id),
-            structure_type: 'custom'
-        };
-        
+        // Add columns array for reference
+        data.columns = currentColumnConfig.map(col => col.id);
         // Set the JSON data in the hidden field
         const dataJsonField = document.getElementById('data_json');
         if (dataJsonField) {
-            dataJsonField.value = JSON.stringify(outcomeData);
+            dataJsonField.value = JSON.stringify(data);
         }
-        
         // Submit the form
         const form = document.getElementById('editFlexibleOutcomeForm');
         if (form) {
             form.submit();
         }
-        
     } catch (error) {
         console.error('Error saving outcome:', error);
         alert('Error saving outcome. Please try again.');
-        
         // Restore button state
         saveBtn.innerHTML = originalText;
         saveBtn.disabled = false;
