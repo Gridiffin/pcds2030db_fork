@@ -420,7 +420,7 @@ if ($result) {
                                         <a href="edit_outcome.php?outcome_id=<?= $outcome['metric_id'] ?>" class="btn btn-sm btn-outline-primary">
                                             <i class="fas fa-edit me-1"></i> Edit
                                         </a>
-                                        <a href="<?php echo APP_URL; ?>/app/views/admin/outcomes/delete_outcome.php?outcome_id=<?= $outcome['metric_id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this outcome?');">
+                                        <a href="delete_outcome.php?outcome_id=<?= $outcome['metric_id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this outcome?');">
                                             <i class="fas fa-trash-alt me-1"></i> Delete
                                         </a>
                                     </div>
