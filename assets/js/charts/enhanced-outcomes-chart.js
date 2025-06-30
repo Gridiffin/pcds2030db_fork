@@ -61,7 +61,7 @@ function setupClassicChart() {
 function setupFlexibleChart() {
     // For flexible structure, use row labels as X-axis and columns as series
     chartOptions.xAxisData = chartStructure.rows.map(row => row.label);
-    chartOptions.columns = chartStructure.columns.map(col => col.name);
+    chartOptions.columns = chartStructure.columns.map(col => col.label);
     chartOptions.dataStructure = 'flexible';
     
     // Setup column selector
@@ -114,7 +114,7 @@ function setupChartControls() {
     if (columnSelect) {
         columnSelect.addEventListener('change', function() {
             if (this.value === 'all') {
-                chartOptions.columns = chartStructure?.columns?.map(col => col.name) || chartData.columns || [];
+                chartOptions.columns = chartStructure?.columns?.map(col => col.label) || chartData.columns || [];
             } else {
                 chartOptions.columns = [this.value];
             }
@@ -123,7 +123,7 @@ function setupChartControls() {
     }
     
     // Cumulative toggle
-    const cumulativeToggle = document.getElementById('cumulativeToggle');
+    const cumulativeToggle = document.getElementById('cumulativeView');
     if (cumulativeToggle) {
         cumulativeToggle.addEventListener('change', function() {
             chartOptions.showCumulative = this.checked;
@@ -265,12 +265,16 @@ function extractColumnData(columnName) {
             }
         });
     } else {
-        // Flexible structure
+        // Flexible structure with array-based data
         let cumulativeValue = 0;
         chartStructure.rows.forEach(row => {
             let value = 0;
-            if (chartData.data && chartData.data[row.label] && chartData.data[row.label][columnName]) {
-                value = parseFloat(chartData.data[row.label][columnName]) || 0;
+            
+            // Find the column index for this column name
+            const columnIndex = chartStructure.columns.findIndex(col => col.label === columnName);
+            
+            if (columnIndex !== -1 && chartData[row.id] && chartData[row.id][columnIndex] !== undefined) {
+                value = parseFloat(chartData[row.id][columnIndex]) || 0;
             }
             
             if (chartOptions.showCumulative) {
@@ -318,8 +322,12 @@ function downloadDataAsCSV() {
                     value = chartData.data[category][column];
                 }
             } else {
-                if (chartData.data && chartData.data[category] && chartData.data[category][column]) {
-                    value = chartData.data[category][column];
+                // Flexible structure with array-based data
+                const columnIndex = chartStructure.columns.findIndex(col => col.label === column);
+                const rowInfo = chartStructure.rows.find(row => row.label === category);
+                
+                if (columnIndex !== -1 && rowInfo && chartData[rowInfo.id] && chartData[rowInfo.id][columnIndex] !== undefined) {
+                    value = chartData[rowInfo.id][columnIndex] || 0;
                 }
             }
             row.push(value);

@@ -148,19 +148,6 @@ foreach ($rows as $row_def) {
     $table_data[] = $row_data;
 }
 
-// Add CSS and JS references for dynamic table structure editor
-$additionalStyles = [
-    APP_URL . '/assets/css/table-structure-designer.css',
-    APP_URL . '/assets/css/custom/metric-create.css'
-];
-
-// Add JS references for edit mode
-$additionalScripts = [
-    APP_URL . '/assets/js/outcomes/edit-outcome.js',
-    APP_URL . '/assets/js/outcomes/chart-manager.js',
-    APP_URL . '/assets/js/table-calculation-engine.js'
-];
-
 // Include header
 require_once '../../layouts/header.php';
 
@@ -241,20 +228,6 @@ require_once '../../layouts/page_header.php';
                     </div>
                 </div>
 
-                <!-- Dynamic Table Structure Editor -->
-                <div id="table-designer-container">
-                    <!-- Will be populated by table structure designer -->
-                </div>
-                
-                <!-- Live Preview Help -->
-                <div class="alert alert-info d-flex align-items-center mb-4" role="alert">
-                    <i class="fas fa-lightbulb me-2"></i>
-                    <div>
-                        <strong>Live Preview:</strong> Use the controls above to add or remove columns and rows. 
-                        Changes appear immediately in the table below and your existing data is preserved.
-                    </div>
-                </div>
-
                 <!-- Editable Data Table -->
                 <div class="table-responsive">
                     <table class="table table-bordered" id="editableDataTable">
@@ -326,48 +299,91 @@ require_once '../../layouts/page_header.php';
                 <input type="hidden" id="structure_type" name="structure_type" value="<?= htmlspecialchars($table_structure_type) ?>">
 
                 <!-- Action Buttons -->
-                <div class="mt-4 d-flex justify-content-end">
-                    <a href="view_outcome.php?metric_id=<?= $metric_id ?>" class="btn btn-outline-secondary me-2">
-                        <i class="fas fa-times me-1"></i> Cancel
-                    </a>
-                    <button type="submit" class="btn btn-success" id="submitBtn">
-                        <i class="fas fa-save me-1"></i> Save Changes
-                    </button>
+                <div class="mt-4 d-flex justify-content-between">
+                    <div>
+                        <button type="button" class="btn btn-outline-info" id="previewChangesBtn">
+                            <i class="fas fa-eye me-1"></i> Preview Changes
+                        </button>
+                    </div>
+                    <div>
+                        <a href="view_outcome.php?metric_id=<?= $metric_id ?>" class="btn btn-outline-secondary me-2">
+                            <i class="fas fa-times me-1"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-success" id="submitBtn">
+                            <i class="fas fa-save me-1"></i> Save Changes
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-<!-- Initialize data for external scripts -->
+<!-- Include necessary scripts -->
 <script>
-// Initialize table data and structure for JavaScript - used by external scripts
+// Initialize table data and structure for JavaScript
 window.tableData = <?= json_encode($outcome_data) ?>;
 window.tableStructure = {
     rows: <?= json_encode($rows) ?>,
     columns: <?= json_encode($columns) ?>
 };
 window.isFlexible = <?= $is_flexible ? 'true' : 'false' ?>;
-window.metricId = <?= $metric_id ?>;
-window.tableName = "<?= addslashes($table_name) ?>";
 
-// Set up save button functionality to work with external JS
 document.addEventListener('DOMContentLoaded', function() {
-    // Set up save button to work with the main form
-    const saveBtn = document.getElementById('submitBtn');
-    if (saveBtn) {
-        saveBtn.addEventListener('click', function(e) {
-            e.preventDefault();
+    // Initialize data collection from inputs
+    function collectTableData() {
+        const data = {};
+        const inputs = document.querySelectorAll('.data-input');
+        
+        inputs.forEach(input => {
+            const rowId = input.dataset.rowId;
+            const columnIndex = input.dataset.columnIndex;
+            const value = input.value.trim();
             
-            // Let external JS handle the save if available
-            if (typeof saveFlexibleOutcome === 'function') {
-                saveFlexibleOutcome();
-            } else {
-                // Fallback: submit the form normally
-                document.getElementById('editFlexibleOutcomeForm').submit();
+            if (!data[rowId]) {
+                data[rowId] = {};
             }
+            
+            data[rowId][columnIndex] = value !== '' ? parseFloat(value) || 0 : null;
+        });
+        
+        return data;
+    }
+    
+    // Update totals when data changes
+    function updateTotals() {
+        const data = collectTableData();
+        const totalCells = document.querySelectorAll('.total-cell');
+        
+        totalCells.forEach(cell => {
+            const columnIndex = cell.dataset.columnIndex;
+            let total = 0;
+            
+            Object.keys(data).forEach(rowId => {
+                if (data[rowId][columnIndex] !== null && !isNaN(data[rowId][columnIndex])) {
+                    total += data[rowId][columnIndex];
+                }
+            });
+            
+            cell.textContent = total.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
         });
     }
+    
+    // Add event listeners to data inputs
+    document.querySelectorAll('.data-input').forEach(input => {
+        input.addEventListener('input', updateTotals);
+        input.addEventListener('change', updateTotals);
+    });
+    
+    // Handle form submission
+    document.getElementById('editFlexibleOutcomeForm').addEventListener('submit', function(e) {
+        // Collect current data and update hidden field
+        const currentData = collectTableData();
+        document.getElementById('data_json').value = JSON.stringify(currentData);
+    });
 });
 </script>
 

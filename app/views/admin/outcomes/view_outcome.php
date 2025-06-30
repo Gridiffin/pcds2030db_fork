@@ -41,12 +41,9 @@ if (!$outcome_details) {
 }
 
 $table_name = $outcome_details['table_name'];
-$sector_id = $outcome_details['sector_id'];
-$sector_name = $outcome_details['sector_name'] ?? 'Unknown Sector';
 $period_id = $outcome_details['period_id'];
 $year = $outcome_details['year'] ?? 'N/A';
 $quarter = $outcome_details['quarter'] ?? 'N/A';
-$reporting_period_name = "Q{$quarter} {$year}"; // Construct proper period name
 $status = $outcome_details['status'] ?? 'submitted'; // Default to submitted if not present
 $overall_rating = $outcome_details['overall_rating'] ?? null;
 
@@ -113,25 +110,25 @@ require_once ROOT_PATH . 'app/views/layouts/header.php';
 // Configure modern page header
 $header_config = [
     'title' => 'View Outcome Details',
-    'subtitle' => 'Review outcome data for ' . htmlspecialchars($sector_name) . ' sector for ' . htmlspecialchars($reporting_period_name),
+    'subtitle' => 'Review outcome data and metrics',
     'variant' => 'white',
     'actions' => [
         [
             'url' => 'manage_outcomes.php',
             'text' => 'Back to Manage Outcomes',
-            'icon' => 'fa-arrow-left',
+            'icon' => 'fas fa-arrow-left',
             'class' => 'btn-outline-primary'
         ],
         [
             'url' => 'outcome_history.php?metric_id=' . $metric_id,
             'text' => 'View History',
-            'icon' => 'fa-history',
+            'icon' => 'fas fa-history',
             'class' => 'btn-outline-info'
         ],
         [
             'url' => 'edit_outcome.php?metric_id=' . $metric_id,
             'text' => 'Edit Outcome',
-            'icon' => 'fa-edit',
+            'icon' => 'fas fa-edit',
             'class' => 'btn-primary'
         ]
     ]
@@ -147,22 +144,18 @@ require_once '../../layouts/page_header.php';
             <h5 class="card-title m-0">
                 <i class="fas fa-bullseye me-2"></i><?= htmlspecialchars($table_name) ?>
             </h5>
-            <div class="d-flex align-items-center">
-                <span class="badge bg-info me-2">
-                    <i class="fas fa-calendar-alt me-1"></i><?= htmlspecialchars($reporting_period_name) ?>
-                </span>
-                <span class="badge bg-secondary me-2">
-                    <i class="fas fa-sitemap me-1"></i><?= htmlspecialchars($sector_name) ?>
-                </span>
-                <?php echo get_status_display_name($status); // Replaced display_submission_status_badge ?>
-                <?php if ($overall_rating !== null) { echo get_rating_badge($overall_rating); } // Replaced display_overall_rating_badge ?>
-            </div>
         </div>        <!-- Tab Navigation -->
         <ul class="nav nav-tabs" id="outcomeDetailTabs" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="table-tab" data-bs-toggle="tab" data-bs-target="#table-view" 
                     type="button" role="tab" aria-controls="table-view" aria-selected="true">
                     <i class="fas fa-table me-1"></i> Table View
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="structure-tab" data-bs-toggle="tab" data-bs-target="#structure-view" 
+                    type="button" role="tab" aria-controls="structure-view" aria-selected="false">
+                    <i class="fas fa-cogs me-1"></i> Structure Info
                 </button>
             </li>
             <li class="nav-item" role="presentation">
@@ -181,11 +174,11 @@ require_once '../../layouts/page_header.php';
                     <div class="row mb-4">
                         <div class="col-md-6">
                             <p><strong>Outcome ID:</strong> <?= $metric_id ?></p>
-                            <p><strong>Sector:</strong> <?= htmlspecialchars($sector_name) ?></p>
-                            <p><strong>Reporting Period:</strong> <?= htmlspecialchars($reporting_period_name) ?></p>
                         </div>
-                        <div class="col-md-6">                            <p><strong>Created:</strong> <?= $created_at->format('F j, Y, g:i A') ?></p>
-                            <p><strong>Last Updated:</strong> <?= $updated_at->format('F j, Y, g:i A') ?></p>                            <?php 
+                        <div class="col-md-6">
+                            <p><strong>Created:</strong> <?= $created_at->format('F j, Y, g:i A') ?></p>
+                            <p><strong>Last Updated:</strong> <?= $updated_at->format('F j, Y, g:i A') ?></p>
+                            <?php 
                             // Only show submitted by if available
                             $submitted_by = $outcome_details['submitted_by_username'] ?? null;
                             if (!empty($submitted_by)): 
@@ -246,27 +239,113 @@ require_once '../../layouts/page_header.php';
                         <div class="alert alert-info">No metrics defined for this outcome structure.</div>
                     <?php endif; ?>
                 </div>
-            </div>            <!-- Chart View Tab -->
+            </div>
+            
+            <!-- Structure Info Tab -->
+            <div class="tab-pane fade" id="structure-view" role="tabpanel" aria-labelledby="structure-tab">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">
+                                <i class="fas fa-list me-2"></i>Row Configuration
+                            </h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Label</th>
+                                            <th>Type</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($rows as $row): ?>
+                                        <tr>
+                                            <td><?= htmlspecialchars($row['label']) ?></td>
+                                            <td>
+                                                <span class="badge bg-secondary"><?= ucfirst($row['type']) ?></span>
+                                            </td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-success">
+                                <i class="fas fa-columns me-2"></i>Column Configuration
+                            </h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Label</th>
+                                            <th>Type</th>
+                                            <th>Unit</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($columns as $column): ?>
+                                        <tr>
+                                            <td><?= htmlspecialchars($column['label']) ?></td>
+                                            <td>
+                                                <span class="badge bg-info"><?= ucfirst($column['type']) ?></span>
+                                            </td>
+                                            <td><?= htmlspecialchars($column['unit'] ?? '') ?></td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chart View Tab -->
             <div class="tab-pane fade" id="chart-view" role="tabpanel" aria-labelledby="chart-tab">
                 <div class="card-body">
                     <!-- Chart options -->
                     <div class="row mb-3">
-                        <div class="col-md-6">
+                        <div class="col-md-3">
                             <div class="form-group">
                                 <label for="chartTypeSelect" class="form-label">Chart Type</label>
                                 <select class="form-select" id="chartTypeSelect">
                                     <option value="line">Line Chart</option>
                                     <option value="bar">Bar Chart</option>
-                                    <option value="radar">Radar Chart</option>
+                                    <option value="area">Area Chart</option>
                                 </select>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group">
-                                <label for="chartColumnSelect" class="form-label">Columns to Display</label>
-                                <select class="form-select" id="chartColumnSelect">
-                                    <!-- Options will be populated by JavaScript -->
+                                <label for="chartColumnSelect" class="form-label">Select Data Series</label>
+                                <select class="form-select" id="chartColumnSelect" multiple>
+                                    <?php foreach ($columns as $column): ?>
+                                        <option value="<?= htmlspecialchars($column['id']) ?>" selected>
+                                            <?= htmlspecialchars($column['label']) ?>
+                                        </option>
+                                    <?php endforeach; ?>
                                 </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-center">
+                            <div class="mt-4">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="cumulativeView">
+                                    <label class="form-check-label" for="cumulativeView">
+                                        Cumulative View
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-center justify-content-end">
+                            <div class="btn-group mt-4" role="group">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" id="downloadChartImage" title="Download Chart">
+                                    <i class="fas fa-image"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" id="downloadDataCSV" title="Download CSV">
+                                    <i class="fas fa-download"></i>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -274,18 +353,6 @@ require_once '../../layouts/page_header.php';
                     <!-- Chart Canvas -->
                     <div class="chart-container" style="position: relative; height:400px;">
                         <canvas id="metricChart"></canvas>
-                    </div>
-                    
-                    <!-- Download Options -->
-                    <div class="mt-4">
-                        <div class="d-flex justify-content-end">
-                            <button id="downloadChartImage" class="btn btn-outline-primary me-2">
-                                <i class="fas fa-image me-1"></i> Download Chart
-                            </button>
-                            <button id="downloadDataCSV" class="btn btn-outline-success">
-                                <i class="fas fa-file-csv me-1"></i> Download Data as CSV
-                            </button>
-                        </div>
                     </div>
                 </div>
             </div>
