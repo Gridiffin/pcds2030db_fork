@@ -244,7 +244,7 @@ if ($result) {
                                        class="btn btn-sm btn-outline-info" title="View Details">
                                         <i class="fas fa-eye me-1"></i> View
                                     </a>
-                                    <a href="<?php echo APP_URL; ?>/app/views/agency/outcomes/edit_outcome.php?outcome_id=<?= $outcome['metric_id'] ?>" 
+                                    <a href="<?php echo APP_URL; ?>/app/views/agency/outcomes/edit_outcomes.php?outcome_id=<?= $outcome['metric_id'] ?>" 
                                        class="btn btn-sm btn-outline-primary" title="Edit Outcome">
                                         <i class="fas fa-edit me-1"></i> Edit
                                     </a>
@@ -417,7 +417,7 @@ if ($result) {
                                         <a href="view_outcome.php?outcome_id=<?= $outcome['metric_id'] ?>" class="btn btn-sm btn-outline-info">
                                             <i class="fas fa-eye me-1"></i> View
                                         </a>
-                                        <a href="edit_outcome.php?outcome_id=<?= $outcome['metric_id'] ?>" class="btn btn-sm btn-outline-primary">
+                                        <a href="edit_outcomes.php?outcome_id=<?= $outcome['metric_id'] ?>" class="btn btn-sm btn-outline-primary">
                                             <i class="fas fa-edit me-1"></i> Edit
                                         </a>
                                         <a href="delete_outcome.php?outcome_id=<?= $outcome['metric_id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this outcome?');">
