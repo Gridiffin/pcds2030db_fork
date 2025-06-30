@@ -221,14 +221,26 @@ require_once '../../layouts/page_header.php';
             </form>
         </div>
     </div>
+
+    <div id="unsavedChangesAlert" class="alert alert-warning alert-dismissible fade show" role="alert" style="display:none;">
+        <strong>Warning:</strong> You have unsaved changes. Please click <b>Save Changes</b> to apply your edits.
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
 </div>
 
 <script>
     // JavaScript to handle dynamic columns and data collection
 
-    const rowLabels = <?= json_encode($row_labels) ?>;
+    // Remove: const rowLabels = ...
+    // let rowLabels = ...
+    // Instead, always use Object.keys(data)
     let columns = <?= json_encode($data_array['columns'] ?? []) ?>;
     let data = <?= json_encode($data_array['data'] ?? []) ?>;
+    
+    // Helper to get current row labels
+    function getRowLabels() {
+        return Object.keys(data);
+    }
     
     // Initialize table with loaded data
     
@@ -240,26 +252,25 @@ require_once '../../layouts/page_header.php';
                 alert('Row already exists!');
                 return;
             }
-            
             // Initialize data for this row with all existing columns
             data[trimmedName] = {};
             columns.forEach(col => {
                 data[trimmedName][col] = 0;
             });
-            
             renderTable();
+            showUnsavedAlert();
         }
     }
 
     function removeRow(rowName) {
-        if (Object.keys(data).length <= 1) {
+        if (getRowLabels().length <= 1) {
             alert('Cannot delete the last row. At least one row is required.');
             return;
         }
-        
         if (data[rowName] !== undefined) {
             delete data[rowName];
-            renderTable();
+            renderTable(true);
+            showUnsavedAlert();
         }
     }
 
@@ -286,7 +297,11 @@ require_once '../../layouts/page_header.php';
         
         // Add column to array
         columns.push(trimmedName);
-        
+        // Add new column to all rows
+        getRowLabels().forEach(rowLabel => {
+            if (!data[rowLabel]) data[rowLabel] = {};
+            data[rowLabel][trimmedName] = 0;
+        });
         // Re-render table with new structure (preserve existing data)
         renderTable();
         
@@ -297,35 +312,26 @@ require_once '../../layouts/page_header.php';
         }, 500);
         
         // Column added successfully
+        showUnsavedAlert();
     }
 
     function removeColumn(columnName) {
         // Show loading state on table
         const table = document.querySelector('.metrics-table');
         table.classList.add('table-loading');
-        
-        // Collect current data from DOM before removing column
-        collectCurrentData();
-        
         // Remove column from array
         columns = columns.filter(c => c !== columnName);
-        
         // Remove data for the deleted column from all rows
-        rowLabels.forEach(rowLabel => {
+        getRowLabels().forEach(rowLabel => {
             if (data[rowLabel]) {
                 delete data[rowLabel][columnName];
             }
         });
-        
-        // Re-render table (preserve existing data)
-        renderTable();
-        
-        // Remove loading state
+        renderTable(true); // Skip collectCurrentData to avoid restoring deleted column
         setTimeout(() => {
             table.classList.remove('table-loading');
         }, 300);
-        
-        // Column removed successfully
+        showUnsavedAlert();
     }
 
     function collectCurrentData() {
@@ -387,7 +393,7 @@ require_once '../../layouts/page_header.php';
         tbody.innerHTML = ''; // Clear all rows
         
         // Create rows dynamically from data object
-        Object.keys(data).forEach(rowLabel => {
+        getRowLabels().forEach(rowLabel => {
             const tr = document.createElement('tr');
             
             // Create row header cell with editable name and delete button
@@ -422,6 +428,7 @@ require_once '../../layouts/page_header.php';
             btn.onclick = (e) => {
                 e.stopPropagation();
                 const row = btn.getAttribute('data-row');
+                console.log('Delete row clicked:', row); // Debug output
                 if (confirm(`Delete row "${row}"? This action cannot be undone.`)) {
                     removeRow(row);
                 }
@@ -446,6 +453,7 @@ require_once '../../layouts/page_header.php';
             btn.onclick = (e) => {
                 e.stopPropagation();
                 const col = btn.getAttribute('data-column');
+                console.log('Delete column clicked:', col); // Debug output
                 if (confirm(`Delete column "${col}"? This action cannot be undone.`)) {
                     removeColumn(col);
                 }
@@ -572,7 +580,7 @@ require_once '../../layouts/page_header.php';
                 this.setAttribute('data-column', newCol);
                 
                 // Update data object with new column name
-                rowLabels.forEach(rowLabel => {
+                getRowLabels().forEach(rowLabel => {
                     if (data[rowLabel] && data[rowLabel][oldCol] !== undefined) {
                         data[rowLabel][newCol] = data[rowLabel][oldCol];
                         delete data[rowLabel][oldCol];
@@ -625,6 +633,7 @@ require_once '../../layouts/page_header.php';
             if (isNaN(val)) val = 0;
             data[rowLabel][column] = val;
         }
+        showUnsavedAlert();
     }
 
     function handleDataCellBlur() {
@@ -695,8 +704,18 @@ require_once '../../layouts/page_header.php';
             return false;
         }
         
+        hideUnsavedAlert();
         // Form validation passed, submitting
     });
+
+    function showUnsavedAlert() {
+        const alertDiv = document.getElementById('unsavedChangesAlert');
+        if (alertDiv) alertDiv.style.display = '';
+    }
+    function hideUnsavedAlert() {
+        const alertDiv = document.getElementById('unsavedChangesAlert');
+        if (alertDiv) alertDiv.style.display = 'none';
+    }
 
     // Initial render when page loads
     document.addEventListener('DOMContentLoaded', () => {
