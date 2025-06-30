@@ -235,12 +235,85 @@ require_once '../../layouts/page_header.php';
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Disable any conflicting external JS
+    window.editOutcomeJsDisabled = true;
+
+    // Initialize data from PHP
+    let columns = <?= json_encode($data_array['columns'] ?? []) ?>;
+    let data = <?= json_encode($data_array['data'] ?? []) ?>;
+
     // Set up save button to work with the main form
-    const saveBtn = document.getElementById('submitBtn');
+    const saveBtn = document.getElementById('saveBtn');
     if (saveBtn) {
         saveBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            this.blur();
+            document.getElementById('isDraftInput').value = '0';
+        });
+    }
+
+    function addRow() {
+        const rowName = prompt('Enter row name:');
+        if (rowName && rowName.trim() !== '') {
+            const trimmedName = rowName.trim();
+            if (data[trimmedName] !== undefined) {
+                alert('Row already exists!');
+                return;
+            }
+            
+            // Initialize data for this row with all existing columns
+            data[trimmedName] = {};
+            columns.forEach(col => {
+                data[trimmedName][col] = 0;
+            });
+            
+            renderTable();
+        }
+    }
+
+    function removeRow(rowName) {
+        if (Object.keys(data).length <= 1) {
+            alert('Cannot delete the last row. At least one row is required.');
+            return;
+        }
+        
+        if (data[rowName] !== undefined) {
+            delete data[rowName];
+            renderTable();
+        }
+    }
+
+    function addColumn() {
+        const columnName = prompt('Enter column name:');
+        if (columnName && columnName.trim() !== '') {
+            const trimmedName = columnName.trim();
+            if (columns.includes(trimmedName)) {
+                alert('Column already exists!');
+                return;
+            }
+            columns.push(trimmedName);
+            
+            // Initialize data for this column in all existing rows
+            Object.keys(data).forEach(rowLabel => {
+                if (!data[rowLabel]) data[rowLabel] = {};
+                data[rowLabel][trimmedName] = 0;
+            });
+            
+            renderTable();
+        }
+    }
+
+    function removeColumn(columnName) {
+        const columnIndex = columns.indexOf(columnName);
+        if (columnIndex > -1) {
+            columns.splice(columnIndex, 1);
+            
+            // Remove this column's data from all rows
+            Object.keys(data).forEach(rowLabel => {
+                if (data[rowLabel] && data[rowLabel][columnName] !== undefined) {
+                    delete data[rowLabel][columnName];
+                }
+            });
+            
+            renderTable();
         }
     }
 
@@ -291,11 +364,55 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function handleRowTitleEdit() {
+        const oldRow = this.getAttribute('data-row');
+        const newRow = this.textContent.trim();
+        
+        if (newRow !== oldRow && newRow !== '') {
+            if (data[newRow] !== undefined) {
+                alert('Row name already exists!');
+                this.textContent = oldRow;
+                return;
+            }
+            
+            // Update data object keys
+            if (data[oldRow] !== undefined) {
+                data[newRow] = data[oldRow];
+                delete data[oldRow];
+                
+                // Update the data attribute
+                this.setAttribute('data-row', newRow);
+                
+                // Update delete button data attribute
+                const deleteBtn = this.parentElement.querySelector('.delete-row-btn');
+                if (deleteBtn) {
+                    deleteBtn.setAttribute('data-row', newRow);
+                }
+            }
+        }
+    }
+
+    function handleRowTitleBlur() {
+        // Validate row name
+        const rowName = this.textContent.trim();
+        if (rowName === '') {
+            this.textContent = this.getAttribute('data-row');
+        }
+    }
+
+    function handleRowTitleKeydown(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            this.blur();
+        }
+    }
+
     function handleDataCellEdit() {
         const rowLabel = this.getAttribute('data-row');
         const columnName = this.getAttribute('data-column');
         const value = this.textContent.trim();
         
+        // Initialize nested objects if they don't exist
         if (!data[rowLabel]) {
             data[rowLabel] = {};
         }
