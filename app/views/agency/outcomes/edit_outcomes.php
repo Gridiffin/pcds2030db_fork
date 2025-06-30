@@ -73,11 +73,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($post_data_array === null) {
             $message = 'Invalid JSON data.';
             $message_type = 'danger';
-        } else {            // Update existing record in sector_outcomes_data
+        } else {
+            // Update existing record in sector_outcomes_data
             $update_query = "UPDATE sector_outcomes_data SET table_name = ?, data_json = ?, is_draft = ? WHERE metric_id = ? AND sector_id = ?";
             $stmt_update = $conn->prepare($update_query);
             $data_json_str = json_encode($post_data_array);
-            $stmt_update->bind_param("ssiii", $post_table_name, $data_json_str, $is_draft, $outcome_id, $sector_id);            if ($stmt_update->execute()) {
+            $stmt_update->bind_param("ssiii", $post_table_name, $data_json_str, $is_draft, $outcome_id, $sector_id);
+            
+            if ($stmt_update->execute()) {
                 // Log successful outcome edit
                 log_audit_action(
                     'outcome_updated',
@@ -86,8 +89,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['user_id']
                 );
                 
-                // Redirect to submit_outcomes.php after successful save or save draft
-                header('Location: submit_outcomes.php');
+                // Redirect to view outcome details after successful save
+                header('Location: view_outcome.php?outcome_id=' . $outcome_id . '&saved=1');
                 exit;
             } else {
                 $message = 'Error updating outcome: ' . $conn->error;
@@ -105,12 +108,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Add CSS and JS references
+// Add CSS references
 $additionalStyles = [
     APP_URL . '/assets/css/custom/metric-create.css'
 ];
 $additionalScripts = [
-    APP_URL . '/assets/js/metric-editor.js'
+    // Removed conflicting metric-editor.js - using embedded JavaScript instead
 ];
 
 // Include header and agency navigation
@@ -167,17 +170,26 @@ require_once '../../layouts/page_header.php';
                     <table class="table table-bordered table-hover metrics-table">
                         <thead class="table-light">
                             <tr>
-                                <th style="width: 150px;">Month</th>
+                                <th style="width: 150px;">Row</th>
                                 <!-- Dynamic columns will be added here -->
                             </tr>
                         </thead>
                         <tbody>
                             <?php
-                            $month_names = ['January', 'February', 'March', 'April', 'May', 'June',
-                                'July', 'August', 'September', 'October', 'November', 'December'];
-                            foreach ($month_names as $month_name): ?>
+                            // Get row labels from existing data or use default if no data exists
+                            $row_labels = [];
+                            if (!empty($data_array['data']) && is_array($data_array['data'])) {
+                                $row_labels = array_keys($data_array['data']);
+                            }
+                            
+                            // If no existing data, provide a default structure that can be modified
+                            if (empty($row_labels)) {
+                                $row_labels = ['Row 1', 'Row 2', 'Row 3']; // Default starting rows
+                            }
+                            
+                            foreach ($row_labels as $row_label): ?>
                                 <tr>
-                                    <td><span class="month-badge"><?= htmlspecialchars($month_name) ?></span></td>
+                                    <td><span class="row-badge"><?= htmlspecialchars($row_label) ?></span></td>
                                     <!-- Dynamic cells will be added here -->
                                 </tr>
                             <?php endforeach; ?>
@@ -189,9 +201,12 @@ require_once '../../layouts/page_header.php';
 
                 <div class="mt-3">
                     <input type="hidden" name="is_draft" id="isDraftInput" value="0" />
-                    <button type="submit" class="btn btn-success" id="saveBtn" onclick="document.getElementById('isDraftInput').value='0';">Save Outcome</button>
-                    <button type="submit" class="btn btn-warning ms-2" id="saveDraftBtn" onclick="document.getElementById('isDraftInput').value='1';">Save as Draft</button>
-                    <a href="submit_outcomes.php" class="btn btn-secondary ms-2">Cancel</a>
+                    <button type="submit" class="btn btn-success" id="saveBtn">
+                        <i class="fas fa-save me-1"></i>Save Changes
+                    </button>
+                    <a href="submit_outcomes.php" class="btn btn-secondary ms-2">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </a>
                 </div>
             </form>
         </div>
@@ -201,9 +216,13 @@ require_once '../../layouts/page_header.php';
 <script>
     // JavaScript to handle dynamic columns and data collection
 
-    const monthNames = <?= json_encode($month_names) ?>;
+    const rowLabels = <?= json_encode($row_labels) ?>;
     let columns = <?= json_encode($data_array['columns'] ?? []) ?>;
-    let data = <?= json_encode($data_array['data'] ?? []) ?>;    function addColumn() {
+    let data = <?= json_encode($data_array['data'] ?? []) ?>;
+    
+    // Initialize table with loaded data
+    
+    function addColumn() {
         // Show enhanced input modal instead of basic prompt
         const columnName = prompt('Enter column title:', 'New Column');
         if (!columnName || columnName.trim() === '') return;
@@ -227,7 +246,7 @@ require_once '../../layouts/page_header.php';
         // Add column to array
         columns.push(trimmedName);
         
-        // Re-render table with new structure
+        // Re-render table with new structure (preserve existing data)
         renderTable();
         
         // Reset button state
@@ -236,7 +255,7 @@ require_once '../../layouts/page_header.php';
             addBtn.disabled = false;
         }, 500);
         
-        console.log(`Column "${trimmedName}" added successfully`);
+        // Column added successfully
     }
 
     function removeColumn(columnName) {
@@ -250,14 +269,14 @@ require_once '../../layouts/page_header.php';
         // Remove column from array
         columns = columns.filter(c => c !== columnName);
         
-        // Remove data for the deleted column from all months
-        monthNames.forEach(month => {
-            if (data[month]) {
-                delete data[month][columnName];
+        // Remove data for the deleted column from all rows
+        rowLabels.forEach(rowLabel => {
+            if (data[rowLabel]) {
+                delete data[rowLabel][columnName];
             }
         });
         
-        // Re-render table
+        // Re-render table (preserve existing data)
         renderTable();
         
         // Remove loading state
@@ -265,7 +284,7 @@ require_once '../../layouts/page_header.php';
             table.classList.remove('table-loading');
         }, 300);
         
-        console.log(`Column "${columnName}" removed successfully`);
+        // Column removed successfully
     }
 
     function collectCurrentData() {
@@ -275,25 +294,27 @@ require_once '../../layouts/page_header.php';
         }
         
         // Collect all current values from DOM
-        monthNames.forEach(month => {
-            if (!data[month]) {
-                data[month] = {};
+        rowLabels.forEach(rowLabel => {
+            if (!data[rowLabel]) {
+                data[rowLabel] = {};
             }
             
             columns.forEach(col => {
-                const cell = document.querySelector(`.metric-cell[data-month="${month}"][data-column="${col}"]`);
+                const cell = document.querySelector(`.metric-cell[data-row="${rowLabel}"][data-column="${col}"]`);
                 if (cell) {
                     let val = parseFloat(cell.textContent.trim());
                     if (isNaN(val)) val = 0;
-                    data[month][col] = val;
+                    data[rowLabel][col] = val;
                 }
             });
         });
     }
 
-    function renderTable() {
-        // Always collect current data before rebuilding table structure
-        collectCurrentData();
+    function renderTable(skipDataCollection = false) {
+        // Only collect current data if this is not the initial render
+        if (!skipDataCollection) {
+            collectCurrentData();
+        }
         
         const theadRow = document.querySelector('.metrics-table thead tr');
         // Remove all columns except the first (Month)
@@ -320,17 +341,19 @@ require_once '../../layouts/page_header.php';
         // Rebuild table body with preserved data
         const tbody = document.querySelector('.metrics-table tbody');
         tbody.querySelectorAll('tr').forEach(row => {
-            // Remove all cells except the first (Month)
+            // Remove all cells except the first (Row)
             while (row.children.length > 1) {
                 row.removeChild(row.lastChild);
             }
             
-            const month = row.querySelector('.month-badge').textContent;
+            const rowLabel = row.querySelector('.row-badge').textContent;
+            
             columns.forEach(col => {
                 // Get preserved data value or default to empty
-                const cellValue = (data[month] && data[month][col] !== undefined) ? data[month][col] : '';
+                const cellValue = (data[rowLabel] && data[rowLabel][col] !== undefined) ? data[rowLabel][col] : '';
+                
                 const td = document.createElement('td');
-                td.innerHTML = `<div class="metric-cell editable-hint" contenteditable="true" data-column="${col}" data-month="${month}">${cellValue}</div>`;
+                td.innerHTML = `<div class="metric-cell editable-hint" contenteditable="true" data-column="${col}" data-row="${rowLabel}">${cellValue}</div>`;
                 row.appendChild(td);
             });
         });
@@ -420,10 +443,10 @@ require_once '../../layouts/page_header.php';
                 this.setAttribute('data-column', newCol);
                 
                 // Update data object with new column name
-                monthNames.forEach(month => {
-                    if (data[month] && data[month][oldCol] !== undefined) {
-                        data[month][newCol] = data[month][oldCol];
-                        delete data[month][oldCol];
+                rowLabels.forEach(rowLabel => {
+                    if (data[rowLabel] && data[rowLabel][oldCol] !== undefined) {
+                        data[rowLabel][newCol] = data[rowLabel][oldCol];
+                        delete data[rowLabel][oldCol];
                     }
                 });
                 
@@ -438,7 +461,7 @@ require_once '../../layouts/page_header.php';
                     deleteBtn.setAttribute('data-column', newCol);
                 }
                 
-                console.log(`Column renamed from "${oldCol}" to "${newCol}"`);
+                // Column renamed successfully
             }
         }
     }
@@ -462,16 +485,16 @@ require_once '../../layouts/page_header.php';
     }
 
     function handleDataCellEdit() {
-        const month = this.getAttribute('data-month');
+        const rowLabel = this.getAttribute('data-row');
         const column = this.getAttribute('data-column');
         
-        if (month && column) {
-            if (!data[month]) {
-                data[month] = {};
+        if (rowLabel && column) {
+            if (!data[rowLabel]) {
+                data[rowLabel] = {};
             }
             let val = parseFloat(this.textContent.trim());
             if (isNaN(val)) val = 0;
-            data[month][column] = val;
+            data[rowLabel][column] = val;
         }
     }
 
@@ -500,8 +523,16 @@ require_once '../../layouts/page_header.php';
     // Initialize event handlers for add column button
     document.getElementById('addColumnBtn').addEventListener('click', addColumn);
 
+    // Handle button clicks to set draft status
+    document.getElementById('saveBtn').addEventListener('click', function(e) {
+        document.getElementById('isDraftInput').value = '0';
+        // Save as final outcome clicked
+    });
+
     // Handle form submission
     document.getElementById('editOutcomeForm').addEventListener('submit', function(e) {
+        // Form submission started
+        
         // Collect any final changes from DOM before submission
         collectCurrentData();
         
@@ -511,12 +542,40 @@ require_once '../../layouts/page_header.php';
             data: data
         };
         
+        // Data collected for submission
         document.getElementById('dataJsonInput').value = JSON.stringify(collectedData);
+        
+        // Basic validation
+        const tableName = document.getElementById('tableNameInput').value.trim();
+        if (!tableName) {
+            e.preventDefault();
+            alert('Please enter a table name.');
+            return false;
+        }
+        
+        if (columns.length === 0) {
+            e.preventDefault();
+            alert('Please add at least one column.');
+            return false;
+        }
+        
+        // Form validation passed, submitting
     });
 
     // Initial render when page loads
     document.addEventListener('DOMContentLoaded', () => {
-        renderTable();
+        // Prevent conflicting edit-outcome.js from interfering
+        window.editOutcomeJsDisabled = true;
+        
+        // Initial render - don't collect data from empty DOM, use loaded data
+        renderTable(true);
+        
+        // Remove any duplicate save buttons that might be auto-generated
+        const duplicateSaveBtn = document.getElementById('saveOutcomeBtn');
+        if (duplicateSaveBtn) {
+            // Remove duplicate save button from header
+            duplicateSaveBtn.remove();
+        }
     });
 </script>
 

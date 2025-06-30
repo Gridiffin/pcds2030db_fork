@@ -724,6 +724,12 @@ window.saveFlexibleOutcome = saveFlexibleOutcome;
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
+    // Check if this script should be disabled (for compatibility with other edit pages)
+    if (window.editOutcomeJsDisabled) {
+        console.log('edit-outcome.js disabled by page request');
+        return;
+    }
+    
     // Add small delay to ensure all scripts are loaded
     setTimeout(function() {
         initFlexibleOutcomeEditor();

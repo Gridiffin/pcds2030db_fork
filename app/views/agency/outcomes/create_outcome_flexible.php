@@ -64,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                          VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
                 
                 $stmt = $conn->prepare($query);
-                $stmt->bind_param("iissssi", 
+                $stmt->bind_param("iisssssi", 
                     $metric_id, 
                     $sector_id, 
                     $table_name, 
@@ -398,15 +398,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function collectTableData(structureData) {
         const data = {
-            structure_type: 'custom', // Always custom structure
             columns: structureData.columns.map(col => col.id),
             data: {}
         };
         
-        // Collect data from input fields
+        // Use actual custom row labels (not forced month names)
         structureData.rows.forEach(row => {
             if (row.type !== 'separator') {
-                data.data[row.id] = {};
+                const rowLabel = row.label || row.id; // Use actual row label
+                data.data[rowLabel] = {};
                 structureData.columns.forEach(col => {
                     const cell = document.querySelector(`[data-row="${row.id}"][data-column="${col.id}"]`);
                     let value = 0;
@@ -420,7 +420,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             value = parseFloat(cell.textContent) || 0;
                         }
                     }
-                    data.data[row.id][col.id] = value;
+                    data.data[rowLabel][col.id] = value;
                 });
             }
         });

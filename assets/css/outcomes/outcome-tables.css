@@ -1,0 +1,278 @@
+/**
+ * Outcome Tables CSS - Clean, modern styling for dynamic outcome tables
+ */
+
+/* Container */
+.outcome-table-container {
+    margin: 20px 0;
+    overflow-x: auto;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+/* Table styles */
+.outcome-table {
+    width: 100%;
+    margin-bottom: 0;
+    background-color: #fff;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.outcome-table th,
+.outcome-table td {
+    padding: 12px;
+    vertical-align: middle;
+    border: 1px solid #dee2e6;
+    position: relative;
+}
+
+/* Header styles */
+.outcome-table thead th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.outcome-table .row-header {
+    background-color: #f8f9fa;
+    font-weight: 500;
+    min-width: 150px;
+    position: sticky;
+    left: 0;
+    z-index: 10;
+}
+
+/* Column header with controls */
+.column-header {
+    min-width: 180px;
+    position: relative;
+}
+
+.column-header .column-label {
+    margin-bottom: 5px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.column-header .remove-column {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    font-size: 12px;
+    line-height: 1;
+    border-radius: 50%;
+}
+
+/* Row header with controls */
+.row-header .row-label {
+    margin-bottom: 5px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.row-header .remove-row {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    font-size: 12px;
+    line-height: 1;
+    border-radius: 50%;
+}
+
+/* Data cells */
+.data-cell {
+    min-width: 120px;
+    text-align: center;
+}
+
+.data-cell .cell-input {
+    text-align: center;
+    font-size: 14px;
+}
+
+/* Add column cell */
+.add-column-cell {
+    background-color: #f8f9fa;
+    width: 60px;
+    text-align: center;
+    border-left: 2px solid #28a745;
+}
+
+.add-column-cell .add-column {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    font-size: 18px;
+    line-height: 1;
+    border-radius: 50%;
+}
+
+/* Table footer */
+.table-footer {
+    text-align: left;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+}
+
+/* Edit controls */
+.edit-controls {
+    padding: 20px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.edit-controls .btn {
+    margin: 0 5px;
+    min-width: 120px;
+}
+
+.save-status {
+    margin-top: 10px;
+    font-weight: 500;
+}
+
+/* Empty state */
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    background-color: #f8f9fa;
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    color: #6c757d;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .outcome-table-container {
+        margin: 10px 0;
+    }
+    
+    .outcome-table th,
+    .outcome-table td {
+        padding: 8px;
+        font-size: 12px;
+    }
+    
+    .column-header,
+    .data-cell {
+        min-width: 100px;
+    }
+    
+    .row-header {
+        min-width: 120px;
+    }
+    
+    .edit-controls .btn {
+        margin: 5px;
+        min-width: 100px;
+    }
+}
+
+/* View mode specific styles */
+.outcome-table.view-mode .data-cell {
+    background-color: #fff;
+    font-weight: 500;
+}
+
+.outcome-table.view-mode .row-header,
+.outcome-table.view-mode .column-header {
+    background-color: #e9ecef;
+}
+
+/* Edit mode specific styles */
+.outcome-table.edit-mode .form-control {
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.outcome-table.edit-mode .form-control:focus {
+    border-color: #80bdff;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Button styles */
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.remove-column,
+.remove-row {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
+.remove-column:hover,
+.remove-row:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+}
+
+.add-column {
+    background-color: #28a745;
+    border-color: #28a745;
+    color: white;
+}
+
+.add-column:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+}
+
+.add-row {
+    background-color: #28a745;
+    border-color: #28a745;
+    color: white;
+    padding: 8px 16px;
+}
+
+.add-row:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+}
+
+/* Animation for adding/removing elements */
+.outcome-table tr,
+.outcome-table th {
+    transition: all 0.3s ease;
+}
+
+.outcome-table tr.removing {
+    opacity: 0;
+    transform: translateX(-100%);
+}
+
+/* Loading state */
+.outcome-table.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.outcome-table.loading::after {
+    content: "Loading...";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 255, 255, 0.9);
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-weight: bold;
+    z-index: 100;
+}

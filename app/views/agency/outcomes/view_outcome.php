@@ -3,6 +3,7 @@
  * View Outcome Details 
  * 
  * Agency page to view outcome details (view-only mode)
+ * Supports flexible table structures (dynamic rows and columns)
  */
 
 // Include necessary files
@@ -30,7 +31,7 @@ if ($outcome_id === 0) {
 
 $sector_id = $_SESSION['sector_id'] ?? 0;
 
-// Get outcome data with flexible structure support
+// Get outcome data
 $query = "SELECT sod.*, u.username as submitted_by_username 
           FROM sector_outcomes_data sod 
           LEFT JOIN users u ON sod.submitted_by = u.user_id 
@@ -59,58 +60,34 @@ if (isset($_GET['saved']) && $_GET['saved'] == '1') {
     $success_message = 'Outcome updated successfully!';
 }
 
-// Get flexible structure configuration
-$table_structure_type = $row['table_structure_type'] ?? 'monthly';
-$row_config = json_decode($row['row_config'] ?? '{}', true);
-$column_config = json_decode($row['column_config'] ?? '{}', true);
+// Parse the data structure (compatible with edit_outcomes.php format)
+$data_array = $outcome_data ?? ['columns' => [], 'data' => []];
 
-// Determine if this is a flexible structure or legacy
-$is_flexible = !empty($row_config) && !empty($column_config);
-
-if ($is_flexible) {
-    // New flexible structure
-    $rows = $row_config['rows'] ?? [];
-    $columns = $column_config['columns'] ?? [];
-} else {
-    // Legacy structure - convert to flexible format
-    $metric_names = $outcome_data['columns'] ?? [];
-    
-    // Create default monthly rows
-    $month_names = ['January', 'February', 'March', 'April', 'May', 'June', 
-                    'July', 'August', 'September', 'October', 'November', 'December'];
-    $rows = array_map(function($month) {
-        return ['id' => $month, 'label' => $month, 'type' => 'data'];
-    }, $month_names);
-    
-    $columns = array_map(function($col) {
-        return ['id' => $col, 'label' => $col, 'type' => 'number', 'unit' => ''];
-    }, $metric_names);
+// Ensure we have the correct structure
+if (!isset($data_array['columns']) || !isset($data_array['data'])) {
+    $data_array = ['columns' => [], 'data' => []];
 }
 
-// Organize data for display
-$table_data = [];
-foreach ($rows as $row_def) {
-    $row_data = ['row' => $row_def, 'metrics' => []];
-    
-    // Add data for each metric in this row
-    if (isset($outcome_data[$row_def['id']])) {
-        $row_data['metrics'] = $outcome_data[$row_def['id']];
-    }
-    
-    $table_data[] = $row_data;
+$columns = $data_array['columns'] ?? [];
+$data = $data_array['data'] ?? [];
+
+// Get row labels from the data
+$row_labels = [];
+if (!empty($data) && is_array($data)) {
+    $row_labels = array_keys($data);
 }
+
+// If no data exists, show empty state
+$has_data = !empty($columns) && !empty($row_labels);
 
 // Add CSS references
 $additionalStyles = [
-    APP_URL . '/assets/css/table-structure-designer.css',
     APP_URL . '/assets/css/custom/metric-create.css'
 ];
 
 // Add JS references for view mode
 $additionalScripts = [
-    'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js',
-    APP_URL . '/assets/js/outcomes/chart-manager.js',  // Load chart-manager.js first
-    APP_URL . '/assets/js/outcomes/view-outcome.js'    // Then view-outcome.js
+    'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js'
 ];
 
 // Include header
@@ -119,11 +96,11 @@ require_once '../../layouts/header.php';
 // Configure modern page header
 $header_config = [
     'title' => 'View Outcome Details',
-    'subtitle' => htmlspecialchars($table_name),
+    'subtitle' => htmlspecialchars($table_name) . ($is_draft ? ' (Draft)' : ' (Submitted)'),
     'variant' => 'white',
     'actions' => [
         [
-            'url' => 'edit_outcome.php?outcome_id=' . $outcome_id,
+            'url' => 'edit_outcomes.php?outcome_id=' . $outcome_id,
             'text' => 'Edit Outcome',
             'icon' => 'fas fa-edit',
             'class' => 'btn-outline-primary'
@@ -155,24 +132,12 @@ require_once '../../layouts/page_header.php';
         <div class="card-header bg-info text-white">
             <div class="d-flex justify-content-between align-items-center">
                 <h5 class="card-title m-0">
-                    <i class="fas fa-info-circle me-2"></i><?= htmlspecialchars($table_name) ?>
+                    <i class="fas fa-table me-2"></i><?= htmlspecialchars($table_name) ?>
                 </h5>
                 <div>
-                    <?php if ($is_draft): ?>
-                        <span class="badge bg-warning">
-                            <i class="fas fa-file-alt me-1"></i> Draft
-                        </span>
-                    <?php else: ?>
-                        <span class="badge bg-success">
-                            <i class="fas fa-check-circle me-1"></i> Submitted
-                        </span>
-                    <?php endif; ?>
-                    
-                    <?php if ($is_flexible): ?>
-                        <span class="badge bg-primary ms-2">
-                            <i class="fas fa-cogs me-1"></i> Flexible Structure
-                        </span>
-                    <?php endif; ?>
+                    <span class="badge bg-success">
+                        <i class="fas fa-check-circle me-1"></i> Flexible Structure
+                    </span>
                 </div>
             </div>
         </div>
@@ -211,10 +176,10 @@ require_once '../../layouts/page_header.php';
                             </div>
                             <div class="mb-3">
                                 <strong>Structure Type:</strong> 
-                                <span class="badge bg-primary">Custom Table</span>
+                                <span class="badge bg-primary">Flexible Table</span>
                             </div>
                             <div class="mb-3">
-                                <strong>Submitted:</strong> <?= $created_at->format('F j, Y g:i A') ?>
+                                <strong>Created:</strong> <?= $created_at->format('F j, Y g:i A') ?>
                             </div>
                             <?php if ($created_at->format('Y-m-d H:i:s') !== $updated_at->format('Y-m-d H:i:s')): ?>
                             <div class="mb-3">
@@ -222,8 +187,20 @@ require_once '../../layouts/page_header.php';
                             </div>
                             <?php endif; ?>
                         </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <strong>Columns:</strong> <?= count($columns) ?>
+                            </div>
+                            <div class="mb-3">
+                                <strong>Rows:</strong> <?= count($row_labels) ?>
+                            </div>
+                            <div class="mb-3">
+                                <strong>Data Points:</strong> <?= count($columns) * count($row_labels) ?>
+                            </div>
+                        </div>
                     </div>
 
+                    <?php if ($has_data): ?>
                     <!-- View Mode: Read-only Table -->
                     <div class="table-responsive">
                         <table class="table table-bordered table-hover">
@@ -232,72 +209,52 @@ require_once '../../layouts/page_header.php';
                                     <th style="width: 150px;">Row</th>
                                     <?php foreach ($columns as $column): ?>
                                         <th class="text-center">
-                                            <div><?= htmlspecialchars($column['label']) ?></div>
-                                            <?php if (!empty($column['unit'])): ?>
-                                                <small class="text-muted">(<?= htmlspecialchars($column['unit']) ?>)</small>
-                                            <?php endif; ?>
+                                            <?= htmlspecialchars($column) ?>
                                         </th>
                                     <?php endforeach; ?>
-                                    <?php if (empty($columns)): ?>
-                                        <th class="text-center text-muted">No columns defined</th>
-                                    <?php endif; ?>
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($table_data as $row_data): ?>
-                                    <tr class="<?= $row_data['row']['type'] === 'separator' ? 'table-secondary' : '' ?>">
+                                <?php foreach ($row_labels as $row_label): ?>
+                                    <tr>
                                         <td>
-                                            <span class="row-badge <?= $row_data['row']['type'] === 'calculated' ? 'calculated' : '' ?>">
-                                                <?= htmlspecialchars($row_data['row']['label']) ?>
+                                            <span class="row-badge">
+                                                <?= htmlspecialchars($row_label) ?>
                                             </span>
                                         </td>
                                         <?php foreach ($columns as $column): ?>
                                             <td class="text-end">
-                                                <?php if ($row_data['row']['type'] === 'separator'): ?>
-                                                    —
-                                                <?php else: ?>
-                                                    <?php 
-                                                    $value = $row_data['metrics'][$column['id']] ?? 0;
-                                                    if ($column['type'] === 'currency') {
-                                                        echo 'RM ' . number_format($value, 2);
-                                                    } elseif ($column['type'] === 'percentage') {
-                                                        echo number_format($value, 1) . '%';
-                                                    } else {
-                                                        echo number_format($value, 2);
-                                                    }
-                                                    ?>
-                                                <?php endif; ?>
+                                                <?php 
+                                                $value = $data[$row_label][$column] ?? 0;
+                                                // Handle empty strings and non-numeric values safely
+                                                if (is_numeric($value) && $value !== '') {
+                                                    echo number_format((float)$value, 2);
+                                                } else {
+                                                    echo '0.00';
+                                                }
+                                                ?>
                                             </td>
                                         <?php endforeach; ?>
-                                        <?php if (empty($columns)): ?>
-                                            <td class="text-center text-muted">No data available</td>
-                                        <?php endif; ?>
                                     </tr>
                                 <?php endforeach; ?>
                                 
-                                <!-- Total Row for numeric columns -->
-                                <?php if (!empty($columns) && array_filter($columns, function($col) { return in_array($col['type'], ['number', 'currency']); })): ?>
+                                <!-- Total Row -->
+                                <?php if (!empty($columns)): ?>
                                 <tr class="table-light">
                                     <td class="fw-bold">TOTAL</td>
                                     <?php foreach ($columns as $column): ?>
                                         <td class="fw-bold text-end">
-                                            <?php if (in_array($column['type'], ['number', 'currency'])): ?>
-                                                <?php
-                                                $total = 0;
-                                                foreach ($table_data as $row_data) {
-                                                    if ($row_data['row']['type'] === 'data') {
-                                                        $total += $row_data['metrics'][$column['id']] ?? 0;
-                                                    }
+                                            <?php
+                                            $total = 0;
+                                            foreach ($row_labels as $row_label) {
+                                                $cell_value = $data[$row_label][$column] ?? 0;
+                                                // Only add numeric values to total
+                                                if (is_numeric($cell_value) && $cell_value !== '') {
+                                                    $total += (float)$cell_value;
                                                 }
-                                                if ($column['type'] === 'currency') {
-                                                    echo 'RM ' . number_format($total, 2);
-                                                } else {
-                                                    echo number_format($total, 2);
-                                                }
-                                                ?>
-                                            <?php else: ?>
-                                                —
-                                            <?php endif; ?>
+                                            }
+                                            echo number_format($total, 2);
+                                            ?>
                                         </td>
                                     <?php endforeach; ?>
                                 </tr>
@@ -305,6 +262,19 @@ require_once '../../layouts/page_header.php';
                             </tbody>
                         </table>
                     </div>
+                    <?php else: ?>
+                    <!-- Empty State -->
+                    <div class="text-center py-5">
+                        <div class="mb-3">
+                            <i class="fas fa-table fa-3x text-muted"></i>
+                        </div>
+                        <h5 class="text-muted">No Data Available</h5>
+                        <p class="text-muted">This outcome doesn't have any data yet.</p>
+                        <a href="edit_outcomes.php?outcome_id=<?= $outcome_id ?>" class="btn btn-primary">
+                            <i class="fas fa-edit me-1"></i> Add Data
+                        </a>
+                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
             
@@ -316,69 +286,85 @@ require_once '../../layouts/page_header.php';
                             <h6 class="text-primary">
                                 <i class="fas fa-list me-2"></i>Row Configuration
                             </h6>
+                            <?php if (!empty($row_labels)): ?>
                             <div class="table-responsive">
                                 <table class="table table-sm">
                                     <thead>
                                         <tr>
                                             <th>Label</th>
-                                            <th>Type</th>
+                                            <th>Index</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php foreach ($rows as $row): ?>
+                                        <?php foreach ($row_labels as $index => $row_label): ?>
                                         <tr>
-                                            <td><?= htmlspecialchars($row['label']) ?></td>
+                                            <td><?= htmlspecialchars($row_label) ?></td>
                                             <td>
-                                                <span class="badge bg-secondary"><?= ucfirst($row['type']) ?></span>
+                                                <span class="badge bg-secondary"><?= $index + 1 ?></span>
                                             </td>
                                         </tr>
                                         <?php endforeach; ?>
                                     </tbody>
                                 </table>
                             </div>
+                            <?php else: ?>
+                            <p class="text-muted">No rows defined yet.</p>
+                            <?php endif; ?>
                         </div>
                         <div class="col-md-6">
                             <h6 class="text-success">
                                 <i class="fas fa-columns me-2"></i>Column Configuration
                             </h6>
+                            <?php if (!empty($columns)): ?>
                             <div class="table-responsive">
                                 <table class="table table-sm">
                                     <thead>
                                         <tr>
                                             <th>Label</th>
-                                            <th>Type</th>
-                                            <th>Unit</th>
+                                            <th>Index</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php foreach ($columns as $column): ?>
+                                        <?php foreach ($columns as $index => $column): ?>
                                         <tr>
-                                            <td><?= htmlspecialchars($column['label']) ?></td>
+                                            <td><?= htmlspecialchars($column) ?></td>
                                             <td>
-                                                <span class="badge bg-info"><?= ucfirst($column['type']) ?></span>
+                                                <span class="badge bg-info"><?= $index + 1 ?></span>
                                             </td>
-                                            <td><?= htmlspecialchars($column['unit'] ?? '') ?></td>
                                         </tr>
                                         <?php endforeach; ?>
                                     </tbody>
                                 </table>
                             </div>
+                            <?php else: ?>
+                            <p class="text-muted">No columns defined yet.</p>
+                            <?php endif; ?>
                         </div>
                     </div>
+                    
+                    <!-- Raw Data Preview -->
+                    <hr class="my-4">
+                    <h6 class="text-warning">
+                        <i class="fas fa-code me-2"></i>Raw Data Structure
+                    </h6>
+                    <pre class="bg-light p-3 rounded" style="max-height: 200px; overflow-y: auto;">
+                        <code><?= htmlspecialchars(json_encode($data_array, JSON_PRETTY_PRINT)) ?></code>
+                    </pre>
                 </div>
             </div>
             
             <!-- Chart View Tab -->
             <div class="tab-pane fade" id="chart-view" role="tabpanel" aria-labelledby="chart-tab">
                 <div class="card-body">
+                    <?php if ($has_data): ?>
                     <!-- Chart options -->
                     <div class="row mb-3">
                         <div class="col-md-3">
                             <div class="form-group">
                                 <label for="chartType" class="form-label">Chart Type</label>
                                 <select class="form-select" id="chartType">
+                                    <option value="bar" selected>Bar Chart</option>
                                     <option value="line">Line Chart</option>
-                                    <option value="bar">Bar Chart</option>
                                     <option value="area">Area Chart</option>
                                 </select>
                             </div>
@@ -388,8 +374,8 @@ require_once '../../layouts/page_header.php';
                                 <label for="chartColumns" class="form-label">Select Data Series</label>
                                 <select class="form-select" id="chartColumns" multiple>
                                     <?php foreach ($columns as $column): ?>
-                                        <option value="<?= htmlspecialchars($column['id']) ?>" selected>
-                                            <?= htmlspecialchars($column['label']) ?>
+                                        <option value="<?= htmlspecialchars($column) ?>" selected>
+                                            <?= htmlspecialchars($column) ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
@@ -428,16 +414,29 @@ require_once '../../layouts/page_header.php';
                             <h6><i class="fas fa-info-circle me-2"></i>Chart Information</h6>
                             <div class="row">
                                 <div class="col-md-6">
-                                    <small><strong>Structure Type:</strong> Custom Table</small><br>
-                                    <small><strong>Rows:</strong> <?= count($rows) ?> categories</small>
+                                    <small><strong>Structure Type:</strong> Flexible Table</small><br>
+                                    <small><strong>Rows:</strong> <?= count($row_labels) ?> categories</small>
                                 </div>
                                 <div class="col-md-6">
                                     <small><strong>Columns:</strong> <?= count($columns) ?> data series</small><br>
-                                    <small><strong>Total Data Points:</strong> <?= count($rows) * count($columns) ?></small>
+                                    <small><strong>Total Data Points:</strong> <?= count($row_labels) * count($columns) ?></small>
                                 </div>
                             </div>
                         </div>
                     </div>
+                    <?php else: ?>
+                    <!-- Empty Chart State -->
+                    <div class="text-center py-5">
+                        <div class="mb-3">
+                            <i class="fas fa-chart-line fa-3x text-muted"></i>
+                        </div>
+                        <h5 class="text-muted">No Data to Chart</h5>
+                        <p class="text-muted">Add some data to this outcome to see charts.</p>
+                        <a href="edit_outcomes.php?outcome_id=<?= $outcome_id ?>" class="btn btn-primary">
+                            <i class="fas fa-edit me-1"></i> Add Data
+                        </a>
+                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -446,7 +445,7 @@ require_once '../../layouts/page_header.php';
         <div class="card-footer text-muted">
             <div class="d-flex justify-content-between align-items-center">
                 <small>
-                    <i class="fas fa-info-circle me-1"></i> This outcome supports flexible table structures beyond monthly data
+                    <i class="fas fa-info-circle me-1"></i> This outcome supports flexible table structures with custom rows and columns
                 </small>
                 <div>
                     <a href="create_outcome_flexible.php" class="btn btn-success btn-sm">
@@ -460,70 +459,230 @@ require_once '../../layouts/page_header.php';
 
 <!-- Pass data to JavaScript -->
 <script>
-// Prepare data for chart in the format expected by prepareChartData function
-<?php
-// Transform data to the format expected by chart functions
-$chart_ready_data = [];
-if ($is_flexible && !empty($rows) && !empty($columns)) {
-    // For flexible outcomes, map data correctly
-    foreach ($rows as $row) {
-        if ($row['type'] === 'data') {
-            $chart_ready_data[$row['id']] = [];
-            foreach ($columns as $col_index => $column) {
-                // Get value from outcome_data using row id and column index
-                $value = 0;
-                if (isset($outcome_data[$row['id']]) && isset($outcome_data[$row['id']][$col_index])) {
-                    $value = $outcome_data[$row['id']][$col_index];
-                } elseif (isset($outcome_data[$row['id']]) && isset($outcome_data[$row['id']][$column['id']])) {
-                    $value = $outcome_data[$row['id']][$column['id']];
-                }
-                $chart_ready_data[$row['id']][$column['id']] = $value;
-            }
-        }
-    }
-} else {
-    // For legacy format, create compatible structure
-    $chart_ready_data = $outcome_data ?? [];
-}
-?>
-
-// Prepare data for chart and make it globally available
-window.tableData = <?= json_encode($chart_ready_data) ?>;
+// Prepare data for chart in a simple, compatible format
+window.tableData = <?= json_encode($data) ?>;
 window.tableColumns = <?= json_encode($columns) ?>;
-window.tableRows = <?= json_encode($rows) ?>;
+window.tableRows = <?= json_encode($row_labels) ?>;
 
 // Additional data for context
 const outcomeInfo = {
     id: <?= $outcome_id ?>,
     tableName: <?= json_encode($table_name) ?>,
-    isFlexible: <?= json_encode($is_flexible) ?>,
-    structureType: <?= json_encode($table_structure_type) ?>
+    isDraft: <?= json_encode($is_draft) ?>,
+    hasData: <?= json_encode($has_data) ?>
 };
 
-console.log('Data passed to JavaScript:', {
-    tableData: window.tableData,
-    columns: window.tableColumns,
-    rows: window.tableRows,
-    info: outcomeInfo
-});
+// Initialize table data and chart functionality
 
-// Initialize the view outcome functionality after Chart.js is loaded
+// Initialize chart functionality if Chart.js is available
+function initializeChart() {
+    if (typeof Chart !== 'undefined' && window.tableData && window.tableColumns && window.tableRows) {
+        // Simple chart initialization
+        const ctx = document.getElementById('metricChart');
+        
+        if (ctx && Object.keys(window.tableData).length > 0) {
+            // Destroy existing chart if present
+            const existingChart = Chart.getChart(ctx);
+            if (existingChart) {
+                existingChart.destroy();
+            }
+            
+            const chartType = document.getElementById('chartType')?.value || 'bar';
+            const cumulativeView = document.getElementById('cumulativeView')?.checked || false;
+            
+            // Create chart data - ensure all values are numeric
+            const labels = window.tableRows;
+            const datasets = window.tableColumns.map((column, index) => {
+                let data = labels.map(row => {
+                    const cellValue = window.tableData[row] ? window.tableData[row][column] : null;
+                    // Convert to number, handle empty strings and null values
+                    let numericValue = 0;
+                    if (cellValue !== null && cellValue !== '' && cellValue !== undefined) {
+                        numericValue = parseFloat(cellValue) || 0;
+                    }
+                    return numericValue;
+                });
+                
+                // Apply cumulative calculation if enabled
+                if (cumulativeView) {
+                    const cumulativeData = [];
+                    let runningTotal = 0;
+                    for (let i = 0; i < data.length; i++) {
+                        runningTotal += data[i];
+                        cumulativeData.push(runningTotal);
+                    }
+                    data = cumulativeData;
+                }
+                
+                const colors = [
+                    'rgba(54, 162, 235, 0.8)',
+                    'rgba(255, 99, 132, 0.8)',
+                    'rgba(75, 192, 192, 0.8)',
+                    'rgba(255, 205, 86, 0.8)',
+                    'rgba(153, 102, 255, 0.8)',
+                    'rgba(255, 159, 64, 0.8)'
+                ];
+                
+                return {
+                    label: column + (cumulativeView ? ' (Cumulative)' : ''),
+                    data: data,
+                    backgroundColor: colors[index % colors.length],
+                    borderColor: colors[index % colors.length].replace('0.8', '1'),
+                    borderWidth: 2,
+                    fill: chartType === 'area'
+                };
+            });
+            
+            // Create chart with improved configuration for financial data
+            const chartInstance = new Chart(ctx, {
+                type: chartType === 'area' ? 'line' : chartType,
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                // Format large numbers (e.g., financial data)
+                                callback: function(value, index, values) {
+                                    if (value >= 1000000000) {
+                                        return 'RM ' + (value / 1000000000).toFixed(1) + 'B';
+                                    } else if (value >= 1000000) {
+                                        return 'RM ' + (value / 1000000).toFixed(1) + 'M';
+                                    } else if (value >= 1000) {
+                                        return 'RM ' + (value / 1000).toFixed(1) + 'K';
+                                    } else {
+                                        return 'RM ' + value.toFixed(2);
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Outcome Data Visualization' + (cumulativeView ? ' (Cumulative View)' : '')
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed.y;
+                                    const formattedValue = new Intl.NumberFormat('en-MY', {
+                                        style: 'currency',
+                                        currency: 'MYR',
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2
+                                    }).format(value);
+                                    return context.dataset.label + ': ' + formattedValue;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Store chart instance globally for download functionality
+            window.currentChart = chartInstance;
+        }
+    }
+}
+
+// Wait for Chart.js to load and initialize
 function waitForChart() {
     if (typeof Chart !== 'undefined') {
-        console.log('Chart.js loaded, initializing view outcome');
-        if (typeof initializeViewOutcome === 'function') {
-            initializeViewOutcome();
-        } else {
-            console.warn('initializeViewOutcome function not found');
-        }
+        // Chart.js loaded, initialize chart
+        initializeChart();
     } else {
-        console.log('Waiting for Chart.js to load...');
+        // Waiting for Chart.js to load
         setTimeout(waitForChart, 100);
     }
 }
 
-// Start waiting for Chart.js after DOM is ready
-document.addEventListener('DOMContentLoaded', waitForChart);
+// Initialize everything when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Start chart initialization
+    waitForChart();
+    
+    // Handle chart tab activation
+    const chartTab = document.getElementById('chart-tab');
+    if (chartTab) {
+        chartTab.addEventListener('shown.bs.tab', function () {
+            // Ensure chart is initialized when tab is shown
+            setTimeout(() => {
+                const canvas = document.getElementById('metricChart');
+                if (canvas && !Chart.getChart(canvas)) {
+                    initializeChart();
+                }
+            }, 100);
+        });
+    }
+    
+    // Chart type change handler (if implemented)
+    const chartTypeSelect = document.getElementById('chartType');
+    if (chartTypeSelect) {
+        chartTypeSelect.addEventListener('change', function() {
+            // Reinitialize chart with new type
+            initializeChart();
+        });
+    }
+    
+    // Cumulative view toggle handler
+    const cumulativeToggle = document.getElementById('cumulativeView');
+    if (cumulativeToggle) {
+        cumulativeToggle.addEventListener('change', function() {
+            // Reinitialize chart with cumulative view setting
+            initializeChart();
+        });
+    }
+    
+    // Download chart image handler
+    const downloadImageBtn = document.getElementById('downloadChartImage');
+    if (downloadImageBtn) {
+        downloadImageBtn.addEventListener('click', function() {
+            if (window.currentChart) {
+                const link = document.createElement('a');
+                link.download = 'outcome-chart.png';
+                link.href = window.currentChart.toBase64Image();
+                link.click();
+            } else {
+                alert('Chart not available for download');
+            }
+        });
+    }
+
+    // Download handlers
+    const downloadBtn = document.getElementById('downloadDataCSV');
+    if (downloadBtn) {
+        downloadBtn.addEventListener('click', function() {
+            // Create CSV content
+            let csv = 'Row,' + window.tableColumns.join(',') + '\n';
+            window.tableRows.forEach(row => {
+                let rowData = [row];
+                window.tableColumns.forEach(col => {
+                    rowData.push(window.tableData[row] ? (window.tableData[row][col] || 0) : 0);
+                });
+                csv += rowData.join(',') + '\n';
+            });
+            
+            // Download CSV
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'outcome_data.csv';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        });
+    }
+});
 </script>
 
 <?php
