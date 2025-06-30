@@ -224,7 +224,7 @@ require_once '../../layouts/page_header.php';
                     <a href="view_outcome.php?metric_id=<?= $metric_id ?>" class="btn btn-outline-secondary">
                         <i class="fas fa-times me-1"></i> Cancel
                     </a>
-                    <button type="submit" class="btn btn-success" id="saveBtn">
+                    <button type="submit" class="btn btn-success" id="submitBtn">
                         <i class="fas fa-save me-1"></i> Save Changes
                     </button>
                 </div>
@@ -235,127 +235,10 @@ require_once '../../layouts/page_header.php';
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Disable any conflicting external JS
-    window.editOutcomeJsDisabled = true;
-
-    // Initialize data from PHP
-    let columns = <?= json_encode($data_array['columns'] ?? []) ?>;
-    let data = <?= json_encode($data_array['data'] ?? []) ?>;
-
-    function addRow() {
-        const rowName = prompt('Enter row name:');
-        if (rowName && rowName.trim() !== '') {
-            const trimmedName = rowName.trim();
-            if (data[trimmedName] !== undefined) {
-                alert('Row already exists!');
-                return;
-            }
-            
-            // Initialize data for this row with all existing columns
-            data[trimmedName] = {};
-            columns.forEach(col => {
-                data[trimmedName][col] = 0;
-            });
-            
-            renderTable();
-        }
-    }
-
-    function removeRow(rowName) {
-        if (Object.keys(data).length <= 1) {
-            alert('Cannot delete the last row. At least one row is required.');
-            return;
-        }
-        
-        if (data[rowName] !== undefined) {
-            delete data[rowName];
-            renderTable();
-        }
-    }
-
-    function addColumn() {
-        const columnName = prompt('Enter column name:');
-        if (columnName && columnName.trim() !== '') {
-            const trimmedName = columnName.trim();
-            if (columns.includes(trimmedName)) {
-                alert('Column already exists!');
-                return;
-            }
-            columns.push(trimmedName);
-            
-            // Initialize data for this column in all existing rows
-            Object.keys(data).forEach(rowLabel => {
-                if (!data[rowLabel]) data[rowLabel] = {};
-                data[rowLabel][trimmedName] = 0;
-            });
-            
-            renderTable();
-        }
-    }
-
-    function removeColumn(columnName) {
-        const columnIndex = columns.indexOf(columnName);
-        if (columnIndex > -1) {
-            columns.splice(columnIndex, 1);
-            
-            // Remove this column's data from all rows
-            Object.keys(data).forEach(rowLabel => {
-                if (data[rowLabel] && data[rowLabel][columnName] !== undefined) {
-                    delete data[rowLabel][columnName];
-                }
-            });
-            
-            renderTable();
-        }
-    }
-
-    // Event handler functions
-    function handleRowTitleEdit() {
-        const oldRow = this.getAttribute('data-row');
-        const newRow = this.textContent.trim();
-        
-        if (newRow !== oldRow && newRow !== '') {
-            if (data[newRow] !== undefined) {
-                alert('Row name already exists!');
-                this.textContent = oldRow;
-                return;
-            }
-            
-            // Update data object keys
-            if (data[oldRow] !== undefined) {
-                data[newRow] = data[oldRow];
-                delete data[oldRow];
-                
-                // Update the data attribute
-                this.setAttribute('data-row', newRow);
-                
-                // Update all related DOM elements
-                const row = this.closest('tr');
-                const deleteBtn = row.querySelector('.delete-row-btn');
-                if (deleteBtn) {
-                    deleteBtn.setAttribute('data-row', newRow);
-                }
-                
-                // Update all metric cells in this row
-                const metricCells = row.querySelectorAll('.metric-cell');
-                metricCells.forEach(cell => {
-                    cell.setAttribute('data-row', newRow);
-                });
-            }
-        }
-    }
-
-    function handleRowTitleBlur() {
-        // Validate row name
-        const rowName = this.textContent.trim();
-        if (rowName === '') {
-            const oldRow = this.getAttribute('data-row');
-            this.textContent = oldRow;
-        }
-    }
-
-    function handleRowTitleKeydown(e) {
-        if (e.key === 'Enter') {
+    // Set up save button to work with the main form
+    const saveBtn = document.getElementById('submitBtn');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', function(e) {
             e.preventDefault();
             this.blur();
         }
