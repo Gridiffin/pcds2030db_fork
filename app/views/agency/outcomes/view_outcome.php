@@ -60,7 +60,7 @@ if (isset($_GET['saved']) && $_GET['saved'] == '1') {
     $success_message = 'Outcome updated successfully!';
 }
 
-// Parse the data structure (compatible with edit_outcomes.php format)
+// Parse the data structure (compatible with edit_outcome.php format)
 $data_array = $outcome_data ?? ['columns' => [], 'data' => []];
 
 // Ensure we have the correct structure
@@ -100,7 +100,7 @@ $header_config = [
     'variant' => 'white',
     'actions' => [
         [
-            'url' => 'edit_outcomes.php?outcome_id=' . $outcome_id,
+            'url' => 'edit_outcome.php?outcome_id=' . $outcome_id,
             'text' => 'Edit Outcome',
             'icon' => 'fas fa-edit',
             'class' => 'btn-outline-primary'
@@ -270,7 +270,7 @@ require_once '../../layouts/page_header.php';
                         </div>
                         <h5 class="text-muted">No Data Available</h5>
                         <p class="text-muted">This outcome doesn't have any data yet.</p>
-                        <a href="edit_outcomes.php?outcome_id=<?= $outcome_id ?>" class="btn btn-primary">
+                        <a href="edit_outcome.php?outcome_id=<?= $outcome_id ?>" class="btn btn-primary">
                             <i class="fas fa-edit me-1"></i> Add Data
                         </a>
                     </div>
@@ -432,7 +432,7 @@ require_once '../../layouts/page_header.php';
                         </div>
                         <h5 class="text-muted">No Data to Chart</h5>
                         <p class="text-muted">Add some data to this outcome to see charts.</p>
-                        <a href="edit_outcomes.php?outcome_id=<?= $outcome_id ?>" class="btn btn-primary">
+                        <a href="edit_outcome.php?outcome_id=<?= $outcome_id ?>" class="btn btn-primary">
                             <i class="fas fa-edit me-1"></i> Add Data
                         </a>
                     </div>
