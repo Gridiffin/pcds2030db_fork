@@ -2011,60 +2011,104 @@ document.addEventListener('DOMContentLoaded', function() {
         return true;
     });
     
-    // Listen for program period data load event to update form fields
-    document.addEventListener('ProgramPeriodDataLoaded', function(e) {
-        const data = e.detail;
-        // Update program name
-        const programNameInput = document.getElementById('program_name');
-        if (programNameInput) programNameInput.value = data.program_name || '';
-        // Update program number
-        const programNumberInput = document.getElementById('program_number');
-        if (programNumberInput) programNumberInput.value = data.program_number || '';
-        // Update brief description
-        const briefDescInput = document.getElementById('brief_description');
-        if (briefDescInput) briefDescInput.value = data.brief_description || '';
-        // Update remarks
-        const remarksInput = document.getElementById('remarks');
-        if (remarksInput) remarksInput.value = data.remarks || '';
-        // Update rating
-        const ratingInput = document.getElementById('rating');
-        if (ratingInput) ratingInput.value = data.rating || 'not-started';
-        // Update rating pills UI
-        const ratingPills = document.querySelectorAll('.rating-pill');
-        ratingPills.forEach(pill => {
-            pill.classList.remove('active');
-            if (pill.getAttribute('data-rating') === data.rating) {
-                pill.classList.add('active');
+        // Listen for program period data load event to update form fields
+        document.addEventListener('ProgramPeriodDataLoaded', function(e) {
+            const data = e.detail;
+            // Update program name
+            const programNameInput = document.getElementById('program_name');
+            if (programNameInput) programNameInput.value = data.program_name || '';
+            // Update program number
+            const programNumberInput = document.getElementById('program_number');
+            if (programNumberInput) programNumberInput.value = data.program_number || '';
+            // Update brief description
+            const briefDescInput = document.getElementById('brief_description');
+            if (briefDescInput) briefDescInput.value = data.brief_description || '';
+            // Update remarks
+            const remarksInput = document.getElementById('remarks');
+            if (remarksInput) remarksInput.value = data.remarks || '';
+            // Update rating
+            const ratingInput = document.getElementById('rating');
+            if (ratingInput) ratingInput.value = data.rating || 'not-started';
+            // Update rating pills UI
+            const ratingPills = document.querySelectorAll('.rating-pill');
+            ratingPills.forEach(pill => {
+                pill.classList.remove('active');
+                if (pill.getAttribute('data-rating') === data.rating) {
+                    pill.classList.add('active');
+                }
+            });
+            // Update targets
+            const targetsContainer = document.getElementById('targets-container');
+            if (targetsContainer) {
+                targetsContainer.innerHTML = '';
+                // Show all targets including completed ones to keep them displayed when navigating back
+                const filteredTargets = (data.targets || [{target_text:'',status_description:'', target_number:'', target_status:'not-started', start_date:null, end_date:null}]);
+                filteredTargets.forEach((target, idx) => {
+                    const targetEntry = document.createElement('div');
+                    targetEntry.className = 'target-entry';
+                    targetEntry.innerHTML = `
+                        <button type="button" class="btn-close remove-target" aria-label="Remove target"></button>
+                        <!-- Target Counter -->
+                        <div class="target-counter-header mb-2">
+                            <h6 class="text-primary fw-bold mb-0">
+                                <i class="fas fa-bullseye me-1"></i>Target #${idx + 1}
+                            </h6>
+                        </div>
+                        <!-- Target Number and Status Row -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Target Number (Optional)</label>
+                                <input type="text" class="form-control target-number-input" name="target_number[]" 
+                                       value="${target.target_number || ''}" 
+                                       placeholder="e.g., ${data.program_number || '30.1A'}.${idx + 1}">
+                                <div class="form-text">Format: {program_number}.{target_counter}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Target Status</label>
+                                <select class="form-select target-status-select" name="target_status[]">
+                                    <option value="not-started" ${target.target_status === 'not-started' ? 'selected' : ''}>Not Started</option>
+                                    <option value="in-progress" ${target.target_status === 'in-progress' ? 'selected' : ''}>In Progress</option>
+                                    <option value="completed" ${target.target_status === 'completed' ? 'selected' : ''}>Completed</option>
+                                    <option value="delayed" ${target.target_status === 'delayed' ? 'selected' : ''}>Delayed</option>
+                                </select>
+                            </div>
+                        </div>
+                        <!-- Target Text -->
+                        <div class="mb-3">
+                            <label class="form-label target-text-label">Target *</label>
+                            <textarea class="form-control target-input" name="target_text[]" 
+                                      rows="3"
+                                      placeholder="Define a measurable target (e.g., 'Plant 100 trees')">${target.target_text || ''}</textarea>
+                        </div>
+                        <!-- Timeline Row -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Start Date (Optional)</label>
+                                <input type="date" class="form-control target-start-date" name="target_start_date[]" 
+                                       value="${target.start_date ? new Date(target.start_date).toISOString().split('T')[0] : ''}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">End Date (Optional)</label>
+                                <input type="date" class="form-control target-end-date" name="target_end_date[]" 
+                                       value="${target.end_date ? new Date(target.end_date).toISOString().split('T')[0] : ''}">
+                            </div>
+                        </div>
+                        <!-- Status Description -->
+                        <div class="mb-2">
+                            <label class="form-label">Status Description</label>
+                            <textarea class="form-control status-description" name="target_status_description[]" rows="2" 
+                                      placeholder="Describe the current status or progress toward this target">${target.status_description || ''}</textarea>
+                            <div class="form-text">Describe the current status or achievement toward this target.</div>
+                        </div>
+                    `;
+                    targetsContainer.appendChild(targetEntry);
+                    // Attach remove event
+                    targetEntry.querySelector('.remove-target').addEventListener('click', function() {
+                        targetEntry.remove();
+                    });
+                });
             }
         });
-        // Update targets
-        const targetsContainer = document.getElementById('targets-container');
-        if (targetsContainer) {
-            targetsContainer.innerHTML = '';
-            (data.targets || [{target_text:'',status_description:''}]).forEach((target, idx) => {
-                const targetEntry = document.createElement('div');
-                targetEntry.className = 'target-entry';
-                targetEntry.innerHTML = `
-                    <button type="button" class="btn-close remove-target" aria-label="Remove target"></button>
-                    <div class="mb-3">
-                        <label class="form-label">Target ${idx+1} *</label>
-                        <textarea class="form-control target-input" name="target_text[]" rows="3" placeholder="Define a measurable target (e.g., 'Plant 100 trees')">${target.target_text||''}</textarea>
-                        <div class="form-text">Define a specific, measurable target for this program.</div>
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label">Status Description</label>
-                        <textarea class="form-control status-description" name="target_status_description[]" rows="2" placeholder="Describe the current status or progress toward this target">${target.status_description||''}</textarea>
-                        <div class="form-text">Describe the current status or achievement toward this target.</div>
-                    </div>
-                `;
-                targetsContainer.appendChild(targetEntry);
-                // Attach remove event
-                targetEntry.querySelector('.remove-target').addEventListener('click', function() {
-                    targetEntry.remove();
-                });
-            });
-        }
-    });
 });
 </script>
 
