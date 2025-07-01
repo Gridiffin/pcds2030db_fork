@@ -60,7 +60,7 @@ if (isset($_GET['saved']) && $_GET['saved'] == '1') {
     $success_message = 'Outcome updated successfully!';
 }
 
-// Parse the data structure (compatible with edit_outcomes.php format)
+// Parse the data structure (compatible with edit_outcome.php format)
 $data_array = $outcome_data ?? ['columns' => [], 'data' => []];
 
 // Ensure we have the correct structure
@@ -100,7 +100,7 @@ $header_config = [
     'variant' => 'white',
     'actions' => [
         [
-            'url' => 'edit_outcomes.php?outcome_id=' . $outcome_id,
+            'url' => 'edit_outcome.php?outcome_id=' . $outcome_id,
             'text' => 'Edit Outcome',
             'icon' => 'fas fa-edit',
             'class' => 'btn-outline-primary'
@@ -209,7 +209,10 @@ require_once '../../layouts/page_header.php';
                                     <th style="width: 150px;">Row</th>
                                     <?php foreach ($columns as $column): ?>
                                         <th class="text-center">
-                                            <?= htmlspecialchars($column) ?>
+                                            <?= htmlspecialchars($column['label'] ?? $column['id']) ?>
+                                            <?php if (!empty($column['unit'])): ?>
+                                                <br><small class="text-muted">(<?= htmlspecialchars($column['unit']) ?>)</small>
+                                            <?php endif; ?>
                                         </th>
                                     <?php endforeach; ?>
                                 </tr>
@@ -225,12 +228,13 @@ require_once '../../layouts/page_header.php';
                                         <?php foreach ($columns as $column): ?>
                                             <td class="text-end">
                                                 <?php 
-                                                $value = $data[$row_label][$column] ?? 0;
+                                                $col_id = $column['id'] ?? $column;
+                                                $value = $data[$row_label][$col_id] ?? 0;
                                                 // Handle empty strings and non-numeric values safely
                                                 if (is_numeric($value) && $value !== '') {
                                                     echo number_format((float)$value, 2);
                                                 } else {
-                                                    echo '0.00';
+                                                    echo htmlspecialchars($value);
                                                 }
                                                 ?>
                                             </td>
@@ -245,9 +249,10 @@ require_once '../../layouts/page_header.php';
                                     <?php foreach ($columns as $column): ?>
                                         <td class="fw-bold text-end">
                                             <?php
+                                            $col_id = $column['id'] ?? $column;
                                             $total = 0;
                                             foreach ($row_labels as $row_label) {
-                                                $cell_value = $data[$row_label][$column] ?? 0;
+                                                $cell_value = $data[$row_label][$col_id] ?? 0;
                                                 // Only add numeric values to total
                                                 if (is_numeric($cell_value) && $cell_value !== '') {
                                                     $total += (float)$cell_value;
@@ -270,7 +275,7 @@ require_once '../../layouts/page_header.php';
                         </div>
                         <h5 class="text-muted">No Data Available</h5>
                         <p class="text-muted">This outcome doesn't have any data yet.</p>
-                        <a href="edit_outcomes.php?outcome_id=<?= $outcome_id ?>" class="btn btn-primary">
+                        <a href="edit_outcome.php?outcome_id=<?= $outcome_id ?>" class="btn btn-primary">
                             <i class="fas fa-edit me-1"></i> Add Data
                         </a>
                     </div>
@@ -321,16 +326,18 @@ require_once '../../layouts/page_header.php';
                                     <thead>
                                         <tr>
                                             <th>Label</th>
+                                            <th>Type</th>
+                                            <th>Unit</th>
                                             <th>Index</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <?php foreach ($columns as $index => $column): ?>
                                         <tr>
-                                            <td><?= htmlspecialchars($column) ?></td>
-                                            <td>
-                                                <span class="badge bg-info"><?= $index + 1 ?></span>
-                                            </td>
+                                            <td><?= htmlspecialchars($column['label'] ?? $column['id']) ?></td>
+                                            <td><?= htmlspecialchars($column['type'] ?? '-') ?></td>
+                                            <td><?= htmlspecialchars($column['unit'] ?? '-') ?></td>
+                                            <td><span class="badge bg-info"><?= $index + 1 ?></span></td>
                                         </tr>
                                         <?php endforeach; ?>
                                     </tbody>
@@ -374,8 +381,8 @@ require_once '../../layouts/page_header.php';
                                 <label for="chartColumns" class="form-label">Select Data Series</label>
                                 <select class="form-select" id="chartColumns" multiple>
                                     <?php foreach ($columns as $column): ?>
-                                        <option value="<?= htmlspecialchars($column) ?>" selected>
-                                            <?= htmlspecialchars($column) ?>
+                                        <option value="<?= htmlspecialchars($column['id']) ?>" selected>
+                                            <?= htmlspecialchars($column['label'] ?? $column['id']) ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
@@ -432,7 +439,7 @@ require_once '../../layouts/page_header.php';
                         </div>
                         <h5 class="text-muted">No Data to Chart</h5>
                         <p class="text-muted">Add some data to this outcome to see charts.</p>
-                        <a href="edit_outcomes.php?outcome_id=<?= $outcome_id ?>" class="btn btn-primary">
+                        <a href="edit_outcome.php?outcome_id=<?= $outcome_id ?>" class="btn btn-primary">
                             <i class="fas fa-edit me-1"></i> Add Data
                         </a>
                     </div>
@@ -494,7 +501,7 @@ function initializeChart() {
             const labels = window.tableRows;
             const datasets = window.tableColumns.map((column, index) => {
                 let data = labels.map(row => {
-                    const cellValue = window.tableData[row] ? window.tableData[row][column] : null;
+                    const cellValue = window.tableData[row] ? window.tableData[row][column['id']] : null;
                     // Convert to number, handle empty strings and null values
                     let numericValue = 0;
                     if (cellValue !== null && cellValue !== '' && cellValue !== undefined) {
@@ -524,7 +531,7 @@ function initializeChart() {
                 ];
                 
                 return {
-                    label: column + (cumulativeView ? ' (Cumulative)' : ''),
+                    label: column['label'] + (cumulativeView ? ' (Cumulative)' : ''),
                     data: data,
                     backgroundColor: colors[index % colors.length],
                     borderColor: colors[index % colors.length].replace('0.8', '1'),
@@ -586,8 +593,7 @@ function initializeChart() {
                             }
                         }
                     }
-                }
-            });
+                });
             
             // Store chart instance globally for download functionality
             window.currentChart = chartInstance;
@@ -663,11 +669,11 @@ document.addEventListener('DOMContentLoaded', function() {
     if (downloadBtn) {
         downloadBtn.addEventListener('click', function() {
             // Create CSV content
-            let csv = 'Row,' + window.tableColumns.join(',') + '\n';
+            let csv = 'Row,' + window.tableColumns.map(col => col['id']).join(',') + '\n';
             window.tableRows.forEach(row => {
                 let rowData = [row];
                 window.tableColumns.forEach(col => {
-                    rowData.push(window.tableData[row] ? (window.tableData[row][col] || 0) : 0);
+                    rowData.push(window.tableData[row] ? (window.tableData[row][col['id']] || 0) : 0);
                 });
                 csv += rowData.join(',') + '\n';
             });

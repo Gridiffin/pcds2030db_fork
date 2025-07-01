@@ -126,6 +126,14 @@ if ($is_flexible) {
     // New flexible structure
     $rows = $row_config['rows'] ?? [];
     $columns = $column_config['columns'] ?? [];
+} elseif (isset($outcome_data['columns'], $outcome_data['data']) && is_array($outcome_data['columns']) && is_array($outcome_data['data'])) {
+    // New JSON structure: columns and data keys
+    $columns = array_map(function($col) {
+        return ['id' => $col, 'label' => $col, 'type' => 'number', 'unit' => ''];
+    }, $outcome_data['columns']);
+    $rows = array_map(function($row_id) {
+        return ['id' => $row_id, 'label' => $row_id, 'type' => 'data'];
+    }, array_keys($outcome_data['data']));
 } else {
     // Legacy structure - convert to flexible format
     $metric_names = $outcome_data['columns'] ?? [];
@@ -144,15 +152,35 @@ if ($is_flexible) {
 
 // Organize data for display
 $table_data = [];
-foreach ($rows as $row_def) {
-    $row_data = ['row' => $row_def, 'metrics' => []];
-    
-    // Add data for each metric in this row
-    if (isset($outcome_data[$row_def['id']])) {
-        $row_data['metrics'] = $outcome_data[$row_def['id']];
+// Support both legacy and new JSON structure with 'data' key
+if (isset($outcome_data['data']) && is_array($outcome_data['data'])) {
+    // New structure: outcome_data['columns'] is an array of objects (id, label, type, unit, ...)
+    // and outcome_data['data'][row_label][col_id]
+    // Ensure $columns is an array of objects
+    if (isset($outcome_data['columns'][0]) && is_array($outcome_data['columns'][0])) {
+        $columns = $outcome_data['columns'];
     }
-    
-    $table_data[] = $row_data;
+    // Build $rows from the data keys
+    $row_labels = array_keys($outcome_data['data']);
+    $rows = array_map(function($row_id) {
+        return ['id' => $row_id, 'label' => $row_id, 'type' => 'data'];
+    }, $row_labels);
+    foreach ($rows as $row_def) {
+        $row_data = ['row' => $row_def, 'metrics' => []];
+        if (isset($outcome_data['data'][$row_def['id']]) && is_array($outcome_data['data'][$row_def['id']])) {
+            $row_data['metrics'] = $outcome_data['data'][$row_def['id']];
+        }
+        $table_data[] = $row_data;
+    }
+} else {
+    // Legacy structure: outcome_data[row_id][column_id]
+    foreach ($rows as $row_def) {
+        $row_data = ['row' => $row_def, 'metrics' => []];
+        if (isset($outcome_data[$row_def['id']])) {
+            $row_data['metrics'] = $outcome_data[$row_def['id']];
+        }
+        $table_data[] = $row_data;
+    }
 }
 
 // Add CSS and JS references
@@ -178,7 +206,7 @@ $header_config = [
     'variant' => 'white',
     'actions' => [
         [
-            'html' => '<button type="button" id="saveOutcomeBtn" class="btn btn-success me-2">
+            'html' => '<button type="button" class="btn btn-success me-2 saveOutcomeBtn">
                         <i class="fas fa-save me-1"></i> Save Changes
                        </button>'
         ],
@@ -383,7 +411,7 @@ require_once '../../layouts/page_header.php';
                     <button type="button" class="btn btn-outline-secondary btn-sm me-2" onclick="window.location.href='view_outcome.php?outcome_id=<?= $outcome_id ?>'">
                         <i class="fas fa-times me-1"></i> Cancel
                     </button>
-                    <button type="button" class="btn btn-success btn-sm" id="saveOutcomeBtn">
+                    <button type="button" class="btn btn-success me-2 saveOutcomeBtn">
                         <i class="fas fa-save me-1"></i> Save Changes
                     </button>
                 </div>
@@ -391,6 +419,51 @@ require_once '../../layouts/page_header.php';
         </div>
     </div>
 </div>
+
+<script>
+// Helper to get columns and rows from PHP
+const columns = <?php echo json_encode($columns); ?>;
+const rows = <?php echo json_encode(array_map(function($row) { return $row['id']; }, $rows)); ?>;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const saveBtns = document.querySelectorAll('.saveOutcomeBtn');
+    const form = document.getElementById('editFlexibleOutcomeForm');
+    if (form) {
+        // Prevent default form submission (e.g. Enter key)
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+        });
+    }
+    if (saveBtns.length && form) {
+        saveBtns.forEach(function(saveBtn) {
+            saveBtn.addEventListener('click', function(e) {
+                e.preventDefault(); // Prevent default button behavior
+                // Build data JSON
+                const data = {};
+                rows.forEach(function(rowId) {
+                    data[rowId] = {};
+                    columns.forEach(function(col) {
+                        const colId = col.id || col;
+                        const input = document.querySelector(
+                            `input.data-input[data-row="${rowId}"][data-column="${colId}"]`
+                        );
+                        if (input) {
+                            data[rowId][colId] = parseFloat(input.value) || 0;
+                        }
+                    });
+                });
+                // Build final JSON structure
+                const json = {
+                    columns: columns, // full column definitions
+                    data: data
+                };
+                document.getElementById('data_json').value = JSON.stringify(json);
+                form.submit();
+            });
+        });
+    }
+});
+</script>
 
 <?php
 // Include footer
