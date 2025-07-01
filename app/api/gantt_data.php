@@ -16,7 +16,31 @@ require_once PROJECT_ROOT_PATH . 'app/config/config.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/agencies/core.php';  // Added for is_agency() function
 require_once PROJECT_ROOT_PATH . 'app/lib/agencies/initiatives.php';
+
+// Ensure database connection is available (PDO)
+global $conn, $pdo;
+
+// If $pdo is not defined, create it from the existing configuration
+if (!isset($pdo)) {
+    try {
+        $db_host = DB_HOST;
+        $db_name = DB_NAME;
+        
+        $pdo = new PDO(
+            "mysql:host={$db_host};dbname={$db_name};charset=utf8",
+            DB_USER,
+            DB_PASS,
+            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+        );
+    } catch (PDOException $e) {
+        error_log("PDO Connection Error: " . $e->getMessage());
+        http_response_code(500);
+        echo json_encode(['error' => 'Database connection failed']);
+        exit;
+    }
+}
 
 // Set JSON header
 header('Content-Type: application/json');
@@ -60,12 +84,55 @@ try {
     // Transform data for gantt chart
     $gantt_data = transform_for_gantt($initiatives);
 
+    // Add debug information
+    $debug = [
+        'initiative_count' => count($initiatives),
+        'data_length' => count($gantt_data['data']),
+        'links_length' => count($gantt_data['links']),
+        'first_task' => !empty($gantt_data['data']) ? $gantt_data['data'][0] : null
+    ];
+    
+    // Ensure date fields are in correct format
+    if (!empty($gantt_data['data'])) {
+        foreach ($gantt_data['data'] as &$task) {
+            // Format date strings in ISO format for better JS parsing
+            if (!empty($task['start_date'])) {
+                $date = is_string($task['start_date']) ? new DateTime($task['start_date']) : $task['start_date'];
+                if ($date instanceof DateTime) {
+                    $task['start_date'] = $date->format('Y-m-d\TH:i:s');
+                }
+            }
+            if (!empty($task['end_date'])) {
+                $date = is_string($task['end_date']) ? new DateTime($task['end_date']) : $task['end_date'];
+                if ($date instanceof DateTime) {
+                    $task['end_date'] = $date->format('Y-m-d\TH:i:s');
+                }
+            }
+            
+            // Add duration for better rendering
+            if (!empty($task['start_date']) && !empty($task['end_date'])) {
+                try {
+                    $start = new DateTime($task['start_date']);
+                    $end = new DateTime($task['end_date']);
+                    $interval = $start->diff($end);
+                    $task['duration'] = $interval->days > 0 ? $interval->days : 1;
+                } catch (Exception $e) {
+                    // Use default duration
+                    $task['duration'] = 1;
+                }
+            } else {
+                $task['duration'] = 1;
+            }
+        }
+    }
+    
     // Return successful response
     echo json_encode([
         'success' => true,
         'data' => $gantt_data,
-        'count' => count($initiatives)
-    ]);
+        'count' => count($initiatives),
+        'debug' => $debug
+    ], JSON_PRETTY_PRINT);
     
 } catch (Exception $e) {
     // Log error and return error response
@@ -75,7 +142,10 @@ try {
     echo json_encode([
         'success' => false,
         'error' => 'Failed to load gantt data',
-        'message' => $e->getMessage()
+        'message' => $e->getMessage(),
+        'file' => $e->getFile(),
+        'line' => $e->getLine(),
+        'trace' => $e->getTraceAsString()
     ]);
 }
 
@@ -84,6 +154,11 @@ try {
  */
 function get_agency_initiatives_with_programs($agency_id, $filters = [], $initiative_id = 0) {
     global $pdo;
+    
+    // Double-check PDO is available
+    if (!isset($pdo) || $pdo === null) {
+        throw new Exception("Database connection not available");
+    }
     
     try {
         // Base query to get initiatives that have programs assigned to the current agency
@@ -149,6 +224,11 @@ function get_agency_initiatives_with_programs($agency_id, $filters = [], $initia
 function get_initiative_programs($initiative_id, $agency_id) {
     global $pdo;
     
+    // Double-check PDO is available
+    if (!isset($pdo) || $pdo === null) {
+        throw new Exception("Database connection not available");
+    }
+    
     try {
         $sql = "
             SELECT 
@@ -209,6 +289,11 @@ function get_initiative_programs($initiative_id, $agency_id) {
  */
 function get_program_targets($program_id) {
     global $pdo;
+    
+    // Double-check PDO is available
+    if (!isset($pdo) || $pdo === null) {
+        throw new Exception("Database connection not available");
+    }
     
     try {
         $sql = "
@@ -290,6 +375,9 @@ function transform_for_gantt($initiatives) {
     $tasks = [];
     $links = [];
     $task_id = 1;
+    
+    // Debug - log input data
+    error_log("transform_for_gantt - Initiatives count: " . count($initiatives));
     
     foreach ($initiatives as $initiative) {
         // Calculate initiative date range from programs
@@ -416,10 +504,28 @@ function transform_for_gantt($initiatives) {
         }
     }
     
-    return [
+    $result = [
         'data' => $tasks,
         'links' => $links
     ];
+    
+    // Debug - log output data structure
+    error_log("transform_for_gantt - Tasks count: " . count($tasks));
+    
+    // Check for empty or invalid dates
+    $date_errors = 0;
+    foreach ($tasks as $task) {
+        if (empty($task['start_date']) || empty($task['end_date'])) {
+            error_log("Invalid dates in task: " . json_encode($task));
+            $date_errors++;
+        }
+    }
+    
+    if ($date_errors > 0) {
+        error_log("transform_for_gantt - Found $date_errors tasks with invalid dates");
+    }
+    
+    return $result;
 }
 
 /**

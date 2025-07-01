@@ -837,12 +837,23 @@ require_once '../../layouts/page_header.php';
         </div>
         <div class="card-body">
             <div id="initiative_gantt_here" style="height: 500px;"></div>
+            
+            <!-- Developer tools for debugging -->
+            <div class="mt-3 text-end">
+                <a href="<?php echo APP_URL; ?>/test_gantt.php?id=<?php echo $initiative_id; ?>" 
+                   target="_blank" 
+                   class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-bug me-1"></i> Debug Gantt Data
+                </a>
+            </div>
         </div>
     </div>
 </div>
 
+<!-- Load dhtmlxGantt libraries and custom implementation -->
 <script src="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.js"></script>
 <link rel="stylesheet" href="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.css">
+<link rel="stylesheet" href="<?php echo asset_url('css', 'components/dhtmlxgantt.css'); ?>">
 <script src="<?php echo asset_url('js', 'components/dhtmlxgantt.js'); ?>"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -865,16 +876,27 @@ document.addEventListener('DOMContentLoaded', function() {
     fetch(apiUrl)
         .then(response => response.json())
         .then(data => {
+            console.log('API Response:', data);
             if (data.success) {
+                if (!data.data || !data.data.data || data.data.data.length === 0) {
+                    ganttDiv.innerHTML = '<div class="alert alert-warning">No timeline data available for this initiative.</div>';
+                    console.error('No tasks found in API response:', data);
+                    return;
+                }
+                
                 ganttDiv.innerHTML = '';
                 const ganttChart = new PCDS2030Gantt('initiative_gantt_here');
-                ganttChart.loadData(data);
+                console.log('Initializing Gantt with data:', data.data);
+                ganttChart.loadData(data.data);  // Fixed: Use data.data instead of data
                 ganttChart.render();
             } else {
-                ganttDiv.innerHTML = '<div class="alert alert-danger">Failed to load Gantt chart data: ' + (data.error || 'Unknown error') + '</div>';
+                const errorMessage = data.message || data.error || 'Unknown error';
+                console.error('API Error:', errorMessage, data);
+                ganttDiv.innerHTML = '<div class="alert alert-danger">Failed to load Gantt chart data: ' + errorMessage + '</div>';
             }
         })
         .catch(error => {
+            console.error('Fetch Error:', error);
             ganttDiv.innerHTML = '<div class="alert alert-danger">Error loading Gantt chart data. Please try again.</div>';
         });
 });

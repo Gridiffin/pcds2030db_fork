@@ -270,32 +270,152 @@ class PCDS2030Gantt {
             return;
         }
         
-        // The API response already contains the transformed data
-        const ganttData = this.transformData(apiResponse.data || []);
+        console.log('loadData called with:', apiResponse);
         
-        this.gantt.clearAll();
-        this.gantt.parse({
-            data: ganttData.tasks,
-            links: ganttData.links || []
+        // Handle different data structures that might come from the API
+        let dataToProcess;
+        
+        // The API returns { data: { data: [], links: [] } }
+        if (apiResponse.data && apiResponse.data.data && Array.isArray(apiResponse.data.data)) {
+            console.log('Found nested data.data structure');
+            // Use the pre-formatted data directly without transformation
+            dataToProcess = {
+                tasks: apiResponse.data.data,
+                links: apiResponse.data.links || []
+            };
+        }
+        // Handle case where we get { data: [], links: [] }
+        else if (apiResponse.data && Array.isArray(apiResponse.data)) {
+            console.log('Found direct data array');
+            dataToProcess = {
+                tasks: apiResponse.data,
+                links: apiResponse.links || []
+            };
+        }
+        // For other structures, try transform
+        else if (Array.isArray(apiResponse)) {
+            console.log('Found direct array, transforming');
+            dataToProcess = this.transformData(apiResponse);
+        }
+        // Last resort
+        else {
+            console.log('Using fallback data processing');
+            const dataArray = apiResponse.data || [];
+            dataToProcess = this.transformData(Array.isArray(dataArray) ? dataArray : [dataArray]);
+        }
+        
+        console.log('Data to process:', dataToProcess);
+        
+        // Verify we have valid data
+        if (!dataToProcess.tasks || !Array.isArray(dataToProcess.tasks) || dataToProcess.tasks.length === 0) {
+            console.error('No tasks available to display');
+            return;
+        }
+        
+        // Process dates before sending to gantt
+        dataToProcess.tasks.forEach(task => {
+            if (task.start_date && !(task.start_date instanceof Date)) {
+                task.start_date = this.parseDate(task.start_date);
+            }
+            if (task.end_date && !(task.end_date instanceof Date)) {
+                task.end_date = this.parseDate(task.end_date);
+            }
+            // Ensure the date is valid
+            if (!task.start_date || isNaN(task.start_date.getTime())) {
+                console.warn('Invalid start_date for task:', task);
+                task.start_date = new Date();
+            }
+            if (!task.end_date || isNaN(task.end_date.getTime())) {
+                console.warn('Invalid end_date for task:', task);
+                task.end_date = new Date(new Date().setDate(new Date().getDate() + 1));
+            }
+            // Ensure end_date is after start_date
+            if (task.start_date >= task.end_date) {
+                console.warn('End date is not after start date for task:', task);
+                task.end_date = new Date(new Date(task.start_date).setDate(task.start_date.getDate() + 1));
+            }
         });
+        
+        try {
+            console.log('Parsing data into gantt:', dataToProcess);
+            this.gantt.clearAll();
+            this.gantt.parse({
+                data: dataToProcess.tasks,
+                links: dataToProcess.links || []
+            });
+            console.log('Gantt data loaded successfully');
+        } catch (error) {
+            console.error('Error parsing data into gantt:', error);
+            throw error;
+        }
     }
     
     transformData(initiatives) {
-        // The data is already transformed by the API, we just need to ensure dates are properly parsed
-        const tasks = initiatives.map(task => {
-            return {
-                ...task,
-                start_date: this.parseDate(task.start_date),
-                end_date: this.parseDate(task.end_date)
-            };
-        });
+        console.log('Transforming data:', initiatives);
         
-        return { tasks, links: [] };
+        if (!Array.isArray(initiatives)) {
+            console.error('Expected array for initiatives, got:', typeof initiatives);
+            return { tasks: [], links: [] };
+        }
+        
+        try {
+            // The data is already transformed by the API, we just need to ensure dates are properly parsed
+            const tasks = initiatives.map(task => {
+                // Ensure the task has valid start and end dates
+                const startDate = this.parseDate(task.start_date);
+                let endDate = this.parseDate(task.end_date);
+                
+                // Make sure end date is after start date
+                if (endDate < startDate) {
+                    endDate = new Date(startDate);
+                    endDate.setDate(startDate.getDate() + 1); // Add one day
+                }
+                
+                return {
+                    ...task,
+                    start_date: startDate,
+                    end_date: endDate
+                };
+            });
+            
+            return { tasks, links: [] };
+        } catch (error) {
+            console.error('Error transforming data:', error);
+            return { tasks: [], links: [] };
+        }
     }
     
     parseDate(dateString) {
         if (!dateString) return new Date();
-        return new Date(dateString);
+        
+        try {
+            // Handle different date formats
+            if (typeof dateString === 'string') {
+                // Check if it's a MySQL date format (YYYY-MM-DD HH:MM:SS)
+                if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(dateString)) {
+                    return new Date(dateString.replace(' ', 'T'));
+                }
+                
+                // Check if it's a simple date format (YYYY-MM-DD)
+                if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+                    return new Date(dateString + 'T00:00:00');
+                }
+            }
+            
+            // Default parsing
+            const date = new Date(dateString);
+            
+            // Validate the date is valid
+            if (isNaN(date.getTime())) {
+                console.warn('Invalid date:', dateString);
+                return new Date(); // Return current date as fallback
+            }
+            
+            return date;
+        } catch (error) {
+            console.error('Error parsing date:', dateString, error);
+            return new Date(); // Return current date as fallback
+        }
     }
     
     calculateInitiativeProgress(programs) {
