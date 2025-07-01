@@ -34,9 +34,36 @@ class PCDS2030Gantt {
         
         // Scale configuration for hierarchical timeline (years/quarters)
         this.gantt.config.scales = [
-            {unit: "year", step: 1, format: "%Y"},
-            {unit: "quarter", step: 1, format: "Q%q"}
+            {
+                unit: "year", 
+                step: 1, 
+                format: "%Y",
+                css: function(date) {
+                    return "gantt_scale_year";
+                }
+            },
+            {
+                unit: "quarter", 
+                step: 1, 
+                format: function(date) {
+                    const quarter = Math.floor((date.getMonth() / 3)) + 1;
+                    return "Q" + quarter;
+                },
+                css: function(date) {
+                    return "gantt_scale_quarter";
+                }
+            }
         ];
+        
+        // Custom date formatting to get quarters
+        this.gantt.date.quarter_start = function(date) {
+            const quarterMonth = Math.floor(date.getMonth() / 3) * 3;
+            return new Date(date.getFullYear(), quarterMonth, 1);
+        };
+        
+        this.gantt.date.add_quarter = function(date, inc) {
+            return this.add_month(date, inc * 3);
+        };
         
         // Grid configuration
         this.gantt.config.columns = [
@@ -93,7 +120,13 @@ class PCDS2030Gantt {
         // Timeline configuration
         this.gantt.config.min_column_width = 70;
         this.gantt.config.scale_height = 60;
-        this.gantt.config.row_height = 40;
+        this.gantt.config.row_height = 60; // Increased row height for better text visibility
+        
+        // Enable word wrap for task names
+        this.gantt.config.wrapTasks = true; // Enable word wrapping on task bars
+        this.gantt.templates.task_text = function(start, end, task) {
+            return "<div class='gantt_task_text' style='word-break: break-word; white-space: normal;'>" + task.text + "</div>";
+        };
         
         // Tree configuration
         this.gantt.config.open_tree_initially = true;
@@ -128,10 +161,49 @@ class PCDS2030Gantt {
             }
             
             if (task.status) {
-                classes.push(`gantt_task_${task.status.toLowerCase().replace(/\s+/g, '_')}`);
+                const statusClass = task.status.toLowerCase().replace(/[\s-]+/g, '_');
+                classes.push(`gantt_task_${statusClass}`);
             }
             
             return classes.join(' ');
+        };
+        
+        // Override task rendering for more control
+        this.gantt.templates.task_text = (start, end, task) => {
+            if (task.type === 'milestone') {
+                return `<div class="gantt_milestone_label">${task.text}</div>`;
+            }
+            return task.text;
+        };
+        
+        // Task date format in tooltips
+        this.gantt.templates.task_date = (date) => {
+            return this.gantt.date.date_to_str("%d %M %Y")(date);
+        };
+        
+        // Set task colors based on status
+        this.gantt.templates.task_color = (start, end, task) => {
+            if (task.type === 'project') return '#2563eb'; // Initiative color
+            
+            if (task.type === 'task') {
+                // Program colors
+                if (task.status) {
+                    const status = task.status.toLowerCase();
+                    if (status.includes('completed') || status.includes('target-achieved')) return '#10b981';
+                    if (status.includes('on-track')) return '#3b82f6';
+                    if (status.includes('at-risk')) return '#f59e0b';
+                    if (status.includes('delay')) return '#ef4444';
+                    if (status.includes('planning')) return '#6b7280';
+                    if (status.includes('active')) return '#0ea5e9';
+                }
+                return '#17a2b8'; // Default program color
+            }
+            
+            if (task.type === 'milestone') {
+                return '#28a745'; // Default target color
+            }
+            
+            return '';
         };
         
         // Tooltip template
@@ -232,8 +304,8 @@ class PCDS2030Gantt {
             html += `<span class="gantt_task_status status-${task.status.toLowerCase().replace(/\s+/g, '-')}"></span>`;
         }
         
-        // Add task name
-        html += `<span class="task-name">${task.text}</span>`;
+        // Add task name with word-wrap support
+        html += `<span class="task-name" style="white-space: normal; word-wrap: break-word; display: inline-block; max-width: 280px;">${task.text}</span>`;
         
         return html;
     }
@@ -338,6 +410,29 @@ class PCDS2030Gantt {
         
         try {
             console.log('Parsing data into gantt:', dataToProcess);
+            
+            // Find the earliest start date and latest end date from initiative tasks
+            const projectTasks = dataToProcess.tasks.filter(task => task.type === 'project');
+            if (projectTasks.length > 0) {
+                const startDates = projectTasks.map(task => task.start_date).filter(date => date instanceof Date);
+                const endDates = projectTasks.map(task => task.end_date).filter(date => date instanceof Date);
+                
+                if (startDates.length > 0 && endDates.length > 0) {
+                    const earliestStart = new Date(Math.min(...startDates.map(d => d.getTime())));
+                    const latestEnd = new Date(Math.max(...endDates.map(d => d.getTime())));
+                    
+                    // Add buffer to start and end dates for better visualization
+                    earliestStart.setMonth(earliestStart.getMonth() - 3);
+                    latestEnd.setMonth(latestEnd.getMonth() + 3);
+                    
+                    console.log('Setting gantt time range:', earliestStart, 'to', latestEnd);
+                    
+                    // Set the start and end date for the gantt chart timeline
+                    this.gantt.config.start_date = earliestStart;
+                    this.gantt.config.end_date = latestEnd;
+                }
+            }
+            
             this.gantt.clearAll();
             this.gantt.parse({
                 data: dataToProcess.tasks,
@@ -453,6 +548,68 @@ class PCDS2030Gantt {
         }
         
         this.gantt.init(this.containerId);
+        
+        // Configure scroll position after initial render
+        this.gantt.attachEvent("onGanttRender", () => {
+            console.log("Gantt rendered, configuring view");
+            
+            // Center the timeline to show current quarter and adjust zoom level if needed
+            const today = new Date();
+            const currentYear = today.getFullYear();
+            const currentQuarter = Math.floor(today.getMonth() / 3);
+            
+            // Scroll to today's position
+            this.gantt.showDate(today);
+            
+            // Update timeline range if needed based on visible data
+            this.adjustTimelineRange();
+        });
+    }
+    
+    adjustTimelineRange() {
+        // Get all visible tasks
+        const visibleTasks = this.gantt.getTaskByTime();
+        
+        if (!visibleTasks || visibleTasks.length === 0) return;
+        
+        // Find earliest and latest dates among visible tasks
+        let earliestDate = new Date();
+        let latestDate = new Date();
+        let hasValidDates = false;
+        
+        visibleTasks.forEach(task => {
+            if (task.start_date && task.start_date instanceof Date) {
+                if (!hasValidDates || task.start_date < earliestDate) {
+                    earliestDate = new Date(task.start_date);
+                }
+                hasValidDates = true;
+            }
+            
+            if (task.end_date && task.end_date instanceof Date) {
+                if (!hasValidDates || task.end_date > latestDate) {
+                    latestDate = new Date(task.end_date);
+                }
+                hasValidDates = true;
+            }
+        });
+        
+        if (hasValidDates) {
+            // Add buffer to the range
+            earliestDate.setMonth(earliestDate.getMonth() - 3);
+            latestDate.setMonth(latestDate.getMonth() + 3);
+            
+            // Check if we need to adjust the current view
+            const currentStartDate = this.gantt.getState().min_date;
+            const currentEndDate = this.gantt.getState().max_date;
+            
+            // Only adjust if the range is significantly different
+            if (earliestDate < currentStartDate || latestDate > currentEndDate) {
+                console.log("Adjusting timeline range:", earliestDate, "to", latestDate);
+                this.gantt.config.start_date = earliestDate;
+                this.gantt.config.end_date = latestDate;
+                this.gantt.render();
+            }
+        }
     }
     
     resize() {
