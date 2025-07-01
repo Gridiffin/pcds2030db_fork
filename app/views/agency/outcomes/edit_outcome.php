@@ -154,7 +154,17 @@ if ($is_flexible) {
 $table_data = [];
 // Support both legacy and new JSON structure with 'data' key
 if (isset($outcome_data['data']) && is_array($outcome_data['data'])) {
-    // New structure: outcome_data['data'][row_id][column_id]
+    // New structure: outcome_data['columns'] is an array of objects (id, label, type, unit, ...)
+    // and outcome_data['data'][row_label][col_id]
+    // Ensure $columns is an array of objects
+    if (isset($outcome_data['columns'][0]) && is_array($outcome_data['columns'][0])) {
+        $columns = $outcome_data['columns'];
+    }
+    // Build $rows from the data keys
+    $row_labels = array_keys($outcome_data['data']);
+    $rows = array_map(function($row_id) {
+        return ['id' => $row_id, 'label' => $row_id, 'type' => 'data'];
+    }, $row_labels);
     foreach ($rows as $row_def) {
         $row_data = ['row' => $row_def, 'metrics' => []];
         if (isset($outcome_data['data'][$row_def['id']]) && is_array($outcome_data['data'][$row_def['id']])) {
@@ -412,7 +422,7 @@ require_once '../../layouts/page_header.php';
 
 <script>
 // Helper to get columns and rows from PHP
-const columns = <?php echo json_encode(array_map(function($col) { return $col['id']; }, $columns)); ?>;
+const columns = <?php echo json_encode($columns); ?>;
 const rows = <?php echo json_encode(array_map(function($row) { return $row['id']; }, $rows)); ?>;
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -432,7 +442,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 const data = {};
                 rows.forEach(function(rowId) {
                     data[rowId] = {};
-                    columns.forEach(function(colId) {
+                    columns.forEach(function(col) {
+                        const colId = col.id || col;
                         const input = document.querySelector(
                             `input.data-input[data-row="${rowId}"][data-column="${colId}"]`
                         );
@@ -443,7 +454,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 // Build final JSON structure
                 const json = {
-                    columns: columns,
+                    columns: columns, // full column definitions
                     data: data
                 };
                 document.getElementById('data_json').value = JSON.stringify(json);

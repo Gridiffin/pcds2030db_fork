@@ -397,7 +397,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function collectTableData(structureData) {
         const data = {
-            columns: structureData.columns.map(col => col.id),
+            // Save full column definitions instead of just IDs
+            columns: structureData.columns.map(col => ({
+                id: col.id,
+                label: col.label,
+                type: col.type,
+                unit: col.unit || '',
+                // Add any other relevant properties here
+            })),
             data: {}
         };
         
