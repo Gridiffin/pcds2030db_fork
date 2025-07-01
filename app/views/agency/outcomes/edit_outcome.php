@@ -196,7 +196,7 @@ $header_config = [
     'variant' => 'white',
     'actions' => [
         [
-            'html' => '<button type="button" id="saveOutcomeBtn" class="btn btn-success me-2">
+            'html' => '<button type="button" class="btn btn-success me-2 saveOutcomeBtn">
                         <i class="fas fa-save me-1"></i> Save Changes
                        </button>'
         ],
@@ -401,7 +401,7 @@ require_once '../../layouts/page_header.php';
                     <button type="button" class="btn btn-outline-secondary btn-sm me-2" onclick="window.location.href='view_outcome.php?outcome_id=<?= $outcome_id ?>'">
                         <i class="fas fa-times me-1"></i> Cancel
                     </button>
-                    <button type="button" id="saveOutcomeBtn" class="btn btn-success me-2">
+                    <button type="button" class="btn btn-success me-2 saveOutcomeBtn">
                         <i class="fas fa-save me-1"></i> Save Changes
                     </button>
                 </div>
@@ -416,7 +416,7 @@ const columns = <?php echo json_encode(array_map(function($col) { return $col['i
 const rows = <?php echo json_encode(array_map(function($row) { return $row['id']; }, $rows)); ?>;
 
 document.addEventListener('DOMContentLoaded', function() {
-    const saveBtn = document.getElementById('saveOutcomeBtn');
+    const saveBtns = document.querySelectorAll('.saveOutcomeBtn');
     const form = document.getElementById('editFlexibleOutcomeForm');
     if (form) {
         // Prevent default form submission (e.g. Enter key)
@@ -424,29 +424,31 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
         });
     }
-    if (saveBtn && form) {
-        saveBtn.addEventListener('click', function(e) {
-            e.preventDefault(); // Prevent default button behavior
-            // Build data JSON
-            const data = {};
-            rows.forEach(function(rowId) {
-                data[rowId] = {};
-                columns.forEach(function(colId) {
-                    const input = document.querySelector(
-                        `input.data-input[data-row="${rowId}"][data-column="${colId}"]`
-                    );
-                    if (input) {
-                        data[rowId][colId] = parseFloat(input.value) || 0;
-                    }
+    if (saveBtns.length && form) {
+        saveBtns.forEach(function(saveBtn) {
+            saveBtn.addEventListener('click', function(e) {
+                e.preventDefault(); // Prevent default button behavior
+                // Build data JSON
+                const data = {};
+                rows.forEach(function(rowId) {
+                    data[rowId] = {};
+                    columns.forEach(function(colId) {
+                        const input = document.querySelector(
+                            `input.data-input[data-row="${rowId}"][data-column="${colId}"]`
+                        );
+                        if (input) {
+                            data[rowId][colId] = parseFloat(input.value) || 0;
+                        }
+                    });
                 });
+                // Build final JSON structure
+                const json = {
+                    columns: columns,
+                    data: data
+                };
+                document.getElementById('data_json').value = JSON.stringify(json);
+                form.submit();
             });
-            // Build final JSON structure
-            const json = {
-                columns: columns,
-                data: data
-            };
-            document.getElementById('data_json').value = JSON.stringify(json);
-            form.submit();
         });
     }
 });
