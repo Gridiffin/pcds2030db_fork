@@ -19,6 +19,7 @@ require_once PROJECT_ROOT_PATH . 'lib/agencies/index.php';
 require_once PROJECT_ROOT_PATH . 'lib/agencies/initiatives.php';
 require_once PROJECT_ROOT_PATH . 'lib/initiative_functions.php';
 require_once PROJECT_ROOT_PATH . 'lib/rating_helpers.php';
+require_once PROJECT_ROOT_PATH . 'lib/asset_helpers.php';
 
 // Verify user is an agency
 if (!is_agency()) {
@@ -47,8 +48,52 @@ if (!$initiative) {
     exit;
 }
 
-// Get programs under this initiative
-$programs = get_initiative_programs_for_agency($initiative_id, $agency_id);
+// Get programs under this initiative with their latest ratings
+$programs = [];
+$latest_ratings_sql = "
+    SELECT 
+        p.program_id,
+        p.program_name,
+        p.program_number,
+        p.owner_agency_id,
+        u.agency_name,
+        JSON_UNQUOTE(JSON_EXTRACT(ps_latest.content_json, '$.rating')) as latest_rating,
+        ps_latest.submission_date,
+        ps_latest.updated_at,
+        ps_latest.is_draft,
+        (p.owner_agency_id = ?) as is_owned_by_agency
+    FROM programs p
+    LEFT JOIN users u ON p.owner_agency_id = u.user_id
+    LEFT JOIN (
+        SELECT 
+            ps1.program_id,
+            ps1.content_json,
+            ps1.submission_date,
+            ps1.updated_at,
+            ps1.is_draft
+        FROM program_submissions ps1
+        INNER JOIN (
+            SELECT 
+                program_id, 
+                MAX(updated_at) as max_updated_at
+            FROM program_submissions 
+            GROUP BY program_id
+        ) ps2 ON ps1.program_id = ps2.program_id AND ps1.updated_at = ps2.max_updated_at
+    ) ps_latest ON p.program_id = ps_latest.program_id
+    WHERE p.initiative_id = ?
+    ORDER BY p.program_id
+";
+
+$stmt = $conn->prepare($latest_ratings_sql);
+$stmt->bind_param('ii', $agency_id, $initiative_id);
+$stmt->execute();
+$result = $stmt->get_result();
+
+while ($row = $result->fetch_assoc()) {
+    // Use latest_rating from submissions if available, fallback to legacy program rating
+    $row['rating'] = $row['latest_rating'] ?? 'not-started';
+    $programs[] = $row;
+}
 
 // Calculate initiative health score based on program performance
 $health_score = 50; // Default neutral score
@@ -104,6 +149,11 @@ if (!empty($programs)) {
 
 // Set page title
 $pageTitle = 'Initiative Progress Tracker';
+
+// Include additional JavaScript for initiative view
+$additionalScripts = [
+    asset_url('js', 'agency/initiative-view.js')
+];
 
 // Include header
 require_once '../../layouts/header.php';
@@ -382,6 +432,98 @@ require_once '../../layouts/page_header.php';
                 </div>
             </div>
         </div>
+
+        <!-- Program Rating Distribution Chart -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                <div class="d-flex align-items-center justify-content-between">
+                    <h5 class="card-title m-0">
+                        <i class="fas fa-chart-pie me-2"></i>Program Rating Distribution
+                    </h5>
+                    <span class="badge bg-secondary">
+                        <?php echo count($programs); ?> programs
+                    </span>
+                </div>
+            </div>
+            <div class="card-body">
+                <?php if (!empty($programs)): ?>
+                    <?php
+                    // Calculate rating distribution for initiative programs
+                    $rating_distribution = [
+                        'target-achieved' => 0,
+                        'on-track' => 0,
+                        'on-track-yearly' => 0,
+                        'delayed' => 0,
+                        'severe-delay' => 0,
+                        'completed' => 0,
+                        'not-started' => 0
+                    ];
+                    
+                    foreach ($programs as $program) {
+                        $status = convert_legacy_rating($program['rating']);
+                        if (isset($rating_distribution[$status])) {
+                            $rating_distribution[$status]++;
+                        } else {
+                            $rating_distribution['not-started']++;
+                        }
+                    }
+                    
+                    $total_programs = count($programs);
+                    
+                    // Define display labels and colors
+                    $rating_config = [
+                        'target-achieved' => ['label' => 'Target Achieved', 'color' => 'success', 'icon' => 'fas fa-check-circle'],
+                        'completed' => ['label' => 'Completed', 'color' => 'success', 'icon' => 'fas fa-check-circle'],
+                        'on-track' => ['label' => 'On Track', 'color' => 'warning', 'icon' => 'fas fa-clock'],
+                        'on-track-yearly' => ['label' => 'On Track (Yearly)', 'color' => 'warning', 'icon' => 'fas fa-calendar-check'],
+                        'delayed' => ['label' => 'Delayed', 'color' => 'danger', 'icon' => 'fas fa-exclamation-triangle'],
+                        'severe-delay' => ['label' => 'Severe Delay', 'color' => 'danger', 'icon' => 'fas fa-exclamation-circle'],
+                        'not-started' => ['label' => 'Not Started', 'color' => 'secondary', 'icon' => 'fas fa-pause-circle']
+                    ];
+                    ?>
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="chart-container" style="position: relative; height:300px; width:100%">
+                                <canvas id="initiativeRatingChart"></canvas>
+                                <!-- Hidden element for rating data (used by JavaScript) -->
+                                <div id="ratingData" style="display: none;">
+                                    <?php echo json_encode($rating_distribution); ?>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="rating-stats">
+                                <h6 class="text-muted mb-3">Rating Breakdown</h6>
+                                
+                                <?php foreach ($rating_config as $status => $config): ?>
+                                    <?php if ($rating_distribution[$status] > 0): ?>
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <div class="d-flex align-items-center">
+                                            <i class="<?php echo $config['icon']; ?> me-2 text-<?php echo $config['color']; ?>"></i>
+                                            <span><?php echo $config['label']; ?></span>
+                                        </div>
+                                        <div>
+                                            <span class="badge bg-<?php echo $config['color']; ?> me-2">
+                                                <?php echo $rating_distribution[$status]; ?>
+                                            </span>
+                                            <small class="text-muted">
+                                                (<?php echo $total_programs > 0 ? round(($rating_distribution[$status] / $total_programs) * 100) : 0; ?>%)
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    </div>
+                <?php else: ?>
+                    <div class="text-muted text-center py-4">
+                        <i class="fas fa-chart-pie fa-2x mb-3"></i>
+                        <div>No programs found to display rating distribution.</div>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
     </div>
 
     <!-- Sidebar -->
@@ -424,14 +566,16 @@ require_once '../../layouts/page_header.php';
                                         $status = convert_legacy_rating($program['rating']);
                                         $status_colors = [
                                             'target-achieved' => 'success',
+                                            'on-track' => 'warning',
                                             'on-track-yearly' => 'warning',
+                                            'delayed' => 'danger',
                                             'severe-delay' => 'danger',
                                             'not-started' => 'secondary'
                                         ];
                                         $color_class = $status_colors[$status] ?? 'secondary';
                                         ?>
                                         <span class="badge bg-<?php echo $color_class; ?>" style="font-size: 0.7em;">
-                                            <?php echo $program['is_draft'] ? 'Draft' : 'Final'; ?>
+                                            <?php echo ucfirst(str_replace('-', ' ', $status)); ?>
                                         </span>
                                     </div>
                                 </div>
