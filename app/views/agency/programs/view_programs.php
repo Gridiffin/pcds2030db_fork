@@ -336,7 +336,7 @@ require_once '../../layouts/page_header.php';
                                 </td>
                                 <td>
                                     <div class="btn-group btn-group-sm" role="group" aria-label="Program actions">
-                                        <a href="update_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-secondary" title="Edit Program">
+                                        <a href="update_program.php?id=<?php echo $program['program_id']; ?>&period_id=<?php echo isset($program['period_id']) ? $program['period_id'] : ($current_period['period_id'] ?? ''); ?>" class="btn btn-outline-secondary" title="Edit Program">
                                             <i class="fas fa-edit"></i>
                                         </a>
                                         <button type="button" class="btn btn-outline-danger delete-program-btn" 
