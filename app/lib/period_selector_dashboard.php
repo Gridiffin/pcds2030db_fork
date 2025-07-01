@@ -26,8 +26,88 @@ require_once __DIR__ . '/functions.php';
 
 // Determine if this is the current active period
 $is_current_active = $selected_period && $selected_period['status'] === 'open';
-?>
 
+// Group periods by year and half-year, and combine into single selectable option per half-year
+// Half Year 1: Q1 (Jan-Mar) + Q2 (Apr-Jun)
+// Half Year 2: Q3 (Jul-Sep) + Q4 (Oct-Dec) -- starts at July
+define('HALF_YEAR_LABELS', [1 => 'Half Year 1', 2 => 'Half Year 2']);
+$half_year_options = [];
+foreach ($periods as $period) {
+    $year = $period['year'];
+    $quarter = (int)$period['quarter'];
+    // Explicitly assign half-year: H1 = Q1/Q2, H2 = Q3/Q4 (H2 starts at July)
+    $half = ($quarter === 1 || $quarter === 2) ? 1 : 2;
+    $half_key = $year . '-H' . $half;
+    if (!isset($half_year_options[$half_key])) {
+        $half_year_options[$half_key] = [
+            'year' => $year,
+            'half' => $half,
+            'periods' => [],
+            'start_date' => null,
+            'end_date' => null,
+            'status' => $period['status'],
+        ];
+    }
+    $half_year_options[$half_key]['periods'][] = $period;
+}
+// Now, for each half, set start_date and end_date using only the correct quarters
+foreach ($half_year_options as &$half) {
+    $quarters = array_column($half['periods'], 'quarter');
+    $dates = array_column($half['periods'], null);
+    if ($half['half'] == 1) {
+        // Only Q1 and Q2
+        $start = null; $end = null;
+        foreach ($half['periods'] as $p) {
+            if ((int)$p['quarter'] === 1 && (!$start || strtotime($p['start_date']) < strtotime($start))) {
+                $start = $p['start_date'];
+            }
+            if ((int)$p['quarter'] === 2 && (!$end || strtotime($p['end_date']) > strtotime($end))) {
+                $end = $p['end_date'];
+            }
+        }
+        // Fallback if only one period exists
+        if (!$start && isset($half['periods'][0]['start_date'])) $start = $half['periods'][0]['start_date'];
+        if (!$end && isset($half['periods'][count($half['periods'])-1]['end_date'])) $end = $half['periods'][count($half['periods'])-1]['end_date'];
+        $half['start_date'] = $start;
+        $half['end_date'] = $end;
+    } else {
+        // Only Q3 and Q4
+        $start = null; $end = null;
+        foreach ($half['periods'] as $p) {
+            if ((int)$p['quarter'] === 3 && (!$start || strtotime($p['start_date']) < strtotime($start))) {
+                $start = $p['start_date'];
+            }
+            if ((int)$p['quarter'] === 4 && (!$end || strtotime($p['end_date']) > strtotime($end))) {
+                $end = $p['end_date'];
+            }
+        }
+        // Fallback if only one period exists
+        if (!$start && isset($half['periods'][0]['start_date'])) $start = $half['periods'][0]['start_date'];
+        if (!$end && isset($half['periods'][count($half['periods'])-1]['end_date'])) $end = $half['periods'][count($half['periods'])-1]['end_date'];
+        $half['start_date'] = $start;
+        $half['end_date'] = $end;
+    }
+}
+unset($half);
+
+// Sort by year DESC, half DESC (so H2 appears before H1 for each year)
+uksort($half_year_options, function($a, $b) {
+    [$yearA, $halfA] = explode('-H', $a);
+    [$yearB, $halfB] = explode('-H', $b);
+    if ($yearA === $yearB) return $halfB <=> $halfA; // H2 before H1
+    return $yearB <=> $yearA; // Newer years first
+});
+// Determine selected half-year key
+$selected_half_key = null;
+foreach ($half_year_options as $key => $half) {
+    foreach ($half['periods'] as $p) {
+        if ($selected_period_id == $p['period_id']) {
+            $selected_half_key = $key;
+            break 2;
+        }
+    }
+}
+?>
 <div class="card shadow-sm mb-4 period-selector-card">
     <div class="card-body py-3">
         <div class="row align-items-center">
@@ -60,12 +140,17 @@ $is_current_active = $selected_period && $selected_period['status'] === 'open';
                 <div class="d-flex align-items-center justify-content-md-end mt-3 mt-md-0">
                     <label for="periodSelector" class="me-2 mb-0">Viewing Period:</label>
                     <div class="position-relative">
-                        <select class="form-select form-select-sm" id="periodSelector" style="max-width: 200px;">
-                            <?php foreach ($periods as $period): ?>
-                                <option value="<?php echo $period['period_id']; ?>" 
-                                        <?php echo ($selected_period_id == $period['period_id']) ? 'selected' : ''; ?>>
-                                    <?php echo get_period_display_name($period); ?>
-                                    <?php echo $period['status'] === 'open' ? ' (Open)' : ''; ?>
+                        <select class="form-select form-select-sm" id="periodSelector" style="max-width: 250px;">
+                            <?php foreach ($half_year_options as $key => $half): ?>
+                                <?php 
+                                    $display = $half['year'] . ' - ' . HALF_YEAR_LABELS[$half['half']];
+                                    $display .= ' (' . date('M j', strtotime($half['start_date'])) . ' - ' . date('M j, Y', strtotime($half['end_date'])) . ')';
+                                    $is_selected = ($selected_half_key === $key);
+                                    // Use a comma-separated list of period_ids for the half-year value
+                                    $value = implode(',', array_column($half['periods'], 'period_id'));
+                                ?>
+                                <option value="<?php echo $value; ?>" <?php echo $is_selected ? 'selected' : ''; ?>>
+                                    <?php echo $display; ?><?php echo $half['status'] === 'open' ? ' (Open)' : ''; ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
@@ -80,7 +165,6 @@ $is_current_active = $selected_period && $selected_period['status'] === 'open';
         </div>
     </div>
 </div>
-
 <script>
     // Initialize the period selector
     document.addEventListener('DOMContentLoaded', function() {
@@ -90,7 +174,7 @@ $is_current_active = $selected_period && $selected_period['status'] === 'open';
                 const selectedPeriodId = this.value;
                 // Get current URL parameters
                 const urlParams = new URLSearchParams(window.location.search);
-                // Set period_id parameter
+                // Set period_id parameter (comma-separated for half-year)
                 urlParams.set('period_id', selectedPeriodId);
                 // Redirect to the same page with the new parameter
                 window.location.href = window.location.pathname + '?' + urlParams.toString();

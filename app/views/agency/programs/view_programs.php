@@ -84,10 +84,10 @@ if (isset($_SESSION['role']) && strtolower($_SESSION['role']) === 'focal') {
     }
 } else {
     $agency_id = $_SESSION['user_id'];
-    // Define the function if it doesn't exist
-    if (!function_exists('get_agency_programs')) {    function get_agency_programs($agency_id) {
-        global $conn;
-        // Fixed query to properly get the latest submission for each program
+    $agency_group_id = $_SESSION['agency_group_id'] ?? null;
+    $programs = [];
+    if ($agency_group_id !== null) {
+        // Fetch all programs in the same agency group for normal users
         $query = "SELECT p.*, 
                          i.initiative_name,
                          i.initiative_number,
@@ -108,20 +108,17 @@ if (isset($_SESSION['role']) && strtolower($_SESSION['role']) === 'focal') {
                           GROUP BY program_id
                       ) ps2 ON ps1.program_id = ps2.program_id AND ps1.submission_id = ps2.max_submission_id
                   ) latest_sub ON p.program_id = latest_sub.program_id
-                  WHERE p.owner_agency_id = ?
+                  INNER JOIN users u ON p.owner_agency_id = u.user_id
+                  WHERE u.agency_group_id = ?
                   ORDER BY p.program_name";
         $stmt = $conn->prepare($query);
-        $stmt->bind_param("i", $agency_id);
+        $stmt->bind_param("i", $agency_group_id);
         $stmt->execute();
         $result = $stmt->get_result();
-        $programs = [];
         while ($row = $result->fetch_assoc()) {
             $programs[] = $row;
         }
-        return $programs;
     }
-    }
-    $programs = get_agency_programs($agency_id);
 }
 
 // Separate programs into drafts and finalized submissions
@@ -339,12 +336,14 @@ require_once '../../layouts/page_header.php';
                                         <a href="update_program.php?id=<?php echo $program['program_id']; ?>&period_id=<?php echo isset($program['period_id']) ? $program['period_id'] : ($current_period['period_id'] ?? ''); ?>" class="btn btn-outline-secondary" title="Edit Program">
                                             <i class="fas fa-edit"></i>
                                         </a>
+                                        <?php if (isset($program['owner_agency_id']) && $program['owner_agency_id'] == $_SESSION['user_id']): ?>
                                         <button type="button" class="btn btn-outline-danger delete-program-btn" 
                                                 data-id="<?php echo $program['program_id']; ?>" 
                                                 data-name="<?php echo htmlspecialchars($program['program_name']); ?>" 
                                                 title="Delete Program">
                                             <i class="fas fa-trash"></i>
                                         </button>
+                                        <?php endif; ?>
                                         <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'focal'): ?>
                                         <button class="btn btn-outline-success btn-sm submit-program" data-program-id="<?php echo $program['program_id']; ?>" title="Submit Program">
                                             <i class="fas fa-check"></i>
@@ -516,15 +515,10 @@ require_once '../../layouts/page_header.php';
                                 </td>
                                 <td>
                                     <div class="btn-group btn-group-sm" role="group" aria-label="Program actions">
-                                        <a href="update_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-secondary" title="Edit Program">
-                                            <i class="fas fa-sync-alt"></i>
-                                        </a>
-                                        <a href="program_details.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="View Program Details">
+                                        <a href="view_program.php?id=<?php echo $program['program_id']; ?>&period_id=<?php echo isset($program['period_id']) ? $program['period_id'] : ($current_period['period_id'] ?? ''); ?>" class="btn btn-outline-secondary" title="View Program">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        
-                                        <!-- Delete button only shows for custom programs (not assigned ones) and only for focal users on finalized programs -->
-                                        <?php if (!$is_assigned && isset($_SESSION['role']) && strtolower($_SESSION['role']) === 'focal'): ?>
+                                        <?php if (isset($program['owner_agency_id']) && $program['owner_agency_id'] == $_SESSION['user_id']): ?>
                                         <button type="button" class="btn btn-outline-danger delete-program-btn" 
                                             data-id="<?php echo $program['program_id']; ?>"
                                             data-name="<?php echo htmlspecialchars($program['program_name']); ?>"

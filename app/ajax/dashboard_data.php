@@ -22,9 +22,10 @@ if (!is_agency()) {
 
 // Get filter parameters
 $agency_id = $_SESSION['user_id'] ?? 0;
-$period_id = isset($_POST['period_id']) ? intval($_POST['period_id']) : 
-             (isset($_GET['period_id']) ? intval($_GET['period_id']) : 
-             getCurrentPeriodId($conn));
+$period_id_param = isset($_POST['period_id']) ? $_POST['period_id'] : 
+                   (isset($_GET['period_id']) ? $_GET['period_id'] : 
+                   getCurrentPeriodId($conn));
+$period_ids = array_map('intval', explode(',', $period_id_param));
 
 $include_assigned = isset($_POST['include_assigned']) ? 
                     filter_var($_POST['include_assigned'], FILTER_VALIDATE_BOOLEAN) : 
@@ -39,7 +40,7 @@ $initiative_id = isset($_POST['initiative_id']) ? intval($_POST['initiative_id']
 $dashboardController = new DashboardController($conn);
 
 // Get filtered data
-$data = $dashboardController->getDashboardData($agency_id, $period_id, $include_assigned, $initiative_id);
+$data = $dashboardController->getDashboardData($agency_id, $period_ids, $include_assigned, $initiative_id);
 
 // Return JSON response
 header('Content-Type: application/json');
