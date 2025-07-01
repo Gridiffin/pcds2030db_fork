@@ -49,8 +49,8 @@
     --active-bg: rgba(var(--forest-deep-rgb), 0.1);
     
     /* Typography */
-    --font-primary: 'Inter', system-ui, -apple-system, sans-serif;
-    --font-secondary: 'Inter', sans-serif;
+    --font-primary: 'Poppins', system-ui, -apple-system, sans-serif;
+    --font-secondary: 'Poppins', sans-serif;
     --font-weight-light: 300;
     --font-weight-regular: 400;
     --font-weight-medium: 500;

@@ -10,7 +10,7 @@
   left: 0;
   z-index: 1030;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 1.5rem;
@@ -19,7 +19,7 @@
   -webkit-backdrop-filter: blur(10px);
   box-shadow: 0 2px 15px rgba(var(--forest-deep-rgb), 0.1);
   border-bottom: 1px solid rgba(var(--forest-deep-rgb), 0.05);
-  height: 70px; /* Fixed height for consistency */
+  min-height: 70px; /* Min-height instead of fixed height to accommodate multi-line brand */
 }
 
 /* Apply Poppins font explicitly to all navbar elements */
@@ -42,14 +42,24 @@
   margin-right: 1.5rem;
   font-size: clamp(1rem, 2.5vw, 1.35rem); /* Responsive font size */
   line-height: 1.2;
-  white-space: nowrap;
   font-weight: var(--font-weight-semibold);
   color: var(--forest-deep);
   letter-spacing: -0.01em;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  max-width: calc(100vw - 200px); /* Prevent overflow, account for navbar controls */
+  max-width: 240px; /* Fixed width for consistency */
+}
+
+/* Brand text with smart truncation */
+.navbar-brand .brand-text {
   overflow: hidden;
   text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* Allow up to 2 lines */
+  line-clamp: 2; /* Standard property for compatibility */
+  -webkit-box-orient: vertical;
+  white-space: normal; /* Allow text wrapping */
+  word-break: break-word;
+  max-height: 2.4em; /* 2 lines of text */
 }
 
 /* Important: Prevent underline on hover for navbar brand */
@@ -244,6 +254,29 @@
   .navbar .dropdown {
     position: static !important;
   }
+  
+  /* Allow more space for the brand on small screens */
+  .navbar-brand {
+    max-width: calc(100% - 60px); /* Leave space for the toggle button */
+    padding-right: 1rem;
+  }
+  
+  /* Improve toggle button positioning */
+  .navbar-toggler {
+    padding: 0.25rem 0.5rem;
+    margin-left: auto;
+  }
+  
+  /* Ensure navbar collapse properly aligns content */
+  .navbar-collapse {
+    margin-top: 0.5rem;
+  }
+  
+  /* Better space distribution in collapsed state */
+  .navbar-nav {
+    width: 100%;
+    margin-left: 0;
+  }
 }
 
 /* Tablet landscape */
@@ -390,5 +423,17 @@
     margin-top: 0.5rem;
     padding: 1rem;
     box-shadow: 0 4px 15px rgba(var(--forest-deep-rgb), 0.1);
+  }
+}
+
+/* Make sure header content scrolls properly under fixed navbar */
+body {
+  padding-top: 70px; /* Match navbar min-height */
+}
+
+/* Adjust padding for multi-line navbar when needed */
+@media (max-width: 480px) {
+  body {
+    padding-top: 85px;
   }
 }

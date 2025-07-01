@@ -57,14 +57,10 @@ $agency_id = $_SESSION['user_id'];
 $initiatives = get_agency_initiatives($agency_id, $filters);
 
 // Additional scripts
-$additionalScripts = [
-    'https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.js'
-];
+$additionalScripts = [];
 
 // Additional styles  
-$additionalStyles = [
-    'https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.css'
-];
+$additionalStyles = [];
 
 // Include header
 require_once '../../layouts/header.php';
@@ -265,29 +261,7 @@ require_once '../../layouts/page_header.php';
 .view-container {
     transition: opacity 0.3s ease;
 }
-
-.gantt-legend {
-    display: flex;
-    gap: 15px;
-    font-size: 0.875rem;
-}
-
-.gantt-legend-item {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.gantt-legend-color {
-    width: 16px;
-    height: 12px;
-    border-radius: 2px;
-}
 </style>
-
-<script>
-
-</script>
 
 <?php
 // Include footer

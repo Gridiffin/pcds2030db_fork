@@ -8,20 +8,15 @@
     <!-- Preconnect to Google Fonts for faster loading -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-      <!-- Google Fonts - Poppins with all needed weights -->
+    <!-- Google Fonts - Poppins with all needed weights -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Favicon -->
     <link rel="shortcut icon" href="<?php echo asset_url('img', 'favicon.ico'); ?>" type="image/x-icon">
     
-    <!-- Preload critical fonts to avoid FOUT (Flash of Unstyled Text) -->
-    <link rel="preload" href="https://fonts.gstatic.com/s/poppins/v20/pxiEyp8kv8JHgFVrJJfecg.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="https://fonts.gstatic.com/s/poppins/v20/pxiByp8kv8JHgFVrLEj6Z1xlFQ.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="https://fonts.gstatic.com/s/poppins/v20/pxiByp8kv8JHgFVrLCz7Z1xlFQ.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="<?php echo asset_url('fonts/fontawesome', 'fa-solid-900.woff2'); ?>" as="font" type="font/woff2" crossorigin>
     
     <!-- CSS Libraries -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
     <!-- Main CSS (imports all component and layout CSS) -->
     <link rel="stylesheet" href="<?php echo asset_url('css', 'main.css'); ?>">
     
@@ -32,7 +27,7 @@
     <script>
         window.APP_URL = '<?php echo APP_URL; ?>';
     </script>
-      <!-- JavaScript URL helper functions -->
+    <!-- JavaScript URL helper functions -->
     <script src="<?php echo asset_url('js', 'url_helpers.js'); ?>"></script>
     
     <!-- Responsive navbar text handler -->
@@ -54,11 +49,6 @@
     
     <!-- Full-width header style -->
     <style>
-        /* Ensure Nunito font is applied globally with proper fallbacks */
-        html, body {
-            font-family: 'Nunito', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
-        }
-        
         /* Override any potential container margins/paddings that might affect header width */
         body {
             overflow-x: hidden; /* Prevent horizontal scrolling */
@@ -117,53 +107,11 @@
         }
     </style>
     
-    <!-- Local fonts fallback CSS to avoid failed CDN downloads -->
+    <!-- Font-related styling -->
     <style>
-        /* Nunito font local fallback */
-        @font-face {
-            font-family: 'Nunito';
-            font-style: normal;
-            font-weight: 400;
-            src: local('Nunito Regular'), local('Nunito-Regular'),
-                 url('<?php echo APP_URL; ?>/assets/fonts/nunito/nunito-v26-latin-regular.woff2') format('woff2');
-            font-display: swap;
-        }
-        
-        @font-face {
-            font-family: 'Nunito';
-            font-style: normal;
-            font-weight: 500;
-            src: local('Nunito Medium'), local('Nunito-Medium'),
-                 url('<?php echo APP_URL; ?>/assets/fonts/nunito/nunito-v26-latin-500.woff2') format('woff2');
-            font-display: swap;
-        }
-        
-        @font-face {
-            font-family: 'Nunito';
-            font-style: normal;
-            font-weight: 600;
-            src: local('Nunito SemiBold'), local('Nunito-SemiBold'),
-                 url('<?php echo APP_URL; ?>/assets/fonts/nunito/nunito-v26-latin-600.woff2') format('woff2');
-            font-display: swap;
-        }
-        
-        @font-face {
-            font-family: 'Nunito';
-            font-style: normal;
-            font-weight: 700;
-            src: local('Nunito Bold'), local('Nunito-Bold'),
-                 url('<?php echo APP_URL; ?>/assets/fonts/nunito/nunito-v26-latin-700.woff2') format('woff2');
-            font-display: swap;
-        }
-        
-        /* Font Awesome local fallback */
-        @font-face {
-            font-family: 'Font Awesome 5 Free';
-            font-style: normal;
-            font-weight: 900;
-            src: local('Font Awesome 5 Free Solid'), local('FontAwesome5Free-Solid'),
-                 url('<?php echo APP_URL; ?>/assets/fonts/fontawesome/fa-solid-900.woff2') format('woff2');
-            font-display: swap;
+        /* Apply Poppins to all elements */
+        body {
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         }
     </style>
 

@@ -811,6 +811,75 @@ require_once '../../layouts/page_header.php';
 
 </main>
 
+</main>
+
+<!-- Initiative Gantt Chart Section -->
+<div class="container-fluid mb-4">
+    <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title m-0">
+                <i class="fas fa-chart-gantt me-2"></i>Initiative Timeline (Gantt Chart)
+            </h5>
+            <div class="gantt-legend">
+                <div class="gantt-legend-item">
+                    <span class="gantt-legend-color" style="background-color: #007bff;"></span>
+                    Initiative
+                </div>
+                <div class="gantt-legend-item">
+                    <span class="gantt-legend-color" style="background-color: #17a2b8;"></span>
+                    Program
+                </div>
+                <div class="gantt-legend-item">
+                    <span class="gantt-legend-color" style="background-color: #28a745;"></span>
+                    Target
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div id="initiative_gantt_here" style="height: 500px;"></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.js"></script>
+<link rel="stylesheet" href="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.css">
+<script src="<?php echo asset_url('js', 'components/dhtmlxgantt.js'); ?>"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Only load Gantt if the container exists
+    const ganttDiv = document.getElementById('initiative_gantt_here');
+    if (!ganttDiv) return;
+
+    // Show loading spinner
+    ganttDiv.innerHTML = '<div class="d-flex justify-content-center align-items-center h-100"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+
+    // Build API URL for this initiative only
+    const urlParams = new URLSearchParams(window.location.search);
+    const initiativeId = urlParams.get('id');
+    if (!initiativeId) {
+        ganttDiv.innerHTML = '<div class="alert alert-danger">No initiative ID provided.</div>';
+        return;
+    }
+    const apiUrl = '../../../api/gantt_data.php?initiative_id=' + encodeURIComponent(initiativeId);
+
+    fetch(apiUrl)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                ganttDiv.innerHTML = '';
+                const ganttChart = new PCDS2030Gantt('initiative_gantt_here');
+                ganttChart.loadData(data);
+                ganttChart.render();
+            } else {
+                ganttDiv.innerHTML = '<div class="alert alert-danger">Failed to load Gantt chart data: ' + (data.error || 'Unknown error') + '</div>';
+            }
+        })
+        .catch(error => {
+            ganttDiv.innerHTML = '<div class="alert alert-danger">Error loading Gantt chart data. Please try again.</div>';
+        });
+});
+</script>
+
 <?php
 // Include footer
 require_once '../../layouts/footer.php';

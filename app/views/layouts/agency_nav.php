@@ -89,7 +89,7 @@ if (!function_exists('format_time_ago')) {
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <?php if ($current_page == 'view_initiatives.php' || $current_page == 'view_initiative.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/agency/initiatives/view_initiatives.php">
+                    <a class="nav-link <?php if ($current_page == 'initiatives.php' || $current_page == 'view_initiative.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/agency/initiatives/initiatives.php">
                         <i class="fas fa-lightbulb me-1"></i> Initiatives
                     </a>
                 </li>

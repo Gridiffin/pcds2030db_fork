@@ -8,9 +8,9 @@
 
     // Breakpoints for different text versions
     const BREAKPOINTS = {
-        ULTRA_SMALL: 380,
-        SMALL: 576,
-        MEDIUM: 768
+        ULTRA_SMALL: 480,
+        SMALL: 768,
+        MEDIUM: 992
     };
 
     // Get the navbar brand element
@@ -65,11 +65,13 @@
         const screenWidth = window.innerWidth;
         let newText = fullText;
 
+        // Use shorter text variants at smaller screen sizes
         if (screenWidth <= BREAKPOINTS.ULTRA_SMALL) {
             newText = ultraShortText;
         } else if (screenWidth <= BREAKPOINTS.SMALL) {
             newText = shortText;
-        } else if (screenWidth <= BREAKPOINTS.MEDIUM) {
+        } else if (screenWidth <= BREAKPOINTS.MEDIUM && fullText.length > 25) {
+            // Only use short text at medium screens if the full text is quite long
             newText = shortText;
         }
 
@@ -79,6 +81,15 @@
             
             // Update title attribute for accessibility
             navbarBrand.setAttribute('title', fullText);
+            
+            // Add a data attribute for the current text length class
+            if (newText === ultraShortText) {
+                navbarBrand.setAttribute('data-size', 'ultra-small');
+            } else if (newText === shortText) {
+                navbarBrand.setAttribute('data-size', 'small');
+            } else {
+                navbarBrand.setAttribute('data-size', 'full');
+            }
         }
     }
 
