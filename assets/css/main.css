@@ -31,6 +31,7 @@
 @import 'pages/admin.css';
 @import 'pages/agency.css';
 @import 'pages/report-generator.css';
+@import 'pages/initiative-view.css';
 
 /* Custom */
 @import 'custom/theme.css';
