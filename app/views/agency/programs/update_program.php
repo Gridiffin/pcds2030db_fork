@@ -33,6 +33,7 @@ if (!is_agency() && !is_focal_user()) {
     exit;
 }
 
+// --- BEGIN: Impersonate owner for editing if not owner ---
 // Get program ID from URL
 $program_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
@@ -43,12 +44,20 @@ if (!$program_id) {
     exit;
 }
 
-// Include session functions to use is_focal_user()
-require_once PROJECT_ROOT_PATH . 'lib/session.php';
-
 // Get program details with cross-agency access for focal users
+// But first, impersonate owner if not owner
+require_once PROJECT_ROOT_PATH . 'lib/session.php';
+$temp_program = get_program_details($program_id, true); // always allow cross-agency for lookup
+if ($temp_program && isset($temp_program['owner_agency_id']) && $_SESSION['user_id'] != $temp_program['owner_agency_id']) {
+    if (!isset($_SESSION['original_user_id'])) {
+        $_SESSION['original_user_id'] = $_SESSION['user_id'];
+    }
+    $_SESSION['user_id'] = $temp_program['owner_agency_id'];
+}
+// Now get the program details as the owner
 $allow_cross_agency = is_focal_user();
 $program = get_program_details($program_id, $allow_cross_agency);
+// --- END: Impersonate owner for editing if not owner ---
 
 if (!$program) {
     $_SESSION['message'] = 'Program not found.';
@@ -102,6 +111,16 @@ if (!$current_period) {
     header('Location: view_programs.php');
     exit;
 }
+
+// --- BEGIN: Impersonate owner for editing if not owner ---
+if (isset($program['owner_agency_id']) && $_SESSION['user_id'] != $program['owner_agency_id']) {
+    // Store original user id for restoration if needed
+    if (!isset($_SESSION['original_user_id'])) {
+        $_SESSION['original_user_id'] = $_SESSION['user_id'];
+    }
+    $_SESSION['user_id'] = $program['owner_agency_id'];
+}
+// --- END: Impersonate owner for editing if not owner ---
 
 // Helper function to check if a field is editable for assigned programs
 function is_editable($field) {
@@ -1782,7 +1801,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     <textarea class="form-control target-input" name="target_text[]" 
                              rows="3"
                              placeholder="Define a measurable target (e.g., 'Plant 100 trees')"></textarea>
-                    <div class="form-text">Define a specific, measurable target for this program.</div>
                 </div>
                 
                 <!-- Timeline Row -->
@@ -1802,7 +1820,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     <label class="form-label">Status Description</label>
                     <textarea class="form-control status-description" name="target_status_description[]" rows="2" 
                               placeholder="Describe the current status or progress toward this target"></textarea>
-                    <div class="form-text">Describe the current status or achievement toward this target.</div>
                 </div>
             `;
             
