@@ -58,12 +58,10 @@ $initiatives = get_agency_initiatives($agency_id, $filters);
 
 // Additional scripts
 $additionalScripts = [
-    'https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.js'
 ];
 
 // Additional styles  
 $additionalStyles = [
-    'https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.css'
 ];
 
 // Include header

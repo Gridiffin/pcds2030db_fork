@@ -162,6 +162,7 @@ function asset_url($type, $file) {
 define('UPLOAD_PATH', ROOT_PATH . 'app/uploads/');
 define('REPORT_PATH', ROOT_PATH . 'app/reports/');
 
+define('BASE_URL', '/pcds2030_dashboard');
 
 // Error reporting
 error_reporting(E_ALL);
