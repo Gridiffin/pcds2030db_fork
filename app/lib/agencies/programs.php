@@ -187,9 +187,19 @@ function create_wizard_program_draft($data) {
         if (!$stmt->execute()) throw new Exception('Failed to create program: ' . $stmt->error);
         $program_id = $conn->insert_id;
         if (!empty($targets) || !empty($brief_description)) {
-            $period_query = "SELECT period_id FROM reporting_periods WHERE status = 'open' ORDER BY year DESC, quarter DESC LIMIT 1";
+            // Prioritize open quarterly periods (1-4)
+            $period_query = "SELECT period_id FROM reporting_periods WHERE status = 'open' AND quarter BETWEEN 1 AND 4 ORDER BY year DESC, quarter DESC LIMIT 1";
             $period_result = $conn->query($period_query);
-            $current_period_id = $period_result && $period_result->num_rows > 0 ? $period_result->fetch_assoc()['period_id'] : 1;
+
+            if ($period_result && $period_result->num_rows > 0) {
+                $current_period_id = $period_result->fetch_assoc()['period_id'];
+            } else {
+                // Fallback to any open period (including half-yearly) if no quarterly period is open
+                $fallback_query = "SELECT period_id FROM reporting_periods WHERE status = 'open' ORDER BY year DESC, quarter DESC LIMIT 1";
+                $fallback_result = $conn->query($fallback_query);
+                $current_period_id = $fallback_result && $fallback_result->num_rows > 0 ? $fallback_result->fetch_assoc()['period_id'] : 1;
+            }
+            
             $content_json = [];
             if (!empty($targets)) $content_json['targets'] = $targets;
             if (!empty($brief_description)) $content_json['brief_description'] = $brief_description;
@@ -300,9 +310,19 @@ function update_program_draft_only($program_id, $data) {
                 $update_stmt->bind_param("si", $content_json_string, $submission_id);
                 if (!$update_stmt->execute()) throw new Exception('Failed to update program submission: ' . $update_stmt->error);
             } else {
-                $period_query = "SELECT period_id FROM reporting_periods WHERE status = 'open' ORDER BY year DESC, quarter DESC LIMIT 1";
+                // Prioritize open quarterly periods (1-4)
+                $period_query = "SELECT period_id FROM reporting_periods WHERE status = 'open' AND quarter BETWEEN 1 AND 4 ORDER BY year DESC, quarter DESC LIMIT 1";
                 $period_result = $conn->query($period_query);
-                $current_period_id = $period_result && $period_result->num_rows > 0 ? $period_result->fetch_assoc()['period_id'] : 1;
+
+                if ($period_result && $period_result->num_rows > 0) {
+                    $current_period_id = $period_result->fetch_assoc()['period_id'];
+                } else {
+                    // Fallback to any open period (including half-yearly) if no quarterly period is open
+                    $fallback_query = "SELECT period_id FROM reporting_periods WHERE status = 'open' ORDER BY year DESC, quarter DESC LIMIT 1";
+                    $fallback_result = $conn->query($fallback_query);
+                    $current_period_id = $fallback_result && $fallback_result->num_rows > 0 ? $fallback_result->fetch_assoc()['period_id'] : 1;
+                }
+                
                 $insert_stmt = $conn->prepare("INSERT INTO program_submissions (program_id, period_id, submitted_by, content_json, is_draft, submission_date, updated_at) VALUES (?, ?, ?, ?, 1, NOW(), NOW())");
                 $insert_stmt->bind_param("iiis", $program_id, $current_period_id, $user_id, $content_json_string);
                 if (!$insert_stmt->execute()) throw new Exception('Failed to create program submission: ' . $insert_stmt->error);
@@ -394,10 +414,12 @@ function update_wizard_program_draft($program_id, $data) {
             $check_stmt->bind_param("i", $program_id);
             $check_stmt->execute();
             $submission_result = $check_stmt->get_result();
+            
             $content_json = [];
             if (!empty($targets)) $content_json['targets'] = $targets;
             if (!empty($brief_description)) $content_json['brief_description'] = $brief_description;
             $content_json_string = json_encode($content_json);
+            
             if ($submission_result->num_rows > 0) {
                 $submission = $submission_result->fetch_assoc();
                 $submission_id = $submission['submission_id'];
@@ -405,9 +427,19 @@ function update_wizard_program_draft($program_id, $data) {
                 $update_stmt->bind_param("si", $content_json_string, $submission_id);
                 if (!$update_stmt->execute()) throw new Exception('Failed to update program submission: ' . $update_stmt->error);
             } else {
-                $period_query = "SELECT period_id FROM reporting_periods WHERE status = 'open' ORDER BY year DESC, quarter DESC LIMIT 1";
+                // Prioritize open quarterly periods (1-4)
+                $period_query = "SELECT period_id FROM reporting_periods WHERE status = 'open' AND quarter BETWEEN 1 AND 4 ORDER BY year DESC, quarter DESC LIMIT 1";
                 $period_result = $conn->query($period_query);
-                $current_period_id = $period_result && $period_result->num_rows > 0 ? $period_result->fetch_assoc()['period_id'] : 1;
+
+                if ($period_result && $period_result->num_rows > 0) {
+                    $current_period_id = $period_result->fetch_assoc()['period_id'];
+                } else {
+                    // Fallback to any open period (including half-yearly) if no quarterly period is open
+                    $fallback_query = "SELECT period_id FROM reporting_periods WHERE status = 'open' ORDER BY year DESC, quarter DESC LIMIT 1";
+                    $fallback_result = $conn->query($fallback_query);
+                    $current_period_id = $fallback_result && $fallback_result->num_rows > 0 ? $fallback_result->fetch_assoc()['period_id'] : 1;
+                }
+                
                 $insert_stmt = $conn->prepare("INSERT INTO program_submissions (program_id, period_id, submitted_by, content_json, is_draft, submission_date, updated_at) VALUES (?, ?, ?, ?, 1, NOW(), NOW())");
                 $insert_stmt->bind_param("iiis", $program_id, $current_period_id, $user_id, $content_json_string);
                 if (!$insert_stmt->execute()) throw new Exception('Failed to create program submission: ' . $insert_stmt->error);
