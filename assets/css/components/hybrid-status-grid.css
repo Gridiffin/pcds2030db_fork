@@ -209,67 +209,51 @@
     position: relative;
 }
 
-/* Status Indicators */
+/* Status Indicators - Colored Circles */
 .hybrid-status-grid .status-indicator {
-    width: 100%;
-    height: 24px;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.7rem;
-    font-weight: 500;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    margin: 0 auto;
     cursor: pointer;
     transition: all 0.2s ease;
-    border: 1px solid transparent;
+    border: 1px solid rgba(0,0,0,0.1);
 }
 
 .hybrid-status-grid .status-indicator:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 8px rgba(var(--forest-deep-rgb, 83, 125, 93), 0.2);
+    transform: scale(1.2);
+    box-shadow: 0 4px 8px rgba(var(--forest-deep-rgb, 83, 125, 93), 0.3);
 }
 
 /* Status Colors with Forest Theme Integration */
 .hybrid-status-grid .status-on-target {
     background: var(--forest-gradient-secondary, linear-gradient(135deg, #73946B 0%, #9EBC8A 100%));
-    color: #fff;
     border-color: var(--forest-medium, #73946B);
-    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
 }
 
 .hybrid-status-grid .status-at-risk {
     background: linear-gradient(135deg, #ffc107 0%, #ffcd39 100%);
-    color: #212529;
-    border-color: var(--forest-medium, #73946B);
-    font-weight: 600;
+    border-color: #ffc107;
 }
 
 .hybrid-status-grid .status-off-target {
     background: linear-gradient(135deg, #dc3545 0%, #e55563 100%);
-    color: #fff;
-    border-color: var(--forest-deep, #537D5D);
-    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    border-color: #dc3545;
 }
 
 .hybrid-status-grid .status-not-started {
     background: linear-gradient(135deg, #6c757d 0%, #868e96 100%);
-    color: #fff;
-    border-color: var(--forest-medium, #73946B);
-    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    border-color: #6c757d;
 }
 
 .hybrid-status-grid .status-completed {
     background: var(--forest-gradient-primary, linear-gradient(135deg, #537D5D 0%, #73946B 100%));
-    color: #fff;
     border-color: var(--forest-deep, #537D5D);
-    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
 }
 
 .hybrid-status-grid .status-planned {
     background: var(--forest-gradient-subtle, linear-gradient(135deg, #9EBC8A 0%, #D2D0A0 100%));
-    color: var(--forest-deep, #537D5D);
     border-color: var(--forest-light, #9EBC8A);
-    font-weight: 600;
 }
 
 /* Badge Styling for Program/Target Numbers */
@@ -362,8 +346,8 @@
     }
     
     .hybrid-status-grid .status-indicator {
-        height: 20px;
-        font-size: 0.65rem;
+        width: 15px;
+        height: 15px;
     }
 }
 
@@ -381,8 +365,8 @@
     }
     
     .hybrid-status-grid .status-indicator {
-        height: 18px;
-        font-size: 0.6rem;
+        width: 14px;
+        height: 14px;
     }
     
     .hybrid-status-grid .program-badge,

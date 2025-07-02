@@ -288,9 +288,7 @@ class StatusGrid {
                 if (status) {
                     row += `
                         <td class="status-cell" data-quarter="${quarter.id}" data-target="${target.target_number || 'unknown'}">
-                            <div class="status-indicator ${status.class}" title="${status.tooltip}">
-                                ${status.label || ''}
-                            </div>
+                            <div class="status-indicator ${status.class}" title="${status.tooltip}"></div>
                         </td>
                     `;
                 } else {
@@ -378,14 +376,14 @@ class StatusGrid {
         
         // Map the 4 valid status values to CSS classes and tooltips
         const statusMap = {
-            'not started': { class: 'status-not-started', tooltip: 'Not Started', label: '○' },
-            'not_started': { class: 'status-not-started', tooltip: 'Not Started', label: '○' },
-            'not-started': { class: 'status-not-started', tooltip: 'Not Started', label: '○' },
-            'in progress': { class: 'status-at-risk', tooltip: 'In Progress', label: '⚠' },
-            'in_progress': { class: 'status-at-risk', tooltip: 'In Progress', label: '⚠' },
-            'in-progress': { class: 'status-at-risk', tooltip: 'In Progress', label: '⚠' },
-            'completed': { class: 'status-completed', tooltip: 'Completed', label: '✓' },
-            'delayed': { class: 'status-off-target', tooltip: 'Delayed', label: '✗' }
+            'not started': { class: 'status-not-started', tooltip: 'Not Started' },
+            'not_started': { class: 'status-not-started', tooltip: 'Not Started' },
+            'not-started': { class: 'status-not-started', tooltip: 'Not Started' },
+            'in progress': { class: 'status-at-risk', tooltip: 'In Progress' },
+            'in_progress': { class: 'status-at-risk', tooltip: 'In Progress' },
+            'in-progress': { class: 'status-at-risk', tooltip: 'In Progress' },
+            'completed': { class: 'status-completed', tooltip: 'Completed' },
+            'delayed': { class: 'status-off-target', tooltip: 'Delayed' }
         };
         
         // Normalize status string (lowercase, handle spaces)
@@ -406,7 +404,6 @@ class StatusGrid {
         return {
             class: status.class,
             tooltip: `${quarter.year} Q${quarter.quarter}: ${status.tooltip}`,
-            label: status.label,
             rawStatus: rawStatus // Include raw status for debugging
         };
     }
