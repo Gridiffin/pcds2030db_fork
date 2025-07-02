@@ -99,6 +99,10 @@ if (isset($_GET['ajax_table']) && $_GET['ajax_table'] == '1') {
                                     </td>
                                     <td class="text-center">
                                         <div class="btn-group btn-group-sm" role="group">
+                                            <a href="view_initiative.php?id=<?php echo $initiative['initiative_id']; ?>" 
+                                               class="btn btn-outline-info" title="View">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
                                             <a href="edit.php?id=<?php echo $initiative['initiative_id']; ?>" 
                                                class="btn btn-outline-primary" title="Edit">
                                                 <i class="fas fa-edit"></i>

@@ -325,6 +325,27 @@
     border: 1px solid rgba(0,0,0,0.1);
 }
 
+/* Legend Status Colors */
+.hybrid-status-grid-legend .legend-indicator.status-not-started {
+    background: linear-gradient(135deg, #6c757d 0%, #868e96 100%);
+    border-color: #6c757d;
+}
+
+.hybrid-status-grid-legend .legend-indicator.status-at-risk {
+    background: linear-gradient(135deg, #ffc107 0%, #ffcd39 100%);
+    border-color: #ffc107;
+}
+
+.hybrid-status-grid-legend .legend-indicator.status-completed {
+    background: var(--forest-gradient-primary, linear-gradient(135deg, #537D5D 0%, #73946B 100%));
+    border-color: var(--forest-deep, #537D5D);
+}
+
+.hybrid-status-grid-legend .legend-indicator.status-off-target {
+    background: linear-gradient(135deg, #dc3545 0%, #e55563 100%);
+    border-color: #dc3545;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .hybrid-status-grid .sticky-left {

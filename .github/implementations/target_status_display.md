@@ -184,3 +184,45 @@ The status grid currently displays empty cells but needs to show actual target s
 - **Delayed**: Red circle (#dc3545)
 
 This completes the status grid implementation with a clean, color-only visual indicator system.
+
+## Legend Color Fix
+
+### Issue Identified:
+- Status legend was showing text labels without colored circle indicators
+- Legend indicators had basic circle styling but no color classes applied
+- Main status indicators worked correctly, but legend was missing color mapping
+
+### Solution Implemented:
+- Added specific CSS rules for legend status colors in `hybrid-status-grid.css`
+- Applied same color gradients and border colors as main status indicators
+- Maintained consistency between legend and main grid indicators
+
+### CSS Changes Made:
+```css
+/* Legend Status Colors */
+.hybrid-status-grid-legend .legend-indicator.status-not-started {
+    background: linear-gradient(135deg, #6c757d 0%, #868e96 100%);
+    border-color: #6c757d;
+}
+
+.hybrid-status-grid-legend .legend-indicator.status-at-risk {
+    background: linear-gradient(135deg, #ffc107 0%, #ffcd39 100%);
+    border-color: #ffc107;
+}
+
+.hybrid-status-grid-legend .legend-indicator.status-completed {
+    background: var(--forest-gradient-primary, linear-gradient(135deg, #537D5D 0%, #73946B 100%));
+    border-color: var(--forest-deep, #537D5D);
+}
+
+.hybrid-status-grid-legend .legend-indicator.status-off-target {
+    background: linear-gradient(135deg, #dc3545 0%, #e55563 100%);
+    border-color: #dc3545;
+}
+```
+
+### Result:
+- Legend now displays colored circles for each status type
+- Colors match exactly with the main status grid indicators
+- Consistent visual experience across agency and admin views
+- Enhanced user understanding of status meaning through color coding
