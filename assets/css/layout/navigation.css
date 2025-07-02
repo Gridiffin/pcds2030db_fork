@@ -214,12 +214,28 @@
     display: none;
   }
   
-  /* Centered nav links with proper spacing */
+  /* Centered nav links with proper spacing - Adjusted for better visual balance */
   .navbar-expand-lg .navbar-nav.mx-auto {
     margin-left: auto;
     margin-right: auto;
     display: flex;
     gap: 0.5rem;
+    /* Shift slightly to the right for better visual centering */
+    transform: translateX(15px);
+  }
+  
+  /* Fine-tune positioning for larger screens */
+  @media (min-width: 1200px) {
+    .navbar-expand-lg .navbar-nav.mx-auto {
+      transform: translateX(25px);
+    }
+  }
+  
+  /* Adjust for medium screens */
+  @media (min-width: 992px) and (max-width: 1199.98px) {
+    .navbar-expand-lg .navbar-nav.mx-auto {
+      transform: translateX(15px);
+    }
   }
 }
 
@@ -243,6 +259,11 @@
   .navbar-brand {
     font-size: 1.25rem;
     max-width: calc(100vw - 180px); /* Adjust for mobile navbar controls */
+  }
+  
+  /* Reset transform on mobile - centered navigation not needed */
+  .navbar-nav.mx-auto {
+    transform: none;
   }
   
   .user-info {

@@ -1,12 +1,3 @@
-/* Container */
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: #333;
-}
-
 /* Headings */
 h1.h2 {
     font-weight: 700;

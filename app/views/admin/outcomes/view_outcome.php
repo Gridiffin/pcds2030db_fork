@@ -430,9 +430,9 @@ require_once '../../layouts/page_header.php';
                         </div>
                     </div>
                     
-                    <!-- Chart Canvas -->
-                    <div class="chart-container" style="position: relative; height:400px;">
-                        <canvas id="metricChart"></canvas>
+                    <!-- Chart Canvas - Simple Approach -->
+                    <div style="width: 100%; height: 800px; margin: 20px 0;">
+                        <canvas id="metricChart" style="width: 100%; height: 100%;"></canvas>
                     </div>
                 </div>
             </div>
@@ -457,18 +457,18 @@ const outcomeInfo = {
 // Initialize chart functionality if Chart.js is available (same as agency side)
 function initializeChart() {
     if (typeof Chart !== 'undefined' && window.tableData && window.tableColumns && window.tableRows) {
-        // Simple chart initialization
-        const ctx = document.getElementById('metricChart');
+        // Get the canvas element
+        const canvas = document.getElementById('metricChart');
         
-        if (ctx && Object.keys(window.tableData).length > 0) {
-            // Destroy existing chart if present
-            const existingChart = Chart.getChart(ctx);
-            if (existingChart) {
-                existingChart.destroy();
+        if (canvas && Object.keys(window.tableData).length > 0) {
+            // Clear any previous chart
+            if (window.currentChart) {
+                window.currentChart.destroy();
             }
             
-            const chartType = document.getElementById('chartType')?.value || 'bar';
-            const cumulativeView = document.getElementById('cumulativeView')?.checked || false;
+            // Get chart settings from form inputs
+            const chartType = document.getElementById('chartType') ? document.getElementById('chartType').value : 'bar';
+            const cumulativeView = document.getElementById('cumulativeView') ? document.getElementById('cumulativeView').checked : false;
             
             // Create chart data - ensure all values are numeric
             const labels = window.tableRows;
@@ -513,8 +513,8 @@ function initializeChart() {
                 };
             });
             
-            // Create chart with improved configuration for financial data
-            const chartInstance = new Chart(ctx, {
+            // Create chart with basic configuration
+            window.currentChart = new Chart(canvas, {
                 type: chartType === 'area' ? 'line' : chartType,
                 data: {
                     labels: labels,
@@ -523,69 +523,97 @@ function initializeChart() {
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    devicePixelRatio: window.devicePixelRatio || 1,
                     scales: {
                         y: {
                             beginAtZero: true,
                             ticks: {
+                                font: {
+                                    size: 14,
+                                    weight: '600'
+                                },
+                                // Format large numbers (e.g., financial data)
                                 callback: function(value) {
-                                    // Format large numbers (millions, billions)
                                     if (value >= 1000000000) {
                                         return 'RM ' + (value / 1000000000).toFixed(1) + 'B';
                                     } else if (value >= 1000000) {
                                         return 'RM ' + (value / 1000000).toFixed(1) + 'M';
                                     } else if (value >= 1000) {
                                         return 'RM ' + (value / 1000).toFixed(1) + 'K';
+                                    } else {
+                                        return 'RM ' + value.toFixed(2);
                                     }
-                                    return 'RM ' + value.toLocaleString();
                                 }
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                font: {
+                                    size: 14,
+                                    weight: '600'
+                                },
+                                maxRotation: 45,
+                                minRotation: 0
                             }
                         }
                     },
                     plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const value = context.parsed.y;
-                                    return context.dataset.label + ': RM ' + value.toLocaleString();
-                                }
+                        title: {
+                            display: true,
+                            text: 'Outcome Data Visualization' + (cumulativeView ? ' (Cumulative View)' : ''),
+                            font: {
+                                size: 20,
+                                weight: 'bold',
+                                family: "'Segoe UI', 'Helvetica', 'Arial', sans-serif"
                             }
                         },
                         legend: {
                             display: true,
-                            position: 'top'
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: 16,
+                                    weight: '600'
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed.y;
+                                    const formattedValue = new Intl.NumberFormat('en-MY', {
+                                        style: 'currency',
+                                        currency: 'MYR',
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2
+                                    }).format(value);
+                                    return context.dataset.label + ': ' + formattedValue;
+                                }
+                            }
                         }
                     }
                 }
             });
-            
-            // Store chart instance globally for download functionality
-            window.currentChart = chartInstance;
         }
-    }
-}
-
-// Wait for Chart.js to load and initialize
-function waitForChart() {
-    if (typeof Chart !== 'undefined') {
-        // Chart.js loaded, initialize chart
-        initializeChart();
-    } else {
-        // Waiting for Chart.js to load
-        setTimeout(waitForChart, 100);
     }
 }
 
 // Initialize everything when the page loads
 document.addEventListener('DOMContentLoaded', function() {
-    // Start chart initialization
-    waitForChart();
-    
-    // Handle chart tab activation
+    // Simple setup for chart initialization on tab switch
     const chartTab = document.getElementById('chart-tab');
     if (chartTab) {
-        chartTab.addEventListener('shown.bs.tab', function () {
+        chartTab.addEventListener('shown.bs.tab', function() {
+            console.log('Chart tab activated, initializing chart');
             setTimeout(initializeChart, 100);
         });
+    }
+    
+    // Check if chart tab is initially active
+    const chartView = document.getElementById('chart-view');
+    if (chartView && chartView.classList.contains('active')) {
+        console.log('Chart tab is initially active, initializing chart');
+        setTimeout(initializeChart, 100);
     }
     
     // Chart type change handler
@@ -644,6 +672,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // Simple handler for window resize
+    window.addEventListener('resize', function() {
+        if (window.currentChart) {
+            setTimeout(() => window.currentChart.resize(), 100);
+        }
+    });
 });
 </script>
 

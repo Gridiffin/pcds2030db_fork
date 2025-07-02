@@ -209,9 +209,13 @@ require_once '../../layouts/page_header.php';
                                     <th style="width: 150px;">Row</th>
                                     <?php foreach ($columns as $column): ?>
                                         <th class="text-center">
-                                            <?= htmlspecialchars($column['label'] ?? $column['id']) ?>
-                                            <?php if (!empty($column['unit'])): ?>
-                                                <br><small class="text-muted">(<?= htmlspecialchars($column['unit']) ?>)</small>
+                                            <?php if (is_array($column)): ?>
+                                                <?= htmlspecialchars($column['label'] ?? $column['id']) ?>
+                                                <?php if (!empty($column['unit'])): ?>
+                                                    <br><small class="text-muted">(<?= htmlspecialchars($column['unit']) ?>)</small>
+                                                <?php endif; ?>
+                                            <?php else: ?>
+                                                <?= htmlspecialchars($column) ?>
                                             <?php endif; ?>
                                         </th>
                                     <?php endforeach; ?>
@@ -334,9 +338,15 @@ require_once '../../layouts/page_header.php';
                                     <tbody>
                                         <?php foreach ($columns as $index => $column): ?>
                                         <tr>
-                                            <td><?= htmlspecialchars($column['label'] ?? $column['id']) ?></td>
-                                            <td><?= htmlspecialchars($column['type'] ?? '-') ?></td>
-                                            <td><?= htmlspecialchars($column['unit'] ?? '-') ?></td>
+                                            <?php if (is_array($column)): ?>
+                                                <td><?= htmlspecialchars($column['label'] ?? $column['id']) ?></td>
+                                                <td><?= htmlspecialchars($column['type'] ?? '-') ?></td>
+                                                <td><?= htmlspecialchars($column['unit'] ?? '-') ?></td>
+                                            <?php else: ?>
+                                                <td><?= htmlspecialchars($column) ?></td>
+                                                <td>-</td>
+                                                <td>-</td>
+                                            <?php endif; ?>
                                             <td><span class="badge bg-info"><?= $index + 1 ?></span></td>
                                         </tr>
                                         <?php endforeach; ?>
@@ -381,9 +391,15 @@ require_once '../../layouts/page_header.php';
                                 <label for="chartColumns" class="form-label">Select Data Series</label>
                                 <select class="form-select" id="chartColumns" multiple>
                                     <?php foreach ($columns as $column): ?>
-                                        <option value="<?= htmlspecialchars($column['id']) ?>" selected>
-                                            <?= htmlspecialchars($column['label'] ?? $column['id']) ?>
-                                        </option>
+                                        <?php if (is_array($column)): ?>
+                                            <option value="<?= htmlspecialchars($column['id']) ?>" selected>
+                                                <?= htmlspecialchars($column['label'] ?? $column['id']) ?>
+                                            </option>
+                                        <?php else: ?>
+                                            <option value="<?= htmlspecialchars($column) ?>" selected>
+                                                <?= htmlspecialchars($column) ?>
+                                            </option>
+                                        <?php endif; ?>
                                     <?php endforeach; ?>
                                 </select>
                             </div>
@@ -410,9 +426,9 @@ require_once '../../layouts/page_header.php';
                         </div>
                     </div>
                     
-                    <!-- Chart Canvas -->
-                    <div class="chart-container" style="position: relative; height:400px;">
-                        <canvas id="metricChart"></canvas>
+                    <!-- Chart Canvas - Simple Approach -->
+                    <div style="width: 100%; height: 800px; margin: 20px 0;">
+                        <canvas id="metricChart" style="width: 100%; height: 100%;"></canvas>
                     </div>
                     
                     <!-- Chart Info -->
@@ -484,24 +500,28 @@ const outcomeInfo = {
 // Initialize chart functionality if Chart.js is available
 function initializeChart() {
     if (typeof Chart !== 'undefined' && window.tableData && window.tableColumns && window.tableRows) {
-        // Simple chart initialization
-        const ctx = document.getElementById('metricChart');
+        // Get the canvas element
+        const canvas = document.getElementById('metricChart');
         
-        if (ctx && Object.keys(window.tableData).length > 0) {
-            // Destroy existing chart if present
-            const existingChart = Chart.getChart(ctx);
-            if (existingChart) {
-                existingChart.destroy();
+        if (canvas && Object.keys(window.tableData).length > 0) {
+            // Clear any previous chart
+            if (window.currentChart) {
+                window.currentChart.destroy();
             }
             
-            const chartType = document.getElementById('chartType')?.value || 'bar';
-            const cumulativeView = document.getElementById('cumulativeView')?.checked || false;
+            // Get chart settings from form inputs
+            const chartType = document.getElementById('chartType') ? document.getElementById('chartType').value : 'bar';
+            const cumulativeView = document.getElementById('cumulativeView') ? document.getElementById('cumulativeView').checked : false;
             
             // Create chart data - ensure all values are numeric
             const labels = window.tableRows;
             const datasets = window.tableColumns.map((column, index) => {
+                // Handle both string columns and object columns
+                const colId = typeof column === 'object' ? (column['id'] || '') : column;
+                const colLabel = typeof column === 'object' ? (column['label'] || column['id'] || '') : column;
+                
                 let data = labels.map(row => {
-                    const cellValue = window.tableData[row] ? window.tableData[row][column['id']] : null;
+                    const cellValue = window.tableData[row] ? window.tableData[row][colId] : null;
                     // Convert to number, handle empty strings and null values
                     let numericValue = 0;
                     if (cellValue !== null && cellValue !== '' && cellValue !== undefined) {
@@ -531,7 +551,7 @@ function initializeChart() {
                 ];
                 
                 return {
-                    label: column['label'] + (cumulativeView ? ' (Cumulative)' : ''),
+                    label: colLabel + (cumulativeView ? ' (Cumulative)' : ''),
                     data: data,
                     backgroundColor: colors[index % colors.length],
                     borderColor: colors[index % colors.length].replace('0.8', '1'),
@@ -540,8 +560,8 @@ function initializeChart() {
                 };
             });
             
-            // Create chart with improved configuration for financial data
-            const chartInstance = new Chart(ctx, {
+            // Create chart with basic configuration
+            window.currentChart = new Chart(canvas, {
                 type: chartType === 'area' ? 'line' : chartType,
                 data: {
                     labels: labels,
@@ -550,12 +570,17 @@ function initializeChart() {
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    devicePixelRatio: window.devicePixelRatio || 1,
                     scales: {
                         y: {
                             beginAtZero: true,
                             ticks: {
+                                font: {
+                                    size: 14,
+                                    weight: '600'
+                                },
                                 // Format large numbers (e.g., financial data)
-                                callback: function(value, index, values) {
+                                callback: function(value) {
                                     if (value >= 1000000000) {
                                         return 'RM ' + (value / 1000000000).toFixed(1) + 'B';
                                     } else if (value >= 1000000) {
@@ -567,16 +592,37 @@ function initializeChart() {
                                     }
                                 }
                             }
+                        },
+                        x: {
+                            ticks: {
+                                font: {
+                                    size: 14,
+                                    weight: '600'
+                                },
+                                maxRotation: 45,
+                                minRotation: 0
+                            }
                         }
                     },
                     plugins: {
                         title: {
                             display: true,
-                            text: 'Outcome Data Visualization' + (cumulativeView ? ' (Cumulative View)' : '')
+                            text: 'Outcome Data Visualization' + (cumulativeView ? ' (Cumulative View)' : ''),
+                            font: {
+                                size: 20,
+                                weight: 'bold',
+                                family: "'Segoe UI', 'Helvetica', 'Arial', sans-serif"
+                            }
                         },
                         legend: {
                             display: true,
-                            position: 'top'
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: 16,
+                                    weight: '600'
+                                }
+                            }
                         },
                         tooltip: {
                             callbacks: {
@@ -593,42 +639,28 @@ function initializeChart() {
                             }
                         }
                     }
-                });
-            
-            // Store chart instance globally for download functionality
-            window.currentChart = chartInstance;
+                }
+            });
         }
-    }
-}
-
-// Wait for Chart.js to load and initialize
-function waitForChart() {
-    if (typeof Chart !== 'undefined') {
-        // Chart.js loaded, initialize chart
-        initializeChart();
-    } else {
-        // Waiting for Chart.js to load
-        setTimeout(waitForChart, 100);
     }
 }
 
 // Initialize everything when the page loads
 document.addEventListener('DOMContentLoaded', function() {
-    // Start chart initialization
-    waitForChart();
-    
-    // Handle chart tab activation
+    // Simple setup for chart initialization on tab switch
     const chartTab = document.getElementById('chart-tab');
     if (chartTab) {
-        chartTab.addEventListener('shown.bs.tab', function () {
-            // Ensure chart is initialized when tab is shown
-            setTimeout(() => {
-                const canvas = document.getElementById('metricChart');
-                if (canvas && !Chart.getChart(canvas)) {
-                    initializeChart();
-                }
-            }, 100);
+        chartTab.addEventListener('shown.bs.tab', function() {
+            console.log('Chart tab activated, initializing chart');
+            setTimeout(initializeChart, 100);
         });
+    }
+    
+    // Check if chart tab is initially active
+    const chartView = document.getElementById('chart-view');
+    if (chartView && chartView.classList.contains('active')) {
+        console.log('Chart tab is initially active, initializing chart');
+        setTimeout(initializeChart, 100);
     }
     
     // Chart type change handler (if implemented)
@@ -669,11 +701,12 @@ document.addEventListener('DOMContentLoaded', function() {
     if (downloadBtn) {
         downloadBtn.addEventListener('click', function() {
             // Create CSV content
-            let csv = 'Row,' + window.tableColumns.map(col => col['id']).join(',') + '\n';
+            let csv = 'Row,' + window.tableColumns.map(col => typeof col === 'object' ? (col['id'] || '') : col).join(',') + '\n';
             window.tableRows.forEach(row => {
                 let rowData = [row];
                 window.tableColumns.forEach(col => {
-                    rowData.push(window.tableData[row] ? (window.tableData[row][col['id']] || 0) : 0);
+                    const colId = typeof col === 'object' ? (col['id'] || '') : col;
+                    rowData.push(window.tableData[row] ? (window.tableData[row][colId] || 0) : 0);
                 });
                 csv += rowData.join(',') + '\n';
             });
@@ -688,6 +721,13 @@ document.addEventListener('DOMContentLoaded', function() {
             window.URL.revokeObjectURL(url);
         });
     }
+
+    // Simple handler for window resize
+    window.addEventListener('resize', function() {
+        if (window.currentChart) {
+            setTimeout(() => window.currentChart.resize(), 100);
+        }
+    });
 });
 </script>
 

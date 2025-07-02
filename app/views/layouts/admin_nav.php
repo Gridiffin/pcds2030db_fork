@@ -85,22 +85,11 @@ $is_settings_page = in_array($current_page, ['reporting_periods.php', 'audit_log
                     </ul>
                 </li>
                 
-                <!-- Outcomes Dropdown -->
-                <li class="nav-item dropdown">
-                    <button class="nav-link dropdown-toggle btn <?php if ($is_outcomes_active) echo 'active'; ?>" data-bs-toggle="dropdown" aria-expanded="false" type="button">
-                        <i class="fas fa-chart-line me-1"></i> Outcomes <i class="fas fa-caret-down nav-dropdown-icon"></i>
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li>
-                            <a class="dropdown-item <?php if ($current_page == 'manage_outcomes.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/admin/outcomes/manage_outcomes.php">
-                                <i class="fas fa-list me-1"></i> Manage Outcomes
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item <?php if ($current_page == 'create_outcome_details.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/admin/outcomes/create_outcome_details.php">
-                                <i class="fas fa-chart-line me-1"></i> Create Outcome Details
-                            </a>                        </li>
-                    </ul>
+                <!-- Outcomes Link -->
+                <li class="nav-item">
+                    <a class="nav-link <?php if ($is_outcomes_active) echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/admin/outcomes/manage_outcomes.php">
+                        <i class="fas fa-chart-line me-1"></i> Outcomes
+                    </a>
                 </li>
             </ul>
 
