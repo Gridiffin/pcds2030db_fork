@@ -515,7 +515,7 @@ require_once '../../layouts/page_header.php';
                                 </td>
                                 <td>
                                     <div class="btn-group btn-group-sm" role="group" aria-label="Program actions">
-                                        <a href="view_program.php?id=<?php echo $program['program_id']; ?>&period_id=<?php echo isset($program['period_id']) ? $program['period_id'] : ($current_period['period_id'] ?? ''); ?>" class="btn btn-outline-secondary" title="View Program">
+                                        <a href="program_details.php?id=<?php echo $program['program_id']; ?>&period_id=<?php echo isset($program['period_id']) ? $program['period_id'] : ($current_period['period_id'] ?? ''); ?>" class="btn btn-outline-secondary" title="View Program">
                                             <i class="fas fa-eye"></i>
                                         </a>
                                         <?php if (isset($program['owner_agency_id']) && $program['owner_agency_id'] == $_SESSION['user_id']): ?>
