@@ -6,6 +6,8 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize the period selector on load
     initPeriodSelector();
+    // Initialize view mode toggle
+    initViewModeToggle();
 });
 
 /**
@@ -55,9 +57,46 @@ function initPeriodSelector() {
 }
 
 /**
+ * Initialize view mode toggle functionality
+ */
+function initViewModeToggle() {
+    const viewModeRadios = document.querySelectorAll('input[name="viewMode"]');
+    
+    viewModeRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.checked) {
+                handleViewModeChange(this.value);
+            }
+        });
+    });
+}
+
+/**
+ * Handle view mode change between half-yearly and quarterly
+ * 
+ * @param {string} viewMode - The selected view mode ('half-yearly' or 'quarterly')
+ */
+function handleViewModeChange(viewMode) {
+    // Show loading indicator
+    const periodSelectorCard = document.querySelector('.period-selector-card');
+    if (periodSelectorCard) {
+        periodSelectorCard.classList.add('loading');
+    }
+    
+    // Update URL with new view mode and reload to rebuild the dropdown
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.set('view_mode', viewMode);
+    // Remove period_id when switching view modes to prevent conflicts
+    // but preserve all other URL parameters (like tab, sector_id, etc.)
+    urlParams.delete('period_id');
+    
+    window.location.href = window.location.pathname + '?' + urlParams.toString();
+}
+
+/**
  * Update page content via AJAX based on the selected period
  * 
- * @param {string} periodId - The selected period ID
+ * @param {string} periodId - The selected period ID (can be single ID or comma-separated IDs)
  */
 function updatePageContent(periodId) {
     // Show loading indicators for all dynamic content sections
@@ -82,6 +121,28 @@ function updatePageContent(periodId) {
         endpoint = '../ajax/agency_reports_data.php';
     } else if (pagePath.includes('/admin/reports.php')) {
         endpoint = '../ajax/admin_reports_data.php';
+    } else if (pagePath.includes('/agency/sectors/view_all_sectors.php')) {
+        // For view_all_sectors.php, always do a full page reload as filtering is client-side
+        const currentParams = new URLSearchParams(window.location.search);
+        
+        // Set the period_id parameter
+        currentParams.set('period_id', periodId);
+        
+        // Ensure view_mode parameter is preserved
+        if (!currentParams.has('view_mode')) {
+            // Default to the current view mode if not already in URL
+            const viewModeRadios = document.querySelectorAll('input[name="viewMode"]:checked');
+            if (viewModeRadios.length > 0) {
+                currentParams.set('view_mode', viewModeRadios[0].value);
+            } else {
+                // Default to half-yearly if no radio is checked
+                currentParams.set('view_mode', 'half-yearly');
+            }
+        }
+        
+        // Perform the page reload with all parameters
+        window.location.href = window.location.pathname + '?' + currentParams.toString();
+        return; // Exit early to avoid the AJAX logic below
     }
     
     // If endpoint is defined, fetch data
@@ -146,8 +207,24 @@ function updatePageContent(periodId) {
             }
         });
     } else {
-        // Fallback to full page reload if no endpoint is defined
-        window.location.href = window.location.pathname + '?' + new URLSearchParams({ period_id: periodId }).toString();
+    // Fallback to full page reload if no endpoint is defined
+    // Preserve all existing URL parameters including view_mode
+    const currentParams = new URLSearchParams(window.location.search);
+    // Set the period_id parameter
+    currentParams.set('period_id', periodId);
+    // Ensure view_mode parameter is preserved
+    if (!currentParams.has('view_mode')) {
+        // Default to the current view mode if not already in URL
+        const viewModeRadios = document.querySelectorAll('input[name="viewMode"]:checked');
+        if (viewModeRadios.length > 0) {
+            currentParams.set('view_mode', viewModeRadios[0].value);
+        } else {
+            // Default to half-yearly if no radio is checked
+            currentParams.set('view_mode', 'half-yearly');
+        }
+    }
+    // Perform the page reload with all parameters
+    window.location.href = window.location.pathname + '?' + currentParams.toString();
     }
 }
 

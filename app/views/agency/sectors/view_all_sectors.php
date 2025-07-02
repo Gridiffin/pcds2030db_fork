@@ -34,8 +34,24 @@ $current_period = get_current_reporting_period();
 // Determine which tab is active
 $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'programs';
 
-// Remove server-side filters and load all programs for client-side filtering
-$period_id = isset($_GET['period_id']) ? intval($_GET['period_id']) : ($current_period['period_id'] ?? null);
+// Get the period_id from URL or use current period if not set
+$period_id = isset($_GET['period_id']) ? $_GET['period_id'] : ($current_period['period_id'] ?? null);
+
+// Set viewing_period for the period selector component
+if ($period_id) {
+    // Handle comma-separated period IDs for half-yearly mode
+    if (strpos($period_id, ',') !== false) {
+        // Get the first period ID from the comma-separated list for display purposes
+        $first_id = explode(',', $period_id)[0];
+        $viewing_period = get_reporting_period(intval($first_id));
+    } else {
+        // Get the selected period details for the period selector
+        $viewing_period = get_reporting_period(intval($period_id));
+    }
+}
+
+// Pass the raw period_id (could be comma-separated) to get_all_sectors_programs
+// The function now handles both single and comma-separated period IDs
 $all_programs = get_all_sectors_programs($period_id, []);
 
 // Filter out draft programs for agency view
@@ -267,7 +283,7 @@ require_once '../../layouts/page_header.php';
                                     <i class="fas fa-info-circle me-2"></i>
                                     <?php if (isset($all_programs['error'])): ?>
                                         <?php echo $all_programs['error']; ?>
-                                    <?php elseif ($period_id && $period_id != ($current_period['period_id'] ?? null)): ?>
+                                    <?php elseif ($period_id): ?>
                                         No programs were submitted for this reporting period.
                                     <?php else: ?>
                                         No programs found matching your criteria.

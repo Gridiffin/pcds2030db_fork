@@ -106,7 +106,35 @@ function get_all_sectors_programs($period_id = null, $filters = []) {
     $filterConditions = [];
     $filterParams = [];
     $filterTypes = "";
-      // Base query
+    
+    // First, get program_ids that have submissions in the requested period
+    if ($period_id) {
+        $programIdsQuery = "SELECT DISTINCT program_id FROM program_submissions WHERE is_draft = 0 AND ";
+        
+        // Handle comma-separated period IDs for half-yearly mode
+        if (strpos($period_id, ',') !== false) {
+            $period_ids = array_map('intval', explode(',', $period_id));
+            $programIdsQuery .= "period_id IN (" . implode(',', $period_ids) . ")";
+        } else {
+            $programIdsQuery .= "period_id = " . intval($period_id);
+        }
+        
+        $programIdsResult = $conn->query($programIdsQuery);
+        
+        $programIds = [];
+        if ($programIdsResult && $programIdsResult->num_rows > 0) {
+            while ($row = $programIdsResult->fetch_assoc()) {
+                $programIds[] = $row['program_id'];
+            }
+        }
+        
+        // If no programs found for this period, return empty array
+        if (empty($programIds)) {
+            return [];
+        }
+    }
+    
+    // Base query
     $query = "SELECT 
                 p.program_id, 
                 p.program_name, 
@@ -134,10 +162,9 @@ function get_all_sectors_programs($period_id = null, $filters = []) {
               FROM programs p
               JOIN sectors s ON p.sector_id = s.sector_id
               JOIN users u ON p.owner_agency_id = u.user_id
-              LEFT JOIN (";
+              JOIN (";
     
-    // Changed to LEFT JOIN to include programs with no submissions
-      // Subquery to get latest submission for each program 
+    // Use INNER JOIN to only include programs with submissions in the selected period
     $subquery = "SELECT ps1.program_id, ps1.is_draft";
     
     if ($has_content_json) {
@@ -148,19 +175,37 @@ function get_all_sectors_programs($period_id = null, $filters = []) {
     
     $subquery .= " FROM program_submissions ps1
                    LEFT JOIN program_submissions ps2 
-                   ON ps1.program_id = ps2.program_id 
-                   AND (ps1.submission_id < ps2.submission_id OR (ps1.submission_id = ps2.submission_id AND ps1.period_id < ps2.period_id))
-                   WHERE ps2.submission_id IS NULL";
+                   ON ps1.program_id = ps2.program_id";
     
-    // Add period filter if specified
+    // Filter by the specific period
     if ($period_id) {
-        $subquery .= " AND ps1.period_id = " . intval($period_id);
+        // Handle comma-separated period IDs for half-yearly mode
+        if (strpos($period_id, ',') !== false) {
+            $period_ids = array_map('intval', explode(',', $period_id));
+            $subquery .= " AND ps1.period_id IN (" . implode(',', $period_ids) . ")";
+            $subquery .= " AND (ps2.period_id IN (" . implode(',', $period_ids) . ")";
+        } else {
+            $period_int = intval($period_id);
+            $subquery .= " AND ps1.period_id = " . $period_int;
+            $subquery .= " AND (ps2.period_id = " . $period_int;
+        }
+        
+        // Get the latest submission for each program in this period
+        $subquery .= " AND ps1.submission_id < ps2.submission_id)";
+        $subquery .= " WHERE ps2.submission_id IS NULL";
+        
+        // Only include programs with submissions in this period
+        $subquery .= " AND ps1.program_id IN (" . implode(',', $programIds) . ")";
+    } else {
+        // If no period specified, use original logic to find latest submission overall
+        $subquery .= " AND (ps1.submission_id < ps2.submission_id OR (ps1.submission_id = ps2.submission_id AND ps1.period_id < ps2.period_id))
+                       WHERE ps2.submission_id IS NULL";
     }
     
     $query .= $subquery . ") ps ON p.program_id = ps.program_id";
     
-    // Start with base condition: only show finalized submissions or no submissions
-    $filterConditions[] = "(ps.is_draft = 0 OR ps.is_draft IS NULL)";
+    // Only show finalized submissions
+    $filterConditions[] = "ps.is_draft = 0";
     
     // Apply additional filters
     if (!empty($filters)) {
