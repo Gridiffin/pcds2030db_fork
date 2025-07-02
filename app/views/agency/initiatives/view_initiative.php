@@ -811,7 +811,7 @@ require_once '../../layouts/page_header.php';
 
 </main>
 
-<!-- dhtmlxGantt Chart Section -->
+<!-- Status Grid Chart Section -->
 <div class="container-fluid mb-4">
     <div class="card shadow-sm">
         <div class="card-header d-flex justify-content-between align-items-center">
@@ -854,10 +854,7 @@ require_once '../../layouts/page_header.php';
     </div>
 </div>
 
-<!-- Load dhtmlxGantt -->
-<script src="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.js"></script>
-<link rel="stylesheet" href="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.css">
-<script src="<?php echo asset_url('js', 'components/dhtmlxgantt.js'); ?>"></script>
+<!-- Status Grid will be loaded here -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Get initiative ID from URL
@@ -865,8 +862,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const initiativeId = urlParams.get('id');
     
     if (initiativeId) {
-        const apiUrl = "<?php echo rtrim(BASE_URL, '/'); ?>/app/api/simple_gantt_data.php?initiative_id=" + initiativeId;
-        const ganttChart = new PCDSGanttChart('gantt_here', apiUrl);
+        // TODO: Initialize custom status grid component
+        document.getElementById('gantt_here').innerHTML = 
+            '<div class="alert alert-info m-3">Custom status grid will be implemented here</div>';
     } else {
         document.getElementById('gantt_here').innerHTML = 
             '<div class="alert alert-danger m-3">No initiative ID provided.</div>';
