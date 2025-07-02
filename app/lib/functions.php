@@ -323,6 +323,38 @@ function get_all_reporting_periods() {
 }
 
 /**
+ * Get available reporting periods for the period dropdown in forms
+ * This function retrieves all reporting periods suitable for dropdown selection in forms
+ * 
+ * @param bool $include_inactive Whether to include inactive (closed) periods in the result
+ * @return array List of reporting periods with essential fields
+ */
+function get_reporting_periods_for_dropdown($include_inactive = false) {
+    global $conn;
+    
+    $where_clause = $include_inactive ? "" : "WHERE status = 'open'";
+    $query = "SELECT period_id, year, quarter, status FROM reporting_periods 
+              $where_clause
+              ORDER BY year DESC, quarter DESC";
+    
+    $result = $conn->query($query);
+    
+    if (!$result) {
+        error_log("Error fetching reporting periods: " . $conn->error);
+        return [];
+    }
+    
+    $periods = [];
+    while ($row = $result->fetch_assoc()) {
+        // Format the period name for display in the dropdown
+        $row['display_name'] = get_period_display_name($row);
+        $periods[] = $row;
+    }
+    
+    return $periods;
+}
+
+/**
  * Get a specific reporting period by ID
  * 
  * @param int $period_id The ID of the reporting period to retrieve

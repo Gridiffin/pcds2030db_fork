@@ -161,6 +161,24 @@ function create_wizard_program_draft($data) {
     $end_date = isset($data['end_date']) && !empty($data['end_date']) ? $data['end_date'] : null;
     $targets = isset($data['targets']) && is_array($data['targets']) ? $data['targets'] : [];
     $initiative_id = isset($data['initiative_id']) && !empty($data['initiative_id']) ? intval($data['initiative_id']) : null;
+    $period_id = isset($data['period_id']) && !empty($data['period_id']) ? intval($data['period_id']) : null;
+    
+    // Validate period_id if provided
+    if (!$period_id) {
+        return ['error' => 'Reporting quarter selection is required'];
+    } else {
+        // Check if period exists in the database
+        $period_check_query = "SELECT period_id FROM reporting_periods WHERE period_id = ?";
+        $check_stmt = $conn->prepare($period_check_query);
+        $check_stmt->bind_param("i", $period_id);
+        $check_stmt->execute();
+        $result = $check_stmt->get_result();
+        
+        if ($result->num_rows === 0) {
+            return ['error' => 'The selected reporting quarter is invalid'];
+        }
+    }
+    
     // Validate program_number format if provided
     if ($program_number && !is_valid_program_number_format($program_number, false)) {
         return ['error' => get_program_number_format_error(false)];
@@ -187,14 +205,11 @@ function create_wizard_program_draft($data) {
         if (!$stmt->execute()) throw new Exception('Failed to create program: ' . $stmt->error);
         $program_id = $conn->insert_id;
         if (!empty($targets) || !empty($brief_description)) {
-            // Prioritize open quarterly periods (1-4)
-            $period_query = "SELECT period_id FROM reporting_periods WHERE status = 'open' AND quarter BETWEEN 1 AND 4 ORDER BY year DESC, quarter DESC LIMIT 1";
-            $period_result = $conn->query($period_query);
-
-            if ($period_result && $period_result->num_rows > 0) {
-                $current_period_id = $period_result->fetch_assoc()['period_id'];
+            // Use the selected period_id from the form if available
+            if ($period_id) {
+                $current_period_id = $period_id;
             } else {
-                // Fallback to any open period (including half-yearly) if no quarterly period is open
+                // Fallback to any open period if no period is selected
                 $fallback_query = "SELECT period_id FROM reporting_periods WHERE status = 'open' ORDER BY year DESC, quarter DESC LIMIT 1";
                 $fallback_result = $conn->query($fallback_query);
                 $current_period_id = $fallback_result && $fallback_result->num_rows > 0 ? $fallback_result->fetch_assoc()['period_id'] : 1;
@@ -285,6 +300,9 @@ function update_program_draft_only($program_id, $data) {
     $targets = isset($data['targets']) && is_array($data['targets']) ? $data['targets'] : [];
     $brief_description = isset($data['brief_description']) ? trim($data['brief_description']) : '';
     
+    // Get the period_id from data if available
+    $period_id = isset($data['period_id']) && !empty($data['period_id']) ? intval($data['period_id']) : null;
+    
     try {
         $conn->begin_transaction();
         $stmt = $conn->prepare("UPDATE programs SET program_name = ?, program_number = ?, start_date = ?, end_date = ?, initiative_id = ?, updated_at = NOW() WHERE program_id = ? AND owner_agency_id = ?");
@@ -310,14 +328,11 @@ function update_program_draft_only($program_id, $data) {
                 $update_stmt->bind_param("si", $content_json_string, $submission_id);
                 if (!$update_stmt->execute()) throw new Exception('Failed to update program submission: ' . $update_stmt->error);
             } else {
-                // Prioritize open quarterly periods (1-4)
-                $period_query = "SELECT period_id FROM reporting_periods WHERE status = 'open' AND quarter BETWEEN 1 AND 4 ORDER BY year DESC, quarter DESC LIMIT 1";
-                $period_result = $conn->query($period_query);
-
-                if ($period_result && $period_result->num_rows > 0) {
-                    $current_period_id = $period_result->fetch_assoc()['period_id'];
+                // Use the selected period_id if available, otherwise fall back to default
+                if ($period_id) {
+                    $current_period_id = $period_id;
                 } else {
-                    // Fallback to any open period (including half-yearly) if no quarterly period is open
+                    // Fallback to any open period if no period is selected
                     $fallback_query = "SELECT period_id FROM reporting_periods WHERE status = 'open' ORDER BY year DESC, quarter DESC LIMIT 1";
                     $fallback_result = $conn->query($fallback_query);
                     $current_period_id = $fallback_result && $fallback_result->num_rows > 0 ? $fallback_result->fetch_assoc()['period_id'] : 1;
@@ -361,6 +376,23 @@ function update_wizard_program_draft($program_id, $data) {
     $end_date = isset($data['end_date']) && !empty($data['end_date']) ? $data['end_date'] : null;
     $targets = isset($data['targets']) && is_array($data['targets']) ? $data['targets'] : [];
     $initiative_id = isset($data['initiative_id']) && !empty($data['initiative_id']) ? intval($data['initiative_id']) : null;
+    $period_id = isset($data['period_id']) && !empty($data['period_id']) ? intval($data['period_id']) : null;
+    
+    // Validate period_id if provided
+    if (!$period_id) {
+        return ['error' => 'Reporting quarter selection is required'];
+    } else {
+        // Check if period exists in the database
+        $period_check_query = "SELECT period_id FROM reporting_periods WHERE period_id = ?";
+        $check_stmt = $conn->prepare($period_check_query);
+        $check_stmt->bind_param("i", $period_id);
+        $check_stmt->execute();
+        $result = $check_stmt->get_result();
+        
+        if ($result->num_rows === 0) {
+            return ['error' => 'The selected reporting quarter is invalid'];
+        }
+    }
     
     // Validate program_number format if provided
     if ($program_number && !is_valid_program_number_format($program_number, false)) {
@@ -427,14 +459,11 @@ function update_wizard_program_draft($program_id, $data) {
                 $update_stmt->bind_param("si", $content_json_string, $submission_id);
                 if (!$update_stmt->execute()) throw new Exception('Failed to update program submission: ' . $update_stmt->error);
             } else {
-                // Prioritize open quarterly periods (1-4)
-                $period_query = "SELECT period_id FROM reporting_periods WHERE status = 'open' AND quarter BETWEEN 1 AND 4 ORDER BY year DESC, quarter DESC LIMIT 1";
-                $period_result = $conn->query($period_query);
-
-                if ($period_result && $period_result->num_rows > 0) {
-                    $current_period_id = $period_result->fetch_assoc()['period_id'];
+                // Use the selected period_id if available, otherwise fall back to default
+                if ($period_id) {
+                    $current_period_id = $period_id;
                 } else {
-                    // Fallback to any open period (including half-yearly) if no quarterly period is open
+                    // Fallback to any open period if no period is selected
                     $fallback_query = "SELECT period_id FROM reporting_periods WHERE status = 'open' ORDER BY year DESC, quarter DESC LIMIT 1";
                     $fallback_result = $conn->query($fallback_query);
                     $current_period_id = $fallback_result && $fallback_result->num_rows > 0 ? $fallback_result->fetch_assoc()['period_id'] : 1;

@@ -28,6 +28,9 @@ if (!is_agency()) {
 // Get active initiatives for dropdown
 $active_initiatives = get_initiatives_for_select(true);
 
+// Get reporting periods for dropdown
+$reporting_periods = get_reporting_periods_for_dropdown(true); // Include all periods (open and closed)
+
 // Process form submission
 $message = '';
 $messageType = '';
@@ -69,7 +72,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'start_date' => $_POST['start_date'] ?? '',
             'end_date' => $_POST['end_date'] ?? '',
             'targets' => $targets,
-            'initiative_id' => !empty($_POST['initiative_id']) ? intval($_POST['initiative_id']) : null
+            'initiative_id' => !empty($_POST['initiative_id']) ? intval($_POST['initiative_id']) : null,
+            'period_id' => !empty($_POST['period_id']) ? intval($_POST['period_id']) : null
         ];
         
         $result = auto_save_program_draft($program_data);
@@ -107,7 +111,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'start_date' => $_POST['start_date'] ?? '',
             'end_date' => $_POST['end_date'] ?? '',
             'targets' => $targets,
-            'initiative_id' => !empty($_POST['initiative_id']) ? intval($_POST['initiative_id']) : null
+            'initiative_id' => !empty($_POST['initiative_id']) ? intval($_POST['initiative_id']) : null,
+            'period_id' => !empty($_POST['period_id']) ? intval($_POST['period_id']) : null
         ];
     
     // Check if this is an update to existing program or new creation
@@ -255,7 +260,65 @@ require_once '../../layouts/page_header.php';
                                         <i class="fas fa-lightbulb me-1"></i>
                                         Link this program to a strategic initiative for better organization and reporting
                                     </div>
-                                </div>                                <!-- Program Number -->
+                                </div>
+                                
+                                <!-- Reporting Period Selection -->
+                                <div class="mb-4">
+                                    <label for="period_id" class="form-label">
+                                        Reporting Quarter
+                                        <span class="badge bg-danger ms-1">Required</span>
+                                    </label>
+                                    <select class="form-select" id="period_id" name="period_id" required>
+                                        <option value="">Select a reporting quarter</option>
+                                        <?php foreach ($reporting_periods as $period): ?>
+                                            <option value="<?php echo $period['period_id']; ?>"
+                                                    <?php echo (isset($_POST['period_id']) && $_POST['period_id'] == $period['period_id']) ? 'selected' : ''; ?>
+                                                    data-status="<?php echo $period['status']; ?>">
+                                                <?php echo htmlspecialchars($period['display_name']); ?>
+                                                <?php if ($period['status'] == 'open'): ?>
+                                                    (Open)
+                                                <?php endif; ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <div class="form-text">
+                                        <i class="fas fa-calendar me-1"></i>
+                                        Select the reporting quarter for this program submission. 
+                                        <span class="text-success">Open</span> periods are currently accepting submissions.
+                                    </div>
+                                </div>
+                                
+                                <style>
+                                    #period_id option[data-status="open"] {
+                                        font-weight: bold;
+                                        color: #28a745;
+                                    }
+                                </style>
+                                
+                                <script>
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    const periodSelect = document.getElementById('period_id');
+                                    
+                                    // Highlight open periods
+                                    Array.from(periodSelect.options).forEach(option => {
+                                        if (option.dataset.status === 'open') {
+                                            option.classList.add('text-success', 'fw-bold');
+                                        }
+                                    });
+                                    
+                                    // Select an open period by default if none selected
+                                    if (!periodSelect.value) {
+                                        const openOption = Array.from(periodSelect.options).find(
+                                            option => option.dataset.status === 'open'
+                                        );
+                                        if (openOption) {
+                                            openOption.selected = true;
+                                        }
+                                    }
+                                });
+                                </script>
+
+                                <!-- Program Number -->
                                 <div class="mb-4">
                                     <label for="program_number" class="form-label">
                                         Program Number
@@ -438,6 +501,10 @@ require_once '../../layouts/page_header.php';
                                             <div class="review-section mb-3">
                                                 <h6 class="text-muted mb-2">Program Number</h6>
                                                 <p class="mb-0" id="review-program-number">-</p>
+                                            </div>
+                                            <div class="review-section mb-3">
+                                                <h6 class="text-muted mb-2">Reporting Quarter</h6>
+                                                <p class="mb-0" id="review-period">-</p>
                                             </div>
                                             <div class="review-section mb-3">
                                                 <h6 class="text-muted mb-2">Linked Initiative</h6>
@@ -791,7 +858,7 @@ require_once '../../layouts/page_header.php';
                                 return;
                             }
 
-                            let targetsHtml = '<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Target #</th><th>Number</th><th>Description</th><th>Status</th><th>Status Description</th><th>Timeline</th></tr></thead><tbody>';
+                            let targetsHtml = '<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Target #</th><th>Number</th><th>Target Description</th><th>Status</th><th>Status Description</th><th>Timeline</th></tr></thead><tbody>';
                             
                             targetEntries.forEach((entry, index) => {
                                 const targetNumber = entry.querySelector('.target-number-input')?.value || '-';
@@ -1080,6 +1147,17 @@ document.addEventListener('DOMContentLoaded', function() {    // Wizard state
         // Program Number
         document.getElementById('review-program-number').textContent = data.program_number || 'Not specified';
 
+        // Reporting Period
+        let periodDisplay = 'No reporting period selected';
+        if (data.period_id) {
+            const periodSelect = document.getElementById('period_id');
+            const selectedOption = periodSelect.options[periodSelect.selectedIndex];
+            if (selectedOption && selectedOption.value) {
+                periodDisplay = selectedOption.textContent.trim();
+            }
+        }
+        document.getElementById('review-period').textContent = periodDisplay;
+
         // Linked Initiative
         let initiativeDisplay = 'No initiative linked';
         if (data.initiative_id) {
@@ -1180,7 +1258,7 @@ document.addEventListener('DOMContentLoaded', function() {    // Wizard state
             const data = {};
             
             // Collect basic form inputs
-            const basicInputs = ['program_id', 'program_name', 'program_number', 'initiative_id', 'brief_description', 'start_date', 'end_date'];
+            const basicInputs = ['program_id', 'program_name', 'program_number', 'initiative_id', 'period_id', 'brief_description', 'start_date', 'end_date'];
             basicInputs.forEach(inputName => {
                 const input = document.getElementById(inputName);
                 if (input) {
@@ -1235,6 +1313,13 @@ document.addEventListener('DOMContentLoaded', function() {    // Wizard state
             const programName = document.getElementById('program_name');
             if (programName.value.trim() && programName.value.trim().length < 3) {
                 showFieldError(programName, 'Program name must be at least 3 characters long');
+                isValid = false;
+            }
+            
+            // Validate reporting period
+            const periodId = document.getElementById('period_id');
+            if (!periodId.value.trim()) {
+                showFieldError(periodId, 'Please select a reporting quarter');
                 isValid = false;
             }
         }
