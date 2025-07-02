@@ -17,6 +17,7 @@ if (file_exists(dirname(__FILE__) . '/core.php')) {
 
 // Include audit logging
 require_once dirname(__DIR__) . '/audit_log.php';
+require_once dirname(__DIR__) . '/admins/users.php'; // Add this to use get_user_by_id
 
 // Include numbering helpers for hierarchical program numbering
 require_once dirname(__DIR__) . '/numbering_helpers.php';
@@ -76,7 +77,8 @@ function create_agency_program($data) {
     global $conn;
     if (!is_agency()) return format_error('Permission denied', 403);
     $validated = validate_agency_program_input($data, ['program_name', 'rating']);
-    if (isset($validated['error'])) return $validated;    $program_name = $validated['program_name'];
+    if (isset($validated['error'])) return $validated;
+    $program_name = $validated['program_name'];
     $program_number = $validated['program_number'] ?? null;
     // Validate program_number format if provided
     if ($program_number && !is_valid_program_number_format($program_number, false)) {
@@ -87,6 +89,10 @@ function create_agency_program($data) {
     $rating = $validated['rating'];
     $column_check = $conn->query("SHOW COLUMNS FROM programs LIKE 'content_json'");
     $has_content_json = $column_check->num_rows > 0;
+    $user_id = $_SESSION['user_id'];
+    $user = get_user_by_id($conn, $user_id);
+    $agency_group_id = $user ? $user['agency_group_id'] : null;
+    $sector_id = FORESTRY_SECTOR_ID;
     if ($has_content_json) {
         $content = [
             'start_date' => $start_date,
@@ -104,25 +110,24 @@ function create_agency_program($data) {
                 ]
             ];
         }
-        $content_json = json_encode($content);        $query = "INSERT INTO programs (program_name, program_number, sector_id, owner_agency_id, is_assigned, content_json, created_at)
-                 VALUES (?, ?, ?, ?, 0, ?, NOW())";
+        $content_json = json_encode($content);
+        $query = "INSERT INTO programs (program_name, program_number, sector_id, owner_agency_id, agency_group, is_assigned, content_json, created_at)
+                 VALUES (?, ?, ?, ?, ?, 0, ?, NOW())";
         $stmt = $conn->prepare($query);
-        $sector_id = FORESTRY_SECTOR_ID;
-        $user_id = $_SESSION['user_id'];
-        $stmt->bind_param("ssiis", $program_name, $program_number, $sector_id, $user_id, $content_json);
-    } else {        $query = "INSERT INTO programs (program_name, program_number, sector_id, owner_agency_id, is_assigned, created_at)
-                 VALUES (?, ?, ?, ?, 0, NOW())";
+        $stmt->bind_param("ssiiis", $program_name, $program_number, $sector_id, $user_id, $agency_group_id, $content_json);
+    } else {
+        $query = "INSERT INTO programs (program_name, program_number, sector_id, owner_agency_id, agency_group, is_assigned, created_at)
+                 VALUES (?, ?, ?, ?, ?, 0, NOW())";
         $stmt = $conn->prepare($query);
-        $sector_id = FORESTRY_SECTOR_ID;
-        $user_id = $_SESSION['user_id'];
-        $stmt->bind_param("ssii", $program_name, $program_number, $sector_id, $user_id);
+        $stmt->bind_param("ssiii", $program_name, $program_number, $sector_id, $user_id, $agency_group_id);
     }
     if ($stmt->execute()) {
         $program_id = $conn->insert_id;
         if (!$has_content_json || isset($validated['create_submission'])) {
             $target = $validated['target'] ?? '';
             $achievement = $validated['achievement'] ?? '';
-            $status_text = $validated['status_text'] ?? '';            $sub_query = "INSERT INTO program_submissions 
+            $status_text = $validated['status_text'] ?? '';
+            $sub_query = "INSERT INTO program_submissions 
                         (program_id, period_id, target, achievement, status_text, is_draft, submission_date)
                         VALUES (?, ?, ?, ?, ?, 1, NOW())";
             $period_id = get_current_reporting_period()['period_id'] ?? 1;
@@ -145,39 +150,40 @@ function create_agency_program($data) {
  */
 function create_wizard_program_draft($data) {
     global $conn;
-    if (!is_agency()) return ['error' => 'Permission denied'];    if (empty($data['program_name']) || trim($data['program_name']) === '') {
+    if (!is_agency()) return ['error' => 'Permission denied'];
+    if (empty($data['program_name']) || trim($data['program_name']) === '') {
         return ['error' => 'Program name is required'];
-    }    $program_name = trim($data['program_name']);
+    }
+    $program_name = trim($data['program_name']);
     $program_number = isset($data['program_number']) ? trim($data['program_number']) : null;
     $brief_description = isset($data['brief_description']) ? trim($data['brief_description']) : '';
     $start_date = isset($data['start_date']) && !empty($data['start_date']) ? $data['start_date'] : null;
     $end_date = isset($data['end_date']) && !empty($data['end_date']) ? $data['end_date'] : null;
     $targets = isset($data['targets']) && is_array($data['targets']) ? $data['targets'] : [];
     $initiative_id = isset($data['initiative_id']) && !empty($data['initiative_id']) ? intval($data['initiative_id']) : null;
-    
     // Validate program_number format if provided
     if ($program_number && !is_valid_program_number_format($program_number, false)) {
         return ['error' => get_program_number_format_error(false)];
     }
-    
     // Additional validation for hierarchical format if initiative is linked
     if ($program_number && $initiative_id) {
         $format_validation = validate_program_number_format($program_number, $initiative_id);
         if (!$format_validation['valid']) {
             return ['error' => $format_validation['message']];
         }
-        
         // Check if number is already in use
         if (!is_program_number_available($program_number)) {
             return ['error' => 'Program number is already in use'];
         }
     }
-    
     $user_id = $_SESSION['user_id'];
+    $user = get_user_by_id($conn, $user_id);
+    $agency_group_id = $user ? $user['agency_group_id'] : null;
     $sector_id = FORESTRY_SECTOR_ID;
     try {
-        $conn->begin_transaction();        $stmt = $conn->prepare("INSERT INTO programs (program_name, program_number, start_date, end_date, owner_agency_id, sector_id, initiative_id, is_assigned, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, 0, NOW())");
-        $stmt->bind_param("ssssiii", $program_name, $program_number, $start_date, $end_date, $user_id, $sector_id, $initiative_id);
+        $conn->begin_transaction();
+        $stmt = $conn->prepare("INSERT INTO programs (program_name, program_number, start_date, end_date, owner_agency_id, agency_group, sector_id, initiative_id, is_assigned, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, NOW())");
+        $stmt->bind_param("ssssiiii", $program_name, $program_number, $start_date, $end_date, $user_id, $agency_group_id, $sector_id, $initiative_id);
         if (!$stmt->execute()) throw new Exception('Failed to create program: ' . $stmt->error);
         $program_id = $conn->insert_id;
         if (!empty($targets) || !empty($brief_description)) {
@@ -188,15 +194,12 @@ function create_wizard_program_draft($data) {
             if (!empty($targets)) $content_json['targets'] = $targets;
             if (!empty($brief_description)) $content_json['brief_description'] = $brief_description;
             $content_json_string = json_encode($content_json);
-            // status column removed from insert
             $submission_stmt = $conn->prepare("INSERT INTO program_submissions (program_id, period_id, submitted_by, content_json, is_draft, submission_date, updated_at) VALUES (?, ?, ?, ?, 1, NOW(), NOW())");
             $submission_stmt->bind_param("iiis", $program_id, $current_period_id, $user_id, $content_json_string);
-            if (!$submission_stmt->execute()) throw new Exception('Failed to create program submission: ' . $submission_stmt->error);        }
+            if (!$submission_stmt->execute()) throw new Exception('Failed to create program submission: ' . $submission_stmt->error);
+        }
         $conn->commit();
-        
-        // Log successful program creation
         log_audit_action('create_program', "Program Name: $program_name | Program ID: $program_id", 'success', $user_id);
-        
         return [
             'success' => true, 
             'message' => 'Program draft created successfully',
@@ -204,10 +207,7 @@ function create_wizard_program_draft($data) {
         ];
     } catch (Exception $e) {
         $conn->rollback();
-        
-        // Log failed program creation
         log_audit_action('create_program_failed', "Program Name: $program_name | Error: " . $e->getMessage(), 'failure', $user_id);
-        
         return ['error' => 'Database error: ' . $e->getMessage()];
     }
 }
@@ -411,7 +411,8 @@ function update_wizard_program_draft($program_id, $data) {
                 $insert_stmt = $conn->prepare("INSERT INTO program_submissions (program_id, period_id, submitted_by, content_json, is_draft, submission_date, updated_at) VALUES (?, ?, ?, ?, 1, NOW(), NOW())");
                 $insert_stmt->bind_param("iiis", $program_id, $current_period_id, $user_id, $content_json_string);
                 if (!$insert_stmt->execute()) throw new Exception('Failed to create program submission: ' . $insert_stmt->error);
-            }        }
+            }
+        }
         $conn->commit();
         
         // Log successful program update
