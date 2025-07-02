@@ -1,0 +1,211 @@
+/**
+ * Custom dhtmlxGantt Styles for PCDS2030 Dashboard
+ * This file contains custom styling for the dhtmlxGantt component
+ */
+
+/* Container styles */
+.gantt_container {
+    height: 600px;
+    width: 100%;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Grid header styling */
+.gantt_grid_head_cell {
+    background: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    font-weight: 600;
+    color: #495057;
+}
+
+/* Timeline header styling */
+.gantt_scale_cell {
+    background: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    font-weight: 600;
+    color: #495057;
+}
+
+/* Program task styling */
+.gantt-task-program {
+    background: #6c757d !important;
+    border: 1px solid #5a6268 !important;
+}
+
+.gantt-task-program .gantt_task_progress {
+    background: #495057 !important;
+}
+
+/* Target status-based styling */
+.gantt-task-on-target {
+    background: #28a745 !important;
+    border: 1px solid #1e7e34 !important;
+}
+
+.gantt-task-on-target .gantt_task_progress {
+    background: #1e7e34 !important;
+}
+
+.gantt-task-at-risk {
+    background: #ffc107 !important;
+    border: 1px solid #e0a800 !important;
+}
+
+.gantt-task-at-risk .gantt_task_progress {
+    background: #e0a800 !important;
+}
+
+.gantt-task-off-target {
+    background: #dc3545 !important;
+    border: 1px solid #c82333 !important;
+}
+
+.gantt-task-off-target .gantt_task_progress {
+    background: #c82333 !important;
+}
+
+.gantt-task-not-started {
+    background: #6c757d !important;
+    border: 1px solid #5a6268 !important;
+}
+
+.gantt-task-not-started .gantt_task_progress {
+    background: #5a6268 !important;
+}
+
+.gantt-task-completed {
+    background: #17a2b8 !important;
+    border: 1px solid #138496 !important;
+}
+
+.gantt-task-completed .gantt_task_progress {
+    background: #138496 !important;
+}
+
+/* Grid row styling */
+.gantt_row {
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.gantt_row:hover {
+    background-color: #f8f9fa;
+}
+
+/* Task text styling */
+.gantt_task_text {
+    color: white !important;
+    font-weight: 500;
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.3);
+}
+
+/* Grid text styling for program rows */
+.gantt_row[task_type="program"] {
+    font-weight: 600;
+    background-color: #f8f9fa;
+}
+
+/* Grid text styling for target rows */
+.gantt_row[task_type="target"] {
+    padding-left: 20px;
+}
+
+/* Tooltip styling */
+.gantt_tooltip {
+    background: #343a40;
+    color: white;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+/* Loading state */
+.gantt-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 400px;
+    color: #6c757d;
+    font-size: 16px;
+}
+
+.gantt-loading .spinner-border {
+    margin-right: 10px;
+}
+
+/* Error state */
+.gantt-error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 400px;
+    color: #dc3545;
+    font-size: 16px;
+}
+
+/* Legend styling */
+.gantt-legend {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.gantt-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+}
+
+.gantt-legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    display: inline-block;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .gantt_container {
+        height: 400px;
+    }
+    
+    .gantt_grid_width {
+        width: 250px !important;
+    }
+    
+    .gantt-legend {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .gantt-legend-item {
+        font-size: 11px;
+    }
+}
+
+/* Hide task bars since we're only showing quarter-based status */
+.gantt_task_line {
+    display: none !important;
+}
+
+/* Only show grid - no timeline bars */
+.gantt_task_content {
+    display: none !important;
+}
+
+/* Quarter status indicators in timeline */
+.gantt_quarter_status {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}

@@ -811,6 +811,69 @@ require_once '../../layouts/page_header.php';
 
 </main>
 
+<!-- dhtmlxGantt Chart Section -->
+<div class="container-fluid mb-4">
+    <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title m-0">
+                <i class="fas fa-chart-gantt me-2"></i>Initiative Timeline
+            </h5>
+            <div class="gantt-legend">
+                <div class="gantt-legend-item">
+                    <span class="gantt-legend-color" style="background-color: #17a2b8;"></span>
+                    <span>Completed</span>
+                </div>
+                <div class="gantt-legend-item">
+                    <span class="gantt-legend-color" style="background-color: #28a745;"></span>
+                    <span>On Target</span>
+                </div>
+                <div class="gantt-legend-item">
+                    <span class="gantt-legend-color" style="background-color: #ffc107;"></span>
+                    <span>At Risk</span>
+                </div>
+                <div class="gantt-legend-item">
+                    <span class="gantt-legend-color" style="background-color: #dc3545;"></span>
+                    <span>Off Target</span>
+                </div>
+                <div class="gantt-legend-item">
+                    <span class="gantt-legend-color" style="background-color: #6c757d;"></span>
+                    <span>Not Started</span>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div id="gantt_here" class="gantt_container">
+                <div class="gantt-loading">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <span class="ms-2">Loading timeline...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Load dhtmlxGantt -->
+<script src="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.js"></script>
+<link rel="stylesheet" href="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.css">
+<script src="<?php echo asset_url('js', 'components/dhtmlxgantt.js'); ?>"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get initiative ID from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const initiativeId = urlParams.get('id');
+    
+    if (initiativeId) {
+        const apiUrl = "<?php echo rtrim(BASE_URL, '/'); ?>/app/api/simple_gantt_data.php?initiative_id=" + initiativeId;
+        const ganttChart = new PCDSGanttChart('gantt_here', apiUrl);
+    } else {
+        document.getElementById('gantt_here').innerHTML = 
+            '<div class="alert alert-danger m-3">No initiative ID provided.</div>';
+    }
+});
+</script>
+
 
 
 <?php
