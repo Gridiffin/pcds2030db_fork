@@ -57,6 +57,19 @@ class StatusGrid {
             this.data = result.data;
             console.log('StatusGrid data loaded:', this.data);
             
+            // Debug: Check if programs have targets with status_by_period
+            if (this.data.programs && this.data.programs.length > 0) {
+                console.log('First program structure:', this.data.programs[0]);
+                if (this.data.programs[0].targets) {
+                    console.log('First program targets:', this.data.programs[0].targets);
+                    if (this.data.programs[0].targets[0]) {
+                        console.log('First target structure:', this.data.programs[0].targets[0]);
+                    }
+                } else {
+                    console.warn('Programs missing targets array!');
+                }
+            }
+            
         } catch (error) {
             console.error('StatusGrid data fetch error:', error);
             throw error;
@@ -67,6 +80,33 @@ class StatusGrid {
      * Generate timeline structure from initiative dates
      */
     generateTimeline() {
+        // Use timeline data from API if available
+        if (this.data && this.data.timeline) {
+            this.timeline = {
+                startYear: Math.min(...this.data.timeline.years),
+                endYear: Math.max(...this.data.timeline.years),
+                years: this.data.timeline.years,
+                quarters: [],
+                periods_map: this.data.timeline.periods_map || {}
+            };
+            
+            // Generate quarters array from years
+            this.data.timeline.years.forEach(year => {
+                for (let quarter = 1; quarter <= 4; quarter++) {
+                    this.timeline.quarters.push({
+                        year,
+                        quarter,
+                        label: `Q${quarter}`,
+                        id: `${year}-Q${quarter}`
+                    });
+                }
+            });
+            
+            console.log('Timeline from API:', this.timeline);
+            return;
+        }
+        
+        // Fallback: Generate timeline from initiative dates or use defaults  
         if (!this.data || !this.data.initiative) {
             throw new Error('No initiative data available for timeline generation');
         }
@@ -81,7 +121,8 @@ class StatusGrid {
             startYear,
             endYear,
             years: [],
-            quarters: []
+            quarters: [],
+            periods_map: {}
         };
         
         // Generate years and quarters
@@ -268,12 +309,10 @@ class StatusGrid {
      */
     renderLegend() {
         const statusTypes = [
-            { key: 'on-target', label: 'On Target', class: 'status-on-target' },
-            { key: 'at-risk', label: 'At Risk', class: 'status-at-risk' },
-            { key: 'off-target', label: 'Off Target', class: 'status-off-target' },
             { key: 'not-started', label: 'Not Started', class: 'status-not-started' },
+            { key: 'in-progress', label: 'In Progress', class: 'status-at-risk' },
             { key: 'completed', label: 'Completed', class: 'status-completed' },
-            { key: 'planned', label: 'Planned', class: 'status-planned' }
+            { key: 'delayed', label: 'Delayed', class: 'status-off-target' }
         ];
         
         return `
@@ -295,47 +334,80 @@ class StatusGrid {
      * Get target status for a specific quarter with hybrid CSS classes
      */
     getTargetStatusForQuarter(target, quarter) {
-        // This method will map target status data to quarters
-        // For demonstration purposes, we'll generate sample status data
+        console.log('Getting status for target:', target.target_text, 'quarter:', quarter);
         
-        if (!target.target_status && !target.outcomes) {
+        // Check if we have status data by period
+        if (!target.status_by_period) {
+            console.log('No status_by_period data for target:', target.target_text);
             return null;
         }
         
-        // Map status values to hybrid CSS classes and tooltips
-        const statusMap = {
-            'on_target': { class: 'status-on-target', tooltip: 'On Target', label: '✓' },
-            'at_risk': { class: 'status-at-risk', tooltip: 'At Risk', label: '⚠' },
-            'off_target': { class: 'status-off-target', tooltip: 'Off Target', label: '✗' },
-            'not_started': { class: 'status-not-started', tooltip: 'Not Started', label: '○' },
-            'completed': { class: 'status-completed', tooltip: 'Completed', label: '✓' },
-            'planned': { class: 'status-planned', tooltip: 'Planned', label: '·' }
-        };
+        console.log('Available status periods:', Object.keys(target.status_by_period));
         
-        // Get status for this quarter - this is where you'd implement
-        // your specific business logic for determining quarterly status
-        let quarterStatus = target.target_status || 'planned';
-        
-        // Check if there are outcomes for this specific quarter
-        if (target.outcomes && Array.isArray(target.outcomes)) {
-            const quarterOutcome = target.outcomes.find(outcome => {
-                if (outcome.period && outcome.period.includes(`${quarter.year}`)) {
-                    return outcome.period.includes(`Q${quarter.quarter}`);
+        // Find the period ID for this year/quarter combination
+        let targetPeriodId = null;
+        if (this.timeline && this.timeline.periods_map) {
+            console.log('Available periods_map:', this.timeline.periods_map);
+            // Look through periods_map to find matching year/quarter
+            for (const [periodId, periodInfo] of Object.entries(this.timeline.periods_map)) {
+                // Handle both "Q1" format and number format for quarter matching
+                const periodQuarter = periodInfo.quarter;
+                const targetQuarter = quarter.quarter;
+                
+                const quarterMatch = (periodQuarter === `Q${targetQuarter}`) || 
+                                   (periodQuarter === targetQuarter) ||
+                                   (periodQuarter === `${targetQuarter}`);
+                                   
+                if (periodInfo.year === quarter.year && quarterMatch) {
+                    targetPeriodId = periodId;
+                    console.log(`Found period ${periodId} for ${quarter.year} Q${quarter.quarter}`);
+                    break;
                 }
-                return false;
-            });
-            
-            if (quarterOutcome && quarterOutcome.status) {
-                quarterStatus = quarterOutcome.status;
             }
         }
         
-        const status = statusMap[quarterStatus] || statusMap['planned'];
+        // If no specific period found, return null (no status to display)
+        if (!targetPeriodId || !target.status_by_period[targetPeriodId]) {
+            console.log(`No status found for period ${targetPeriodId} in quarter ${quarter.year} ${quarter.quarter}`);
+            return null;
+        }
+        
+        // Get the status for this period
+        const rawStatus = target.status_by_period[targetPeriodId];
+        console.log('Raw status found:', rawStatus, 'for period:', targetPeriodId);
+        
+        // Map the 4 valid status values to CSS classes and tooltips
+        const statusMap = {
+            'not started': { class: 'status-not-started', tooltip: 'Not Started', label: '○' },
+            'not_started': { class: 'status-not-started', tooltip: 'Not Started', label: '○' },
+            'not-started': { class: 'status-not-started', tooltip: 'Not Started', label: '○' },
+            'in progress': { class: 'status-at-risk', tooltip: 'In Progress', label: '⚠' },
+            'in_progress': { class: 'status-at-risk', tooltip: 'In Progress', label: '⚠' },
+            'in-progress': { class: 'status-at-risk', tooltip: 'In Progress', label: '⚠' },
+            'completed': { class: 'status-completed', tooltip: 'Completed', label: '✓' },
+            'delayed': { class: 'status-off-target', tooltip: 'Delayed', label: '✗' }
+        };
+        
+        // Normalize status string (lowercase, handle spaces)
+        const normalizedStatus = String(rawStatus).toLowerCase().trim();
+        console.log('Normalized status:', normalizedStatus);
+        
+        // Get status configuration or return null if no valid status
+        const status = statusMap[normalizedStatus];
+        
+        if (!status) {
+            console.log('No valid status mapping found for:', normalizedStatus);
+            // No valid status found, don't display anything for this quarter
+            return null;
+        }
+        
+        console.log('Status mapped to:', status);
         
         return {
             class: status.class,
             tooltip: `${quarter.year} Q${quarter.quarter}: ${status.tooltip}`,
-            label: status.label
+            label: status.label,
+            rawStatus: rawStatus // Include raw status for debugging
         };
     }
     

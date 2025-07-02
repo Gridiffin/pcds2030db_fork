@@ -176,7 +176,9 @@ function transform_for_simple_gantt($initiative, $programs, $submissions, $perio
                     foreach ($content['targets'] as $target) {
                         $target_number = $target['target_number'] ?? '';
                         $target_text = $target['target_text'] ?? '';
-                        $target_status = $target['target_status'] ?? 'not-started';
+                        
+                        // Handle both 'target_status' and 'status_description' fields (both optional)
+                        $target_status = $target['target_status'] ?? $target['status_description'] ?? null;
                         
                         // Use target_text as key if target_number is empty
                         $target_key = !empty($target_number) ? $target_number : $target_text;
@@ -189,8 +191,10 @@ function transform_for_simple_gantt($initiative, $programs, $submissions, $perio
                             ];
                         }
                         
-                        // Store status for this period
-                        $targets_by_number[$target_key]['status_by_period'][$period_id] = $target_status;
+                        // Only store status if it exists (target_status is optional)
+                        if ($target_status !== null) {
+                            $targets_by_number[$target_key]['status_by_period'][$period_id] = $target_status;
+                        }
                     }
                 }
             }
@@ -198,6 +202,11 @@ function transform_for_simple_gantt($initiative, $programs, $submissions, $perio
         
         // Convert to indexed array
         $program_data['targets'] = array_values($targets_by_number);
+        
+        // Debug: Log target data for first program
+        if (count($result['programs']) === 0) {
+            error_log("Debug - Program {$program_id} targets: " . json_encode($program_data['targets']));
+        }
         
         $result['programs'][] = $program_data;
     }

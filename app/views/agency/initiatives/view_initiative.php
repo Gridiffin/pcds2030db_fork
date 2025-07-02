@@ -847,6 +847,42 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Store reference globally for debugging
         window.statusGrid = statusGrid;
+        
+        // Add a test function to check status data
+        window.testStatusData = function() {
+            console.log('=== STATUS DATA TEST ===');
+            const data = statusGrid.data;
+            if (!data || !data.programs) {
+                console.log('No data or programs found');
+                return;
+            }
+            
+            data.programs.forEach((program, pi) => {
+                console.log(`\nProgram ${pi}: ${program.program_name}`);
+                if (!program.targets || program.targets.length === 0) {
+                    console.log('  No targets');
+                    return;
+                }
+                
+                program.targets.forEach((target, ti) => {
+                    console.log(`  Target ${ti}: ${target.target_text}`);
+                    console.log(`    status_by_period:`, target.status_by_period);
+                    
+                    if (target.status_by_period) {
+                        Object.entries(target.status_by_period).forEach(([periodId, status]) => {
+                            console.log(`      Period ${periodId}: "${status}"`);
+                        });
+                    }
+                });
+            });
+            
+            console.log('\nTimeline periods_map:', data.timeline?.periods_map);
+        };
+        
+        // Run the test after a short delay
+        setTimeout(() => {
+            window.testStatusData();
+        }, 1000);
     } else {
         document.getElementById('status_grid_here').innerHTML = 
             '<div class="status-grid-error">No initiative ID provided.</div>';
