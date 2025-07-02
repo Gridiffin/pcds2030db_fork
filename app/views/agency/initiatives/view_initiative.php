@@ -816,45 +816,24 @@ require_once '../../layouts/page_header.php';
     <div class="card shadow-sm">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="card-title m-0">
-                <i class="fas fa-chart-gantt me-2"></i>Initiative Timeline
+                <i class="fas fa-chart-line me-2"></i>Initiative Status Grid
             </h5>
-            <div class="gantt-legend">
-                <div class="gantt-legend-item">
-                    <span class="gantt-legend-color" style="background-color: #17a2b8;"></span>
-                    <span>Completed</span>
-                </div>
-                <div class="gantt-legend-item">
-                    <span class="gantt-legend-color" style="background-color: #28a745;"></span>
-                    <span>On Target</span>
-                </div>
-                <div class="gantt-legend-item">
-                    <span class="gantt-legend-color" style="background-color: #ffc107;"></span>
-                    <span>At Risk</span>
-                </div>
-                <div class="gantt-legend-item">
-                    <span class="gantt-legend-color" style="background-color: #dc3545;"></span>
-                    <span>Off Target</span>
-                </div>
-                <div class="gantt-legend-item">
-                    <span class="gantt-legend-color" style="background-color: #6c757d;"></span>
-                    <span>Not Started</span>
-                </div>
-            </div>
         </div>
         <div class="card-body p-0">
-            <div id="gantt_here" class="gantt_container">
-                <div class="gantt-loading">
+            <div id="status_grid_here">
+                <div class="status-grid-loading">
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Loading...</span>
                     </div>
-                    <span class="ms-2">Loading timeline...</span>
+                    <span class="ms-2">Loading status grid...</span>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Status Grid will be loaded here -->
+<!-- Status Grid Component -->
+<script src="<?php echo asset_url('js', 'components/status-grid.js'); ?>"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Get initiative ID from URL
@@ -862,12 +841,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const initiativeId = urlParams.get('id');
     
     if (initiativeId) {
-        // TODO: Initialize custom status grid component
-        document.getElementById('gantt_here').innerHTML = 
-            '<div class="alert alert-info m-3">Custom status grid will be implemented here</div>';
+        // Initialize StatusGrid component with status grid data API
+        const apiUrl = "<?php echo rtrim(BASE_URL, '/'); ?>/app/api/simple_gantt_data.php?initiative_id=" + initiativeId;
+        const statusGrid = new StatusGrid('status_grid_here', apiUrl);
+        
+        // Store reference globally for debugging
+        window.statusGrid = statusGrid;
     } else {
-        document.getElementById('gantt_here').innerHTML = 
-            '<div class="alert alert-danger m-3">No initiative ID provided.</div>';
+        document.getElementById('status_grid_here').innerHTML = 
+            '<div class="status-grid-error">No initiative ID provided.</div>';
     }
 });
 </script>

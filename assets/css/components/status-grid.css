@@ -1,0 +1,321 @@
+/**
+ * Status Grid Component Styles
+ * 
+ * Custom table-based status grid for displaying initiative programs and targets
+ * with quarterly status indicators in a two-tier timeline header.
+ */
+
+/* Status Grid Container */
+.status-grid-container {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    background: #fff;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+/* Status Grid Table */
+.status-grid-table {
+    width: 100%;
+    min-width: 800px; /* Ensure minimum width for proper display */
+    border-collapse: separate !important; /* Override Bootstrap */
+    border-spacing: 0 !important; /* Override Bootstrap */
+    font-size: 0.875rem;
+}
+
+/* Table Header */
+.status-grid-table thead {
+    background-color: #f8f9fa;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+/* Header Rows */
+.status-grid-table thead tr:first-child {
+    border-bottom: 1px solid #dee2e6;
+}
+
+.status-grid-table thead tr:last-child {
+    border-bottom: 2px solid #495057;
+}
+
+/* Header Cells */
+.status-grid-table th {
+    padding: 0.75rem 0.5rem;
+    text-align: center;
+    font-weight: 600;
+    color: #495057;
+    border-right: 1px solid #dee2e6;
+    white-space: nowrap;
+    vertical-align: middle;
+    box-sizing: border-box; /* Ensure consistent sizing */
+}
+
+/* Left Panel Headers - Disable sticky for now to test rowspan */
+.status-grid-table th.left-panel {
+    background-color: #e9ecef;
+    /* position: sticky; */
+    z-index: 11;
+    text-align: left;
+}
+
+/* Positioning disabled for testing rowspan behavior
+.status-grid-table th.program-number,
+.status-grid-table td.program-number {
+    left: 0;
+}
+
+.status-grid-table th.program-name,
+.status-grid-table td.program-name {
+    left: 120px;
+}
+*/
+
+.status-grid-table th.program-number {
+    width: 120px;
+    min-width: 120px;
+}
+
+.status-grid-table th.program-name {
+    width: 300px;
+    min-width: 300px;
+}
+
+/* Year Headers (Top Tier) */
+.status-grid-table th.year-header {
+    background-color: #6c757d;
+    color: #fff;
+    font-size: 0.95rem;
+    border-bottom: 1px solid #495057;
+}
+
+/* Quarter Headers (Bottom Tier) */
+.status-grid-table th.quarter-header {
+    background-color: #adb5bd;
+    color: #fff;
+    font-size: 0.8rem;
+    width: 60px;
+    min-width: 60px;
+}
+
+/* Empty Header Cells for Left Panel */
+.status-grid-table th.empty-header {
+    background-color: #e9ecef;
+    border-right: 2px solid #495057;
+}
+
+/* Table Body */
+.status-grid-table tbody tr {
+    border-bottom: 1px solid #dee2e6;
+}
+
+.status-grid-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Table Cells */
+.status-grid-table td {
+    padding: 0.5rem;
+    border-right: 1px solid #dee2e6;
+    vertical-align: middle;
+}
+
+/* Left Panel Cells */
+.status-grid-table td.left-panel {
+    background-color: #fff;
+    position: sticky;
+    z-index: 5;
+    border-right: 1px solid #dee2e6;
+}
+
+.status-grid-table td.program-number {
+    width: 120px;
+    min-width: 120px;
+    /* left: 0; */
+    font-weight: 500;
+    text-align: center;
+}
+
+.status-grid-table td.program-name {
+    width: 300px;
+    min-width: 300px;
+    /* left: 120px; */
+    text-align: left;
+}
+
+/* Program Rows */
+.status-grid-table tr.program-row {
+    background-color: #f1f3f4;
+    border-top: 2px solid #6c757d;
+    border-bottom: 1px solid #6c757d;
+}
+
+.status-grid-table tr.program-row td {
+    font-weight: 700;
+    color: #343a40;
+    background-color: #f1f3f4;
+}
+
+.status-grid-table tr.program-row td.left-panel {
+    background-color: #f1f3f4;
+}
+
+/* Target Rows */
+.status-grid-table tr.target-row td {
+    background-color: #fff;
+}
+
+.status-grid-table tr.target-row td.left-panel {
+    background-color: #fff;
+}
+
+/* Status Indicator Cells */
+.status-grid-table td.status-cell {
+    text-align: center;
+    padding: 0.75rem 0.5rem;
+    width: 60px;
+    min-width: 60px;
+}
+
+/* Status Indicators */
+.status-indicator {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    cursor: help;
+}
+
+/* Status Colors */
+.status-indicator.on-target {
+    background-color: #28a745;
+}
+
+.status-indicator.at-risk {
+    background-color: #ffc107;
+}
+
+.status-indicator.off-target {
+    background-color: #dc3545;
+}
+
+.status-indicator.not-started {
+    background-color: #6c757d;
+}
+
+.status-indicator.completed {
+    background-color: #17a2b8;
+}
+
+.status-indicator.planned {
+    background-color: #e9ecef;
+    border-color: #adb5bd;
+}
+
+/* Empty Status Cell */
+.status-cell.empty {
+    background-color: #f8f9fa;
+}
+
+/* Loading State */
+.status-grid-loading {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #6c757d;
+}
+
+.status-grid-loading .spinner-border {
+    width: 2rem;
+    height: 2rem;
+    margin-bottom: 1rem;
+}
+
+/* Error State */
+.status-grid-error {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: #dc3545;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 0.375rem;
+    margin: 1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .status-grid-table {
+        min-width: 600px;
+    }
+    
+    .status-grid-table th.program-name,
+    .status-grid-table td.program-name {
+        width: 200px;
+        min-width: 200px;
+        left: 100px;
+    }
+    
+    .status-grid-table th.program-number,
+    .status-grid-table td.program-number {
+        width: 100px;
+        min-width: 100px;
+    }
+    
+    .status-grid-table th.quarter-header,
+    .status-grid-table td.status-cell {
+        width: 50px;
+        min-width: 50px;
+    }
+    
+    .status-indicator {
+        width: 16px;
+        height: 16px;
+    }
+}
+
+/* Tooltip Styles */
+.status-tooltip {
+    position: absolute;
+    z-index: 1000;
+    background-color: #343a40;
+    color: #fff;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+}
+
+.status-tooltip.show {
+    opacity: 1;
+}
+
+/* Legend */
+.status-grid-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background-color: #f8f9fa;
+    border-radius: 0.375rem;
+    border: 1px solid #dee2e6;
+}
+
+.status-grid-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.status-grid-legend .status-indicator {
+    width: 16px;
+    height: 16px;
+}
