@@ -24,19 +24,19 @@ The current dhtmlxGantt implementation shows timeline bars, but the original cha
 - ✅ Remove dhtmlxGantt documentation and implementation files
 - ✅ Update view_initiative.php with placeholder for new component
 
-### Phase 2: Create Custom Status Grid Component
-- [ ] Create new status-grid.js component file
-- [ ] Create new status-grid.css styling file
-- [ ] Design HTML structure for status grid (table or CSS grid)
-- [ ] Implement quarterly status indicators (colored circles/squares)
-- [ ] Make project rows bold and targets regular text
-- [ ] Enable scrollable left panel
+### Phase 2: Create Custom Status Grid Component ✅
+- ✅ Create new status-grid.js component file
+- ✅ Create new status-grid.css styling file
+- ✅ Design HTML structure for status grid (table-based)
+- ✅ Implement quarterly status indicators (colored circles)
+- ✅ Make program rows bold and targets regular text
+- ✅ Enable scrollable left panel with sticky positioning
 
-### Phase 3: Integration and Styling
-- [ ] Update view_initiative.php to load new status grid component
-- [ ] Update main.css to include status-grid.css
-- [ ] Test API integration with simple_gantt_data.php
-- [ ] Ensure responsive design and proper spacing
+### Phase 3: Integration and Styling ✅
+- ✅ Update view_initiative.php to load new status grid component
+- ✅ Update main.css to include status-grid.css
+- ✅ Test API integration with simple_gantt_data.php
+- ✅ Ensure responsive design and proper spacing
 
 ### Phase 4: Test and Refine
 - [ ] Test scrolling behavior
