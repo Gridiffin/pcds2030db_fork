@@ -40,22 +40,14 @@ if (!$program_id) {
 }
 
 // Get program details
-// Pass true as the second parameter when source is 'all_sectors' to allow cross-agency viewing
-$program = get_program_details($program_id, $source === 'all_sectors');
+$program = get_program_details($program_id, true); // Always allow cross-agency viewing
 
-// If coming from all_sectors view, we allow viewing of any program
-// Otherwise, check if this agency owns the program
-$allow_view = ($source === 'all_sectors');
+// Allow all users to view any program
+$allow_view = true;
+$is_owner = isset($program['owner_agency_id']) && $program['owner_agency_id'] == $_SESSION['user_id'];
 
-// Check if current user is the owner of this program
-$is_owner = false;
-if (isset($program['owner_agency_id']) && $program['owner_agency_id'] == $_SESSION['user_id']) {
-    $allow_view = true;
-    $is_owner = true;
-}
-
-if (!$program || (!$allow_view)) {
-    $_SESSION['message'] = 'Program not found or you do not have permission to view it.';
+if (!$program) {
+    $_SESSION['message'] = 'Program not found.';
     $_SESSION['message_type'] = 'danger';
     header('Location: view_programs.php');
     exit;
@@ -99,8 +91,11 @@ if (isset($current_submission['content_json']) && !empty($current_submission['co
             if (isset($target['target_text'])) {
                 // New format that uses target_text
                 $targets[] = [
+                    'target_number' => $target['target_number'] ?? '',
                     'text' => $target['target_text'],
-                    'status_description' => $target['status_description'] ?? ''
+                    'status_description' => $target['status_description'] ?? '',
+                    'start_date' => $target['start_date'] ?? '',
+                    'end_date' => $target['end_date'] ?? ''
                 ];
             } else {
                 // Format that uses text directly
@@ -474,47 +469,50 @@ $showNoTargetsAlert = empty($targets) && $is_owner; // Only show no targets aler
         <h5 class="card-title mb-0">
             <i class="fas fa-tasks me-2"></i>Current Period Performance
         </h5>
-    </div>    <div class="card-body">
+    </div>
+    <div class="card-body">
         <?php if (!empty($targets)): ?>
-            <div class="performance-grid">
-                <?php foreach ($targets as $index => $target): ?>
-                    <div class="performance-item card mb-3 shadow-sm">
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-lg-6">
-                                    <div class="target-section">
-                                        <h6 class="target-header d-flex align-items-center mb-3">
-                                            <span class="target-number me-2"><?php echo $index + 1; ?></span>
-                                            <span class="text-primary fw-bold">Program Target</span>
-                                        </h6>
-                                        <div class="target-content">
-                                            <?php if (!empty($target['text'])): ?>
-                                                <p class="mb-0"><?php echo nl2br(htmlspecialchars($target['text'])); ?></p>
-                                            <?php else: ?>
-                                                <p class="text-muted fst-italic mb-0">No target specified</p>
-                                            <?php endif; ?>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-lg-6">
-                                    <div class="status-section">
-                                        <h6 class="status-header d-flex align-items-center mb-3">
-                                            <i class="fas fa-chart-line me-2 text-success"></i>
-                                            <span class="text-success fw-bold">Status & Achievements</span>
-                                        </h6>
-                                        <div class="status-content">
-                                            <?php if (!empty($target['status_description'])): ?>
-                                                <p class="mb-0"><?php echo nl2br(htmlspecialchars($target['status_description'])); ?></p>
-                                            <?php else: ?>
-                                                <p class="text-muted fst-italic mb-0">No status update provided</p>
-                                            <?php endif; ?>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
+            <?php
+                // Determine which columns to show
+                $show_number = false;
+                $show_status = false;
+                $show_start = false;
+                $show_end = false;
+                foreach ($targets as $target) {
+                    if (!empty($target['target_number'])) $show_number = true;
+                    if (!empty($target['status_description'])) $show_status = true;
+                    if (!empty($target['start_date'])) $show_start = true;
+                    if (!empty($target['end_date'])) $show_end = true;
+                }
+            ?>
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <?php if ($show_number): ?><th style="width: 12%">Target Number</th><?php endif; ?>
+                            <th>Target Name/Description</th>
+                            <?php if ($show_status): ?><th>Status</th><?php endif; ?>
+                            <?php if ($show_start): ?><th>Start Date</th><?php endif; ?>
+                            <?php if ($show_end): ?><th>End Date</th><?php endif; ?>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($targets as $index => $target): ?>
+                            <?php
+                                $has_any = ($show_number && !empty($target['target_number'])) || !empty($target['text']) || ($show_status && !empty($target['status_description'])) || ($show_start && !empty($target['start_date'])) || ($show_end && !empty($target['end_date']));
+                            ?>
+                            <?php if ($has_any): ?>
+                            <tr>
+                                <?php if ($show_number): ?><td><?php echo !empty($target['target_number']) ? htmlspecialchars($target['target_number']) : ''; ?></td><?php endif; ?>
+                                <td><?php echo !empty($target['text']) ? nl2br(htmlspecialchars($target['text'])) : ''; ?></td>
+                                <?php if ($show_status): ?><td><?php echo !empty($target['status_description']) ? htmlspecialchars($target['status_description']) : ''; ?></td><?php endif; ?>
+                                <?php if ($show_start): ?><td><?php echo !empty($target['start_date']) ? date('M j, Y', strtotime($target['start_date'])) : ''; ?></td><?php endif; ?>
+                                <?php if ($show_end): ?><td><?php echo !empty($target['end_date']) ? date('M j, Y', strtotime($target['end_date'])) : ''; ?></td><?php endif; ?>
+                            </tr>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
             </div>
             <?php if (isset($current_submission['achievement']) && !empty($current_submission['achievement'])): ?>
             <div class="overall-achievement p-4">
