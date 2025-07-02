@@ -20,7 +20,7 @@ if ($periods_result) {
 
 // Determine the selected period
 $selected_period = $viewing_period ?? $current_period ?? null;
-$selected_period_id = $selected_period ? $selected_period['period_id'] : null;
+$selected_period_id = $viewing_period_id ?? ($selected_period ? $selected_period['period_id'] : null);
 $is_current_active = $selected_period && $selected_period['status'] === 'open';
 ?>
 
@@ -89,65 +89,10 @@ $is_current_active = $selected_period && $selected_period['status'] === 'open';
                 if (periodInput) {
                     periodInput.value = selectedPeriodId;
                 }
-                // Update the URL query parameter period_id without reloading the page
+                // Update the URL query parameter period_id and reload the page
                 const url = new URL(window.location.href);
                 url.searchParams.set('period_id', selectedPeriodId);
-                window.history.replaceState({}, '', url.toString());
-
-                // Try to get programId from hidden input, JS global, or URL
-                let programId = (typeof PROGRAM_ID !== 'undefined') ? PROGRAM_ID : (window.programId || null);
-                if (!programId) {
-                    // fallback: try to get from hidden input or URL
-                    const hiddenInput = document.querySelector('input[name="program_id"]');
-                    if (hiddenInput) {
-                        programId = hiddenInput.value;
-                    } else {
-                        const urlParams = new URLSearchParams(window.location.search);
-                        const idFromUrl = urlParams.get('id');
-                        if (idFromUrl) {
-                            programId = idFromUrl;
-                        }
-                    }
-                }
-                if (!programId) {
-                    alert('Missing program ID.');
-                    return;
-                }
-                // Show loading spinner
-                const spinner = document.querySelector('.selector-spinner');
-                if (spinner) spinner.style.display = 'block';
-                // AJAX fetch program data for selected period
-                fetch(APP_URL + '/app/ajax/get_program_submission.php?program_id=' + programId + '&period_id=' + selectedPeriodId)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (spinner) spinner.style.display = 'none';
-                        if (data.success && data.data) {
-                            // Dispatch custom event so update_program.php JS can update fields
-                            const event = new CustomEvent('ProgramPeriodDataLoaded', { detail: data.data });
-                            document.dispatchEvent(event);
-
-                            // --- Update the period label and badge dynamically ---
-                            // Find the selected option's text
-                            const selectedOption = periodSelector.options[periodSelector.selectedIndex];
-                            const periodName = selectedOption.text.replace(/\s*\(Open\)$/, '');
-                            const isOpen = selectedOption.text.includes('(Open)');
-                            // Update the label and badge
-                            const h5 = document.querySelector('.period-selector-info h5');
-                            if (h5) {
-                                h5.innerHTML =
-                                    periodName +
-                                    ' <span class="badge ms-2 ' + (isOpen ? 'bg-success' : 'bg-secondary') + '">' +
-                                    (isOpen ? 'Currently Editing a program in a ACTIVE period' : 'Currently editing a program in a CLOSED period.') +
-                                    '</span>';
-                            }
-                        } else {
-                            alert(data.error || 'Failed to load program data for selected period.');
-                        }
-                    })
-                    .catch(() => {
-                        if (spinner) spinner.style.display = 'none';
-                        alert('Failed to load program data for selected period.');
-                    });
+                window.location.href = url.toString(); // This will reload the page with the new period
             });
         }
     });

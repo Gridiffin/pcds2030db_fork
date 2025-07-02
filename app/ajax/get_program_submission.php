@@ -34,23 +34,21 @@ if (!$program) {
 
 // Find the correct submission for the selected period
 $current_submission = null;
-$previous_submission = null;
 if (isset($program['submissions']) && is_array($program['submissions'])) {
-    // Sort submissions by period_id descending to find previous period easily
-    usort($program['submissions'], function($a, $b) {
-        return $b['period_id'] <=> $a['period_id'];
+    // Filter submissions for the selected period only
+    $period_submissions = array_filter($program['submissions'], function($submission) use ($period_id) {
+        return isset($submission['period_id']) && $submission['period_id'] == $period_id;
     });
-    foreach ($program['submissions'] as $submission) {
-        if (isset($submission['period_id']) && $submission['period_id'] == $period_id) {
-            $current_submission = $submission;
-            break;
-        }
-        // Track the most recent submission before the requested period
-        if (isset($submission['period_id']) && $submission['period_id'] < $period_id) {
-            if ($previous_submission === null || $submission['period_id'] > $previous_submission['period_id']) {
-                $previous_submission = $submission;
-            }
-        }
+    
+    // If there are multiple submissions for this period, get the latest one
+    if (!empty($period_submissions)) {
+        // Sort by submission_id descending to get the latest submission for this period
+        usort($period_submissions, function($a, $b) {
+            return $b['submission_id'] <=> $a['submission_id'];
+        });
+        
+        // Get the latest submission for this period
+        $current_submission = reset($period_submissions);
     }
 }
 
@@ -64,30 +62,47 @@ $response = [
         'targets' => [['target_text' => '', 'status_description' => '']],
         'rating' => 'not-started',
         'remarks' => '',
+        'period_id' => $period_id,
     ]
 ];
 
-// Use current submission if exists, else fallback to previous submission if exists
-$submission_to_use = $current_submission ?? $previous_submission;
-
-if ($submission_to_use && isset($submission_to_use['content_json']) && is_string($submission_to_use['content_json'])) {
-    $content = json_decode($submission_to_use['content_json'], true);
-    if (isset($content['targets']) && is_array($content['targets'])) {
-        $response['data']['targets'] = $content['targets'];
+// Use only the current submission for the selected period if it exists
+if ($current_submission && isset($current_submission['content_json']) && is_string($current_submission['content_json'])) {
+    $content = json_decode($current_submission['content_json'], true);
+    if (is_array($content)) {
+        // Update with content from the current period submission
+        if (isset($content['targets']) && is_array($content['targets'])) {
+            $response['data']['targets'] = $content['targets'];
+        }
         $response['data']['rating'] = $content['rating'] ?? 'not-started';
         $response['data']['remarks'] = $content['remarks'] ?? '';
         $response['data']['brief_description'] = $content['brief_description'] ?? '';
     }
+} else {
+    // No submission exists for this period - provide empty form
+    // We'll keep the program name and number but reset everything else
+    $response['data']['targets'] = [
+        [
+            'target_number' => '',
+            'target_text' => '',
+            'status_description' => '',
+            'target_status' => 'not-started',
+            'start_date' => null,
+            'end_date' => null
+        ]
+    ];
 }
 
-// Legacy fallback for old structure
-if (!$submission_to_use && isset($program['brief_description'])) {
+// Include basic program info from the program table
+if (isset($program['brief_description']) && empty($response['data']['brief_description'])) {
     $response['data']['brief_description'] = $program['brief_description'];
 }
 
-// Add submission_id if available
-if ($submission_to_use && isset($submission_to_use['submission_id'])) {
-    $response['data']['submission_id'] = $submission_to_use['submission_id'];
+// Add submission_id if available, or set to null if creating a new submission for this period
+if ($current_submission && isset($current_submission['submission_id'])) {
+    $response['data']['submission_id'] = $current_submission['submission_id'];
+} else {
+    $response['data']['submission_id'] = null;
 }
 
 echo json_encode($response);

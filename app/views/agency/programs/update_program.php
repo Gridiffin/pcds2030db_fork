@@ -276,10 +276,19 @@ if ($conn) {
         }
     }
 }
-if (!$selected_period && $current_period) {
+
+// If no period was specified in URL, default to current period
+if (!$selected_period_id && $current_period) {
     $selected_period = $current_period;
     $selected_period_id = $current_period['period_id'];
 }
+
+// If still no selected period, use the first available period
+if (!$selected_period && !empty($all_periods)) {
+    $selected_period = $all_periods[0];
+    $selected_period_id = $selected_period['period_id'];
+}
+
 if (!$selected_period) {
     die('<div style="color:red">No reporting period found.</div>');
 }
@@ -288,30 +297,45 @@ if (!$selected_period) {
 $submission_id = null;
 $current_submission = null;
 if (isset($program['submissions']) && is_array($program['submissions'])) {
-    foreach ($program['submissions'] as $submission) {
-        if (isset($submission['period_id']) && $submission['period_id'] == $selected_period_id) {
-            $current_submission = $submission;
-            $submission_id = $submission['submission_id'] ?? null;
-            break;
-        }
+    // Filter submissions for the selected period
+    $period_submissions = array_filter($program['submissions'], function($submission) use ($selected_period_id) {
+        return isset($submission['period_id']) && $submission['period_id'] == $selected_period_id;
+    });
+    
+    // If there are submissions for this period, get the latest one
+    if (!empty($period_submissions)) {
+        // Sort by submission_id in descending order to get the latest submission
+        usort($period_submissions, function($a, $b) {
+            return $b['submission_id'] <=> $a['submission_id'];
+        });
+        
+        $current_submission = reset($period_submissions);
+        $submission_id = $current_submission['submission_id'] ?? null;
     }
 }
 
 // Process form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Validate that period_id from the form matches the URL parameter
+    if (isset($_POST['period_id']) && intval($_POST['period_id']) != $selected_period_id) {
+        $_SESSION['message'] = 'Period mismatch. Please try again.';
+        $_SESSION['message_type'] = 'danger';
+        header('Location: update_program.php?id=' . $program_id . '&period_id=' . $selected_period_id);
+        exit;
+    }
+    
     // Determine submission type
     $is_draft = isset($_POST['save_draft']);
     $finalize_draft = isset($_POST['finalize_draft']);    if ($finalize_draft) {
         $submission_id = $_POST['submission_id'] ?? 0;
-        // Get current reporting period to ensure we're finalizing the correct submission
-        $current_period = get_current_reporting_period();
+        // Use the selected period ID instead of only allowing the current period
         
-        if ($submission_id && $current_period) {
+        if ($submission_id && $selected_period_id) {
             global $conn;
             
             // First validate that the submission has content
             $content_check = $conn->prepare("SELECT content_json FROM program_submissions WHERE submission_id = ? AND program_id = ? AND period_id = ?");
-            $content_check->bind_param("iii", $submission_id, $program_id, $current_period['period_id']);
+            $content_check->bind_param("iii", $submission_id, $program_id, $selected_period_id);
             $content_check->execute();
             $content_result = $content_check->get_result();
             
@@ -344,36 +368,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     } else {
                         // Content is valid, proceed with finalization
                         $stmt = $conn->prepare("UPDATE program_submissions SET is_draft = 0, submission_date = NOW() WHERE submission_id = ? AND program_id = ? AND period_id = ?");
-                        $stmt->bind_param("iii", $submission_id, $program_id, $current_period['period_id']);                        if ($stmt->execute() && $stmt->affected_rows > 0) {
+                        $stmt->bind_param("iii", $submission_id, $program_id, $selected_period_id);                        if ($stmt->execute() && $stmt->affected_rows > 0) {
                             $result = ['success' => true, 'message' => 'Draft finalized successfully.'];
                             
                             // Log successful finalization
                             log_audit_action(
                                 'program_submission_finalized',
-                                "Program '{$program['program_name']}' (ID: {$program_id}) submission finalized for period {$current_period['period_id']}",
+                                "Program '{$program['program_name']}' (ID: {$program_id}) submission finalized for period {$selected_period_id}",
                                 'success',
                                 $_SESSION['user_id']
                             );
                         } else {
-                            $result = ['error' => 'Failed to finalize draft. Submission may not exist for current period.'];
+                            $result = ['error' => 'Failed to finalize draft. Submission may not exist for selected period.'];
                             
                             // Log finalization failure
                             log_audit_action(
                                 'program_submission_finalization_failed',
-                                "Failed to finalize program '{$program['program_name']}' (ID: {$program_id}) submission for period {$current_period['period_id']}",
+                                "Failed to finalize program '{$program['program_name']}' (ID: {$program_id}) submission for period {$selected_period_id}",
                                 'failure',
                                 $_SESSION['user_id']
                             );
                         }
                     }
                 }
-            } else {
-                $result = ['error' => 'Submission not found.'];
-            }} else {
-            $result = ['error' => 'Invalid submission ID or no active reporting period.'];
-        }    } else {
-        // Handle save draft functionality - update both program basic info and submission content
-        global $conn;
+                } else {
+                    $result = ['error' => 'Submission not found.'];
+                }
+            }
+        } else {
+            // Handle save draft functionality - update both program basic info and submission content
+            global $conn;
         try {
             $conn->begin_transaction();            // Get form data
             $program_name = trim($_POST['program_name'] ?? '');
@@ -384,8 +408,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $initiative_id = !empty($_POST['initiative_id']) ? intval($_POST['initiative_id']) : null;$rating = $_POST['rating'] ?? 'not-started';
             $remarks = trim($_POST['remarks'] ?? '');
             $period_id = intval($_POST['period_id'] ?? 0);
-            $submission_id = intval($_POST['submission_id'] ?? 0);
+            $submission_id = isset($_POST['submission_id']) && !empty($_POST['submission_id']) ? intval($_POST['submission_id']) : null;
             $current_user_id = $_SESSION['user_id'];
+            
+            // Ensure we're updating the correct period
+            if ($period_id != $selected_period_id) {
+                $_SESSION['message'] = 'Selected period mismatch. Please try again.';
+                $_SESSION['message_type'] = 'danger';
+                header('Location: update_program.php?id=' . $program_id . '&period_id=' . $selected_period_id);
+                exit;
+            }
               // Validate program_number format if provided
             if (!empty($program_number) && !is_valid_program_number_format($program_number, false)) {
                 $_SESSION['message'] = get_program_number_format_error(false);
@@ -657,15 +689,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Check if the program has a draft submission for the current period
+// Check if the program has a draft submission for the selected period
 $is_draft = false;
-$submission_id = null;
+$rating = 'not-started';
+$remarks = '';
+$targets = [];
+$brief_description = '';
 
-// Check for current submission
-if (isset($program['current_submission'])) {
-    $current_submission = $program['current_submission'];
+// Use submission data only from the selected period (already filtered above)
+if ($current_submission) {
     $is_draft = isset($current_submission['is_draft']) && $current_submission['is_draft'] == 1;
-    $submission_id = $current_submission['submission_id'] ?? null;
     
     // Process content_json if available
     if (isset($current_submission['content_json']) && is_string($current_submission['content_json'])) {
@@ -735,9 +768,12 @@ if (isset($program['current_submission'])) {
             ];
             }
             
-            $rating = $current_submission['status'] ?? 'not-started';
-            $remarks = $content['remarks'] ?? '';
-        }    } else {
+            // Get other fields from content or submission
+            $rating = $content['rating'] ?? $current_submission['rating'] ?? 'not-started';
+            $remarks = $content['remarks'] ?? $current_submission['remarks'] ?? '';
+            $brief_description = $content['brief_description'] ?? $current_submission['brief_description'] ?? '';
+        }
+    } else {
         // Old structure without content_json - handle semicolon-separated targets
         $target_text = $current_submission['target'] ?? '';
         $status_description = $current_submission['status_text'] ?? '';
@@ -773,21 +809,23 @@ if (isset($program['current_submission'])) {
                     'end_date' => null
                 ]];
             }
-        } else {        // Single target
-        $targets = [
-            [
-                'target_number' => '',
-                'target_text' => $target_text,
-                'status_description' => $status_description,
-                'target_status' => 'not-started',
-                'start_date' => null,
-                'end_date' => null
-            ]
-        ];}
+        } else {
+            // Single target
+            $targets = [
+                [
+                    'target_number' => '',
+                    'target_text' => $target_text,
+                    'status_description' => $status_description,
+                    'target_status' => 'not-started',
+                    'start_date' => null,
+                    'end_date' => null
+                ]
+            ];
+        }
         
         $rating = $current_submission['status'] ?? 'not-started';
         $remarks = $current_submission['remarks'] ?? '';
-        $brief_description = $content['brief_description'] ?? '';
+        $brief_description = $current_submission['brief_description'] ?? '';
     }
 } else {
     // No current submission, initialize empty targets with new structure
@@ -868,8 +906,9 @@ $header_config = [
 // Include modern page header
 require_once dirname(__DIR__, 2) . '/layouts/page_header.php';
 
-// Set the period selector variable for the component
+// Set the period selector variables for the component
 $viewing_period_id = $selected_period_id;
+$viewing_period = $selected_period;
 // Render the period selector UI before the form
 require_once PROJECT_ROOT_PATH . 'lib/period_selector_edit.php';
 ?>
@@ -2031,21 +2070,38 @@ document.addEventListener('DOMContentLoaded', function() {
         // Listen for program period data load event to update form fields
         document.addEventListener('ProgramPeriodDataLoaded', function(e) {
             const data = e.detail;
+            
             // Update program name
             const programNameInput = document.getElementById('program_name');
             if (programNameInput) programNameInput.value = data.program_name || '';
+            
             // Update program number
             const programNumberInput = document.getElementById('program_number');
             if (programNumberInput) programNumberInput.value = data.program_number || '';
+            
             // Update brief description
             const briefDescInput = document.getElementById('brief_description');
             if (briefDescInput) briefDescInput.value = data.brief_description || '';
+            
             // Update remarks
             const remarksInput = document.getElementById('remarks');
             if (remarksInput) remarksInput.value = data.remarks || '';
+            
             // Update rating
             const ratingInput = document.getElementById('rating');
             if (ratingInput) ratingInput.value = data.rating || 'not-started';
+            
+            // Update submission_id hidden field
+            const submissionIdInput = document.querySelector('input[name="submission_id"]');
+            if (submissionIdInput) {
+                submissionIdInput.value = data.submission_id || '';
+            }
+            
+            // Update period_id hidden field
+            const periodIdInput = document.querySelector('input[name="period_id"]');
+            if (periodIdInput) {
+                periodIdInput.value = data.period_id || '';
+            }
             // Update rating pills UI
             const ratingPills = document.querySelectorAll('.rating-pill');
             ratingPills.forEach(pill => {
