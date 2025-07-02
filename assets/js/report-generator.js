@@ -141,6 +141,24 @@ document.addEventListener('DOMContentLoaded', function() {
         // Build URL - always load all programs for the period, then filter on frontend
         let url = `${APP_URL}/app/api/get_period_programs.php?period_id=${periodId}${sectorId ? '&sector_id=' + sectorId : ''}`;
         
+        // Log the API request for debugging
+        console.log(`Requesting programs for period_id: ${periodId}`);
+        
+        // Get period option text to debug what's actually being selected
+        const selectedOption = periodSelect.options[periodSelect.selectedIndex];
+        console.log(`Selected period text: "${selectedOption.textContent}"`);
+        
+        // Debug to check period type based on text
+        const isHalfYearly1 = selectedOption.textContent.includes('Half Yearly 1') || selectedOption.textContent.includes('H1');
+        const isHalfYearly2 = selectedOption.textContent.includes('Half Yearly 2') || selectedOption.textContent.includes('H2');
+        
+        // Log additional info for half-yearly periods
+        if (periodId == 5 || isHalfYearly1) {
+            console.log('Half Yearly 1 selected - backend should include Q1 and Q2 submissions');
+        } else if (periodId == 6 || isHalfYearly2) {
+            console.log('Half Yearly 2 selected - backend should include Q3 and Q4 submissions');
+        }
+        
         fetch(url)
             .then(response => {
                 if (!response.ok) {

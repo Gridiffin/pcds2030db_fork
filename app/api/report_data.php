@@ -34,6 +34,53 @@ $sector_id = isset($_GET['sector_id']) ? intval($_GET['sector_id']) : 1; // Defa
 $selected_program_ids_raw = isset($_GET['selected_program_ids']) ? $_GET['selected_program_ids'] : null;
 $program_orders_raw = isset($_GET['program_orders']) ? $_GET['program_orders'] : null;
 
+// Handle half-yearly period logic
+$period_ids = [$period_id];
+
+// Get period details to check if it's half-yearly
+$period_query = "SELECT period_id, quarter, year FROM reporting_periods WHERE period_id = ?";
+$stmt = $conn->prepare($period_query);
+$stmt->bind_param("i", $period_id);
+$stmt->execute();
+$period_result = $stmt->get_result();
+$period_data = $period_result->fetch_assoc();
+
+// Check if this is a half-yearly period based on quarter value
+if ($period_data && isset($period_data['quarter'])) {
+    $quarter = (int)$period_data['quarter'];
+    $year = $period_data['year'];
+    
+    if ($quarter == 5) { // Half Yearly 1 includes Q1 and Q2
+        // Find all Q1 and Q2 periods for the same year
+        $q1q2_query = "SELECT period_id FROM reporting_periods WHERE year = ? AND quarter IN (1, 2)";
+        $stmt = $conn->prepare($q1q2_query);
+        $stmt->bind_param("i", $year);
+        $stmt->execute();
+        $q1q2_result = $stmt->get_result();
+        
+        $period_ids = [$period_id]; // Always include the original period
+        while ($row = $q1q2_result->fetch_assoc()) {
+            $period_ids[] = $row['period_id'];
+        }
+        
+        error_log("Half Yearly 1 ($year) selected: Including period_ids " . implode(", ", $period_ids));
+    } elseif ($quarter == 6) { // Half Yearly 2 includes Q3 and Q4
+        // Find all Q3 and Q4 periods for the same year
+        $q3q4_query = "SELECT period_id FROM reporting_periods WHERE year = ? AND quarter IN (3, 4)";
+        $stmt = $conn->prepare($q3q4_query);
+        $stmt->bind_param("i", $year);
+        $stmt->execute();
+        $q3q4_result = $stmt->get_result();
+        
+        $period_ids = [$period_id]; // Always include the original period
+        while ($row = $q3q4_result->fetch_assoc()) {
+            $period_ids[] = $row['period_id'];
+        }
+        
+        error_log("Half Yearly 2 ($year) selected: Including period_ids " . implode(", ", $period_ids));
+    }
+}
+
 // Parse program orders if provided
 $program_orders = [];
 if ($program_orders_raw) {
@@ -50,7 +97,8 @@ if ($program_orders_raw) {
 }
 
 // Add debug logging for parameters
-error_log("API parameters - period_id: {$period_id}, sector_id: {$sector_id}");
+$period_ids_str = implode(',', $period_ids);
+error_log("API parameters - period_ids: {$period_ids_str}, sector_id: {$sector_id}");
 error_log("Fixed duplicate submission query - using MAX(submission_id) for tie-breaking");
 if (!empty($program_orders)) {
     error_log("Program orders provided: " . json_encode($program_orders));
@@ -129,8 +177,14 @@ $sector_leads = $dept_prefix . $sector_leads;
 // Process selected program IDs if provided
 $selected_program_ids = [];
 $program_filter_condition = "p.sector_id = ?"; // Default filter by sector only
-$program_params = [$period_id, $period_id, $sector_id]; // period_id appears twice in subquery
-$program_param_types = "iii"; // Three parameters: period_id, period_id, sector_id
+
+// Create the period IN clause for the two places where period_id is used
+$period_in_clause = implode(',', array_fill(0, count($period_ids), '?'));
+
+// Prepare the parameters for the query
+$program_params = array_merge($period_ids, $period_ids); // period_ids appear twice in subquery
+$program_params[] = $sector_id; // Add sector_id 
+$program_param_types = str_repeat('i', count($period_ids) * 2) . 'i'; // period_ids (twice) + sector_id
 
 if (!empty($selected_program_ids_raw)) {
     error_log("Selected program IDs raw: {$selected_program_ids_raw}");
@@ -151,9 +205,9 @@ if (!empty($selected_program_ids_raw)) {
         $placeholders = implode(',', array_fill(0, count($selected_program_ids), '?'));
         $program_filter_condition = "p.program_id IN ($placeholders)";
         
-        // Reset params and add period_id twice (for subquery and main query), then all program IDs
-        $program_params = [$period_id, $period_id];
-        $program_param_types = "ii";
+        // Reset params and add period_ids twice (for both IN clauses in the subquery), then all program IDs
+        $program_params = array_merge($period_ids, $period_ids); // period_ids appear twice in subquery
+        $program_param_types = str_repeat('i', count($period_ids) * 2);
         
         // Add each program_id to params
         foreach ($selected_program_ids as $prog_id) {
@@ -205,12 +259,12 @@ $programs_query = "SELECT p.program_id, p.program_name,
                       INNER JOIN (
                           SELECT program_id, MAX(submission_date) as latest_date, MAX(submission_id) as latest_submission_id
                           FROM program_submissions
-                          WHERE period_id = ? AND is_draft = 0
+                          WHERE period_id IN ($period_in_clause) AND is_draft = 0
                           GROUP BY program_id
                       ) ps2 ON ps1.program_id = ps2.program_id 
                            AND ps1.submission_date = ps2.latest_date 
                            AND ps1.submission_id = ps2.latest_submission_id
-                      WHERE ps1.period_id = ? AND ps1.is_draft = 0
+                      WHERE ps1.period_id IN ($period_in_clause) AND ps1.is_draft = 0
                   ) ps ON p.program_id = ps.program_id
                   LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
                   WHERE $program_filter_condition

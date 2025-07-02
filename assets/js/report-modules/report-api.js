@@ -25,6 +25,13 @@ if (typeof window.ReportAPI !== 'undefined') {
                 'sector_id': sectorId
             };
             
+            // Log additional info for half-yearly periods
+            if (periodId == 5) {
+                console.log('Half Yearly 1 selected for report - backend should include Q1 and Q2 submissions');
+            } else if (periodId == 6) {
+                console.log('Half Yearly 2 selected for report - backend should include Q3 and Q4 submissions');
+            }
+            
             // Add selected program IDs to the API call if provided
             if (selectedProgramIds && selectedProgramIds.length > 0) {
                 params.selected_program_ids = selectedProgramIds.join(',');

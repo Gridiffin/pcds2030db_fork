@@ -52,8 +52,59 @@ if (!$period_id) {
     exit;
 }
 
+// Handle half-yearly period logic
+$period_ids = [$period_id];
+
+// Get period details to check if it's half-yearly
+$period_query = "SELECT period_id, quarter, year FROM reporting_periods WHERE period_id = ?";
+$stmt = $conn->prepare($period_query);
+$stmt->bind_param("i", $period_id);
+$stmt->execute();
+$period_result = $stmt->get_result();
+$period_data = $period_result->fetch_assoc();
+
+// Check if this is a half-yearly period based on quarter value
+if ($period_data && isset($period_data['quarter'])) {
+    $quarter = (int)$period_data['quarter'];
+    $year = $period_data['year'];
+    
+    if ($quarter == 5) { // Half Yearly 1 includes Q1 and Q2
+        // Find all Q1 and Q2 periods for the same year
+        $q1q2_query = "SELECT period_id FROM reporting_periods WHERE year = ? AND quarter IN (1, 2)";
+        $stmt = $conn->prepare($q1q2_query);
+        $stmt->bind_param("i", $year);
+        $stmt->execute();
+        $q1q2_result = $stmt->get_result();
+        
+        $period_ids = [$period_id]; // Always include the original period
+        while ($row = $q1q2_result->fetch_assoc()) {
+            $period_ids[] = $row['period_id'];
+        }
+        
+        error_log("Half Yearly 1 ($year) selected: Including period_ids " . implode(", ", $period_ids));
+    } elseif ($quarter == 6) { // Half Yearly 2 includes Q3 and Q4
+        // Find all Q3 and Q4 periods for the same year
+        $q3q4_query = "SELECT period_id FROM reporting_periods WHERE year = ? AND quarter IN (3, 4)";
+        $stmt = $conn->prepare($q3q4_query);
+        $stmt->bind_param("i", $year);
+        $stmt->execute();
+        $q3q4_result = $stmt->get_result();
+        
+        $period_ids = [$period_id]; // Always include the original period
+        while ($row = $q3q4_result->fetch_assoc()) {
+            $period_ids[] = $row['period_id'];
+        }
+        
+        error_log("Half Yearly 2 ($year) selected: Including period_ids " . implode(", ", $period_ids));
+    }
+}
+
 try {    // Get programs that have non-draft submissions for this period (only latest submission per program)
-    // Updated to include initiative information
+    // Updated to include initiative information and half-yearly period logic
+    
+    // Create the period IN clause
+    $period_in_clause = implode(',', array_fill(0, count($period_ids), '?'));
+    
     $programs_query = "SELECT DISTINCT p.program_id, p.program_name, p.program_number, p.initiative_id,
                       i.initiative_name, i.initiative_number, 
                       s.sector_id, s.sector_name, u.agency_name, u.user_id as owner_agency_id
@@ -64,12 +115,12 @@ try {    // Get programs that have non-draft submissions for this period (only l
                           INNER JOIN (
                               SELECT program_id, MAX(submission_date) as latest_date, MAX(submission_id) as latest_submission_id
                               FROM program_submissions
-                              WHERE period_id = ? AND is_draft = 0
+                              WHERE period_id IN ($period_in_clause) AND is_draft = 0
                               GROUP BY program_id
                           ) ps2 ON ps1.program_id = ps2.program_id 
                                AND ps1.submission_date = ps2.latest_date 
                                AND ps1.submission_id = ps2.latest_submission_id
-                          WHERE ps1.period_id = ? AND ps1.is_draft = 0
+                          WHERE ps1.period_id IN ($period_in_clause) AND ps1.is_draft = 0
                       ) ps ON p.program_id = ps.program_id
                       LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
                       LEFT JOIN sectors s ON p.sector_id = s.sector_id
@@ -80,12 +131,13 @@ try {    // Get programs that have non-draft submissions for this period (only l
                             (!empty($agency_ids) ? "AND p.owner_agency_id IN (" . implode(",", array_fill(0, count($agency_ids), '?')) . ") " : "") .
                       "ORDER BY i.initiative_name, s.sector_name, u.agency_name, p.program_name";
       // Add debug logging
-    error_log("Fetching programs for period_id: {$period_id}" . ($sector_id ? ", sector_id: {$sector_id}" : ", all sectors") . ($initiative_id ? ", initiative_id: {$initiative_id}" : ", all initiatives"));
+    $period_ids_str = implode(',', $period_ids);
+    error_log("Fetching programs for period_ids: {$period_ids_str}" . ($sector_id ? ", sector_id: {$sector_id}" : ", all sectors") . ($initiative_id ? ", initiative_id: {$initiative_id}" : ", all initiatives"));
     error_log("Fixed duplicate submission query - using MAX(submission_id) for tie-breaking");
     
-    // Prepare statement with dynamic params - need period_id twice for the nested subquery
-    $param_types = 'ii'; // Always need period_id twice
-    $params = [$period_id, $period_id];
+    // Prepare statement with dynamic params - need period_ids twice for the nested subquery (once for each IN clause)
+    $param_types = str_repeat('i', count($period_ids) * 2); // Period IDs repeated for two IN clauses
+    $params = array_merge($period_ids, $period_ids); // First set for first IN clause, second set for second IN clause
     
     if ($sector_id) {
         $param_types .= 'i';
