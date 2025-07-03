@@ -190,7 +190,7 @@ require_once '../../layouts/page_header.php';
 <!-- Draft Programs Card -->
 <div class="card shadow-sm mb-4 w-100 draft-programs-card">
     <div class="card-header d-flex justify-content-between align-items-center bg-light border-start border-warning border-4">
-        <h5 class="card-title m-0 d-flex align-items-center">
+        <h5 class="card-title view-programs-card-title m-0 d-flex align-items-center">
             <i class="fas fa-edit text-warning me-2"></i>
             Draft Programs 
             <span class="badge bg-warning text-dark ms-2" title="These programs are still in draft status and can be edited">
@@ -437,7 +437,7 @@ require_once '../../layouts/page_header.php';
 <!-- Finalized Programs Card -->
 <div class="card shadow-sm mb-4 w-100 finalized-programs-card">
     <div class="card-header d-flex justify-content-between align-items-center bg-light border-start border-success border-4">
-        <h5 class="card-title m-0 d-flex align-items-center">
+        <h5 class="card-title view-programs-card-title m-0 d-flex align-items-center">
             <i class="fas fa-check-circle text-success me-2"></i>
             Finalized Programs 
             <span class="badge bg-success ms-2" title="These programs have finalized submissions for the current period">
