@@ -8,6 +8,7 @@
 require_once '../../../../app/config/config.php';
 require_once '../../../../app/lib/db_connect.php';
 require_once '../../../../app/lib/session.php';
+require_once '../../../../app/lib/functions.php';
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
@@ -40,18 +41,7 @@ function formatPeriod($report) {
         return 'Unknown';
     }
     
-    $quarter = (int)$report['quarter'];
-    $year = $report['year'];
-    
-    if ($quarter >= 1 && $quarter <= 4) {
-        return "Q{$quarter} {$year}";
-    } elseif ($quarter == 5) {
-        return "H1 {$year}";
-    } elseif ($quarter == 6) {
-        return "H2 {$year}";
-    }
-    
-    return "Period {$quarter} {$year}";
+    return get_period_display_name($report);
 }
 ?>
 

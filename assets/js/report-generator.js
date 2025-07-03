@@ -22,12 +22,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const sectorSelect = document.getElementById('sectorSelect');
     const programSelector = document.getElementById('programSelector');
     const programContainerElement = programSelector ? programSelector.querySelector('.program-selector-container') : null;
+    const targetSelector = document.getElementById('targetSelector');
+    const targetContainerElement = targetSelector ? targetSelector.querySelector('.target-selector-container') : null;
+    const targetSelectionSection = document.getElementById('targetSelectionSection');
+    const targetCountElement = document.getElementById('targetCount');
     const agencyFilterContainer = document.getElementById('agencyFilterTags');
     const searchInput = document.getElementById('programSearchInput');
     const programCountBadge = document.getElementById('programCount');
 
     // --- Global State ---
     let globalProgramSelections = new Map(); // Tracks selected programs and their order
+    let globalTargetSelections = new Map(); // Tracks selected targets per program
+    let allProgramTargets = []; // Stores targets for all selected programs
     let nextOrderNumber = 1;
     let allLoadedPrograms = []; // Stores all programs fetched from the API for a period
     let filteredPrograms = []; // Stores programs after applying filters
@@ -202,6 +208,232 @@ document.addEventListener('DOMContentLoaded', function() {
                     `;
                 }
             });
+    }
+
+    // Load targets for selected programs
+    function loadTargets() {
+        const selectedPrograms = getSelectedPrograms();
+        const periodId = periodSelect.value;
+        const sectorId = sectorSelect.value;
+
+        if (!periodId || selectedPrograms.length === 0) {
+            hideTargetSelection();
+            return;
+        }
+
+        // Show target selection section
+        showTargetSelection();
+        showTargetsLoading();
+
+        // Get selected program IDs
+        const programIds = selectedPrograms.map(p => p.program_id).join(',');
+        
+        const url = `${APP_URL}/app/api/get_program_targets.php?period_id=${periodId}&sector_id=${sectorId}&selected_program_ids=${programIds}`;
+
+        fetch(url)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (!data.success || !data.programs) {
+                    throw new Error(data.error || 'Invalid response from server');
+                }
+
+                allProgramTargets = data.programs;
+                displayTargets(allProgramTargets);
+                updateTargetCount();
+            })
+            .catch(error => {
+                console.error('Error loading targets:', error);
+                
+                if (targetContainerElement) {
+                    targetContainerElement.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            Error loading targets: ${error.message}
+                        </div>
+                    `;
+                }
+            });
+    }
+
+    // Display targets in the UI
+    function displayTargets(programsWithTargets) {
+        if (!targetContainerElement) return;
+
+        if (!programsWithTargets || programsWithTargets.length === 0) {
+            targetContainerElement.innerHTML = `
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    No targets found for the selected programs.
+                </div>
+            `;
+            return;
+        }
+
+        let html = '';
+
+        programsWithTargets.forEach(program => {
+            html += `
+                <div class="program-targets-group mb-4">
+                    <div class="program-header bg-light p-2 rounded mb-2">
+                        <h6 class="mb-0">
+                            <i class="fas fa-folder me-2"></i>${program.program_name}
+                            <span class="badge bg-secondary ms-2">${program.target_count} targets</span>
+                        </h6>
+                    </div>
+                    <div class="targets-list">
+            `;
+
+            program.targets.forEach(target => {
+                const targetId = `target_${program.program_id}_${target.target_id}`;
+                html += `
+                    <div class="target-item border rounded p-3 mb-2">
+                        <div class="form-check">
+                            <input class="form-check-input target-checkbox" 
+                                   type="checkbox" 
+                                   id="${targetId}"
+                                   data-program-id="${program.program_id}"
+                                   data-target-id="${target.target_id}"
+                                   ${target.selected ? 'checked' : ''}>
+                            <label class="form-check-label w-100" for="${targetId}">
+                                <div class="target-content">
+                                    <div class="target-header d-flex justify-content-between align-items-start mb-2">
+                                        <strong class="target-number">Target ${target.target_number}</strong>
+                                        <span class="badge bg-info">${target.period_label}</span>
+                                    </div>
+                                    <div class="target-text mb-2">
+                                        <strong>Target:</strong>
+                                        <div class="text-muted">${target.target_text.replace(/\n/g, '<br>')}</div>
+                                    </div>
+                                    <div class="status-text">
+                                        <strong>Status:</strong>
+                                        <div class="text-muted">${target.status_description.replace(/\n/g, '<br>')}</div>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `
+                    </div>
+                </div>
+            `;
+        });
+
+        targetContainerElement.innerHTML = html;
+
+        // Add event listeners to target checkboxes
+        const targetCheckboxes = targetContainerElement.querySelectorAll('.target-checkbox');
+        targetCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', handleTargetSelection);
+        });
+    }
+
+    // Handle target selection
+    function handleTargetSelection(event) {
+        const checkbox = event.target;
+        const programId = checkbox.dataset.programId;
+        const targetId = checkbox.dataset.targetId;
+        const isSelected = checkbox.checked;
+
+        // Update global target selections
+        if (!globalTargetSelections.has(programId)) {
+            globalTargetSelections.set(programId, new Set());
+        }
+
+        const programTargets = globalTargetSelections.get(programId);
+        
+        if (isSelected) {
+            programTargets.add(targetId);
+        } else {
+            programTargets.delete(targetId);
+        }
+
+        updateTargetCount();
+    }
+
+    // Update target count display
+    function updateTargetCount() {
+        if (!targetCountElement) return;
+
+        let totalSelected = 0;
+        for (const [programId, targetSet] of globalTargetSelections) {
+            totalSelected += targetSet.size;
+        }
+
+        targetCountElement.textContent = totalSelected;
+    }
+
+    // Show target selection section
+    function showTargetSelection() {
+        if (targetSelectionSection) {
+            targetSelectionSection.style.display = 'block';
+        }
+    }
+
+    // Hide target selection section
+    function hideTargetSelection() {
+        if (targetSelectionSection) {
+            targetSelectionSection.style.display = 'none';
+        }
+        // Clear target selections
+        globalTargetSelections.clear();
+        allProgramTargets = [];
+    }
+
+    // Show targets loading state
+    function showTargetsLoading() {
+        if (!targetContainerElement) return;
+
+        targetContainerElement.innerHTML = `
+            <div class="text-center p-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading targets...</span>
+                </div>
+                <div class="mt-2">Loading targets...</div>
+            </div>
+        `;
+    }
+
+    // Get selected targets data for report generation
+    function getSelectedTargets() {
+        const selectedTargets = {};
+        
+        for (const [programId, targetSet] of globalTargetSelections) {
+            if (targetSet.size > 0) {
+                selectedTargets[programId] = Array.from(targetSet);
+            }
+        }
+
+        return selectedTargets;
+    }
+
+    // Select all targets
+    function selectAllTargets() {
+        const targetCheckboxes = document.querySelectorAll('.target-checkbox');
+        targetCheckboxes.forEach(checkbox => {
+            if (!checkbox.checked) {
+                checkbox.checked = true;
+                checkbox.dispatchEvent(new Event('change'));
+            }
+        });
+    }
+
+    // Clear all target selections
+    function clearAllTargets() {
+        const targetCheckboxes = document.querySelectorAll('.target-checkbox');
+        targetCheckboxes.forEach(checkbox => {
+            if (checkbox.checked) {
+                checkbox.checked = false;
+                checkbox.dispatchEvent(new Event('change'));
+            }
+        });
     }
     
     function updateProgramOrder() {
@@ -720,6 +952,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 resetAllFilters();
             });
         }
+
+        // Target selection event listeners
+        const selectAllTargetsBtn = document.getElementById('selectAllTargets');
+        if (selectAllTargetsBtn) {
+            selectAllTargetsBtn.addEventListener('click', function() {
+                selectAllTargets();
+            });
+        }
+
+        const clearAllTargetsBtn = document.getElementById('clearAllTargets');
+        if (clearAllTargetsBtn) {
+            clearAllTargetsBtn.addEventListener('click', function() {
+                clearAllTargets();
+            });
+        }
     }
 
     // Call the enhanced filter setup
@@ -1020,6 +1267,9 @@ document.addEventListener('DOMContentLoaded', function() {
             showNotification('All visible programs are already selected', 'info');
         }
         applyAllFilters();
+        
+        // Load targets for newly selected programs
+        loadTargets();
     }
     function clearAllProgramSelections() {
         // Clear global selections state
@@ -1059,6 +1309,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Refresh the program list and count
         applyAllFilters();
+        
+        // Update target selection when programs are cleared
+        loadTargets();
     }
     function resetAllFilters() {
         // Clear search
@@ -1162,6 +1415,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
                 applyAllFilters(); // Re-render to update the selected banner
+                
+                // Load targets when program selection changes
+                loadTargets();
             });
         });
         
@@ -1271,6 +1527,97 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function getSelectedAgencyIds() {
         return selectedAgencyIds.length > 0 ? selectedAgencyIds : [];
+    }
+
+    
+    // Form submission handler
+    const reportForm = document.getElementById('reportGenerationForm');
+    if (reportForm) {
+        reportForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const selectedPrograms = getSelectedPrograms();
+            const selectedTargets = getSelectedTargets();
+            
+            // Add selected programs with their order
+            selectedPrograms.forEach((program, index) => {
+                formData.append(`selected_programs[${index}][program_id]`, program.program_id);
+                formData.append(`selected_programs[${index}][order]`, program.order || index + 1);
+            });
+            
+            // Add selected targets
+            for (const [programId, targetIds] of Object.entries(selectedTargets)) {
+                targetIds.forEach((targetId, index) => {
+                    formData.append(`selected_targets[${programId}][${index}]`, targetId);
+                });
+            }
+            
+            // Log for debugging
+            console.log('Form submission data:');
+            console.log('Selected programs:', selectedPrograms);
+            console.log('Selected targets:', selectedTargets);
+            
+            // Show loading state
+            const submitBtn = document.getElementById('generatePptxBtn');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generating...';
+            
+            // Submit to report generation endpoint
+            fetch(`${APP_URL}/app/api/generate_report.php`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    showNotification('Report generated successfully!', 'success');
+                    
+                    // Reset form if needed
+                    // this.reset();
+                    // clearAllProgramSelections();
+                    // hideTargetSelection();
+                    
+                    // Optionally redirect or refresh reports list
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                } else {
+                    throw new Error(data.error || 'Failed to generate report');
+                }
+            })
+            .catch(error => {
+                console.error('Error generating report:', error);
+                showNotification('Error generating report: ' + error.message, 'error');
+            })
+            .finally(() => {
+                // Reset button state
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            });
+        });
+    }
+
+    // Function to get selected programs data
+    function getSelectedPrograms() {
+        const selectedPrograms = [];
+        for (const [programId, data] of globalProgramSelections) {
+            if (data.selected) {
+                selectedPrograms.push({
+                    program_id: programId,
+                    order: data.order,
+                    agency: data.agency,
+                    program_name: data.program_name,
+                    program_number: data.program_number
+                });
+            }
+        }
+        
+        // Sort by order
+        selectedPrograms.sort((a, b) => (a.order || 0) - (b.order || 0));
+        return selectedPrograms;
     }
 
 }); // End of DOMContentLoaded

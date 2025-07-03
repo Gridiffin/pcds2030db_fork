@@ -146,18 +146,7 @@ function formatPeriod($report) {
         return 'Unknown';
     }
     
-    $quarter = (int)$report['quarter'];
-    $year = $report['year'];
-    
-    if ($quarter >= 1 && $quarter <= 4) {
-        return "Q{$quarter} {$year}";
-    } elseif ($quarter == 5) {
-        return "H1 {$year}";
-    } elseif ($quarter == 6) {
-        return "H2 {$year}";
-    }
-    
-    return "Period {$quarter} {$year}";
+    return get_period_display_name($report);
 }
 
 // Fetch data for page
@@ -426,6 +415,57 @@ $jsConfig = [
                                         <div class="alert alert-light text-center">
                                             <i class="fas fa-arrow-up me-2"></i>
                                             Please select a reporting period above to load available programs.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Target Selection Section -->
+                            <div class="mb-4" id="targetSelectionSection" style="display: none;">
+                                <label class="form-label">
+                                    <i class="fas fa-bullseye me-1"></i>Select Targets to Include
+                                    <small class="text-muted">(Optional - Choose specific targets per program)</small>
+                                </label>
+                                
+                                <div class="target-selection-info mb-3">
+                                    <div class="alert alert-info border-info">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <strong>Target Selection:</strong> Review and select specific targets to include in your report. 
+                                        All targets are selected by default. Uncheck targets you want to exclude.
+                                    </div>
+                                </div>
+                                
+                                <div class="target-selector-controls mb-3">
+                                    <div class="d-flex gap-2">
+                                        <button type="button" 
+                                                class="btn btn-outline-success btn-sm" 
+                                                id="selectAllTargets"
+                                                title="Select all targets">
+                                            <i class="fas fa-check-square me-1"></i>Select All Targets
+                                        </button>
+                                        <button type="button" 
+                                                class="btn btn-outline-secondary btn-sm" 
+                                                id="clearAllTargets"
+                                                title="Deselect all targets">
+                                            <i class="fas fa-square me-1"></i>Deselect All
+                                        </button>
+                                        <div class="ms-auto">
+                                            <span class="badge bg-primary" id="selectedTargetCount">
+                                                <i class="fas fa-bullseye me-1"></i>
+                                                <span id="targetCount">0</span> targets selected
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div id="targetSelector" class="target-selector">
+                                    <div class="target-selector-container border rounded p-3" 
+                                         style="max-height: 400px; overflow-y: auto;" 
+                                         role="region" 
+                                         aria-label="Target selection">
+                                        <div class="alert alert-light text-center">
+                                            <i class="fas fa-arrow-up me-2"></i>
+                                            Please select programs above to load available targets.
                                         </div>
                                     </div>
                                 </div>
