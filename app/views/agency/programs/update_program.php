@@ -841,18 +841,32 @@ if ($current_submission) {
         $brief_description = $current_submission['brief_description'] ?? '';
     }
 } else {
-    // No current submission, initialize empty targets with new structure
-    $targets = [[
-        'target_number' => '',
-        'target_text' => '',
-        'status_description' => '',
-        'target_status' => 'not-started',
-        'start_date' => null,
-        'end_date' => null
-    ]];
-    $rating = 'not-started';
-    $remarks = '';
-    $brief_description = '';
+    // No submission for this period: carry over incomplete targets from previous period
+    $targets = [];
+    $prev_submission = null;
+    // Find the latest previous period with a submission
+    if (isset($program['submissions']) && is_array($program['submissions'])) {
+        // Sort submissions by period_id descending (latest first, but less than selected_period_id)
+        $prev_subs = array_filter($program['submissions'], function($sub) use ($selected_period_id) {
+            return isset($sub['period_id']) && $sub['period_id'] < $selected_period_id;
+        });
+        usort($prev_subs, function($a, $b) {
+            return $b['period_id'] <=> $a['period_id'];
+        });
+        if (!empty($prev_subs)) {
+            $prev_submission = $prev_subs[0];
+        }
+    }
+    if ($prev_submission && isset($prev_submission['content_json'])) {
+        $prev_content = json_decode($prev_submission['content_json'], true);
+        if (isset($prev_content['targets']) && is_array($prev_content['targets'])) {
+            foreach ($prev_content['targets'] as $target) {
+                if (!isset($target['target_status']) || strtolower($target['target_status']) !== 'completed') {
+                    $targets[] = $target;
+                }
+            }
+        }
+    }
 }
 
 // Ensure $brief_description is always defined as a string to prevent warnings and deprecated notices
