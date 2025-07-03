@@ -58,6 +58,7 @@ try {
     $period_id = $current_period['period_id']; // Moved this line here
 
     // First, validate that the program has content to submit
+    // Try to find a submission for the current period first
     $validation_query = "SELECT content_json FROM program_submissions 
                         WHERE program_id = ? AND period_id = ? 
                         ORDER BY submission_date DESC, submission_id DESC 
@@ -67,22 +68,55 @@ try {
     $validation_stmt->execute();
     $validation_result = $validation_stmt->get_result();
     
+    $existing_content = null;
+    $has_current_period_submission = false;
+    
     if ($validation_result->num_rows > 0) {
         $validation_row = $validation_result->fetch_assoc();
         $existing_content = $validation_row['content_json'];
+        $has_current_period_submission = true;
+    } else {
+        // No submission for current period, check if program has any submissions from other periods
+        $any_submission_query = "SELECT content_json FROM program_submissions 
+                               WHERE program_id = ? 
+                               ORDER BY submission_date DESC, submission_id DESC 
+                               LIMIT 1";
+        $any_submission_stmt = $conn->prepare($any_submission_query);
+        $any_submission_stmt->bind_param("i", $program_id);
+        $any_submission_stmt->execute();
+        $any_submission_result = $any_submission_stmt->get_result();
         
-        // Validate content exists and has required fields        
-        if (empty($existing_content) || $existing_content === 'null') {
-            // Log content validation failure
-            log_audit_action(
-                'program_submit_no_content',
-                "Program submission failed - no content available (Program ID: {$program_id}, Period ID: {$period_id})",
-                'failure',
-                $_SESSION['user_id'] ?? null
-            );
-            echo json_encode(['status' => 'error', 'message' => 'Cannot submit program without content. Please add targets and rating first.']);
-            exit;
+        if ($any_submission_result->num_rows > 0) {
+            $any_submission_row = $any_submission_result->fetch_assoc();
+            $existing_content = $any_submission_row['content_json'];
+        } else {
+            // No submissions at all, check if program exists and has basic data
+            $program_check_query = "SELECT program_name FROM programs WHERE program_id = ?";
+            $program_check_stmt = $conn->prepare($program_check_query);
+            $program_check_stmt->bind_param("i", $program_id);
+            $program_check_stmt->execute();
+            $program_check_result = $program_check_stmt->get_result();
+            
+            if ($program_check_result->num_rows === 0) {
+                // Program doesn't exist
+                log_audit_action(
+                    'program_submit_invalid_program',
+                    "Program submission failed - program does not exist (Program ID: {$program_id})",
+                    'failure',
+                    $_SESSION['user_id'] ?? null
+                );
+                echo json_encode(['status' => 'error', 'message' => 'Invalid program ID.']);
+                exit;
+            }
+            
+            // Program exists but has no submissions - this is OK for new programs
+            // We'll allow submission but will need to create content from form data or use defaults
+            $existing_content = null;
         }
+    }
+    
+    // Validate content if we have it
+    if (!empty($existing_content) && $existing_content !== 'null') {
         $content_data = json_decode($existing_content, true);
         if (!$content_data || (empty($content_data['targets']) && empty($content_data['target'])) || empty($content_data['rating'])) {
             // Log validation failure for incomplete content
@@ -95,16 +129,15 @@ try {
             echo json_encode(['status' => 'error', 'message' => 'Cannot submit program without targets and rating. Please complete the program details first.']);
             exit;
         }
-    } else { // Added else to handle case where no validation result is found
-        // Log content validation failure - no prior submission found
+    } else {
+        // No existing content, program might be new - this is acceptable
+        // The submission will be created with minimal content or default values
         log_audit_action(
-            'program_submit_no_prior_submission',
-            "Program submission failed - no prior submission or draft found to validate content (Program ID: {$program_id}, Period ID: {$period_id})",
-            'failure',
+            'program_submit_new_program',
+            "Program submission for new program without prior content (Program ID: {$program_id}, Period ID: {$period_id})",
+            'info',
             $_SESSION['user_id'] ?? null
         );
-        echo json_encode(['status' => 'error', 'message' => 'Cannot submit program. No prior submission or draft found to validate content.']);
-        exit;
     }
     
     // CASCADING SUBMISSION LOGIC: Finalize ALL other drafts for this program (any period)
@@ -191,6 +224,37 @@ try {
             if ($content_result->num_rows > 0) {
                 $content_row = $content_result->fetch_assoc();
                 $content_json = $content_row['content_json'];
+            } else {
+                // No existing content found, create minimal content for new program
+                // Get basic program info from the programs table
+                $program_info_query = "SELECT program_name, program_number FROM programs WHERE program_id = ?";
+                $program_info_stmt = $conn->prepare($program_info_query);
+                $program_info_stmt->bind_param("i", $program_id);
+                $program_info_stmt->execute();
+                $program_info_result = $program_info_stmt->get_result();
+                
+                if ($program_info_result->num_rows > 0) {
+                    $program_info = $program_info_result->fetch_assoc();
+                    
+                    // Create minimal content for submission
+                    $minimal_content = [
+                        'rating' => 'not-started',
+                        'targets' => [
+                            [
+                                'target_text' => 'Initial submission',
+                                'status_description' => 'Program submitted for the first time',
+                                'target_status' => 'not-started'
+                            ]
+                        ],
+                        'remarks' => 'Initial program submission',
+                        'program_name' => $program_info['program_name'],
+                        'program_number' => $program_info['program_number'] ?? ''
+                    ];
+                    $content_json = json_encode($minimal_content);
+                } else {
+                    echo json_encode(['status' => 'error', 'message' => 'Program not found.']);
+                    exit;
+                }
             }
             
             // Validate that we have meaningful content to submit
@@ -199,12 +263,29 @@ try {
                 exit;
             }
             
-            // Additional validation: check if content has required fields
+            // Validate content structure (but be more lenient for new programs)
             $content_data = json_decode($content_json, true);
-            if (!$content_data || (empty($content_data['targets']) && empty($content_data['target'])) || empty($content_data['rating'])) {
-                echo json_encode(['status' => 'error', 'message' => 'Cannot submit program without targets and rating. Please complete the program details first.']);
+            if (!$content_data) {
+                echo json_encode(['status' => 'error', 'message' => 'Invalid program content format.']);
                 exit;
             }
+            
+            // Ensure minimal required fields exist
+            if (empty($content_data['rating'])) {
+                $content_data['rating'] = 'not-started';
+            }
+            if (empty($content_data['targets']) && empty($content_data['target'])) {
+                $content_data['targets'] = [
+                    [
+                        'target_text' => 'Initial submission',
+                        'status_description' => 'Program submitted for the first time',
+                        'target_status' => 'not-started'
+                    ]
+                ];
+            }
+            
+            // Update content_json with any defaults we added
+            $content_json = json_encode($content_data);
             
             // CASCADING SUBMISSION LOGIC: Finalize ALL other drafts for this program (any period)
             $cascade_query = "UPDATE program_submissions 
