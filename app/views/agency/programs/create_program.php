@@ -266,6 +266,7 @@ require_once '../../layouts/page_header.php';
                                     <select class="form-select" id="period_id" name="period_id" required>
                                         <option value="">Select a reporting quarter</option>
                                         <?php foreach ($reporting_periods as $period): ?>
+                                            <?php if (!preg_match('/Q[1-4]\b/i', $period['display_name'])) continue; ?>
                                             <option value="<?php echo $period['period_id']; ?>"
                                                     <?php echo (isset($_POST['period_id']) && $_POST['period_id'] == $period['period_id']) ? 'selected' : ''; ?>
                                                     data-status="<?php echo $period['status']; ?>">
