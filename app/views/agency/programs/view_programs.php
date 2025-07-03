@@ -40,8 +40,9 @@ $pageTitle = 'View Programs';
 
 // Add additional scripts
 $additionalScripts = [
-    APP_URL . '/assets/js/agency/view_programs.js',
-    APP_URL . '/assets/js/utilities/table_sorting.js'
+    APP_URL . '/assets/js/utilities/table_sorting.js',
+    APP_URL . '/assets/js/utilities/pagination.js',
+    APP_URL . '/assets/js/agency/view_programs.js'
 ];
 
 // Get active initiatives for filtering
@@ -157,6 +158,15 @@ $additionalScripts = [
     APP_URL . '/assets/js/utilities/table_sorting.js' // Add table sorting script
 ];
 
+// Function to render rating badge
+function renderRatingBadge($rating_map, $current_rating) {
+    return '<span class="badge bg-' . $rating_map[$current_rating]['class'] . ' rating-badge" ' .
+           'title="' . htmlspecialchars($rating_map[$current_rating]['label']) . '">' .
+           '<i class="' . $rating_map[$current_rating]['icon'] . ' me-1"></i>' .
+           htmlspecialchars($rating_map[$current_rating]['label']) .
+           '</span>';
+}
+
 // Include header
 require_once '../../layouts/header.php';
 
@@ -178,9 +188,16 @@ require_once '../../layouts/page_header.php';
 </div>
 
 <!-- Draft Programs Card -->
-<div class="card shadow-sm mb-4 w-100">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="card-title m-0">Draft Programs</h5>
+<div class="card shadow-sm mb-4 w-100 draft-programs-card">
+    <div class="card-header d-flex justify-content-between align-items-center bg-light border-start border-warning border-4">
+        <h5 class="card-title view-programs-card-title m-0 d-flex align-items-center">
+            <i class="fas fa-edit text-warning me-2"></i>
+            Draft Programs 
+            <span class="badge bg-warning text-dark ms-2" title="These programs are still in draft status and can be edited">
+                <i class="fas fa-pencil-alt me-1"></i> Editable
+            </span>
+            <span class="badge bg-secondary ms-2" id="draft-count">0</span>
+        </h5>
     </div>
     
     <!-- Draft Programs Filters -->    <div class="card-body pb-0">
@@ -235,11 +252,25 @@ require_once '../../layouts/page_header.php';
         <div class="table-responsive">            <table class="table table-hover table-custom mb-0" id="draftProgramsTable">
                 <thead class="table-light">
                     <tr>
-                        <th class="sortable" data-sort="name">Program Name <i class="fas fa-sort ms-1"></i></th>
-                        <th class="sortable initiative-display" data-sort="initiative">Initiative <i class="fas fa-sort ms-1"></i></th>
-                        <th class="sortable" data-sort="rating">Rating <i class="fas fa-sort ms-1"></i></th>
-                        <th class="sortable" data-sort="date">Last Updated <i class="fas fa-sort ms-1"></i></th>
-                        <th class="text-end">Actions</th>
+                        <th class="sortable" data-sort="name">
+                            <i class="fas fa-project-diagram me-1"></i>Program Information 
+                            <i class="fas fa-sort ms-1"></i>
+                        </th>
+                        <th class="sortable initiative-display" data-sort="initiative">
+                            <i class="fas fa-lightbulb me-1"></i>Initiative 
+                            <i class="fas fa-sort ms-1"></i>
+                        </th>
+                        <th class="sortable" data-sort="rating">
+                            <i class="fas fa-chart-line me-1"></i>Progress Rating 
+                            <i class="fas fa-sort ms-1"></i>
+                        </th>
+                        <th class="sortable" data-sort="date">
+                            <i class="fas fa-clock me-1"></i>Last Updated 
+                            <i class="fas fa-sort ms-1"></i>
+                        </th>
+                        <th class="text-end">
+                            <i class="fas fa-cog me-1"></i>Actions
+                        </th>
                     </tr>
                 </thead>
                 <tbody>                    <?php if (empty($draft_programs)): ?>
@@ -253,15 +284,43 @@ require_once '../../layouts/page_header.php';
                               // Convert rating for display
                             $current_rating = isset($program['rating']) ? convert_legacy_rating($program['rating']) : 'not-started';
                             
-                            // Map database rating values to display labels and classes
+                            // Map database rating values to display labels, classes, and icons
                             $rating_map = [
-                                'on-track' => ['label' => 'On Track', 'class' => 'warning'],
-                                'on-track-yearly' => ['label' => 'On Track for Year', 'class' => 'warning'],
-                                'target-achieved' => ['label' => 'Monthly Target Achieved', 'class' => 'success'],
-                                'delayed' => ['label' => 'Delayed', 'class' => 'danger'],
-                                'severe-delay' => ['label' => 'Severe Delays', 'class' => 'danger'],
-                                'completed' => ['label' => 'Completed', 'class' => 'primary'],
-                                'not-started' => ['label' => 'Not Started', 'class' => 'secondary']
+                                'on-track' => [
+                                    'label' => 'On Track', 
+                                    'class' => 'success',
+                                    'icon' => 'fas fa-check-circle'
+                                ],
+                                'on-track-yearly' => [
+                                    'label' => 'On Track for Year', 
+                                    'class' => 'warning',
+                                    'icon' => 'fas fa-calendar-check'
+                                ],
+                                'target-achieved' => [
+                                    'label' => 'Target Achieved', 
+                                    'class' => 'success',
+                                    'icon' => 'fas fa-trophy'
+                                ],
+                                'delayed' => [
+                                    'label' => 'Delayed', 
+                                    'class' => 'warning',
+                                    'icon' => 'fas fa-clock'
+                                ],
+                                'severe-delay' => [
+                                    'label' => 'Severe Delays', 
+                                    'class' => 'danger',
+                                    'icon' => 'fas fa-exclamation-triangle'
+                                ],
+                                'completed' => [
+                                    'label' => 'Completed', 
+                                    'class' => 'primary',
+                                    'icon' => 'fas fa-flag-checkered'
+                                ],
+                                'not-started' => [
+                                    'label' => 'Not Started', 
+                                    'class' => 'secondary',
+                                    'icon' => 'fas fa-circle'
+                                ]
                             ];
                             
                             // Set default if rating is not in our map
@@ -272,7 +331,7 @@ require_once '../../layouts/page_header.php';
                             // Check if this is a draft
                             $is_draft = isset($program['is_draft']) && $program['is_draft'] ? true : false;
                         ?>                            <tr class="<?php echo $is_draft ? 'draft-program' : ''; ?>"                                data-program-type="<?php echo $is_assigned ? 'assigned' : 'created'; ?>">                                <!-- Draft programs initiative column -->
-                                <td class="text-truncate" style="max-width: 300px;">
+                                <td class="text-truncate program-name-col">
                                     <div class="fw-medium">
                                         <span class="program-name" title="<?php echo htmlspecialchars($program['program_name']); ?>">
                                             <?php if (!empty($program['program_number'])): ?>
@@ -289,7 +348,9 @@ require_once '../../layouts/page_header.php';
                                         <?php echo $is_assigned ? 'Assigned' : 'Agency-Created'; ?>
                                     </div>
                                 </td>
-                                <td class="text-truncate" style="max-width: 250px;">
+                                <td class="text-truncate initiative-col" 
+                                    data-initiative="<?php echo !empty($program['initiative_name']) ? htmlspecialchars($program['initiative_name']) : 'zzz_no_initiative'; ?>"
+                                    data-initiative-id="<?php echo $program['initiative_id'] ?? '0'; ?>">
                                     <?php if (!empty($program['initiative_name'])): ?>
                                         <span class="badge bg-primary initiative-badge" title="Initiative">
                                             <i class="fas fa-lightbulb me-1"></i>
@@ -311,8 +372,21 @@ require_once '../../layouts/page_header.php';
                                         </span>
                                     <?php endif; ?>
                                 </td>
-                                <td>
-                                    <span class="badge bg-<?php echo $rating_map[$current_rating]['class']; ?>">
+                                <td data-rating="<?php echo $current_rating; ?>" data-rating-order="<?php 
+                                    $rating_order = [
+                                        'target-achieved' => 1,
+                                        'on-track' => 2, 
+                                        'on-track-yearly' => 2,
+                                        'delayed' => 3,
+                                        'severe-delay' => 4,
+                                        'completed' => 5,
+                                        'not-started' => 6
+                                    ];
+                                    echo $rating_order[$current_rating] ?? 999;
+                                ?>">
+                                    <span class="badge bg-<?php echo $rating_map[$current_rating]['class']; ?> rating-badge" 
+                                          title="<?php echo $rating_map[$current_rating]['label']; ?>">
+                                        <i class="<?php echo $rating_map[$current_rating]['icon']; ?> me-1"></i>
                                         <?php echo $rating_map[$current_rating]['label']; ?>
                                     </span>
                                 </td>
@@ -361,13 +435,15 @@ require_once '../../layouts/page_header.php';
 </div>
 
 <!-- Finalized Programs Card -->
-<div class="card shadow-sm mb-4 w-100">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="card-title m-0">
+<div class="card shadow-sm mb-4 w-100 finalized-programs-card">
+    <div class="card-header d-flex justify-content-between align-items-center bg-light border-start border-success border-4">
+        <h5 class="card-title view-programs-card-title m-0 d-flex align-items-center">
+            <i class="fas fa-check-circle text-success me-2"></i>
             Finalized Programs 
-            <span class="badge bg-info ms-2" title="These programs have finalized submissions for the current period">
-                <i class="fas fa-lock me-1"></i> No longer editable
+            <span class="badge bg-success ms-2" title="These programs have finalized submissions for the current period">
+                <i class="fas fa-lock me-1"></i> Finalized
             </span>
+            <span class="badge bg-secondary ms-2" id="finalized-count">0</span>
         </h5>
     </div>
     
@@ -422,11 +498,25 @@ require_once '../../layouts/page_header.php';
         <div class="table-responsive">            <table class="table table-hover table-custom mb-0" id="finalizedProgramsTable">
                 <thead class="table-light">
                     <tr>
-                        <th class="sortable" data-sort="name">Program Name <i class="fas fa-sort ms-1"></i></th>
-                        <th class="sortable initiative-display" data-sort="initiative">Initiative <i class="fas fa-sort ms-1"></i></th>
-                        <th class="sortable" data-sort="rating">Rating <i class="fas fa-sort ms-1"></i></th>
-                        <th class="sortable" data-sort="date">Last Updated <i class="fas fa-sort ms-1"></i></th>
-                        <th class="text-end">Actions</th>
+                        <th class="sortable" data-sort="name">
+                            <i class="fas fa-project-diagram me-1"></i>Program Information 
+                            <i class="fas fa-sort ms-1"></i>
+                        </th>
+                        <th class="sortable initiative-display" data-sort="initiative">
+                            <i class="fas fa-lightbulb me-1"></i>Initiative 
+                            <i class="fas fa-sort ms-1"></i>
+                        </th>
+                        <th class="sortable" data-sort="rating">
+                            <i class="fas fa-chart-line me-1"></i>Progress Rating 
+                            <i class="fas fa-sort ms-1"></i>
+                        </th>
+                        <th class="sortable" data-sort="date">
+                            <i class="fas fa-clock me-1"></i>Last Updated 
+                            <i class="fas fa-sort ms-1"></i>
+                        </th>
+                        <th class="text-end">
+                            <i class="fas fa-cog me-1"></i>Actions
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
@@ -441,15 +531,43 @@ require_once '../../layouts/page_header.php';
                             // Convert rating for display
                             $current_rating = isset($program['rating']) ? convert_legacy_rating($program['rating']) : 'not-started';
                             
-                            // Map database rating values to display labels and classes
+                            // Map database rating values to display labels, classes, and icons
                             $rating_map = [
-                                'on-track' => ['label' => 'On Track', 'class' => 'warning'],
-                                'on-track-yearly' => ['label' => 'On Track for Year', 'class' => 'warning'],
-                                'target-achieved' => ['label' => 'Monthly Target Achieved', 'class' => 'success'],
-                                'delayed' => ['label' => 'Delayed', 'class' => 'danger'],
-                                'severe-delay' => ['label' => 'Severe Delays', 'class' => 'danger'],
-                                'completed' => ['label' => 'Completed', 'class' => 'primary'],
-                                'not-started' => ['label' => 'Not Started', 'class' => 'secondary']
+                                'on-track' => [
+                                    'label' => 'On Track', 
+                                    'class' => 'success',
+                                    'icon' => 'fas fa-check-circle'
+                                ],
+                                'on-track-yearly' => [
+                                    'label' => 'On Track for Year', 
+                                    'class' => 'warning',
+                                    'icon' => 'fas fa-calendar-check'
+                                ],
+                                'target-achieved' => [
+                                    'label' => 'Target Achieved', 
+                                    'class' => 'success',
+                                    'icon' => 'fas fa-trophy'
+                                ],
+                                'delayed' => [
+                                    'label' => 'Delayed', 
+                                    'class' => 'warning',
+                                    'icon' => 'fas fa-clock'
+                                ],
+                                'severe-delay' => [
+                                    'label' => 'Severe Delays', 
+                                    'class' => 'danger',
+                                    'icon' => 'fas fa-exclamation-triangle'
+                                ],
+                                'completed' => [
+                                    'label' => 'Completed', 
+                                    'class' => 'primary',
+                                    'icon' => 'fas fa-flag-checkered'
+                                ],
+                                'not-started' => [
+                                    'label' => 'Not Started', 
+                                    'class' => 'secondary',
+                                    'icon' => 'fas fa-circle'
+                                ]
                             ];
                             
                             // Set default if rating is not in our map
@@ -457,7 +575,7 @@ require_once '../../layouts/page_header.php';
                                 $current_rating = 'not-started';
                             }                        ?>                            <tr data-program-type="<?php echo $is_assigned ? 'assigned' : 'created'; ?>">
                                 <!-- Finalized programs initiative column -->
-                                <td class="text-truncate" style="max-width: 300px;">
+                                <td class="text-truncate program-name-col">
                                     <div class="fw-medium">
                                         <span class="program-name" title="<?php echo htmlspecialchars($program['program_name']); ?>">
                                             <?php if (!empty($program['program_number'])): ?>
@@ -471,7 +589,9 @@ require_once '../../layouts/page_header.php';
                                         <?php echo $is_assigned ? 'Assigned' : 'Agency-Created'; ?>
                                     </div>
                                 </td>
-                                <td class="text-truncate" style="max-width: 250px;">
+                                <td class="text-truncate initiative-col" 
+                                    data-initiative="<?php echo !empty($program['initiative_name']) ? htmlspecialchars($program['initiative_name']) : 'zzz_no_initiative'; ?>"
+                                    data-initiative-id="<?php echo $program['initiative_id'] ?? '0'; ?>">
                                     <?php if (!empty($program['initiative_name'])): ?>
                                         <span class="badge bg-primary initiative-badge" title="Initiative">
                                             <i class="fas fa-lightbulb me-1"></i>
@@ -493,8 +613,21 @@ require_once '../../layouts/page_header.php';
                                         </span>
                                     <?php endif; ?>
                                 </td>
-                                <td>
-                                    <span class="badge bg-<?php echo $rating_map[$current_rating]['class']; ?>">
+                                <td data-rating="<?php echo $current_rating; ?>" data-rating-order="<?php 
+                                    $rating_order = [
+                                        'target-achieved' => 1,
+                                        'on-track' => 2, 
+                                        'on-track-yearly' => 2,
+                                        'delayed' => 3,
+                                        'severe-delay' => 4,
+                                        'completed' => 5,
+                                        'not-started' => 6
+                                    ];
+                                    echo $rating_order[$current_rating] ?? 999;
+                                ?>">
+                                    <span class="badge bg-<?php echo $rating_map[$current_rating]['class']; ?> rating-badge" 
+                                          title="<?php echo $rating_map[$current_rating]['label']; ?>">
+                                        <i class="<?php echo $rating_map[$current_rating]['icon']; ?> me-1"></i>
                                         <?php echo $rating_map[$current_rating]['label']; ?>
                                     </span>
                                 </td>
@@ -540,28 +673,60 @@ require_once '../../layouts/page_header.php';
     </div>
 </div>
 
-<!-- Pagination component -->
-<div class="pagination-container mt-3 d-flex justify-content-between align-items-center">
-    <div>
-        <span id="showing-entries">Showing 1-<?php echo min(count($programs), 10); ?> of <?php echo count($programs); ?> entries</span>
-    </div>
-    <nav aria-label="Program pagination">
-        <ul class="pagination pagination-sm" id="programPagination">
-            <!-- Pagination will be populated by JavaScript -->
-        </ul>
-    </nav>
-</div>
-
-<!-- Add program data for JavaScript pagination -->
+<!-- Add program data for JavaScript -->
 <script>
-    // Make program data available to JavaScript for client-side pagination
+    // Make program data available to JavaScript for filtering and pagination
     const allPrograms = <?php echo json_encode($programs); ?>;
     
-    // Set pagination options
-    const paginationOptions = {
-        itemsPerPage: 10,
-        currentPage: 1
-    };
+    // Update counters when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        updateProgramCounters();
+        
+        // Add loading states for tables
+        initializeTableLoadingStates();
+        
+        // Add enhanced filtering
+        initializeEnhancedFiltering();
+    });
+    
+    function updateProgramCounters() {
+        const draftCount = document.querySelectorAll('#draftProgramsTable tbody tr:not(.d-none)').length;
+        const finalizedCount = document.querySelectorAll('#finalizedProgramsTable tbody tr:not(.d-none)').length;
+        
+        document.getElementById('draft-count').textContent = draftCount;
+        document.getElementById('finalized-count').textContent = finalizedCount;
+    }
+    
+    function initializeTableLoadingStates() {
+        const tables = document.querySelectorAll('.table-responsive');
+        tables.forEach(table => {
+            table.classList.add('table-loading');
+            setTimeout(() => {
+                table.classList.remove('table-loading');
+            }, 500);
+        });
+    }
+    
+    function initializeEnhancedFiltering() {
+        // Add real-time counter updates when filters change
+        const filterInputs = document.querySelectorAll('input[id*="Search"], select[id*="Filter"]');
+        filterInputs.forEach(input => {
+            input.addEventListener('change', function() {
+                setTimeout(updateProgramCounters, 100);
+            });
+            input.addEventListener('input', function() {
+                setTimeout(updateProgramCounters, 100);
+            });
+        });
+        
+        // Add filter clear functionality
+        const resetButtons = document.querySelectorAll('[id*="resetFilters"]');
+        resetButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                setTimeout(updateProgramCounters, 100);
+            });
+        });
+    }
 </script>
 
 <!-- Delete Confirmation Modal -->
@@ -586,98 +751,6 @@ require_once '../../layouts/page_header.php';
         </div>
     </div>
 </div>
-
-<style>
-/* Program Name Truncation Styles */
-.program-name {
-    cursor: help;
-    display: inline-block;
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.program-name:hover {
-    color: #0d6efd;
-    transition: color 0.2s ease;
-}
-
-.text-truncate td,
-.text-truncate .fw-medium {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-/* Ensure program type indicator doesn't interfere with truncation */
-.program-type-indicator {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 100%;
-}
-
-/* Initiative Column Enhanced Styles */
-.initiative-display {
-    min-width: 120px;
-    max-width: 100%;
-}
-
-/* Balanced Table Layout */
-.table td:nth-child(1) { /* Program Name Column */
-    max-width: 280px;
-    width: 28%;
-}
-
-.table td:nth-child(2) { /* Initiative Column */
-    max-width: 220px;
-    width: 22%;
-}
-
-.table td:nth-child(3) { /* Rating Column */
-    width: 15%;
-}
-
-.table td:nth-child(4) { /* Last Updated Column */
-    width: 25%;
-    min-width: 140px; /* Ensure enough space for date + time */
-}
-
-.table td:nth-child(5) { /* Actions Column */
-    width: 10%;
-}
-
-/* Tooltip enhancements */
-.initiative-display [title] {
-    cursor: help;
-}
-
-.initiative-display .badge:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-    transition: all 0.2s ease;
-}
-
-@media (max-width: 768px) {
-    .initiative-display {
-        min-width: auto;
-    }
-    
-    /* Stack date and time on mobile for better readability */
-    .table td:nth-child(4) span {
-        display: inline-block;
-        white-space: nowrap;
-    }
-    
-    /* Adjust column widths for mobile */
-    .table td:nth-child(1) { width: 35%; }
-    .table td:nth-child(2) { width: 25%; }
-    .table td:nth-child(3) { width: 15%; }
-    .table td:nth-child(4) { width: 25%; min-width: 120px; }
-}
-</style>
-
 <?php
 // Include footer
 require_once '../../layouts/footer.php';

@@ -31,13 +31,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Update header icons
                 sortableHeaders.forEach(h => {
-                    const icon = h.querySelector('i');
-                    if (h === this) {
-                        icon.className = currentSort.direction === 'asc' 
+                    // Find the sort icon specifically (the one with fa-sort, fa-sort-up, or fa-sort-down)
+                    const sortIcon = h.querySelector('i[class*="fa-sort"]');
+                    if (sortIcon && h === this) {
+                        sortIcon.className = currentSort.direction === 'asc' 
                             ? 'fas fa-sort-up ms-1' 
                             : 'fas fa-sort-down ms-1';
-                    } else {
-                        icon.className = 'fas fa-sort ms-1';
+                    } else if (sortIcon) {
+                        sortIcon.className = 'fas fa-sort ms-1';
                     }
                 });
                 
@@ -55,7 +56,7 @@ function sortTable(table, sortBy, direction) {
     const tbody = table.querySelector('tbody');
     if (!tbody) return;
 
-    const rows = Array.from(tbody.querySelectorAll('tr:not(.no-filter-results)'));
+    const rows = Array.from(tbody.querySelectorAll('tr:not(.no-filter-results):not(.no-results-row)'));
     if (rows.length <= 1) return;
 
     const sortedRows = rows.sort((a, b) => {
@@ -64,25 +65,34 @@ function sortTable(table, sortBy, direction) {
             const bText = b.querySelector('td:first-child .fw-medium')?.textContent.trim().toLowerCase() || '';
             return direction === 'asc' ? aText.localeCompare(bText) : bText.localeCompare(aText);
         } 
+        else if (sortBy === 'initiative') {
+            // Sort by initiative name (column 2) using data attributes
+            const aInitiativeElement = a.querySelector('td:nth-child(2)');
+            const bInitiativeElement = b.querySelector('td:nth-child(2)');
+            
+            const aInitiative = aInitiativeElement?.getAttribute('data-initiative') || 'zzz_no_initiative';
+            const bInitiative = bInitiativeElement?.getAttribute('data-initiative') || 'zzz_no_initiative';
+            
+            return direction === 'asc' ? aInitiative.localeCompare(bInitiative) : bInitiative.localeCompare(aInitiative);
+        }
         else if (sortBy === 'rating') {
-            const statusOrder = {
-                'monthly target achieved': 1,
-                'on track for year': 2,
-                'severe delays': 3,
-                'not started': 4
-            };
-            const aStatus = a.querySelector('td:nth-child(2) .badge')?.textContent.trim().toLowerCase() || '';
-            const bStatus = b.querySelector('td:nth-child(2) .badge')?.textContent.trim().toLowerCase() || '';
-            const aRank = statusOrder[aStatus] || 999;
-            const bRank = statusOrder[bStatus] || 999;
-            return direction === 'asc' ? aRank - bRank : bRank - aRank;
+            // Sort by rating (column 3) using data attributes
+            const aRatingElement = a.querySelector('td:nth-child(3)');
+            const bRatingElement = b.querySelector('td:nth-child(3)');
+            
+            const aOrder = parseInt(aRatingElement?.getAttribute('data-rating-order') || '999');
+            const bOrder = parseInt(bRatingElement?.getAttribute('data-rating-order') || '999');
+            
+            return direction === 'asc' ? aOrder - bOrder : bOrder - aOrder;
         }
         else if (sortBy === 'date') {
-            // Use data-date attribute if available for reliable sorting
+            // Sort by date (column 4)
             const aDateCell = a.querySelector('td:nth-child(4) span[data-date]');
             const bDateCell = b.querySelector('td:nth-child(4) span[data-date]');
+            
             const aDate = aDateCell ? new Date(aDateCell.getAttribute('data-date')) : new Date(0);
             const bDate = bDateCell ? new Date(bDateCell.getAttribute('data-date')) : new Date(0);
+            
             return direction === 'asc' ? aDate - bDate : bDate - aDate;
         }
         return 0;
