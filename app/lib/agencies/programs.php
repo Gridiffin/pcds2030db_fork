@@ -591,8 +591,10 @@ function get_program_details($program_id, $allow_cross_agency = false) {
     $submissions_result = $stmt->get_result();
     
     $program['submissions'] = [];
+    $program['latest_submissions_by_period'] = [];
     
     if ($submissions_result->num_rows > 0) {
+        $submissions_by_period = [];
         while ($submission = $submissions_result->fetch_assoc()) {
             // Process content_json if applicable
             if (isset($submission['content_json']) && is_string($submission['content_json'])) {
@@ -603,17 +605,23 @@ function get_program_details($program_id, $allow_cross_agency = false) {
                     $submission['achievement'] = $content['achievement'] ?? '';
                     $submission['remarks'] = $content['remarks'] ?? '';
                     $submission['status_date'] = $content['status_date'] ?? '';
-                    $submission['status_text'] = $content['status_text'] ?? '';                    $submission['targets'] = $content['targets'] ?? [];
+                    $submission['status_text'] = $content['status_text'] ?? '';
+                    $submission['targets'] = $content['targets'] ?? [];
                     $submission['status'] = $content['status'] ?? 'not-started';
                     $submission['brief_description'] = $content['brief_description'] ?? '';
                 }
             }
             $program['submissions'][] = $submission;
+            // Group by period_id, keep only the latest (highest submission_id)
+            $period_id = $submission['period_id'];
+            if (!isset($submissions_by_period[$period_id]) || $submission['submission_id'] > $submissions_by_period[$period_id]['submission_id']) {
+                $submissions_by_period[$period_id] = $submission;
+            }
         }
-        
-        // Set current submission (most recent)
+        // Set latest_submissions_by_period
+        $program['latest_submissions_by_period'] = $submissions_by_period;
+        // Set current submission (most recent overall)
         $program['current_submission'] = $program['submissions'][0];
-        
         // Extract brief_description from the most recent submission if not in program table
         if (!isset($program['brief_description']) || empty($program['brief_description'])) {
             if (isset($program['current_submission']['brief_description'])) {

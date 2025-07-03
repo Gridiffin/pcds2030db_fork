@@ -148,6 +148,10 @@ if (isset($current_submission['content_json']) && !empty($current_submission['co
     $remarks = $current_submission['remarks'] ?? '';
 }
 
+// Get all reporting periods for display
+$all_periods = get_all_reporting_periods();
+$latest_by_period = $program['latest_submissions_by_period'] ?? [];
+
 // Set page title
 $pageTitle = 'Program Details';
 
@@ -337,201 +341,81 @@ $showNoTargetsAlert = empty($targets) && $is_owner; // Only show no targets aler
     </div>
 </div>
 
-<!-- Initiative Details Card -->
-<?php if (!empty($program['initiative_id'])): ?>
+<!-- All Periods & Latest Submissions Card -->
 <div class="card shadow-sm mb-4">
     <div class="card-header">
         <h5 class="card-title mb-0">
-            <i class="fas fa-lightbulb me-2"></i>Initiative Information
+            <i class="fas fa-calendar-alt me-2"></i>Latest Submissions by Reporting Period
         </h5>
     </div>
     <div class="card-body">
-        <div class="row">
-            <!-- Initiative Basic Info -->
-            <div class="col-lg-8 mb-4">
-                <div class="initiative-header mb-3">
-                    <?php if (!empty($program['initiative_number'])): ?>
-                        <span class="badge bg-primary initiative-number me-2" 
-                              style="font-family: 'Courier New', monospace; font-size: 1.1em; font-weight: 700;">
-                            <i class="fas fa-hashtag me-1"></i>
-                            <?php echo htmlspecialchars($program['initiative_number']); ?>
-                        </span>
-                    <?php endif; ?>
-                    <span class="initiative-name fw-bold text-primary" style="font-size: 1.2em;">
-                        <?php echo htmlspecialchars($program['initiative_name']); ?>
-                    </span>
-                </div>
-                
-                <?php if (!empty($program['initiative_description'])): ?>
-                <div class="initiative-description mb-3">
-                    <h6 class="text-muted mb-2">
-                        <i class="fas fa-info-circle me-1"></i>Description
-                    </h6>
-                    <div class="p-3 bg-light rounded border" style="max-height: 200px; overflow-y: auto;">
-                        <?php echo nl2br(htmlspecialchars($program['initiative_description'])); ?>
-                    </div>
-                </div>
-                <?php endif; ?>
-                
-                <div class="initiative-timeline">
-                    <h6 class="text-muted mb-2">
-                        <i class="fas fa-calendar-alt me-1"></i>Initiative Timeline
-                    </h6>
-                    <div class="timeline-info">
-                        <?php if (!empty($program['initiative_start_date']) || !empty($program['initiative_end_date'])): ?>
-                            <span class="text-muted">
-                                <?php if (!empty($program['initiative_start_date'])): ?>
-                                    <i class="far fa-calendar-alt me-1"></i>
-                                    Started: <?php echo date('M j, Y', strtotime($program['initiative_start_date'])); ?>
-                                <?php endif; ?>
-                                <?php if (!empty($program['initiative_end_date'])): ?>
-                                    <?php if (!empty($program['initiative_start_date'])): ?>
-                                        <span class="mx-2">•</span>
-                                    <?php endif; ?>
-                                    <i class="far fa-calendar-check me-1"></i>
-                                    Target End: <?php echo date('M j, Y', strtotime($program['initiative_end_date'])); ?>
-                                <?php endif; ?>
-                            </span>
-                        <?php else: ?>
-                            <span class="text-muted fst-italic">Timeline not specified</span>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Related Programs -->
-            <div class="col-lg-4">
-                <h6 class="text-muted mb-3">
-                    <i class="fas fa-project-diagram me-1"></i>Related Programs
-                    <span class="badge bg-secondary ms-1"><?php echo count($related_programs); ?></span>
-                </h6>
-                
-                <?php if (!empty($related_programs)): ?>
-                    <div class="related-programs-list" style="max-height: 300px; overflow-y: auto;">
-                        <?php foreach ($related_programs as $related): ?>
-                            <div class="related-program-item p-2 mb-2 border rounded bg-white" style="border-left: 3px solid #0d6efd !important;">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div class="flex-grow-1">
-                                        <div class="fw-medium" style="font-size: 0.9em;">
-                                            <?php if (!empty($related['program_number'])): ?>
-                                                <span class="badge bg-info me-1" style="font-size: 0.7em;">
-                                                    <?php echo htmlspecialchars($related['program_number']); ?>
+        <div class="table-responsive">
+            <table class="table table-bordered align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Period</th>
+                        <th>Targets</th>
+                        <th>Status</th>
+                        <th>Submission</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($latest_by_period as $pid => $submission):
+                        $period = get_reporting_period($pid);
+                        if (!$period) continue;
+                        $period_name = get_period_display_name($period);
+                    ?>
+                    <tr>
+                        <td><?php echo htmlspecialchars($period_name); ?></td>
+                        <td>
+                            <?php if (!empty($submission['targets'])): ?>
+                                <ul class="mb-0 ps-3">
+                                    <?php foreach ($submission['targets'] as $t): ?>
+                                        <li>
+                                            <?php echo htmlspecialchars($t['target_text'] ?? $t['text'] ?? ''); ?>
+                                            <?php if (!empty($t['target_status'])): ?>
+                                                <?php
+                                                // Map status to badge color and label
+                                                $target_status = $t['target_status'];
+                                                $target_status_map = [
+                                                    'not-started' => ['label' => 'Not Started', 'class' => 'secondary'],
+                                                    'in-progress' => ['label' => 'In Progress', 'class' => 'info'],
+                                                    'completed' => ['label' => 'Completed', 'class' => 'success'],
+                                                    'delayed' => ['label' => 'Delayed', 'class' => 'danger'],
+                                                    'severe-delay' => ['label' => 'Severe Delay', 'class' => 'danger'],
+                                                    // Add more mappings as needed
+                                                ];
+                                                $ts = $target_status_map[$target_status] ?? ['label' => ucfirst($target_status), 'class' => 'secondary'];
+                                                ?>
+                                                <span class="badge bg-<?php echo $ts['class']; ?> ms-2" title="<?php echo htmlspecialchars($ts['label']); ?>">
+                                                    <?php echo htmlspecialchars($ts['label']); ?>
                                                 </span>
                                             <?php endif; ?>
-                                            <?php echo htmlspecialchars($related['program_name']); ?>
-                                        </div>
-                                        <div class="small text-muted">
-                                            <?php echo htmlspecialchars($related['agency_name']); ?>
-                                        </div>
-                                    </div>
-                                    <div class="ms-2">
-                                        <?php
-                                        $status = convert_legacy_rating($related['rating']);
-                                        $status_colors = [
-                                            'target-achieved' => 'success',
-                                            'on-track-yearly' => 'warning',
-                                            'severe-delay' => 'danger',
-                                            'not-started' => 'secondary'
-                                        ];
-                                        $color_class = $status_colors[$status] ?? 'secondary';
-                                        ?>
-                                        <span class="badge bg-<?php echo $color_class; ?>" style="font-size: 0.6em;">
-                                            <?php echo $related['is_draft'] ? 'Draft' : 'Final'; ?>
-                                        </span>
-                                    </div>
-                                </div>
-                                <?php if ($allow_view): ?>
-                                    <div class="mt-1">
-                                        <a href="program_details.php?id=<?php echo $related['program_id']; ?>&source=<?php echo htmlspecialchars($source); ?>" 
-                                           class="btn btn-outline-primary btn-sm" style="font-size: 0.7em;">
-                                            <i class="fas fa-eye me-1"></i>View Details
-                                        </a>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                <?php else: ?>
-                    <div class="text-muted fst-italic small">
-                        <i class="fas fa-info-circle me-1"></i>
-                        No other programs found under this initiative.
-                    </div>
-                <?php endif; ?>
-            </div>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            <?php else: ?>
+                                <span class="text-muted">-</span>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <?php if (!empty($submission['targets'])): ?>
+                                <ul class="mb-0 ps-3">
+                                    <?php foreach ($submission['targets'] as $t): ?>
+                                        <li><?php echo htmlspecialchars($t['status_description'] ?? ''); ?></li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            <?php else: ?>
+                                <span class="text-muted">-</span>
+                            <?php endif; ?>
+                        </td>
+                        <td><?php echo !empty($submission['submission_date']) ? date('M j, Y g:i A', strtotime($submission['submission_date'])) : '<span class="text-muted">-</span>'; ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
         </div>
     </div>
-</div>
-<?php endif; ?>
-
-<!-- Program Targets and Status Card -->
-<div class="card shadow-sm mb-4">
-    <div class="card-header">
-        <h5 class="card-title mb-0">
-            <i class="fas fa-tasks me-2"></i>Current Period Performance
-        </h5>
-    </div>
-    <div class="card-body">
-        <?php if (!empty($targets)): ?>
-            <?php
-                // Determine which columns to show
-                $show_number = false;
-                $show_status = false;
-                $show_start = false;
-                $show_end = false;
-                foreach ($targets as $target) {
-                    if (!empty($target['target_number'])) $show_number = true;
-                    if (!empty($target['status_description'])) $show_status = true;
-                    if (!empty($target['start_date'])) $show_start = true;
-                    if (!empty($target['end_date'])) $show_end = true;
-                }
-            ?>
-            <div class="table-responsive">
-                <table class="table table-bordered align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <?php if ($show_number): ?><th style="width: 12%">Target Number</th><?php endif; ?>
-                            <th>Target Name/Description</th>
-                            <?php if ($show_status): ?><th>Status</th><?php endif; ?>
-                            <?php if ($show_start): ?><th>Start Date</th><?php endif; ?>
-                            <?php if ($show_end): ?><th>End Date</th><?php endif; ?>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($targets as $index => $target): ?>
-                            <?php
-                                $has_any = ($show_number && !empty($target['target_number'])) || !empty($target['text']) || ($show_status && !empty($target['status_description'])) || ($show_start && !empty($target['start_date'])) || ($show_end && !empty($target['end_date']));
-                            ?>
-                            <?php if ($has_any): ?>
-                            <tr>
-                                <?php if ($show_number): ?><td><?php echo !empty($target['target_number']) ? htmlspecialchars($target['target_number']) : ''; ?></td><?php endif; ?>
-                                <td><?php echo !empty($target['text']) ? nl2br(htmlspecialchars($target['text'])) : ''; ?></td>
-                                <?php if ($show_status): ?><td><?php echo !empty($target['status_description']) ? htmlspecialchars($target['status_description']) : ''; ?></td><?php endif; ?>
-                                <?php if ($show_start): ?><td><?php echo !empty($target['start_date']) ? date('M j, Y', strtotime($target['start_date'])) : ''; ?></td><?php endif; ?>
-                                <?php if ($show_end): ?><td><?php echo !empty($target['end_date']) ? date('M j, Y', strtotime($target['end_date'])) : ''; ?></td><?php endif; ?>
-                            </tr>
-                            <?php endif; ?>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-            <?php if (isset($current_submission['achievement']) && !empty($current_submission['achievement'])): ?>
-            <div class="overall-achievement p-4">
-                <div class="overall-achievement-label">
-                    <i class="fas fa-award me-2"></i>Overall Achievement
-                </div>
-                <div class="achievement-content">
-                    <?php echo nl2br(htmlspecialchars($current_submission['achievement'])); ?>
-                </div>
-            </div>
-            <?php endif; ?>
-        <?php else: ?>
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle me-2"></i>
-                No targets have been specified for this program.                <?php if ($is_owner): ?>
-                    <a href="<?php echo APP_URL; ?>/app/views/agency/programs/update_program.php?id=<?php echo $program_id; ?>" class="alert-link">Add targets</a>
-                <?php endif; ?>
-            </div>
-        <?php endif; ?>    </div>
 </div>
 
 <!-- Program Attachments Section -->

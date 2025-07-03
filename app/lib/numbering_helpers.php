@@ -584,43 +584,44 @@ function generate_next_target_number($program_id, $program_number) {
  * @param string $target_number The target number to check
  * @param int $program_id The program ID
  * @param int $exclude_submission_id Optional submission ID to exclude from check
+ * @param int $period_id Optional period ID to exclude from check
  * @return bool True if available, false if already in use
  */
-function is_target_number_available($target_number, $program_id, $exclude_submission_id = null) {
+function is_target_number_available($target_number, $program_id, $exclude_submission_id = null, $period_id = null) {
     global $conn;
-    
     if (empty($target_number) || !$program_id) {
         return true; // Empty numbers are always available
     }
-    
-    $query = "SELECT submission_id, content_json FROM program_submissions 
-              WHERE program_id = ? AND content_json IS NOT NULL";
-    
+    // Check for duplicates in the same program, excluding the current submission
+    $query = "SELECT submission_id, period_id, content_json FROM program_submissions WHERE program_id = ? AND content_json IS NOT NULL";
+    $params = [$program_id];
+    $types = "i";
     if ($exclude_submission_id) {
         $query .= " AND submission_id != ?";
-        $stmt = $conn->prepare($query);
-        $stmt->bind_param("ii", $program_id, $exclude_submission_id);
-    } else {
-        $stmt = $conn->prepare($query);
-        $stmt->bind_param("i", $program_id);
+        $params[] = $exclude_submission_id;
+        $types .= "i";
     }
-    
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param($types, ...$params);
     $stmt->execute();
     $result = $stmt->get_result();
-    
+    $found_in_other_period = false;
     while ($row = $result->fetch_assoc()) {
         $content = json_decode($row['content_json'], true);
         if (isset($content['targets']) && is_array($content['targets'])) {
             foreach ($content['targets'] as $target) {
                 if (isset($target['target_number']) && 
                     strtolower(trim($target['target_number'])) === strtolower(trim($target_number))) {
-                    return false; // Number is already in use
+                    // If found in a different period, block it
+                    if ($period_id === null || $row['period_id'] != $period_id) {
+                        return false; // Number is already in use in a different period
+                    }
+                    // If found in the same period, allow (for history)
                 }
             }
         }
     }
-    
-    return true; // Number is available
+    return true; // Number is available or only found in previous submissions for the same period
 }
 
 /**

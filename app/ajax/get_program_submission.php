@@ -34,19 +34,22 @@ if (!$program) {
 
 // Find the correct submission for the selected period
 $current_submission = null;
-if (isset($program['submissions']) && is_array($program['submissions'])) {
-    // Filter submissions for the selected period only
+if (isset($program['latest_submissions_by_period']) && is_array($program['latest_submissions_by_period'])) {
+    // Use the new optimized array for latest submission by period
+    if (isset($program['latest_submissions_by_period'][$period_id])) {
+        $current_submission = $program['latest_submissions_by_period'][$period_id];
+    }
+} else if (isset($program['submissions']) && is_array($program['submissions'])) {
+    // Fallback: Filter submissions for the selected period only
     $period_submissions = array_filter($program['submissions'], function($submission) use ($period_id) {
         return isset($submission['period_id']) && $submission['period_id'] == $period_id;
     });
-    
     // If there are multiple submissions for this period, get the latest one
     if (!empty($period_submissions)) {
         // Sort by submission_id descending to get the latest submission for this period
         usort($period_submissions, function($a, $b) {
             return $b['submission_id'] <=> $a['submission_id'];
         });
-        
         // Get the latest submission for this period
         $current_submission = reset($period_submissions);
     }
