@@ -4,11 +4,14 @@
  * 
  * This component shows a dropdown to select different reporting periods
  * for editing a program. It uses program_id and fetches program data for the selected period.
+ * 
+ * Note: Half-yearly periods (quarters 5 and 6) are excluded from this selector
+ * to provide a cleaner editing interface focused on quarterly reporting.
  */
 
-// Get all periods for the selector
+// Get all periods for the selector (excluding half-yearly periods for cleaner editing interface)
 require_once __DIR__ . '/functions.php';
-$periods_query = "SELECT * FROM reporting_periods ORDER BY year DESC, quarter DESC";
+$periods_query = "SELECT * FROM reporting_periods WHERE quarter NOT IN (5, 6) ORDER BY year DESC, quarter DESC";
 $periods_result = $conn->query($periods_query);
 
 $periods = [];
