@@ -180,66 +180,135 @@ function applyFilters(tableType) {
     
     // Apply filters to table rows
     const tableRows = document.querySelectorAll(`#${tableId} tbody tr`);
-    tableRows.forEach(row => {
-        const programNameElement = row.querySelector('td:first-child .fw-medium');
-        const programName = programNameElement?.textContent.toLowerCase() || '';
-          // Extract program number from the badge if it exists
-        const programNumberBadge = programNameElement?.querySelector('.badge.bg-info');
-        const programNumber = programNumberBadge ? programNumberBadge.textContent.toLowerCase() : '';
+    
+    tableRows.forEach((row, index) => {
+        // Skip "no programs found" rows
+        if (row.querySelector('td[colspan]')) {
+            return;
+        }
         
-        // Get initiative information - 2nd column now
-        const initiativeElement = row.querySelector('td:nth-child(2)');
-        const initiativeText = initiativeElement?.textContent.trim().toLowerCase() || '';
-        const hasInitiative = initiativeElement?.querySelector('.badge.bg-primary') !== null;
+        // Get program data from the allPrograms array
+        // We need to determine which program this row represents
+        const programNameElement = row.querySelector('td:first-child .fw-medium .program-name');
+        if (!programNameElement) return;
         
-        // Rating is now in 3rd column
-        const ratingText = row.querySelector('td:nth-child(3) .badge')?.textContent.trim().toLowerCase() || '';
-        const programType = row.getAttribute('data-program-type') || '';
+        const programNameInRow = programNameElement.textContent.trim();
         
-        // Map display text back to rating values for comparison
-        const ratingMap = {
-            'monthly target achieved': 'target-achieved',
-            'on track for year': 'on-track-yearly',
-            'on track': 'on-track',
-            'severe delays': 'severe-delay',
-            'delayed': 'delayed',
-            'completed': 'completed',
-            'not started': 'not-started'
-        };
+        // Find matching program in allPrograms array
+        let currentProgram = null;
+        if (typeof allPrograms !== 'undefined') {
+            currentProgram = allPrograms.find(p => {
+                const programDisplayName = (p.program_number ? p.program_number + ' ' : '') + p.program_name;
+                return programDisplayName === programNameInRow || p.program_name === programNameInRow;
+            });
+        }
         
-        const normalizedRating = ratingMap[ratingText] || ratingText;
+        // Fallback to DOM parsing if program not found in data
+        if (!currentProgram) {
+            const programNameElement = row.querySelector('td:first-child .fw-medium');
+            const programName = programNameElement?.textContent.toLowerCase() || '';
+              // Extract program number from the badge if it exists
+            const programNumberBadge = programNameElement?.querySelector('.badge.bg-info');
+            const programNumber = programNumberBadge ? programNumberBadge.textContent.toLowerCase() : '';
+            
+            // Get initiative information - 2nd column now
+            const initiativeElement = row.querySelector('td:nth-child(2)');
+            const initiativeText = initiativeElement?.textContent.trim().toLowerCase() || '';
+            const hasInitiative = initiativeElement?.querySelector('.badge.bg-primary') !== null;
+            
+            // Rating is now in 3rd column
+            const ratingText = row.querySelector('td:nth-child(3) .badge')?.textContent.trim().toLowerCase() || '';
+            const programType = row.getAttribute('data-program-type') || '';
+            
+            // Map display text back to rating values for comparison
+            const ratingMap = {
+                'monthly target achieved': 'target-achieved',
+                'on track for year': 'on-track-yearly',
+                'on track': 'on-track',
+                'severe delays': 'severe-delay',
+                'delayed': 'delayed',
+                'completed': 'completed',
+                'not started': 'not-started'
+            };
+            
+            const normalizedRating = ratingMap[ratingText] || ratingText;
+            
+            // Apply all filters using DOM data
+            let showRow = true;
+            
+            // Text search filter - search in both program name and program number
+            if (searchText && !programName.includes(searchText) && !programNumber.includes(searchText)) {
+                showRow = false;
+            }
+            
+            // Rating filter
+            if (ratingValue && normalizedRating !== ratingValue) {
+                showRow = false;
+            }
+              // Type filter
+            if (typeValue && programType !== typeValue) {
+                showRow = false;
+            }
+            
+            // Initiative filter (fallback DOM method)
+            if (initiativeValue) {
+                if (initiativeValue === 'no-initiative') {
+                    // Show only programs without initiatives
+                    if (hasInitiative) {
+                        showRow = false;
+                    }
+                } else {
+                    // Show only programs with the specific initiative
+                    // Check if the initiative text contains the selected initiative name
+                    const selectedInitiativeElement = document.querySelector(`#${tableType}InitiativeFilter option[value="${initiativeValue}"]`);
+                    const selectedInitiativeName = selectedInitiativeElement ? selectedInitiativeElement.textContent.toLowerCase() : '';
+                    
+                    if (!hasInitiative || !initiativeText.includes(selectedInitiativeName)) {
+                        showRow = false;
+                    }
+                }
+            }
+            
+            // Show or hide the row
+            row.style.display = showRow ? '' : 'none';
+            return;
+        }
         
-        // Apply all filters
+        // Use program data for filtering (preferred method)
         let showRow = true;
         
         // Text search filter - search in both program name and program number
-        if (searchText && !programName.includes(searchText) && !programNumber.includes(searchText)) {
-            showRow = false;
+        if (searchText) {
+            const searchInName = currentProgram.program_name.toLowerCase().includes(searchText);
+            const searchInNumber = currentProgram.program_number ? currentProgram.program_number.toLowerCase().includes(searchText) : false;
+            if (!searchInName && !searchInNumber) {
+                showRow = false;
+            }
         }
         
         // Rating filter
-        if (ratingValue && normalizedRating !== ratingValue) {
+        if (ratingValue && currentProgram.rating !== ratingValue) {
             showRow = false;
         }
           // Type filter
-        if (typeValue && programType !== typeValue) {
-            showRow = false;
+        if (typeValue) {
+            const isAssigned = currentProgram.is_assigned == 1;
+            const programType = isAssigned ? 'assigned' : 'created';
+            if (programType !== typeValue) {
+                showRow = false;
+            }
         }
         
-        // Initiative filter
+        // Initiative filter using initiative_id
         if (initiativeValue) {
             if (initiativeValue === 'no-initiative') {
                 // Show only programs without initiatives
-                if (hasInitiative) {
+                if (currentProgram.initiative_id && currentProgram.initiative_id !== null) {
                     showRow = false;
                 }
             } else {
-                // Show only programs with the specific initiative
-                // Check if the initiative text contains the selected initiative name
-                const selectedInitiativeElement = document.querySelector(`#${tableType}InitiativeFilter option[value="${initiativeValue}"]`);
-                const selectedInitiativeName = selectedInitiativeElement ? selectedInitiativeElement.textContent.toLowerCase() : '';
-                
-                if (!hasInitiative || !initiativeText.includes(selectedInitiativeName)) {
+                // Show only programs with the specific initiative ID
+                if (!currentProgram.initiative_id || currentProgram.initiative_id != initiativeValue) {
                     showRow = false;
                 }
             }

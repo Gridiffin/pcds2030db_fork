@@ -321,10 +321,10 @@ require_once '../../layouts/page_header.php';
                                     $date_iso = '';
                                     if (isset($program['updated_at']) && $program['updated_at']) {
                                         $date_iso = date('Y-m-d', strtotime($program['updated_at']));
-                                        $date_display = date('M j, Y', strtotime($program['updated_at']));
+                                        $date_display = date('M j, Y g:i A', strtotime($program['updated_at']));
                                     } elseif (isset($program['created_at']) && $program['created_at']) {
                                         $date_iso = date('Y-m-d', strtotime($program['created_at']));
-                                        $date_display = date('M j, Y', strtotime($program['created_at']));
+                                        $date_display = date('M j, Y g:i A', strtotime($program['created_at']));
                                     } else {
                                         $date_display = 'Not set';
                                     }
@@ -503,10 +503,10 @@ require_once '../../layouts/page_header.php';
                                     $date_iso = '';
                                     if (isset($program['updated_at']) && $program['updated_at']) {
                                         $date_iso = date('Y-m-d', strtotime($program['updated_at']));
-                                        $date_display = date('M j, Y', strtotime($program['updated_at']));
+                                        $date_display = date('M j, Y g:i A', strtotime($program['updated_at']));
                                     } elseif (isset($program['created_at']) && $program['created_at']) {
                                         $date_iso = date('Y-m-d', strtotime($program['created_at']));
-                                        $date_display = date('M j, Y', strtotime($program['created_at']));
+                                        $date_display = date('M j, Y g:i A', strtotime($program['created_at']));
                                     } else {
                                         $date_display = 'Not set';
                                     }
@@ -626,13 +626,13 @@ require_once '../../layouts/page_header.php';
 
 /* Balanced Table Layout */
 .table td:nth-child(1) { /* Program Name Column */
-    max-width: 300px;
-    width: 30%;
+    max-width: 280px;
+    width: 28%;
 }
 
 .table td:nth-child(2) { /* Initiative Column */
-    max-width: 250px;
-    width: 25%;
+    max-width: 220px;
+    width: 22%;
 }
 
 .table td:nth-child(3) { /* Rating Column */
@@ -640,7 +640,8 @@ require_once '../../layouts/page_header.php';
 }
 
 .table td:nth-child(4) { /* Last Updated Column */
-    width: 20%;
+    width: 25%;
+    min-width: 140px; /* Ensure enough space for date + time */
 }
 
 .table td:nth-child(5) { /* Actions Column */
@@ -662,6 +663,18 @@ require_once '../../layouts/page_header.php';
     .initiative-display {
         min-width: auto;
     }
+    
+    /* Stack date and time on mobile for better readability */
+    .table td:nth-child(4) span {
+        display: inline-block;
+        white-space: nowrap;
+    }
+    
+    /* Adjust column widths for mobile */
+    .table td:nth-child(1) { width: 35%; }
+    .table td:nth-child(2) { width: 25%; }
+    .table td:nth-child(3) { width: 15%; }
+    .table td:nth-child(4) { width: 25%; min-width: 120px; }
 }
 </style>
 
