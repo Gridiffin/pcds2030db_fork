@@ -762,6 +762,142 @@ function unsubmit_program($program_id, $period_id) {
 }
 
 /**
+ * Enhanced unsubmit program with cascading logic awareness
+ * This function reverts the latest submission to draft and handles multi-period scenarios
+ * 
+ * @param int $program_id The ID of the program
+ * @param int $period_id The ID of the reporting period
+ * @param bool $cascade_revert Whether to revert all submissions after this period to draft (default: false)
+ * @return array Result array with success status and details
+ */
+function enhanced_unsubmit_program($program_id, $period_id, $cascade_revert = false) {
+    global $conn;
+    $program_id = intval($program_id);
+    $period_id = intval($period_id);
+    $affected_periods = [];
+    
+    // Start transaction for consistency
+    $conn->begin_transaction();
+    
+    try {
+        // First, get the submission for the specified period
+        $sql_select = "SELECT submission_id, content_json, is_draft FROM program_submissions 
+                      WHERE program_id = ? AND period_id = ? 
+                      ORDER BY submission_id DESC LIMIT 1";
+        $stmt = $conn->prepare($sql_select);
+        if (!$stmt) {
+            throw new Exception("Database error in enhanced_unsubmit_program (select): " . $conn->error);
+        }
+        
+        $stmt->bind_param('ii', $program_id, $period_id);
+        if (!$stmt->execute()) {
+            throw new Exception("Execution error in enhanced_unsubmit_program (select): " . $stmt->error);
+        }
+        
+        $result = $stmt->get_result();
+        if ($result->num_rows === 0) {
+            $stmt->close();
+            throw new Exception("No submission found for Program ID: {$program_id}, Period ID: {$period_id}");
+        }
+        
+        $row = $result->fetch_assoc();
+        $submission_id = $row['submission_id'];
+        $content_json = $row['content_json'];
+        $is_already_draft = $row['is_draft'];
+        $stmt->close();
+        
+        // If already draft, no need to proceed unless cascading
+        if ($is_already_draft && !$cascade_revert) {
+            $conn->rollback();
+            return [
+                'success' => true,
+                'message' => 'Submission is already in draft status',
+                'affected_periods' => []
+            ];
+        }
+        
+        // Update the rating/status in content_json to 'not-started'
+        $content = json_decode($content_json, true) ?: [];
+        $content['rating'] = 'not-started';
+        $new_content_json = json_encode($content);
+        
+        // Revert the specified period to draft
+        $sql_update = "UPDATE program_submissions 
+                      SET is_draft = 1, content_json = ? 
+                      WHERE submission_id = ?";
+        $stmt = $conn->prepare($sql_update);
+        if (!$stmt) {
+            throw new Exception("Database error in enhanced_unsubmit_program (update): " . $conn->error);
+        }
+        
+        $stmt->bind_param('si', $new_content_json, $submission_id);
+        if (!$stmt->execute()) {
+            throw new Exception("Execution error in enhanced_unsubmit_program (update): " . $stmt->error);
+        }
+        
+        if ($stmt->affected_rows > 0) {
+            $affected_periods[] = $period_id;
+        }
+        $stmt->close();
+        
+        // If cascade_revert is true, also revert all other submissions for this program
+        if ($cascade_revert) {
+            $cascade_sql = "UPDATE program_submissions 
+                           SET is_draft = 1 
+                           WHERE program_id = ? 
+                           AND period_id != ? 
+                           AND is_draft = 0";
+            $cascade_stmt = $conn->prepare($cascade_sql);
+            if (!$cascade_stmt) {
+                throw new Exception("Database error in enhanced_unsubmit_program (cascade): " . $conn->error);
+            }
+            
+            $cascade_stmt->bind_param('ii', $program_id, $period_id);
+            if (!$cascade_stmt->execute()) {
+                throw new Exception("Execution error in enhanced_unsubmit_program (cascade): " . $cascade_stmt->error);
+            }
+            
+            // Get the periods that were affected by cascade
+            if ($cascade_stmt->affected_rows > 0) {
+                $affected_periods_sql = "SELECT DISTINCT period_id FROM program_submissions 
+                                        WHERE program_id = ? AND period_id != ? AND is_draft = 1";
+                $affected_stmt = $conn->prepare($affected_periods_sql);
+                $affected_stmt->bind_param('ii', $program_id, $period_id);
+                $affected_stmt->execute();
+                $affected_result = $affected_stmt->get_result();
+                
+                while ($affected_row = $affected_result->fetch_assoc()) {
+                    if (!in_array($affected_row['period_id'], $affected_periods)) {
+                        $affected_periods[] = $affected_row['period_id'];
+                    }
+                }
+                $affected_stmt->close();
+            }
+            $cascade_stmt->close();
+        }
+        
+        $conn->commit();
+        
+        return [
+            'success' => true,
+            'message' => count($affected_periods) > 1 ? 
+                        'Program unsubmitted with cascading effect on ' . count($affected_periods) . ' periods' : 
+                        'Program successfully unsubmitted',
+            'affected_periods' => $affected_periods
+        ];
+        
+    } catch (Exception $e) {
+        $conn->rollback();
+        error_log("Enhanced unsubmit error: " . $e->getMessage());
+        return [
+            'success' => false,
+            'message' => $e->getMessage(),
+            'affected_periods' => []
+        ];
+    }
+}
+
+/**
  * Log an admin action in the system
  * 
  * @param string $action The action being performed

@@ -33,6 +33,7 @@ $period_id = isset($_GET['period_id']) ? intval($_GET['period_id']) : null;
 $sector_id = isset($_GET['sector_id']) ? intval($_GET['sector_id']) : 1; // Default to Forestry (sector_id 1)
 $selected_program_ids_raw = isset($_GET['selected_program_ids']) ? $_GET['selected_program_ids'] : null;
 $program_orders_raw = isset($_GET['program_orders']) ? $_GET['program_orders'] : null;
+$selected_targets_raw = isset($_GET['selected_targets']) ? $_GET['selected_targets'] : null;
 
 // Handle half-yearly period logic
 $period_ids = [$period_id];
@@ -96,12 +97,30 @@ if ($program_orders_raw) {
     }
 }
 
+// Parse selected targets if provided
+$selected_targets = [];
+if ($selected_targets_raw) {
+    try {
+        $selected_targets = json_decode($selected_targets_raw, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            error_log("Error parsing selected_targets JSON: " . json_last_error_msg());
+            $selected_targets = [];
+        }
+    } catch (Exception $e) {
+        error_log("Exception parsing selected_targets: " . $e->getMessage());
+        $selected_targets = [];
+    }
+}
+
 // Add debug logging for parameters
 $period_ids_str = implode(',', $period_ids);
 error_log("API parameters - period_ids: {$period_ids_str}, sector_id: {$sector_id}");
 error_log("Fixed duplicate submission query - using MAX(submission_id) for tie-breaking");
 if (!empty($program_orders)) {
     error_log("Program orders provided: " . json_encode($program_orders));
+}
+if (!empty($selected_targets)) {
+    error_log("Selected targets provided: " . json_encode($selected_targets));
 }
 
 // If no period_id provided, use current reporting period
@@ -143,8 +162,8 @@ if ($sector_result->num_rows === 0) {
 
 $sector = $sector_result->fetch_assoc();
 
-// Format the quarter/year string (e.g., "Q4 2024")
-$quarter = "Q" . $period['quarter'] . " " . $period['year'];
+// Format the quarter/year string (e.g., "Q4 2024", "Half Yearly 1 2025")
+$quarter = get_period_display_name($period);
 
 // --- 1. Get Sector Leads (agencies with this sector, including focal agencies) ---
 $sector_leads_query = "SELECT GROUP_CONCAT(agency_name SEPARATOR '; ') as sector_leads 
@@ -250,24 +269,28 @@ if (!empty($program_orders) && !empty($selected_program_ids)) {
 }
 
 $programs_query = "SELECT p.program_id, p.program_name, 
-                    ps.content_json,
+                    GROUP_CONCAT(ps.content_json ORDER BY rp.quarter ASC SEPARATOR '|||') as all_content_json,
+                    GROUP_CONCAT(CONCAT(rp.quarter, ':', ps.period_id) ORDER BY rp.quarter ASC SEPARATOR ',') as period_info,
                     i.initiative_id, i.initiative_name
                   FROM programs p
                   LEFT JOIN (
                       SELECT ps1.*
                       FROM program_submissions ps1
                       INNER JOIN (
-                          SELECT program_id, MAX(submission_date) as latest_date, MAX(submission_id) as latest_submission_id
+                          SELECT program_id, period_id, MAX(submission_date) as latest_date, MAX(submission_id) as latest_submission_id
                           FROM program_submissions
                           WHERE period_id IN ($period_in_clause) AND is_draft = 0
-                          GROUP BY program_id
+                          GROUP BY program_id, period_id
                       ) ps2 ON ps1.program_id = ps2.program_id 
+                           AND ps1.period_id = ps2.period_id
                            AND ps1.submission_date = ps2.latest_date 
                            AND ps1.submission_id = ps2.latest_submission_id
                       WHERE ps1.period_id IN ($period_in_clause) AND ps1.is_draft = 0
                   ) ps ON p.program_id = ps.program_id
+                  LEFT JOIN reporting_periods rp ON ps.period_id = rp.period_id
                   LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
                   WHERE $program_filter_condition
+                  GROUP BY p.program_id, p.program_name, i.initiative_id, i.initiative_name
                   ORDER BY $order_by_clause";
 
 $stmt = $conn->prepare($programs_query);
@@ -287,78 +310,132 @@ $programs_count = $programs_result->num_rows;
 error_log("Query returned {$programs_count} programs");
 
 $programs = [];
-while ($program = $programs_result->fetch_assoc()) {    // Extract target from content_json
-    $content = json_decode($program['content_json'] ?? '{}', true);
-    $target = 'No target set';
-    $status_text = 'No status update available';
+while ($program = $programs_result->fetch_assoc()) {
+    // Handle aggregated content from multiple periods
+    $all_content_jsons = $program['all_content_json'] ? explode('|||', $program['all_content_json']) : [];
+    $period_info = $program['period_info'] ? explode(',', $program['period_info']) : [];
     
-    // Check if we have the new format with targets array
-    if (isset($content['targets']) && is_array($content['targets']) && !empty($content['targets'])) {
-        $target_texts = [];
-        $status_texts = [];
+    // Initialize arrays to collect targets and statuses from all periods
+    $all_target_texts = [];
+    $all_status_texts = [];
+    $latest_rating = 'not-reported'; // Default rating
+    
+    // Process each period's content
+    foreach ($all_content_jsons as $index => $content_json) {
+        if (empty(trim($content_json))) continue;
         
-        // Process each target and ensure newline consistency
-        foreach ($content['targets'] as $t) {
-            // Get target text with several fallbacks
-            $target_text = $t['target_text'] ?? $t['text'] ?? 'No target set';
-            // Make sure there are no escaped newlines in the text
-            $target_text = str_replace(['\\n', '\\r', '\\r\\n'], "\n", $target_text);
-            $target_texts[] = $target_text;
-            
-            // Get status with fallbacks
-            $status_desc = $t['status_description'] ?? 'No status update available';
-            // Make sure there are no escaped newlines in the status
-            $status_desc = str_replace(['\\n', '\\r', '\\r\\n'], "\n", $status_desc);
-            $status_texts[] = $status_desc;
+        $content = json_decode($content_json, true);
+        if (!$content) continue;
+        
+        // Extract period info for logging
+        $period_quarter = isset($period_info[$index]) ? explode(':', $period_info[$index])[0] : 'unknown';
+        
+        // Update rating to the latest one (from last period processed)
+        if (isset($content['rating'])) {
+            $latest_rating = $content['rating'];
+        } elseif (isset($content['status'])) {
+            $latest_rating = $content['status'];
         }
-          // Combine targets and statuses with literal newlines for bullet point separation
-        // Use clean newlines to ensure consistent bullet point formatting in the frontend
-        $target = implode("\n", $target_texts);
-        $status_text = implode("\n", $status_texts);
         
-        // Extra normalization to ensure no leftover escaped characters
-        $target = preg_replace('/\\\\[rn]/', "\n", $target);
-        $status_text = preg_replace('/\\\\[rn]/', "\n", $status_text);
-        
-        // Debug log the processed targets (can be removed in production)
-        error_log("Program {$program['program_id']}: Processed " . count($target_texts) . " targets");
-          } elseif (isset($content['target'])) { // Old format with direct target property
-        $target_text = $content['target'] ?? 'No target set';
-        $status_description = $content['status_text'] ?? 'No status update available';
-        
-        // Check if targets are semicolon-separated
-        if (strpos($target_text, ';') !== false) {
-            // Split semicolon-separated targets and status descriptions
-            $target_parts = array_map('trim', explode(';', $target_text));
-            $status_parts = array_map('trim', explode(';', $status_description));
-            
-            $target_texts = [];
-            $status_texts = [];
-            
-            foreach ($target_parts as $index => $target_part) {
-                if (!empty($target_part)) {
-                    $target_texts[] = $target_part;
-                    $status_texts[] = isset($status_parts[$index]) ? $status_parts[$index] : 'No status update available';
+        // Process targets from this period
+        if (isset($content['targets']) && is_array($content['targets']) && !empty($content['targets'])) {
+            // New format with targets array
+            foreach ($content['targets'] as $target_index => $t) {
+                $target_text = $t['target_text'] ?? $t['text'] ?? 'No target set';
+                $status_desc = $t['status_description'] ?? 'No status update available';
+                
+                // Calculate target_id using the same logic as get_program_targets.php
+                // This is a sequential counter across all periods for this program
+                $target_id = count($all_target_texts) + 1;
+                
+                // Check if target filtering is enabled and if this target is selected
+                $program_id_str = strval($submission['program_id']);
+                $should_include_target = true;
+                
+                if (!empty($selected_targets) && isset($selected_targets[$program_id_str])) {
+                    $selected_target_ids = array_map('intval', $selected_targets[$program_id_str]);
+                    $should_include_target = in_array($target_id, $selected_target_ids);
+                }
+                
+                if ($should_include_target) {
+                    // Clean up newlines
+                    $target_text = str_replace(['\\n', '\\r', '\\r\\n'], "\n", $target_text);
+                    $status_desc = str_replace(['\\n', '\\r', '\\r\\n'], "\n", $status_desc);
+                    
+                    $all_target_texts[] = $target_text;
+                    $all_status_texts[] = $status_desc;
                 }
             }
+        } elseif (isset($content['target'])) {
+            // Old format with direct target property
+            $target_text = $content['target'] ?? 'No target set';
+            $status_description = $content['status_text'] ?? 'No status update available';
             
-            // Combine targets and statuses with newlines for bullet point separation
-            $target = implode("\n", $target_texts);
-            $status_text = implode("\n", $status_texts);
-        } else {
-            // Single target
-            $target = $target_text;
-            $status_text = $status_description;
+            // Check if targets are semicolon-separated
+            if (strpos($target_text, ';') !== false) {
+                $target_parts = array_map('trim', explode(';', $target_text));
+                $status_parts = array_map('trim', explode(';', $status_description));
+                
+                foreach ($target_parts as $idx => $target_part) {
+                    if (!empty($target_part)) {
+                        // Calculate target_id for this target part
+                        $target_id = count($all_target_texts) + 1;
+                        
+                        // Check if target filtering is enabled and if this target is selected
+                        $program_id_str = strval($submission['program_id']);
+                        $should_include_target = true;
+                        
+                        if (!empty($selected_targets) && isset($selected_targets[$program_id_str])) {
+                            $selected_target_ids = array_map('intval', $selected_targets[$program_id_str]);
+                            $should_include_target = in_array($target_id, $selected_target_ids);
+                        }
+                        
+                        if ($should_include_target) {
+                            $all_target_texts[] = $target_part;
+                            $all_status_texts[] = isset($status_parts[$idx]) ? $status_parts[$idx] : 'No status update available';
+                        }
+                    }
+                }
+            } else {
+                // Single target
+                $target_id = count($all_target_texts) + 1;
+                
+                // Check if target filtering is enabled and if this target is selected
+                $program_id_str = strval($submission['program_id']);
+                $should_include_target = true;
+                
+                if (!empty($selected_targets) && isset($selected_targets[$program_id_str])) {
+                    $selected_target_ids = array_map('intval', $selected_targets[$program_id_str]);
+                    $should_include_target = in_array($target_id, $selected_target_ids);
+                }
+                
+                if ($should_include_target) {
+                    $target_text = str_replace(['\\n', '\\r', '\\r\\n'], "\n", $target_text);
+                    $status_description = str_replace(['\\n', '\\r', '\\r\\n'], "\n", $status_description);
+                    
+                    $all_target_texts[] = $target_text;
+                    $all_status_texts[] = $status_description;
+                }
+            }
         }
         
-        // Normalize newlines in the old format as well
-        $target = str_replace(['\\n', '\\r', '\\r\\n'], "\n", $target);
-        $status_text = str_replace(['\\n', '\\r', '\\r\\n'], "\n", $status_text);
+        error_log("Program {$program['program_id']}: Processed Q{$period_quarter} with " . 
+                 (isset($content['targets']) ? count($content['targets']) : '1') . " targets");
     }
-      // Map status to color (green, yellow, red, grey)
+    
+    // Combine all targets and statuses from all periods
+    $target = !empty($all_target_texts) ? implode("\n", $all_target_texts) : 'No target set';
+    $status_text = !empty($all_status_texts) ? implode("\n", $all_status_texts) : 'No status update available';
+    
+    // Final cleanup of newlines
+    $target = preg_replace('/\\\\[rn]/', "\n", $target);
+    $status_text = preg_replace('/\\\\[rn]/', "\n", $status_text);
+    
+    // Map status to color (green, yellow, red, grey)
     $status_color = 'grey'; // Default for not reported
-      // Get the rating from content_json instead of the removed status column
-    $rating = $content['rating'] ?? $content['status'] ?? 'not-reported';
+    
+    // Get the rating from the latest period's content
+    $rating = $latest_rating;
     
     // Use the same color mapping as the rating_helpers.php and program admin
     switch ($rating) {
