@@ -406,6 +406,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $start_date = !empty($_POST['start_date']) ? $_POST['start_date'] : null;
             $end_date = !empty($_POST['end_date']) ? $_POST['end_date'] : null;
             $initiative_id = !empty($_POST['initiative_id']) ? intval($_POST['initiative_id']) : null;
+            $status_indicator = !empty($_POST['status_indicator']) ? $_POST['status_indicator'] : null;
             $hold_point_post = isset($_POST['hold_point']) ? json_encode(['is_on_hold' => true, 'reason' => $_POST['hold_reason'] ?? '', 'date_set' => date('Y-m-d H:i:s')]) : null;
             $rating = $_POST['rating'] ?? 'not-started';
             $remarks = trim($_POST['remarks'] ?? '');
@@ -594,6 +595,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $update_fields[] = "initiative_id = ?";
                 $update_params[] = $initiative_id;
                 $param_types .= 'i';
+                
+                // Add status_indicator field
+                $update_fields[] = "status_indicator = ?";
+                $update_params[] = $status_indicator;
+                $param_types .= 's';
                 
                 // Add hold_point field
                 $update_fields[] = "hold_point = ?";
@@ -1132,6 +1138,31 @@ if (isset($_SESSION['message'])): ?>
                             <!-- Program Status Controls -->
                             <div class="mt-4 pt-3 border-top">
                                 <h6 class="fw-bold mb-3">Program Status</h6>
+                                
+                                <!-- Status Indicator Selection -->
+                                <div class="mb-4">
+                                    <label for="status_indicator" class="form-label fw-medium">
+                                        <i class="fas fa-flag me-2"></i>
+                                        Overall Program Status
+                                    </label>
+                                    <select class="form-select" id="status_indicator" name="status_indicator">
+                                        <option value="">Select Status...</option>
+                                        <option value="not-started" <?php echo (isset($program['status_indicator']) && $program['status_indicator'] === 'not-started') ? 'selected' : ''; ?>>
+                                            Not Started
+                                        </option>
+                                        <option value="in-progress" <?php echo (isset($program['status_indicator']) && $program['status_indicator'] === 'in-progress') ? 'selected' : ''; ?>>
+                                            In Progress
+                                        </option>
+                                        <option value="completed" <?php echo (isset($program['status_indicator']) && $program['status_indicator'] === 'completed') ? 'selected' : ''; ?>>
+                                            Completed
+                                        </option>
+                                    </select>
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Set the overall status to track the program's progress at a high level.
+                                    </div>
+                                </div>
+                                
                                 <div class="form-check form-switch">
                                     <?php 
                                     $hold_point_data = null;
