@@ -519,6 +519,9 @@ require_once '../../layouts/page_header.php';
                                             <i class="fas fa-eye"></i>
                                         </a>
                                         <?php if (isset($program['owner_agency_id']) && $program['owner_agency_id'] == $_SESSION['user_id']): ?>
+                                        <a href="update_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="Edit Program">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
                                         <button type="button" class="btn btn-outline-danger delete-program-btn" 
                                             data-id="<?php echo $program['program_id']; ?>"
                                             data-name="<?php echo htmlspecialchars($program['program_name']); ?>"
