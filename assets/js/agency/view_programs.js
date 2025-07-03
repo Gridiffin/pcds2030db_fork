@@ -6,6 +6,19 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize delete functionality
     initDeleteButtons();
     
+    // Initialize pagination for both tables (wait for TablePagination to be available)
+    if (typeof TablePagination !== 'undefined') {
+        initializePagination();
+    } else {
+        // Wait for TablePagination to be loaded
+        const checkForTablePagination = setInterval(() => {
+            if (typeof TablePagination !== 'undefined') {
+                clearInterval(checkForTablePagination);
+                initializePagination();
+            }
+        }, 100);
+    }
+    
     // Initialize table sorting
     const tables = ['draftProgramsTable', 'finalizedProgramsTable'];
     tables.forEach(tableId => {
@@ -35,6 +48,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Update direction attribute
                 this.setAttribute('data-direction', newDirection);
+                
+                // Refresh pagination after sorting
+                if (window.tablePaginations[tableId]) {
+                    window.tablePaginations[tableId].refresh();
+                }
             });
         });
     });
@@ -269,8 +287,13 @@ function applyFilters(tableType) {
                 }
             }
             
-            // Show or hide the row
-            row.style.display = showRow ? '' : 'none';
+            // Show or hide the row by adding/removing d-none class
+            // This is compatible with the pagination utility
+            if (showRow) {
+                row.classList.remove('d-none');
+            } else {
+                row.classList.add('d-none');
+            }
             return;
         }
         
@@ -314,41 +337,57 @@ function applyFilters(tableType) {
             }
         }
         
-        // Show or hide the row
-        row.style.display = showRow ? '' : 'none';
+        // Show or hide the row by adding/removing d-none class
+        // This is compatible with the pagination utility
+        if (showRow) {
+            row.classList.remove('d-none');
+        } else {
+            row.classList.add('d-none');
+        }
     });
     
     // Update "no results" message if needed
     updateNoResultsMessage(tableId);
+    
+    // Update pagination after filtering
+    if (window.tablePaginations[tableId]) {
+        window.tablePaginations[tableId].onFilterChange();
+    }
 }
 
-// Function to update "no results" message when all filtered rows are hidden
-function updateNoResultsMessage(tableId) {
-    const tbody = document.querySelector(`#${tableId} tbody`);
-    if (!tbody) return;
-    
-    // Check if there are any visible rows
-    const visibleRows = Array.from(tbody.querySelectorAll('tr')).filter(row => 
-        row.style.display !== 'none'
-    );
-    
-    // If all rows are either filtered out or there are no rows originally
-    if (visibleRows.length === 0) {
-        // Check if we already have a "no results" row
-        let noResultsRow = tbody.querySelector('.no-results-row');
-          if (!noResultsRow) {
-            noResultsRow = document.createElement('tr');
-            noResultsRow.className = 'no-results-row';
-            noResultsRow.innerHTML = '<td colspan="5" class="text-center py-4">No matching programs found.</td>';
-            tbody.appendChild(noResultsRow);
-        }
-    } else {
-        // Remove any existing "no results" row if we have visible rows
-        const noResultsRow = tbody.querySelector('.no-results-row');
-        if (noResultsRow) {
-            noResultsRow.remove();
-        }
+/**
+ * Initialize pagination for both tables
+ */
+function initializePagination() {
+    // Check if TablePagination is available
+    if (typeof TablePagination === 'undefined') {
+        console.error('TablePagination class is not available. Make sure pagination.js is loaded first.');
+        return;
     }
+    
+    // Initialize pagination for draft programs table
+    const draftTable = document.getElementById('draftProgramsTable');
+    if (draftTable) {
+        window.tablePaginations = window.tablePaginations || {};
+        window.tablePaginations['draftProgramsTable'] = new TablePagination('draftProgramsTable', {
+            itemsPerPage: 5,
+            paginationContainerId: 'draftProgramsPagination',
+            counterElementId: 'draftProgramsCounter'
+        });
+    }
+    
+    // Initialize pagination for finalized programs table
+    const finalizedTable = document.getElementById('finalizedProgramsTable');
+    if (finalizedTable) {
+        window.tablePaginations = window.tablePaginations || {};
+        window.tablePaginations['finalizedProgramsTable'] = new TablePagination('finalizedProgramsTable', {
+            itemsPerPage: 5,
+            paginationContainerId: 'finalizedProgramsPagination',
+            counterElementId: 'finalizedProgramsCounter'
+        });
+    }
+    
+    console.log('Pagination initialized for both tables');
 }
 
 /**
@@ -378,4 +417,35 @@ function initDeleteButtons() {
             bsModal.show();
         });
     });
+}
+
+/**
+ * Update "no results" message when all filtered rows are hidden
+ */
+function updateNoResultsMessage(tableId) {
+    const tbody = document.querySelector(`#${tableId} tbody`);
+    if (!tbody) return;
+    
+    // Check if there are any visible rows (not hidden by filters)
+    const visibleRows = Array.from(tbody.querySelectorAll('tr:not(.d-none)')).filter(row => 
+        !row.querySelector('td[colspan]') // Exclude "no results" rows
+    );
+    
+    // If all rows are filtered out
+    if (visibleRows.length === 0) {
+        // Check if we already have a "no results" row
+        let noResultsRow = tbody.querySelector('.no-filter-results');
+          if (!noResultsRow) {
+            noResultsRow = document.createElement('tr');
+            noResultsRow.className = 'no-filter-results';
+            noResultsRow.innerHTML = '<td colspan="5" class="text-center py-4">No matching programs found.</td>';
+            tbody.appendChild(noResultsRow);
+        }
+    } else {
+        // Remove any existing "no results" row if we have visible rows
+        const noResultsRow = tbody.querySelector('.no-filter-results');
+        if (noResultsRow) {
+            noResultsRow.remove();
+        }
+    }
 }
