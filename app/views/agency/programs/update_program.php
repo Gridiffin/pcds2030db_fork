@@ -405,7 +405,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $brief_description = trim($_POST['brief_description'] ?? '');
             $start_date = !empty($_POST['start_date']) ? $_POST['start_date'] : null;
             $end_date = !empty($_POST['end_date']) ? $_POST['end_date'] : null;
-            $initiative_id = !empty($_POST['initiative_id']) ? intval($_POST['initiative_id']) : null;$rating = $_POST['rating'] ?? 'not-started';
+            $initiative_id = !empty($_POST['initiative_id']) ? intval($_POST['initiative_id']) : null;
+            $hold_point_post = isset($_POST['hold_point']) ? json_encode(['is_on_hold' => true, 'reason' => $_POST['hold_reason'] ?? '', 'date_set' => date('Y-m-d H:i:s')]) : null;
+            $rating = $_POST['rating'] ?? 'not-started';
             $remarks = trim($_POST['remarks'] ?? '');
             $period_id = intval($_POST['period_id'] ?? 0);
             $submission_id = isset($_POST['submission_id']) && !empty($_POST['submission_id']) ? intval($_POST['submission_id']) : null;
@@ -592,6 +594,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $update_fields[] = "initiative_id = ?";
                 $update_params[] = $initiative_id;
                 $param_types .= 'i';
+                
+                // Add hold_point field
+                $update_fields[] = "hold_point = ?";
+                $update_params[] = $hold_point_post;
+                $param_types .= 's';
                 
                 if (!empty($update_fields)) {
                     $update_fields[] = "updated_at = NOW()";
@@ -1121,6 +1128,44 @@ if (isset($_SESSION['message'])): ?>
                                     <?php endif; ?>
                                 </div>
                             </div>
+                            
+                            <!-- Program Status Controls -->
+                            <div class="mt-4 pt-3 border-top">
+                                <h6 class="fw-bold mb-3">Program Status</h6>
+                                <div class="form-check form-switch">
+                                    <?php 
+                                    $hold_point_data = null;
+                                    $is_on_hold = false;
+                                    $hold_reason = '';
+                                    
+                                    if (isset($program['hold_point']) && !empty($program['hold_point'])) {
+                                        $hold_point_data = json_decode($program['hold_point'], true);
+                                        $is_on_hold = isset($hold_point_data['is_on_hold']) && $hold_point_data['is_on_hold'];
+                                        $hold_reason = $hold_point_data['reason'] ?? '';
+                                    }
+                                    ?>
+                                    <input class="form-check-input" type="checkbox" id="hold_point" name="hold_point" value="1" 
+                                           <?php echo $is_on_hold ? 'checked' : ''; ?>>
+                                    <label class="form-check-label fw-medium" for="hold_point">
+                                        <i class="fas fa-pause-circle me-2 text-warning"></i>
+                                        Put Program on Hold
+                                    </label>
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Mark this program as on hold to pause its execution temporarily. This will help track programs that are temporarily suspended.
+                                    </div>
+                                </div>
+                                
+                                <!-- Hold Reason (shown when hold is checked) -->
+                                <div id="hold-reason-container" class="mt-3" style="<?php echo $is_on_hold ? '' : 'display: none;'; ?>">
+                                    <label for="hold_reason" class="form-label">Reason for Hold (Optional)</label>
+                                    <textarea class="form-control" id="hold_reason" name="hold_reason" rows="2" 
+                                              placeholder="Briefly explain why this program is being put on hold..."><?php echo htmlspecialchars($hold_reason); ?></textarea>
+                                    <div class="form-text">
+                                        Provide context for why this program is on hold to help with future reference.
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                         <!-- 2. Program Targets Card -->
@@ -1437,6 +1482,35 @@ document.addEventListener('DOMContentLoaded', function() {
             ratingInput.value = this.getAttribute('data-rating');
         });
     });
+    
+    // Hold Point toggle functionality
+    const holdPointCheckbox = document.getElementById('hold_point');
+    const holdReasonContainer = document.getElementById('hold-reason-container');
+    
+    if (holdPointCheckbox && holdReasonContainer) {
+        holdPointCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                holdReasonContainer.style.display = 'block';
+                // Add smooth animation
+                holdReasonContainer.style.opacity = '0';
+                setTimeout(() => {
+                    holdReasonContainer.style.transition = 'opacity 0.3s ease';
+                    holdReasonContainer.style.opacity = '1';
+                }, 10);
+            } else {
+                holdReasonContainer.style.transition = 'opacity 0.3s ease';
+                holdReasonContainer.style.opacity = '0';
+                setTimeout(() => {
+                    holdReasonContainer.style.display = 'none';
+                }, 300);
+                // Clear the reason field when unchecked
+                const holdReasonField = document.getElementById('hold_reason');
+                if (holdReasonField) {
+                    holdReasonField.value = '';
+                }
+            }
+        });
+    }
       // Attachment Management
     const dropzone = document.getElementById('attachment-dropzone');
     const fileInput = document.getElementById('attachment-file-input');
