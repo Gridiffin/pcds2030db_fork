@@ -107,6 +107,28 @@ try {
         exit;
     }
     
+    // CASCADING SUBMISSION LOGIC: Finalize ALL other drafts for this program (any period)
+    $cascade_query = "UPDATE program_submissions 
+                      SET is_draft = 0, 
+                          submission_date = NOW() 
+                      WHERE program_id = ? 
+                      AND is_draft = 1 
+                      AND period_id != ?";
+    
+    $cascade_stmt = $conn->prepare($cascade_query);
+    $cascade_stmt->bind_param("ii", $program_id, $period_id);
+    $cascade_result = $cascade_stmt->execute();
+    
+    if ($cascade_result && $cascade_stmt->affected_rows > 0) {
+        // Log cascading finalization
+        log_audit_action(
+            'program_cascade_finalized',
+            "Cascading finalization: {$cascade_stmt->affected_rows} other period drafts finalized for Program ID: {$program_id} when submitting Period ID: {$period_id}",
+            'success',
+            $_SESSION['user_id'] ?? null
+        );
+    }
+    
     // Update the submission for this program in the current period
     $query = "UPDATE program_submissions 
               SET is_draft = 0, 
@@ -182,6 +204,28 @@ try {
             if (!$content_data || (empty($content_data['targets']) && empty($content_data['target'])) || empty($content_data['rating'])) {
                 echo json_encode(['status' => 'error', 'message' => 'Cannot submit program without targets and rating. Please complete the program details first.']);
                 exit;
+            }
+            
+            // CASCADING SUBMISSION LOGIC: Finalize ALL other drafts for this program (any period)
+            $cascade_query = "UPDATE program_submissions 
+                              SET is_draft = 0, 
+                                  submission_date = NOW() 
+                              WHERE program_id = ? 
+                              AND is_draft = 1 
+                              AND period_id != ?";
+            
+            $cascade_stmt = $conn->prepare($cascade_query);
+            $cascade_stmt->bind_param("ii", $program_id, $period_id);
+            $cascade_result = $cascade_stmt->execute();
+            
+            if ($cascade_result && $cascade_stmt->affected_rows > 0) {
+                // Log cascading finalization
+                log_audit_action(
+                    'program_cascade_finalized',
+                    "Cascading finalization: {$cascade_stmt->affected_rows} other period drafts finalized for Program ID: {$program_id} when submitting Period ID: {$period_id}",
+                    'success',
+                    $_SESSION['user_id'] ?? null
+                );
             }
             
             $insert_query = "INSERT INTO program_submissions (program_id, period_id, is_draft, submission_date, submitted_by, content_json) 

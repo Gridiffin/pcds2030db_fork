@@ -40,37 +40,41 @@ if (!isset($_GET['program_id']) || !is_numeric($_GET['program_id']) ||
 
 $program_id = intval($_GET['program_id']);
 $period_id = intval($_GET['period_id']);
+$cascade_revert = isset($_GET['cascade']) && $_GET['cascade'] === 'true';
 
-// Use the model function instead of direct SQL
-$success = unsubmit_program($program_id, $period_id);
+// Use the enhanced model function instead of direct SQL
+$result = enhanced_unsubmit_program($program_id, $period_id, $cascade_revert);
 
 // Get program information for logging
 $program_info = get_program_submission($program_id, $period_id);
 $program_name = $program_info['program_name'] ?? 'Unknown Program';
 
-if ($success) {
-    $_SESSION['success_message'] = "Program submission has been successfully un-submitted and marked as draft.";
+if ($result['success']) {
+    $affected_count = count($result['affected_periods']);
+    $periods_text = implode(', ', $result['affected_periods']);
     
-    // Log successful program unsubmit
-    log_audit_action('admin_unsubmit_program', "Program: $program_name | Program ID: $program_id | Period ID: $period_id", 'success', $_SESSION['user_id']);
-} else {
-    // Check if a submission record actually exists for this program_id and period_id
-    $submission = get_program_submission($program_id, $period_id);
-    
-    if (!$submission) {
-        $_SESSION['error_message'] = "No submission found for this program in the specified period. Nothing to un-submit.";
-        
-        // Log failed program unsubmit
-        log_audit_action('admin_unsubmit_program_failed', "Program: $program_name | Program ID: $program_id | Period ID: $period_id | Error: No submission found", 'failure', $_SESSION['user_id']);
+    if ($affected_count > 1) {
+        $_SESSION['success_message'] = "Program submission has been successfully unsubmitted. Affected periods: {$periods_text}";
     } else {
-        // Record existed, but maybe no change was needed (e.g., already draft and not-started)
-        $_SESSION['info_message'] = "Program submission was already in the desired state or no changes were made.";
+        $_SESSION['success_message'] = "Program submission has been successfully unsubmitted and marked as draft.";
     }
+    
+    // Log successful program unsubmit with details
+    $log_details = "Program: $program_name | Program ID: $program_id | Period ID: $period_id";
+    if ($affected_count > 1) {
+        $log_details .= " | Affected Periods: {$periods_text}";
+    }
+    log_audit_action('admin_unsubmit_program', $log_details, 'success', $_SESSION['user_id']);
+} else {
+    $_SESSION['error_message'] = "Failed to unsubmit program: " . $result['message'];
+    
+    // Log failed program unsubmit
+    log_audit_action('admin_unsubmit_program_failed', "Program: $program_name | Program ID: $program_id | Period ID: $period_id | Error: " . $result['message'], 'failure', $_SESSION['user_id']);
 }
 
-// Log the action
+// Log the action for backward compatibility
 if (function_exists('log_action')) {
-    log_action('unsubmit_program', "Program ID: $program_id, Period ID: $period_id", $success);
+    log_action('unsubmit_program', "Program ID: $program_id, Period ID: $period_id", $result['success']);
 }
 
 // Construct redirect URL to go back to the programs page, maintaining the period context
