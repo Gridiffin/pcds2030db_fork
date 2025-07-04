@@ -539,7 +539,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         //     exit;
                         // }
 
-                        // ... rest of the target processing ...
+                        // Build the target array (this was missing!)
+                        $targets[] = [
+                            'target_number' => $target_number,
+                            'target_text' => $target_text,
+                            'target_status' => trim($target_statuses[$i] ?? 'not-started'),
+                            'status_description' => trim($target_status_descriptions[$i] ?? ''),
+                            'start_date' => !empty($target_start_dates[$i]) ? $target_start_dates[$i] : null,
+                            'end_date' => !empty($target_end_dates[$i]) ? $target_end_dates[$i] : null
+                        ];
+                    }
+                }
+            }
+            
+            // Final validation: ensure we don't save completely empty targets
+            if (empty($targets)) {
+                // Add a default empty target structure to prevent data loss
+                $targets = [[
+                    'target_number' => '',
+                    'target_text' => '',
+                    'status_description' => '',
+                    'target_status' => 'not-started',
+                    'start_date' => null,
+                    'end_date' => null
+                ]];
+            } else {
+                // Validate that at least one target has content
+                $has_content = false;
+                foreach ($targets as $target) {
+                    if (!empty(trim($target['target_text'] ?? ''))) {
+                        $has_content = true;
+                        break;
+                    }
+                }
+                
+                // If no targets have content, keep existing targets instead of overwriting with empty ones
+                if (!$has_content && isset($current_submission) && !empty($current_submission['content_json'])) {
+                    $existing_content = json_decode($current_submission['content_json'], true);
+                    if (isset($existing_content['targets']) && !empty($existing_content['targets'])) {
+                        $targets = $existing_content['targets'];
+                        error_log("[DEBUG] Preserved existing targets to prevent data loss");
                     }
                 }
             }
