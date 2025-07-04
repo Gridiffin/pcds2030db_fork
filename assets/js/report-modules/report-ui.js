@@ -301,49 +301,18 @@ if (typeof window.ReportUI !== 'undefined') {
 
     /**
      * Show a toast notification
+     * Uses the global showToast function for consistency
      * @param {string} title - The toast title
      * @param {string} message - The toast message
      * @param {string} type - The toast type (success, info, warning, danger)
      */
     function showToast(title, message, type = 'info') {
-        // Check if toast container exists, if not create it
-        let toastContainer = document.querySelector('.toast-container');
-        if (!toastContainer) {
-            toastContainer = document.createElement('div');
-            toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
-            document.body.appendChild(toastContainer);
+        if (typeof window.showToast === 'function') {
+            window.showToast(title, message, type);
+        } else {
+            // Fallback if global showToast isn't loaded
+            alert(`${title}: ${message}`);
         }
-        
-        // Create toast element
-        const toastId = 'toast-' + Date.now();
-        const toast = document.createElement('div');
-        toast.className = `toast align-items-center text-white bg-${type} border-0`;
-        toast.id = toastId;
-        toast.setAttribute('role', 'alert');
-        toast.setAttribute('aria-live', 'assertive');
-        toast.setAttribute('aria-atomic', 'true');
-        
-        // Add toast content
-        toast.innerHTML = `
-            <div class="d-flex">
-                <div class="toast-body">
-                    <strong>${title}</strong>: ${message}
-                </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-        `;
-        
-        // Add toast to container
-        toastContainer.appendChild(toast);
-        
-        // Initialize and show toast
-        const bsToast = new bootstrap.Toast(toast, { autohide: true, delay: 5000 });
-        bsToast.show();
-        
-        // Remove toast from DOM after it's hidden
-        toast.addEventListener('hidden.bs.toast', function() {
-            toast.remove();
-        });
     }    // Expose public methods
     return {
         initUI,

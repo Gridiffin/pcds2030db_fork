@@ -381,8 +381,8 @@ if (!window.reportingPeriodsInitialized) {
                 .then(data => {
                     if (data.success) {
                         // alert('Period saved successfully!'); // Replace with a toast notification
-                        if (window.ToastManager && typeof window.ToastManager.showToast === 'function') {
-                            window.ToastManager.showToast('success', 'Success!', data.message || 'Period saved successfully.');
+                        if (typeof window.showToast === 'function') {
+                            window.showToast('Success', data.message || 'Period saved successfully.', 'success');
                         } else {
                             alert(data.message || 'Period saved successfully.');
                         }
@@ -395,8 +395,8 @@ if (!window.reportingPeriodsInitialized) {
                         }
                     } else {
                         // alert(`Error: ${data.message}`); // Replace with a toast notification
-                         if (window.ToastManager && typeof window.ToastManager.showToast === 'function') {
-                            window.ToastManager.showToast('error', 'Error!', data.message || 'Failed to save period.');
+                         if (typeof window.showToast === 'function') {
+                            window.showToast('Error', data.message || 'Failed to save period.', 'danger');
                         } else {
                             alert(`Error: ${data.message || 'Failed to save period.'}`);
                         }
@@ -405,8 +405,8 @@ if (!window.reportingPeriodsInitialized) {
                 .catch(error => {
                     console.error('Error saving period:', error);
                     // alert('An unexpected error occurred. Please try again.');
-                    if (window.ToastManager && typeof window.ToastManager.showToast === 'function') {
-                        window.ToastManager.showToast('error', 'Error!', 'An unexpected error occurred. Please try again.');
+                    if (typeof window.showToast === 'function') {
+                        window.showToast('Error', 'An unexpected error occurred. Please try again.', 'danger');
                     } else {
                         alert('An unexpected error occurred. Please try again.');
                     }

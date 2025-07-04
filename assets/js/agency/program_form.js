@@ -132,13 +132,12 @@ function clearValidationError(fieldId) {
     if (errorDiv) errorDiv.remove();
 }
 
-// Helper for toast notification (uses global showToast if available)
+// Helper for toast notification (uses global showToast for consistency)
 function showToast(title, message, type = 'info', duration = 5000) {
     if (typeof window.showToast === 'function') {
         window.showToast(title, message, type, duration);
-    } else if (typeof showToast === 'function') {
-        showToast(title, message, type, duration);
     } else {
-        alert(title + ': ' + message);
+        // Fallback if global showToast isn't loaded
+        alert(`${title}: ${message}`);
     }
 }

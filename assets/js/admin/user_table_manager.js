@@ -2,10 +2,9 @@
  * User Table Manager
  * Handles user table interactions, refreshing, and updates
  */
-function UserTableManager(formManagerParam, toastManagerParam) {
+function UserTableManager(formManagerParam) {
     // Use provided managers or create new ones if needed
     const formManager = formManagerParam || (window.UserFormManager ? UserFormManager() : null);
-    const toastManager = toastManagerParam || (window.ToastManager ? ToastManager() : null);
     
     // Flag to track if event listeners have been attached
     let listenersAttached = false;
@@ -84,17 +83,29 @@ function UserTableManager(formManagerParam, toastManagerParam) {
         .then(data => {
             if (data.success) {
                 const statusText = isActive === 1 ? 'activated' : 'deactivated';
-                toastManager.show('Success', `User "${username}" ${statusText} successfully.`, 'success');
+                if (typeof window.showToast === 'function') {
+                    window.showToast('Success', `User "${username}" ${statusText} successfully.`, 'success');
+                } else {
+                    alert(`User "${username}" ${statusText} successfully.`);
+                }
                 
                 // Refresh the table to reflect the changes
                 refreshTable();
             } else {
-                toastManager.show('Error', data.error || 'Failed to update user status', 'danger');
+                if (typeof window.showToast === 'function') {
+                    window.showToast('Error', data.error || 'Failed to update user status', 'danger');
+                } else {
+                    alert(data.error || 'Failed to update user status');
+                }
             }
         })
         .catch(error => {
             console.error('Toggle active error:', error);
-            toastManager.show('Error', 'An unexpected error occurred while updating status', 'danger');
+            if (typeof window.showToast === 'function') {
+                window.showToast('Error', 'An unexpected error occurred while updating status', 'danger');
+            } else {
+                alert('An unexpected error occurred while updating status');
+            }
         });
     }
     
@@ -117,7 +128,7 @@ function UserTableManager(formManagerParam, toastManagerParam) {
             </div>
         `;
 
-        fetch(window.APP_URL + '/app/views/admin/manage_users.php?ajax_table=1')
+        fetch(window.APP_URL + '/app/views/admin/users/manage_users.php?ajax_table=1')
             .then(response => {
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}, statusText: ${response.statusText}`);
@@ -145,8 +156,8 @@ function UserTableManager(formManagerParam, toastManagerParam) {
                 listenersAttached = false; 
                 attachEventListeners();
 
-                if (toastManager && typeof toastManager.show === 'function') {
-                    toastManager.show('Error', `Failed to refresh user list: ${error.message}. Please try again.`, 'danger');
+                if (typeof window.showToast === 'function') {
+                    window.showToast('Error', `Failed to refresh user list: ${error.message}. Please try again.`, 'danger');
                 } else {
                     alert(`Failed to refresh user list: ${error.message}. Please try again.`);
                 }
@@ -206,8 +217,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Create instances with proper dependency injection
         const formManager = UserFormManager();
-        const toastManager = window.ToastManager ? ToastManager() : null;
-        const tableManager = UserTableManager(formManager, toastManager);
+        const tableManager = UserTableManager(formManager);
         
         // Attach event listeners once
         tableManager.attachEventListeners();

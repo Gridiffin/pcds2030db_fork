@@ -203,38 +203,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Function to show toast notifications
         function showToast(title, message, type = 'info') {
-            // Create the toast element
-            const toast = document.createElement('div');
-            toast.className = `toast align-items-center text-white bg-${type} border-0`;
-            toast.setAttribute('role', 'alert');
-            toast.setAttribute('aria-live', 'assertive');
-            toast.setAttribute('aria-atomic', 'true');
-            
-            // Toast content
-            toast.innerHTML = `
-                <div class="d-flex">
-                    <div class="toast-body">
-                        <strong>${title}</strong>: ${message}
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
-            `;
-            
-            // Add toast to container
-            toastContainer.appendChild(toast);
-            
-            // Initialize the toast
-            const bsToast = new bootstrap.Toast(toast, {
-                delay: 3000
-            });
-            
-            // Show the toast
-            bsToast.show();
-            
-            // Remove the toast when hidden
-            toast.addEventListener('hidden.bs.toast', function() {
-                toast.remove();
-            });
+            if (typeof window.showToast === 'function') {
+                window.showToast(title, message, type);
+            } else {
+                // Fallback if global showToast isn't loaded
+                alert(`${title}: ${message}`);
+            }
         }
         
         // Function to reinitialize tooltips for dynamically added elements

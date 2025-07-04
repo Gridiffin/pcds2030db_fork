@@ -219,13 +219,13 @@ function validateUserForm(form, isEdit = false) {
 
 /**
  * Show a toast notification
+ * Uses the global showToast function for consistency
  */
 function showToast(title, message, type = 'info') {
-    if (typeof window.ToastManager === 'function') {
-        const toast = window.ToastManager();
-        toast.show(title, message, type);
+    if (typeof window.showToast === 'function') {
+        window.showToast(title, message, type);
     } else {
-        // Fallback if toast manager isn't loaded
+        // Fallback if global showToast isn't loaded
         alert(`${title}: ${message}`);
     }
 }

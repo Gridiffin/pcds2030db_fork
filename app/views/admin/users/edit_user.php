@@ -64,7 +64,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $sectors = get_all_sectors();
 
 // Get all agency groups for dropdown
-$agency_groups = get_all_agency_groups($conn);
+$config = include __DIR__ . '/../../../config/db_names.php';
+if (!$config || !isset($config['tables']['agency'])) {
+    die('Config not loaded or missing agency table definition.');
+}
+$agencyTable = $config['tables']['agency'];
+$agencyIdCol = $config['columns']['agency']['id'];
+$agencyNameCol = $config['columns']['agency']['name'];
+$agencies = get_all_agencies($conn);
 
 // Set page title
 $pageTitle = 'Edit User';
@@ -92,6 +99,9 @@ $header_config = [
 
 // Include the modern page header
 require_once '../../layouts/page_header.php';
+
+// Before the form, set the role value for the dropdown
+$role_value = $_POST['role'] ?? $user['role'];
 ?>
 
 <main class="flex-fill">
@@ -131,8 +141,9 @@ require_once '../../layouts/page_header.php';
                     <div class="col-md-6">
                         <label for="role" class="form-label">User Role *</label>
                         <select class="form-select" id="role" name="role" required>
-                            <option value="admin" <?php echo $user['role'] === 'admin' ? 'selected' : ''; ?>>Administrator</option>
-                            <option value="agency" <?php echo $user['role'] === 'agency' ? 'selected' : ''; ?>>Agency User</option>
+                            <option value="admin" <?php echo $role_value === 'admin' ? 'selected' : ''; ?>>Administrator</option>
+                            <option value="agency" <?php echo $role_value === 'agency' ? 'selected' : ''; ?>>Agency User</option>
+                            <option value="focal" <?php echo $role_value === 'focal' ? 'selected' : ''; ?>>Focal</option>
                         </select>
                     </div>
                     
@@ -160,33 +171,16 @@ require_once '../../layouts/page_header.php';
             </div>
             
             <!-- Agency Information (shown only for agency role) -->
-            <div id="agencyFields" class="mb-4" style="display: <?php echo ($user['role'] === 'agency') ? 'block' : 'none'; ?>;">
+            <div id="agencyFields" class="mb-4" style="display: <?php echo (in_array($user['role'], ['agency', 'focal'])) ? 'block' : 'none'; ?>;">
                 <h6 class="fw-bold mb-3">Agency Information <span class="text-danger">(Required for Agency Users)</span></h6>
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label for="agency_name" class="form-label">Agency Name *</label>
-                        <input type="text" class="form-control" id="agency_name" name="agency_name" value="<?php echo htmlspecialchars($user['agency_name'] ?? ''); ?>">
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <label for="sector_id" class="form-label">Sector *</label>
-                        <select class="form-select" id="sector_id" name="sector_id">
-                            <option value="">Select Sector</option>
-                            <?php foreach($sectors as $sector): ?>
-                                <option value="<?php echo $sector['sector_id']; ?>" <?php echo isset($user['sector_id']) && $user['sector_id'] == $sector['sector_id'] ? 'selected' : ''; ?>>
-                                    <?php echo htmlspecialchars($sector['sector_name']); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <div class="col-md-6">
-                        <label for="agency_group_id" class="form-label">Agency Group</label>
-                        <select class="form-select" id="agency_group_id" name="agency_group_id">
-                            <option value="">Select Agency Group (Optional)</option>
-                            <?php foreach($agency_groups as $group): ?>
-                                <option value="<?php echo $group['agency_group_id']; ?>" <?php echo isset($user['agency_group_id']) && $user['agency_group_id'] == $group['agency_group_id'] ? 'selected' : ''; ?>>
-                                    <?php echo htmlspecialchars($group['group_name']); ?>
+                        <label for="<?php echo $agencyIdCol; ?>" class="form-label">Agency</label>
+                        <select class="form-select" id="<?php echo $agencyIdCol; ?>" name="<?php echo $agencyIdCol; ?>">
+                            <option value="">Select Agency</option>
+                            <?php foreach($agencies as $agency): ?>
+                                <option value="<?php echo $agency[$agencyIdCol]; ?>" <?php echo isset($user[$agencyIdCol]) && $user[$agencyIdCol] == $agency[$agencyIdCol] ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($agency[$agencyNameCol]); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
@@ -216,7 +210,7 @@ require_once '../../layouts/page_header.php';
                         <input type="hidden" name="is_active" value="0">
                         <input class="form-check-input" type="checkbox" id="is_active" name="is_active" value="1" <?php echo $user['is_active'] ? 'checked' : ''; ?>>
                         <label class="form-check-label" for="is_active">
-                            <span class="status-indicator <?php echo $user['is_active'] ? 'active' : 'inactive'; ?>">
+                            <span class="user-status <?php echo $user['is_active'] ? 'active' : 'inactive'; ?>">
                                 <?php echo $user['is_active'] ? 'Active' : 'Inactive'; ?>
                             </span>
                         </label>
@@ -227,7 +221,7 @@ require_once '../../layouts/page_header.php';
             
             <!-- Action Buttons -->
             <div class="d-flex justify-content-end mt-4">
-                <a href="<?php echo APP_URL; ?>/app/views/admin/manage_users.php" class="btn btn-outline-secondary me-2">
+                <a href="<?php echo APP_URL; ?>/app/views/admin/users/manage_users.php" class="btn btn-outline-secondary me-2">
                     <i class="fas fa-times me-1"></i> Cancel
                 </a>
                 <button type="submit" class="btn btn-primary">
@@ -244,23 +238,17 @@ document.addEventListener('DOMContentLoaded', function() {
     // Toggle agency fields visibility based on role selection
     const roleSelect = document.getElementById('role');
     const agencyFields = document.getElementById('agencyFields');
-    const agencyName = document.getElementById('agency_name');
-    const sectorId = document.getElementById('sector_id');
-    const agencyGroupId = document.getElementById('agency_group_id'); // Add agency_group_id
+    const agencyId = document.getElementById('<?php echo $agencyIdCol; ?>');
 
     if (roleSelect && agencyFields) {
         // Function to update required status based on role
         const updateRequiredFields = function() {
-            if (roleSelect.value === 'agency') {
+            if (roleSelect.value === 'agency' || roleSelect.value === 'focal') {
                 agencyFields.style.display = 'block';
-                agencyName.setAttribute('required', '');
-                sectorId.setAttribute('required', '');
-                // agency_group_id is optional, so no required attribute here
+                agencyId.setAttribute('required', '');
             } else {
                 agencyFields.style.display = 'none';
-                agencyName.removeAttribute('required');
-                sectorId.removeAttribute('required');
-                // agency_group_id remains optional
+                agencyId.removeAttribute('required');
             }
         };
         
@@ -343,19 +331,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 // Additional validation for agency role
-                if (roleSelect.value === 'agency') {
-                    if (!agencyName.value.trim()) {
+                if (roleSelect.value === 'agency' || roleSelect.value === 'focal') {
+                    if (!agencyId.value.trim()) {
                         isValid = false;
-                        setInputFeedback(agencyName, false, 'Agency name is required');
+                        setInputFeedback(agencyId, false, 'Agency is required');
                     } else {
-                        setInputFeedback(agencyName, true);
-                    }
-                    
-                    if (!sectorId.value) {
-                        isValid = false;
-                        setInputFeedback(sectorId, false, 'Please select a sector');
-                    } else {
-                        setInputFeedback(sectorId, true);
+                        setInputFeedback(agencyId, true);
                     }
                 }
 

@@ -82,9 +82,24 @@ function UserFormManager() {
     // Initialize on creation
     initialize();
 
+    /**
+     * Hide any open forms/modals
+     */
+    function hideForm() {
+        // Hide any open Bootstrap modals
+        const openModals = document.querySelectorAll('.modal.show');
+        openModals.forEach(modal => {
+            const bsModal = bootstrap.Modal.getInstance(modal);
+            if (bsModal) {
+                bsModal.hide();
+            }
+        });
+    }
+
     // Public API
     return {
-        showDeleteForm
+        showDeleteForm,
+        hideForm
         // Other public methods...
     };
 }
