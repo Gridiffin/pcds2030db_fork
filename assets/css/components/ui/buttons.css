@@ -2,6 +2,8 @@
  * Button Component Styles
  */
 
+/* Button styles have been centralized in components/buttons.css. Remove all .btn, .btn-primary, .btn-secondary, .btn-outline-primary, and related variant styles from this file to avoid conflicts. Use only unique utility classes if needed. */
+
 /* Base button styles */
 .btn {
     --btn-padding-y: 0.5rem;

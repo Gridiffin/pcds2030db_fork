@@ -16,14 +16,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // Load initial audit logs
         loadAuditLogs();
         
-    // Set up event listeners
-    setupEventListeners();
-    
-    // Set default date range (last 30 days)
-    setDefaultDateRange();
-    
-    // Add refresh button
-    addRefreshButton();
+        // Set up event listeners
+        setupEventListeners();
+        
+        // Set default date range (last 30 days)
+        setDefaultDateRange();
     }
     
     function setupEventListeners() {
@@ -467,21 +464,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         });
-    }
-    
-    function addRefreshButton() {
-        const cardHeader = document.querySelector('.card-header');
-        if (cardHeader) {
-            const refreshButton = document.createElement('button');
-            refreshButton.className = 'btn btn-sm btn-outline-primary float-end';
-            refreshButton.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh';
-            refreshButton.id = 'refreshLogs';
-            refreshButton.addEventListener('click', function(e) {
-                e.preventDefault();
-                loadAuditLogs();
-            });
-            cardHeader.appendChild(refreshButton);
-        }
     }
     
     function showError(message) {

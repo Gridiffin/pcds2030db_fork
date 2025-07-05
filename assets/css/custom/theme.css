@@ -47,22 +47,7 @@ body.forest-theme {
 }
 
 /* Primary Buttons Forest Theme */
-.btn-primary,
-.btn-forest-primary {
-    background: var(--forest-gradient-primary);
-    border: none;
-    color: white;
-    font-weight: 500;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(var(--forest-deep-rgb), 0.2);
-}
-
-.btn-primary:hover,
-.btn-forest-primary:hover {
-    background: var(--forest-deep);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(var(--forest-deep-rgb), 0.3);
-}
+/* Button styles have been centralized in components/buttons.css. Remove all .btn-primary, .btn-forest-primary, .btn-outline-primary, and related variant overrides from this file. */
 
 /* Secondary Buttons Forest Theme */
 .btn-secondary,
@@ -77,23 +62,6 @@ body.forest-theme {
 .btn-secondary:hover,
 .btn-forest-secondary:hover {
     background: var(--forest-medium);
-    transform: translateY(-1px);
-}
-
-/* Outline Buttons Forest Theme */
-.btn-outline-primary,
-.btn-forest-outline {
-    border: 2px solid var(--forest-deep);
-    color: var(--forest-deep);
-    background: transparent;
-    font-weight: 500;
-    transition: all 0.3s ease;
-}
-
-.btn-outline-primary:hover,
-.btn-forest-outline:hover {
-    background: var(--forest-deep);
-    color: white;
     transform: translateY(-1px);
 }
 
