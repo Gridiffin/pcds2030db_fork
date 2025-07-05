@@ -37,8 +37,16 @@ function log_audit_action($action, $details = '', $status = 'success', $user_id 
     // Get client information
     $ip_address = get_client_ip();
 
+    // Load database mappings
+    $db_mappings = include __DIR__ . '/../config/db_names.php';
+    $tables = $db_mappings['tables'];
+    $columns = $db_mappings['columns'];
+    
+    $audit_logs_table = $tables['audit_logs'];
+    $user_id_col = $columns['audit_logs']['user_id'];
+    
     // Prepare the SQL statement
-    $sql = "INSERT INTO audit_logs (user_id, action, details, ip_address, status, created_at) 
+    $sql = "INSERT INTO $audit_logs_table ($user_id_col, action, details, ip_address, status, created_at) 
             VALUES (?, ?, ?, ?, ?, NOW())";
 
     try {
@@ -126,11 +134,22 @@ function get_audit_logs($filters = [], $limit = 50, $offset = 0) {
         $where_clause = 'WHERE ' . implode(' AND ', $conditions);
     }
 
+    // Load database mappings for count query
+    $db_mappings = include __DIR__ . '/../config/db_names.php';
+    $tables = $db_mappings['tables'];
+    $columns = $db_mappings['columns'];
+    
+    $audit_logs_table = $tables['audit_logs'];
+    $users_table = $tables['users'];
+    $agency_table = $tables['agency'];
+    $user_id_col = $columns['audit_logs']['user_id'];
+    $agency_id_col = $columns['users']['agency_id'];
+    
     // Get total count for pagination
     $count_sql = "SELECT COUNT(*) as total 
-                  FROM audit_logs al 
-                  LEFT JOIN users u ON al.user_id = u.user_id 
-                  LEFT JOIN agency a ON u.agency_id = a.agency_id 
+                  FROM $audit_logs_table al 
+                  LEFT JOIN $users_table u ON al.$user_id_col = u.user_id 
+                  LEFT JOIN $agency_table a ON u.$agency_id_col = a.agency_id 
                   $where_clause";
 
     $total_records = 0;
@@ -156,17 +175,23 @@ function get_audit_logs($filters = [], $limit = 50, $offset = 0) {
         ];
     }
 
+    // Get additional mapped column names for main query
+    $audit_field_changes_table = $tables['audit_field_changes'];
+    $agency_name_col = $columns['agency']['name'];
+    $username_col = $columns['users']['username'];
+    $role_col = $columns['users']['role'];
+    
     // Main query with joins - enhanced to include field changes
     $sql = "SELECT 
                 al.id,
-                al.user_id,
+                al.$user_id_col,
                 al.action,
                 al.details,
                 al.ip_address,
                 al.status,
                 al.created_at,
-                COALESCE(a.agency_name, u.username, 'System') as user_name,
-                u.role,
+                COALESCE(a.$agency_name_col, u.$username_col, 'System') as user_name,
+                u.$role_col,
                 COUNT(afc.change_id) as field_changes_count,
                 GROUP_CONCAT(
                     CONCAT(afc.field_name, ':', afc.change_type, ':', 
@@ -174,12 +199,12 @@ function get_audit_logs($filters = [], $limit = 50, $offset = 0) {
                            COALESCE(afc.new_value, 'NULL')
                     ) SEPARATOR '|'
                 ) as field_changes_summary
-            FROM audit_logs al
-            LEFT JOIN users u ON al.user_id = u.user_id
-            LEFT JOIN agency a ON u.agency_id = a.agency_id
-            LEFT JOIN audit_field_changes afc ON al.id = afc.audit_log_id
+            FROM $audit_logs_table al
+            LEFT JOIN $users_table u ON al.$user_id_col = u.user_id
+            LEFT JOIN $agency_table a ON u.$agency_id_col = a.agency_id
+            LEFT JOIN $audit_field_changes_table afc ON al.id = afc.audit_log_id
             $where_clause
-            GROUP BY al.id, al.user_id, al.action, al.details, al.ip_address, al.status, al.created_at, u.username, u.fullname, a.agency_name
+            GROUP BY al.id, al.$user_id_col, al.action, al.details, al.ip_address, al.status, al.created_at, u.$username_col, u.fullname, a.$agency_name_col
             ORDER BY al.created_at DESC
             LIMIT ? OFFSET ?";
 
@@ -426,7 +451,13 @@ function log_field_changes($audit_log_id, $field_changes) {
         return false;
     }
     
-    $sql = "INSERT INTO audit_field_changes (audit_log_id, field_name, field_type, old_value, new_value, change_type) VALUES (?, ?, ?, ?, ?, ?)";
+    // Load database mappings
+    $db_mappings = include __DIR__ . '/../config/db_names.php';
+    $tables = $db_mappings['tables'];
+    
+    $audit_field_changes_table = $tables['audit_field_changes'];
+    
+    $sql = "INSERT INTO $audit_field_changes_table (audit_log_id, field_name, field_type, old_value, new_value, change_type) VALUES (?, ?, ?, ?, ?, ?)";
     
     try {
         $stmt = $conn->prepare($sql);
@@ -522,7 +553,13 @@ function cleanup_audit_logs($days_to_keep = 90) {
         return 0;
     }
     
-    $sql = "DELETE FROM audit_logs WHERE created_at < DATE_SUB(NOW(), INTERVAL ? DAY)";
+    // Load database mappings
+    $db_mappings = include __DIR__ . '/../config/db_names.php';
+    $tables = $db_mappings['tables'];
+    
+    $audit_logs_table = $tables['audit_logs'];
+    
+    $sql = "DELETE FROM $audit_logs_table WHERE created_at < DATE_SUB(NOW(), INTERVAL ? DAY)";
     
     try {
         $stmt = $conn->prepare($sql);
@@ -589,6 +626,12 @@ function log_user_deletion_failed($target_user_id, $error_reason, $admin_user_id
 function get_audit_field_changes($audit_log_id) {
     global $conn;
     
+    // Load database mappings
+    $db_mappings = include __DIR__ . '/../config/db_names.php';
+    $tables = $db_mappings['tables'];
+    
+    $audit_field_changes_table = $tables['audit_field_changes'];
+    
     $sql = "SELECT 
                 field_name,
                 field_type,
@@ -596,7 +639,7 @@ function get_audit_field_changes($audit_log_id) {
                 new_value,
                 change_type,
                 created_at
-            FROM audit_field_changes 
+            FROM $audit_field_changes_table 
             WHERE audit_log_id = ?
             ORDER BY field_name, created_at";
     
@@ -682,26 +725,31 @@ function generate_audit_details($operation, $entity, $entity_id, $old_data = [],
 }
 
 /**
- * Get the key field name for an entity type
+ * Get the key field name for an entity type using mappings
  * 
  * @param string $entity Entity type
  * @return string Key field name
  */
 function get_key_field($entity) {
-    $key_fields = [
+    // Load database mappings
+    $db_mappings = include __DIR__ . '/../config/db_names.php';
+    $columns = $db_mappings['columns'];
+    
+    // Map entity types to table names and their key fields
+    $entity_key_fields = [
         'program' => 'program_name',
         'user' => 'username',
-        'outcome' => 'outcome_title',
+        'outcome' => 'detail_name',
         'initiative' => 'initiative_name',
         'agency' => 'agency_name',
-        'period' => 'period_name'
+        'period' => 'period_type'
     ];
     
-    return $key_fields[$entity] ?? 'id';
+    return $entity_key_fields[$entity] ?? 'id';
 }
 
 /**
- * Get entity name from database
+ * Get entity name from database using mappings
  * 
  * @param string $entity Entity type
  * @param int $entity_id Entity ID
@@ -712,31 +760,49 @@ function get_entity_name($entity, $entity_id) {
     
     if (!$entity_id) return null;
     
-    $table_map = [
-        'program' => ['table' => 'programs', 'field' => 'program_name'],
-        'user' => ['table' => 'users', 'field' => 'username'],
-        'outcome' => ['table' => 'outcomes', 'field' => 'outcome_title'],
-        'initiative' => ['table' => 'initiatives', 'field' => 'initiative_name'],
-        'agency' => ['table' => 'agency', 'field' => 'agency_name'],
-        'period' => ['table' => 'reporting_periods', 'field' => 'period_name']
+    // Load database mappings
+    $db_mappings = include __DIR__ . '/../config/db_names.php';
+    $tables = $db_mappings['tables'];
+    $columns = $db_mappings['columns'];
+    
+    // Map entity types to table names
+    $entity_table_map = [
+        'program' => 'programs',
+        'user' => 'users',
+        'outcome' => 'outcomes_details',
+        'initiative' => 'initiatives',
+        'agency' => 'agency',
+        'period' => 'reporting_periods'
     ];
     
-    if (!isset($table_map[$entity])) {
+    if (!isset($entity_table_map[$entity])) {
         return null;
     }
     
-    $table = $table_map[$entity]['table'];
-    $field = $table_map[$entity]['field'];
+    $table = $entity_table_map[$entity];
+    
+    // Get the appropriate name field based on entity type
+    $name_field_map = [
+        'program' => 'program_name',
+        'user' => 'username',
+        'outcome' => 'detail_name',
+        'initiative' => 'initiative_name',
+        'agency' => 'agency_name',
+        'period' => 'period_type' // reporting_periods doesn't have a name field, using period_type
+    ];
+    
+    $name_field = $name_field_map[$entity] ?? 'id';
+    $id_field = $columns[$table]['id'] ?? 'id';
     
     try {
-        $sql = "SELECT $field FROM $table WHERE id = ? LIMIT 1";
+        $sql = "SELECT $name_field FROM $table WHERE $id_field = ? LIMIT 1";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param('i', $entity_id);
         $stmt->execute();
         $result = $stmt->get_result();
         
         if ($row = $result->fetch_assoc()) {
-            return $row[$field];
+            return $row[$name_field];
         }
         
         $stmt->close();

@@ -5,6 +5,7 @@ return [
     'tables' => [
         'agency' => 'agency',
         'audit_logs' => 'audit_logs',
+        'audit_field_changes' => 'audit_field_changes',
         'initiatives' => 'initiatives',
         'notifications' => 'notifications',
         'outcomes_details' => 'outcomes_details',
@@ -31,6 +32,16 @@ return [
             'details' => 'details',
             'ip_address' => 'ip_address',
             'status' => 'status',
+            'created_at' => 'created_at',
+        ],
+        'audit_field_changes' => [
+            'id' => 'change_id',
+            'audit_log_id' => 'audit_log_id',
+            'field_name' => 'field_name',
+            'field_type' => 'field_type',
+            'old_value' => 'old_value',
+            'new_value' => 'new_value',
+            'change_type' => 'change_type',
             'created_at' => 'created_at',
         ],
         'initiatives' => [

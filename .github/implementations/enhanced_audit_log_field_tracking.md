@@ -80,8 +80,15 @@ log_detailed_data_operation('delete', 'program', 123, $data_to_delete, [], $user
 ```
 
 ## Files Created/Modified
-- **New**: `enhanced_audit_log_schema.sql` - Database schema
+- **New**: `enhanced_audit_log_schema.sql` - Database schema (uses pcds2030_dashboard)
 - **New**: `app/ajax/get_audit_field_changes.php` - AJAX endpoint
 - **New**: `test_enhanced_audit_log.php` - Test script
+- **New**: `test_audit_log_database.php` - Database connection test
 - **Modified**: `app/lib/audit_log.php` - Enhanced functions
-- **Modified**: `assets/js/admin/audit-log.js` - Frontend enhancements 
+- **Modified**: `assets/js/admin/audit-log.js` - Frontend enhancements
+
+## Database Configuration
+- **Current Database**: `pcds2030_dashboard` (as configured in app/config/config.php)
+- **Schema File**: `enhanced_audit_log_schema.sql` uses the correct database name
+- **All Functions**: Use config constants (DB_NAME) for database references
+- **No Hardcoded References**: All database connections use the centralized config 

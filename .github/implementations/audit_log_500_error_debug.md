@@ -36,7 +36,7 @@
 ## Progress
 - Started investigation of the 500 error
 - [x] Identified database name mismatch issue
-- [x] Fixed database name in config.php from 'pcds2030_dashboard' to 'pcds2030_db'
+- [x] Fixed database name in config.php from 'pcds2030_db' to 'pcds2030_dashboard'
 - [x] Identified SQL query issue in get_audit_logs function
 - [x] Fixed SQL query to properly join with agency table
 - [x] Updated user search to include agency name, username, and fullname
@@ -45,12 +45,12 @@
 ## Root Cause Analysis
 The 500 Internal Server Error was caused by two main issues:
 
-1. **Database Name Mismatch**: The config file was pointing to `pcds2030_dashboard` database, but the actual database name is `pcds2030_db`.
+1. **Database Name Mismatch**: The config file was pointing to `pcds2030_db` database, but the actual database name is `pcds2030_dashboard`.
 
 2. **SQL Query Error**: The `get_audit_logs` function was trying to access `u.agency_name` column which doesn't exist in the users table. The users table has `agency_id` and needs to be joined with the agency table to get the agency name.
 
 ## Solution Implemented
-1. **Fixed Database Configuration**: Updated `app/config/config.php` to use the correct database name `pcds2030_db`.
+1. **Fixed Database Configuration**: Updated `app/config/config.php` to use the correct database name `pcds2030_dashboard`.
 
 2. **Fixed SQL Query**: Updated the `get_audit_logs` function in `app/lib/audit_log.php` to:
    - Add proper JOIN with the agency table
