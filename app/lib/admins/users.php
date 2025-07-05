@@ -136,6 +136,19 @@ function add_user($data) {
                 $conn->rollback();
                 return ['error' => 'Invalid agency group selected'];
             }
+        } elseif ($role === 'admin') {
+            // Assign admin users to agency ID 4
+            $agency_id = 4;
+            
+            // Verify agency ID 4 exists
+            $group_check = "SELECT agency_id FROM agency WHERE agency_id = ?";
+            $stmt = $conn->prepare($group_check);
+            $stmt->bind_param("i", $agency_id);
+            $stmt->execute();
+            if ($stmt->get_result()->num_rows === 0) {
+                $conn->rollback();
+                return ['error' => 'Admin agency (ID: 4) does not exist. Please create agency ID 4 first.'];
+            }
         }
         
         // Prepare email and fullname

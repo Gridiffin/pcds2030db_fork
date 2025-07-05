@@ -13,7 +13,7 @@
  * @param string $details Additional details about the action (optional)
  * @param string $status The status of the action ('success' or 'failure')
  * @param int $user_id Override user ID (optional, defaults to current session user)
- * @return bool True if logged successfully, false otherwise
+ * @return int|bool Audit log ID if logged successfully, false otherwise
  */
 function log_audit_action($action, $details = '', $status = 'success', $user_id = null) {
     global $conn;
@@ -55,8 +55,9 @@ function log_audit_action($action, $details = '', $status = 'success', $user_id 
             error_log("Audit log error: Failed to execute statement - " . $stmt->error);
         }
 
+        $audit_log_id = $conn->insert_id;
         $stmt->close();
-        return $result;
+        return $audit_log_id;
 
     } catch (Exception $e) {
         error_log("Audit log error: " . $e->getMessage());
@@ -98,11 +99,12 @@ function get_audit_logs($filters = [], $limit = 50, $offset = 0) {
         $params[] = $filters['action_type'];
         $param_types .= 's';
     }    if (!empty($filters['user'])) {
-        $conditions[] = "(u.agency_name LIKE ? OR u.username LIKE ?)";
+        $conditions[] = "(a.agency_name LIKE ? OR u.username LIKE ? OR u.fullname LIKE ?)";
         $search_term = '%' . $filters['user'] . '%';
         $params[] = $search_term;
         $params[] = $search_term;
-        $param_types .= 'ss';
+        $params[] = $search_term;
+        $param_types .= 'sss';
         error_log("Searching audit logs for user: " . $filters['user']);
     }
 
@@ -128,6 +130,7 @@ function get_audit_logs($filters = [], $limit = 50, $offset = 0) {
     $count_sql = "SELECT COUNT(*) as total 
                   FROM audit_logs al 
                   LEFT JOIN users u ON al.user_id = u.user_id 
+                  LEFT JOIN agency a ON u.agency_id = a.agency_id 
                   $where_clause";
 
     $total_records = 0;
@@ -153,7 +156,7 @@ function get_audit_logs($filters = [], $limit = 50, $offset = 0) {
         ];
     }
 
-    // Main query with joins
+    // Main query with joins - enhanced to include field changes
     $sql = "SELECT 
                 al.id,
                 al.user_id,
@@ -162,11 +165,21 @@ function get_audit_logs($filters = [], $limit = 50, $offset = 0) {
                 al.ip_address,
                 al.status,
                 al.created_at,
-                COALESCE(u.agency_name, u.username, 'System') as user_name,
-                u.role
+                COALESCE(a.agency_name, u.username, 'System') as user_name,
+                u.role,
+                COUNT(afc.change_id) as field_changes_count,
+                GROUP_CONCAT(
+                    CONCAT(afc.field_name, ':', afc.change_type, ':', 
+                           COALESCE(afc.old_value, 'NULL'), '->', 
+                           COALESCE(afc.new_value, 'NULL')
+                    ) SEPARATOR '|'
+                ) as field_changes_summary
             FROM audit_logs al
             LEFT JOIN users u ON al.user_id = u.user_id
+            LEFT JOIN agency a ON u.agency_id = a.agency_id
+            LEFT JOIN audit_field_changes afc ON al.id = afc.audit_log_id
             $where_clause
+            GROUP BY al.id, al.user_id, al.action, al.details, al.ip_address, al.status, al.created_at, u.username, u.fullname, a.agency_name
             ORDER BY al.created_at DESC
             LIMIT ? OFFSET ?";
 
@@ -274,13 +287,206 @@ function log_logout($user_id = null) {
  */
 function log_data_operation($operation, $entity, $entity_id, $changes = [], $user_id = null) {
     $action = "{$operation}_{$entity}";
-    $details = "Entity ID: $entity_id";
+    
+    // Generate better details
+    $entity_name = get_entity_name($entity, $entity_id);
+    $entity_display = $entity_name ? $entity_name : "ID: $entity_id";
+    
+    switch ($operation) {
+        case 'create':
+            $details = "Created new $entity: $entity_display";
+            break;
+        case 'update':
+            $details = "Updated $entity: $entity_display";
+            break;
+        case 'delete':
+            $details = "Deleted $entity: $entity_display";
+            break;
+        default:
+            $details = "$entity: $entity_display";
+    }
     
     if (!empty($changes)) {
         $details .= " | Changes: " . json_encode($changes);
     }
     
-    log_audit_action($action, $details, 'success', $user_id);
+    $audit_log_id = log_audit_action($action, $details, 'success', $user_id);
+    
+    // If we have field changes and a valid audit log ID, log the field changes
+    if ($audit_log_id && !empty($changes) && is_array($changes)) {
+        log_field_changes($audit_log_id, $changes);
+    }
+    
+    return $audit_log_id;
+}
+
+/**
+ * Enhanced function to log data operations with detailed field tracking
+ * 
+ * @param string $operation Operation type (create, update, delete)
+ * @param string $entity Entity type (program, user, outcome, etc.)
+ * @param int $entity_id ID of the affected entity
+ * @param array $old_data Old data before changes (for updates)
+ * @param array $new_data New data after changes
+ * @param int $user_id User performing the action
+ * @return int|bool Audit log ID if successful, false otherwise
+ */
+function log_detailed_data_operation($operation, $entity, $entity_id, $old_data = [], $new_data = [], $user_id = null) {
+    global $conn;
+    
+    $action = "{$operation}_{$entity}";
+    
+    // Generate meaningful details based on operation and entity
+    $details = generate_audit_details($operation, $entity, $entity_id, $old_data, $new_data);
+    
+    // Log the basic audit action first
+    $audit_log_id = log_audit_action($action, $details, 'success', $user_id);
+    
+    if (!$audit_log_id) {
+        return false;
+    }
+    
+    // Calculate field changes
+    $field_changes = [];
+    
+    if ($operation === 'create') {
+        // For create operations, all fields are new
+        foreach ($new_data as $field => $value) {
+            if ($value !== null && $value !== '') {
+                $field_changes[] = [
+                    'field_name' => $field,
+                    'field_type' => get_field_type($value),
+                    'old_value' => null,
+                    'new_value' => $value,
+                    'change_type' => 'added'
+                ];
+            }
+        }
+    } elseif ($operation === 'update') {
+        // For update operations, compare old and new values
+        foreach ($new_data as $field => $new_value) {
+            $old_value = $old_data[$field] ?? null;
+            
+            // Check if the value actually changed
+            if ($old_value !== $new_value) {
+                $field_changes[] = [
+                    'field_name' => $field,
+                    'field_type' => get_field_type($new_value),
+                    'old_value' => $old_value,
+                    'new_value' => $new_value,
+                    'change_type' => $old_value === null ? 'added' : 'modified'
+                ];
+            }
+        }
+        
+        // Check for removed fields
+        foreach ($old_data as $field => $old_value) {
+            if (!array_key_exists($field, $new_data) && $old_value !== null) {
+                $field_changes[] = [
+                    'field_name' => $field,
+                    'field_type' => get_field_type($old_value),
+                    'old_value' => $old_value,
+                    'new_value' => null,
+                    'change_type' => 'removed'
+                ];
+            }
+        }
+    } elseif ($operation === 'delete') {
+        // For delete operations, all fields are removed
+        foreach ($old_data as $field => $value) {
+            $field_changes[] = [
+                'field_name' => $field,
+                'field_type' => get_field_type($value),
+                'old_value' => $value,
+                'new_value' => null,
+                'change_type' => 'removed'
+            ];
+        }
+    }
+    
+    // Log the field changes
+    if (!empty($field_changes)) {
+        log_field_changes($audit_log_id, $field_changes);
+    }
+    
+    return $audit_log_id;
+}
+
+/**
+ * Log field-level changes to the audit_field_changes table
+ * 
+ * @param int $audit_log_id The audit log ID to associate with
+ * @param array $field_changes Array of field changes
+ * @return bool True if successful, false otherwise
+ */
+function log_field_changes($audit_log_id, $field_changes) {
+    global $conn;
+    
+    if (empty($field_changes) || !is_array($field_changes)) {
+        return false;
+    }
+    
+    $sql = "INSERT INTO audit_field_changes (audit_log_id, field_name, field_type, old_value, new_value, change_type) VALUES (?, ?, ?, ?, ?, ?)";
+    
+    try {
+        $stmt = $conn->prepare($sql);
+        
+        foreach ($field_changes as $change) {
+            $stmt->bind_param('isssss', 
+                $audit_log_id,
+                $change['field_name'],
+                $change['field_type'],
+                $change['old_value'],
+                $change['new_value'],
+                $change['change_type']
+            );
+            
+            if (!$stmt->execute()) {
+                error_log("Failed to log field change: " . $stmt->error);
+                return false;
+            }
+        }
+        
+        $stmt->close();
+        return true;
+        
+    } catch (Exception $e) {
+        error_log("Error logging field changes: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Determine the field type based on the value
+ * 
+ * @param mixed $value The value to analyze
+ * @return string The field type
+ */
+function get_field_type($value) {
+    if (is_null($value)) {
+        return 'null';
+    } elseif (is_bool($value)) {
+        return 'boolean';
+    } elseif (is_numeric($value)) {
+        return is_float($value) ? 'float' : 'integer';
+    } elseif (is_string($value)) {
+        // Check if it's a date
+        if (strtotime($value) !== false && preg_match('/^\d{4}-\d{2}-\d{2}/', $value)) {
+            return 'date';
+        }
+        // Check if it's JSON
+        if (is_string($value) && (strpos($value, '{') === 0 || strpos($value, '[') === 0)) {
+            json_decode($value);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                return 'json';
+            }
+        }
+        return 'text';
+    } elseif (is_array($value)) {
+        return 'json';
+    } else {
+        return 'text';
+    }
 }
 
 /**
@@ -372,5 +578,172 @@ function log_user_deletion_failed($target_user_id, $error_reason, $admin_user_id
     ], JSON_UNESCAPED_SLASHES);
 
     return log_audit_action('user_deletion', $details, 'failure', $admin_user_id);
+}
+
+/**
+ * Get detailed field changes for a specific audit log entry
+ * 
+ * @param int $audit_log_id The audit log ID
+ * @return array Array of field changes
+ */
+function get_audit_field_changes($audit_log_id) {
+    global $conn;
+    
+    $sql = "SELECT 
+                field_name,
+                field_type,
+                old_value,
+                new_value,
+                change_type,
+                created_at
+            FROM audit_field_changes 
+            WHERE audit_log_id = ?
+            ORDER BY field_name, created_at";
+    
+    $field_changes = [];
+    
+    try {
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param('i', $audit_log_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        while ($row = $result->fetch_assoc()) {
+            $field_changes[] = $row;
+        }
+        
+        $stmt->close();
+        
+    } catch (Exception $e) {
+        error_log("Error fetching field changes: " . $e->getMessage());
+    }
+    
+    return $field_changes;
+}
+
+/**
+ * Format field change for display
+ * 
+ * @param array $change Field change data
+ * @return string Formatted change description
+ */
+function format_field_change($change) {
+    $field_name = ucwords(str_replace('_', ' ', $change['field_name']));
+    $change_type = $change['change_type'];
+    $old_value = $change['old_value'];
+    $new_value = $change['new_value'];
+    
+    switch ($change_type) {
+        case 'added':
+            return "<strong>$field_name</strong> was added with value: <code>" . htmlspecialchars($new_value) . "</code>";
+        case 'modified':
+            return "<strong>$field_name</strong> changed from <code>" . htmlspecialchars($old_value) . "</code> to <code>" . htmlspecialchars($new_value) . "</code>";
+        case 'removed':
+            return "<strong>$field_name</strong> was removed (was: <code>" . htmlspecialchars($old_value) . "</code>)";
+        default:
+            return "<strong>$field_name</strong> was changed";
+    }
+}
+
+/**
+ * Generate meaningful audit details based on operation and entity
+ * 
+ * @param string $operation Operation type (create, update, delete)
+ * @param string $entity Entity type (program, user, outcome, etc.)
+ * @param int $entity_id ID of the affected entity
+ * @param array $old_data Old data before changes
+ * @param array $new_data New data after changes
+ * @return string Formatted details string
+ */
+function generate_audit_details($operation, $entity, $entity_id, $old_data = [], $new_data = []) {
+    $entity_name = get_entity_name($entity, $entity_id);
+    $entity_display = $entity_name ? $entity_name : "ID: $entity_id";
+    
+    switch ($operation) {
+        case 'create':
+            $key_field = get_key_field($entity);
+            $new_value = $new_data[$key_field] ?? 'Unknown';
+            return "Created new $entity: $new_value";
+            
+        case 'update':
+            $key_field = get_key_field($entity);
+            $old_value = $old_data[$key_field] ?? 'Unknown';
+            $new_value = $new_data[$key_field] ?? $old_value;
+            return "Updated $entity: $new_value";
+            
+        case 'delete':
+            $key_field = get_key_field($entity);
+            $deleted_value = $old_data[$key_field] ?? 'Unknown';
+            return "Deleted $entity: $deleted_value";
+            
+        default:
+            return "$entity: $entity_display";
+    }
+}
+
+/**
+ * Get the key field name for an entity type
+ * 
+ * @param string $entity Entity type
+ * @return string Key field name
+ */
+function get_key_field($entity) {
+    $key_fields = [
+        'program' => 'program_name',
+        'user' => 'username',
+        'outcome' => 'outcome_title',
+        'initiative' => 'initiative_name',
+        'agency' => 'agency_name',
+        'period' => 'period_name'
+    ];
+    
+    return $key_fields[$entity] ?? 'id';
+}
+
+/**
+ * Get entity name from database
+ * 
+ * @param string $entity Entity type
+ * @param int $entity_id Entity ID
+ * @return string|null Entity name or null if not found
+ */
+function get_entity_name($entity, $entity_id) {
+    global $conn;
+    
+    if (!$entity_id) return null;
+    
+    $table_map = [
+        'program' => ['table' => 'programs', 'field' => 'program_name'],
+        'user' => ['table' => 'users', 'field' => 'username'],
+        'outcome' => ['table' => 'outcomes', 'field' => 'outcome_title'],
+        'initiative' => ['table' => 'initiatives', 'field' => 'initiative_name'],
+        'agency' => ['table' => 'agency', 'field' => 'agency_name'],
+        'period' => ['table' => 'reporting_periods', 'field' => 'period_name']
+    ];
+    
+    if (!isset($table_map[$entity])) {
+        return null;
+    }
+    
+    $table = $table_map[$entity]['table'];
+    $field = $table_map[$entity]['field'];
+    
+    try {
+        $sql = "SELECT $field FROM $table WHERE id = ? LIMIT 1";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param('i', $entity_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($row = $result->fetch_assoc()) {
+            return $row[$field];
+        }
+        
+        $stmt->close();
+    } catch (Exception $e) {
+        error_log("Error getting entity name: " . $e->getMessage());
+    }
+    
+    return null;
 }
 ?>

@@ -25,7 +25,7 @@ $currentPage = 'audit';
 
 // Additional CSS/JS for this page
 $additionalStyles = [
-    asset_url('css', 'admin/audit.css')
+    // audit.css removed - using standard Bootstrap classes
 ];
 
 $additionalScripts = [

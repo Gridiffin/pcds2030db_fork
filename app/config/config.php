@@ -10,7 +10,7 @@
 define('DB_HOST', 'localhost');
 define('DB_USER', 'root'); // Change this to your MySQL username (default for XAMPP is 'root')
 define('DB_PASS', ''); // Change this to your MySQL password (default for XAMPP is often empty '')
-define('DB_NAME', 'pcds2030_dashboard'); // Updated to correct database name
+define('DB_NAME', 'pcds2030_dashboard'); // Updated to use pcds2030_dashboard database
 
 // Application settings
 define('APP_NAME', 'PCDS2030 Dashboard Forestry Sector'); 
