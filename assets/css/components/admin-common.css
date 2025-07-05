@@ -559,3 +559,79 @@ tr.user-inactive:hover {
     background-color: #ffc107;
     border-color: #ffc107;
 }
+
+/* --- Username + Role Badge + Full Name + Email Stacking --- */
+.user-table .fw-medium.text-forest {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+.user-table .badge {
+  margin-left: 0.5em;
+  font-size: 0.85em;
+  vertical-align: middle;
+}
+.user-table .text-muted.small {
+  font-size: 0.85em;
+  color: #888 !important;
+  margin-top: 2px;
+}
+.user-table .user-email {
+  font-family: monospace, monospace;
+  font-size: 0.95em;
+  color: #666;
+}
+.user-table .btn-copy-email {
+  color: #888;
+  font-size: 1em;
+  margin-left: 0.5em;
+  opacity: 0.7;
+  transition: color 0.2s, opacity 0.2s;
+}
+.user-table .btn-copy-email:hover,
+.user-table .btn-copy-email:focus {
+  color: var(--forest-deep);
+  opacity: 1;
+  text-decoration: none;
+}
+
+/* Equal width and word wrap for .user-table and .table-custom */
+.user-table,
+.table-custom {
+  table-layout: fixed;
+  width: 100%;
+}
+.user-table th,
+.user-table td,
+.table-custom th,
+.table-custom td {
+  width: 12.5%;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+  text-align: center;
+  vertical-align: middle;
+  padding: 12px 8px;
+}
+@media (max-width: 900px) {
+  .user-table,
+  .table-custom {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+}
+
+/* --- Copied Feedback Badge --- */
+.copied-feedback {
+  display: inline-block;
+  margin-left: 0.5em;
+  color: #2E7D32;
+  font-size: 0.95em;
+  font-weight: 600;
+  background: #eafbe7;
+  border-radius: 4px;
+  padding: 2px 8px;
+  vertical-align: middle;
+  transition: opacity 0.2s;
+}

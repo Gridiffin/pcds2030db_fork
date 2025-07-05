@@ -424,10 +424,10 @@ function validate_login($username, $password) {
         return ['error' => 'Your account has been deactivated. Please contact an administrator.'];
     }
     
-    // Verify password
-    if (password_verify($password, $user['password'])) {
+    // Verify password - ensure hash exists and is not null
+    if (!empty($user['pw']) && password_verify($password, $user['pw'])) {
         // Store user data in session, but don't include password
-        unset($user['password']);
+        unset($user['pw']);
         $_SESSION = $user;
         
         // Log successful login

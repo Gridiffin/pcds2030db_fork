@@ -40,29 +40,35 @@ if (isset($_GET['ajax_table']) && $_GET['ajax_table'] == '1') {
         <div class="card-body p-0">
             <div class="table-responsive w-100">
                 <table class="table table-hover table-custom user-table mb-0">
-                                            <thead>
-                            <tr>
-                                <th>Username</th>
-                                <th>Full Name</th>
-                                <th>Email</th>
-                                <th>Role</th>
-                                <th>Created</th>
-                                <th>Status</th>
-                                <th class="text-center" style="width: 100px;">Actions</th>
-                            </tr>
-                        </thead>
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Created</th>
+                            <th>Status</th>
+                            <th class="text-center" style="width: 100px;">Actions</th>
+                        </tr>
+                    </thead>
                     <tbody>
                         <?php foreach($admin_users as $user): ?>
                             <tr class="<?php echo !$user['is_active'] ? 'inactive-user' : ''; ?>">
                                 <td>
-                                    <div class="fw-medium"><?php echo htmlspecialchars($user['username']); ?></div>
-                                    <?php if ($user['user_id'] == $_SESSION['user_id']): ?>
-                                        <small class="text-muted">(You)</small>
-                                    <?php endif; ?>
+                                    <div class="d-flex flex-column align-items-start">
+                                        <span class="fw-medium text-forest">
+                                            <?php echo htmlspecialchars($user['username']); ?>
+                                            <span class="badge ms-2 bg-primary align-middle" style="font-size:0.85em; vertical-align:middle;">
+                                                <?php echo ucfirst($user['role']); ?>
+                                            </span>
+                                        </span>
+                                        <span class="text-muted small mt-1"><?php echo htmlspecialchars($user['fullname'] ?? '-'); ?></span>
+                                        <span class="text-muted small mt-1 d-flex align-items-center">
+                                            <span class="user-email" data-email="<?php echo htmlspecialchars($user['email'] ?? '-'); ?>"><?php echo htmlspecialchars($user['email'] ?? '-'); ?></span>
+                                            <button type="button" class="btn btn-link btn-copy-email p-0 ms-2" data-bs-toggle="tooltip" title="Copy email" tabindex="0">
+                                                <i class="fas fa-copy"></i>
+                                            </button>
+                                            <span class="copied-feedback" style="display:none;">Copied!</span>
+                                        </span>
+                                    </div>
                                 </td>
-                                <td><?php echo htmlspecialchars($user['fullname'] ?? '-'); ?></td>
-                                <td><?php echo htmlspecialchars($user['email'] ?? '-'); ?></td>
-                                <td><span class="badge bg-primary"><?php echo ucfirst($user['role']); ?></span></td>
                                 <td><?php echo date('M d, Y', strtotime($user['created_at'])); ?></td>
                                 <td>
                                     <?php if ($user['is_active']): ?>
@@ -70,7 +76,6 @@ if (isset($_GET['ajax_table']) && $_GET['ajax_table'] == '1') {
                                     <?php else: ?>
                                         <span class="user-status inactive">Inactive</span>
                                     <?php endif; ?>
-                                    
                                     <?php if ($user['user_id'] != $_SESSION['user_id']): ?>
                                         <button class="btn btn-sm ms-2 toggle-active-btn" 
                                             data-user-id="<?php echo $user['user_id']; ?>"
@@ -99,7 +104,7 @@ if (isset($_GET['ajax_table']) && $_GET['ajax_table'] == '1') {
                             </tr>
                         <?php endforeach; ?>
                         <?php if (empty($admin_users)): ?>
-                            <tr><td colspan="7" class="text-center text-muted">No admin users found.</td></tr>
+                            <tr><td colspan="4" class="text-center text-muted">No admin users found.</td></tr>
                         <?php endif; ?>
                     </tbody>
                 </table>
@@ -115,28 +120,35 @@ if (isset($_GET['ajax_table']) && $_GET['ajax_table'] == '1') {
         <div class="card-body p-0">
             <div class="table-responsive w-100">
                 <table class="table table-forest mb-0">
-                                            <thead>
-                            <tr>
-                                <th>Username</th>
-                                <th>Full Name</th>
-                                <th>Email</th>
-                                <th>Role</th>
-                                <th>Agency</th>
-                                <th>Created</th>
-                                <th>Status</th>
-                                <th class="text-center" style="width: 100px;">Actions</th>
-                            </tr>
-                        </thead>
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Created</th>
+                            <th>Status</th>
+                            <th class="text-center" style="width: 100px;">Actions</th>
+                        </tr>
+                    </thead>
                     <tbody>
                         <?php foreach($agency_users as $user): ?>
                             <tr class="<?php echo !$user['is_active'] ? 'user-inactive' : ''; ?>">
                                 <td>
-                                    <div class="fw-medium text-forest"><?php echo htmlspecialchars($user['username']); ?></div>
+                                    <div class="d-flex flex-column align-items-start">
+                                        <span class="fw-medium text-forest">
+                                            <?php echo htmlspecialchars($user['username']); ?>
+                                            <span class="badge ms-2 bg-<?php echo $user['role'] === 'focal' ? 'warning' : ($user['role'] === 'admin' ? 'primary' : 'info'); ?> align-middle" style="font-size:0.85em; vertical-align:middle;">
+                                                <?php echo ucfirst($user['role']); ?>
+                                            </span>
+                                        </span>
+                                        <span class="text-muted small mt-1"><?php echo htmlspecialchars($user['fullname'] ?? '-'); ?></span>
+                                        <span class="text-muted small mt-1 d-flex align-items-center">
+                                            <span class="user-email" data-email="<?php echo htmlspecialchars($user['email'] ?? '-'); ?>"><?php echo htmlspecialchars($user['email'] ?? '-'); ?></span>
+                                            <button type="button" class="btn btn-link btn-copy-email p-0 ms-2" data-bs-toggle="tooltip" title="Copy email" tabindex="0">
+                                                <i class="fas fa-copy"></i>
+                                            </button>
+                                            <span class="copied-feedback" style="display:none;">Copied!</span>
+                                        </span>
+                                    </div>
                                 </td>
-                                <td><?php echo htmlspecialchars($user['fullname'] ?? '-'); ?></td>
-                                <td><?php echo htmlspecialchars($user['email'] ?? '-'); ?></td>
-                                <td><span class="badge bg-<?php echo $user['role'] === 'focal' ? 'warning' : 'info'; ?>"><?php echo ucfirst($user['role']); ?></span></td>
-                                <td><?php echo htmlspecialchars($user['agency_name'] ?? '-'); ?></td>
                                 <td><?php echo date('M d, Y', strtotime($user['created_at'])); ?></td>
                                 <td>
                                     <?php if ($user['is_active']): ?>
@@ -144,7 +156,6 @@ if (isset($_GET['ajax_table']) && $_GET['ajax_table'] == '1') {
                                     <?php else: ?>
                                         <span class="badge bg-danger">Inactive</span>
                                     <?php endif; ?>
-                                    
                                     <button class="btn btn-sm ms-2 toggle-active-btn" 
                                         data-user-id="<?php echo $user['user_id']; ?>"
                                         data-username="<?php echo htmlspecialchars($user['username']); ?>"
@@ -169,7 +180,7 @@ if (isset($_GET['ajax_table']) && $_GET['ajax_table'] == '1') {
                             </tr>
                         <?php endforeach; ?>
                         <?php if (empty($agency_users)): ?>
-                            <tr><td colspan="8" class="text-center text-muted">No agency users found.</td></tr>
+                            <tr><td colspan="4" class="text-center text-muted">No agency users found.</td></tr>
                         <?php endif; ?>
                     </tbody>
                 </table>
@@ -315,6 +326,8 @@ require_once '../../layouts/page_header.php';
     };
 </script>
 
+<script src="<?php echo APP_URL; ?>/assets/js/admin/manage_users.js"></script>
+
 <?php if (!empty($message) && empty($show_toast_only)): ?>
     <div class="alert alert-forest alert-<?php echo $message_type; ?> alert-dismissible fade show" role="alert">
         <div class="d-flex align-items-center">
@@ -334,13 +347,10 @@ require_once '../../layouts/page_header.php';
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive w-100">
-                    <table class="table table-hover table-custom user-table mb-0">
+                    <table class="table table-forest mb-0">
                         <thead>
                             <tr>
                                 <th>Username</th>
-                                <th>Full Name</th>
-                                <th>Email</th>
-                                <th>Role</th>
                                 <th>Created</th>
                                 <th>Status</th>
                                 <th class="text-center" style="width: 100px;">Actions</th>
@@ -348,24 +358,32 @@ require_once '../../layouts/page_header.php';
                         </thead>
                         <tbody>
                             <?php foreach($admin_users as $user): ?>
-                                                            <tr class="<?php echo !$user['is_active'] ? 'inactive-user' : ''; ?>">
-                                <td>
-                                    <div class="fw-medium"><?php echo htmlspecialchars($user['username']); ?></div>
-                                    <?php if ($user['user_id'] == $_SESSION['user_id']): ?>
-                                        <small class="text-muted">(You)</small>
-                                    <?php endif; ?>
-                                </td>
-                                <td><?php echo htmlspecialchars($user['fullname'] ?? '-'); ?></td>
-                                <td><?php echo htmlspecialchars($user['email'] ?? '-'); ?></td>
-                                <td><span class="badge bg-primary"><?php echo ucfirst($user['role']); ?></span></td>
-                                <td><?php echo date('M d, Y', strtotime($user['created_at'])); ?></td>
+                                <tr class="<?php echo !$user['is_active'] ? 'inactive-user' : ''; ?>">
+                                    <td>
+                                        <div class="d-flex flex-column align-items-start">
+                                            <span class="fw-medium text-forest">
+                                                <?php echo htmlspecialchars($user['username']); ?>
+                                                <span class="badge ms-2 bg-primary align-middle" style="font-size:0.85em; vertical-align:middle;">
+                                                    <?php echo ucfirst($user['role']); ?>
+                                                </span>
+                                            </span>
+                                            <span class="text-muted small mt-1"><?php echo htmlspecialchars($user['fullname'] ?? '-'); ?></span>
+                                            <span class="text-muted small mt-1 d-flex align-items-center">
+                                                <span class="user-email" data-email="<?php echo htmlspecialchars($user['email'] ?? '-'); ?>"><?php echo htmlspecialchars($user['email'] ?? '-'); ?></span>
+                                                <button type="button" class="btn btn-link btn-copy-email p-0 ms-2" data-bs-toggle="tooltip" title="Copy email" tabindex="0">
+                                                    <i class="fas fa-copy"></i>
+                                                </button>
+                                                <span class="copied-feedback" style="display:none;">Copied!</span>
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td><?php echo date('M d, Y', strtotime($user['created_at'])); ?></td>
                                     <td>
                                         <?php if ($user['is_active']): ?>
                                             <span class="user-status active">Active</span>
                                         <?php else: ?>
                                             <span class="user-status inactive">Inactive</span>
                                         <?php endif; ?>
-                                        
                                         <?php if ($user['user_id'] != $_SESSION['user_id']): ?>
                                             <button class="btn btn-sm ms-2 toggle-active-btn" 
                                                 data-user-id="<?php echo $user['user_id']; ?>"
@@ -385,7 +403,7 @@ require_once '../../layouts/page_header.php';
                                                 <a href="#" class="btn btn-forest-light text-danger delete-user-btn" 
                                                     title="Delete User"
                                                     data-user-id="<?php echo $user['user_id']; ?>"
-                                                    data-username="<?php echo $user['username']; ?>">
+                                                    data-username="<?php echo htmlspecialchars($user['username']); ?>">
                                                     <i class="fas fa-trash"></i>
                                                 </a>
                                             <?php endif; ?>
@@ -393,6 +411,9 @@ require_once '../../layouts/page_header.php';
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
+                            <?php if (empty($admin_users)): ?>
+                                <tr><td colspan="4" class="text-center text-muted">No admin users found.</td></tr>
+                            <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
@@ -410,10 +431,6 @@ require_once '../../layouts/page_header.php';
                         <thead>
                             <tr>
                                 <th>Username</th>
-                                <th>Full Name</th>
-                                <th>Email</th>
-                                <th>Role</th>
-                                <th>Agency</th>
                                 <th>Created</th>
                                 <th>Status</th>
                                 <th class="text-center" style="width: 100px;">Actions</th>
@@ -423,12 +440,23 @@ require_once '../../layouts/page_header.php';
                             <?php foreach($agency_users as $user): ?>
                                 <tr class="<?php echo !$user['is_active'] ? 'user-inactive' : ''; ?>">
                                     <td>
-                                        <div class="fw-medium text-forest"><?php echo htmlspecialchars($user['username']); ?></div>
+                                        <div class="d-flex flex-column align-items-start">
+                                            <span class="fw-medium text-forest">
+                                                <?php echo htmlspecialchars($user['username']); ?>
+                                                <span class="badge ms-2 bg-<?php echo $user['role'] === 'focal' ? 'warning' : ($user['role'] === 'admin' ? 'primary' : 'info'); ?> align-middle" style="font-size:0.85em; vertical-align:middle;">
+                                                    <?php echo ucfirst($user['role']); ?>
+                                                </span>
+                                            </span>
+                                            <span class="text-muted small mt-1"><?php echo htmlspecialchars($user['fullname'] ?? '-'); ?></span>
+                                            <span class="text-muted small mt-1 d-flex align-items-center">
+                                                <span class="user-email" data-email="<?php echo htmlspecialchars($user['email'] ?? '-'); ?>"><?php echo htmlspecialchars($user['email'] ?? '-'); ?></span>
+                                                <button type="button" class="btn btn-link btn-copy-email p-0 ms-2" data-bs-toggle="tooltip" title="Copy email" tabindex="0">
+                                                    <i class="fas fa-copy"></i>
+                                                </button>
+                                                <span class="copied-feedback" style="display:none;">Copied!</span>
+                                            </span>
+                                        </div>
                                     </td>
-                                    <td><?php echo htmlspecialchars($user['fullname'] ?? '-'); ?></td>
-                                    <td><?php echo htmlspecialchars($user['email'] ?? '-'); ?></td>
-                                    <td><span class="badge bg-<?php echo $user['role'] === 'focal' ? 'warning' : 'info'; ?>"><?php echo ucfirst($user['role']); ?></span></td>
-                                    <td><?php echo htmlspecialchars($user['agency_name'] ?? '-'); ?></td>
                                     <td><?php echo date('M d, Y', strtotime($user['created_at'])); ?></td>
                                     <td>
                                         <?php if ($user['is_active']): ?>
@@ -436,7 +464,6 @@ require_once '../../layouts/page_header.php';
                                         <?php else: ?>
                                             <span class="badge bg-danger">Inactive</span>
                                         <?php endif; ?>
-                                        
                                         <button class="btn btn-sm ms-2 toggle-active-btn" 
                                             data-user-id="<?php echo $user['user_id']; ?>"
                                             data-username="<?php echo htmlspecialchars($user['username']); ?>"
@@ -453,7 +480,7 @@ require_once '../../layouts/page_header.php';
                                             <a href="#" class="btn btn-outline-danger delete-user-btn" 
                                                 title="Delete User"
                                                 data-user-id="<?php echo $user['user_id']; ?>"
-                                                data-username="<?php echo $user['username']; ?>">
+                                                data-username="<?php echo htmlspecialchars($user['username']); ?>">
                                                 <i class="fas fa-trash"></i>
                                             </a>
                                         </div>

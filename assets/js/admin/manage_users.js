@@ -3,6 +3,12 @@
  * Fixed password validation issue
  */
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Bootstrap tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+        new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
     // Modal management functions
     function showModal(templateId) {
         // Clone the template
@@ -193,22 +199,24 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Add User Modal
-    document.querySelector('.add-user-btn').addEventListener('click', function(e) {
-        e.preventDefault();
-        
-        const modal = showModal('addUserTemplate');
-        
-        // Setup role toggle
-        const roleSelect = modal.querySelector('#role');
-        if (roleSelect) {
-            roleSelect.addEventListener('change', function() {
-                toggleAgencyFields(this, '.agency-field');
-            });
+    var addUserBtn = document.querySelector('.add-user-btn');
+    if (addUserBtn) {
+        addUserBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const modal = showModal('addUserTemplate');
             
-            // Initial toggle based on default value
-            toggleAgencyFields(roleSelect, '.agency-field');
-        }
-    });
+            // Setup role toggle
+            const roleSelect = modal.querySelector('#role');
+            if (roleSelect) {
+                roleSelect.addEventListener('change', function() {
+                    toggleAgencyFields(this, '.agency-field');
+                });
+                
+                // Initial toggle based on default value
+                toggleAgencyFields(roleSelect, '.agency-field');
+            }
+        });
+    }
     
     // Edit User Modal
     document.querySelectorAll('.edit-user-btn').forEach(button => {
@@ -277,5 +285,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 hideModal(activeModal);
             }
         }
+    });
+
+    // Copy email button functionality with inline feedback
+    document.querySelectorAll('.btn-copy-email').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            var emailSpan = btn.closest('.d-flex').querySelector('.user-email');
+            var copiedFeedback = btn.parentNode.querySelector('.copied-feedback');
+            var email = emailSpan ? emailSpan.getAttribute('data-email') : '';
+            if (email) {
+                navigator.clipboard.writeText(email).then(function() {
+                    if (copiedFeedback) {
+                        copiedFeedback.style.display = 'inline-block';
+                        setTimeout(function() {
+                            copiedFeedback.style.display = 'none';
+                        }, 1200);
+                    }
+                    btn.querySelector('i').classList.add('text-success');
+                    setTimeout(function() {
+                        btn.querySelector('i').classList.remove('text-success');
+                    }, 1200);
+                });
+            }
+        });
     });
 });

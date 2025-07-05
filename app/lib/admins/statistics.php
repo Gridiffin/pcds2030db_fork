@@ -229,12 +229,13 @@ function get_admin_programs_list($period_id = null, $filters = []) {
                 p.program_id, p.program_name, p.program_number, p.owner_agency_id, p.sector_id, p.created_at, p.is_assigned,
                 p.initiative_id, i.initiative_name, i.initiative_number,
                 s.sector_name, 
-                u.agency_name,
+                a.agency_name,
                 latest_sub.submission_id, latest_sub.is_draft, latest_sub.submission_date, latest_sub.updated_at, latest_sub.period_id AS submission_period_id,
                 COALESCE(JSON_UNQUOTE(JSON_EXTRACT(latest_sub.content_json, '$.rating')), 'not-started') as rating
             FROM programs p
             JOIN sectors s ON p.sector_id = s.sector_id
             JOIN users u ON p.owner_agency_id = u.user_id
+            LEFT JOIN agency a ON u.agency_id = a.agency_id
             LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
             LEFT JOIN (
                 SELECT ps1.*
@@ -339,12 +340,13 @@ function get_admin_programs_list($period_id = null, $filters = []) {
                 p.program_id, p.program_name, p.program_number, p.owner_agency_id, p.sector_id, p.created_at, p.is_assigned,
                 p.initiative_id, i.initiative_name, i.initiative_number,
                 s.sector_name, 
-                u.agency_name,
+                a.agency_name,
                 latest_sub.submission_id, latest_sub.is_draft, latest_sub.submission_date, latest_sub.updated_at, latest_sub.period_id AS submission_period_id,
                 COALESCE(JSON_UNQUOTE(JSON_EXTRACT(latest_sub.content_json, '$.rating')), 'not-started') as rating
             FROM programs p
             JOIN sectors s ON p.sector_id = s.sector_id
             JOIN users u ON p.owner_agency_id = u.user_id
+            LEFT JOIN agency a ON u.agency_id = a.agency_id
             LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
             LEFT JOIN (
                 SELECT ps1.*
@@ -502,10 +504,11 @@ function get_recent_submissions($period_id = null, $limit = 5) {
     global $conn;
     
     $query = "SELECT ps.*, 
-              u.agency_name, 
+              a.agency_name, 
               p.program_name 
               FROM program_submissions ps
               JOIN users u ON ps.submitted_by = u.user_id
+              LEFT JOIN agency a ON u.agency_id = a.agency_id
               JOIN programs p ON ps.program_id = p.program_id
               WHERE 1=1";
     
@@ -574,13 +577,14 @@ function get_all_sectors() {
 function get_admin_program_details($program_id) {
     global $conn;
     
-    $stmt = $conn->prepare("SELECT p.*, s.sector_name, u.agency_name, u.user_id as owner_agency_id,
+    $stmt = $conn->prepare("SELECT p.*, s.sector_name, a.agency_name, u.user_id as owner_agency_id,
                                   i.initiative_id, i.initiative_name, i.initiative_number, 
                                   i.initiative_description, i.start_date as initiative_start_date, 
                                   i.end_date as initiative_end_date
                           FROM programs p
                           LEFT JOIN sectors s ON p.sector_id = s.sector_id
                           LEFT JOIN users u ON p.owner_agency_id = u.user_id
+                          LEFT JOIN agency a ON u.agency_id = a.agency_id
                           LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
                           WHERE p.program_id = ?");
     $stmt->bind_param("i", $program_id);

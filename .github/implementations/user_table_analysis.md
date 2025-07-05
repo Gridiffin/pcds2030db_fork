@@ -122,6 +122,34 @@ $query = "SELECT u.*, a.agency_name
 - Full names should be sanitized
 - Role information is already public in current system
 
+## UI/UX Enhancement: Username + Role Badge + Full Name Stacking
+
+### Problem
+- The "Role" column is redundant and takes up space.
+- The role badge is better shown next to the username for quick visual identification.
+- Full name can be stacked below for clarity.
+
+### Solution Plan
+- [x] Remove the "Role" column from the table header and rows.
+- [x] In the Username cell, display:
+    - Username (bold)
+    - Role badge (inline, right after username)
+    - Full name (smaller, muted, stacked below)
+- [x] Adjust CSS for badge alignment and full name styling.
+- [ ] Test for responsive layout and visual clarity.
+
+### Implementation Steps
+1. Update table header: remove "Role" column.
+2. Update table row: move role badge next to username, stack full name below.
+3. Add/adjust CSS for inline badge and stacked full name.
+4. Test on desktop and mobile.
+
+### Expected Outcome
+- Cleaner, more compact user table.
+- Role is visually associated with username.
+- Full name is still visible but less prominent.
+- Table is easier to scan and more modern in appearance.
+
 ## Implementation Summary
 
 ### ✅ Completed Enhancements
