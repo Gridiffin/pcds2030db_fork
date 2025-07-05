@@ -113,6 +113,18 @@ require_once '../../layouts/page_header.php';
                     </div>
                     
                     <div class="col-md-6">
+                        <label for="fullname" class="form-label">Full Name *</label>
+                        <input type="text" class="form-control" id="fullname" name="fullname" required>
+                        <div class="form-text">Enter the user's full name.</div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="email" class="form-label">Email *</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                        <div class="form-text">Enter a valid email address. This will be used for notifications and password resets.</div>
+                    </div>
+                    
+                    <div class="col-md-6">
                         <label for="role" class="form-label">User Role *</label>
                         <select class="form-select" id="role" name="role" required>
                             <option value="">Select Role</option>
@@ -127,9 +139,9 @@ require_once '../../layouts/page_header.php';
                         <label for="password" class="form-label">Password *</label>
                         <div class="input-group">
                             <input type="password" class="form-control" id="password" name="password" required>
-                            <button class="btn btn-outline-secondary toggle-password" type="button">
+                            <span class="input-group-text toggle-password" tabindex="-1" aria-label="Toggle password visibility">
                                 <i class="far fa-eye"></i>
-                            </button>
+                            </span>
                         </div>
                         <div class="form-text password-strength">Password should be at least 8 characters.</div>
                     </div>
@@ -138,9 +150,9 @@ require_once '../../layouts/page_header.php';
                         <label for="confirm_password" class="form-label">Confirm Password *</label>
                         <div class="input-group">
                             <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
-                            <button class="btn btn-outline-secondary toggle-password" type="button">
+                            <span class="input-group-text toggle-password" tabindex="-1" aria-label="Toggle password visibility">
                                 <i class="far fa-eye"></i>
-                            </button>
+                            </span>
                         </div>
                         <div class="form-text">Re-enter the password to confirm.</div>
                     </div>

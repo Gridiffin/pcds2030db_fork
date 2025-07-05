@@ -151,9 +151,9 @@ $role_value = $_POST['role'] ?? $user['role'];
                         <label for="password" class="form-label">Password (leave blank to keep current)</label>
                         <div class="input-group">
                             <input type="password" class="form-control" id="password" name="password">
-                            <button class="btn btn-outline-secondary toggle-password" type="button">
+                            <span class="input-group-text toggle-password" tabindex="-1" aria-label="Toggle password visibility">
                                 <i class="far fa-eye"></i>
-                            </button>
+                            </span>
                         </div>
                         <div class="form-text password-strength">Password should be at least 8 characters.</div>
                     </div>
@@ -162,9 +162,9 @@ $role_value = $_POST['role'] ?? $user['role'];
                         <label for="confirm_password" class="form-label">Confirm Password</label>
                         <div class="input-group">
                             <input type="password" class="form-control" id="confirm_password" name="confirm_password">
-                            <button class="btn btn-outline-secondary toggle-password" type="button">
+                            <span class="input-group-text toggle-password" tabindex="-1" aria-label="Toggle password visibility">
                                 <i class="far fa-eye"></i>
-                            </button>
+                            </span>
                         </div>
                     </div>
                 </div>

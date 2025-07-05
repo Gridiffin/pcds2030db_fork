@@ -635,3 +635,26 @@ tr.user-inactive:hover {
   vertical-align: middle;
   transition: opacity 0.2s;
 }
+
+/* --- Password Toggle Icon Visibility --- */
+.input-group .toggle-password {
+  color: #537D5D;
+  opacity: 1;
+  font-size: 1.25em;
+  background: none;
+  border: none;
+  outline: none;
+  box-shadow: none;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.input-group .toggle-password:hover,
+.input-group .toggle-password:focus {
+  color: #2C3E2E;
+  background: #eafbe7;
+  border-radius: 4px;
+}
+.input-group .toggle-password i {
+  font-size: 1.25em;
+  vertical-align: middle;
+}

@@ -72,7 +72,7 @@ function add_user($data) {
     global $conn;
     
     // Validate required fields
-    $required_fields = ['username', 'role', 'password', 'confirm_password'];
+    $required_fields = ['username', 'role', 'password', 'confirm_password', 'fullname', 'email'];
     
     // Add agency-specific required fields
     if (isset($data['role']) && ($data['role'] === 'agency' || $data['role'] === 'focal')) {
