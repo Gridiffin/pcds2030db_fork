@@ -169,7 +169,7 @@ if (!function_exists('format_time_ago')) {
                 </div>
                 
                 <div class="user-info me-3 text-dark">
-                    <i class="fas fa-user-circle me-1"></i> <?php echo htmlspecialchars($_SESSION['agency_name']); ?>
+                    <i class="fas fa-user-circle me-1"></i> <?php echo htmlspecialchars($_SESSION['fullname'] ?? $_SESSION['username']); ?>
                 </div>
                 <a href="<?php echo APP_URL; ?>/logout.php" class="btn btn-outline-danger btn-sm logout-btn">
                     <i class="fas fa-sign-out-alt me-1"></i> Logout

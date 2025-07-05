@@ -91,7 +91,7 @@ function create_agency_program($data) {
     $has_content_json = $column_check->num_rows > 0;
     $user_id = $_SESSION['user_id'];
     $user = get_user_by_id($conn, $user_id);
-    $agency_group_id = $user ? $user['agency_group_id'] : null;
+    $agency_id = $user ? $user['agency_id'] : null;
     $sector_id = FORESTRY_SECTOR_ID;
     if ($has_content_json) {
         $content = [
@@ -111,15 +111,15 @@ function create_agency_program($data) {
             ];
         }
         $content_json = json_encode($content);
-        $query = "INSERT INTO programs (program_name, program_number, sector_id, owner_agency_id, agency_group, is_assigned, content_json, created_at)
+        $query = "INSERT INTO programs (program_name, program_number, sector_id, owner_agency_id, agency_id, is_assigned, content_json, created_at)
                  VALUES (?, ?, ?, ?, ?, 0, ?, NOW())";
         $stmt = $conn->prepare($query);
-        $stmt->bind_param("ssiiis", $program_name, $program_number, $sector_id, $user_id, $agency_group_id, $content_json);
+        $stmt->bind_param("ssiiis", $program_name, $program_number, $sector_id, $user_id, $agency_id, $content_json);
     } else {
-        $query = "INSERT INTO programs (program_name, program_number, sector_id, owner_agency_id, agency_group, is_assigned, created_at)
+        $query = "INSERT INTO programs (program_name, program_number, sector_id, owner_agency_id, agency_id, is_assigned, created_at)
                  VALUES (?, ?, ?, ?, ?, 0, NOW())";
         $stmt = $conn->prepare($query);
-        $stmt->bind_param("ssiii", $program_name, $program_number, $sector_id, $user_id, $agency_group_id);
+        $stmt->bind_param("ssiii", $program_name, $program_number, $sector_id, $user_id, $agency_id);
     }
     if ($stmt->execute()) {
         $program_id = $conn->insert_id;
@@ -196,12 +196,12 @@ function create_wizard_program_draft($data) {
     }
     $user_id = $_SESSION['user_id'];
     $user = get_user_by_id($conn, $user_id);
-    $agency_group_id = $user ? $user['agency_group_id'] : null;
+    $agency_id = $user ? $user['agency_id'] : null;
     $sector_id = FORESTRY_SECTOR_ID;
     try {
         $conn->begin_transaction();
-        $stmt = $conn->prepare("INSERT INTO programs (program_name, program_number, start_date, end_date, owner_agency_id, agency_group, sector_id, initiative_id, is_assigned, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, NOW())");
-        $stmt->bind_param("ssssiiii", $program_name, $program_number, $start_date, $end_date, $user_id, $agency_group_id, $sector_id, $initiative_id);
+        $stmt = $conn->prepare("INSERT INTO programs (program_name, program_number, start_date, end_date, owner_agency_id, agency_id, sector_id, initiative_id, is_assigned, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, NOW())");
+        $stmt->bind_param("ssssiiii", $program_name, $program_number, $start_date, $end_date, $user_id, $agency_id, $sector_id, $initiative_id);
         if (!$stmt->execute()) throw new Exception('Failed to create program: ' . $stmt->error);
         $program_id = $conn->insert_id;
         if (!empty($targets) || !empty($brief_description)) {

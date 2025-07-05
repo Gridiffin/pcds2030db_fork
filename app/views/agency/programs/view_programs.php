@@ -50,9 +50,9 @@ $active_initiatives = get_initiatives_for_select(true);
 
 // Get programs for FOCAL user (all agencies in their group) or just their own if not FOCAL
 if (isset($_SESSION['role']) && strtolower($_SESSION['role']) === 'focal') {
-    $agency_group_id = $_SESSION['agency_group_id'];
+    $agency_id = $_SESSION['agency_id'];
     $programs = [];
-    if ($agency_group_id !== null) {        $query = "SELECT p.*, 
+    if ($agency_id !== null) {        $query = "SELECT p.*, 
                          i.initiative_name,
                          i.initiative_number,
                          i.initiative_id,
@@ -73,10 +73,10 @@ if (isset($_SESSION['role']) && strtolower($_SESSION['role']) === 'focal') {
                       ) ps2 ON ps1.program_id = ps2.program_id AND ps1.submission_id = ps2.max_submission_id
                   ) latest_sub ON p.program_id = latest_sub.program_id
                   INNER JOIN users u ON p.owner_agency_id = u.user_id
-                  WHERE u.agency_group_id = ?
+                  WHERE u.agency_id = ?
                   ORDER BY p.program_name";
         $stmt = $conn->prepare($query);
-        $stmt->bind_param("i", $agency_group_id);
+        $stmt->bind_param("i", $agency_id);
         $stmt->execute();
         $result = $stmt->get_result();
         while ($row = $result->fetch_assoc()) {
@@ -84,10 +84,9 @@ if (isset($_SESSION['role']) && strtolower($_SESSION['role']) === 'focal') {
         }
     }
 } else {
-    $agency_id = $_SESSION['user_id'];
-    $agency_group_id = $_SESSION['agency_group_id'] ?? null;
+    $agency_id = $_SESSION['agency_id'] ?? null;
     $programs = [];
-    if ($agency_group_id !== null) {
+    if ($agency_id !== null) {
         // Fetch all programs in the same agency group for normal users
         $query = "SELECT p.*, 
                          i.initiative_name,
@@ -110,10 +109,10 @@ if (isset($_SESSION['role']) && strtolower($_SESSION['role']) === 'focal') {
                       ) ps2 ON ps1.program_id = ps2.program_id AND ps1.submission_id = ps2.max_submission_id
                   ) latest_sub ON p.program_id = latest_sub.program_id
                   INNER JOIN users u ON p.owner_agency_id = u.user_id
-                  WHERE u.agency_group_id = ?
+                  WHERE u.agency_id = ?
                   ORDER BY p.program_name";
         $stmt = $conn->prepare($query);
-        $stmt->bind_param("i", $agency_group_id);
+        $stmt->bind_param("i", $agency_id);
         $stmt->execute();
         $result = $stmt->get_result();
         while ($row = $result->fetch_assoc()) {

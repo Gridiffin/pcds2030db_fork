@@ -38,13 +38,19 @@ ALTER TABLE `programs` ADD COLUMN IF NOT EXISTS `users_assigned` int DEFAULT NUL
 ALTER TABLE `programs` ADD COLUMN IF NOT EXISTS `status` set('not-started','in-progress','completed') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL;
 ALTER TABLE `programs` ADD COLUMN IF NOT EXISTS `targets_linked` int DEFAULT '0';
 
--- Map agency_group to agency_id if agency_group exists
+-- === MIGRATION: Align programs table with agency_id refactor ===
+-- Add agency_id column if not exists
+ALTER TABLE `programs` ADD COLUMN IF NOT EXISTS `agency_id` INT DEFAULT NULL;
+
+-- Migrate data from agency_group to agency_id (legacy mapping: 0→1, 1→2, 2→3)
 UPDATE `programs` SET `agency_id` = 1 WHERE `agency_group` = 0;
 UPDATE `programs` SET `agency_id` = 2 WHERE `agency_group` = 1;
 UPDATE `programs` SET `agency_id` = 3 WHERE `agency_group` = 2;
 
--- Remove old columns
+-- Drop agency_group column if exists
 ALTER TABLE `programs` DROP COLUMN IF EXISTS `agency_group`;
+
+-- Remove old columns
 ALTER TABLE `programs` DROP COLUMN IF EXISTS `sector_id`;
 ALTER TABLE `programs` DROP COLUMN IF EXISTS `owner_agency_id`;
 ALTER TABLE `programs` DROP COLUMN IF EXISTS `is_assigned`;
