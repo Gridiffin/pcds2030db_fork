@@ -19,6 +19,7 @@ require_once PROJECT_ROOT_PATH . 'lib/agencies/index.php';
 require_once PROJECT_ROOT_PATH . 'lib/agencies/initiatives.php';
 require_once PROJECT_ROOT_PATH . 'lib/initiative_functions.php';
 require_once PROJECT_ROOT_PATH . 'lib/rating_helpers.php';
+require_once PROJECT_ROOT_PATH . 'lib/db_names_helper.php';
 
 // Verify user is an agency
 if (!is_agency()) {
@@ -51,6 +52,15 @@ if (!empty($search)) {
 if ($status_filter !== '') {
     $filters['is_active'] = $status_filter === 'active' ? 1 : 0;
 }
+
+// Get column names using db_names helper
+$initiative_id_col = get_column_name('initiatives', 'id');
+$initiative_name_col = get_column_name('initiatives', 'name');
+$initiative_number_col = get_column_name('initiatives', 'number');
+$initiative_description_col = get_column_name('initiatives', 'description');
+$start_date_col = get_column_name('initiatives', 'start_date');
+$end_date_col = get_column_name('initiatives', 'end_date');
+$is_active_col = get_column_name('initiatives', 'is_active');
 
 // Get initiatives for current agency
 $agency_id = $_SESSION['user_id'];
@@ -167,22 +177,22 @@ require_once '../../layouts/page_header.php';
                     </thead>
                     <tbody>
                         <?php foreach ($initiatives as $initiative): ?>
-                            <tr data-initiative-id="<?php echo $initiative['initiative_id']; ?>">
+                            <tr data-initiative-id="<?php echo $initiative[$initiative_id_col]; ?>">
                                 <td>
                                     <div class="d-flex align-items-start">
                                         <div class="flex-grow-1">
                                             <div class="fw-semibold mb-1">
-                                                <?php if (!empty($initiative['initiative_number'])): ?>
+                                                <?php if (!empty($initiative[$initiative_number_col])): ?>
                                                     <span class="badge bg-primary me-2">
-                                                        <?php echo htmlspecialchars($initiative['initiative_number']); ?>
+                                                        <?php echo htmlspecialchars($initiative[$initiative_number_col]); ?>
                                                     </span>
                                                 <?php endif; ?>
-                                                <?php echo htmlspecialchars($initiative['initiative_name']); ?>
+                                                <?php echo htmlspecialchars($initiative[$initiative_name_col]); ?>
                                             </div>
-                                            <?php if (!empty($initiative['initiative_description'])): ?>
+                                            <?php if (!empty($initiative[$initiative_description_col])): ?>
                                                 <div class="text-muted small" style="line-height: 1.4;">
                                                     <?php 
-                                                    $description = htmlspecialchars($initiative['initiative_description']);
+                                                    $description = htmlspecialchars($initiative[$initiative_description_col]);
                                                     echo strlen($description) > 120 ? substr($description, 0, 120) . '...' : $description;
                                                     ?>
                                                 </div>
@@ -201,18 +211,18 @@ require_once '../../layouts/page_header.php';
                                     </span>
                                 </td>
                                 <td>
-                                    <?php if (!empty($initiative['start_date']) || !empty($initiative['end_date'])): ?>
+                                    <?php if (!empty($initiative[$start_date_col]) || !empty($initiative[$end_date_col])): ?>
                                         <div class="small">
-                                            <?php if (!empty($initiative['start_date']) && !empty($initiative['end_date'])): ?>
+                                            <?php if (!empty($initiative[$start_date_col]) && !empty($initiative[$end_date_col])): ?>
                                                 <i class="fas fa-calendar-alt me-1 text-muted"></i>
-                                                <?php echo date('M j, Y', strtotime($initiative['start_date'])); ?> - 
-                                                <?php echo date('M j, Y', strtotime($initiative['end_date'])); ?>
-                                            <?php elseif (!empty($initiative['start_date'])): ?>
+                                                <?php echo date('M j, Y', strtotime($initiative[$start_date_col])); ?> - 
+                                                <?php echo date('M j, Y', strtotime($initiative[$end_date_col])); ?>
+                                            <?php elseif (!empty($initiative[$start_date_col])): ?>
                                                 <i class="fas fa-play me-1 text-success"></i>
-                                                Started: <?php echo date('M j, Y', strtotime($initiative['start_date'])); ?>
-                                            <?php elseif (!empty($initiative['end_date'])): ?>
+                                                Started: <?php echo date('M j, Y', strtotime($initiative[$start_date_col])); ?>
+                                            <?php elseif (!empty($initiative[$end_date_col])): ?>
                                                 <i class="fas fa-flag-checkered me-1 text-warning"></i>
-                                                Due: <?php echo date('M j, Y', strtotime($initiative['end_date'])); ?>
+                                                Due: <?php echo date('M j, Y', strtotime($initiative[$end_date_col])); ?>
                                             <?php endif; ?>
                                         </div>
                                     <?php else: ?>
@@ -223,14 +233,14 @@ require_once '../../layouts/page_header.php';
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <?php if ($initiative['is_active']): ?>
+                                    <?php if ($initiative[$is_active_col]): ?>
                                         <span class="badge bg-success">Active</span>
                                     <?php else: ?>
                                         <span class="badge bg-secondary">Inactive</span>
                                     <?php endif; ?>
                                 </td>
                                 <td class="text-center">
-                                    <a href="view_initiative.php?id=<?php echo $initiative['initiative_id']; ?>" 
+                                    <a href="view_initiative.php?id=<?php echo $initiative[$initiative_id_col]; ?>" 
                                        class="btn btn-outline-primary btn-sm"
                                        title="View Initiative Details">
                                         <i class="fas fa-eye me-1"></i>View Details

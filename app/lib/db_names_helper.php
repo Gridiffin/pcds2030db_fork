@@ -21,10 +21,16 @@ function load_db_config() {
             $config_path = ROOT_PATH . 'app/config/db_names.php';
         }
         
+        error_log("DEBUG: Loading db_names from: " . $config_path);
+        error_log("DEBUG: ROOT_PATH defined: " . (defined('ROOT_PATH') ? 'Yes' : 'No'));
+        error_log("DEBUG: File exists: " . (file_exists($config_path) ? 'Yes' : 'No'));
+        
         if (file_exists($config_path)) {
             $db_names = require_once $config_path;
+            error_log("DEBUG: Loaded db_names successfully");
         } else {
             // Fallback to hardcoded values if config file not found
+            error_log("DEBUG: Using fallback db_names configuration");
             $db_names = [
                 'tables' => [
                     'reporting_periods' => 'reporting_periods',

@@ -12,6 +12,7 @@ require_once ROOT_PATH . 'app/lib/session.php';
 require_once ROOT_PATH . 'app/lib/functions.php';
 require_once ROOT_PATH . 'app/lib/admins/index.php';
 require_once ROOT_PATH . 'app/lib/initiative_functions.php';
+require_once ROOT_PATH . 'app/lib/db_names_helper.php';
 
 // Verify user is admin
 if (!is_admin()) {

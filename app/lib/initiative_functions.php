@@ -8,24 +8,67 @@
 // Include numbering helpers for hierarchical program numbering
 require_once __DIR__ . '/numbering_helpers.php';
 
+// Load database configuration directly
+$config = include __DIR__ . '/../config/db_names.php';
+if (!$config || !isset($config['tables']['initiatives'])) {
+    die('Config not loaded or missing initiatives table definition.');
+}
+
+// Extract table and column names
+$initiativesTable = $config['tables']['initiatives'];
+$programsTable = $config['tables']['programs'];
+$usersTable = $config['tables']['users'];
+$agencyTable = $config['tables']['agency'];
+
+// Initiative columns
+$initiativeIdCol = $config['columns']['initiatives']['id'];
+$initiativeNameCol = $config['columns']['initiatives']['name'];
+$initiativeNumberCol = $config['columns']['initiatives']['number'];
+$initiativeDescriptionCol = $config['columns']['initiatives']['description'];
+$initiativeStartDateCol = $config['columns']['initiatives']['start_date'];
+$initiativeEndDateCol = $config['columns']['initiatives']['end_date'];
+$initiativeIsActiveCol = $config['columns']['initiatives']['is_active'];
+$initiativeCreatedByCol = $config['columns']['initiatives']['created_by'];
+$initiativeCreatedAtCol = $config['columns']['initiatives']['created_at'];
+$initiativeUpdatedAtCol = $config['columns']['initiatives']['updated_at'];
+
+// Program columns
+$programIdCol = $config['columns']['programs']['id'];
+$programNameCol = $config['columns']['programs']['name'];
+$programNumberCol = $config['columns']['programs']['number'];
+$programInitiativeIdCol = $config['columns']['programs']['initiative_id'];
+$programUsersAssignedCol = $config['columns']['programs']['users_assigned'];
+
+// User columns
+$userIdCol = $config['columns']['users']['id'];
+$userUsernameCol = $config['columns']['users']['username'];
+$userAgencyIdCol = $config['columns']['users']['agency_id'];
+
+// Agency columns
+$agencyIdCol = $config['columns']['agency']['id'];
+$agencyNameCol = $config['columns']['agency']['name'];
+
 /**
  * Get all initiatives with optional filtering
  */
 function get_all_initiatives($filters = []) {
-    global $conn;
+    global $conn, $initiativesTable, $usersTable, $programsTable;
+    global $initiativeIdCol, $initiativeNameCol, $initiativeIsActiveCol, $initiativeDescriptionCol, $initiativeNumberCol, $initiativeCreatedByCol;
+    global $userUsernameCol, $userIdCol, $programInitiativeIdCol;
     
     $where_conditions = ['1=1'];
     $params = [];
     $param_types = '';
-      // Add filter conditions
+    
+    // Add filter conditions
     if (isset($filters['is_active'])) {
-        $where_conditions[] = 'i.is_active = ?';
+        $where_conditions[] = "i.{$initiativeIsActiveCol} = ?";
         $params[] = $filters['is_active'];
         $param_types .= 'i';
     }
     
     if (isset($filters['search']) && !empty($filters['search'])) {
-        $where_conditions[] = '(i.initiative_name LIKE ? OR i.initiative_number LIKE ? OR i.initiative_description LIKE ?)';
+        $where_conditions[] = "(i.{$initiativeNameCol} LIKE ? OR i.{$initiativeNumberCol} LIKE ? OR i.{$initiativeDescriptionCol} LIKE ?)";
         $search_term = '%' . $filters['search'] . '%';
         $params[] = $search_term;
         $params[] = $search_term;
@@ -33,15 +76,12 @@ function get_all_initiatives($filters = []) {
         $param_types .= 'sss';
     }
     
-    // Build query
-    $sql = "SELECT i.*, u.username as created_by_username,
-                   COUNT(p.program_id) as program_count
-            FROM initiatives i
-            LEFT JOIN users u ON i.created_by = u.user_id
-            LEFT JOIN programs p ON i.initiative_id = p.initiative_id
+    $sql = "SELECT i.*, u.{$userUsernameCol} as created_by_username,
+                   (SELECT COUNT(*) FROM {$programsTable} WHERE {$programInitiativeIdCol} = i.{$initiativeIdCol}) as program_count
+            FROM {$initiativesTable} i
+            LEFT JOIN {$usersTable} u ON i.{$initiativeCreatedByCol} = u.{$userIdCol}
             WHERE " . implode(' AND ', $where_conditions) . "
-            GROUP BY i.initiative_id
-            ORDER BY i.initiative_name ASC";
+            ORDER BY i.{$initiativeNameCol} ASC";
     
     $stmt = $conn->prepare($sql);
     if (!empty($params)) {
@@ -63,15 +103,14 @@ function get_all_initiatives($filters = []) {
  * Get single initiative by ID
  */
 function get_initiative_by_id($initiative_id) {
-    global $conn;
+    global $conn, $initiativesTable, $usersTable, $programsTable;
+    global $initiativeIdCol, $initiativeCreatedByCol, $userIdCol, $userUsernameCol, $programInitiativeIdCol;
     
-    $sql = "SELECT i.*, u.username as created_by_username,
-                   COUNT(p.program_id) as program_count
-            FROM initiatives i
-            LEFT JOIN users u ON i.created_by = u.user_id
-            LEFT JOIN programs p ON i.initiative_id = p.initiative_id
-            WHERE i.initiative_id = ?
-            GROUP BY i.initiative_id";
+    $sql = "SELECT i.*, u.{$userUsernameCol} as created_by_username,
+                   (SELECT COUNT(*) FROM {$programsTable} WHERE {$programInitiativeIdCol} = i.{$initiativeIdCol}) as program_count
+            FROM {$initiativesTable} i
+            LEFT JOIN {$usersTable} u ON i.{$initiativeCreatedByCol} = u.{$userIdCol}
+            WHERE i.{$initiativeIdCol} = ?";
     
     $stmt = $conn->prepare($sql);
     $stmt->bind_param('i', $initiative_id);
@@ -85,8 +124,9 @@ function get_initiative_by_id($initiative_id) {
  * Create new initiative
  */
 function create_initiative($data) {
-    global $conn;
-    
+    global $conn, $initiativesTable, $initiativeNameCol, $initiativeNumberCol, $initiativeDescriptionCol, $initiativeStartDateCol, $initiativeEndDateCol, $initiativeIsActiveCol, $initiativeCreatedByCol;
+    global $initiativeIdCol;
+
     // Validate required fields
     $required_fields = ['initiative_name'];
     foreach ($required_fields as $field) {
@@ -94,31 +134,29 @@ function create_initiative($data) {
             return ['error' => "Field '{$field}' is required"];
         }
     }
-    
+
     // Check for duplicate initiative name or number
-    $check_sql = "SELECT initiative_id FROM initiatives WHERE initiative_name = ?";
+    $check_sql = "SELECT {$initiativeIdCol} FROM {$initiativesTable} WHERE {$initiativeNameCol} = ?";
     $params = [$data['initiative_name']];
     $param_types = 's';
-    
+
     if (!empty($data['initiative_number'])) {
-        $check_sql .= " OR initiative_number = ?";
+        $check_sql .= " OR {$initiativeNumberCol} = ?";
         $params[] = $data['initiative_number'];
         $param_types .= 's';
     }
-    
+
     $check_stmt = $conn->prepare($check_sql);
     $check_stmt->bind_param($param_types, ...$params);
     $check_stmt->execute();
     $check_result = $check_stmt->get_result();
-    
+
     if ($check_result->num_rows > 0) {
         return ['error' => 'Initiative with this name or number already exists'];
-    }    // Insert new initiative
-    $sql = "INSERT INTO initiatives (initiative_name, initiative_number, initiative_description, 
-                                   start_date, end_date, is_active, created_by) 
-            VALUES (?, ?, ?, ?, ?, ?, ?)";
-    
-    // Prepare variables for bind_param (must be actual variables, not expressions)
+    }
+
+    $sql = "INSERT INTO {$initiativesTable} ({$initiativeNameCol}, {$initiativeNumberCol}, {$initiativeDescriptionCol}, {$initiativeStartDateCol}, {$initiativeEndDateCol}, {$initiativeIsActiveCol}, {$initiativeCreatedByCol}) VALUES (?, ?, ?, ?, ?, ?, ?)";
+
     $initiative_name = $data['initiative_name'];
     $initiative_number = $data['initiative_number'] ?? null;
     $initiative_description = $data['initiative_description'] ?? null;
@@ -126,18 +164,10 @@ function create_initiative($data) {
     $end_date = $data['end_date'] ?? null;
     $is_active = $data['is_active'] ?? 1;
     $created_by = $_SESSION['user_id'] ?? 1;
-    
+
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param('sssssii', 
-        $initiative_name,
-        $initiative_number,
-        $initiative_description,
-        $start_date,
-        $end_date,
-        $is_active,
-        $created_by
-    );
-    
+    $stmt->bind_param('sssssii', $initiative_name, $initiative_number, $initiative_description, $start_date, $end_date, $is_active, $created_by);
+
     if ($stmt->execute()) {
         $initiative_id = $conn->insert_id;
         return ['success' => true, 'initiative_id' => $initiative_id];
@@ -150,8 +180,8 @@ function create_initiative($data) {
  * Update existing initiative
  */
 function update_initiative($initiative_id, $data) {
-    global $conn;
-    
+    global $conn, $initiativesTable, $initiativeIdCol, $initiativeNameCol, $initiativeNumberCol, $initiativeDescriptionCol, $initiativeStartDateCol, $initiativeEndDateCol, $initiativeIsActiveCol, $initiativeUpdatedAtCol;
+
     // Validate required fields
     $required_fields = ['initiative_name'];
     foreach ($required_fields as $field) {
@@ -159,75 +189,63 @@ function update_initiative($initiative_id, $data) {
             return ['error' => "Field '{$field}' is required"];
         }
     }
-    
+
     // Check if initiative exists
-    $check_sql = "SELECT initiative_id FROM initiatives WHERE initiative_id = ?";
+    $check_sql = "SELECT {$initiativeIdCol} FROM {$initiativesTable} WHERE {$initiativeIdCol} = ?";
     $check_stmt = $conn->prepare($check_sql);
     $check_stmt->bind_param('i', $initiative_id);
     $check_stmt->execute();
     $check_result = $check_stmt->get_result();
-    
+
     if ($check_result->num_rows === 0) {
         return ['error' => 'Initiative not found'];
     }
-    
+
     // Check for duplicate name/number (excluding current initiative)
-    $dup_sql = "SELECT initiative_id FROM initiatives WHERE (initiative_name = ?";
+    $dup_sql = "SELECT {$initiativeIdCol} FROM {$initiativesTable} WHERE ({$initiativeNameCol} = ?";
     $dup_params = [$data['initiative_name']];
     $dup_types = 's';
-    
+
     if (!empty($data['initiative_number'])) {
-        $dup_sql .= " OR initiative_number = ?";
+        $dup_sql .= " OR {$initiativeNumberCol} = ?";
         $dup_params[] = $data['initiative_number'];
         $dup_types .= 's';
     }
-    
-    $dup_sql .= ") AND initiative_id != ?";
+
+    $dup_sql .= ") AND {$initiativeIdCol} != ?";
     $dup_params[] = $initiative_id;
     $dup_types .= 'i';
-    
+
     $dup_stmt = $conn->prepare($dup_sql);
     $dup_stmt->bind_param($dup_types, ...$dup_params);
     $dup_stmt->execute();
     $dup_result = $dup_stmt->get_result();
-      if ($dup_result->num_rows > 0) {
+    if ($dup_result->num_rows > 0) {
         return ['error' => 'Another initiative with this name or number already exists'];
     }
-    
+
     // Get current initiative number to check if it's changing
-    $current_query = "SELECT initiative_number FROM initiatives WHERE initiative_id = ?";
+    $current_query = "SELECT {$initiativeNumberCol} FROM {$initiativesTable} WHERE {$initiativeIdCol} = ?";
     $current_stmt = $conn->prepare($current_query);
     $current_stmt->bind_param('i', $initiative_id);
     $current_stmt->execute();
     $current_result = $current_stmt->get_result();
     $current_initiative = $current_result->fetch_assoc();
-    $current_number = $current_initiative['initiative_number'];
-    
+    $current_number = $current_initiative[$initiativeNumberCol];
+
     // Update initiative
-    $sql = "UPDATE initiatives            SET initiative_name = ?, initiative_number = ?, initiative_description = ?, 
-                start_date = ?, end_date = ?, is_active = ?, 
-                updated_at = CURRENT_TIMESTAMP 
-            WHERE initiative_id = ?";
-    
-    // Prepare variables for bind_param (must be actual variables, not expressions)
+    $sql = "UPDATE {$initiativesTable} SET {$initiativeNameCol} = ?, {$initiativeNumberCol} = ?, {$initiativeDescriptionCol} = ?, {$initiativeStartDateCol} = ?, {$initiativeEndDateCol} = ?, {$initiativeIsActiveCol} = ?, {$initiativeUpdatedAtCol} = CURRENT_TIMESTAMP WHERE {$initiativeIdCol} = ?";
+
     $initiative_name = $data['initiative_name'];
     $initiative_number = $data['initiative_number'] ?? null;
     $initiative_description = $data['initiative_description'] ?? null;
     $start_date = $data['start_date'] ?? null;
     $end_date = $data['end_date'] ?? null;
     $is_active = $data['is_active'] ?? 1;
-    
+
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param('sssssii', 
-        $initiative_name,
-        $initiative_number,
-        $initiative_description,
-        $start_date,
-        $end_date,
-        $is_active,
-        $initiative_id
-    );
-    
+    $stmt->bind_param('sssssii', $initiative_name, $initiative_number, $initiative_description, $start_date, $end_date, $is_active, $initiative_id);
+
     if ($stmt->execute()) {
         // If initiative number changed and there are programs, update their numbers
         if ($current_number !== $initiative_number && $initiative_number) {
@@ -248,7 +266,6 @@ function update_initiative($initiative_id, $data) {
                 ];
             }
         }
-        
         return ['success' => true];
     } else {
         return ['error' => 'Failed to update initiative: ' . $conn->error];
@@ -259,27 +276,25 @@ function update_initiative($initiative_id, $data) {
  * Toggle initiative active status
  */
 function toggle_initiative_status($initiative_id) {
-    global $conn;
-    
-    // Get current status
-    $sql = "SELECT is_active FROM initiatives WHERE initiative_id = ?";
+    global $conn, $initiativesTable, $initiativeIdCol, $initiativeIsActiveCol, $initiativeUpdatedAtCol;
+
+    $sql = "SELECT {$initiativeIsActiveCol} FROM {$initiativesTable} WHERE {$initiativeIdCol} = ?";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param('i', $initiative_id);
     $stmt->execute();
     $result = $stmt->get_result();
-    
+
     if ($result->num_rows === 0) {
         return ['error' => 'Initiative not found'];
     }
-    
-    $current_status = $result->fetch_assoc()['is_active'];
+
+    $current_status = $result->fetch_assoc()[$initiativeIsActiveCol];
     $new_status = $current_status ? 0 : 1;
-    
-    // Update status
-    $update_sql = "UPDATE initiatives SET is_active = ?, updated_at = CURRENT_TIMESTAMP WHERE initiative_id = ?";
+
+    $update_sql = "UPDATE {$initiativesTable} SET {$initiativeIsActiveCol} = ?, {$initiativeUpdatedAtCol} = CURRENT_TIMESTAMP WHERE {$initiativeIdCol} = ?";
     $update_stmt = $conn->prepare($update_sql);
     $update_stmt->bind_param('ii', $new_status, $initiative_id);
-    
+
     if ($update_stmt->execute()) {
         return ['success' => true, 'new_status' => $new_status];
     } else {
@@ -291,26 +306,27 @@ function toggle_initiative_status($initiative_id) {
  * Get programs associated with an initiative
  */
 function get_initiative_programs($initiative_id) {
-    global $conn;
-    
-    $sql = "SELECT p.program_id, p.program_name, p.program_number,
-                   a.agency_name
-            FROM programs p
-            LEFT JOIN users u ON p.users_assigned = u.user_id
-            LEFT JOIN agency a ON u.agency_id = a.agency_id
-            WHERE p.initiative_id = ?
-            ORDER BY p.program_name";
-    
+    global $conn, $programsTable, $usersTable, $agencyTable;
+    global $programIdCol, $programNameCol, $programNumberCol, $programInitiativeIdCol, $programUsersAssignedCol;
+    global $userIdCol, $userAgencyIdCol, $agencyIdCol, $agencyNameCol;
+
+    $sql = "SELECT p.{$programIdCol}, p.{$programNameCol}, p.{$programNumberCol}, a.{$agencyNameCol}
+            FROM {$programsTable} p
+            LEFT JOIN {$usersTable} u ON p.{$programUsersAssignedCol} = u.{$userIdCol}
+            LEFT JOIN {$agencyTable} a ON u.{$userAgencyIdCol} = a.{$agencyIdCol}
+            WHERE p.{$programInitiativeIdCol} = ?
+            ORDER BY p.{$programNameCol}";
+
     $stmt = $conn->prepare($sql);
     $stmt->bind_param('i', $initiative_id);
     $stmt->execute();
     $result = $stmt->get_result();
-    
+
     $programs = [];
     while ($row = $result->fetch_assoc()) {
         $programs[] = $row;
     }
-    
+
     return $programs;
 }
 
@@ -318,24 +334,19 @@ function get_initiative_programs($initiative_id) {
  * Get initiatives for dropdown/select options
  */
 function get_initiatives_for_select($active_only = true) {
-    global $conn;
-    
-    $sql = "SELECT initiative_id, initiative_name, initiative_number 
-            FROM initiatives";
-    
+    global $conn, $initiativesTable, $initiativeIdCol, $initiativeNameCol, $initiativeNumberCol, $initiativeIsActiveCol;
+
+    $sql = "SELECT {$initiativeIdCol}, {$initiativeNameCol}, {$initiativeNumberCol} FROM {$initiativesTable}";
     if ($active_only) {
-        $sql .= " WHERE is_active = 1";
+        $sql .= " WHERE {$initiativeIsActiveCol} = 1";
     }
-    
-    $sql .= " ORDER BY initiative_name ASC";
-    
+    $sql .= " ORDER BY {$initiativeNameCol} ASC";
+
     $result = $conn->query($sql);
-    
     $initiatives = [];
     while ($row = $result->fetch_assoc()) {
         $initiatives[] = $row;
     }
-    
     return $initiatives;
 }
 ?>

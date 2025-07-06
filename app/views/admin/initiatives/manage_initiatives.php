@@ -12,6 +12,7 @@ require_once ROOT_PATH . 'app/lib/session.php';
 require_once ROOT_PATH . 'app/lib/functions.php';
 require_once ROOT_PATH . 'app/lib/admins/index.php';
 require_once ROOT_PATH . 'app/lib/initiative_functions.php';
+require_once ROOT_PATH . 'app/lib/db_names_helper.php';
 
 // Verify user is admin
 if (!is_admin()) {
@@ -36,6 +37,15 @@ if (isset($_GET['ajax_table']) && $_GET['ajax_table'] == '1') {
     }
     
     $initiatives = get_all_initiatives($filters);
+    
+    // Load config and extract column names
+    $config = include __DIR__ . '/../../../config/db_names.php';
+    $initiative_id_col = $config['columns']['initiatives']['id'];
+    $initiative_name_col = $config['columns']['initiatives']['name'];
+    $initiative_description_col = $config['columns']['initiatives']['description'];
+    $initiative_number_col = $config['columns']['initiatives']['number'];
+    $is_active_col = $config['columns']['initiatives']['is_active'];
+    $created_at_col = $config['columns']['initiatives']['created_at'];
     
     ?>    <div class="card shadow-sm h-100 d-flex flex-column">
         <div class="card-header d-flex justify-content-between align-items-center">
@@ -70,22 +80,23 @@ if (isset($_GET['ajax_table']) && $_GET['ajax_table'] == '1') {
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($initiatives as $initiative): ?>
-                                <tr data-initiative-id="<?php echo $initiative['initiative_id']; ?>">
+                            <?php 
+                            foreach ($initiatives as $initiative): ?>
+                                <tr data-initiative-id="<?php echo $initiative[$initiative_id_col]; ?>">
                                     <td>
-                                        <div class="fw-semibold"><?php echo htmlspecialchars($initiative['initiative_name']); ?></div>
-                                        <?php if (!empty($initiative['initiative_description'])): ?>
-                                            <small class="text-muted"><?php echo htmlspecialchars(substr($initiative['initiative_description'], 0, 80)) . (strlen($initiative['initiative_description']) > 80 ? '...' : ''); ?></small>
+                                        <div class="fw-semibold"><?php echo htmlspecialchars($initiative[$initiative_name_col] ?? ''); ?></div>
+                                        <?php if (!empty($initiative[$initiative_description_col])): ?>
+                                            <small class="text-muted"><?php echo htmlspecialchars(substr($initiative[$initiative_description_col], 0, 80)) . (strlen($initiative[$initiative_description_col]) > 80 ? '...' : ''); ?></small>
                                         <?php endif; ?>
                                     </td>
                                     <td>
-                                        <?php echo $initiative['initiative_number'] ? htmlspecialchars($initiative['initiative_number']) : '<span class="text-muted">—</span>'; ?>
+                                        <?php echo !empty($initiative[$initiative_number_col]) ? htmlspecialchars($initiative[$initiative_number_col]) : '<span class="text-muted">—</span>'; ?>
                                     </td>
                                     <td>
                                         <span class="badge bg-info"><?php echo $initiative['program_count']; ?> programs</span>
                                     </td>
                                     <td>
-                                        <?php if ($initiative['is_active']): ?>
+                                        <?php if (!empty($initiative[$is_active_col])): ?>
                                             <span class="badge bg-success">Active</span>
                                         <?php else: ?>
                                             <span class="badge bg-secondary">Inactive</span>
@@ -94,25 +105,25 @@ if (isset($_GET['ajax_table']) && $_GET['ajax_table'] == '1') {
                                     <td><?php echo htmlspecialchars($initiative['created_by_username'] ?? 'Unknown'); ?></td>
                                     <td>
                                         <small class="text-muted">
-                                            <?php echo date('M j, Y', strtotime($initiative['created_at'])); ?>
+                                            <?php echo !empty($initiative[$created_at_col]) ? date('M j, Y', strtotime($initiative[$created_at_col])) : ''; ?>
                                         </small>
                                     </td>
                                     <td class="text-center">
                                         <div class="btn-group btn-group-sm" role="group">
-                                            <a href="view_initiative.php?id=<?php echo $initiative['initiative_id']; ?>" 
+                                            <a href="view_initiative.php?id=<?php echo $initiative[$initiative_id_col]; ?>" 
                                                class="btn btn-outline-info" title="View">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <a href="edit.php?id=<?php echo $initiative['initiative_id']; ?>" 
+                                            <a href="edit.php?id=<?php echo $initiative[$initiative_id_col]; ?>" 
                                                class="btn btn-outline-primary" title="Edit">
                                                 <i class="fas fa-edit"></i>
                                             </a>
                                             <button type="button" 
-                                                    class="btn btn-outline-<?php echo $initiative['is_active'] ? 'warning' : 'success'; ?> btn-toggle-status" 
-                                                    data-initiative-id="<?php echo $initiative['initiative_id']; ?>"
-                                                    data-current-status="<?php echo $initiative['is_active']; ?>"
-                                                    title="<?php echo $initiative['is_active'] ? 'Deactivate' : 'Activate'; ?>">
-                                                <i class="fas fa-<?php echo $initiative['is_active'] ? 'pause' : 'play'; ?>"></i>
+                                                    class="btn btn-outline-<?php echo !empty($initiative[$is_active_col]) ? 'warning' : 'success'; ?> btn-toggle-status" 
+                                                    data-initiative-id="<?php echo $initiative[$initiative_id_col]; ?>"
+                                                    data-current-status="<?php echo $initiative[$is_active_col]; ?>"
+                                                    title="<?php echo !empty($initiative[$is_active_col]) ? 'Deactivate' : 'Activate'; ?>">
+                                                <i class="fas fa-<?php echo !empty($initiative[$is_active_col]) ? 'pause' : 'play'; ?>"></i>
                                             </button>
                                         </div>
                                     </td>

@@ -12,6 +12,7 @@ require_once ROOT_PATH . 'app/lib/session.php';
 require_once ROOT_PATH . 'app/lib/functions.php';
 require_once ROOT_PATH . 'app/lib/admins/index.php';
 require_once ROOT_PATH . 'app/lib/initiative_functions.php';
+require_once ROOT_PATH . 'app/lib/db_names_helper.php';
 
 // Verify user is admin
 if (!is_admin()) {
@@ -39,8 +40,19 @@ if (!$initiative) {
     exit;
 }
 
+// Get column names using db_names helper
+$initiative_id_col = get_column_name('initiatives', 'id');
+$initiative_name_col = get_column_name('initiatives', 'name');
+$initiative_number_col = get_column_name('initiatives', 'number');
+$initiative_description_col = get_column_name('initiatives', 'description');
+$start_date_col = get_column_name('initiatives', 'start_date');
+$end_date_col = get_column_name('initiatives', 'end_date');
+$is_active_col = get_column_name('initiatives', 'is_active');
+$created_at_col = get_column_name('initiatives', 'created_at');
+$updated_at_col = get_column_name('initiatives', 'updated_at');
+
 // Set page title
-$pageTitle = 'Edit Initiative - ' . $initiative['initiative_name'];
+$pageTitle = 'Edit Initiative - ' . $initiative[$initiative_name_col];
 
 // Process form submission
 $message = '';
@@ -130,7 +142,7 @@ if (isset($_SESSION['message']) && !empty($_SESSION['message'])) {
                                                class="form-control" 
                                                id="initiative_name" 
                                                name="initiative_name" 
-                                               value="<?php echo htmlspecialchars($form_data['initiative_name'] ?? ''); ?>" 
+                                               value="<?php echo htmlspecialchars($form_data[$initiative_name_col] ?? ''); ?>" 
                                                required>
                                         <div class="form-text">Enter a clear, descriptive name for the initiative</div>
                                     </div>
@@ -142,7 +154,7 @@ if (isset($_SESSION['message']) && !empty($_SESSION['message'])) {
                                                class="form-control" 
                                                id="initiative_number" 
                                                name="initiative_number" 
-                                               value="<?php echo htmlspecialchars($form_data['initiative_number'] ?? ''); ?>" 
+                                               value="<?php echo htmlspecialchars($form_data[$initiative_number_col] ?? ''); ?>" 
                                                placeholder="e.g., PCDS-CI-001">
                                         <div class="form-text">Optional reference number</div>
                                     </div>
@@ -155,7 +167,7 @@ if (isset($_SESSION['message']) && !empty($_SESSION['message'])) {
                                               id="initiative_description" 
                                               name="initiative_description" 
                                               rows="4" 
-                                              placeholder="Describe the initiative's purpose, goals, and scope..."><?php echo htmlspecialchars($form_data['initiative_description'] ?? ''); ?></textarea>
+                                              placeholder="Describe the initiative's purpose, goals, and scope..."><?php echo htmlspecialchars($form_data[$initiative_description_col] ?? ''); ?></textarea>
                                     <div class="form-text">Provide a detailed description of the initiative</div>
                                 </div>
 
@@ -167,7 +179,7 @@ if (isset($_SESSION['message']) && !empty($_SESSION['message'])) {
                                                class="form-control" 
                                                id="start_date" 
                                                name="start_date" 
-                                               value="<?php echo htmlspecialchars($form_data['start_date'] ?? ''); ?>">
+                                               value="<?php echo htmlspecialchars($form_data[$start_date_col] ?? ''); ?>">
                                         <div class="form-text">When does this initiative begin?</div>
                                     </div>
                                     
@@ -178,7 +190,7 @@ if (isset($_SESSION['message']) && !empty($_SESSION['message'])) {
                                                class="form-control" 
                                                id="end_date" 
                                                name="end_date" 
-                                               value="<?php echo htmlspecialchars($form_data['end_date'] ?? ''); ?>">
+                                               value="<?php echo htmlspecialchars($form_data[$end_date_col] ?? ''); ?>">
                                         <div class="form-text">When is this initiative expected to complete?</div>
                                     </div>
                                 </div>
@@ -192,7 +204,7 @@ if (isset($_SESSION['message']) && !empty($_SESSION['message'])) {
                                                id="is_active" 
                                                name="is_active" 
                                                value="1" 
-                                               <?php echo (!empty($form_data['is_active'])) ? 'checked' : ''; ?>>
+                                               <?php echo (!empty($form_data[$is_active_col])) ? 'checked' : ''; ?>>
                                         <label class="form-check-label" for="is_active">
                                             Active
                                         </label>
@@ -232,7 +244,7 @@ if (isset($_SESSION['message']) && !empty($_SESSION['message'])) {
                             <div class="small">
                                 <div class="row mb-2">
                                     <div class="col-sm-5 fw-semibold">Created:</div>
-                                    <div class="col-sm-7"><?php echo date('M j, Y g:i A', strtotime($initiative['created_at'])); ?></div>
+                                    <div class="col-sm-7"><?php echo date('M j, Y g:i A', strtotime($initiative[$created_at_col])); ?></div>
                                 </div>
                                 <div class="row mb-2">
                                     <div class="col-sm-5 fw-semibold">Created By:</div>
@@ -240,13 +252,13 @@ if (isset($_SESSION['message']) && !empty($_SESSION['message'])) {
                                 </div>
                                 <div class="row mb-2">
                                     <div class="col-sm-5 fw-semibold">Last Updated:</div>
-                                    <div class="col-sm-7"><?php echo date('M j, Y g:i A', strtotime($initiative['updated_at'])); ?></div>
+                                    <div class="col-sm-7"><?php echo date('M j, Y g:i A', strtotime($initiative[$updated_at_col])); ?></div>
                                 </div>
                                 <div class="row">
                                     <div class="col-sm-5 fw-semibold">Status:</div>
                                     <div class="col-sm-7">
-                                        <span class="badge bg-<?php echo $initiative['is_active'] ? 'success' : 'secondary'; ?>">
-                                            <?php echo $initiative['is_active'] ? 'Active' : 'Inactive'; ?>
+                                        <span class="badge bg-<?php echo $initiative[$is_active_col] ? 'success' : 'secondary'; ?>">
+                                            <?php echo $initiative[$is_active_col] ? 'Active' : 'Inactive'; ?>
                                         </span>
                                     </div>
                                 </div>
