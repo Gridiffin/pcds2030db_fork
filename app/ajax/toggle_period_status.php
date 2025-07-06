@@ -17,6 +17,7 @@ require_once ROOT_PATH . 'app/lib/session.php';
 require_once ROOT_PATH . 'app/lib/functions.php';
 require_once ROOT_PATH . 'app/lib/admin_functions.php';
 require_once ROOT_PATH . 'app/lib/audit_log.php';
+require_once ROOT_PATH . 'app/lib/db_names_helper.php';
 
 // Ensure user is admin
 if (!is_admin()) {
@@ -53,7 +54,7 @@ try {
     $conn->begin_transaction();
     
     try {        // Check if period exists
-        $check_query = "SELECT period_id, year, quarter, status FROM reporting_periods WHERE period_id = ?";
+        $check_query = "SELECT period_id, year, period_type, period_number, status FROM reporting_periods WHERE period_id = ?";
         $check_stmt = $conn->prepare($check_query);
         $check_stmt->bind_param("i", $period_id);
         $check_stmt->execute();
@@ -67,7 +68,7 @@ try {
             throw new Exception('Period not found');
         }
         
-        $period_name = "Q{$period['quarter']} {$period['year']}";
+        $period_name = "{$period['period_type']} {$period['period_number']} {$period['year']}";
         $old_status = $period['status'];
         
         // Check if status is actually changing

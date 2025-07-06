@@ -7,7 +7,7 @@
  */
 
 // Get all periods for the selector
-$periods_query = "SELECT * FROM reporting_periods ORDER BY year DESC, quarter DESC";
+$periods_query = "SELECT * FROM reporting_periods ORDER BY year DESC, period_type ASC, period_number DESC";
 $periods_result = $conn->query($periods_query);
 
 $periods = [];

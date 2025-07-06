@@ -15,6 +15,7 @@ require_once '../config/config.php';
 require_once ROOT_PATH . 'app/lib/db_connect.php';
 require_once ROOT_PATH . 'app/lib/session.php';
 require_once ROOT_PATH . 'app/lib/functions.php';
+require_once ROOT_PATH . 'app/lib/db_names_helper.php';
 require_once ROOT_PATH . 'app/lib/admin_functions.php';
 
 // Check if user is admin
@@ -54,7 +55,7 @@ try {
     
     // Check for overlapping periods in the database
     $query = "
-        SELECT period_id, quarter, year, start_date, end_date 
+        SELECT period_id, period_type, period_number, year, start_date, end_date 
         FROM reporting_periods 
         WHERE 
             (
@@ -82,7 +83,8 @@ try {
     while ($row = $result->fetch_assoc()) {
         $overlapping_periods[] = [
             'period_id' => $row['period_id'],
-            'quarter' => $row['quarter'],
+            'period_type' => $row['period_type'],
+            'period_number' => $row['period_number'],
             'year' => $row['year'],
             'start_date' => $row['start_date'],
             'end_date' => $row['end_date']
@@ -91,11 +93,61 @@ try {
     
     $stmt->close();
     
+    // Filter out hierarchical overlaps that are allowed
+    // We need to know what type of period is being created to apply the right rules
+    $new_period_type = $_POST['period_type'] ?? null;
+    $new_period_number = $_POST['period_number'] ?? null;
+    $new_year = $_POST['year'] ?? null;
+    
+    $conflicting_periods = [];
+    
+    if ($new_period_type && $new_period_number && $new_year) {
+        foreach ($overlapping_periods as $period) {
+            $is_conflict = false;
+            
+            // Same type and year = always conflict (except for the excluded period)
+            if ($period['period_type'] === $new_period_type && $period['year'] == $new_year) {
+                $is_conflict = true;
+            }
+            // Yearly periods can contain half-yearly and quarterly periods (no conflict)
+            elseif ($new_period_type === 'yearly' && in_array($period['period_type'], ['half', 'quarter'])) {
+                $is_conflict = false;
+            }
+            // Half-yearly periods can contain quarterly periods (no conflict)
+            elseif ($new_period_type === 'half' && $period['period_type'] === 'quarter') {
+                $is_conflict = false;
+            }
+            // Quarterly periods cannot overlap with other quarterly periods
+            elseif ($new_period_type === 'quarter' && $period['period_type'] === 'quarter') {
+                $is_conflict = true;
+            }
+            // Half-yearly periods cannot overlap with other half-yearly periods
+            elseif ($new_period_type === 'half' && $period['period_type'] === 'half') {
+                $is_conflict = true;
+            }
+            // Yearly periods cannot overlap with other yearly periods
+            elseif ($new_period_type === 'yearly' && $period['period_type'] === 'yearly') {
+                $is_conflict = true;
+            }
+            // Default: treat as conflict for safety
+            else {
+                $is_conflict = true;
+            }
+            
+            if ($is_conflict) {
+                $conflicting_periods[] = $period;
+            }
+        }
+    } else {
+        // If we don't have period type info, treat all overlaps as conflicts
+        $conflicting_periods = $overlapping_periods;
+    }
+    
     // Return result
     echo json_encode([
         'success' => true,
-        'overlaps' => count($overlapping_periods) > 0,
-        'periods' => $overlapping_periods
+        'overlaps' => count($conflicting_periods) > 0,
+        'periods' => $conflicting_periods
     ]);
     
 } catch (Exception $e) {

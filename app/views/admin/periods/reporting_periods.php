@@ -97,19 +97,26 @@ require_once '../../layouts/page_header.php';
                     <input type="hidden" id="useCustomDates" name="use_custom_dates" value="0">
                     
                     <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label for="quarter" class="form-label">Period Type <span class="text-danger">*</span></label>
-                            <select class="form-select" id="quarter" name="quarter" required>
+                        <div class="col-md-4">
+                            <label for="periodType" class="form-label">Period Type <span class="text-danger">*</span></label>
+                            <select class="form-select" id="periodType" name="period_type" required>
                                 <option value="" disabled selected>Select Period Type</option>
-                                <option value="1">Q1</option>
-                                <option value="2">Q2</option>
-                                <option value="3">Q3</option>
-                                <option value="4">Q4</option>
-                                <option value="5">Half Yearly 1 (Jan-Jun)</option>
-                                <option value="6">Half Yearly 2 (Jul-Dec)</option>
+                                <option value="quarter">Quarter</option>
+                                <option value="half">Half Yearly</option>
+                                <option value="yearly">Yearly</option>
                             </select>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
+                            <label for="periodNumber" class="form-label">Period Number <span class="text-danger">*</span></label>
+                            <select class="form-select" id="periodNumber" name="period_number" required>
+                                <option value="" disabled selected>Select Number</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
                             <label for="year" class="form-label">Year <span class="text-danger">*</span></label>
                             <input type="number" class="form-control" id="year" name="year" required 
                                    placeholder="YYYY" min="2000" max="2099">

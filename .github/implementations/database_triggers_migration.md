@@ -58,3 +58,20 @@ SELECT program_id, attachment_count FROM programs WHERE program_id = 1;
 ```
 
 **Migration Status: Database triggers are now complete and functional! ✅**
+
+## ⚠️ UPDATE: Reporting Periods Validation Fixed
+
+After database migration, we discovered and fixed validation logic issues:
+
+### Fixed Issues:
+- ✅ **Half-yearly periods**: Now correctly accept only 1-2 
+- ✅ **Yearly periods**: Now correctly accept only 1 (not any positive number)
+- ✅ **Quarter periods**: Continue to accept 1-4 ✅
+
+### Changes Made:
+1. **Backend validation enhanced** in `save_period.php`
+2. **Frontend already correct** in `periods-management.js` 
+3. **Database CHECK constraint added** for data integrity
+4. **All validation tested and working**
+
+**Result**: Both current data and future reporting periods are now properly validated! ✅

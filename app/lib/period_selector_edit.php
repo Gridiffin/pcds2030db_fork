@@ -11,7 +11,7 @@
 
 // Get all periods for the selector (excluding half-yearly periods for cleaner editing interface)
 require_once __DIR__ . '/functions.php';
-$periods_query = "SELECT * FROM reporting_periods WHERE quarter NOT IN (5, 6) ORDER BY year DESC, quarter DESC";
+$periods_query = "SELECT * FROM reporting_periods WHERE period_type = 'quarter' ORDER BY year DESC, period_number DESC";
 $periods_result = $conn->query($periods_query);
 
 $periods = [];

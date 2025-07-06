@@ -210,7 +210,7 @@ function create_wizard_program_draft($data) {
                 $current_period_id = $period_id;
             } else {
                 // Fallback to any open period if no period is selected
-                $fallback_query = "SELECT period_id FROM reporting_periods WHERE status = 'open' ORDER BY year DESC, quarter DESC LIMIT 1";
+                $fallback_query = "SELECT period_id FROM reporting_periods WHERE status = 'open' ORDER BY year DESC, period_type ASC, period_number DESC LIMIT 1";
                 $fallback_result = $conn->query($fallback_query);
                 $current_period_id = $fallback_result && $fallback_result->num_rows > 0 ? $fallback_result->fetch_assoc()['period_id'] : 1;
             }
@@ -333,7 +333,7 @@ function update_program_draft_only($program_id, $data) {
                     $current_period_id = $period_id;
                 } else {
                     // Fallback to any open period if no period is selected
-                    $fallback_query = "SELECT period_id FROM reporting_periods WHERE status = 'open' ORDER BY year DESC, quarter DESC LIMIT 1";
+                    $fallback_query = "SELECT period_id FROM reporting_periods WHERE status = 'open' ORDER BY year DESC, period_type ASC, period_number DESC LIMIT 1";
                     $fallback_result = $conn->query($fallback_query);
                     $current_period_id = $fallback_result && $fallback_result->num_rows > 0 ? $fallback_result->fetch_assoc()['period_id'] : 1;
                 }
@@ -464,7 +464,7 @@ function update_wizard_program_draft($program_id, $data) {
                     $current_period_id = $period_id;
                 } else {
                     // Fallback to any open period if no period is selected
-                    $fallback_query = "SELECT period_id FROM reporting_periods WHERE status = 'open' ORDER BY year DESC, quarter DESC LIMIT 1";
+                    $fallback_query = "SELECT period_id FROM reporting_periods WHERE status = 'open' ORDER BY year DESC, period_type ASC, period_number DESC LIMIT 1";
                     $fallback_result = $conn->query($fallback_query);
                     $current_period_id = $fallback_result && $fallback_result->num_rows > 0 ? $fallback_result->fetch_assoc()['period_id'] : 1;
                 }

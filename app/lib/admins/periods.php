@@ -7,6 +7,7 @@
 
 require_once dirname(__DIR__) . '/utilities.php';
 require_once 'core.php';
+require_once dirname(__DIR__) . '/db_names_helper.php';
 
 /**
  * Manage reporting periods (open/close)
@@ -48,16 +49,18 @@ function update_reporting_period_status($period_id, $status) {
         $conn->commit();
         
         // Get the period details for the response
-        $period_query = "SELECT year, quarter FROM reporting_periods WHERE period_id = ?";
+        $period_query = "SELECT year, period_type, period_number FROM reporting_periods WHERE period_id = ?";
         $stmt = $conn->prepare($period_query);
         $stmt->bind_param("i", $period_id);
         $stmt->execute();
         $result = $stmt->get_result();
         $period = $result->fetch_assoc();
         
+        $period_name = "{$period['period_type']} {$period['period_number']} {$period['year']}";
+        
         return [
             'success' => true,
-            'message' => "Period Q{$period['quarter']}-{$period['year']} has been " . 
+            'message' => "Period {$period_name} has been " . 
                         ($status == 'open' ? "opened" : "closed") . " for submissions.",
             'period_id' => $period_id,
             'new_status' => $status
@@ -72,39 +75,45 @@ function update_reporting_period_status($period_id, $status) {
 /**
  * Add a new reporting period
  * @param int $year Year
- * @param int $quarter Quarter (1-4)
+ * @param string $period_type Period type (quarter, half, yearly)
+ * @param int $period_number Period number
  * @param string $start_date Start date (YYYY-MM-DD)
  * @param string $end_date End date (YYYY-MM-DD)
  * @param string $status Status (open/closed)
  * @return array Result of operation
  */
-function add_reporting_period($year, $quarter, $start_date, $end_date, $status = 'open') {
+function add_reporting_period($year, $period_type, $period_number, $start_date, $end_date, $status = 'open') {
     global $conn;
       // Validate inputs
-    if (!$year || !$quarter || !$start_date || !$end_date) {
+    if (!$year || !$period_type || !$period_number || !$start_date || !$end_date) {
         return ['error' => 'All fields are required'];
     }
     
-    if ($quarter < 1 || $quarter > 6) {
-        return ['error' => 'Quarter must be between 1 and 6 (1-4 for quarterly, 5-6 for half-yearly)'];
+    if (!in_array($period_type, ['quarter', 'half', 'yearly'])) {
+        return ['error' => 'Period type must be quarter, half, or yearly'];
+    }
+    
+    if ($period_type == 'quarter' && ($period_number < 1 || $period_number > 4)) {
+        return ['error' => 'Quarter period number must be between 1 and 4'];
+    }
+    
+    if ($period_type == 'half' && ($period_number < 1 || $period_number > 2)) {
+        return ['error' => 'Half yearly period number must be between 1 and 2'];
     }
     
     if (strtotime($start_date) > strtotime($end_date)) {
         return ['error' => 'End date cannot be before start date'];
     }
     
-    // Check for standard dates
-    $is_standard = is_standard_quarter_date($year, $quarter, $start_date, $end_date);
-    
     // Check if period already exists
-    $check_query = "SELECT * FROM reporting_periods WHERE year = ? AND quarter = ?";
+    $check_query = "SELECT * FROM reporting_periods WHERE year = ? AND period_type = ? AND period_number = ?";
     $stmt = $conn->prepare($check_query);
-    $stmt->bind_param("ii", $year, $quarter);
+    $stmt->bind_param("isi", $year, $period_type, $period_number);
     $stmt->execute();
     $result = $stmt->get_result();
     
     if ($result->num_rows > 0) {
-        return ['error' => "Period Q{$quarter}-{$year} already exists"];
+        return ['error' => "Period {$period_type} {$period_number} {$year} already exists"];
     }
     
     // Check for date range overlap with other periods
@@ -124,16 +133,14 @@ function add_reporting_period($year, $quarter, $start_date, $end_date, $status =
     }
     
     // Insert new period
-    $insert_query = "INSERT INTO reporting_periods (year, quarter, start_date, end_date, status, is_standard_dates) 
-                     VALUES (?, ?, ?, ?, ?, ?)";
+    $insert_query = "INSERT INTO reporting_periods (year, period_type, period_number, start_date, end_date, status) VALUES (?, ?, ?, ?, ?, ?)";
     $stmt = $conn->prepare($insert_query);
-    $stmt->bind_param("iisssi", $year, $quarter, $start_date, $end_date, $status, $is_standard);
+    $stmt->bind_param("isisss", $year, $period_type, $period_number, $start_date, $end_date, $status);
     
     if ($stmt->execute()) {
         return [
             'success' => true,
-            'message' => "Reporting period Q{$quarter}-{$year} added successfully" .
-                        (!$is_standard ? " (using custom date range)" : "")
+            'message' => "Reporting period {$period_type} {$period_number} {$year} added successfully"
         ];
     } else {
         return ['error' => 'Failed to add reporting period: ' . $stmt->error];
@@ -144,39 +151,45 @@ function add_reporting_period($year, $quarter, $start_date, $end_date, $status =
  * Update an existing reporting period
  * @param int $period_id Period ID
  * @param int $year Year
- * @param int $quarter Quarter (1-4)
+ * @param string $period_type Period type (quarter, half, yearly)
+ * @param int $period_number Period number
  * @param string $start_date Start date (YYYY-MM-DD)
  * @param string $end_date End date (YYYY-MM-DD)
  * @param string $status Status (open/closed)
  * @return array Result of operation
  */
-function update_reporting_period($period_id, $year, $quarter, $start_date, $end_date, $status) {
+function update_reporting_period($period_id, $year, $period_type, $period_number, $start_date, $end_date, $status) {
     global $conn;
       // Validate inputs
-    if (!$period_id || !$year || !$quarter || !$start_date || !$end_date) {
+    if (!$period_id || !$year || !$period_type || !$period_number || !$start_date || !$end_date) {
         return ['error' => 'All fields are required'];
     }
     
-    if ($quarter < 1 || $quarter > 6) {
-        return ['error' => 'Quarter must be between 1 and 6 (1-4 for quarterly, 5-6 for half-yearly)'];
+    if (!in_array($period_type, ['quarter', 'half', 'yearly'])) {
+        return ['error' => 'Period type must be quarter, half, or yearly'];
+    }
+    
+    if ($period_type == 'quarter' && ($period_number < 1 || $period_number > 4)) {
+        return ['error' => 'Quarter period number must be between 1 and 4'];
+    }
+    
+    if ($period_type == 'half' && ($period_number < 1 || $period_number > 2)) {
+        return ['error' => 'Half yearly period number must be between 1 and 2'];
     }
     
     if (strtotime($start_date) > strtotime($end_date)) {
         return ['error' => 'End date cannot be before start date'];
     }
     
-    // Check for standard dates
-    $is_standard = is_standard_quarter_date($year, $quarter, $start_date, $end_date);
-    
-    // Check if another period already exists with same year/quarter
-    $check_query = "SELECT * FROM reporting_periods WHERE year = ? AND quarter = ? AND period_id != ?";
+    // Check if another period already exists with same year/period_type/period_number
+    $check_query = "SELECT * FROM reporting_periods WHERE year = ? AND period_type = ? AND period_number = ? AND period_id != ?";
     $stmt = $conn->prepare($check_query);
-    $stmt->bind_param("iii", $year, $quarter, $period_id);
+    $stmt->bind_param("isii", $year, $period_type, $period_number, $period_id);
     $stmt->execute();
     $result = $stmt->get_result();
     
     if ($result->num_rows > 0) {
-        return ['error' => "Another period with Q{$quarter}-{$year} already exists"];
+        return ['error' => "Another period with {$period_type} {$period_number} {$year} already exists"];
     }
     
     // Check for date range overlap with other periods
@@ -198,16 +211,15 @@ function update_reporting_period($period_id, $year, $quarter, $start_date, $end_
     
     // Update period
     $update_query = "UPDATE reporting_periods 
-                     SET year = ?, quarter = ?, start_date = ?, end_date = ?, status = ?, is_standard_dates = ? 
+                     SET year = ?, period_type = ?, period_number = ?, start_date = ?, end_date = ?, status = ? 
                      WHERE period_id = ?";
     $stmt = $conn->prepare($update_query);
-    $stmt->bind_param("iisssii", $year, $quarter, $start_date, $end_date, $status, $is_standard, $period_id);
+    $stmt->bind_param("isisssi", $year, $period_type, $period_number, $start_date, $end_date, $status, $period_id);
     
     if ($stmt->execute()) {
         return [
             'success' => true,
-            'message' => "Reporting period Q{$quarter}-{$year} updated successfully" .
-                        (!$is_standard ? " (using custom date range)" : "")
+            'message' => "Reporting period {$period_type} {$period_number} {$year} updated successfully"
         ];
     } else {
         return ['error' => 'Failed to update reporting period: ' . $stmt->error];
@@ -234,7 +246,7 @@ function delete_reporting_period($period_id) {
     }
     
     // Check if period exists and get its details for the response message
-    $check_query = "SELECT year, quarter FROM reporting_periods WHERE period_id = ?";
+    $check_query = "SELECT year, period_type, period_number FROM reporting_periods WHERE period_id = ?";
     $stmt = $conn->prepare($check_query);
     $stmt->bind_param("i", $period_id);
     $stmt->execute();
@@ -245,6 +257,7 @@ function delete_reporting_period($period_id) {
     }
     
     $period = $result->fetch_assoc();
+    $period_name = "{$period['period_type']} {$period['period_number']} {$period['year']}";
     
     // Check if this period has any associated submissions
     $submission_check = "SELECT COUNT(*) as count FROM program_submissions WHERE period_id = ?";
@@ -256,7 +269,7 @@ function delete_reporting_period($period_id) {
     
     if ($submission_count > 0) {
         return [
-            'error' => "Cannot delete period Q{$period['quarter']}-{$period['year']} because it has {$submission_count} associated submissions. Delete the submissions first or contact system administrator."
+            'error' => "Cannot delete period {$period_name} because it has {$submission_count} associated submissions. Delete the submissions first or contact system administrator."
         ];
     }
     
@@ -268,7 +281,7 @@ function delete_reporting_period($period_id) {
     if ($stmt->execute()) {
         return [
             'success' => true,
-            'message' => "Reporting period Q{$period['quarter']}-{$period['year']} deleted successfully"
+            'message' => "Reporting period {$period_name} deleted successfully"
         ];
     } else {
         return ['error' => 'Failed to delete reporting period: ' . $stmt->error];

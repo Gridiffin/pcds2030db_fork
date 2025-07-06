@@ -63,7 +63,7 @@ $current_period = get_current_reporting_period();
 
 // If no current period, use the latest period
 if (!$current_period) {
-    $latest_period_query = "SELECT * FROM reporting_periods ORDER BY year DESC, quarter DESC LIMIT 1";
+    $latest_period_query = "SELECT * FROM reporting_periods ORDER BY year DESC, period_type ASC, period_number DESC LIMIT 1";
     $latest_result = $conn->query($latest_period_query);
     if ($latest_result && $latest_result->num_rows > 0) {
         $current_period = $latest_result->fetch_assoc();
@@ -83,7 +83,7 @@ $selected_period = null;
 
 // Fetch all periods for selector
 if ($conn) {
-    $periods_result = $conn->query("SELECT * FROM reporting_periods ORDER BY year DESC, quarter DESC");
+    $periods_result = $conn->query("SELECT * FROM reporting_periods ORDER BY year DESC, period_type ASC, period_number DESC");
     if ($periods_result) {
         while ($row = $periods_result->fetch_assoc()) {
             $all_periods[] = $row;

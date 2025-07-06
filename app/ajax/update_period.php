@@ -18,6 +18,21 @@ require_once ROOT_PATH . 'app/lib/functions.php';
 require_once ROOT_PATH . 'app/lib/admin_functions.php';
 require_once ROOT_PATH . 'app/lib/audit_log.php';
 
+// Load database configuration
+$config = include __DIR__ . '/../config/db_names.php';
+if (!$config || !isset($config['tables']['reporting_periods'])) {
+    die('Config not loaded or missing reporting_periods table definition.');
+}
+$periodsTable = $config['tables']['reporting_periods'];
+$periodIdCol = $config['columns']['reporting_periods']['id'];
+$periodYearCol = $config['columns']['reporting_periods']['year'];
+$periodTypeCol = $config['columns']['reporting_periods']['period_type'];
+$periodNumberCol = $config['columns']['reporting_periods']['period_number'];
+$periodStartDateCol = $config['columns']['reporting_periods']['start_date'];
+$periodEndDateCol = $config['columns']['reporting_periods']['end_date'];
+$periodStatusCol = $config['columns']['reporting_periods']['status'];
+$periodUpdatedAtCol = $config['columns']['reporting_periods']['updated_at'];
+
 // Check if user is admin
 if (!is_admin()) {
     echo json_encode(['success' => false, 'message' => 'Access denied']);
@@ -35,24 +50,37 @@ try {
     
     // Get and validate input data
     $periodId = isset($_POST['period_id']) ? intval($_POST['period_id']) : 0;
-    $quarter = trim($_POST['quarter'] ?? '');
+    $period_type = trim($_POST['period_type'] ?? 'quarter');
+    $period_number = trim($_POST['period_number'] ?? '');
     $year = trim($_POST['year'] ?? '');
     $start_date = trim($_POST['start_date'] ?? '');
     $end_date = trim($_POST['end_date'] ?? '');
     $status = trim($_POST['status'] ?? 'closed'); // Default to closed
-    $use_custom_dates = isset($_POST['use_custom_dates']) ? (bool)$_POST['use_custom_dates'] : false;
     
     // Validation
     if (empty($periodId) || $periodId <= 0) {
         throw new Exception('Invalid period ID');
     }
     
-    if (empty($quarter)) {
-        throw new Exception('Period type is required');
+    if (empty($period_number)) {
+        throw new Exception('Period number is required');
     }
     
-    if (!in_array($quarter, ['1', '2', '3', '4', '5', '6'])) {
-        throw new Exception('Invalid period type. Must be Q1-Q4 or Half Yearly.');
+    if (!in_array($period_type, ['quarter', 'half', 'yearly'])) {
+        throw new Exception('Invalid period type. Must be quarter, half, or yearly.');
+    }
+    
+    if (!is_numeric($period_number) || $period_number < 1) {
+        throw new Exception('Period number must be a positive number');
+    }
+    
+    // Validate period number based on type
+    if ($period_type == 'quarter' && ($period_number < 1 || $period_number > 4)) {
+        throw new Exception('Quarter period number must be between 1 and 4');
+    }
+    
+    if ($period_type == 'half' && ($period_number < 1 || $period_number > 2)) {
+        throw new Exception('Half yearly period number must be between 1 and 2');
     }
     
     if (empty($year)) {
@@ -83,7 +111,10 @@ try {
         throw new Exception('Invalid status value');
     }
       // Check if the period exists and get current data
-    $checkStmt = $conn->prepare("SELECT period_id, quarter, year, start_date, end_date, status, is_standard_dates FROM reporting_periods WHERE period_id = ?");
+    $checkStmt = $conn->prepare("SELECT $periodIdCol, $periodTypeCol, $periodNumberCol, $periodYearCol, 
+                                        $periodStartDateCol, $periodEndDateCol, $periodStatusCol 
+                                 FROM $periodsTable 
+                                 WHERE $periodIdCol = ?");
     $checkStmt->bind_param("i", $periodId);
     $checkStmt->execute();
     $checkResult = $checkStmt->get_result();
@@ -97,39 +128,37 @@ try {
     $current_period = $checkResult->fetch_assoc();
     $checkStmt->close();
     
-    // Check for conflicting periods (same quarter/year but different ID)
+    // Check for conflicting periods (same period_type/period_number/year but different ID)
     $conflictStmt = $conn->prepare(
-        "SELECT period_id FROM reporting_periods 
-         WHERE quarter = ? AND year = ? AND period_id != ?"
+        "SELECT $periodIdCol FROM $periodsTable 
+         WHERE $periodTypeCol = ? AND $periodNumberCol = ? AND $periodYearCol = ? AND $periodIdCol != ?"
     );
-    $conflictStmt->bind_param("sii", $quarter, $year, $periodId);
+    $conflictStmt->bind_param("siii", $period_type, $period_number, $year, $periodId);
     $conflictStmt->execute();
     $conflictResult = $conflictStmt->get_result();
     
     if ($conflictResult->num_rows > 0) {
-        throw new Exception("A period for this quarter and year already exists");
+        throw new Exception("A period for this period type, number and year already exists");
     }
     $conflictStmt->close();
     
     // Format dates to MySQL format
     $start_date_db = $start_date;
     $end_date_db = $end_date;
-      // Set is_standard_dates based on the use_custom_dates flag (inverse)
-    $is_standard_dates = $use_custom_dates ? 0 : 1;
     
     // Update the period
     $updateStmt = $conn->prepare(
-        "UPDATE reporting_periods 
-         SET quarter = ?, 
-             year = ?, 
-             start_date = ?, 
-             end_date = ?, 
-             status = ?,
-             is_standard_dates = ?,
-             updated_at = NOW()
-         WHERE period_id = ?"
+        "UPDATE $periodsTable 
+         SET $periodTypeCol = ?, 
+             $periodNumberCol = ?, 
+             $periodYearCol = ?, 
+             $periodStartDateCol = ?, 
+             $periodEndDateCol = ?, 
+             $periodStatusCol = ?,
+             $periodUpdatedAtCol = NOW()
+         WHERE $periodIdCol = ?"
     );
-    $updateStmt->bind_param("sisssii", $quarter, $year, $start_date_db, $end_date_db, $status, $is_standard_dates, $periodId);
+    $updateStmt->bind_param("siisssi", $period_type, $period_number, $year, $start_date_db, $end_date_db, $status, $periodId);
     $updateSuccess = $updateStmt->execute();
     
     if (!$updateSuccess) {
@@ -140,7 +169,7 @@ try {
         $updateStmt->close();
         
         // Log no changes made
-        $period_name = "Q{$quarter} {$year}";
+        $period_name = "{$period_type} {$period_number} {$year}";
         log_audit_action('update_period', "No changes made to period: {$period_name} (ID: {$periodId})", 'success');
         
         echo json_encode([
@@ -153,25 +182,25 @@ try {
     $updateStmt->close();
     
     // Log successful period update with before/after data
-    $period_name = "Q{$quarter} {$year}";
+    $period_name = "{$period_type} {$period_number} {$year}";
     $changes = [];
-    if ($current_period['quarter'] != $quarter) {
-        $changes[] = "Quarter: {$current_period['quarter']} → {$quarter}";
+    if ($current_period[$periodTypeCol] != $period_type) {
+        $changes[] = "Period Type: {$current_period[$periodTypeCol]} → {$period_type}";
     }
-    if ($current_period['year'] != $year) {
-        $changes[] = "Year: {$current_period['year']} → {$year}";
+    if ($current_period[$periodNumberCol] != $period_number) {
+        $changes[] = "Period Number: {$current_period[$periodNumberCol]} → {$period_number}";
     }
-    if ($current_period['start_date'] != $start_date_db) {
-        $changes[] = "Start Date: {$current_period['start_date']} → {$start_date_db}";
+    if ($current_period[$periodYearCol] != $year) {
+        $changes[] = "Year: {$current_period[$periodYearCol]} → {$year}";
     }
-    if ($current_period['end_date'] != $end_date_db) {
-        $changes[] = "End Date: {$current_period['end_date']} → {$end_date_db}";
+    if ($current_period[$periodStartDateCol] != $start_date_db) {
+        $changes[] = "Start Date: {$current_period[$periodStartDateCol]} → {$start_date_db}";
     }
-    if ($current_period['status'] != $status) {
-        $changes[] = "Status: {$current_period['status']} → {$status}";
+    if ($current_period[$periodEndDateCol] != $end_date_db) {
+        $changes[] = "End Date: {$current_period[$periodEndDateCol]} → {$end_date_db}";
     }
-    if ($current_period['is_standard_dates'] != $is_standard_dates) {
-        $changes[] = "Custom Dates: " . ($current_period['is_standard_dates'] ? 'No' : 'Yes') . " → " . ($is_standard_dates ? 'No' : 'Yes');
+    if ($current_period[$periodStatusCol] != $status) {
+        $changes[] = "Status: {$current_period[$periodStatusCol]} → {$status}";
     }
     
     $change_details = !empty($changes) ? implode(', ', $changes) : 'Minor updates';
@@ -186,7 +215,7 @@ try {
     
 } catch (Exception $e) {
     // Log failed period update attempt
-    $period_name = !empty($quarter) && !empty($year) ? "Q{$quarter} {$year}" : "Unknown Period";
+    $period_name = !empty($period_type) && !empty($period_number) && !empty($year) ? "{$period_type} {$period_number} {$year}" : "Unknown Period";
     log_audit_action('update_period', "Failed to update period: {$period_name} (ID: {$periodId}). Error: " . $e->getMessage(), 'failure');
     
     echo json_encode([

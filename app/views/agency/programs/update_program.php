@@ -266,7 +266,7 @@ $selected_period = null;
 
 // Fetch all periods for selector
 if ($conn) {
-    $periods_result = $conn->query("SELECT * FROM reporting_periods ORDER BY year DESC, quarter DESC");
+    $periods_result = $conn->query("SELECT * FROM reporting_periods ORDER BY year DESC, period_type ASC, period_number DESC");
     if ($periods_result) {
         while ($row = $periods_result->fetch_assoc()) {
             $all_periods[] = $row;
