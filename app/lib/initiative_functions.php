@@ -294,10 +294,10 @@ function get_initiative_programs($initiative_id) {
     global $conn;
     
     $sql = "SELECT p.program_id, p.program_name, p.program_number,
-                   s.sector_name, u.agency_name
+                   a.agency_name
             FROM programs p
-            LEFT JOIN sectors s ON p.sector_id = s.sector_id
-            LEFT JOIN users u ON p.owner_agency_id = u.user_id
+            LEFT JOIN users u ON p.users_assigned = u.user_id
+            LEFT JOIN agency a ON u.agency_id = a.agency_id
             WHERE p.initiative_id = ?
             ORDER BY p.program_name";
     

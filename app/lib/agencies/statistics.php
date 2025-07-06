@@ -143,9 +143,8 @@ function get_all_sectors_programs($period_id = null, $filters = []) {
                 p.created_at,
                 p.updated_at,
                 p.sector_id,
-                p.owner_agency_id AS agency_id,
-                s.sector_name,
-                u.agency_name";
+                p.users_assigned AS agency_id,
+                a.agency_name";
     
     // Add content json field or target/achievement fields based on schema
     if ($has_content_json) {
@@ -160,8 +159,8 @@ function get_all_sectors_programs($period_id = null, $filters = []) {
     // Only add is_draft since status has been removed
     $query .= ", ps.is_draft
               FROM programs p
-              JOIN sectors s ON p.sector_id = s.sector_id
-              JOIN users u ON p.owner_agency_id = u.user_id
+              JOIN users u ON p.users_assigned = u.user_id
+              JOIN agency a ON u.agency_id = a.agency_id
               JOIN (";
     
     // Use INNER JOIN to only include programs with submissions in the selected period
@@ -218,7 +217,7 @@ function get_all_sectors_programs($period_id = null, $filters = []) {
         
         // Filter by agency_id
         if (isset($filters['agency_id']) && $filters['agency_id']) {
-            $filterConditions[] = "p.owner_agency_id = ?";
+            $filterConditions[] = "p.users_assigned = ?";
             $filterParams[] = $filters['agency_id'];
             $filterTypes .= "i";
         }
@@ -243,7 +242,7 @@ function get_all_sectors_programs($period_id = null, $filters = []) {
     }
       // Finalize query
     $query .= " GROUP BY p.program_id, p.program_name, p.start_date, p.end_date, 
-                p.created_at, p.updated_at, p.sector_id, p.owner_agency_id, s.sector_name, u.agency_name";
+                p.created_at, p.updated_at, p.sector_id, p.users_assigned, a.agency_name";
     
     // Add additional GROUP BY fields based on schema
     if ($has_content_json) {
@@ -310,11 +309,11 @@ function get_agency_submission_status($agency_id, $period_id = null) {
         ];        // Get total programs for agency (including those with and without submissions for the period)
         if ($period_id) {
             // Count all programs owned by agency, regardless of submission status for the period
-            $query = "SELECT COUNT(*) as total FROM programs WHERE owner_agency_id = ?";
+            $query = "SELECT COUNT(*) as total FROM programs WHERE users_assigned = ?";
             $stmt = $conn->prepare($query);
             $stmt->bind_param("i", $agency_id);
         } else {
-            $query = "SELECT COUNT(*) as total FROM programs WHERE owner_agency_id = ?";
+            $query = "SELECT COUNT(*) as total FROM programs WHERE users_assigned = ?";
             $stmt = $conn->prepare($query);
             $stmt->bind_param("i", $agency_id);
         }
@@ -342,7 +341,7 @@ function get_agency_submission_status($agency_id, $period_id = null) {
                 ) latest ON ps1.program_id = latest.program_id AND ps1.submission_id = latest.max_submission_id
                 WHERE (ps1.period_id = ? OR ? IS NULL)
             ) ps ON p.program_id = ps.program_id
-            WHERE p.owner_agency_id = ?
+            WHERE p.users_assigned = ?
             GROUP BY COALESCE(JSON_UNQUOTE(JSON_EXTRACT(ps.content_json, '$.rating')), 'not-started')";
 
         $stmt = $conn->prepare($status_query);

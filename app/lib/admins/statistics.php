@@ -48,10 +48,10 @@ function get_admin_dashboard_stats() {
         // Get program submission counts
         $query = "SELECT 
                     u.user_id,
-                    (SELECT COUNT(*) FROM programs p WHERE p.owner_agency_id = u.user_id) AS agency_programs,
+                    (SELECT COUNT(*) FROM programs p WHERE p.users_assigned = u.user_id) AS agency_programs,
                     (SELECT COUNT(*) FROM program_submissions ps 
                      JOIN programs p ON ps.program_id = p.program_id 
-                     WHERE p.owner_agency_id = u.user_id AND ps.period_id = ?) AS submitted_programs
+                     WHERE p.users_assigned = u.user_id AND ps.period_id = ?) AS submitted_programs
                   FROM users u
                   WHERE u.role IN ('agency', 'focal')";
         
@@ -524,13 +524,12 @@ function get_recent_submissions($period_id = null, $limit = 5) {
 function get_admin_program_details($program_id) {
     global $conn;
     
-    $stmt = $conn->prepare("SELECT p.*, s.sector_name, a.agency_name, u.user_id as owner_agency_id,
+    $stmt = $conn->prepare("SELECT p.*, a.agency_name, u.user_id as users_assigned,
                                   i.initiative_id, i.initiative_name, i.initiative_number, 
                                   i.initiative_description, i.start_date as initiative_start_date, 
                                   i.end_date as initiative_end_date
                           FROM programs p
-                          LEFT JOIN sectors s ON p.sector_id = s.sector_id
-                          LEFT JOIN users u ON p.agency_id = u.agency_id
+                          LEFT JOIN users u ON p.users_assigned = u.user_id
                           LEFT JOIN agency a ON u.agency_id = a.agency_id
                           LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
                           WHERE p.program_id = ?");

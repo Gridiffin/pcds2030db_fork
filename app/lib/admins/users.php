@@ -417,7 +417,7 @@ function delete_user($user_id) {
     $user = $result->fetch_assoc();
     
     // Check if user has any programs
-    $program_check = "SELECT COUNT(*) as count FROM programs WHERE owner_agency_id = ?";
+    $program_check = "SELECT COUNT(*) as count FROM programs WHERE users_assigned = ?";
     $stmt = $conn->prepare($program_check);
     $stmt->bind_param("i", $user_id);
     $stmt->execute();

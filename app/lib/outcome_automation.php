@@ -188,10 +188,11 @@ function updateOutcomeDataOnProgramStatusChange($program_id, $new_status, $perio
 function getLinkedPrograms($outcome_id) {
     global $conn;
     
-    $query = "SELECT p.program_id, p.program_name, p.sector_id, u.agency_name
+    $query = "SELECT p.program_id, p.program_name, p.sector_id, a.agency_name
               FROM program_outcome_links pol
               JOIN programs p ON pol.program_id = p.program_id
-              JOIN users u ON p.owner_agency_id = u.user_id
+              JOIN users u ON p.users_assigned = u.user_id
+              JOIN agency a ON u.agency_id = a.agency_id
               WHERE pol.outcome_id = ?
               ORDER BY p.program_name";
     

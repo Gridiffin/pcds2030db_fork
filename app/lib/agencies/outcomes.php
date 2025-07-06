@@ -102,9 +102,8 @@ function get_agency_outcomes_statistics($sector_id, $period_id = null) {
     ];
     
     // Build base query
-    $query = "SELECT sod.*, s.sector_name 
+    $query = "SELECT sod.* 
               FROM sector_outcomes_data sod
-              LEFT JOIN sectors s ON sod.sector_id = s.sector_id
               WHERE sod.sector_id = ?";
     
     $params = [$sector_id];
@@ -144,7 +143,6 @@ function get_agency_outcomes_statistics($sector_id, $period_id = null) {
                 $stats['recent_outcomes'][] = [
                     'metric_id' => $row['metric_id'],
                     'table_name' => $row['table_name'],
-                    'sector_name' => $row['sector_name'],
                     'is_draft' => $row['is_draft'],
                     'updated_at' => $row['updated_at']
                 ];

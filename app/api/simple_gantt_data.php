@@ -1,4 +1,6 @@
 <?php
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 /**
  * Simple Gantt Chart Data API
  * 
@@ -78,9 +80,9 @@ try {
     $programs = $stmt->fetchAll();
     
     // Get reporting periods for timeline
-    $periods_sql = "SELECT period_id, year, quarter, start_date, end_date 
+    $periods_sql = "SELECT period_id, year, period_type, period_number, start_date, end_date 
                     FROM reporting_periods 
-                    ORDER BY year, quarter";
+                    ORDER BY year, period_number";
     $stmt = $pdo->prepare($periods_sql);
     $stmt->execute();
     $periods = $stmt->fetchAll();
@@ -247,12 +249,14 @@ function generate_timeline($start_date, $end_date, $periods_lookup) {
     // Map periods to year/quarter combinations
     foreach ($periods_lookup as $period_id => $period) {
         $year = (int) $period['year'];
-        $quarter = (int) $period['quarter'];
+        $period_type = $period['period_type'];
+        $period_number = (int) $period['period_number'];
         
-        if ($year >= $start_year && $year <= $end_year && $quarter >= 1 && $quarter <= 4) {
+        // Only process quarter periods for the timeline
+        if ($period_type === 'quarter' && $year >= $start_year && $year <= $end_year && $period_number >= 1 && $period_number <= 4) {
             $periods_map[$period_id] = [
                 'year' => $year,
-                'quarter' => "Q$quarter"
+                'quarter' => "Q$period_number"
             ];
         }
     }

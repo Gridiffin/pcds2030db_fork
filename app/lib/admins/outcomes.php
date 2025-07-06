@@ -92,9 +92,8 @@ function get_all_outcomes_data($period_id = null, $include_drafts = true) {
     global $conn;
     
     $query = "SELECT sod.metric_id, sod.sector_id, sod.period_id, sod.table_name, sod.is_draft, sod.is_important,
-              s.sector_name, rp.year, rp.quarter, sod.created_at, sod.updated_at 
+              rp.year, rp.quarter, sod.created_at, sod.updated_at 
               FROM sector_outcomes_data sod
-              LEFT JOIN sectors s ON sod.sector_id = s.sector_id
               LEFT JOIN reporting_periods rp ON sod.period_id = rp.period_id";
     
     if (!$include_drafts) {
@@ -130,11 +129,10 @@ function get_all_outcomes_data($period_id = null, $include_drafts = true) {
  */
 function get_outcome_data($metric_id) {
     global $conn;
-      // Query the sector_outcomes_data table with proper JOINs for sector and reporting period information
-    $query = "SELECT sod.*, s.sector_name, rp.year, rp.quarter, rp.status as period_status,
+      // Query the sector_outcomes_data table with proper JOINs for reporting period information
+    $query = "SELECT sod.*, rp.year, rp.quarter, rp.status as period_status,
               COALESCE(u.username, 'System') as submitted_by_username
               FROM sector_outcomes_data sod
-              LEFT JOIN sectors s ON sod.sector_id = s.sector_id
               LEFT JOIN reporting_periods rp ON sod.period_id = rp.period_id
               LEFT JOIN users u ON sod.submitted_by = u.user_id
               WHERE sod.metric_id = ?
@@ -495,10 +493,9 @@ function get_outcomes_statistics($period_id = null) {
         // Get recent outcomes (last 5)
         $recent_query = "SELECT sod.metric_id, sod.table_name, sod.is_draft, 
                                 sod.created_at, sod.updated_at,
-                                s.sector_name, rp.year, rp.quarter,
+                                rp.year, rp.quarter,
                                 COALESCE(u.username, 'System') as submitted_by_username
                          FROM sector_outcomes_data sod
-                         LEFT JOIN sectors s ON sod.sector_id = s.sector_id
                          LEFT JOIN reporting_periods rp ON sod.period_id = rp.period_id
                          LEFT JOIN users u ON sod.submitted_by = u.user_id
                          $where_clause

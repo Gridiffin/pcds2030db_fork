@@ -123,8 +123,8 @@ function auto_manage_reporting_periods($respect_admin_open = true) {
         ['type' => 'quarterly', 'q_num' => 3, 'start_month' => 7, 'start_day' => 1, 'end_month' => 9, 'end_day' => 30],
         ['type' => 'quarterly', 'q_num' => 4, 'start_month' => 10, 'start_day' => 1, 'end_month' => 12, 'end_day' => 31],
         // Half-yearly
-        ['type' => 'half_yearly', 'q_num' => 5, 'start_month' => 1, 'start_day' => 1, 'end_month' => 6, 'end_day' => 30], // H1
-        ['type' => 'half_yearly', 'q_num' => 6, 'start_month' => 7, 'start_day' => 1, 'end_month' => 12, 'end_day' => 31], // H2
+        ['type' => 'half_yearly', 'q_num' => 1, 'start_month' => 1, 'start_day' => 1, 'end_month' => 6, 'end_day' => 30], // H1
+        ['type' => 'half_yearly', 'q_num' => 2, 'start_month' => 7, 'start_day' => 1, 'end_month' => 12, 'end_day' => 31], // H2
     ];
     
     $managed_periods = []; // To store details for creation/update
@@ -189,10 +189,10 @@ function auto_manage_reporting_periods($respect_admin_open = true) {
             // Determine if this should be open
             // For quarterly:
             $is_current_q_for_year = ($ptype == 'quarter' && $y == $current_year && $pnum == $current_quarter);
-            // For half-yearly H1 (q=5): open if current month is Jan-Jun
-            $is_current_h1_for_year = ($ptype == 'half' && $y == $current_year && $pnum == 5 && $current_month >= 1 && $current_month <= 6);
-            // For half-yearly H2 (q=6): open if current month is Jul-Dec
-            $is_current_h2_for_year = ($ptype == 'half' && $y == $current_year && $pnum == 6 && $current_month >= 7 && $current_month <= 12);
+            // For half-yearly H1 (q=1): open if current month is Jan-Jun
+            $is_current_h1_for_year = ($ptype == 'half' && $y == $current_year && $pnum == 1 && $current_month >= 1 && $current_month <= 6);
+            // For half-yearly H2 (q=2): open if current month is Jul-Dec
+            $is_current_h2_for_year = ($ptype == 'half' && $y == $current_year && $pnum == 2 && $current_month >= 7 && $current_month <= 12);
 
             $status = ($is_current_q_for_year || $is_current_h1_for_year || $is_current_h2_for_year) ? 'open' : 'closed';
             
@@ -215,8 +215,8 @@ function auto_manage_reporting_periods($respect_admin_open = true) {
             
             // Current quarter/half should be open, others closed
             $is_current_q_for_year = ($ptype == 'quarter' && $y == $current_year && $pnum == $current_quarter);
-            $is_current_h1_for_year = ($ptype == 'half' && $y == $current_year && $pnum == 5 && $current_month >= 1 && $current_month <= 6);
-            $is_current_h2_for_year = ($ptype == 'half' && $y == $current_year && $pnum == 6 && $current_month >= 7 && $current_month <= 12);
+            $is_current_h1_for_year = ($ptype == 'half' && $y == $current_year && $pnum == 1 && $current_month >= 1 && $current_month <= 6);
+            $is_current_h2_for_year = ($ptype == 'half' && $y == $current_year && $pnum == 2 && $current_month >= 7 && $current_month <= 12);
             
             $should_be_open = ($is_current_q_for_year || $is_current_h1_for_year || $is_current_h2_for_year);
             

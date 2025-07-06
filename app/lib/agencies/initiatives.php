@@ -16,7 +16,7 @@ function get_agency_initiatives($agency_id = null, $filters = []) {
         $agency_id = $_SESSION['user_id'];
     }
     
-    $where_conditions = ['p.owner_agency_id = ?'];
+    $where_conditions = ['p.users_assigned = ?'];
     $params = [$agency_id];
     $param_types = 'i';
     
@@ -75,7 +75,7 @@ function get_agency_initiative_details($initiative_id, $agency_id = null) {
     }
     
     // First check if agency has programs in this initiative
-    $check_sql = "SELECT COUNT(*) as count FROM programs WHERE initiative_id = ? AND owner_agency_id = ?";
+    $check_sql = "SELECT COUNT(*) as count FROM programs WHERE initiative_id = ? AND users_assigned = ?";
     $check_stmt = $conn->prepare($check_sql);
     $check_stmt->bind_param('ii', $initiative_id, $agency_id);
     $check_stmt->execute();
@@ -92,7 +92,7 @@ function get_agency_initiative_details($initiative_id, $agency_id = null) {
                    COUNT(DISTINCT agency_p.program_id) as agency_program_count
             FROM initiatives i
             LEFT JOIN programs p ON i.initiative_id = p.initiative_id
-            LEFT JOIN programs agency_p ON i.initiative_id = agency_p.initiative_id AND agency_p.owner_agency_id = ?
+            LEFT JOIN programs agency_p ON i.initiative_id = agency_p.initiative_id AND agency_p.users_assigned = ?
             WHERE i.initiative_id = ?
             GROUP BY i.initiative_id";
     
@@ -115,12 +115,13 @@ function get_initiative_programs_for_agency($initiative_id, $agency_id = null) {
         $agency_id = $_SESSION['user_id'];
     }
     
-    $sql = "SELECT p.*, u.agency_name,
+    $sql = "SELECT p.*, a.agency_name,
                    COALESCE(latest_sub.is_draft, 1) as is_draft,
                    COALESCE(JSON_UNQUOTE(JSON_EXTRACT(latest_sub.content_json, '$.rating')), 'not-started') as rating,
-                   (p.owner_agency_id = ?) as is_owned_by_agency
+                   (p.users_assigned = ?) as is_owned_by_agency
             FROM programs p
-            LEFT JOIN users u ON p.owner_agency_id = u.user_id
+            LEFT JOIN users u ON p.users_assigned = u.user_id
+            LEFT JOIN agency a ON u.agency_id = a.agency_id
             LEFT JOIN (
                 SELECT ps1.*
                 FROM program_submissions ps1

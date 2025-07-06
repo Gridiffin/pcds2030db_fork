@@ -57,7 +57,7 @@ function get_agency_programs_list($user_id, $is_assigned = false) {
              ORDER BY ps.submission_id DESC LIMIT 1) AS achievement";
     }
     $query = "SELECT $select_fields FROM programs p
-              WHERE p.owner_agency_id = ? AND p.is_assigned = ?
+              WHERE p.users_assigned = ? AND p.is_assigned = ?
               ORDER BY p.created_at DESC";
     $stmt = $conn->prepare($query);
     $stmt->bind_param("ii", $user_id, $is_assigned);
@@ -111,12 +111,12 @@ function create_agency_program($data) {
             ];
         }
         $content_json = json_encode($content);
-        $query = "INSERT INTO programs (program_name, program_number, sector_id, owner_agency_id, agency_id, is_assigned, content_json, created_at)
+        $query = "INSERT INTO programs (program_name, program_number, sector_id, users_assigned, agency_id, is_assigned, content_json, created_at)
                  VALUES (?, ?, ?, ?, ?, 0, ?, NOW())";
         $stmt = $conn->prepare($query);
         $stmt->bind_param("ssiiis", $program_name, $program_number, $sector_id, $user_id, $agency_id, $content_json);
     } else {
-        $query = "INSERT INTO programs (program_name, program_number, sector_id, owner_agency_id, agency_id, is_assigned, created_at)
+        $query = "INSERT INTO programs (program_name, program_number, sector_id, users_assigned, agency_id, is_assigned, created_at)
                  VALUES (?, ?, ?, ?, ?, 0, NOW())";
         $stmt = $conn->prepare($query);
         $stmt->bind_param("ssiii", $program_name, $program_number, $sector_id, $user_id, $agency_id);
@@ -200,7 +200,7 @@ function create_wizard_program_draft($data) {
     $sector_id = FORESTRY_SECTOR_ID;
     try {
         $conn->begin_transaction();
-        $stmt = $conn->prepare("INSERT INTO programs (program_name, program_number, start_date, end_date, owner_agency_id, agency_id, sector_id, initiative_id, is_assigned, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, NOW())");
+        $stmt = $conn->prepare("INSERT INTO programs (program_name, program_number, start_date, end_date, users_assigned, agency_id, sector_id, initiative_id, is_assigned, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, NOW())");
         $stmt->bind_param("ssssiiii", $program_name, $program_number, $start_date, $end_date, $user_id, $agency_id, $sector_id, $initiative_id);
         if (!$stmt->execute()) throw new Exception('Failed to create program: ' . $stmt->error);
         $program_id = $conn->insert_id;
@@ -265,7 +265,7 @@ function update_program_draft_only($program_id, $data) {
     // Allow focal users to update any program draft, bypass ownership check
     require_once dirname(__DIR__) . '/session.php';
     if (!is_focal_user()) {
-        $check_stmt = $conn->prepare("SELECT program_id FROM programs WHERE program_id = ? AND owner_agency_id = ?");
+        $check_stmt = $conn->prepare("SELECT program_id FROM programs WHERE program_id = ? AND users_assigned = ?");
         $check_stmt->bind_param("ii", $program_id, $user_id);
         $check_stmt->execute();
         $result = $check_stmt->get_result();
@@ -305,7 +305,7 @@ function update_program_draft_only($program_id, $data) {
     
     try {
         $conn->begin_transaction();
-        $stmt = $conn->prepare("UPDATE programs SET program_name = ?, program_number = ?, start_date = ?, end_date = ?, initiative_id = ?, updated_at = NOW() WHERE program_id = ? AND owner_agency_id = ?");
+        $stmt = $conn->prepare("UPDATE programs SET program_name = ?, program_number = ?, start_date = ?, end_date = ?, initiative_id = ?, updated_at = NOW() WHERE program_id = ? AND users_assigned = ?");
         $stmt->bind_param("sssssii", $program_name, $program_number, $start_date, $end_date, $initiative_id, $program_id, $user_id);
         if (!$stmt->execute()) throw new Exception('Failed to update program: ' . $stmt->error);
         
@@ -363,7 +363,7 @@ function update_wizard_program_draft($program_id, $data) {
     global $conn;
     if (!is_agency()) return ['error' => 'Permission denied'];
     $user_id = $_SESSION['user_id'];
-    $check_stmt = $conn->prepare("SELECT program_id FROM programs WHERE program_id = ? AND owner_agency_id = ?");
+    $check_stmt = $conn->prepare("SELECT program_id FROM programs WHERE program_id = ? AND users_assigned = ?");
     $check_stmt->bind_param("ii", $program_id, $user_id);
     $check_stmt->execute();
     $result = $check_stmt->get_result();
@@ -438,7 +438,7 @@ function update_wizard_program_draft($program_id, $data) {
             }
         }
         
-        $stmt = $conn->prepare("UPDATE programs SET program_name = ?, program_number = ?, start_date = ?, end_date = ?, initiative_id = ?, updated_at = NOW() WHERE program_id = ? AND owner_agency_id = ?");
+        $stmt = $conn->prepare("UPDATE programs SET program_name = ?, program_number = ?, start_date = ?, end_date = ?, initiative_id = ?, updated_at = NOW() WHERE program_id = ? AND users_assigned = ?");
         $stmt->bind_param("sssssii", $program_name, $new_program_number, $start_date, $end_date, $initiative_id, $program_id, $user_id);
         if (!$stmt->execute()) throw new Exception('Failed to update program: ' . $stmt->error);
         if (!empty($targets) || !empty($brief_description)) {
@@ -556,13 +556,13 @@ function get_program_details($program_id, $allow_cross_agency = false) {
     
     $current_user_id = $_SESSION['user_id'];
       // Base query to get program details with initiative information
-    $stmt = $conn->prepare("SELECT p.*, s.sector_name, u.agency_name, u.user_id as owner_agency_id,
+    $stmt = $conn->prepare("SELECT p.*, a.agency_name, u.user_id as users_assigned,
                                    i.initiative_id, i.initiative_name, i.initiative_number,
                                    i.initiative_description, i.start_date as initiative_start_date,
                                    i.end_date as initiative_end_date, i.created_at as initiative_created_at
                           FROM programs p
-                          LEFT JOIN sectors s ON p.sector_id = s.sector_id
-                          LEFT JOIN users u ON p.owner_agency_id = u.user_id
+                          LEFT JOIN users u ON p.users_assigned = u.user_id
+                          LEFT JOIN agency a ON u.agency_id = a.agency_id
                           LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
                           WHERE p.program_id = ?");
     $stmt->bind_param("i", $program_id);
@@ -576,7 +576,7 @@ function get_program_details($program_id, $allow_cross_agency = false) {
     $program = $result->fetch_assoc();
     
     // Access control: Check if user can view this program
-    if (!$allow_cross_agency && $program['owner_agency_id'] != $current_user_id) {
+    if (!$allow_cross_agency && $program['users_assigned'] != $current_user_id) {
         return false;
     }
     
@@ -736,10 +736,11 @@ function get_program_edit_history_paginated($program_id, $page = 1, $per_page = 
                CONCAT('Q', rp.quarter, ' ', rp.year) as period_name,
                ps.submission_date as effective_date,
                u.username as submitted_by_name,
-               u.agency_name as submitted_by_agency
+               a.agency_name as submitted_by_agency
         FROM program_submissions ps 
         LEFT JOIN reporting_periods rp ON ps.period_id = rp.period_id
         LEFT JOIN users u ON ps.submitted_by = u.user_id
+        LEFT JOIN agency a ON u.agency_id = a.agency_id
         WHERE ps.program_id = ? 
         ORDER BY ps.submission_id DESC, ps.submission_date DESC
         LIMIT ? OFFSET ?
@@ -913,17 +914,18 @@ function get_related_programs_by_initiative($initiative_id, $current_program_id 
     
     // Access control - only show programs user can access
     if (!$allow_cross_agency) {
-        $where_conditions[] = "p.owner_agency_id = ?";
+        $where_conditions[] = "p.users_assigned = ?";
         $params[] = $current_user_id;
         $param_types .= "i";
     }
     
-    $sql = "SELECT p.program_id, p.program_name, p.program_number, p.owner_agency_id,
-                   u.agency_name, 
+    $sql = "SELECT p.program_id, p.program_name, p.program_number, p.users_assigned,
+                   a.agency_name, 
                    COALESCE(latest_sub.is_draft, 1) as is_draft,
                    COALESCE(JSON_UNQUOTE(JSON_EXTRACT(latest_sub.content_json, '$.rating')), 'not-started') as rating
             FROM programs p
-            LEFT JOIN users u ON p.owner_agency_id = u.user_id
+            LEFT JOIN users u ON p.users_assigned = u.user_id
+            LEFT JOIN agency a ON u.agency_id = a.agency_id
             LEFT JOIN (
                 SELECT ps1.*
                 FROM program_submissions ps1
@@ -961,13 +963,12 @@ function get_current_program_state($program_id) {
     
     // Get program table data
     $stmt = $conn->prepare("
-        SELECT p.program_name, p.program_number, p.owner_agency_id, p.sector_id, 
+        SELECT p.program_name, p.program_number, p.users_assigned, p.sector_id, 
                p.start_date, p.end_date, p.is_assigned, p.edit_permissions,
-               u.agency_name as owner_agency_name,
-               s.sector_name
+               a.agency_name as users_assigned_name
         FROM programs p
-        LEFT JOIN users u ON p.owner_agency_id = u.user_id
-        LEFT JOIN sectors s ON p.sector_id = s.sector_id
+        LEFT JOIN users u ON p.users_assigned = u.user_id
+        LEFT JOIN agency a ON u.agency_id = a.agency_id
         WHERE p.program_id = ?
     ");
     
@@ -1046,7 +1047,7 @@ function generate_field_changes($before_state, $after_state) {
         'program_name' => 'Program Name',
         'program_number' => 'Program Number',
         'brief_description' => 'Brief Description',
-        'owner_agency_name' => 'Owner Agency',
+        'users_assigned_name' => 'Owner Agency',
         'sector_name' => 'Sector',
         'start_date' => 'Start Date',
         'end_date' => 'End Date',

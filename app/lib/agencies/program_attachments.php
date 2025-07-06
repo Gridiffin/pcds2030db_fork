@@ -163,7 +163,7 @@ function delete_program_attachment($attachment_id) {
     try {
         // Get attachment details
         $stmt = $conn->prepare("
-            SELECT pa.*, p.owner_agency_id 
+            SELECT pa.*, p.users_assigned 
             FROM program_attachments pa 
             JOIN programs p ON pa.program_id = p.program_id 
             WHERE pa.attachment_id = ? AND pa.is_active = 1
@@ -179,7 +179,7 @@ function delete_program_attachment($attachment_id) {
         $attachment = $result->fetch_assoc();
         
         // Verify user has access
-        if ($attachment['owner_agency_id'] != $_SESSION['user_id'] && !is_admin()) {
+        if ($attachment['users_assigned'] != $_SESSION['user_id'] && !is_admin()) {
             log_audit_action(
                 'attachment_delete_denied',
                 "Unauthorized attachment deletion attempt for attachment ID: {$attachment_id}",
@@ -409,7 +409,7 @@ function verify_program_access($program_id) {
         return false;
     }
     
-    $stmt = $conn->prepare("SELECT owner_agency_id FROM programs WHERE program_id = ?");
+    $stmt = $conn->prepare("SELECT users_assigned FROM programs WHERE program_id = ?");
     $stmt->bind_param("i", $program_id);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -419,7 +419,7 @@ function verify_program_access($program_id) {
     }
     
     $program = $result->fetch_assoc();
-    return $program['owner_agency_id'] == $_SESSION['user_id'];
+    return $program['users_assigned'] == $_SESSION['user_id'];
 }
 
 /**
@@ -470,7 +470,7 @@ function get_attachment_for_download($attachment_id) {
     $attachment_id = intval($attachment_id);
     
     $stmt = $conn->prepare("
-        SELECT pa.*, p.owner_agency_id 
+        SELECT pa.*, p.users_assigned 
         FROM program_attachments pa 
         JOIN programs p ON pa.program_id = p.program_id 
         WHERE pa.attachment_id = ? AND pa.is_active = 1
@@ -486,7 +486,7 @@ function get_attachment_for_download($attachment_id) {
     $attachment = $result->fetch_assoc();
     
     // Verify user has access
-    if (!is_admin() && $attachment['owner_agency_id'] != $_SESSION['user_id']) {
+    if (!is_admin() && $attachment['users_assigned'] != $_SESSION['user_id']) {
         return false;
     }
       return $attachment;
