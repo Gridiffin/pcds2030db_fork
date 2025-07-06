@@ -237,6 +237,37 @@ function auto_manage_reporting_periods($respect_admin_open = true) {
 }
 
 /**
+ * Add derived fields to period data for backward compatibility
+ * @param array $period The period data from database
+ * @return array Period data with derived fields added
+ */
+function add_derived_period_fields($period) {
+    if (!$period) {
+        return null;
+    }
+    
+    // Add quarter field for backward compatibility
+    if (isset($period['period_type']) && isset($period['period_number'])) {
+        if ($period['period_type'] === 'quarter') {
+            $period['quarter'] = $period['period_number'];
+        } elseif ($period['period_type'] === 'half') {
+            // For half-yearly periods, use period_number as quarter (5 or 6)
+            $period['quarter'] = $period['period_number'];
+        } elseif ($period['period_type'] === 'yearly') {
+            // For yearly periods, use 1 as quarter
+            $period['quarter'] = 1;
+        }
+    }
+    
+    // Add half field for half-yearly periods
+    if (isset($period['period_type']) && $period['period_type'] === 'half') {
+        $period['half'] = $period['period_number'];
+    }
+    
+    return $period;
+}
+
+/**
  * Get current reporting period
  * @return array|null Current active reporting period or null if none
  */
@@ -255,7 +286,8 @@ function get_current_reporting_period() {
     $result = $stmt->get_result();
 
     if ($result->num_rows > 0) {
-        return $result->fetch_assoc();
+        $period = $result->fetch_assoc();
+        return add_derived_period_fields($period);
     }
 
     // Then prefer open half-yearly period if available and current
@@ -267,7 +299,8 @@ function get_current_reporting_period() {
     $result_h = $stmt_h->get_result();
 
     if ($result_h->num_rows > 0) {
-        return $result_h->fetch_assoc();
+        $period = $result_h->fetch_assoc();
+        return add_derived_period_fields($period);
     }
     
     // Fallback: any other open period (could be manually opened by admin)
@@ -275,7 +308,8 @@ function get_current_reporting_period() {
     $result_any_open = $conn->query($query_any_open);
     
     if ($result_any_open->num_rows > 0) {
-        return $result_any_open->fetch_assoc();
+        $period = $result_any_open->fetch_assoc();
+        return add_derived_period_fields($period);
     }
     
     // If no open period, get the next upcoming one (quarterly or half-yearly)
@@ -287,7 +321,8 @@ function get_current_reporting_period() {
     $result = $conn->query($query);
     
     if ($result && $result->num_rows > 0) {
-        return $result->fetch_assoc();
+        $period = $result->fetch_assoc();
+        return add_derived_period_fields($period);
     }
     
     // If no upcoming period, get the most recent one (quarterly or half-yearly)
@@ -298,7 +333,8 @@ function get_current_reporting_period() {
     $result = $conn->query($query);
     
     if ($result && $result->num_rows > 0) {
-        return $result->fetch_assoc();
+        $period = $result->fetch_assoc();
+        return add_derived_period_fields($period);
     }
     
     return null;
@@ -316,7 +352,7 @@ function get_all_reporting_periods() {
     
     $periods = [];
     while ($row = $result->fetch_assoc()) {
-        $periods[] = $row;
+        $periods[] = add_derived_period_fields($row);
     }
     
     return $periods;
@@ -342,6 +378,8 @@ function get_reporting_periods_for_dropdown($include_inactive = false) {
     }
     $periods = [];
     while ($row = $result->fetch_assoc()) {
+        // Add derived fields for backward compatibility
+        $row = add_derived_period_fields($row);
         // Format the period name for display in the dropdown
         $row['display_name'] = get_period_display_name($row);
         $periods[] = $row;
@@ -376,7 +414,8 @@ function get_reporting_period($period_id) {
     $result = $stmt->get_result();
     
     if ($result->num_rows > 0) {
-        return $result->fetch_assoc();
+        $period = $result->fetch_assoc();
+        return add_derived_period_fields($period);
     }
     
     return null;
