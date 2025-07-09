@@ -338,6 +338,19 @@ require_once '../../layouts/page_header.php';
                                         </ul>
                                     </div>
                                 </div>
+                                <!-- Attachment Section -->
+                                <div class="card shadow-sm mt-3">
+                                    <div class="card-body">
+                                        <h6 class="card-title mb-2">
+                                            <i class="fas fa-paperclip me-2"></i>
+                                            Attachments
+                                        </h6>
+                                        <input type="file" class="form-control" name="attachments[]" id="attachments" multiple>
+                                        <div class="form-text mt-1">
+                                            You can select multiple files. Allowed types: PDF, DOCX, XLSX, PNG, JPG, etc.
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 

@@ -3,4 +3,5 @@
 - [x] Remove the Submit button from the add submission form, leaving only Save as Draft. Every first submission should be a draft and only focal users can submit submissions.
 - [x] Separate the scripts and styles from the add submission page into their own modular files in the assets directory.
 - [x] Import add_submission.css into main.css for automatic inclusion.
-- [ ] Move the Targets section to the left side, below the Description, and expand it to the full width of the card section if possible. 
+- [x] Move the Targets section to the left side, below the Description, and expand it to the full width of the card section if possible.
+- [ ] Add an attachment section under the Submission Info card on the right side of the add submission page. 

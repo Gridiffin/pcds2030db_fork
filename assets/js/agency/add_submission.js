@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div class="row g-2">
                 <div class="col-6">
-                    <input type="text" class="form-control form-control-sm" name="target_number[]" placeholder="Number (optional)">
+                    <input type="text" class="form-control form-control-sm" name="target_number[]" placeholder="Target Number">
                 </div>
                 <div class="col-6">
                     <select class="form-select form-select-sm" name="target_status[]">
@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
             <div class="mt-2">
-                <textarea class="form-control form-control-sm" name="target_status_description[]" rows="1" placeholder="Status description (optional)"></textarea>
+                <textarea class="form-control form-control-sm" name="target_status_description[]" rows="1" placeholder="Status description"></textarea>
             </div>
         `;
         targetsContainer.appendChild(targetEntry);
