@@ -127,8 +127,6 @@ function handlePost($input) {
     $period_id = intval($input['period_id']);
     $is_draft = isset($input['is_draft']) ? intval($input['is_draft']) : 1;
     $is_submitted = isset($input['is_submitted']) ? intval($input['is_submitted']) : 0;
-    $status_indicator = isset($input['status_indicator']) ? $input['status_indicator'] : 'not_started';
-    $rating = isset($input['rating']) ? $input['rating'] : 'not_started';
     $description = isset($input['description']) ? $input['description'] : null;
     $start_date = validate_program_date($input['start_date'] ?? '');
     $end_date = validate_program_date($input['end_date'] ?? '');
@@ -144,9 +142,9 @@ function handlePost($input) {
     }
     $submitted_by = $is_submitted ? $_SESSION['user_id'] : null;
     $submitted_at = $is_submitted ? date('Y-m-d H:i:s') : null;
-    $sql = "INSERT INTO program_submissions (program_id, period_id, is_draft, is_submitted, status_indicator, rating, description, start_date, end_date, submitted_by, submitted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    $sql = "INSERT INTO program_submissions (program_id, period_id, is_draft, is_submitted, description, start_date, end_date, submitted_by, submitted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param('iiiisssssis', $program_id, $period_id, $is_draft, $is_submitted, $status_indicator, $rating, $description, $start_date, $end_date, $submitted_by, $submitted_at);
+    $stmt->bind_param('iiiisssss', $program_id, $period_id, $is_draft, $is_submitted, $description, $start_date, $end_date, $submitted_by, $submitted_at);
     if ($stmt->execute()) {
         echo json_encode(['success' => true, 'submission_id' => $conn->insert_id]);
     } else {
@@ -171,7 +169,7 @@ function handlePut($input) {
     $fields = [];
     $params = [];
     $types = '';
-    $allowed = ['is_draft','is_submitted','status_indicator','rating','description','is_deleted'];
+    $allowed = ['is_draft','is_submitted','description','is_deleted'];
     foreach ($allowed as $field) {
         if (isset($input[$field])) {
             $fields[] = "$field = ?";

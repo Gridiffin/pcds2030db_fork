@@ -1192,8 +1192,7 @@ function get_related_programs_by_initiative($initiative_id, $current_program_id 
     
     $sql = "SELECT p.program_id, p.program_name, p.program_number, p.agency_id,
                    a.agency_name, 
-                   COALESCE(latest_sub.is_draft, 1) as is_draft,
-                   COALESCE(latest_sub.rating, 'not_started') as rating
+                   COALESCE(latest_sub.is_draft, 1) as is_draft
             FROM programs p
             LEFT JOIN agency a ON p.agency_id = a.agency_id
             LEFT JOIN (
@@ -1577,25 +1576,22 @@ function create_program_submission($data) {
         
         // Create program submission
         $submission_query = "INSERT INTO program_submissions 
-                            (program_id, period_id, is_draft, is_submitted, status_indicator, description, 
-                             start_date, end_date, submitted_by) 
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                            (program_id, period_id, is_draft, is_submitted, description, submitted_by, submitted_at)
+                            VALUES (?, ?, ?, ?, ?, ?, ?)";
         
         $is_draft = isset($_POST['save_as_draft']) ? 1 : 0;
         $is_submitted = isset($_POST['submit']) ? 1 : 0;
         $submitted_by = $_SESSION['user_id'] ?? null;
         
         $stmt = $conn->prepare($submission_query);
-        $stmt->bind_param("iiissssssi", 
+        $stmt->bind_param("iiissss", 
             $data['program_id'],
             $data['period_id'],
             $is_draft,
             $is_submitted,
-            $data['status_indicator'],
             $data['description'],
-            $data['start_date'],
-            $data['end_date'],
-            $submitted_by
+            $submitted_by,
+            date('Y-m-d H:i:s')
         );
         
         if (!$stmt->execute()) {
@@ -1654,7 +1650,64 @@ function create_program_submission($data) {
     }
 }
 
-
+/**
+ * Update an existing program submission and its targets
+ * @param array $data Submission data including program_id, period_id, description, targets, etc.
+ * @return array Result with success status and message/error
+ */
+function update_program_submission($data) {
+    global $conn;
+    try {
+        // Validate required fields
+        if (empty($data['program_id']) || empty($data['period_id'])) {
+            return ['success' => false, 'error' => 'Program ID and Period ID are required.'];
+        }
+        // Check if submission exists
+        $submission_query = "SELECT submission_id FROM program_submissions WHERE program_id = ? AND period_id = ? AND is_deleted = 0";
+        $stmt = $conn->prepare($submission_query);
+        $stmt->bind_param("ii", $data['program_id'], $data['period_id']);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($result->num_rows === 0) {
+            return ['success' => false, 'error' => 'Submission not found.'];
+        }
+        $row = $result->fetch_assoc();
+        $submission_id = $row['submission_id'];
+        // Start transaction
+        $conn->begin_transaction();
+        // Update submission
+        $update_query = "UPDATE program_submissions SET description = ?, updated_at = NOW() WHERE submission_id = ?";
+        $stmt = $conn->prepare($update_query);
+        $stmt->bind_param("si", $data['description'], $submission_id);
+        if (!$stmt->execute()) {
+            throw new Exception('Failed to update program submission: ' . $stmt->error);
+        }
+        // Update targets: delete old, insert new
+        $delete_targets_query = "DELETE FROM program_targets WHERE submission_id = ?";
+        $stmt = $conn->prepare($delete_targets_query);
+        $stmt->bind_param("i", $submission_id);
+        $stmt->execute();
+        if (!empty($data['targets']) && is_array($data['targets'])) {
+            $target_query = "INSERT INTO program_targets (submission_id, target_number, target_description, status_indicator, status_description) VALUES (?, ?, ?, ?, ?)";
+            $stmt = $conn->prepare($target_query);
+            foreach ($data['targets'] as $index => $target) {
+                $target_number = $target['target_number'] ?? '';
+                $target_text = $target['target_text'] ?? '';
+                $target_status = $target['target_status'] ?? 'not_started';
+                $status_description = $target['status_description'] ?? '';
+                $stmt->bind_param("issss", $submission_id, $target_number, $target_text, $target_status, $status_description);
+                if (!$stmt->execute()) {
+                    throw new Exception('Failed to update target: ' . $stmt->error);
+                }
+            }
+        }
+        $conn->commit();
+        return ['success' => true, 'message' => 'Submission updated successfully.'];
+    } catch (Exception $e) {
+        $conn->rollback();
+        return ['success' => false, 'error' => $e->getMessage()];
+    }
+}
 
 /**
  * Strictly validate a date string as YYYY-MM-DD or empty/null.

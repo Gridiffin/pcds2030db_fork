@@ -43,7 +43,6 @@ $agencyNameCol = $config['columns']['agency']['name'];
 $submissionIdCol = $config['columns']['program_submissions']['id'];
 $submissionProgramIdCol = $config['columns']['program_submissions']['program_id'];
 $submissionIsDraftCol = $config['columns']['program_submissions']['is_draft'];
-$submissionRatingCol = $config['columns']['program_submissions']['rating'];
 
 /**
  * Get initiatives that have programs assigned to the current agency
@@ -154,7 +153,7 @@ function get_initiative_programs_for_agency($initiative_id, $agency_id = null) {
     global $conn, $programsTable, $usersTable, $agencyTable, $programSubmissionsTable;
     global $programIdCol, $programNameCol, $programInitiativeIdCol, $programAgencyIdCol;
     global $userIdCol, $userAgencyIdCol, $agencyIdCol, $agencyNameCol;
-    global $submissionIdCol, $submissionProgramIdCol, $submissionIsDraftCol, $submissionRatingCol;
+    global $submissionIdCol, $submissionProgramIdCol, $submissionIsDraftCol;
     
     // Use current session agency if no agency_id provided
     if ($agency_id === null) {
@@ -162,9 +161,7 @@ function get_initiative_programs_for_agency($initiative_id, $agency_id = null) {
     }
     
     $sql = "SELECT p.*, a.{$agencyNameCol},
-                   COALESCE(latest_sub.{$submissionIsDraftCol}, 1) as is_draft,
-                   COALESCE(latest_sub.{$submissionRatingCol}, 'not-started') as rating,
-                   (p.{$programAgencyIdCol} = ?) as is_owned_by_agency
+                   COALESCE(latest_sub.{$submissionIsDraftCol}, 1) as is_draft
             FROM {$programsTable} p
             LEFT JOIN {$agencyTable} a ON p.{$programAgencyIdCol} = a.{$agencyIdCol}
             LEFT JOIN (
@@ -177,10 +174,10 @@ function get_initiative_programs_for_agency($initiative_id, $agency_id = null) {
                 ) ps2 ON ps1.{$submissionProgramIdCol} = ps2.{$submissionProgramIdCol} AND ps1.{$submissionIdCol} = ps2.max_submission_id
             ) latest_sub ON p.{$programIdCol} = latest_sub.{$submissionProgramIdCol}
             WHERE p.{$programInitiativeIdCol} = ?
-            ORDER BY is_owned_by_agency DESC, p.{$programNameCol} ASC";
+            ORDER BY p.{$programNameCol} ASC";
     
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param('ii', $agency_id, $initiative_id);
+    $stmt->bind_param('ii', $initiative_id);
     $stmt->execute();
     $result = $stmt->get_result();
     

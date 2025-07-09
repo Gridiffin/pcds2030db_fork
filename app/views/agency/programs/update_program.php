@@ -2344,3 +2344,11 @@ document.addEventListener('DOMContentLoaded', function() {
 <?php
 // Include footer
 require_once dirname(__DIR__, 2) . '/layouts/footer.php';
+
+// 2) After a successful update (save draft or finalize), redirect to view_programs.php
+if (isset($result['success']) && $result['success']) {
+    $_SESSION['message'] = $result['message'];
+    $_SESSION['message_type'] = 'success';
+    header('Location: view_programs.php');
+    exit;
+}

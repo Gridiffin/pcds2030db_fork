@@ -93,10 +93,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Create submission
     $result = create_program_submission($submission_data);
     
+    // 1) Change the redirect after saving as draft to view_programs.php
     if (isset($result['success']) && $result['success']) {
         $_SESSION['message'] = $result['message'];
         $_SESSION['message_type'] = 'success';
-        header('Location: program_details.php?id=' . $program_id);
+        header('Location: view_programs.php');
         exit;
     } else {
         $message = $result['error'] ?? 'An error occurred while creating the submission.';
@@ -213,7 +214,14 @@ require_once '../../layouts/page_header.php';
                                         <?php endif; ?>
                                     </td>
                                     <td>
-                                        <?php echo htmlspecialchars(ucfirst(str_replace('_', ' ', $submission['status_indicator']))); ?>
+                                        <?php echo htmlspecialchars(ucfirst(str_replace('_', ' ', $submission['period_type']))); ?>
+                                    </td>
+                                    <td>
+                                        <?php if ($submission['is_draft']): ?>
+                                            <a href="edit_submission.php?program_id=<?php echo $program_id; ?>&period_id=<?php echo $submission['period_id']; ?>" class="btn btn-sm btn-outline-primary" title="Edit Submission">
+                                                <i class="fas fa-edit"></i> Edit
+                                            </a>
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>

@@ -61,9 +61,7 @@ if ($agency_id !== null) {
                      latest_sub.is_draft,
                      latest_sub.period_id,
                      latest_sub.submission_id as latest_submission_id,
-                     latest_sub.rating,
                      latest_sub.submitted_at,
-                     latest_sub.status_indicator,
                      rp.period_type,
                      rp.period_number,
                      rp.year as period_year,
@@ -385,9 +383,15 @@ require_once '../../layouts/page_header.php';
                                             <i class="fas fa-eye"></i>
                                         </a>
                                         <?php if (isset($program['created_by']) && $program['created_by'] == $_SESSION['user_id']): ?>
-                                        <a href="add_submission.php?program_id=<?php echo $program['program_id']; ?>" class="btn btn-outline-success" title="Add Submission">
-                                            <i class="fas fa-plus"></i>
-                                        </a>
+                                        <?php if (isset($program['is_draft']) && $program['is_draft']): ?>
+                                            <a href="submission_info.php?program_id=<?php echo $program['program_id']; ?>&period_id=<?php echo $program['period_id'] ?? ''; ?>" class="btn btn-outline-info" title="Submission Information">
+                                                <i class="fas fa-info-circle"></i>
+                                            </a>
+                                        <?php else: ?>
+                                            <a href="add_submission.php?program_id=<?php echo $program['program_id']; ?>" class="btn btn-outline-success" title="Add Submission">
+                                                <i class="fas fa-plus"></i>
+                                            </a>
+                                        <?php endif; ?>
                                         <a href="edit_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="Edit Program">
                                             <i class="fas fa-edit"></i>
                                         </a>
