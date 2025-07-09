@@ -91,7 +91,7 @@ if ($agency_id !== null) {
     }
 }
 
-// Separate programs into programs with draft submissions and programs with submitted submissions
+// Separate programs into programs with draft submissions and programs with finalized submissions
 $programs_with_drafts = [];
 $programs_with_submissions = [];
 $programs_without_submissions = [];
@@ -105,7 +105,7 @@ foreach ($programs as $program) {
             // Latest submission is a draft
             $programs_with_drafts[] = $program;
         } else {
-            // Latest submission is submitted
+            // Latest submission is finalized
             $programs_with_submissions[] = $program;
         }
     } else {
@@ -413,14 +413,14 @@ require_once '../../layouts/page_header.php';
     </div>
 </div>
 
-<!-- Programs with Submitted Submissions Card -->
+<!-- Programs with Finalized Submissions Card -->
 <div class="card shadow-sm mb-4 w-100 finalized-programs-card">
     <div class="card-header d-flex justify-content-between align-items-center bg-light border-start border-success border-4">
         <h5 class="card-title view-programs-card-title m-0 d-flex align-items-center">
             <i class="fas fa-check-circle text-success me-2"></i>
-            Programs with Submitted Submissions
-            <span class="badge bg-success ms-2" title="These programs have submitted submissions">
-                <i class="fas fa-check me-1"></i> Submitted
+            Programs with Finalized Submissions
+            <span class="badge bg-success ms-2" title="These programs have finalized submissions">
+                <i class="fas fa-check me-1"></i> Finalized
             </span>
             <span class="badge bg-secondary ms-2" id="finalized-count"><?php echo count($programs_with_submissions); ?></span>
         </h5>
@@ -501,7 +501,7 @@ require_once '../../layouts/page_header.php';
                 <tbody>
                     <?php if (empty($programs_with_submissions)): ?>
                         <tr>
-                            <td colspan="5" class="text-center py-4">No programs with submitted submissions found.</td>
+                            <td colspan="5" class="text-center py-4">No programs with finalized submissions found.</td>
                         </tr>
                     <?php else: ?>
                         <?php                        foreach ($programs_with_submissions as $program): 

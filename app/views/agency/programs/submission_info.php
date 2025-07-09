@@ -66,7 +66,7 @@ require_once '../../layouts/page_header.php';
                 <dt class="col-sm-3">Period</dt>
                 <dd class="col-sm-9"><?php echo htmlspecialchars($submission['period_type'] . ' ' . $submission['period_number'] . ' ' . $submission['year']); ?></dd>
                 <dt class="col-sm-3">Status</dt>
-                <dd class="col-sm-9"><?php echo $submission['is_draft'] ? 'Draft' : 'Submitted'; ?></dd>
+                <dd class="col-sm-9"><?php echo $submission['is_draft'] ? 'Draft' : 'Finalized'; ?></dd>
                 <dt class="col-sm-3">Description</dt>
                 <dd class="col-sm-9"><?php echo nl2br(htmlspecialchars($submission['description'])); ?></dd>
                 <dt class="col-sm-3">Targets</dt>
