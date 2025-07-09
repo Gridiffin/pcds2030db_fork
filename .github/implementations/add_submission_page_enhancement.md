@@ -1,0 +1,2 @@
+- [x] Remove duplicate Targets and Submission Info sections from the form
+- [ ] Move the Targets and Submission Info cards back to the right column (col-md-4) for a balanced two-column layout 

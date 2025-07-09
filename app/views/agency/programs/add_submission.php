@@ -47,7 +47,7 @@ if (!$program) {
 $reporting_periods = get_reporting_periods_for_dropdown(true);
 
 // Get existing submissions for this program to show which periods are already covered
-$existing_submissions_query = "SELECT ps.period_id, ps.is_draft, ps.is_submitted, ps.status_indicator, ps.rating,
+$existing_submissions_query = "SELECT ps.period_id, ps.is_draft, ps.is_submitted,
                                      rp.year, rp.period_type, rp.period_number
                               FROM program_submissions ps
                               JOIN reporting_periods rp ON ps.period_id = rp.period_id
@@ -66,11 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $submission_data = [
         'program_id' => $program_id,
         'period_id' => !empty($_POST['period_id']) ? intval($_POST['period_id']) : null,
-        'status_indicator' => $_POST['status_indicator'] ?? 'not_started',
-        'rating' => $_POST['rating'] ?? 'not_started',
         'description' => $_POST['description'] ?? '',
-        'start_date' => $_POST['start_date'] ?? '',
-        'end_date' => $_POST['end_date'] ?? '',
         'targets' => [] // Will be populated from form data
     ];
     
@@ -80,8 +76,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $target_numbers = $_POST['target_number'] ?? [];
         $target_statuses = $_POST['target_status'] ?? [];
         $target_status_descriptions = $_POST['target_status_description'] ?? [];
-        $target_start_dates = $_POST['target_start_date'] ?? [];
-        $target_end_dates = $_POST['target_end_date'] ?? [];
         
         for ($i = 0; $i < count($target_texts); $i++) {
             $target_text = trim($target_texts[$i] ?? '');
@@ -91,8 +85,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'target_text' => $target_text,
                     'target_status' => trim($target_statuses[$i] ?? 'not_started'),
                     'status_description' => trim($target_status_descriptions[$i] ?? ''),
-                    'start_date' => !empty($target_start_dates[$i]) ? $target_start_dates[$i] : null,
-                    'end_date' => !empty($target_end_dates[$i]) ? $target_end_dates[$i] : null
                 ];
             }
         }
@@ -125,8 +117,8 @@ $header_config = [
     'variant' => 'white',
     'actions' => [
         [
-            'url' => 'program_details.php?id=' . $program_id,
-            'text' => 'Back to Program',
+            'url' => 'view_programs.php',
+            'text' => 'Back to Programs',
             'icon' => 'fas fa-arrow-left',
             'class' => 'btn-outline-secondary'
         ]
@@ -162,6 +154,15 @@ require_once '../../layouts/page_header.php';
                         <div class="col-md-6">
                             <strong>Program Name:</strong> <?php echo htmlspecialchars($program['program_name']); ?><br>
                             <strong>Program Number:</strong> <?php echo htmlspecialchars($program['program_number'] ?? 'Not assigned'); ?><br>
+                            <strong>Initiative:</strong> 
+                            <?php if (!empty($program['initiative_name'])): ?>
+                                <?php echo htmlspecialchars($program['initiative_name']); ?>
+                                <?php if (!empty($program['initiative_number'])): ?>
+                                    (<?php echo htmlspecialchars($program['initiative_number']); ?>)
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <span class="text-muted">Not linked</span>
+                            <?php endif; ?><br>
                             <strong>Agency:</strong> <?php echo htmlspecialchars($program['agency_name'] ?? 'Unknown'); ?>
                         </div>
                         <div class="col-md-6">
@@ -189,7 +190,6 @@ require_once '../../layouts/page_header.php';
                                 <tr>
                                     <th>Period</th>
                                     <th>Status</th>
-                                    <th>Rating</th>
                                     <th>Type</th>
                                 </tr>
                             </thead>
@@ -210,9 +210,6 @@ require_once '../../layouts/page_header.php';
                                         <?php else: ?>
                                             <span class="badge bg-secondary">Not Submitted</span>
                                         <?php endif; ?>
-                                    </td>
-                                    <td>
-                                        <?php echo htmlspecialchars(ucfirst(str_replace('_', ' ', $submission['rating']))); ?>
                                     </td>
                                     <td>
                                         <?php echo htmlspecialchars(ucfirst(str_replace('_', ' ', $submission['status_indicator']))); ?>
@@ -277,28 +274,6 @@ require_once '../../layouts/page_header.php';
                                     </div>
                                 </div>
 
-                                <!-- Status and Rating -->
-                                <div class="row mb-4">
-                                    <div class="col-md-6">
-                                        <label for="status_indicator" class="form-label">Status Indicator</label>
-                                        <select class="form-select" id="status_indicator" name="status_indicator">
-                                            <option value="not_started" <?php echo (isset($_POST['status_indicator']) && $_POST['status_indicator'] == 'not_started') ? 'selected' : ''; ?>>Not Started</option>
-                                            <option value="in_progress" <?php echo (isset($_POST['status_indicator']) && $_POST['status_indicator'] == 'in_progress') ? 'selected' : ''; ?>>In Progress</option>
-                                            <option value="completed" <?php echo (isset($_POST['status_indicator']) && $_POST['status_indicator'] == 'completed') ? 'selected' : ''; ?>>Completed</option>
-                                            <option value="delayed" <?php echo (isset($_POST['status_indicator']) && $_POST['status_indicator'] == 'delayed') ? 'selected' : ''; ?>>Delayed</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label for="rating" class="form-label">Rating</label>
-                                        <select class="form-select" id="rating" name="rating">
-                                            <option value="not_started" <?php echo (isset($_POST['rating']) && $_POST['rating'] == 'not_started') ? 'selected' : ''; ?>>Not Started</option>
-                                            <option value="monthly_target_achieved" <?php echo (isset($_POST['rating']) && $_POST['rating'] == 'monthly_target_achieved') ? 'selected' : ''; ?>>Monthly Target Achieved</option>
-                                            <option value="on_track_for_year" <?php echo (isset($_POST['rating']) && $_POST['rating'] == 'on_track_for_year') ? 'selected' : ''; ?>>On Track for Year</option>
-                                            <option value="severe_delay" <?php echo (isset($_POST['rating']) && $_POST['rating'] == 'severe_delay') ? 'selected' : ''; ?>>Severe Delay</option>
-                                        </select>
-                                    </div>
-                                </div>
-
                                 <!-- Description -->
                                 <div class="mb-4">
                                     <label for="description" class="form-label">Description</label>
@@ -306,34 +281,13 @@ require_once '../../layouts/page_header.php';
                                               id="description" 
                                               name="description"
                                               rows="3"
-                                              placeholder="Describe the progress and status for this period"><?php echo htmlspecialchars($_POST['description'] ?? ''); ?></textarea>
+                                              placeholder="Describe the submission for this period"><?php echo htmlspecialchars($_POST['description'] ?? ''); ?></textarea>
                                     <div class="form-text">
                                         <i class="fas fa-info-circle me-1"></i>
                                         Provide details about the program's progress during this reporting period
                                     </div>
                                 </div>
-
-                                <!-- Timeline -->
-                                <div class="row mb-4">
-                                    <div class="col-md-6">
-                                        <label for="start_date" class="form-label">Start Date</label>
-                                        <input type="date" 
-                                               class="form-control" 
-                                               id="start_date" 
-                                               name="start_date"
-                                               value="<?php echo htmlspecialchars($_POST['start_date'] ?? ''); ?>">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label for="end_date" class="form-label">End Date</label>
-                                        <input type="date" 
-                                               class="form-control" 
-                                               id="end_date" 
-                                               name="end_date"
-                                               value="<?php echo htmlspecialchars($_POST['end_date'] ?? ''); ?>">
-                                    </div>
-                                </div>
                             </div>
-
                             <div class="col-md-4">
                                 <!-- Targets Section -->
                                 <div class="card shadow-sm">

@@ -30,6 +30,14 @@ ALTER TABLE programs
     ADD COLUMN IF NOT EXISTS start_date DATE NULL AFTER program_description,
     ADD COLUMN IF NOT EXISTS end_date DATE NULL AFTER start_date;
 
+-- Migration: Add rating column to programs table
+ALTER TABLE programs
+    ADD COLUMN IF NOT EXISTS rating ENUM('monthly_target_achieved','on_track_for_year','severe_delay','not_started') DEFAULT 'not_started' AFTER program_number;
+
+-- Migration: Remove rating column from program_submissions table
+ALTER TABLE program_submissions
+    DROP COLUMN IF EXISTS rating;
+
 -- 3. Program User Assignments Table
 CREATE TABLE IF NOT EXISTS program_user_assignments (
   assignment_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -49,7 +57,6 @@ CREATE TABLE IF NOT EXISTS program_submissions (
   is_draft TINYINT(1) DEFAULT 1,
   is_submitted TINYINT(1) DEFAULT 0,
   status_indicator ENUM('not_started','in_progress','completed','delayed') DEFAULT 'not_started',
-  rating ENUM('monthly_target_achieved','on_track_for_year','severe_delay','not_started') DEFAULT 'not_started',
   description TEXT,
   start_date DATE,
   end_date DATE,

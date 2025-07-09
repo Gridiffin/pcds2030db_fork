@@ -83,7 +83,7 @@ function get_agency_programs_list($user_id, $is_assigned = false) {
     global $conn;
     
     $query = "SELECT p.*, 
-                     ps.status_indicator, ps.rating, ps.description, ps.start_date, ps.end_date,
+                     ps.status_indicator, ps.description, ps.start_date, ps.end_date,
                      ps.is_draft, ps.submission_id,
                      a.agency_name
               FROM programs p
@@ -149,8 +149,8 @@ function create_agency_program($data) {
         // Create initial program submission
         $period_id = get_current_reporting_period()['period_id'] ?? 1;
         $sub_query = "INSERT INTO program_submissions 
-                    (program_id, period_id, is_draft, status_indicator, rating, description, start_date, end_date, submitted_by)
-                    VALUES (?, ?, 1, 'not_started', 'not_started', ?, ?, ?, ?)";
+                    (program_id, period_id, is_draft, status_indicator, description, start_date, end_date, submitted_by)
+                    VALUES (?, ?, 1, 'not_started', ?, ?, ?, ?)";
         $sub_stmt = $conn->prepare($sub_query);
         $description = $validated['description'] ?? '';
         $sub_stmt->bind_param("iissss", $program_id, $period_id, $description, $start_date, $end_date, $user_id);
@@ -235,7 +235,7 @@ function create_wizard_program_draft($data) {
         
         // Create initial program submission
         $current_period_id = $period_id ?: 1;
-        $submission_stmt = $conn->prepare("INSERT INTO program_submissions (program_id, period_id, is_draft, status_indicator, rating, description, start_date, end_date, submitted_by) VALUES (?, ?, 1, 'not_started', 'not_started', ?, ?, ?, ?)");
+        $submission_stmt = $conn->prepare("INSERT INTO program_submissions (program_id, period_id, is_draft, status_indicator, description, start_date, end_date, submitted_by) VALUES (?, ?, 1, 'not_started', ?, ?, ?, ?)");
         $submission_stmt->bind_param("iissss", $program_id, $current_period_id, $brief_description, $start_date, $end_date, $user_id);
         if (!$submission_stmt->execute()) throw new Exception('Failed to create program submission: ' . $submission_stmt->error);
         
@@ -572,7 +572,7 @@ function update_program_draft_only($program_id, $data) {
             } else {
                 // Create new submission
                 $current_period_id = $period_id ?: 1;
-                $insert_stmt = $conn->prepare("INSERT INTO program_submissions (program_id, period_id, is_draft, status_indicator, rating, description, start_date, end_date, submitted_by) VALUES (?, ?, 1, 'not_started', 'not_started', ?, ?, ?, ?)");
+                $insert_stmt = $conn->prepare("INSERT INTO program_submissions (program_id, period_id, is_draft, status_indicator, description, start_date, end_date, submitted_by) VALUES (?, ?, 1, 'not_started', ?, ?, ?, ?)");
                 $insert_stmt->bind_param("iissss", $program_id, $current_period_id, $brief_description, $start_date, $end_date, $user_id);
                 if (!$insert_stmt->execute()) throw new Exception('Failed to create program submission: ' . $insert_stmt->error);
                 
@@ -1234,7 +1234,7 @@ function get_current_program_state($program_id) {
     // Get program table data
     $stmt = $conn->prepare("
         SELECT p.program_name, p.program_description, p.agency_id,
-               ps.status_indicator, ps.rating, ps.description, ps.start_date, ps.end_date,
+               ps.status_indicator, ps.description, ps.start_date, ps.end_date,
                a.agency_name
         FROM programs p
         LEFT JOIN (
@@ -1577,9 +1577,9 @@ function create_program_submission($data) {
         
         // Create program submission
         $submission_query = "INSERT INTO program_submissions 
-                            (program_id, period_id, is_draft, is_submitted, status_indicator, rating, 
-                             description, start_date, end_date, submitted_by) 
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                            (program_id, period_id, is_draft, is_submitted, status_indicator, description, 
+                             start_date, end_date, submitted_by) 
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
         $is_draft = isset($_POST['save_as_draft']) ? 1 : 0;
         $is_submitted = isset($_POST['submit']) ? 1 : 0;
@@ -1592,7 +1592,6 @@ function create_program_submission($data) {
             $is_draft,
             $is_submitted,
             $data['status_indicator'],
-            $data['rating'],
             $data['description'],
             $data['start_date'],
             $data['end_date'],
