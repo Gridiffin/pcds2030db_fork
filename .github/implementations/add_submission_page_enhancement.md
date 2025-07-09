@@ -1,2 +1,6 @@
 - [x] Remove duplicate Targets and Submission Info sections from the form
-- [ ] Move the Targets and Submission Info cards back to the right column (col-md-4) for a balanced two-column layout 
+- [x] Move the Targets and Submission Info cards back to the right column (col-md-4) for a balanced two-column layout
+- [x] Remove the Submit button from the add submission form, leaving only Save as Draft. Every first submission should be a draft and only focal users can submit submissions.
+- [x] Separate the scripts and styles from the add submission page into their own modular files in the assets directory.
+- [x] Import add_submission.css into main.css for automatic inclusion.
+- [ ] Move the Targets section to the left side, below the Description, and expand it to the full width of the card section if possible. 

@@ -129,6 +129,7 @@ $header_config = [
 require_once '../../layouts/page_header.php';
 ?>
 
+
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
@@ -287,8 +288,7 @@ require_once '../../layouts/page_header.php';
                                         Provide details about the program's progress during this reporting period
                                     </div>
                                 </div>
-                            </div>
-                            <div class="col-md-4">
+
                                 <!-- Targets Section -->
                                 <div class="card shadow-sm">
                                     <div class="card-header">
@@ -309,9 +309,10 @@ require_once '../../layouts/page_header.php';
                                         </button>
                                     </div>
                                 </div>
-
-                                <!-- Info Card -->
-                                <div class="card shadow-sm mt-3">
+                            </div>
+                            <div class="col-md-4">
+                                <!-- Submission Info Card only -->
+                                <div class="card shadow-sm">
                                     <div class="card-body">
                                         <h6 class="card-title">
                                             <i class="fas fa-info-circle me-2"></i>
@@ -332,7 +333,7 @@ require_once '../../layouts/page_header.php';
                                             </li>
                                             <li>
                                                 <i class="fas fa-save text-success me-2"></i>
-                                                Save as draft or submit when ready
+                                                Save as draft or ask focal to submit when ready
                                             </li>
                                         </ul>
                                     </div>
@@ -351,10 +352,7 @@ require_once '../../layouts/page_header.php';
                                     <i class="fas fa-save me-2"></i>
                                     Save as Draft
                                 </button>
-                                <button type="submit" name="submit" value="1" class="btn btn-primary">
-                                    <i class="fas fa-paper-plane me-2"></i>
-                                    Submit
-                                </button>
+                                <!-- Submit button removed -->
                             </div>
                         </div>
                     </form>
@@ -364,106 +362,7 @@ require_once '../../layouts/page_header.php';
     </div>
 </div>
 
-<style>
-#period_id option[data-status="open"] {
-    font-weight: bold;
-    color: #28a745;
-}
-</style>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const periodSelect = document.getElementById('period_id');
-    const targetsContainer = document.getElementById('targets-container');
-    const addTargetBtn = document.getElementById('add-target-btn');
-    
-    // Highlight open periods
-    Array.from(periodSelect.options).forEach(option => {
-        if (option.dataset.status === 'open') {
-            option.classList.add('text-success', 'fw-bold');
-        }
-    });
-
-    // Target management
-    let targetCounter = 0;
-
-    const addNewTarget = () => {
-        targetCounter++;
-        const targetEntry = document.createElement('div');
-        targetEntry.className = 'target-entry border rounded p-2 mb-2 position-relative';
-        targetEntry.innerHTML = `
-            <button type="button" class="btn-close remove-target" aria-label="Remove target" style="position: absolute; top: 5px; right: 5px;"></button>
-            <div class="mb-2">
-                <label class="form-label small">Target ${targetCounter}</label>
-                <textarea class="form-control form-control-sm" name="target_text[]" rows="2" placeholder="Define a measurable target" required></textarea>
-            </div>
-            <div class="row g-2">
-                <div class="col-6">
-                    <input type="text" class="form-control form-control-sm" name="target_number[]" placeholder="Number (optional)">
-                </div>
-                <div class="col-6">
-                    <select class="form-select form-select-sm" name="target_status[]">
-                        <option value="not_started">Not Started</option>
-                        <option value="in_progress">In Progress</option>
-                        <option value="completed">Completed</option>
-                        <option value="delayed">Delayed</option>
-                    </select>
-                </div>
-            </div>
-            <div class="mt-2">
-                <textarea class="form-control form-control-sm" name="target_status_description[]" rows="1" placeholder="Status description (optional)"></textarea>
-            </div>
-        `;
-        targetsContainer.appendChild(targetEntry);
-
-        // Add remove functionality
-        const removeBtn = targetEntry.querySelector('.remove-target');
-        removeBtn.addEventListener('click', () => {
-            targetEntry.remove();
-            updateTargetNumbers();
-        });
-    };
-
-    const updateTargetNumbers = () => {
-        const targets = targetsContainer.querySelectorAll('.target-entry');
-        targets.forEach((target, index) => {
-            const label = target.querySelector('label');
-            if (label) {
-                label.textContent = `Target ${index + 1}`;
-            }
-        });
-        targetCounter = targets.length;
-    };
-
-    addTargetBtn.addEventListener('click', addNewTarget);
-
-    // Add one target by default
-    addNewTarget();
-
-    // Auto-generate target numbers if not provided
-    function updateTargetNumbers() {
-        const programNumber = <?php echo json_encode($program['program_number'] ?? ''); ?>;
-        const targetRows = document.querySelectorAll('.target-row');
-        targetRows.forEach((row, idx) => {
-            const numberInput = row.querySelector('input[name^="target_number"]');
-            if (numberInput && !numberInput.value) {
-                numberInput.value = programNumber ? (programNumber + '.' + (idx + 1)) : (idx + 1);
-            }
-        });
-    }
-    
-    // Call on page load and when adding/removing targets
-    updateTargetNumbers();
-    document.getElementById('addTargetBtn')?.addEventListener('click', function() {
-        setTimeout(updateTargetNumbers, 100); // Wait for new row
-    });
-    document.querySelectorAll('.remove-target-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            setTimeout(updateTargetNumbers, 100);
-        });
-    });
-});
-</script>
+<script src="<?php echo asset_url('js/agency', 'add_submission.js'); ?>"></script>
 
 <?php
 // Include footer
