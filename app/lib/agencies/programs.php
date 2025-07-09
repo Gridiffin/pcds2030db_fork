@@ -221,6 +221,71 @@ function create_wizard_program_draft($data) {
 }
 
 /**
+ * Create simple program as empty vessel (no initial submission)
+ */
+function create_simple_program($data) {
+    global $conn;
+    if (!is_agency()) return ['error' => 'Permission denied'];
+    if (empty($data['program_name']) || trim($data['program_name']) === '') {
+        return ['error' => 'Program name is required'];
+    }
+    $program_name = trim($data['program_name']);
+    $program_number = isset($data['program_number']) ? trim($data['program_number']) : null;
+    $brief_description = isset($data['brief_description']) ? trim($data['brief_description']) : '';
+    $start_date = isset($data['start_date']) && !empty($data['start_date']) ? $data['start_date'] : null;
+    $end_date = isset($data['end_date']) && !empty($data['end_date']) ? $data['end_date'] : null;
+    $initiative_id = isset($data['initiative_id']) && !empty($data['initiative_id']) ? intval($data['initiative_id']) : null;
+    
+    // Validate program_number format if provided
+    if ($program_number && !is_valid_program_number_format($program_number, false)) {
+        return ['error' => get_program_number_format_error(false)];
+    }
+    // Additional validation for hierarchical format if initiative is linked
+    if ($program_number && $initiative_id) {
+        $format_validation = validate_program_number_format($program_number, $initiative_id);
+        if (!$format_validation['valid']) {
+            return ['error' => $format_validation['message']];
+        }
+        // Check if number is already in use
+        if (!is_program_number_available($program_number)) {
+            return ['error' => 'Program number is already in use'];
+        }
+    }
+    $user_id = $_SESSION['user_id'];
+    $user = get_user_by_id($conn, $user_id);
+    $agency_id = $user ? $user['agency_id'] : null;
+    try {
+        $conn->begin_transaction();
+        
+        // Create the program (empty vessel)
+        $stmt = $conn->prepare("INSERT INTO programs (program_name, program_description, agency_id, created_by, created_at) VALUES (?, ?, ?, ?, NOW())");
+        $stmt->bind_param("ssii", $program_name, $brief_description, $agency_id, $user_id);
+        if (!$stmt->execute()) throw new Exception('Failed to create program: ' . $stmt->error);
+        $program_id = $conn->insert_id;
+        
+        // Create user assignment for the creator
+        $assignment_stmt = $conn->prepare("INSERT INTO program_user_assignments (program_id, user_id, role) VALUES (?, ?, 'editor')");
+        $assignment_stmt->bind_param("ii", $program_id, $user_id);
+        if (!$assignment_stmt->execute()) throw new Exception('Failed to create user assignment: ' . $assignment_stmt->error);
+        
+        // Note: No initial submission is created - programs exist as empty vessels
+        // Submissions will be created when users add them for specific periods
+        
+        $conn->commit();
+        log_audit_action('create_program', "Program Name: $program_name | Program ID: $program_id", 'success', $user_id);
+        return [
+            'success' => true, 
+            'message' => 'Program created successfully as an empty vessel. Add submissions for specific periods when ready to report progress.',
+            'program_id' => $program_id
+        ];
+    } catch (Exception $e) {
+        $conn->rollback();
+        log_audit_action('create_program_failed', "Program Name: $program_name | Error: " . $e->getMessage(), 'failure', $user_id);
+        return ['error' => 'Database error: ' . $e->getMessage()];
+    }
+}
+
+/**
  * Auto-save program draft with minimal validation
  */
 function auto_save_program_draft($data) {
@@ -1308,4 +1373,111 @@ function get_outcome_name_by_id($outcome_id) {
     
     $stmt->close();
     return "Unknown Outcome (ID: $outcome_id)";
+}
+
+/**
+ * Create a new program submission with targets
+ * 
+ * @param array $data Submission data including program_id, period_id, targets, etc.
+ * @return array Result with success status and message/error
+ */
+function create_program_submission($data) {
+    global $conn;
+    
+    try {
+        // Validate required fields
+        if (empty($data['program_id']) || empty($data['period_id'])) {
+            return ['success' => false, 'error' => 'Program ID and Period ID are required.'];
+        }
+        
+        // Check if program exists and user has access
+        $program = get_program_details($data['program_id']);
+        if (!$program) {
+            return ['success' => false, 'error' => 'Program not found or access denied.'];
+        }
+        
+        // Check if submission already exists for this program and period
+        $existing_query = "SELECT submission_id FROM program_submissions 
+                          WHERE program_id = ? AND period_id = ? AND is_deleted = 0";
+        $stmt = $conn->prepare($existing_query);
+        $stmt->bind_param("ii", $data['program_id'], $data['period_id']);
+        $stmt->execute();
+        if ($stmt->get_result()->num_rows > 0) {
+            return ['success' => false, 'error' => 'A submission already exists for this program and period.'];
+        }
+        
+        // Start transaction
+        $conn->begin_transaction();
+        
+        // Create program submission
+        $submission_query = "INSERT INTO program_submissions 
+                            (program_id, period_id, is_draft, is_submitted, status_indicator, rating, 
+                             description, start_date, end_date, submitted_by) 
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        
+        $is_draft = isset($_POST['save_as_draft']) ? 1 : 0;
+        $is_submitted = isset($_POST['submit']) ? 1 : 0;
+        $submitted_by = $_SESSION['user_id'] ?? null;
+        
+        $stmt = $conn->prepare($submission_query);
+        $stmt->bind_param("iiissssssi", 
+            $data['program_id'],
+            $data['period_id'],
+            $is_draft,
+            $is_submitted,
+            $data['status_indicator'],
+            $data['rating'],
+            $data['description'],
+            $data['start_date'],
+            $data['end_date'],
+            $submitted_by
+        );
+        
+        if (!$stmt->execute()) {
+            throw new Exception("Failed to create program submission: " . $stmt->error);
+        }
+        
+        $submission_id = $conn->insert_id;
+        
+        // Create targets if provided
+        if (!empty($data['targets']) && is_array($data['targets'])) {
+            $target_query = "INSERT INTO program_targets 
+                            (submission_id, target_description, status_indicator, status_description, 
+                             start_date, end_date) 
+                            VALUES (?, ?, ?, ?, ?, ?)";
+            
+            $stmt = $conn->prepare($target_query);
+            
+            foreach ($data['targets'] as $target) {
+                $target_description = $target['target_number'] . ' ' . $target['target_text'];
+                $stmt->bind_param("isssss", 
+                    $submission_id,
+                    $target_description,
+                    $target['target_status'],
+                    $target['status_description'],
+                    $target['start_date'],
+                    $target['end_date']
+                );
+                
+                if (!$stmt->execute()) {
+                    throw new Exception("Failed to create target: " . $stmt->error);
+                }
+            }
+        }
+        
+        // Commit transaction
+        $conn->commit();
+        
+        $action = $is_submitted ? 'submitted' : 'saved as draft';
+        return [
+            'success' => true, 
+            'message' => "Program submission successfully {$action}.",
+            'submission_id' => $submission_id
+        ];
+        
+    } catch (Exception $e) {
+        // Rollback transaction
+        $conn->rollback();
+        return ['success' => false, 'error' => $e->getMessage()];
+    }
 }

@@ -649,6 +649,9 @@ require_once '../../layouts/page_header.php';
                                             <i class="fas fa-eye"></i>
                                         </a>
                                         <?php if (isset($program['created_by']) && $program['created_by'] == $_SESSION['user_id']): ?>
+                                        <a href="add_submission.php?program_id=<?php echo $program['program_id']; ?>" class="btn btn-outline-success" title="Add Submission">
+                                            <i class="fas fa-plus"></i>
+                                        </a>
                                         <a href="update_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="Edit Program">
                                             <i class="fas fa-edit"></i>
                                         </a>

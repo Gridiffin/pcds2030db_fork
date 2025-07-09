@@ -247,10 +247,16 @@ $showNoTargetsAlert = empty($targets) && $is_owner; // Only show no targets aler
             <span class="badge bg-<?php echo $status_map[$status]['class']; ?> py-2 px-3">
                 <i class="<?php echo $status_map[$status]['icon']; ?> me-1"></i> 
                 <?php echo $status_map[$status]['label']; ?>
-            </span>            <?php if ($is_owner && $is_draft): ?>
-            <a href="<?php echo APP_URL; ?>/app/views/agency/programs/update_program.php?id=<?php echo $program_id; ?>" class="btn btn-warning btn-sm ms-2">
-                <i class="fas fa-edit me-1"></i> Edit Draft
-            </a>
+            </span>
+            <?php if ($is_owner): ?>
+                <a href="<?php echo APP_URL; ?>/app/views/agency/programs/add_submission.php?program_id=<?php echo $program_id; ?>" class="btn btn-primary btn-sm ms-2">
+                    <i class="fas fa-plus me-1"></i> Add Submission
+                </a>
+                <?php if ($is_draft): ?>
+                <a href="<?php echo APP_URL; ?>/app/views/agency/programs/update_program.php?id=<?php echo $program_id; ?>" class="btn btn-warning btn-sm ms-2">
+                    <i class="fas fa-edit me-1"></i> Edit Draft
+                </a>
+                <?php endif; ?>
             <?php endif; ?>
         </div>
     </div>
