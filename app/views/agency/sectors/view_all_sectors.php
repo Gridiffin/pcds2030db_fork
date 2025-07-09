@@ -62,21 +62,19 @@ if (!empty($all_programs) && !isset($all_programs['error'])) {
     $all_programs = array_values($all_programs);
 }
 
-// Get current agency's sector
-$current_sector_id = $_SESSION['sector_id'];
+// Get current agency's data
+$current_agency_id = $_SESSION['agency_id'];
 
-// Load sector outcomes data for the current sector
+// Load outcomes data for the current agency
 require_once PROJECT_ROOT_PATH . 'app/lib/agencies/outcomes.php';
-$sector_outcomes_data = get_agency_sector_outcomes($current_sector_id);
+$agency_outcomes_data = get_agency_outcomes($current_agency_id);
 
-// Get all sectors from the database
-if (MULTI_SECTOR_ENABLED) {
-    $sectors = get_all_sectors();
-} else {
-    // Only get the Forestry sector
-    $sectors = array_filter(get_all_sectors(), function($sector) {
-        return $sector['sector_id'] == FORESTRY_SECTOR_ID;
-    });
+// Get all agencies from the database
+$all_agencies = [];
+$agencies_query = "SELECT agency_id, agency_name FROM agency ORDER BY agency_name";
+$agencies_result = $conn->query($agencies_query);
+while ($row = $agencies_result->fetch_assoc()) {
+    $all_agencies[] = $row;
 }
 
 // Metrics functionality removed: get_agency_metrics_data and all related logic are unused and deleted for clarity.
@@ -84,20 +82,16 @@ if (MULTI_SECTOR_ENABLED) {
 // Get all agencies for filter dropdown
 if (MULTI_SECTOR_ENABLED) {
     $agencies = [];
-    $agencies_query = "SELECT user_id, agency_name FROM users WHERE role = 'agency' ORDER BY agency_name";
+    $agencies_query = "SELECT a.agency_id, a.agency_name FROM agency a ORDER BY a.agency_name";
     $agencies_result = $conn->query($agencies_query);
     while ($row = $agencies_result->fetch_assoc()) {
         $agencies[] = $row;
     }
 } else {
-    // Only get agencies from the Forestry sector
+    // Only get agencies from the Forestry sector (using agency_id instead of sector_id)
     $agencies = [];
-    $agencies_query = "SELECT user_id, agency_name FROM users WHERE role = 'agency' AND sector_id = ? ORDER BY agency_name";
-    $stmt = $conn->prepare($agencies_query);
-    $stmt->bind_param("i", $forestry_sector_id);
-    $forestry_sector_id = FORESTRY_SECTOR_ID;
-    $stmt->execute();
-    $agencies_result = $stmt->get_result();
+    $agencies_query = "SELECT a.agency_id, a.agency_name FROM agency a WHERE a.agency_id IN (1, 2, 3) ORDER BY a.agency_name";
+    $agencies_result = $conn->query($agencies_query);
     while ($row = $agencies_result->fetch_assoc()) {
         $agencies[] = $row;
     }
@@ -114,10 +108,8 @@ require_once '../../layouts/header.php';
 
 // Configure modern page header
 $header_config = [
-    'title' => MULTI_SECTOR_ENABLED ? "Cross-Sector Programs" : "Forestry Sector Programs",
-    'subtitle' => MULTI_SECTOR_ENABLED ? 
-        "View and track programs across all sectors" : 
-        "View and track forestry sector programs",
+    'title' => "All Agency Programs",
+    'subtitle' => "View and track programs across all agencies",
     'variant' => 'green',
     'actions' => []
 ];
@@ -130,12 +122,10 @@ require_once '../../layouts/page_header.php';
     <!-- Period Selector Component -->
     <?php require_once PROJECT_ROOT_PATH . 'app/lib/period_selector_dashboard.php'; ?>
 
-    <?php if (!MULTI_SECTOR_ENABLED): ?>
     <div class="alert alert-info mb-4">
         <i class="fas fa-info-circle me-2"></i>
-        <strong>Note:</strong> The dashboard is currently focused on the Forestry sector only.
+        <strong>Note:</strong> This view shows programs from all agencies.
     </div>
-    <?php endif; ?>
 
     <!-- Tab Navigation -->
     <!-- Metrics tab removed: Only Programs tab is shown -->
@@ -198,9 +188,9 @@ require_once '../../layouts/page_header.php';
                     <?php if ($active_tab === 'outcomes'): ?>
                         <option value="">All Creators</option>
                         <?php
-                        // For outcomes, get distinct creators from $sector_outcomes_data
+                        // For outcomes, get distinct creators from $agency_outcomes_data
                         $creators = [];
-                        foreach ($sector_outcomes_data as $outcome) {
+                        foreach ($agency_outcomes_data as $outcome) {
                             $creator_id = $outcome['submitted_by'] ?? null;
                             $creator_name = $outcome['submitted_by_username'] ?? 'Unknown';
                             if ($creator_id && !isset($creators[$creator_id])) {
@@ -216,7 +206,7 @@ require_once '../../layouts/page_header.php';
                     <?php else: ?>
                         <option value="">All Agencies</option>
                         <?php foreach ($agencies as $agency): ?>
-                            <option value="<?php echo $agency['user_id']; ?>">
+                            <option value="<?php echo $agency['agency_id']; ?>">
                                 <?php echo htmlspecialchars($agency['agency_name']); ?>
                             </option>
                         <?php endforeach; ?>
@@ -243,7 +233,7 @@ require_once '../../layouts/page_header.php';
     <div class="alert alert-info mb-4">
         <div class="d-flex align-items-center">
             <i class="fas fa-filter me-2"></i>
-            <span>Filtered results: <strong><?php echo $active_tab === 'programs' ? count($all_programs) : count($sector_metrics, COUNT_RECURSIVE) - count($sector_metrics); ?></strong> <?php echo $active_tab === 'programs' ? 'programs' : 'metrics'; ?> found</span>
+            <span>Filtered results: <strong><?php echo $active_tab === 'programs' ? count($all_programs) : count($agency_outcomes_data); ?></strong> <?php echo $active_tab === 'programs' ? 'programs' : 'outcomes'; ?> found</span>
             <a href="view_all_sectors.php?tab=<?php echo $active_tab; ?><?php echo $period_id ? '&period_id=' . $period_id : ''; ?>" class="btn btn-sm btn-outline-secondary">
                 <i class="fas fa-times me-1"></i> Clear All Filters
             </a>
@@ -268,7 +258,7 @@ require_once '../../layouts/page_header.php';
                         <th class="sortable" data-sort="name" style="width: 20%;">Program Name <i class="fas fa-sort ms-1"></i></th>
 
                         <th class="sortable" data-sort="agency">Agency <i class="fas fa-sort ms-1"></i></th>
-                        <th class="sortable" data-sort="sector">Sector <i class="fas fa-sort ms-1"></i></th>
+                        <th class="sortable" data-sort="initiative">Initiative <i class="fas fa-sort ms-1"></i></th>
                         <th class="sortable" data-sort="rating">Rating <i class="fas fa-sort ms-1"></i></th>
                         <th>Timeline</th>
                         <th class="sortable" data-sort="date">Last Updated <i class="fas fa-sort ms-1"></i></th>
@@ -293,7 +283,7 @@ require_once '../../layouts/page_header.php';
                         </tr>
                     <?php else: ?>
                         <?php foreach ($all_programs as $program): ?>
-                    <tr class="<?php echo (($program['sector_id'] ?? null) == $current_sector_id) ? 'current-sector-row' : ''; ?> sector-<?php echo $program['sector_id'] ?? ''; ?>" data-agency="<?php echo $program['agency_id'] ?? ''; ?>" data-rating="<?php echo $program['status'] ?? ''; ?>">
+                    <tr class="<?php echo (($program['agency_id'] ?? null) == $current_agency_id) ? 'current-agency-row' : ''; ?> agency-<?php echo $program['agency_id'] ?? ''; ?>" data-agency="<?php echo $program['agency_id'] ?? ''; ?>" data-rating="<?php echo $program['status'] ?? ''; ?>">
                                 <td class="text-truncate" style="max-width: 200px;">
                                     <span class="program-name" title="<?php echo htmlspecialchars($program['program_name']); ?>">
                                         <?php echo htmlspecialchars($program['program_name']); ?>
@@ -302,7 +292,7 @@ require_once '../../layouts/page_header.php';
 
                                 <td><?php echo htmlspecialchars($program['agency_name']); ?></td>
                                 <td>
-                                    <span class="badge bg-secondary"><?php echo htmlspecialchars($program['sector_name']); ?></span>
+                                    <span class="badge bg-secondary"><?php echo htmlspecialchars($program['initiative_name'] ?? 'N/A'); ?></span>
                                 </td>
                                 <td>
                                     <?php
@@ -344,9 +334,9 @@ require_once '../../layouts/page_header.php';
 <?php elseif ($active_tab === 'outcomes'): ?>
 <div class="card shadow-sm">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="card-title m-0">All Sector Outcomes</h5>
+        <h5 class="card-title m-0">All Agency Outcomes</h5>
         <div>
-            <span class="badge bg-primary"><?php echo count($sector_outcomes_data); ?> Outcomes</span>
+            <span class="badge bg-primary"><?php echo count($agency_outcomes_data); ?> Outcomes</span>
         </div>
     </div>
     <div class="card-body p-0">
@@ -361,7 +351,7 @@ require_once '../../layouts/page_header.php';
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if (empty($sector_outcomes_data)): ?>
+                    <?php if (empty($agency_outcomes_data)): ?>
                         <tr>
                             <td colspan="5" class="text-center py-4">
                                 <div class="alert alert-info mb-0">
@@ -371,7 +361,7 @@ require_once '../../layouts/page_header.php';
                             </td>
                         </tr>
                     <?php else: ?>
-                        <?php foreach ($sector_outcomes_data as $outcome): ?>
+                        <?php foreach ($agency_outcomes_data as $outcome): ?>
                             <tr>
                                 <td><?php echo htmlspecialchars($outcome['table_name']); ?></td>
                                 <td>

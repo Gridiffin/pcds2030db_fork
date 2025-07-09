@@ -153,3 +153,43 @@ function get_agency_outcomes_statistics($sector_id, $period_id = null) {
     $stmt->close();
     return $stats;
 }
+
+/**
+ * Get agency outcomes - using new schema with agency_id
+ */
+function get_agency_outcomes($agency_id) {
+    global $conn;
+
+    $agency_id = intval($agency_id);
+    $query = "SELECT od.detail_id, od.detail_name, od.display_config, od.detail_json, od.is_important, od.indicator_type,
+                     COALESCE(u.username, 'Unknown') AS submitted_by_username,
+                     COALESCE(u.user_id, 0) AS submitted_by
+              FROM outcomes_details od
+              LEFT JOIN users u ON od.agency_id = u.agency_id
+              WHERE od.agency_id = ?";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("i", $agency_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    $outcomes = [];
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            // Convert to array that matches the expected format for backward compatibility
+            $outcome_base = [
+                'metric_id' => $row['detail_id'], // Using detail_id as metric_id for compatibility
+                'table_name' => $row['detail_name'], // Using detail_name as table_name for compatibility
+                'is_submitted' => true,
+                'submitted_by' => $row['submitted_by'],
+                'submitted_by_username' => $row['submitted_by_username'],
+                'is_important' => $row['is_important'] ?? 0,
+                'indicator_type' => $row['indicator_type']
+            ];
+            
+            // Add to outcomes array
+            $outcomes[] = $outcome_base;
+        }
+    }
+
+    return $outcomes;
+}

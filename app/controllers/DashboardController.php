@@ -21,14 +21,12 @@ $agencyTable = $config['tables']['agency'];
 $programIdCol = $config['columns']['programs']['id'];
 $programNameCol = $config['columns']['programs']['name'];
 $programAgencyIdCol = $config['columns']['programs']['agency_id'];
-$programUsersAssignedCol = $config['columns']['programs']['users_assigned'];
 $programCreatedAtCol = $config['columns']['programs']['created_at'];
 
 // Program submissions columns
 $submissionIdCol = $config['columns']['program_submissions']['id'];
 $submissionProgramIdCol = $config['columns']['program_submissions']['program_id'];
 $submissionPeriodIdCol = $config['columns']['program_submissions']['period_id'];
-$submissionContentJsonCol = $config['columns']['program_submissions']['content_json'];
 $submissionIsDraftCol = $config['columns']['program_submissions']['is_draft'];
 
 // User columns
@@ -80,19 +78,16 @@ class DashboardController {
      * @return array Stats data
      */
     private function getStatsData($agency_id, $period_ids, $include_assigned, $initiative_id = null) {
-        global $programsTable, $programSubmissionsTable, $usersTable;
-        global $programIdCol, $programNameCol, $programAgencyIdCol, $programUsersAssignedCol, $programCreatedAtCol;
-        global $submissionIdCol, $submissionProgramIdCol, $submissionPeriodIdCol, $submissionContentJsonCol, $submissionIsDraftCol;
-        global $userIdCol, $userAgencyIdCol;
-        
-        // Build query with filters - support multiple period_ids
+        global $programsTable, $programSubmissionsTable;
+        global $programIdCol, $programNameCol, $programAgencyIdCol, $programCreatedAtCol;
+        global $submissionIdCol, $submissionProgramIdCol, $submissionPeriodIdCol, $submissionIsDraftCol;
+
         $in_clause = implode(',', array_fill(0, count($period_ids), '?'));
         $query = "SELECT 
                     p.{$programIdCol},
                     p.{$programNameCol},
-                    p.{$programUsersAssignedCol},
                     p.{$programCreatedAtCol},
-                    COALESCE(JSON_UNQUOTE(JSON_EXTRACT(ps.{$submissionContentJsonCol}, '$.rating')), 'not-started') as rating,
+                    COALESCE(ps.rating, 'not-started') as rating,
                     CASE 
                         WHEN ps.{$submissionIdCol} IS NULL THEN 1
                         ELSE ps.{$submissionIsDraftCol} 
@@ -108,34 +103,20 @@ class DashboardController {
                         GROUP BY {$submissionProgramIdCol}
                     ) ps2 ON ps1.{$submissionProgramIdCol} = ps2.{$submissionProgramIdCol} AND ps1.{$submissionIdCol} = ps2.max_id
                   ) ps ON p.{$programIdCol} = ps.{$submissionProgramIdCol}
-                  WHERE ((p.{$programAgencyIdCol} = ? AND p.{$programUsersAssignedCol} IS NULL)";
-        $params = array_merge($period_ids, [$agency_id]);
-        $types = str_repeat('i', count($period_ids)) . 'i';
-        
-        // Add assigned programs if include_assigned is true
-        if ($include_assigned) {
-            $query .= " OR (p.{$programUsersAssignedCol} IS NOT NULL AND p.{$programAgencyIdCol} = ?)";
-            $params[] = $agency_id;
-            $types .= "i";
-        }
-        $query .= ")";
-        
-        // Add initiative filter if provided
+                  WHERE (p.{$programAgencyIdCol} = ? OR 
+                    EXISTS (SELECT 1 FROM program_user_assignments pua WHERE pua.program_id = p.{$programIdCol} AND pua.user_id = ?))";
+        $params = array_merge($period_ids, [$agency_id, $agency_id]);
+        $types = str_repeat('i', count($period_ids)) . 'ii';
         if ($initiative_id !== null) {
             $query .= " AND p.initiative_id = ?";
             $params[] = $initiative_id;
             $types .= "i";
         }
-        
-        // Important: Only count finalized programs, NOT drafts
         $query .= " AND (ps.{$submissionIsDraftCol} = 0 OR ps.{$submissionIdCol} IS NULL)";
-        
         $stmt = $this->db->prepare($query);
         $stmt->bind_param($types, ...$params);
         $stmt->execute();
         $result = $stmt->get_result();
-        
-        // Initialize stats counters
         $stats = [
             'total' => 0,
             'on-track' => 0,
@@ -143,15 +124,9 @@ class DashboardController {
             'completed' => 0,
             'not-started' => 0
         ];
-        
         while ($program = $result->fetch_assoc()) {
-            // Skip draft programs and newly assigned programs (which are treated as drafts)
-            if ($program['is_draft'] == 1 || ($program[$programUsersAssignedCol] !== null && !isset($program['rating']))) {
-                continue;
-            }
+            if ($program['is_draft'] == 1) continue;
             $stats['total']++;
-            
-            // Map rating to categories
             $rating = $program['rating'] ?? 'not-started';
             if (in_array($rating, ['on-track', 'on-track-yearly'])) {
                 $stats['on-track']++;
@@ -163,7 +138,6 @@ class DashboardController {
                 $stats['not-started']++;
             }
         }
-        
         return $stats;
     }
     
@@ -203,21 +177,18 @@ class DashboardController {
      * @return array Recent program updates
      */
     private function getRecentUpdates($agency_id, $period_ids, $initiative_id = null) {
-        global $programsTable, $programSubmissionsTable, $usersTable;
-        global $programIdCol, $programNameCol, $programAgencyIdCol, $programUsersAssignedCol, $programCreatedAtCol;
-        global $submissionIdCol, $submissionProgramIdCol, $submissionPeriodIdCol, $submissionContentJsonCol, $submissionIsDraftCol;
-        global $userIdCol, $userAgencyIdCol;
-        
+        global $programsTable, $programSubmissionsTable;
+        global $programIdCol, $programNameCol, $programAgencyIdCol, $programCreatedAtCol;
+        global $submissionIdCol, $submissionProgramIdCol, $submissionPeriodIdCol, $submissionIsDraftCol;
         $in_clause = implode(',', array_fill(0, count($period_ids), '?'));
         $query = "SELECT 
                     p.{$programIdCol}, 
                     p.{$programNameCol},
-                    p.{$programUsersAssignedCol},
                     p.{$programCreatedAtCol},
                     p.updated_at as program_updated_at,
-                    COALESCE(JSON_UNQUOTE(JSON_EXTRACT(ps.{$submissionContentJsonCol}, '$.rating')), 'not-started') as rating,
+                    COALESCE(ps.rating, 'not-started') as rating,
                     ps.{$submissionIsDraftCol},
-                    ps.submission_date as updated_at
+                    ps.submitted_at as updated_at
                   FROM {$programsTable} p
                   LEFT JOIN (
                     SELECT ps1.*
@@ -229,37 +200,24 @@ class DashboardController {
                         GROUP BY {$submissionProgramIdCol}
                     ) ps2 ON ps1.{$submissionProgramIdCol} = ps2.{$submissionProgramIdCol} AND ps1.{$submissionIdCol} = ps2.max_id
                   ) ps ON p.{$programIdCol} = ps.{$submissionProgramIdCol}
-                  WHERE (p.{$programAgencyIdCol} = ? OR (p.{$programUsersAssignedCol} IS NOT NULL AND p.{$programAgencyIdCol} = ?))";
+                  WHERE (p.{$programAgencyIdCol} = ? OR EXISTS (SELECT 1 FROM program_user_assignments pua WHERE pua.program_id = p.{$programIdCol} AND pua.user_id = ?))";
         $params = array_merge($period_ids, [$agency_id, $agency_id]);
         $types = str_repeat('i', count($period_ids)) . 'ii';
-        
-        // Add initiative filter if provided
         if ($initiative_id !== null) {
             $query .= " AND p.initiative_id = ?";
             $params[] = $initiative_id;
             $types .= "i";
         }
-        
-        $query .= " ORDER BY COALESCE(ps.submission_date, p.updated_at, p.{$programCreatedAtCol}) DESC LIMIT 5";
-        
+        $query .= " ORDER BY COALESCE(ps.submitted_at, p.updated_at, p.{$programCreatedAtCol}) DESC LIMIT 5";
         $stmt = $this->db->prepare($query);
         $stmt->bind_param($types, ...$params);
         $stmt->execute();
         $result = $stmt->get_result();
-        
         $programs = [];
         while ($row = $result->fetch_assoc()) {
-            // Mark newly assigned programs with no submissions as drafts
-            if ($row[$programUsersAssignedCol] !== null && $row['rating'] === null) {
-                $row[$submissionIsDraftCol] = 1;
-                $row['rating'] = 'not-started';
-            }
-            
-            // Set updated_at timestamp with fallback to program creation date
             $row['updated_at'] = $row['updated_at'] ?? $row['program_updated_at'] ?? $row[$programCreatedAtCol];
             $programs[] = $row;
         }
-        
         return $programs;
     }
 }

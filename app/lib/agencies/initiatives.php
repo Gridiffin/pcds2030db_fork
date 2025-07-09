@@ -29,7 +29,7 @@ $initiativeIsActiveCol = $config['columns']['initiatives']['is_active'];
 $programIdCol = $config['columns']['programs']['id'];
 $programNameCol = $config['columns']['programs']['name'];
 $programInitiativeIdCol = $config['columns']['programs']['initiative_id'];
-$programUsersAssignedCol = $config['columns']['programs']['users_assigned'];
+$programAgencyIdCol = $config['columns']['programs']['agency_id'];
 
 // User columns
 $userIdCol = $config['columns']['users']['id'];
@@ -43,7 +43,7 @@ $agencyNameCol = $config['columns']['agency']['name'];
 $submissionIdCol = $config['columns']['program_submissions']['id'];
 $submissionProgramIdCol = $config['columns']['program_submissions']['program_id'];
 $submissionIsDraftCol = $config['columns']['program_submissions']['is_draft'];
-$submissionContentJsonCol = $config['columns']['program_submissions']['content_json'];
+$submissionRatingCol = $config['columns']['program_submissions']['rating'];
 
 /**
  * Get initiatives that have programs assigned to the current agency
@@ -51,14 +51,14 @@ $submissionContentJsonCol = $config['columns']['program_submissions']['content_j
 function get_agency_initiatives($agency_id = null, $filters = []) {
     global $conn, $initiativesTable, $programsTable;
     global $initiativeIdCol, $initiativeNameCol, $initiativeNumberCol, $initiativeDescriptionCol, $initiativeIsActiveCol;
-    global $programIdCol, $programInitiativeIdCol, $programUsersAssignedCol;
+    global $programIdCol, $programInitiativeIdCol, $programAgencyIdCol;
     
-    // Use current session user if no agency_id provided
+    // Use current session agency if no agency_id provided
     if ($agency_id === null) {
-        $agency_id = $_SESSION['user_id'];
+        $agency_id = $_SESSION['agency_id'];
     }
     
-    $where_conditions = ["p.{$programUsersAssignedCol} = ?"];
+    $where_conditions = ["p.{$programAgencyIdCol} = ?"];
     $params = [$agency_id];
     $param_types = 'i';
     
@@ -110,15 +110,15 @@ function get_agency_initiatives($agency_id = null, $filters = []) {
  */
 function get_agency_initiative_details($initiative_id, $agency_id = null) {
     global $conn, $initiativesTable, $programsTable;
-    global $initiativeIdCol, $programIdCol, $programInitiativeIdCol, $programUsersAssignedCol;
+    global $initiativeIdCol, $programIdCol, $programInitiativeIdCol, $programAgencyIdCol;
     
-    // Use current session user if no agency_id provided
+    // Use current session agency if no agency_id provided
     if ($agency_id === null) {
-        $agency_id = $_SESSION['user_id'];
+        $agency_id = $_SESSION['agency_id'];
     }
     
     // First check if agency has programs in this initiative
-    $check_sql = "SELECT COUNT(*) as count FROM {$programsTable} WHERE {$programInitiativeIdCol} = ? AND {$programUsersAssignedCol} = ?";
+    $check_sql = "SELECT COUNT(*) as count FROM {$programsTable} WHERE {$programInitiativeIdCol} = ? AND {$programAgencyIdCol} = ?";
     $check_stmt = $conn->prepare($check_sql);
     $check_stmt->bind_param('ii', $initiative_id, $agency_id);
     $check_stmt->execute();
@@ -135,7 +135,7 @@ function get_agency_initiative_details($initiative_id, $agency_id = null) {
                    COUNT(DISTINCT agency_p.{$programIdCol}) as agency_program_count
             FROM {$initiativesTable} i
             LEFT JOIN {$programsTable} p ON i.{$initiativeIdCol} = p.{$programInitiativeIdCol}
-            LEFT JOIN {$programsTable} agency_p ON i.{$initiativeIdCol} = agency_p.{$programInitiativeIdCol} AND agency_p.{$programUsersAssignedCol} = ?
+            LEFT JOIN {$programsTable} agency_p ON i.{$initiativeIdCol} = agency_p.{$programInitiativeIdCol} AND agency_p.{$programAgencyIdCol} = ?
             WHERE i.{$initiativeIdCol} = ?
             GROUP BY i.{$initiativeIdCol}";
     
@@ -152,22 +152,21 @@ function get_agency_initiative_details($initiative_id, $agency_id = null) {
  */
 function get_initiative_programs_for_agency($initiative_id, $agency_id = null) {
     global $conn, $programsTable, $usersTable, $agencyTable, $programSubmissionsTable;
-    global $programIdCol, $programNameCol, $programInitiativeIdCol, $programUsersAssignedCol;
+    global $programIdCol, $programNameCol, $programInitiativeIdCol, $programAgencyIdCol;
     global $userIdCol, $userAgencyIdCol, $agencyIdCol, $agencyNameCol;
-    global $submissionIdCol, $submissionProgramIdCol, $submissionIsDraftCol, $submissionContentJsonCol;
+    global $submissionIdCol, $submissionProgramIdCol, $submissionIsDraftCol, $submissionRatingCol;
     
-    // Use current session user if no agency_id provided
+    // Use current session agency if no agency_id provided
     if ($agency_id === null) {
-        $agency_id = $_SESSION['user_id'];
+        $agency_id = $_SESSION['agency_id'];
     }
     
     $sql = "SELECT p.*, a.{$agencyNameCol},
                    COALESCE(latest_sub.{$submissionIsDraftCol}, 1) as is_draft,
-                   COALESCE(JSON_UNQUOTE(JSON_EXTRACT(latest_sub.{$submissionContentJsonCol}, '$.rating')), 'not-started') as rating,
-                   (p.{$programUsersAssignedCol} = ?) as is_owned_by_agency
+                   COALESCE(latest_sub.{$submissionRatingCol}, 'not-started') as rating,
+                   (p.{$programAgencyIdCol} = ?) as is_owned_by_agency
             FROM {$programsTable} p
-            LEFT JOIN {$usersTable} u ON p.{$programUsersAssignedCol} = u.{$userIdCol}
-            LEFT JOIN {$agencyTable} a ON u.{$userAgencyIdCol} = a.{$agencyIdCol}
+            LEFT JOIN {$agencyTable} a ON p.{$programAgencyIdCol} = a.{$agencyIdCol}
             LEFT JOIN (
                 SELECT ps1.*
                 FROM {$programSubmissionsTable} ps1

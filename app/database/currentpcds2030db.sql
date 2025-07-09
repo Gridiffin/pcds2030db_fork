@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS `agency` (
   PRIMARY KEY (`agency_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table pcds2030_dashboard.agency: ~3 rows (approximately)
+-- Dumping data for table pcds2030_dashboard.agency: ~4 rows (approximately)
 INSERT INTO `agency` (`agency_id`, `agency_name`, `created_at`, `updated_at`) VALUES
 	(1, 'STIDC', '2025-07-04 10:00:00', '2025-07-04 10:00:00'),
 	(2, 'SFC', '2025-07-04 10:00:00', '2025-07-04 10:00:00'),
@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS `audit_field_changes` (
   CONSTRAINT `fk_audit_field_changes_log` FOREIGN KEY (`audit_log_id`) REFERENCES `audit_logs` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=49 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table pcds2030_dashboard.audit_field_changes: ~0 rows (approximately)
+-- Dumping data for table pcds2030_dashboard.audit_field_changes: ~48 rows (approximately)
 INSERT INTO `audit_field_changes` (`change_id`, `audit_log_id`, `field_name`, `field_type`, `old_value`, `new_value`, `change_type`, `created_at`) VALUES
 	(1, 5, 'program_name', 'text', NULL, 'Test Program', 'added', '2025-07-05 15:34:01'),
 	(2, 5, 'description', 'text', NULL, 'This is a test program', 'added', '2025-07-05 15:34:01'),
@@ -112,9 +112,9 @@ CREATE TABLE IF NOT EXISTS `audit_logs` (
   KEY `created_at` (`created_at`),
   KEY `user_id` (`user_id`),
   KEY `idx_entity_operation` (`action`,`created_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=45 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=47 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table pcds2030_dashboard.audit_logs: ~39 rows (approximately)
+-- Dumping data for table pcds2030_dashboard.audit_logs: ~46 rows (approximately)
 INSERT INTO `audit_logs` (`id`, `user_id`, `action`, `details`, `ip_address`, `status`, `created_at`) VALUES
 	(1, 12, 'create_program_failed', 'Program Name: adasdas | Error: Unknown column \'start_date\' in \'field list\'', '127.0.0.1', 'failure', '2025-07-05 13:02:34'),
 	(2, 12, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-05 13:04:08'),
@@ -159,7 +159,9 @@ INSERT INTO `audit_logs` (`id`, `user_id`, `action`, `details`, `ip_address`, `s
 	(41, 1, 'delete_period', 'Exception during period deletion (ID: 17). Error: Unknown column \'id\' in \'field list\'', '127.0.0.1', 'failure', '2025-07-06 10:59:31'),
 	(42, 1, 'delete_period', 'Deleted reporting period: yearly 1 2025 (ID: 17, Status: closed)', '127.0.0.1', 'success', '2025-07-06 11:05:28'),
 	(43, 1, 'login_failure', 'Username: admin | Reason: Invalid password', '127.0.0.1', 'failure', '2025-07-06 19:02:41'),
-	(44, 1, 'login_success', 'Username: admin', '127.0.0.1', 'success', '2025-07-06 19:02:47');
+	(44, 1, 'login_success', 'Username: admin', '127.0.0.1', 'success', '2025-07-06 19:02:47'),
+	(45, 1, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-06 21:56:25'),
+	(46, 12, 'login_success', 'Username: user', '127.0.0.1', 'success', '2025-07-06 21:56:31');
 
 -- Dumping structure for view pcds2030_dashboard.audit_logs_with_changes
 -- Creating temporary table to overcome VIEW dependency errors
@@ -199,7 +201,7 @@ CREATE TABLE IF NOT EXISTS `initiatives` (
 -- Dumping data for table pcds2030_dashboard.initiatives: ~4 rows (approximately)
 INSERT INTO `initiatives` (`initiative_id`, `initiative_name`, `initiative_number`, `initiative_description`, `start_date`, `end_date`, `is_active`, `created_by`, `created_at`, `updated_at`) VALUES
 	(1, 'PCDS2030 Conservation Initiative', 'PCDS-CI-001', 'Primary conservation initiative for PCDS2030 strategic planning', NULL, NULL, 1, 1, '2025-06-23 14:16:15', '2025-06-23 14:16:15'),
-	(2, 'inititative 1', '1', 'descirption of initative 1', '2025-06-17', '2025-06-24', 1, 1, '2025-06-24 02:03:01', '2025-06-24 02:03:01'),
+	(2, 'inititative 1', '1', 'descirption of initative 1', '2025-06-17', '2025-06-24', 1, 1, '2025-06-24 02:03:01', '2025-07-06 13:55:06'),
 	(3, 'Achieve world class recognition for biodiversity conservation and protected areas management', '31', 'description', '2021-01-01', '2030-12-31', 1, 1, '2025-06-24 07:11:35', '2025-06-24 07:11:35'),
 	(4, 'something here', '12', '123', '2025-06-30', '2025-07-31', 1, 1, '2025-06-30 01:54:36', '2025-06-30 01:54:36');
 
@@ -247,119 +249,105 @@ INSERT INTO `outcomes_details` (`detail_id`, `detail_name`, `display_config`, `d
 -- Dumping structure for table pcds2030_dashboard.programs
 CREATE TABLE IF NOT EXISTS `programs` (
   `program_id` int NOT NULL AUTO_INCREMENT,
-  `program_name` varchar(255) NOT NULL,
-  `program_number` varchar(20) DEFAULT NULL,
-  `initiative_id` int DEFAULT NULL,
+  `initiative_id` int NOT NULL,
+  `program_name` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `program_description` text COLLATE utf8mb4_general_ci,
   `agency_id` int NOT NULL,
-  `users_assigned` int DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `created_by` int NOT NULL DEFAULT '1',
-  `attachment_count` int DEFAULT '0' COMMENT 'Cached count of active attachments',
-  `status` set('pending','in_progress','completed','on_hold') DEFAULT NULL,
-  `hold_point` json DEFAULT NULL,
-  `targets_linked` int DEFAULT '0',
+  `is_deleted` tinyint(1) DEFAULT '0',
+  `created_by` int NOT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`program_id`),
+  KEY `initiative_id` (`initiative_id`),
   KEY `agency_id` (`agency_id`),
-  KEY `idx_initiative_id` (`initiative_id`),
-  KEY `idx_program_number` (`program_number`),
-  KEY `users_assigned` (`users_assigned`),
-  CONSTRAINT `FK_programs_agency` FOREIGN KEY (`agency_id`) REFERENCES `agency` (`agency_id`),
-  CONSTRAINT `FK_programs_users` FOREIGN KEY (`users_assigned`) REFERENCES `users` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=212 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  KEY `created_by` (`created_by`),
+  CONSTRAINT `programs_ibfk_1` FOREIGN KEY (`initiative_id`) REFERENCES `initiatives` (`initiative_id`),
+  CONSTRAINT `programs_ibfk_2` FOREIGN KEY (`agency_id`) REFERENCES `agency` (`agency_id`),
+  CONSTRAINT `programs_ibfk_3` FOREIGN KEY (`created_by`) REFERENCES `users` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table pcds2030_dashboard.programs: ~25 rows (approximately)
-INSERT INTO `programs` (`program_id`, `program_name`, `program_number`, `initiative_id`, `agency_id`, `users_assigned`, `created_at`, `updated_at`, `created_by`, `attachment_count`, `status`, `hold_point`, `targets_linked`) VALUES
-	(176, 'Bamboo Industry Development', '', NULL, 1, 4, '2025-06-18 01:33:33', '2025-07-02 02:06:07', 1, 0, NULL, NULL, 2),
-	(177, 'Bamboo Industry Developement 2026', NULL, NULL, 2, 5, '2025-06-18 01:34:45', '2025-07-01 08:23:09', 1, 0, NULL, NULL, 0),
-	(181, 'Niah Unesco', NULL, NULL, 2, 5, '2025-06-18 01:35:28', '2025-07-01 08:23:09', 1, 0, NULL, NULL, 0),
-	(182, 'Research and Development for KURSI PUSAKA in UNIMAS', NULL, NULL, 1, 3, '2025-06-18 01:35:47', '2025-07-01 08:23:09', 1, 0, NULL, NULL, 0),
-	(183, 'Pusat Latihan Perkayuan PUSAKA Tanjung Manis', NULL, NULL, 1, 2, '2025-06-18 01:36:13', '2025-07-01 08:23:09', 1, 0, NULL, NULL, 0),
-	(184, 'Obtaining UNESCO recognition for Sarawak Delta Geopark', NULL, NULL, 3, 8, '2025-06-18 01:36:19', '2025-07-01 08:23:09', 1, 0, NULL, NULL, 0),
-	(185, 'Bamboo Industry Development', NULL, NULL, 3, 8, '2025-06-18 01:36:24', '2025-07-01 08:23:09', 1, 0, NULL, NULL, 0),
-	(187, 'Conservation and Protection of Wetlands and Watershed Within Heart of Borneo Sarawak', NULL, NULL, 3, 8, '2025-06-18 01:37:10', '2025-07-01 08:23:09', 1, 0, NULL, NULL, 0),
-	(189, 'Furniture Park', '', NULL, 1, 2, '2025-06-18 01:37:53', '2025-07-02 02:31:59', 1, 0, NULL, NULL, 0),
-	(193, 'Proposed Implementation of Forest Landscape Restoration Throughout Sarawak', NULL, NULL, 3, 8, '2025-06-18 01:52:41', '2025-07-01 08:23:09', 1, 0, NULL, NULL, 0),
-	(194, 'Strengthening Forest Enforcement Through Advancing the Technology and Equipments', NULL, NULL, 3, 8, '2025-06-18 01:52:50', '2025-07-01 08:23:09', 1, 0, NULL, NULL, 0),
-	(195, 'Quantifying Forest Carbon Stock in Sarawak', NULL, NULL, 3, 10, '2025-06-18 02:11:12', '2025-07-01 08:23:09', 1, 0, NULL, NULL, 0),
-	(196, 'Applied R&D to develop commercially viable high value products from planted timber species', '', NULL, 1, 3, '2025-06-18 02:16:34', '2025-07-03 03:21:48', 1, 0, NULL, NULL, 0),
-	(197, 'Implementation of Sarawak Young Designers programme', NULL, NULL, 1, 3, '2025-06-18 02:41:00', '2025-07-01 08:23:09', 1, 0, NULL, NULL, 0),
-	(198, 'Integrated wildlife conservation and management in Sarawak', NULL, NULL, 2, 5, '2025-06-19 01:18:33', '2025-07-01 08:23:09', 1, 0, NULL, NULL, 0),
-	(199, 'Lambir Hills NP and Bako NP inscribed as ASEAN Heritage Parks', NULL, NULL, 2, 5, '2025-06-19 01:18:36', '2025-07-01 08:23:09', 1, 0, NULL, NULL, 0),
-	(200, 'System Tagang', NULL, NULL, 2, 5, '2025-06-19 01:18:40', '2025-07-01 08:23:09', 1, 0, NULL, NULL, 0),
-	(201, 'Identify potential TPA to be managed by Managing Agent', NULL, NULL, 2, 5, '2025-06-19 01:18:40', '2025-07-01 08:23:09', 1, 0, NULL, NULL, 0),
-	(202, 'To certify 20 sites under IUCN Green List of Protected and Conserved Areas', NULL, NULL, 2, 5, '2025-06-19 01:22:36', '2025-07-01 08:23:09', 1, 0, NULL, NULL, 0),
-	(203, 'Establishment of Rainforest/Nature Discovery Centre', NULL, NULL, 2, 5, '2025-06-19 01:33:55', '2025-07-01 08:23:09', 1, 0, NULL, NULL, 0),
-	(205, 'Development of Boardwalk & One Stop Centre at North Gate of Bukit Lima Nature Reserve', NULL, NULL, 2, 5, '2025-06-19 01:42:04', '2025-07-01 08:23:09', 1, 0, NULL, NULL, 0),
-	(206, 'Achieve world class recognition for biodiversity conservation & protected areas management', NULL, NULL, 2, 5, '2025-06-19 01:58:16', '2025-07-01 08:23:09', 1, 0, NULL, NULL, 0),
-	(207, 'To develop and upgrade facilities at selected manned and unmanned TPAs', NULL, NULL, 2, 5, '2025-06-19 02:18:56', '2025-07-01 08:23:09', 1, 0, NULL, NULL, 0),
-	(209, 'Landscape Rehabilitation Programs', NULL, NULL, 2, 5, '2025-06-19 02:43:43', '2025-07-01 08:23:09', 1, 0, NULL, NULL, 0),
-	(211, 'Turtle Conservation Project', NULL, NULL, 2, 5, '2025-06-19 02:54:04', '2025-07-01 08:23:09', 1, 0, NULL, NULL, 0);
+-- Dumping data for table pcds2030_dashboard.programs: ~0 rows (approximately)
 
 -- Dumping structure for table pcds2030_dashboard.program_attachments
 CREATE TABLE IF NOT EXISTS `program_attachments` (
   `attachment_id` int NOT NULL AUTO_INCREMENT,
-  `program_id` int NOT NULL,
-  `file_name` varchar(255) NOT NULL,
-  `file_path` varchar(500) NOT NULL,
-  `file_size` bigint NOT NULL,
-  `file_type` varchar(100) NOT NULL,
+  `submission_id` int NOT NULL,
+  `file_name` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `file_path` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `file_size` int DEFAULT NULL,
+  `file_type` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `uploaded_by` int NOT NULL,
-  `uploaded_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `is_active` tinyint DEFAULT '1',
+  `uploaded_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `is_deleted` tinyint(1) DEFAULT '0',
   PRIMARY KEY (`attachment_id`),
-  KEY `idx_is_active` (`is_active`),
-  KEY `program_id` (`program_id`),
+  KEY `submission_id` (`submission_id`),
   KEY `uploaded_by` (`uploaded_by`),
-  CONSTRAINT `program_attachments_ibfk_1` FOREIGN KEY (`program_id`) REFERENCES `programs` (`program_id`),
+  CONSTRAINT `program_attachments_ibfk_1` FOREIGN KEY (`submission_id`) REFERENCES `program_submissions` (`submission_id`) ON DELETE CASCADE,
   CONSTRAINT `program_attachments_ibfk_2` FOREIGN KEY (`uploaded_by`) REFERENCES `users` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Dumping data for table pcds2030_dashboard.program_attachments: ~0 rows (approximately)
-
--- Dumping structure for table pcds2030_dashboard.program_outcome_links
-CREATE TABLE IF NOT EXISTS `program_outcome_links` (
-  `link_id` int NOT NULL AUTO_INCREMENT,
-  `program_id` int NOT NULL,
-  `outcome_id` int NOT NULL,
-  `created_by` int NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`link_id`),
-  KEY `idx_created_by` (`created_by`),
-  KEY `idx_outcome_id` (`outcome_id`),
-  KEY `idx_program_id` (`program_id`),
-  KEY `unique_program_outcome` (`program_id`,`outcome_id`),
-  CONSTRAINT `fk_pol_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`user_id`),
-  CONSTRAINT `fk_pol_outcome` FOREIGN KEY (`outcome_id`) REFERENCES `outcomes_details` (`detail_id`),
-  CONSTRAINT `fk_pol_program` FOREIGN KEY (`program_id`) REFERENCES `programs` (`program_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Dumping data for table pcds2030_dashboard.program_outcome_links: ~2 rows (approximately)
-INSERT INTO `program_outcome_links` (`link_id`, `program_id`, `outcome_id`, `created_by`, `created_at`) VALUES
-	(1, 176, 19, 1, '2025-06-25 07:09:33'),
-	(3, 176, 21, 1, '2025-06-25 07:24:23');
 
 -- Dumping structure for table pcds2030_dashboard.program_submissions
 CREATE TABLE IF NOT EXISTS `program_submissions` (
   `submission_id` int NOT NULL AUTO_INCREMENT,
   `program_id` int NOT NULL,
   `period_id` int NOT NULL,
-  `submitted_by` int NOT NULL,
-  `content_json` text,
-  `submission_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `is_draft` tinyint NOT NULL DEFAULT '0',
+  `is_draft` tinyint(1) DEFAULT '1',
+  `is_submitted` tinyint(1) DEFAULT '0',
+  `status_indicator` enum('not_started','in_progress','completed','delayed') COLLATE utf8mb4_general_ci DEFAULT 'not_started',
+  `rating` enum('monthly_target_achieved','on_track_for_year','severe_delay','not_started') COLLATE utf8mb4_general_ci DEFAULT 'not_started',
+  `description` text COLLATE utf8mb4_general_ci,
+  `start_date` date DEFAULT NULL,
+  `end_date` date DEFAULT NULL,
+  `submitted_by` int DEFAULT NULL,
+  `submitted_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `is_deleted` tinyint(1) DEFAULT '0',
   PRIMARY KEY (`submission_id`),
-  KEY `idx_program_period_draft` (`program_id`,`period_id`,`is_draft`),
-  KEY `period_id` (`period_id`),
   KEY `program_id` (`program_id`),
+  KEY `period_id` (`period_id`),
   KEY `submitted_by` (`submitted_by`),
-  CONSTRAINT `program_submissions_ibfk_1` FOREIGN KEY (`program_id`) REFERENCES `programs` (`program_id`),
-  CONSTRAINT `program_submissions_ibfk_2` FOREIGN KEY (`period_id`) REFERENCES `reporting_periods` (`period_id`),
+  CONSTRAINT `program_submissions_ibfk_1` FOREIGN KEY (`program_id`) REFERENCES `programs` (`program_id`) ON DELETE CASCADE,
+  CONSTRAINT `program_submissions_ibfk_2` FOREIGN KEY (`period_id`) REFERENCES `reporting_periods` (`period_id`) ON DELETE CASCADE,
   CONSTRAINT `program_submissions_ibfk_3` FOREIGN KEY (`submitted_by`) REFERENCES `users` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Dumping data for table pcds2030_dashboard.program_submissions: ~0 rows (approximately)
+
+-- Dumping structure for table pcds2030_dashboard.program_targets
+CREATE TABLE IF NOT EXISTS `program_targets` (
+  `target_id` int NOT NULL AUTO_INCREMENT,
+  `submission_id` int NOT NULL,
+  `target_description` text COLLATE utf8mb4_general_ci,
+  `status_indicator` enum('not_started','in_progress','completed','delayed') COLLATE utf8mb4_general_ci DEFAULT 'not_started',
+  `status_description` text COLLATE utf8mb4_general_ci,
+  `remarks` text COLLATE utf8mb4_general_ci,
+  `start_date` date DEFAULT NULL,
+  `end_date` date DEFAULT NULL,
+  `is_deleted` tinyint(1) DEFAULT '0',
+  PRIMARY KEY (`target_id`),
+  KEY `submission_id` (`submission_id`),
+  CONSTRAINT `program_targets_ibfk_1` FOREIGN KEY (`submission_id`) REFERENCES `program_submissions` (`submission_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Dumping data for table pcds2030_dashboard.program_targets: ~0 rows (approximately)
+
+-- Dumping structure for table pcds2030_dashboard.program_user_assignments
+CREATE TABLE IF NOT EXISTS `program_user_assignments` (
+  `assignment_id` int NOT NULL AUTO_INCREMENT,
+  `program_id` int NOT NULL,
+  `user_id` int NOT NULL,
+  `role` enum('editor','viewer') COLLATE utf8mb4_general_ci DEFAULT 'editor',
+  `assigned_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`assignment_id`),
+  KEY `program_id` (`program_id`),
+  KEY `user_id` (`user_id`),
+  CONSTRAINT `program_user_assignments_ibfk_1` FOREIGN KEY (`program_id`) REFERENCES `programs` (`program_id`) ON DELETE CASCADE,
+  CONSTRAINT `program_user_assignments_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Dumping data for table pcds2030_dashboard.program_user_assignments: ~0 rows (approximately)
 
 -- Dumping structure for table pcds2030_dashboard.reporting_periods
 CREATE TABLE IF NOT EXISTS `reporting_periods` (
@@ -378,7 +366,7 @@ CREATE TABLE IF NOT EXISTS `reporting_periods` (
   CONSTRAINT `chk_valid_period_numbers` CHECK ((((`period_type` = _utf8mb4'quarter') and (`period_number` between 1 and 4)) or ((`period_type` = _utf8mb4'half') and (`period_number` between 1 and 2)) or ((`period_type` = _utf8mb4'yearly') and (`period_number` = 1))))
 ) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table pcds2030_dashboard.reporting_periods: ~8 rows (approximately)
+-- Dumping data for table pcds2030_dashboard.reporting_periods: ~0 rows (approximately)
 INSERT INTO `reporting_periods` (`period_id`, `year`, `period_type`, `period_number`, `start_date`, `end_date`, `status`, `updated_at`, `created_at`) VALUES
 	(1, 2025, 'quarter', 1, '2025-01-01', '2025-03-31', 'closed', '2025-07-06 01:54:35', '2025-04-17 02:54:12'),
 	(2, 2025, 'quarter', 2, '2025-04-01', '2025-06-30', 'closed', '2025-07-01 00:29:54', '2025-04-17 02:54:12'),
@@ -412,44 +400,34 @@ CREATE TABLE IF NOT EXISTS `reports` (
 CREATE TABLE IF NOT EXISTS `sector_outcomes_data` (
   `id` int NOT NULL AUTO_INCREMENT,
   `metric_id` int NOT NULL,
+  `outcome_type` enum('simple','complex') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'complex' COMMENT 'Type of outcome: simple (value-based) or complex (table/chart-based)',
+  `outcome_template_id` int NOT NULL DEFAULT '0' COMMENT 'References the outcome template/definition this record is based on',
+  `display_config` json DEFAULT NULL COMMENT 'JSON configuration for display settings (charts, formatting, etc.)',
   `sector_id` int NOT NULL,
   `period_id` int DEFAULT NULL,
   `table_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `data_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  `is_draft` tinyint(1) NOT NULL DEFAULT '1',
+  `is_draft` tinyint(1) DEFAULT '1',
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `submitted_by` int DEFAULT NULL,
   `is_important` tinyint(1) DEFAULT '0' COMMENT 'Flag for important outcomes used in slide reports',
+  `table_structure_type` enum('monthly','quarterly','yearly','custom') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'monthly' COMMENT 'Type of table structure: monthly (default), quarterly, yearly, or custom',
+  `row_config` json DEFAULT NULL COMMENT 'JSON configuration for custom row definitions',
+  `column_config` json DEFAULT NULL COMMENT 'JSON configuration for enhanced column definitions with types and units',
   PRIMARY KEY (`id`),
   UNIQUE KEY `metric_sector_draft` (`metric_id`,`sector_id`,`is_draft`),
   KEY `fk_period_id` (`period_id`),
   KEY `fk_submitted_by` (`submitted_by`),
   KEY `idx_sector_outcomes_important` (`is_important`,`sector_id`),
+  KEY `idx_outcome_type` (`outcome_type`),
+  KEY `idx_type_sector_draft` (`outcome_type`,`sector_id`,`is_draft`),
+  KEY `idx_table_structure_type` (`table_structure_type`),
+  KEY `idx_structure_sector_draft` (`table_structure_type`,`sector_id`,`is_draft`),
   CONSTRAINT `fk_submitted_by` FOREIGN KEY (`submitted_by`) REFERENCES `users` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=32 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping data for table pcds2030_dashboard.sector_outcomes_data: ~7 rows (approximately)
-INSERT INTO `sector_outcomes_data` (`id`, `metric_id`, `sector_id`, `period_id`, `table_name`, `data_json`, `is_draft`, `created_at`, `updated_at`, `submitted_by`, `is_important`) VALUES
-	(21, 8, 1, 2, 'TOTAL DEGRADED AREA', '{"columns":["2022","2023","2024","2025","2026"],"data":{"January":{"2022":"787.01","2023":"1856.37","2024":"3572.12","2025":"5.6","2026":"0"},"February":{"2022":"912.41","2023":"3449.94","2024":"6911.42","2025":"86.5","2026":"0"},"March":{"2022":"513.04","2023":"2284.69","2024":"3565.31","2025":"62.2","2026":"0"},"April":{"2022":"428.18","2023":"1807.69","2024":"2243.09","2025":"127.3","2026":"0"},"May":{"2022":"485.08","2023":"3255.8","2024":"3190.19","2025":"42","2026":"0"},"June":{"2022":"1277.9","2023":"3120.66","2024":"3618.48","2025":"0","2026":"0"},"July":{"2022":"745.15","2023":"2562.38","2024":"1378.09","2025":"0","2026":"0"},"August":{"2022":"762.69","2023":"2474.93","2024":"1536.83","2025":"0","2026":"0"},"September":{"2022":"579.09","2023":"3251.93","2024":"1141.79","2025":"0","2026":"0"},"October":{"2022":"676.27","2023":"3086.64","2024":"1311.2","2025":"0","2026":"0"},"November":{"2022":"2012.35","2023":"3081.63","2024":"942.5","2025":"0","2026":"0"},"December":{"2022":"1114.64","2023":"3240.14","2024":"969","2025":"0","2026":"0"}},"units":{"2022":"","2023":"","2024":"","2025":"","2026":""}}', 0, '2025-05-13 15:25:38', '2025-06-25 00:26:00', 1, 1),
-	(22, 9, 1, NULL, 'Repair and Maintenance of the Workshop', '{"columns":[],"data":{"January":[],"February":[],"March":[],"April":[],"May":[],"June":[],"July":[],"August":[],"September":[],"October":[],"November":[],"December":[]}}', 1, '2025-06-17 17:47:50', '2025-06-17 17:59:49', 1, 0),
-	(23, 10, 1, NULL, 'Sarawak Delta Geopark (SDGp)', '{"columns":["Q1 2025 outcome"],"data":{"January":{"Q1 2025 outcome":0},"February":{"Q1 2025 outcome":0},"March":{"Q1 2025 outcome":0},"April":{"Q1 2025 outcome":0},"May":{"Q1 2025 outcome":0},"June":{"Q1 2025 outcome":0},"July":{"Q1 2025 outcome":0},"August":{"Q1 2025 outcome":0},"September":{"Q1 2025 outcome":0},"October":{"Q1 2025 outcome":0},"November":{"Q1 2025 outcome":0},"December":{"Q1 2025 outcome":0}}}', 1, '2025-06-17 18:52:22', '2025-06-17 19:00:10', NULL, 0),
-	(24, 11, 1, NULL, 'TPA Bako', '{"columns":["Local","Foreign"],"data":{"January":{"Local":0,"Foreign":0},"February":{"Local":0,"Foreign":0},"March":{"Local":0,"Foreign":0},"April":{"Local":0,"Foreign":0},"May":{"Local":0,"Foreign":0},"June":{"Local":0,"Foreign":0},"July":{"Local":0,"Foreign":0},"August":{"Local":0,"Foreign":0},"September":{"Local":0,"Foreign":0},"October":{"Local":0,"Foreign":0},"November":{"Local":0,"Foreign":0},"December":{"Local":0,"Foreign":0}}}', 0, '2025-06-17 18:58:42', '2025-06-17 18:58:42', NULL, 0),
-	(25, 12, 1, NULL, 'Total Bako Visitor For 2025', '{"columns":["Local","Foreigner"],"data":{"January":{"Local":376,"Foreigner":1103},"February":{"Local":596,"Foreigner":1840},"March":{"Local":703,"Foreigner":2268},"April":{"Local":1098,"Foreigner":2934},"May":{"Local":1135,"Foreigner":2391},"June":{"Local":0,"Foreigner":0},"July":{"Local":0,"Foreigner":0},"August":{"Local":0,"Foreigner":0},"September":{"Local":0,"Foreigner":0},"October":{"Local":0,"Foreigner":0},"November":{"Local":0,"Foreigner":0},"December":{"Local":0,"Foreigner":0}}}', 0, '2025-06-17 19:03:18', '2025-06-17 19:12:54', NULL, 0),
-	(26, 13, 1, NULL, 'Lambir Hills NP and Bako NP inscribed as ASEAN Heritage Parks', '{"columns":[],"data":{"January":[],"February":[],"March":[],"April":[],"May":[],"June":[],"July":[],"August":[],"September":[],"October":[],"November":[],"December":[]}}', 1, '2025-06-18 19:24:34', '2025-06-18 19:24:34', NULL, 0),
-	(27, 14, 1, NULL, '20 TPAs certified under  IUCN Green List of Protected and Conserved Areas', '{"columns":[],"data":{"January":[],"February":[],"March":[],"April":[],"May":[],"June":[],"July":[],"August":[],"September":[],"October":[],"November":[],"December":[]}}', 1, '2025-06-18 19:31:59', '2025-06-18 19:33:01', NULL, 0);
-
--- Dumping structure for table pcds2030_dashboard.targets
-CREATE TABLE IF NOT EXISTS `targets` (
-  `target_id` int NOT NULL AUTO_INCREMENT,
-  `target_name` varchar(255) NOT NULL,
-  `status_description` varchar(500) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`target_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Dumping data for table pcds2030_dashboard.targets: ~0 rows (approximately)
+-- Dumping data for table pcds2030_dashboard.sector_outcomes_data: ~0 rows (approximately)
 
 -- Dumping structure for table pcds2030_dashboard.users
 CREATE TABLE IF NOT EXISTS `users` (
@@ -470,7 +448,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   CONSTRAINT `users_ibfk_1` FOREIGN KEY (`agency_id`) REFERENCES `agency` (`agency_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=46 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table pcds2030_dashboard.users: ~13 rows (approximately)
+-- Dumping data for table pcds2030_dashboard.users: ~0 rows (approximately)
 INSERT INTO `users` (`user_id`, `username`, `pw`, `fullname`, `email`, `agency_id`, `role`, `created_at`, `updated_at`, `is_active`) VALUES
 	(1, 'admin', '$2y$10$XsLEVjglthHpji3ONspyx.0YT/BxTe.fzDAUK4Jydg7oC8uQnc3V.', 'System Administrator', 'admin@pcds2030.gov.my', 4, 'admin', '2025-03-25 01:31:15', '2025-07-05 15:16:34', 1),
 	(2, 'stidc1', '$2y$10$nQCMzJPe8xSV0F0uxFebeeNtFJnsCegdRJE7GEjpBmONWn/msBfI6', 'STIDC User 1', 'stidc1@stidc.gov.my', 1, 'focal', '2025-05-23 06:27:42', '2025-06-20 08:24:39', 1),
@@ -485,49 +463,6 @@ INSERT INTO `users` (`user_id`, `username`, `pw`, `fullname`, `email`, `agency_i
 	(12, 'user', '$2y$10$/Z6xCsE7OknP.4HBT5CdBuWDZK5VNMf7MqwmGusJ0SM8xxaGQKdq2', 'Test User', 'user@test.gov.my', 1, 'focal', '2025-03-25 07:42:27', '2025-06-21 16:11:50', 1),
 	(44, 'admin2', '$2y$10$XsLEVjglthHpji3ONspyx.0YT/BxTe.fzDAUK4Jydg7oC8uQnc3V.', 'Second Admin', 'admin2@pcds2030.gov.my', 1, 'admin', '2025-07-04 06:38:58', '2025-07-04 06:38:58', 1),
 	(45, 'superadmin', '$2y$10$XsLEVjglthHpji3ONspyx.0YT/BxTe.fzDAUK4Jydg7oC8uQnc3V.', 'Super Admin', 'superadmin@pcds2030.gov.my', 1, 'admin', '2025-07-04 06:47:20', '2025-07-04 06:47:20', 1);
-
--- Dumping structure for trigger pcds2030_dashboard.tr_program_attachments_delete
-SET @OLDTMP_SQL_MODE=@@SQL_MODE, SQL_MODE='IGNORE_SPACE,ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
-DELIMITER //
-CREATE TRIGGER `tr_program_attachments_delete` AFTER DELETE ON `program_attachments` FOR EACH ROW BEGIN
-    IF OLD.is_active = 1 THEN
-        UPDATE programs 
-        SET attachment_count = attachment_count - 1 
-        WHERE program_id = OLD.program_id;
-    END IF;
-END//
-DELIMITER ;
-SET SQL_MODE=@OLDTMP_SQL_MODE;
-
--- Dumping structure for trigger pcds2030_dashboard.tr_program_attachments_insert
-SET @OLDTMP_SQL_MODE=@@SQL_MODE, SQL_MODE='IGNORE_SPACE,ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
-DELIMITER //
-CREATE TRIGGER `tr_program_attachments_insert` AFTER INSERT ON `program_attachments` FOR EACH ROW BEGIN
-    IF NEW.is_active = 1 THEN
-        UPDATE programs 
-        SET attachment_count = attachment_count + 1 
-        WHERE program_id = NEW.program_id;
-    END IF;
-END//
-DELIMITER ;
-SET SQL_MODE=@OLDTMP_SQL_MODE;
-
--- Dumping structure for trigger pcds2030_dashboard.tr_program_attachments_update
-SET @OLDTMP_SQL_MODE=@@SQL_MODE, SQL_MODE='IGNORE_SPACE,ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
-DELIMITER //
-CREATE TRIGGER `tr_program_attachments_update` AFTER UPDATE ON `program_attachments` FOR EACH ROW BEGIN
-    IF OLD.is_active = 1 AND NEW.is_active = 0 THEN
-        UPDATE programs 
-        SET attachment_count = attachment_count - 1 
-        WHERE program_id = NEW.program_id;
-    ELSEIF OLD.is_active = 0 AND NEW.is_active = 1 THEN
-        UPDATE programs 
-        SET attachment_count = attachment_count + 1 
-        WHERE program_id = NEW.program_id;
-    END IF;
-END//
-DELIMITER ;
-SET SQL_MODE=@OLDTMP_SQL_MODE;
 
 -- Dumping structure for view pcds2030_dashboard.audit_logs_with_changes
 -- Removing temporary table and create final VIEW structure

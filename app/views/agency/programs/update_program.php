@@ -122,13 +122,31 @@ if (isset($program['owner_agency_id']) && $_SESSION['user_id'] != $program['owne
 }
 // --- END: Impersonate owner for editing if not owner ---
 
+// Helper function to check if a program is assigned (based on new schema)
+function is_program_assigned($program) {
+    // Check if the program has assigned users through program_user_assignments
+    if (isset($program['assigned_users']) && !empty($program['assigned_users'])) {
+        return true;
+    }
+    
+    // For backward compatibility, check if created_by is different from current user
+    // This indicates it was created by someone else (assigned)
+    if (isset($program['created_by']) && $program['created_by'] != $_SESSION['user_id']) {
+        return true;
+    }
+    
+    return false;
+}
+
 // Helper function to check if a field is editable for assigned programs
 function is_editable($field) {
     global $program, $is_draft, $current_submission;
+    
     // Allow focal users to edit any field
     if (is_focal_user()) {
         return true;
     }
+    
     // If program has a finalized submission, nothing is editable unless reopened by admin
     if (isset($current_submission) && 
         !empty($current_submission) && 
@@ -137,7 +155,7 @@ function is_editable($field) {
     }
     
     // If not an assigned program, all fields are editable
-    if (!isset($program['is_assigned']) || !$program['is_assigned']) {
+    if (!is_program_assigned($program)) {
         return true;
     }
     
@@ -1073,7 +1091,7 @@ if (isset($_SESSION['message'])): ?>
                                 <input type="text" class="form-control" id="program_name" name="program_name" required
                                         value="<?php echo htmlspecialchars($program['program_name']); ?>"
                                         <?php echo (!is_editable('program_name')) ? 'readonly' : ''; ?>>
-                                <?php if ($program['is_assigned'] && !is_editable('program_name')): ?>
+                                <?php if (is_program_assigned($program) && !is_editable('program_name')): ?>
                                     <div class="form-text">Program name was set by an administrator and cannot be changed.</div>
                                 <?php endif; ?>
                                 
@@ -1133,7 +1151,7 @@ if (isset($_SESSION['message'])): ?>
                                     <i class="fas fa-info-circle me-1"></i>
                                     A brief overview to help identify this program
                                 </div>
-                                <?php if ($program['is_assigned'] && !is_editable('brief_description')): ?>
+                                <?php if (is_program_assigned($program) && !is_editable('brief_description')): ?>
                                     <div class="form-text">Brief description was set by an administrator and cannot be changed.</div>
                                 <?php endif; ?>
                                 
@@ -1151,18 +1169,18 @@ if (isset($_SESSION['message'])): ?>
                                 <div class="col-md-6">
                                     <label for="start_date" class="form-label">Start Date</label>
                                     <input type="date" class="form-control" id="start_date" name="start_date" 
-                                            value="<?php echo get_field_value('start_date', $program['start_date'] ? date('Y-m-d', strtotime($program['start_date'])) : ''); ?>"
+                                            value="<?php echo get_field_value('start_date', isset($program['start_date']) && $program['start_date'] ? date('Y-m-d', strtotime($program['start_date'])) : ''); ?>"
                                             <?php echo (!is_editable('timeline')) ? 'readonly' : ''; ?>>
-                                    <?php if ($program['is_assigned'] && !is_editable('timeline')): ?>
+                                    <?php if (is_program_assigned($program) && !is_editable('timeline')): ?>
                                         <div class="form-text">Start date was set by an administrator and cannot be changed.</div>
                                     <?php endif; ?>
                                 </div>
                                 <div class="col-md-6">
                                     <label for="end_date" class="form-label">End Date</label>
                                     <input type="date" class="form-control" id="end_date" name="end_date" 
-                                            value="<?php echo get_field_value('end_date', $program['end_date'] ? date('Y-m-d', strtotime($program['end_date'])) : ''); ?>"
+                                            value="<?php echo get_field_value('end_date', isset($program['end_date']) && $program['end_date'] ? date('Y-m-d', strtotime($program['end_date'])) : ''); ?>"
                                             <?php echo (!is_editable('timeline')) ? 'readonly' : ''; ?>>
-                                    <?php if ($program['is_assigned'] && !is_editable('timeline')): ?>
+                                    <?php if (is_program_assigned($program) && !is_editable('timeline')): ?>
                                         <div class="form-text">End date was set by an administrator and cannot be changed.</div>
                                     <?php endif; ?>
                                 </div>
@@ -1359,7 +1377,7 @@ if (isset($_SESSION['message'])): ?>
                                 <textarea class="form-control" id="remarks" name="remarks" rows="4" 
                                           placeholder="Add any additional remarks, challenges, or observations about this program..."
                                           <?php echo (is_editable('remarks')) ? '' : 'readonly'; ?>><?php echo htmlspecialchars($remarks); ?></textarea>
-                                <?php if ($program['is_assigned'] && !is_editable('remarks')): ?>
+                                <?php if (is_program_assigned($program) && !is_editable('remarks')): ?>
                                     <div class="form-text">Remarks were set by an administrator and cannot be changed.</div>
                                 <?php endif; ?>
                                 

@@ -58,9 +58,9 @@ if (isset($_SESSION['role']) && strtolower($_SESSION['role']) === 'focal') {
                          i.initiative_id,
                          COALESCE(latest_sub.is_draft, 1) as is_draft,
                          latest_sub.period_id,
-                         COALESCE(latest_sub.submission_date, p.created_at) as updated_at,
+                         COALESCE(latest_sub.submitted_at, p.created_at) as updated_at,
                          latest_sub.submission_id as latest_submission_id,
-                         COALESCE(JSON_UNQUOTE(JSON_EXTRACT(latest_sub.content_json, '$.rating')), 'not-started') as rating
+                         COALESCE(latest_sub.rating, 'not-started') as rating
                   FROM programs p 
                   LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
                   LEFT JOIN (
@@ -72,8 +72,7 @@ if (isset($_SESSION['role']) && strtolower($_SESSION['role']) === 'focal') {
                           GROUP BY program_id
                       ) ps2 ON ps1.program_id = ps2.program_id AND ps1.submission_id = ps2.max_submission_id
                   ) latest_sub ON p.program_id = latest_sub.program_id
-                  INNER JOIN users u ON p.owner_agency_id = u.user_id
-                  WHERE u.agency_id = ?
+                  WHERE p.agency_id = ?
                   ORDER BY p.program_name";
         $stmt = $conn->prepare($query);
         $stmt->bind_param("i", $agency_id);
@@ -94,9 +93,9 @@ if (isset($_SESSION['role']) && strtolower($_SESSION['role']) === 'focal') {
                          i.initiative_id,
                          COALESCE(latest_sub.is_draft, 1) as is_draft,
                          latest_sub.period_id,
-                         COALESCE(latest_sub.submission_date, p.created_at) as updated_at,
+                         COALESCE(latest_sub.submitted_at, p.created_at) as updated_at,
                          latest_sub.submission_id as latest_submission_id,
-                         COALESCE(JSON_UNQUOTE(JSON_EXTRACT(latest_sub.content_json, '$.rating')), 'not-started') as rating
+                         COALESCE(latest_sub.rating, 'not-started') as rating
                   FROM programs p 
                   LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
                   LEFT JOIN (
@@ -108,8 +107,7 @@ if (isset($_SESSION['role']) && strtolower($_SESSION['role']) === 'focal') {
                           GROUP BY program_id
                       ) ps2 ON ps1.program_id = ps2.program_id AND ps1.submission_id = ps2.max_submission_id
                   ) latest_sub ON p.program_id = latest_sub.program_id
-                  INNER JOIN users u ON p.owner_agency_id = u.user_id
-                  WHERE u.agency_id = ?
+                  WHERE p.agency_id = ?
                   ORDER BY p.program_name";
         $stmt = $conn->prepare($query);
         $stmt->bind_param("i", $agency_id);
@@ -409,7 +407,7 @@ require_once '../../layouts/page_header.php';
                                         <a href="update_program.php?id=<?php echo $program['program_id']; ?>&period_id=<?php echo isset($program['period_id']) ? $program['period_id'] : ($current_period['period_id'] ?? ''); ?>" class="btn btn-outline-secondary" title="Edit Program">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <?php if (isset($program['owner_agency_id']) && $program['owner_agency_id'] == $_SESSION['user_id']): ?>
+                                        <?php if (isset($program['created_by']) && $program['created_by'] == $_SESSION['user_id']): ?>
                                         <button type="button" class="btn btn-outline-danger delete-program-btn" 
                                                 data-id="<?php echo $program['program_id']; ?>" 
                                                 data-name="<?php echo htmlspecialchars($program['program_name']); ?>" 
@@ -650,7 +648,7 @@ require_once '../../layouts/page_header.php';
                                         <a href="program_details.php?id=<?php echo $program['program_id']; ?>&period_id=<?php echo isset($program['period_id']) ? $program['period_id'] : ($current_period['period_id'] ?? ''); ?>" class="btn btn-outline-secondary" title="View Program">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        <?php if (isset($program['owner_agency_id']) && $program['owner_agency_id'] == $_SESSION['user_id']): ?>
+                                        <?php if (isset($program['created_by']) && $program['created_by'] == $_SESSION['user_id']): ?>
                                         <a href="update_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="Edit Program">
                                             <i class="fas fa-edit"></i>
                                         </a>

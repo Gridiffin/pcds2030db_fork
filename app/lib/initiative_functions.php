@@ -37,7 +37,7 @@ $programIdCol = $config['columns']['programs']['id'];
 $programNameCol = $config['columns']['programs']['name'];
 $programNumberCol = $config['columns']['programs']['number'];
 $programInitiativeIdCol = $config['columns']['programs']['initiative_id'];
-$programUsersAssignedCol = $config['columns']['programs']['users_assigned'];
+// Removed users_assigned - no longer exists in new schema
 
 // User columns
 $userIdCol = $config['columns']['users']['id'];
@@ -307,7 +307,7 @@ function toggle_initiative_status($initiative_id) {
  */
 function get_initiative_programs($initiative_id) {
     global $conn, $programsTable, $usersTable, $agencyTable;
-    global $programIdCol, $programNameCol, $programNumberCol, $programInitiativeIdCol, $programUsersAssignedCol;
+    global $programIdCol, $programNameCol, $programNumberCol, $programInitiativeIdCol;
     global $userIdCol, $userAgencyIdCol, $agencyIdCol, $agencyNameCol;
 
     $sql = "SELECT p.{$programIdCol}, p.{$programNameCol}, p.{$programNumberCol}, a.{$agencyNameCol}
