@@ -325,7 +325,7 @@ function get_agency_submission_status($agency_id, $period_id = null) {
             return $stats;
         }        // Get submission status counts with proper rating extraction - Fixed to avoid duplicates
         $status_query = "SELECT 
-            COALESCE(JSON_UNQUOTE(JSON_EXTRACT(ps.content_json, '$.rating')), 'not-started') as rating,
+            COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p.rating, '$.rating')), 'not-started') as rating,
             COUNT(DISTINCT p.program_id) as count,
             SUM(CASE WHEN ps.is_draft = 1 THEN 1 ELSE 0 END) as draft_count,
             SUM(CASE WHEN ps.is_draft = 0 THEN 1 ELSE 0 END) as submitted_count
@@ -342,7 +342,7 @@ function get_agency_submission_status($agency_id, $period_id = null) {
                 WHERE (ps1.period_id = ? OR ? IS NULL)
             ) ps ON p.program_id = ps.program_id
             WHERE p.users_assigned = ?
-            GROUP BY COALESCE(JSON_UNQUOTE(JSON_EXTRACT(ps.content_json, '$.rating')), 'not-started')";
+            GROUP BY COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p.rating, '$.rating')), 'not-started')";
 
         $stmt = $conn->prepare($status_query);
         $stmt->bind_param("iiiii", $period_id, $period_id, $period_id, $period_id, $agency_id);

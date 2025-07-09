@@ -378,29 +378,34 @@ require_once '../../layouts/page_header.php';
                                     <span <?php if ($date_iso) echo 'data-date="' . $date_iso . '"'; ?>><?php echo $date_display; ?></span>
                                 </td>
                                 <td>
-                                    <div class="btn-group btn-group-sm" role="group" aria-label="Program actions">
-                                        <a href="program_details.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-secondary" title="View Program">
+                                    <div class="btn-group btn-group-sm d-flex flex-nowrap" role="group" aria-label="Program actions">
+                                        <a href="program_details.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-secondary flex-fill" title="View Program">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        <?php if (isset($program['created_by']) && $program['created_by'] == $_SESSION['user_id']): ?>
-                                        <?php if (isset($program['is_draft']) && $program['is_draft']): ?>
-                                            <a href="submission_info.php?program_id=<?php echo $program['program_id']; ?>&period_id=<?php echo $program['period_id'] ?? ''; ?>" class="btn btn-outline-info" title="Submission Information">
-                                                <i class="fas fa-info-circle"></i>
-                                            </a>
-                                        <?php else: ?>
-                                            <a href="add_submission.php?program_id=<?php echo $program['program_id']; ?>" class="btn btn-outline-success" title="Add Submission">
-                                                <i class="fas fa-plus"></i>
-                                            </a>
-                                        <?php endif; ?>
-                                        <a href="edit_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="Edit Program">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <button type="button" class="btn btn-outline-danger delete-program-btn" 
+                                        <button type="button" class="btn btn-outline-danger flex-fill delete-program-btn" 
                                                 data-id="<?php echo $program['program_id']; ?>" 
                                                 data-name="<?php echo htmlspecialchars($program['program_name']); ?>" 
                                                 title="Delete Program">
                                             <i class="fas fa-trash"></i>
                                         </button>
+                                        <?php if (isset($program['created_by']) && $program['created_by'] == $_SESSION['user_id']): ?>
+                                        <div class="btn-group" role="group">
+                                            <button type="button" class="btn btn-outline-secondary dropdown-toggle flex-fill" data-bs-toggle="dropdown" aria-expanded="false" title="More Actions">
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li>
+                                                    <a class="dropdown-item" href="add_submission.php?program_id=<?php echo $program['program_id']; ?>">
+                                                        <i class="fas fa-edit me-1"></i> Edit Submission
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item" href="edit_program.php?id=<?php echo $program['program_id']; ?>">
+                                                        <i class="fas fa-edit me-1"></i> Edit Program
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
                                         <?php endif; ?>
                                     </div>
                                 </td>
@@ -907,6 +912,7 @@ require_once '../../layouts/page_header.php';
 // Include footer
 require_once '../../layouts/footer.php';
 ?>
+
 
 
 

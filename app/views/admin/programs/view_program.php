@@ -56,80 +56,10 @@ if (!empty($program['initiative_id'])) {
     );
 }
 
-// Process content_json for better data access
-$content = [];
-$targets = [];
-$rating = 'not-started';
-$remarks = '';
-
-// Extract data from content_json if available
-if (isset($program['current_submission']['content_json']) && !empty($program['current_submission']['content_json'])) {
-    if (is_string($program['current_submission']['content_json'])) {
-        $content = json_decode($program['current_submission']['content_json'], true) ?: [];
-    } elseif (is_array($program['current_submission']['content_json'])) {
-        $content = $program['current_submission']['content_json'];
-    }
-    
-    // If we have the new structure with targets array, use it
-    if (isset($content['targets']) && is_array($content['targets'])) {
-        $targets = [];
-        foreach ($content['targets'] as $target) {
-            if (isset($target['target_text'])) {
-                // New format that uses target_text
-                $targets[] = [
-                    'text' => $target['target_text'],
-                    'status_description' => $target['status_description'] ?? ''
-                ];
-            } else {
-                // Format that uses text directly
-                $targets[] = $target;
-            }
-        }
-        $rating = $content['rating'] ?? 'not-started'; // Default since status column doesn't exist
-        $remarks = $content['remarks'] ?? '';    } else {
-        // Legacy data format - handle semicolon-separated targets
-        $target_text = $content['target'] ?? $program['current_submission']['target'] ?? '';
-        $status_description = $content['status_text'] ?? '';
-        
-        // Check if targets are semicolon-separated
-        if (strpos($target_text, ';') !== false) {
-            // Split semicolon-separated targets and status descriptions
-            $target_parts = array_map('trim', explode(';', $target_text));
-            $status_parts = array_map('trim', explode(';', $status_description));
-            
-            $targets = [];
-            foreach ($target_parts as $index => $target_part) {
-                if (!empty($target_part)) {
-                    $targets[] = [
-                        'text' => $target_part,
-                        'status_description' => isset($status_parts[$index]) ? $status_parts[$index] : ''
-                    ];
-                }
-            }
-        } else {
-            // Single target
-            $targets = [
-                [
-                    'text' => $target_text,
-                    'status_description' => $status_description
-                ]
-            ];
-        }
-        
-        $rating = 'not-started'; // Default since status column doesn't exist
-        $remarks = $program['current_submission']['remarks'] ?? '';
-    }
-} else {
-    // Fallback to direct properties if no content_json
-    if (!empty($program['current_submission']['target'])) {
-        $targets[] = [
-            'text' => $program['current_submission']['target'],
-            'status_description' => ''
-        ];
-    }
-    $rating = 'not-started'; // Default since status column doesn't exist
-    $remarks = $program['current_submission']['remarks'] ?? '';
-}
+// Remove all content_json and per-submission rating logic
+// Refactor to use only programs.rating for all rating display and logic
+$rating = $program['rating'] ?? 'not-started';
+$remarks = $program['remarks'] ?? '';
 
 // Set page title
 $pageTitle = 'Program Details: ' . $program['program_name'];
@@ -211,7 +141,7 @@ require_once '../../layouts/page_header.php';
             <div class="card-header d-flex justify-content-between align-items-center">                <h5 class="card-title m-0">
                     <i class="fas fa-clipboard-list me-2"></i>Program Information
                 </h5><div>
-                    <?php if (isset($program['status'])): ?>
+                    <?php if (isset($rating_map[$rating_value])): ?>
                     <span class="rating-badge badge bg-<?php echo $rating_map[$rating_value]['class']; ?> py-2 px-3">
                         <i class="<?php echo $rating_map[$rating_value]['icon']; ?> me-1"></i> 
                         <?php echo $rating_map[$rating_value]['label']; ?>

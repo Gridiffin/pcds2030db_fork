@@ -21,14 +21,15 @@ CREATE TABLE IF NOT EXISTS `agency` (
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`agency_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Dumping data for table pcds2030_db.agency: ~4 rows (approximately)
 INSERT INTO `agency` (`agency_id`, `agency_name`, `created_at`, `updated_at`) VALUES
 	(1, 'STIDC', '2025-07-04 10:00:00', '2025-07-04 10:00:00'),
 	(2, 'SFC', '2025-07-04 10:00:00', '2025-07-04 10:00:00'),
 	(3, 'FDS', '2025-07-04 10:00:00', '2025-07-04 10:00:00'),
-	(4, 'admin', '2025-07-05 15:16:11', '2025-07-05 15:16:11');
+	(4, 'admin', '2025-07-05 15:16:11', '2025-07-05 15:16:11'),
+	(5, 'testagency', '2025-07-09 06:48:10', '2025-07-09 06:48:10');
 
 -- Dumping structure for table pcds2030_db.audit_field_changes
 CREATE TABLE IF NOT EXISTS `audit_field_changes` (
@@ -112,7 +113,7 @@ CREATE TABLE IF NOT EXISTS `audit_logs` (
   KEY `created_at` (`created_at`),
   KEY `user_id` (`user_id`),
   KEY `idx_entity_operation` (`action`,`created_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=53 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=84 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Dumping data for table pcds2030_db.audit_logs: ~49 rows (approximately)
 INSERT INTO `audit_logs` (`id`, `user_id`, `action`, `details`, `ip_address`, `status`, `created_at`) VALUES
@@ -167,7 +168,38 @@ INSERT INTO `audit_logs` (`id`, `user_id`, `action`, `details`, `ip_address`, `s
 	(49, 12, 'login_success', 'Username: user', '127.0.0.1', 'success', '2025-07-09 10:36:27'),
 	(50, 12, 'login_success', 'Username: user', '127.0.0.1', 'success', '2025-07-09 11:28:45'),
 	(51, 12, 'create_program', 'Program Name: testing 1 (no dates) | Program ID: 4 | Program Number: 31.A', '127.0.0.1', 'success', '2025-07-09 11:47:49'),
-	(52, 12, 'create_program', 'Program Name: testing 2 (with dates) | Program ID: 5 | Program Number: 31.B', '127.0.0.1', 'success', '2025-07-09 11:50:37');
+	(52, 12, 'create_program', 'Program Name: testing 2 (with dates) | Program ID: 5 | Program Number: 31.B', '127.0.0.1', 'success', '2025-07-09 11:50:37'),
+	(53, 12, 'create_program', 'Program Name: testing 3 | Program ID: 6 | Program Number: 31.C', '127.0.0.1', 'success', '2025-07-09 12:01:19'),
+	(54, 12, 'delete_program', 'Program Name: testing 3 | Program ID: 6', '127.0.0.1', 'success', '2025-07-09 12:04:34'),
+	(55, 12, 'create_program_failed', 'Program Name: testing 3 (date again) | Error: Incorrect date value: \'2025\' for column \'start_date\' at row 1', '127.0.0.1', 'failure', '2025-07-09 13:47:34'),
+	(56, 12, 'create_program_failed', 'Program Name: testing 3 (date again) | Error: Incorrect date value: \'2025\' for column \'start_date\' at row 1', '127.0.0.1', 'failure', '2025-07-09 13:47:43'),
+	(57, 12, 'create_program_failed', 'Program Name: testing 3 (dates) | Error: Incorrect date value: \'2025\' for column \'start_date\' at row 1', '127.0.0.1', 'failure', '2025-07-09 13:48:59'),
+	(58, 12, 'create_program_failed', 'Program Name: testing 3 (dates) | Error: Incorrect date value: \'2025\' for column \'start_date\' at row 1', '127.0.0.1', 'failure', '2025-07-09 13:52:23'),
+	(59, 12, 'create_program_failed', 'Program Name: adasdsa | Error: Incorrect date value: \'2025\' for column \'start_date\' at row 1', '127.0.0.1', 'failure', '2025-07-09 13:52:45'),
+	(60, 12, 'create_program_failed', 'Program Name: adasdsa | Error: Incorrect date value: \'2025\' for column \'start_date\' at row 1', '127.0.0.1', 'failure', '2025-07-09 13:54:40'),
+	(61, 12, 'create_program_failed', 'Program Name: xczzcszc | Error: Column \'initiative_id\' cannot be null', '127.0.0.1', 'failure', '2025-07-09 13:55:00'),
+	(62, 12, 'create_program_failed', 'Program Name: xczzcszc | Error: Incorrect date value: \'2025\' for column \'start_date\' at row 1', '127.0.0.1', 'failure', '2025-07-09 13:55:34'),
+	(63, 12, 'create_program_failed', 'Program Name: fasfasf | Error: Incorrect date value: \'2025\' for column \'start_date\' at row 1', '127.0.0.1', 'failure', '2025-07-09 13:58:11'),
+	(64, 12, 'create_program_failed', 'Program Name: fasfasf | Error: Incorrect date value: \'2025\' for column \'start_date\' at row 1', '127.0.0.1', 'failure', '2025-07-09 14:01:03'),
+	(65, 12, 'create_program', 'Program Name: dasdasd | Program ID: 7 | Program Number: 31.D', '127.0.0.1', 'success', '2025-07-09 14:01:42'),
+	(66, 12, 'delete_program', 'Program Name: dasdasd | Program ID: 7', '127.0.0.1', 'success', '2025-07-09 14:02:01'),
+	(67, 12, 'create_program_failed', 'Program Name: zxzczx | Error: Incorrect date value: \'2025\' for column \'start_date\' at row 1', '127.0.0.1', 'failure', '2025-07-09 14:04:15'),
+	(68, 12, 'create_program_failed', 'Program Name: asdasas | Error: Incorrect date value: \'2025\' for column \'start_date\' at row 1', '127.0.0.1', 'failure', '2025-07-09 14:04:52'),
+	(69, 12, 'create_program_failed', 'Program Name: asdasas | Error: Incorrect date value: \'2025\' for column \'start_date\' at row 1', '127.0.0.1', 'failure', '2025-07-09 14:05:37'),
+	(70, 12, 'create_program_failed', 'Program Name: asfasfasfas | Error: Incorrect date value: \'2025\' for column \'start_date\' at row 1', '127.0.0.1', 'failure', '2025-07-09 14:06:41'),
+	(71, 12, 'create_program_failed', 'Program Name: adasdas | Error: Incorrect date value: \'2025\' for column \'start_date\' at row 1', '127.0.0.1', 'failure', '2025-07-09 14:08:22'),
+	(72, 12, 'create_program_failed', 'Program Name: adasdas | Error: Incorrect date value: \'2025\' for column \'start_date\' at row 1', '127.0.0.1', 'failure', '2025-07-09 14:24:32'),
+	(73, 12, 'create_program_failed', 'Program Name: dadasdas | Error: Incorrect date value: \'2025\' for column \'start_date\' at row 1', '127.0.0.1', 'failure', '2025-07-09 14:34:10'),
+	(74, 12, 'create_program_failed', 'Program Name: dadasdas | Error: Incorrect date value: \'2025\' for column \'start_date\' at row 1', '127.0.0.1', 'failure', '2025-07-09 14:35:32'),
+	(75, 12, 'create_program_failed', 'Program Name: afasas | Error: Incorrect date value: \'2025\' for column \'start_date\' at row 1', '127.0.0.1', 'failure', '2025-07-09 14:35:57'),
+	(76, 12, 'create_program_failed', 'Program Name: afasfas | Error: Incorrect date value: \'2025\' for column \'start_date\' at row 1', '127.0.0.1', 'failure', '2025-07-09 14:40:11'),
+	(77, 12, 'create_program', 'Program Name: adasdas | Program ID: 8 | Program Number: 31.D', '127.0.0.1', 'success', '2025-07-09 14:44:55'),
+	(78, 12, 'delete_program', 'Program Name: adasdas | Program ID: 8', '127.0.0.1', 'success', '2025-07-09 14:46:45'),
+	(79, 12, 'create_program', 'Program Name: testing 3 | Program ID: 9 | Program Number: 31.D', '127.0.0.1', 'success', '2025-07-09 14:47:13'),
+	(80, 12, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-09 14:52:17'),
+	(81, 12, 'login_success', 'Username: user', '127.0.0.1', 'success', '2025-07-09 14:52:27'),
+	(82, 12, 'update_program', 'Program Name: testing 3A | Program ID: 9 | Program Number: 31.D', '127.0.0.1', 'success', '2025-07-09 16:01:12'),
+	(83, 12, 'login_success', 'Username: user', '127.0.0.1', 'success', '2025-07-09 20:47:44');
 
 -- Dumping structure for view pcds2030_db.audit_logs_with_changes
 -- Creating temporary table to overcome VIEW dependency errors
@@ -255,10 +287,13 @@ INSERT INTO `outcomes_details` (`detail_id`, `detail_name`, `display_config`, `d
 -- Dumping structure for table pcds2030_db.programs
 CREATE TABLE IF NOT EXISTS `programs` (
   `program_id` int NOT NULL AUTO_INCREMENT,
-  `initiative_id` int NOT NULL,
+  `initiative_id` int DEFAULT NULL,
   `program_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `program_number` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `rating` enum('monthly_target_achieved','on_track_for_year','severe_delay','not_started') COLLATE utf8mb4_general_ci DEFAULT 'not_started',
   `program_description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
+  `start_date` date DEFAULT NULL,
+  `end_date` date DEFAULT NULL,
   `agency_id` int NOT NULL,
   `is_deleted` tinyint(1) DEFAULT '0',
   `created_by` int NOT NULL,
@@ -272,15 +307,16 @@ CREATE TABLE IF NOT EXISTS `programs` (
   CONSTRAINT `programs_ibfk_1` FOREIGN KEY (`initiative_id`) REFERENCES `initiatives` (`initiative_id`),
   CONSTRAINT `programs_ibfk_2` FOREIGN KEY (`agency_id`) REFERENCES `agency` (`agency_id`),
   CONSTRAINT `programs_ibfk_3` FOREIGN KEY (`created_by`) REFERENCES `users` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Dumping data for table pcds2030_db.programs: ~3 rows (approximately)
-INSERT INTO `programs` (`program_id`, `initiative_id`, `program_name`, `program_number`, `program_description`, `agency_id`, `is_deleted`, `created_by`, `created_at`, `updated_at`) VALUES
-	(1, 1, 'Test Program - New Schema', NULL, 'Test description for new schema', 1, 0, 2, '2025-07-09 00:30:11', '2025-07-09 00:30:11'),
-	(2, 1, 'Test Program - New Schema', NULL, 'Test description for new schema', 1, 0, 2, '2025-07-09 00:30:28', '2025-07-09 00:30:28'),
-	(3, 1, 'Test Program - New Schema', NULL, 'Test description for new schema', 1, 0, 2, '2025-07-09 00:30:52', '2025-07-09 00:30:52'),
-	(4, 3, 'testing 1 (no dates)', '31.A', 'description', 1, 0, 12, '2025-07-09 03:47:49', '2025-07-09 03:47:49'),
-	(5, 3, 'testing 2 (with dates)', '31.B', 'DESCRIPTION FOR PROGRAM TESTING 2', 1, 0, 12, '2025-07-09 03:50:37', '2025-07-09 03:50:37');
+INSERT INTO `programs` (`program_id`, `initiative_id`, `program_name`, `program_number`, `rating`, `program_description`, `start_date`, `end_date`, `agency_id`, `is_deleted`, `created_by`, `created_at`, `updated_at`) VALUES
+	(1, 1, 'Test Program - New Schema', NULL, 'not_started', 'Test description for new schema', NULL, NULL, 5, 0, 2, '2025-07-09 00:30:11', '2025-07-09 06:52:50'),
+	(2, 1, 'Test Program - New Schema', NULL, 'not_started', 'Test description for new schema', NULL, NULL, 5, 0, 2, '2025-07-09 00:30:28', '2025-07-09 06:52:51'),
+	(3, 1, 'Test Program - New Schema', NULL, 'not_started', 'Test description for new schema', NULL, NULL, 5, 0, 2, '2025-07-09 00:30:52', '2025-07-09 06:52:53'),
+	(4, 3, 'testing 1 (no dates)', '31.A', 'not_started', 'description', NULL, NULL, 5, 0, 12, '2025-07-09 03:47:49', '2025-07-09 06:52:55'),
+	(5, 3, 'testing 2 (with dates)', '31.B', 'not_started', 'DESCRIPTION FOR PROGRAM TESTING 2', NULL, NULL, 5, 0, 12, '2025-07-09 03:50:37', '2025-07-09 06:52:59'),
+	(9, 3, 'testing 3A', '31.D', 'not_started', 'short summary', '2025-07-01', '2025-07-31', 5, 0, 12, '2025-07-09 06:47:13', '2025-07-09 08:01:12');
 
 -- Dumping structure for table pcds2030_db.program_attachments
 CREATE TABLE IF NOT EXISTS `program_attachments` (
@@ -309,11 +345,7 @@ CREATE TABLE IF NOT EXISTS `program_submissions` (
   `period_id` int NOT NULL,
   `is_draft` tinyint(1) DEFAULT '1',
   `is_submitted` tinyint(1) DEFAULT '0',
-  `status_indicator` enum('not_started','in_progress','completed','delayed') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT 'not_started',
-  `rating` enum('monthly_target_achieved','on_track_for_year','severe_delay','not_started') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT 'not_started',
   `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
-  `start_date` date DEFAULT NULL,
-  `end_date` date DEFAULT NULL,
   `submitted_by` int DEFAULT NULL,
   `submitted_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -325,11 +357,12 @@ CREATE TABLE IF NOT EXISTS `program_submissions` (
   CONSTRAINT `program_submissions_ibfk_1` FOREIGN KEY (`program_id`) REFERENCES `programs` (`program_id`) ON DELETE CASCADE,
   CONSTRAINT `program_submissions_ibfk_2` FOREIGN KEY (`period_id`) REFERENCES `reporting_periods` (`period_id`) ON DELETE CASCADE,
   CONSTRAINT `program_submissions_ibfk_3` FOREIGN KEY (`submitted_by`) REFERENCES `users` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Dumping data for table pcds2030_db.program_submissions: ~0 rows (approximately)
-INSERT INTO `program_submissions` (`submission_id`, `program_id`, `period_id`, `is_draft`, `is_submitted`, `status_indicator`, `rating`, `description`, `start_date`, `end_date`, `submitted_by`, `submitted_at`, `updated_at`, `is_deleted`) VALUES
-	(1, 3, 3, 1, 0, 'not_started', 'not_started', 'Test description for new schema', '2025-01-01', '2025-12-31', 2, NULL, '2025-07-09 00:30:52', 0);
+INSERT INTO `program_submissions` (`submission_id`, `program_id`, `period_id`, `is_draft`, `is_submitted`, `description`, `submitted_by`, `submitted_at`, `updated_at`, `is_deleted`) VALUES
+	(1, 3, 3, 1, 0, 'Test description for new schema', 2, NULL, '2025-07-09 00:30:52', 0),
+	(2, 9, 2, 1, 0, 'asdasda', 12, '2025-07-08 23:57:45', '2025-07-09 07:57:45', 0);
 
 -- Dumping structure for table pcds2030_db.program_targets
 CREATE TABLE IF NOT EXISTS `program_targets` (
@@ -347,9 +380,11 @@ CREATE TABLE IF NOT EXISTS `program_targets` (
   KEY `submission_id` (`submission_id`),
   KEY `idx_target_number` (`target_number`),
   CONSTRAINT `program_targets_ibfk_1` FOREIGN KEY (`submission_id`) REFERENCES `program_submissions` (`submission_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Dumping data for table pcds2030_db.program_targets: ~0 rows (approximately)
+INSERT INTO `program_targets` (`target_id`, `target_number`, `submission_id`, `target_description`, `status_indicator`, `status_description`, `remarks`, `start_date`, `end_date`, `is_deleted`) VALUES
+	(1, '121', 2, 'sadasd', 'in_progress', 'asdsada', NULL, NULL, NULL, 0);
 
 -- Dumping structure for table pcds2030_db.program_user_assignments
 CREATE TABLE IF NOT EXISTS `program_user_assignments` (
@@ -363,7 +398,7 @@ CREATE TABLE IF NOT EXISTS `program_user_assignments` (
   KEY `user_id` (`user_id`),
   CONSTRAINT `program_user_assignments_ibfk_1` FOREIGN KEY (`program_id`) REFERENCES `programs` (`program_id`) ON DELETE CASCADE,
   CONSTRAINT `program_user_assignments_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Dumping data for table pcds2030_db.program_user_assignments: ~0 rows (approximately)
 INSERT INTO `program_user_assignments` (`assignment_id`, `program_id`, `user_id`, `role`, `assigned_at`) VALUES
@@ -371,7 +406,8 @@ INSERT INTO `program_user_assignments` (`assignment_id`, `program_id`, `user_id`
 	(2, 2, 2, 'editor', '2025-07-09 00:30:28'),
 	(3, 3, 2, 'editor', '2025-07-09 00:30:52'),
 	(4, 4, 12, 'editor', '2025-07-09 03:47:49'),
-	(5, 5, 12, 'editor', '2025-07-09 03:50:37');
+	(5, 5, 12, 'editor', '2025-07-09 03:50:37'),
+	(9, 9, 12, 'editor', '2025-07-09 06:47:13');
 
 -- Dumping structure for table pcds2030_db.reporting_periods
 CREATE TABLE IF NOT EXISTS `reporting_periods` (
@@ -484,7 +520,7 @@ INSERT INTO `users` (`user_id`, `username`, `pw`, `fullname`, `email`, `agency_i
 	(8, 'fds1', '$2y$10$bua8hVx2q0f3cWjXr/2TVefQnh.51LMX4Fyfz3.zWDJGMyuUxEBpq', 'FDS User 1', 'fds1@fds.gov.my', 3, 'focal', '2025-05-23 06:31:31', '2025-06-20 08:24:43', 1),
 	(9, 'fds2', '$2y$10$WWnKHgaCDo14MVBDogRpUOhu2sIHWkSfRC4NWuih9R3Uda/BrzSz.', 'FDS User 2', 'fds2@fds.gov.my', 3, 'focal', '2025-05-23 06:31:48', '2025-06-20 08:24:44', 1),
 	(10, 'fds3', '$2y$10$3NE/RJmmL/98cmD4nffKJOcZxtl7Pu4q71P8QNgGVQMBeo.mAmTzG', 'FDS User 3', 'fds3@fds.gov.my', 3, 'focal', '2025-05-23 06:32:05', '2025-06-20 08:24:46', 1),
-	(12, 'user', '$2y$10$/Z6xCsE7OknP.4HBT5CdBuWDZK5VNMf7MqwmGusJ0SM8xxaGQKdq2', 'Test User', 'user@test.gov.my', 1, 'focal', '2025-03-25 07:42:27', '2025-06-21 16:11:50', 1),
+	(12, 'user', '$2y$10$/Z6xCsE7OknP.4HBT5CdBuWDZK5VNMf7MqwmGusJ0SM8xxaGQKdq2', 'Test User', 'user@test.gov.my', 5, 'focal', '2025-03-25 07:42:27', '2025-07-09 06:48:23', 1),
 	(44, 'admin2', '$2y$10$XsLEVjglthHpji3ONspyx.0YT/BxTe.fzDAUK4Jydg7oC8uQnc3V.', 'Second Admin', 'admin2@pcds2030.gov.my', 1, 'admin', '2025-07-04 06:38:58', '2025-07-04 06:38:58', 1),
 	(45, 'superadmin', '$2y$10$XsLEVjglthHpji3ONspyx.0YT/BxTe.fzDAUK4Jydg7oC8uQnc3V.', 'Super Admin', 'superadmin@pcds2030.gov.my', 1, 'admin', '2025-07-04 06:47:20', '2025-07-04 06:47:20', 1);
 

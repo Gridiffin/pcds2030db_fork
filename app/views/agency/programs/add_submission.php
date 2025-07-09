@@ -47,7 +47,7 @@ if (!$program) {
 $reporting_periods = get_reporting_periods_for_dropdown(true);
 
 // Get existing submissions for this program to show which periods are already covered
-$existing_submissions_query = "SELECT ps.period_id, ps.is_draft, ps.is_submitted,
+$existing_submissions_query = "SELECT ps.period_id, ps.is_draft, ps.is_submitted, ps.submission_id,
                                      rp.year, rp.period_type, rp.period_number
                               FROM program_submissions ps
                               JOIN reporting_periods rp ON ps.period_id = rp.period_id
@@ -198,30 +198,15 @@ require_once '../../layouts/page_header.php';
                             <tbody>
                                 <?php foreach ($existing_submissions as $submission): ?>
                                 <tr>
-                                    <td>
-                                        <?php 
-                                        $period_display = $submission['period_type'] . ' ' . $submission['period_number'] . ' ' . $submission['year'];
-                                        echo htmlspecialchars(ucfirst($period_display));
-                                        ?>
-                                    </td>
-                                    <td>
-                                        <?php if ($submission['is_draft']): ?>
-                                            <span class="badge bg-warning">Draft</span>
-                                        <?php elseif ($submission['is_submitted']): ?>
-                                            <span class="badge bg-success">Submitted</span>
-                                        <?php else: ?>
-                                            <span class="badge bg-secondary">Not Submitted</span>
-                                        <?php endif; ?>
-                                    </td>
+                                    <td><?php echo htmlspecialchars($submission['year'] . ' ' . ucfirst($submission['period_type']) . ' ' . $submission['period_number']); ?></td>
+                                    <td><?php echo $submission['is_draft'] ? 'Draft' : ($submission['is_submitted'] ? 'Finalized' : 'Unknown'); ?></td>
                                     <td>
                                         <?php echo htmlspecialchars(ucfirst(str_replace('_', ' ', $submission['period_type']))); ?>
                                     </td>
                                     <td>
-                                        <?php if ($submission['is_draft']): ?>
-                                            <a href="edit_submission.php?program_id=<?php echo $program_id; ?>&period_id=<?php echo $submission['period_id']; ?>" class="btn btn-sm btn-outline-primary" title="Edit Submission">
-                                                <i class="fas fa-edit"></i> Edit
-                                            </a>
-                                        <?php endif; ?>
+                                        <a href="edit_submission.php?program_id=<?php echo $program_id; ?>&period_id=<?php echo $submission['period_id']; ?>" class="btn btn-sm btn-outline-primary" title="Edit Submission">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </a>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>

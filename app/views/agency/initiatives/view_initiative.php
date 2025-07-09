@@ -58,41 +58,20 @@ $latest_ratings_sql = "
         p.program_number,
         p.owner_agency_id,
         u.agency_name,
-        JSON_UNQUOTE(JSON_EXTRACT(ps_latest.content_json, '$.rating')) as latest_rating,
-        ps_latest.submission_date,
-        ps_latest.updated_at,
-        ps_latest.is_draft,
-        (p.owner_agency_id = ?) as is_owned_by_agency
+        p.rating,
+        p.updated_at
     FROM programs p
     LEFT JOIN users u ON p.owner_agency_id = u.user_id
-    LEFT JOIN (
-        SELECT 
-            ps1.program_id,
-            ps1.content_json,
-            ps1.submission_date,
-            ps1.updated_at,
-            ps1.is_draft
-        FROM program_submissions ps1
-        INNER JOIN (
-            SELECT 
-                program_id, 
-                MAX(updated_at) as max_updated_at
-            FROM program_submissions 
-            GROUP BY program_id
-        ) ps2 ON ps1.program_id = ps2.program_id AND ps1.updated_at = ps2.max_updated_at
-    ) ps_latest ON p.program_id = ps_latest.program_id
     WHERE p.initiative_id = ?
     ORDER BY p.program_id
 ";
 
 $stmt = $conn->prepare($latest_ratings_sql);
-$stmt->bind_param('ii', $agency_id, $initiative_id);
+$stmt->bind_param('i', $initiative_id);
 $stmt->execute();
 $result = $stmt->get_result();
 
 while ($row = $result->fetch_assoc()) {
-    // Use latest_rating from submissions if available, fallback to legacy program rating
-    $row['rating'] = $row['latest_rating'] ?? 'not-started';
     $programs[] = $row;
 }
 

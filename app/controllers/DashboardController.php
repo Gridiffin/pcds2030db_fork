@@ -87,7 +87,7 @@ class DashboardController {
                     p.{$programIdCol},
                     p.{$programNameCol},
                     p.{$programCreatedAtCol},
-                    COALESCE(ps.rating, 'not-started') as rating,
+                    p.rating,
                     CASE 
                         WHEN ps.{$submissionIdCol} IS NULL THEN 1
                         ELSE ps.{$submissionIsDraftCol} 
@@ -186,7 +186,7 @@ class DashboardController {
                     p.{$programNameCol},
                     p.{$programCreatedAtCol},
                     p.updated_at as program_updated_at,
-                    COALESCE(ps.rating, 'not-started') as rating,
+                    p.rating,
                     ps.{$submissionIsDraftCol},
                     ps.submitted_at as updated_at
                   FROM {$programsTable} p
