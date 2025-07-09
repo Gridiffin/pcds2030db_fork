@@ -485,6 +485,29 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Add one target by default
     addNewTarget();
+
+    // Auto-generate target numbers if not provided
+    function updateTargetNumbers() {
+        const programNumber = <?php echo json_encode($program['program_number'] ?? ''); ?>;
+        const targetRows = document.querySelectorAll('.target-row');
+        targetRows.forEach((row, idx) => {
+            const numberInput = row.querySelector('input[name^="target_number"]');
+            if (numberInput && !numberInput.value) {
+                numberInput.value = programNumber ? (programNumber + '.' + (idx + 1)) : (idx + 1);
+            }
+        });
+    }
+    
+    // Call on page load and when adding/removing targets
+    updateTargetNumbers();
+    document.getElementById('addTargetBtn')?.addEventListener('click', function() {
+        setTimeout(updateTargetNumbers, 100); // Wait for new row
+    });
+    document.querySelectorAll('.remove-target-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            setTimeout(updateTargetNumbers, 100);
+        });
+    });
 });
 </script>
 

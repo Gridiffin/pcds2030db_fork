@@ -1,8 +1,9 @@
 <?php
 /**
- * Create Program - Simplified
+ * Edit Program - Simplified
  * 
- * Simple interface for agency users to create programs with basic information only.
+ * Simple interface for agency users to edit program basic information only.
+ * Submissions are managed separately.
  */
 
 // Define project root path for consistent file references
@@ -25,6 +26,37 @@ if (!is_agency()) {
     exit;
 }
 
+// Get program ID from URL
+$program_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+
+if (!$program_id) {
+    $_SESSION['message'] = 'Invalid program ID.';
+    $_SESSION['message_type'] = 'danger';
+    header('Location: view_programs.php');
+    exit;
+}
+
+// Get program details
+$program = get_program_details($program_id);
+
+if (!$program) {
+    $_SESSION['message'] = 'Program not found or access denied.';
+    $_SESSION['message_type'] = 'danger';
+    header('Location: view_programs.php');
+    exit;
+}
+
+// Check if user owns this program
+$user_id = $_SESSION['user_id'];
+$is_owner = ($program['created_by'] == $user_id);
+
+if (!$is_owner && !is_focal_user()) {
+    $_SESSION['message'] = 'You can only edit programs you own.';
+    $_SESSION['message_type'] = 'danger';
+    header('Location: view_programs.php');
+    exit;
+}
+
 // Get active initiatives for dropdown
 $active_initiatives = get_initiatives_for_select(true);
 
@@ -34,6 +66,7 @@ $messageType = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $program_data = [
+        'program_id' => $program_id,
         'program_name' => $_POST['program_name'] ?? '',
         'program_number' => $_POST['program_number'] ?? '',
         'brief_description' => $_POST['brief_description'] ?? '',
@@ -42,38 +75,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'initiative_id' => !empty($_POST['initiative_id']) ? intval($_POST['initiative_id']) : null
     ];
     
-    // Create new program using simplified function
-    $result = create_simple_program($program_data);
+    // Update program using simplified function
+    $result = update_simple_program($program_data);
     
     if (isset($result['success']) && $result['success']) {
         // Set success message and redirect
         $_SESSION['message'] = $result['message'];
         $_SESSION['message_type'] = 'success';
         
-        // Redirect to programs list
-        header('Location: view_programs.php');
+        // Redirect to program details
+        header('Location: program_details.php?id=' . $program_id);
         exit;
     } else {
-        $message = $result['error'] ?? 'An error occurred while creating the program.';
+        $message = $result['error'] ?? 'An error occurred while updating the program.';
         $messageType = 'danger';
     }
 }
 
 // Set page title
-$pageTitle = 'Create New Program';
+$pageTitle = 'Edit Program';
 
 // Include header
 require_once '../../layouts/header.php';
 
 // Configure modern page header
+$program_display_name = '';
+if (!empty($program['program_number'])) {
+    $program_display_name = '<span class="badge bg-info me-2" title="Program Number">' . htmlspecialchars($program['program_number']) . '</span>';
+}
+$program_display_name .= htmlspecialchars($program['program_name']);
+
 $header_config = [
-    'title' => 'Create New Program',
-    'subtitle' => 'Create a new program as an empty vessel. Add submissions for specific periods later.',
+    'title' => 'Edit Program',
+    'subtitle' => $program_display_name,
+    'subtitle_html' => true,
     'variant' => 'white',
     'actions' => [
         [
-            'url' => 'view_programs.php',
-            'text' => 'Back to Programs',
+            'url' => 'program_details.php?id=' . $program_id,
+            'text' => 'Back to Program',
             'icon' => 'fas fa-arrow-left',
             'class' => 'btn-outline-secondary'
         ]
@@ -96,16 +136,16 @@ require_once '../../layouts/page_header.php';
                 </script>
             <?php endif; ?>
 
-            <!-- Simple Program Creation Form -->
+            <!-- Simple Program Editing Form -->
             <div class="card shadow-sm mb-4 w-100">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-plus-circle me-2"></i>
-                        Create New Program
+                        <i class="fas fa-edit me-2"></i>
+                        Edit Program Information
                     </h5>
                 </div>
                 <div class="card-body">
-                    <form method="post" id="createProgramForm">
+                    <form method="post" id="editProgramForm">
                         <div class="row">
                             <div class="col-md-8">
                                 <!-- Program Name -->
@@ -119,7 +159,7 @@ require_once '../../layouts/page_header.php';
                                            name="program_name" 
                                            required
                                            placeholder="Enter the program name"
-                                           value="<?php echo htmlspecialchars($_POST['program_name'] ?? ''); ?>">
+                                           value="<?php echo htmlspecialchars($_POST['program_name'] ?? $program['program_name']); ?>">
                                     <div class="form-text">
                                         <i class="fas fa-info-circle me-1"></i>
                                         This will be the main identifier for your program
@@ -136,7 +176,7 @@ require_once '../../layouts/page_header.php';
                                         <option value="">Select an initiative (optional)</option>
                                         <?php foreach ($active_initiatives as $initiative): ?>
                                             <option value="<?php echo $initiative['initiative_id']; ?>"
-                                                    <?php echo (isset($_POST['initiative_id']) && $_POST['initiative_id'] == $initiative['initiative_id']) ? 'selected' : ''; ?>>
+                                                    <?php echo (isset($_POST['initiative_id']) ? $_POST['initiative_id'] : $program['initiative_id']) == $initiative['initiative_id'] ? 'selected' : ''; ?>>
                                                 <?php echo htmlspecialchars($initiative['initiative_name']); ?>
                                                 <?php if ($initiative['initiative_number']): ?>
                                                     (<?php echo htmlspecialchars($initiative['initiative_number']); ?>)
@@ -149,8 +189,6 @@ require_once '../../layouts/page_header.php';
                                         Link this program to a strategic initiative for better organization and reporting
                                     </div>
                                 </div>
-                                
-
 
                                 <!-- Program Number -->
                                 <div class="mb-4">
@@ -165,7 +203,7 @@ require_once '../../layouts/page_header.php';
                                            disabled
                                            pattern="[\w.]+"
                                            title="Program number can contain letters, numbers, and dots"
-                                           value="<?php echo htmlspecialchars($_POST['program_number'] ?? ''); ?>">
+                                           value="<?php echo htmlspecialchars($_POST['program_number'] ?? $program['program_number'] ?? ''); ?>">
                                     <div class="form-text">
                                         <i class="fas fa-info-circle me-1"></i>
                                         <span id="number-help-text">Select an initiative to enable program numbering</span>
@@ -185,7 +223,7 @@ require_once '../../layouts/page_header.php';
                                               id="brief_description" 
                                               name="brief_description"
                                               rows="3"
-                                              placeholder="Provide a short summary of the program"><?php echo htmlspecialchars($_POST['brief_description'] ?? ''); ?></textarea>
+                                              placeholder="Provide a short summary of the program"><?php echo htmlspecialchars($_POST['brief_description'] ?? $program['program_description'] ?? ''); ?></textarea>
                                     <div class="form-text">
                                         <i class="fas fa-info-circle me-1"></i>
                                         A brief overview to help identify this program
@@ -212,7 +250,7 @@ require_once '../../layouts/page_header.php';
                                                    class="form-control" 
                                                    id="start_date" 
                                                    name="start_date"
-                                                   value="<?php echo htmlspecialchars($_POST['start_date'] ?? ''); ?>">
+                                                   value="<?php echo htmlspecialchars($_POST['start_date'] ?? $program['start_date'] ?? ''); ?>">
                                             <div class="form-text">
                                                 <i class="fas fa-info-circle me-1"></i>
                                                 Optional: Set a start date if the program has a specific timeline
@@ -228,7 +266,7 @@ require_once '../../layouts/page_header.php';
                                                    class="form-control" 
                                                    id="end_date" 
                                                    name="end_date"
-                                                   value="<?php echo htmlspecialchars($_POST['end_date'] ?? ''); ?>">
+                                                   value="<?php echo htmlspecialchars($_POST['end_date'] ?? $program['end_date'] ?? ''); ?>">
                                             <div class="form-text">
                                                 <i class="fas fa-info-circle me-1"></i>
                                                 Optional: Set an end date if the program has a specific timeline
@@ -242,26 +280,33 @@ require_once '../../layouts/page_header.php';
                                     <div class="card-body">
                                         <h6 class="card-title">
                                             <i class="fas fa-info-circle me-2"></i>
-                                            How It Works
+                                            What You Can Edit
                                         </h6>
                                         <ul class="list-unstyled mb-0">
                                             <li class="mb-2">
                                                 <i class="fas fa-check-circle text-success me-2"></i>
-                                                Create program (empty vessel)
+                                                Program name and description
                                             </li>
                                             <li class="mb-2">
-                                                <i class="fas fa-calendar-plus text-primary me-2"></i>
-                                                Add submissions for specific periods
+                                                <i class="fas fa-link text-primary me-2"></i>
+                                                Initiative linkage
                                             </li>
                                             <li class="mb-2">
-                                                <i class="fas fa-bullseye text-info me-2"></i>
-                                                Add targets to submissions
+                                                <i class="fas fa-hashtag text-info me-2"></i>
+                                                Program number
                                             </li>
                                             <li>
-                                                <i class="fas fa-paperclip text-warning me-2"></i>
-                                                Upload attachments to submissions
+                                                <i class="fas fa-calendar text-warning me-2"></i>
+                                                Timeline dates
                                             </li>
                                         </ul>
+                                        <hr>
+                                        <div class="alert alert-info mb-0">
+                                            <small>
+                                                <i class="fas fa-info-circle me-1"></i>
+                                                <strong>Note:</strong> Submissions are managed separately. Use the "Add Submission" button on the program details page to add or edit submissions.
+                                            </small>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -269,13 +314,13 @@ require_once '../../layouts/page_header.php';
 
                         <!-- Form Actions -->
                         <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
-                            <a href="view_programs.php" class="btn btn-outline-secondary">
+                            <a href="program_details.php?id=<?php echo $program_id; ?>" class="btn btn-outline-secondary">
                                 <i class="fas fa-times me-2"></i>
                                 Cancel
                             </a>
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-save me-2"></i>
-                                Create Program
+                                Update Program
                             </button>
                         </div>
                     </form>
@@ -285,12 +330,23 @@ require_once '../../layouts/page_header.php';
     </div>
 </div>
 
-
-
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const initiativeSelect = document.getElementById('initiative_id');
     const programNumberInput = document.getElementById('program_number');
+    
+    // Initialize program number field based on current initiative
+    const currentInitiative = initiativeSelect.value;
+    if (currentInitiative) {
+        programNumberInput.disabled = false;
+        programNumberInput.placeholder = 'Enter program number';
+        document.getElementById('number-help-text').textContent = 'Enter a program number or leave blank for auto-generation';
+        
+        // Show final number preview
+        document.getElementById('final-number-display').style.display = 'block';
+        const currentNumber = programNumberInput.value;
+        document.getElementById('final-number-preview').textContent = currentNumber || 'Will be generated automatically';
+    }
 
     // Handle initiative selection for program numbering
     initiativeSelect.addEventListener('change', function() {
@@ -306,7 +362,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Show final number preview
             finalNumberDisplay.style.display = 'block';
-            finalNumberPreview.textContent = 'Will be generated automatically';
+            const currentNumber = programNumberInput.value;
+            finalNumberPreview.textContent = currentNumber || 'Will be generated automatically';
         } else {
             programNumberInput.disabled = true;
             programNumberInput.placeholder = 'Select initiative first';
@@ -345,4 +402,4 @@ document.addEventListener('DOMContentLoaded', function() {
 <?php
 // Include footer
 require_once '../../layouts/footer.php';
-?>
+?> 

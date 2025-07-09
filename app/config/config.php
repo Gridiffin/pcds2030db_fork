@@ -10,7 +10,7 @@
 define('DB_HOST', 'localhost');
 define('DB_USER', 'root'); // Change this to your MySQL username (default for XAMPP is 'root')
 define('DB_PASS', ''); // Change this to your MySQL password (default for XAMPP is often empty '')
-define('DB_NAME', 'pcds2030_dashboard'); // Updated to use pcds2030_dashboard database
+define('DB_NAME', 'pcds2030_db'); // Updated to use pcds2030_db database
 
 // Application settings
 define('APP_NAME', 'PCDS2030 Dashboard Forestry Sector'); 
@@ -19,7 +19,7 @@ define('APP_NAME', 'PCDS2030 Dashboard Forestry Sector');
 if (!defined('APP_URL')) {
     // Check if we're running from command line
     if (php_sapi_name() === 'cli') {
-        define('APP_URL', 'http://localhost/pcds2030_dashboard'); // Default for CLI
+        define('APP_URL', 'http://localhost/pcds2030_dashboard_fork'); // Default for CLI
     } else {
         // Detect the correct APP_URL based on current request
         $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
@@ -31,8 +31,13 @@ if (!defined('APP_URL')) {
         
         // Extract the base path by finding the common directory structure
         $app_path = '';
-        if (strpos($script_name, '/pcds2030_dashboard/') !== false) {
-            // If script is in pcds2030_dashboard folder
+        
+        // Check for the new fork directory name first
+        if (strpos($script_name, '/pcds2030_dashboard_fork/') !== false) {
+            // If script is in pcds2030_dashboard_fork folder
+            $app_path = '/pcds2030_dashboard_fork';
+        } elseif (strpos($script_name, '/pcds2030_dashboard/') !== false) {
+            // If script is in pcds2030_dashboard folder (fallback)
             $app_path = '/pcds2030_dashboard';
         } elseif (strpos($script_name, '/') !== false) {
             // Try to detect from script path
@@ -162,7 +167,65 @@ function asset_url($type, $file) {
 define('UPLOAD_PATH', ROOT_PATH . 'app/uploads/');
 define('REPORT_PATH', ROOT_PATH . 'app/reports/');
 
-define('BASE_URL', '/pcds2030_dashboard');
+// Dynamic BASE_URL detection for better cross-environment compatibility
+if (!defined('BASE_URL')) {
+    // Check if we're running from command line
+    if (php_sapi_name() === 'cli') {
+        define('BASE_URL', '/pcds2030_dashboard_fork'); // Default for CLI
+    } else {
+        // Use the same logic as APP_URL but just the path part
+        $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        
+        // Get the directory path of the application
+        $script_name = $_SERVER['SCRIPT_NAME'] ?? '';
+        $request_uri = $_SERVER['REQUEST_URI'] ?? '';
+        
+        // Extract the base path by finding the common directory structure
+        $base_path = '';
+        
+        // Check for the new fork directory name first
+        if (strpos($script_name, '/pcds2030_dashboard_fork/') !== false) {
+            // If script is in pcds2030_dashboard_fork folder
+            $base_path = '/pcds2030_dashboard_fork';
+        } elseif (strpos($script_name, '/pcds2030_dashboard/') !== false) {
+            // If script is in pcds2030_dashboard folder (fallback)
+            $base_path = '/pcds2030_dashboard';
+        } elseif (strpos($script_name, '/') !== false) {
+            // Try to detect from script path
+            $path_parts = explode('/', trim($script_name, '/'));
+            if (count($path_parts) > 0) {
+                // Check if we're in a subdirectory
+                foreach ($path_parts as $part) {
+                    if (in_array($part, ['app', 'views', 'admin', 'agency'])) {
+                        break;
+                    }
+                    if (!empty($part)) {
+                        $base_path .= '/' . $part;
+                    }
+                }
+            }
+        }
+        
+        // Fallback to document root detection
+        if (empty($base_path)) {
+            $document_root = $_SERVER['DOCUMENT_ROOT'] ?? '';
+            $current_dir = dirname(dirname(dirname(__FILE__)));
+            if (!empty($document_root) && strpos($current_dir, $document_root) === 0) {
+                $base_path = str_replace($document_root, '', $current_dir);
+                $base_path = str_replace('\\', '/', $base_path); // Windows compatibility
+            }
+        }
+        
+        // Ensure base_path doesn't end with slash and starts with slash
+        $base_path = '/' . trim($base_path, '/');
+        if ($base_path === '/') {
+            $base_path = '';
+        }
+        
+        define('BASE_URL', $base_path);
+    }
+}
 
 // Error reporting
 error_reporting(E_ALL);

@@ -48,103 +48,71 @@ $additionalScripts = [
 // Get active initiatives for filtering
 $active_initiatives = get_initiatives_for_select(true);
 
-// Get programs for FOCAL user (all agencies in their group) or just their own if not FOCAL
-if (isset($_SESSION['role']) && strtolower($_SESSION['role']) === 'focal') {
-    $agency_id = $_SESSION['agency_id'];
-    $programs = [];
-    if ($agency_id !== null) {        $query = "SELECT p.*, 
-                         i.initiative_name,
-                         i.initiative_number,
-                         i.initiative_id,
-                         COALESCE(latest_sub.is_draft, 1) as is_draft,
-                         latest_sub.period_id,
-                         COALESCE(latest_sub.submitted_at, p.created_at) as updated_at,
-                         latest_sub.submission_id as latest_submission_id,
-                         COALESCE(latest_sub.rating, 'not-started') as rating
-                  FROM programs p 
-                  LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
-                  LEFT JOIN (
-                      SELECT ps1.*
-                      FROM program_submissions ps1
-                      INNER JOIN (
-                          SELECT program_id, MAX(submission_id) as max_submission_id
-                          FROM program_submissions
-                          GROUP BY program_id
-                      ) ps2 ON ps1.program_id = ps2.program_id AND ps1.submission_id = ps2.max_submission_id
-                  ) latest_sub ON p.program_id = latest_sub.program_id
-                  WHERE p.agency_id = ?
-                  ORDER BY p.program_name";
-        $stmt = $conn->prepare($query);
-        $stmt->bind_param("i", $agency_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        while ($row = $result->fetch_assoc()) {
-            $programs[] = $row;
-        }
-    }
-} else {
-    $agency_id = $_SESSION['agency_id'] ?? null;
-    $programs = [];
-    if ($agency_id !== null) {
-        // Fetch all programs in the same agency group for normal users
-        $query = "SELECT p.*, 
-                         i.initiative_name,
-                         i.initiative_number,
-                         i.initiative_id,
-                         COALESCE(latest_sub.is_draft, 1) as is_draft,
-                         latest_sub.period_id,
-                         COALESCE(latest_sub.submitted_at, p.created_at) as updated_at,
-                         latest_sub.submission_id as latest_submission_id,
-                         COALESCE(latest_sub.rating, 'not-started') as rating
-                  FROM programs p 
-                  LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
-                  LEFT JOIN (
-                      SELECT ps1.*
-                      FROM program_submissions ps1
-                      INNER JOIN (
-                          SELECT program_id, MAX(submission_id) as max_submission_id
-                          FROM program_submissions
-                          GROUP BY program_id
-                      ) ps2 ON ps1.program_id = ps2.program_id AND ps1.submission_id = ps2.max_submission_id
-                  ) latest_sub ON p.program_id = latest_sub.program_id
-                  WHERE p.agency_id = ?
-                  ORDER BY p.program_name";
-        $stmt = $conn->prepare($query);
-        $stmt->bind_param("i", $agency_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        while ($row = $result->fetch_assoc()) {
-            $programs[] = $row;
-        }
+// Get programs for the current agency user
+$agency_id = $_SESSION['agency_id'] ?? null;
+$programs = [];
+
+if ($agency_id !== null) {
+    // Fetch all programs for the agency with latest submission info (if any)
+    $query = "SELECT p.*, 
+                     i.initiative_name,
+                     i.initiative_number,
+                     i.initiative_id,
+                     latest_sub.is_draft,
+                     latest_sub.period_id,
+                     latest_sub.submission_id as latest_submission_id,
+                     latest_sub.rating,
+                     latest_sub.submitted_at,
+                     latest_sub.status_indicator,
+                     rp.period_type,
+                     rp.period_number,
+                     rp.year as period_year,
+                     COALESCE(latest_sub.submitted_at, p.created_at) as updated_at
+              FROM programs p 
+              LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
+              LEFT JOIN (
+                  SELECT ps1.*
+                  FROM program_submissions ps1
+                  INNER JOIN (
+                      SELECT program_id, MAX(submission_id) as max_submission_id
+                      FROM program_submissions
+                      WHERE is_deleted = 0
+                      GROUP BY program_id
+                  ) ps2 ON ps1.program_id = ps2.program_id AND ps1.submission_id = ps2.max_submission_id
+              ) latest_sub ON p.program_id = latest_sub.program_id
+              LEFT JOIN reporting_periods rp ON latest_sub.period_id = rp.period_id
+              WHERE p.agency_id = ? AND p.is_deleted = 0
+              ORDER BY p.program_name";
+    
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("i", $agency_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    while ($row = $result->fetch_assoc()) {
+        $programs[] = $row;
     }
 }
 
-// Separate programs into drafts and finalized submissions
-$draft_programs = [];
-$finalized_programs = [];
-
-// Get current reporting period once for all programs
-$current_period = get_current_reporting_period();
+// Separate programs into programs with draft submissions and programs with submitted submissions
+$programs_with_drafts = [];
+$programs_with_submissions = [];
+$programs_without_submissions = [];
 
 // Process programs and separate into appropriate arrays
 foreach ($programs as $program) {
-    // Determine if this is a draft submission
-    $is_draft = isset($program['is_draft']) && $program['is_draft'] ? true : false;
-    
-    // Determine if program is finalized for current period
-    $is_finalized = false;
-    if ($current_period && 
-        isset($program['period_id']) && 
-        $current_period['period_id'] == $program['period_id'] && 
-        isset($program['is_draft']) && 
-        $program['is_draft'] == 0) {
-        $is_finalized = true;
-    }
-    
-    if ($is_draft || !$is_finalized) {
-        $draft_programs[] = $program;
+    // Check if program has any submissions
+    if (isset($program['latest_submission_id']) && $program['latest_submission_id']) {
+        // Program has submissions
+        if (isset($program['is_draft']) && $program['is_draft']) {
+            // Latest submission is a draft
+            $programs_with_drafts[] = $program;
+        } else {
+            // Latest submission is submitted
+            $programs_with_submissions[] = $program;
+        }
     } else {
-        $finalized_programs[] = $program;
+        // Program has no submissions (empty vessel)
+        $programs_without_submissions[] = $program;
     }
 }
 
@@ -184,16 +152,16 @@ require_once '../../layouts/page_header.php';
     </a>
 </div>
 
-<!-- Draft Programs Card -->
+<!-- Programs with Draft Submissions Card -->
 <div class="card shadow-sm mb-4 w-100 draft-programs-card">
     <div class="card-header d-flex justify-content-between align-items-center bg-light border-start border-warning border-4">
         <h5 class="card-title view-programs-card-title m-0 d-flex align-items-center">
             <i class="fas fa-edit text-warning me-2"></i>
-            Draft Programs 
-            <span class="badge bg-warning text-dark ms-2" title="These programs are still in draft status and can be edited">
-                <i class="fas fa-pencil-alt me-1"></i> Editable
+            Programs with Draft Submissions
+            <span class="badge bg-warning text-dark ms-2" title="These programs have draft submissions that can be edited">
+                <i class="fas fa-pencil-alt me-1"></i> Draft Submissions
             </span>
-            <span class="badge bg-secondary ms-2" id="draft-count">0</span>
+            <span class="badge bg-secondary ms-2" id="draft-count"><?php echo count($programs_with_drafts); ?></span>
         </h5>
     </div>
     
@@ -270,12 +238,12 @@ require_once '../../layouts/page_header.php';
                         </th>
                     </tr>
                 </thead>
-                <tbody>                    <?php if (empty($draft_programs)): ?>
+                <tbody>                    <?php if (empty($programs_with_drafts)): ?>
                         <tr>
-                            <td colspan="5" class="text-center py-4">No draft programs found.</td>
+                            <td colspan="5" class="text-center py-4">No programs with draft submissions found.</td>
                         </tr>
                     <?php else: ?>
-                        <?php                        foreach ($draft_programs as $program): 
+                        <?php                        foreach ($programs_with_drafts as $program): 
                             // Determine program type (assigned or custom)
                             $is_assigned = isset($program['is_assigned']) && $program['is_assigned'] ? true : false;
                               // Convert rating for display
@@ -404,20 +372,21 @@ require_once '../../layouts/page_header.php';
                                 </td>
                                 <td>
                                     <div class="btn-group btn-group-sm" role="group" aria-label="Program actions">
-                                        <a href="update_program.php?id=<?php echo $program['program_id']; ?>&period_id=<?php echo isset($program['period_id']) ? $program['period_id'] : ($current_period['period_id'] ?? ''); ?>" class="btn btn-outline-secondary" title="Edit Program">
-                                            <i class="fas fa-edit"></i>
+                                        <a href="program_details.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-secondary" title="View Program">
+                                            <i class="fas fa-eye"></i>
                                         </a>
                                         <?php if (isset($program['created_by']) && $program['created_by'] == $_SESSION['user_id']): ?>
+                                        <a href="add_submission.php?program_id=<?php echo $program['program_id']; ?>" class="btn btn-outline-success" title="Add Submission">
+                                            <i class="fas fa-plus"></i>
+                                        </a>
+                                        <a href="edit_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="Edit Program">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
                                         <button type="button" class="btn btn-outline-danger delete-program-btn" 
                                                 data-id="<?php echo $program['program_id']; ?>" 
                                                 data-name="<?php echo htmlspecialchars($program['program_name']); ?>" 
                                                 title="Delete Program">
                                             <i class="fas fa-trash"></i>
-                                        </button>
-                                        <?php endif; ?>
-                                        <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'focal'): ?>
-                                        <button class="btn btn-outline-success btn-sm submit-program" data-program-id="<?php echo $program['program_id']; ?>" title="Submit Program">
-                                            <i class="fas fa-check"></i>
                                         </button>
                                         <?php endif; ?>
                                     </div>
@@ -431,16 +400,16 @@ require_once '../../layouts/page_header.php';
     </div>
 </div>
 
-<!-- Finalized Programs Card -->
+<!-- Programs with Submitted Submissions Card -->
 <div class="card shadow-sm mb-4 w-100 finalized-programs-card">
     <div class="card-header d-flex justify-content-between align-items-center bg-light border-start border-success border-4">
         <h5 class="card-title view-programs-card-title m-0 d-flex align-items-center">
             <i class="fas fa-check-circle text-success me-2"></i>
-            Finalized Programs 
-            <span class="badge bg-success ms-2" title="These programs have finalized submissions for the current period">
-                <i class="fas fa-lock me-1"></i> Finalized
+            Programs with Submitted Submissions
+            <span class="badge bg-success ms-2" title="These programs have submitted submissions">
+                <i class="fas fa-check me-1"></i> Submitted
             </span>
-            <span class="badge bg-secondary ms-2" id="finalized-count">0</span>
+            <span class="badge bg-secondary ms-2" id="finalized-count"><?php echo count($programs_with_submissions); ?></span>
         </h5>
     </div>
     
@@ -517,11 +486,12 @@ require_once '../../layouts/page_header.php';
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if (empty($finalized_programs)): ?>                        <tr>
-                            <td colspan="5" class="text-center py-4">No finalized programs found.</td>
+                    <?php if (empty($programs_with_submissions)): ?>
+                        <tr>
+                            <td colspan="5" class="text-center py-4">No programs with submitted submissions found.</td>
                         </tr>
                     <?php else: ?>
-                        <?php                        foreach ($finalized_programs as $program): 
+                        <?php                        foreach ($programs_with_submissions as $program): 
                             // Determine program type (assigned or custom)
                             $is_assigned = isset($program['is_assigned']) && $program['is_assigned'] ? true : false;
                             
@@ -652,7 +622,174 @@ require_once '../../layouts/page_header.php';
                                         <a href="add_submission.php?program_id=<?php echo $program['program_id']; ?>" class="btn btn-outline-success" title="Add Submission">
                                             <i class="fas fa-plus"></i>
                                         </a>
-                                        <a href="update_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="Edit Program">
+                                        <a href="edit_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="Edit Program">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger delete-program-btn" 
+                                            data-id="<?php echo $program['program_id']; ?>"
+                                            data-name="<?php echo htmlspecialchars($program['program_name']); ?>"
+                                            title="Delete Program">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        <?php endif; ?>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Programs Without Submissions Card -->
+<div class="card shadow-sm mb-4 w-100 empty-programs-card">
+    <div class="card-header d-flex justify-content-between align-items-center bg-light border-start border-info border-4">
+        <h5 class="card-title view-programs-card-title m-0 d-flex align-items-center">
+            <i class="fas fa-folder-open text-info me-2"></i>
+            Empty Vessel Programs
+            <span class="badge bg-info ms-2" title="These programs have no submissions yet">
+                <i class="fas fa-plus me-1"></i> Ready for Submissions
+            </span>
+            <span class="badge bg-secondary ms-2" id="empty-count"><?php echo count($programs_without_submissions); ?></span>
+        </h5>
+    </div>
+    
+    <div class="card-body pb-0">
+        <div class="row g-3">
+            <div class="col-md-4 col-sm-12">
+                <label for="emptyProgramSearch" class="form-label">Search</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="text" class="form-control" id="emptyProgramSearch" placeholder="Search by program name or number">
+                </div>
+            </div>
+            <div class="col-md-2 col-sm-6">
+                <label for="emptyTypeFilter" class="form-label">Program Type</label>
+                <select class="form-select" id="emptyTypeFilter">
+                    <option value="">All Types</option>
+                    <option value="assigned">Assigned</option>
+                    <option value="created">Agency-Created Programs</option>
+                </select>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <label for="emptyInitiativeFilter" class="form-label">Initiative</label>
+                <select class="form-select" id="emptyInitiativeFilter">
+                    <option value="">All Initiatives</option>
+                    <option value="no-initiative">Not Linked to Initiative</option>
+                    <?php foreach ($active_initiatives as $initiative): ?>
+                        <option value="<?php echo $initiative['initiative_id']; ?>">
+                            <?php echo htmlspecialchars($initiative['initiative_name']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-md-1 col-sm-12 d-flex align-items-end">
+                <button id="resetEmptyFilters" class="btn btn-outline-secondary w-100">
+                    <i class="fas fa-undo me-1"></i> Reset
+                </button>
+            </div>
+        </div>
+        <div id="emptyFilterBadges" class="filter-badges mt-2"></div>
+    </div>
+    
+    <div class="card-body pt-2 p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-custom mb-0" id="emptyProgramsTable">
+                <thead class="table-light">
+                    <tr>
+                        <th class="sortable" data-sort="name">
+                            <i class="fas fa-project-diagram me-1"></i>Program Information 
+                            <i class="fas fa-sort ms-1"></i>
+                        </th>
+                        <th class="sortable initiative-display" data-sort="initiative">
+                            <i class="fas fa-lightbulb me-1"></i>Initiative 
+                            <i class="fas fa-sort ms-1"></i>
+                        </th>
+                        <th class="sortable" data-sort="date">
+                            <i class="fas fa-clock me-1"></i>Created Date 
+                            <i class="fas fa-sort ms-1"></i>
+                        </th>
+                        <th class="text-end">
+                            <i class="fas fa-cog me-1"></i>Actions
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (empty($programs_without_submissions)): ?>
+                        <tr>
+                            <td colspan="4" class="text-center py-4">No empty vessel programs found.</td>
+                        </tr>
+                    <?php else: ?>
+                        <?php foreach ($programs_without_submissions as $program): 
+                            // Determine program type (assigned or custom)
+                            $is_assigned = isset($program['is_assigned']) && $program['is_assigned'] ? true : false;
+                        ?>
+                            <tr data-program-type="<?php echo $is_assigned ? 'assigned' : 'created'; ?>">
+                                <td class="text-truncate program-name-col">
+                                    <div class="fw-medium">
+                                        <span class="program-name" title="<?php echo htmlspecialchars($program['program_name']); ?>">
+                                            <?php if (!empty($program['program_number'])): ?>
+                                                <span class="badge bg-info me-2" title="Program Number"><?php echo htmlspecialchars($program['program_number']); ?></span>
+                                            <?php endif; ?>
+                                            <?php echo htmlspecialchars($program['program_name']); ?>
+                                        </span>
+                                        <span class="badge bg-info ms-2" title="No submissions yet">
+                                            <i class="fas fa-plus me-1"></i> Empty Vessel
+                                        </span>
+                                    </div>
+                                    <div class="small text-muted program-type-indicator">
+                                        <i class="fas fa-<?php echo $is_assigned ? 'tasks' : 'folder-plus'; ?> me-1"></i>
+                                        <?php echo $is_assigned ? 'Assigned' : 'Agency-Created'; ?>
+                                    </div>
+                                </td>
+                                <td class="text-truncate initiative-col" 
+                                    data-initiative="<?php echo !empty($program['initiative_name']) ? htmlspecialchars($program['initiative_name']) : 'zzz_no_initiative'; ?>"
+                                    data-initiative-id="<?php echo $program['initiative_id'] ?? '0'; ?>">
+                                    <?php if (!empty($program['initiative_name'])): ?>
+                                        <span class="badge bg-primary initiative-badge" title="Initiative">
+                                            <i class="fas fa-lightbulb me-1"></i>
+                                            <span class="initiative-badge-card" title="<?php 
+                                                echo !empty($program['initiative_number']) ? 
+                                                    htmlspecialchars($program['initiative_number'] . ' - ' . $program['initiative_name']) : 
+                                                    htmlspecialchars($program['initiative_name']); 
+                                            ?>">
+                                                <?php 
+                                                echo !empty($program['initiative_number']) ? 
+                                                    htmlspecialchars($program['initiative_number'] . ' - ' . $program['initiative_name']) : 
+                                                    htmlspecialchars($program['initiative_name']); 
+                                                ?>
+                                            </span>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="text-muted small">
+                                            <i class="fas fa-minus me-1"></i>Not Linked
+                                        </span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php 
+                                    $date_iso = '';
+                                    if (isset($program['created_at']) && $program['created_at']) {
+                                        $date_iso = date('Y-m-d', strtotime($program['created_at']));
+                                        $date_display = date('M j, Y g:i A', strtotime($program['created_at']));
+                                    } else {
+                                        $date_display = 'Not set';
+                                    }
+                                    ?>
+                                    <span <?php if ($date_iso) echo 'data-date="' . $date_iso . '"'; ?>><?php echo $date_display; ?></span>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group" aria-label="Program actions">
+                                        <a href="program_details.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-secondary" title="View Program">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <?php if (isset($program['created_by']) && $program['created_by'] == $_SESSION['user_id']): ?>
+                                        <a href="add_submission.php?program_id=<?php echo $program['program_id']; ?>" class="btn btn-outline-success" title="Add Submission">
+                                            <i class="fas fa-plus"></i>
+                                        </a>
+                                        <a href="edit_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="Edit Program">
                                             <i class="fas fa-edit"></i>
                                         </a>
                                         <button type="button" class="btn btn-outline-danger delete-program-btn" 
@@ -692,9 +829,11 @@ require_once '../../layouts/page_header.php';
     function updateProgramCounters() {
         const draftCount = document.querySelectorAll('#draftProgramsTable tbody tr:not(.d-none)').length;
         const finalizedCount = document.querySelectorAll('#finalizedProgramsTable tbody tr:not(.d-none)').length;
+        const emptyCount = document.querySelectorAll('#emptyProgramsTable tbody tr:not(.d-none)').length;
         
         document.getElementById('draft-count').textContent = draftCount;
         document.getElementById('finalized-count').textContent = finalizedCount;
+        document.getElementById('empty-count').textContent = emptyCount;
     }
     
     function initializeTableLoadingStates() {
