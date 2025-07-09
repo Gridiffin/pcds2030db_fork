@@ -60,4 +60,70 @@ document.addEventListener('DOMContentLoaded', function() {
     addNewTarget();
     // Auto-generate target numbers if not provided
     // (Optional: implement if needed)
+
+    // Modern multi-file upload UX
+    const addAttachmentBtn = document.getElementById('add-attachment-btn');
+    const attachmentsInput = document.getElementById('attachments');
+    const attachmentsList = document.getElementById('attachments-list');
+    let selectedFiles = [];
+
+    function renderAttachmentsList() {
+        attachmentsList.innerHTML = '';
+        selectedFiles.forEach((file, idx) => {
+            const li = document.createElement('li');
+            li.className = 'd-flex align-items-center justify-content-between mb-1';
+            li.innerHTML = `<span>${file.name}</span>`;
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'btn btn-sm btn-link text-danger p-0 ms-2';
+            removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+            removeBtn.addEventListener('click', function() {
+                selectedFiles.splice(idx, 1);
+                renderAttachmentsList();
+            });
+            li.appendChild(removeBtn);
+            attachmentsList.appendChild(li);
+        });
+    }
+
+    if (addAttachmentBtn && attachmentsInput) {
+        addAttachmentBtn.addEventListener('click', function() {
+            attachmentsInput.value = '';
+            attachmentsInput.click();
+        });
+        attachmentsInput.addEventListener('change', function() {
+            if (attachmentsInput.files.length > 0) {
+                Array.from(attachmentsInput.files).forEach(file => {
+                    // Prevent duplicates
+                    if (!selectedFiles.some(f => f.name === file.name && f.size === file.size && f.lastModified === file.lastModified)) {
+                        selectedFiles.push(file);
+                    }
+                });
+                renderAttachmentsList();
+            }
+        });
+    }
+
+    // On form submit, append all files to FormData
+    const form = document.getElementById('addSubmissionForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            if (selectedFiles.length > 0) {
+                // Remove any existing file inputs
+                const oldInputs = form.querySelectorAll('input[type="file"][name="attachments[]"]');
+                oldInputs.forEach(input => input.remove());
+                // Create a new DataTransfer to hold all files
+                const dataTransfer = new DataTransfer();
+                selectedFiles.forEach(file => dataTransfer.items.add(file));
+                // Create a new file input and append to form
+                const newInput = document.createElement('input');
+                newInput.type = 'file';
+                newInput.name = 'attachments[]';
+                newInput.multiple = true;
+                newInput.className = 'd-none';
+                newInput.files = dataTransfer.files;
+                form.appendChild(newInput);
+            }
+        });
+    }
 }); 

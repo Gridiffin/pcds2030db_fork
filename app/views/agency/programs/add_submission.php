@@ -345,10 +345,14 @@ require_once '../../layouts/page_header.php';
                                             <i class="fas fa-paperclip me-2"></i>
                                             Attachments
                                         </h6>
-                                        <input type="file" class="form-control" name="attachments[]" id="attachments" multiple>
+                                        <button type="button" id="add-attachment-btn" class="btn btn-outline-secondary btn-sm mb-2">
+                                            <i class="fas fa-plus me-1"></i> Add File(s)
+                                        </button>
+                                        <input type="file" class="form-control d-none" name="attachments[]" id="attachments" multiple>
                                         <div class="form-text mt-1">
-                                            You can select multiple files. Allowed types: PDF, DOCX, XLSX, PNG, JPG, etc.
+                                            You can add files one by one or in batches. Allowed types: PDF, DOCX, XLSX, PNG, JPG, etc.
                                         </div>
+                                        <ul id="attachments-list" class="list-unstyled small mt-2"></ul>
                                     </div>
                                 </div>
                             </div>

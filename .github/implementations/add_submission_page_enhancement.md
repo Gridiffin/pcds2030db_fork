@@ -4,4 +4,5 @@
 - [x] Separate the scripts and styles from the add submission page into their own modular files in the assets directory.
 - [x] Import add_submission.css into main.css for automatic inclusion.
 - [x] Move the Targets section to the left side, below the Description, and expand it to the full width of the card section if possible.
-- [ ] Add an attachment section under the Submission Info card on the right side of the add submission page. 
+- [x] Add an attachment section under the Submission Info card on the right side of the add submission page.
+- [ ] Implement a modern, user-friendly multi-file upload interface for attachments: allow adding files one by one or in batches, show a list, allow removal, and upload all on form submission. 
