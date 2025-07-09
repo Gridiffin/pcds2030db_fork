@@ -111,7 +111,7 @@ foreach ($programs as $program) {
             $programs_with_submissions[] = $program;
         }
     } else {
-        // Program has no submissions (empty vessel)
+        // Program has no submissions (program template)
         $programs_without_submissions[] = $program;
     }
 }
@@ -145,6 +145,15 @@ $header_config = [
 // Include modern page header
 require_once '../../layouts/page_header.php';
 ?>
+
+<!-- Toast Notification for Program Creation/Deletion -->
+<?php if (!empty($message)): ?>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            showToast('<?= ucfirst($messageType) ?>', <?= json_encode($message) ?>, '<?= $messageType ?>');
+        });
+    </script>
+<?php endif; ?>
 
 <div class="mb-3">
     <a href="<?php echo APP_URL; ?>/app/views/agency/programs/create_program.php" class="btn btn-primary">
@@ -646,14 +655,14 @@ require_once '../../layouts/page_header.php';
 <!-- Programs Without Submissions Card -->
 <div class="card shadow-sm mb-4 w-100 empty-programs-card">
     <div class="card-header d-flex justify-content-between align-items-center bg-light border-start border-info border-4">
-        <h5 class="card-title view-programs-card-title m-0 d-flex align-items-center">
-            <i class="fas fa-folder-open text-info me-2"></i>
-            Empty Vessel Programs
-            <span class="badge bg-info ms-2" title="These programs have no submissions yet">
-                <i class="fas fa-plus me-1"></i> Ready for Submissions
-            </span>
-            <span class="badge bg-secondary ms-2" id="empty-count"><?php echo count($programs_without_submissions); ?></span>
-        </h5>
+                    <h5 class="card-title view-programs-card-title m-0 d-flex align-items-center text-white">
+                <i class="fas fa-folder-open text-white me-2" style="color: #fff !important;"></i>
+                Program Templates
+                <span class="badge bg-info ms-2" title="These programs are templates waiting for progress reports">
+                    <i class="fas fa-file-alt me-1 text-white"></i> Ready for Reports
+                </span>
+                <span class="badge bg-secondary ms-2" id="empty-count"><?php echo count($programs_without_submissions); ?></span>
+            </h5>
     </div>
     
     <div class="card-body pb-0">
@@ -719,7 +728,7 @@ require_once '../../layouts/page_header.php';
                 <tbody>
                     <?php if (empty($programs_without_submissions)): ?>
                         <tr>
-                            <td colspan="4" class="text-center py-4">No empty vessel programs found.</td>
+                            <td colspan="4" class="text-center py-4">No program templates found.</td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($programs_without_submissions as $program): 
@@ -735,8 +744,8 @@ require_once '../../layouts/page_header.php';
                                             <?php endif; ?>
                                             <?php echo htmlspecialchars($program['program_name']); ?>
                                         </span>
-                                        <span class="badge bg-info ms-2" title="No submissions yet">
-                                            <i class="fas fa-plus me-1"></i> Empty Vessel
+                                        <span class="badge bg-info ms-2" title="Program template - ready for progress reports">
+                                            <i class="fas fa-file-alt me-1"></i> Template
                                         </span>
                                     </div>
                                     <div class="small text-muted program-type-indicator">

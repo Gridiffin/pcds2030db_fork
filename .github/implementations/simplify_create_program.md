@@ -1,7 +1,7 @@
 # Simplify Create Program Functionality - Updated Approach
 
 ## Overview
-Simplify the create program functionality to create programs as "empty vessels" (like initiatives) without any reporting period or submission. Users will add submissions for specific periods later when they need to report progress.
+Simplify the create program functionality to create programs as "templates" (like initiatives) without any reporting period or submission. Users will add progress reports for specific periods later when they need to report progress.
 
 ## Current State
 - Complex wizard interface with 3 steps (Basic Info, Targets, Review)
@@ -15,7 +15,7 @@ Simplify the create program functionality to create programs as "empty vessels" 
 - No reporting period selection during creation
 - No targets or attachments during initial creation
 - No initial submission created
-- Programs exist as empty vessels until users add submissions for specific periods
+- Programs exist as templates until users add progress reports for specific periods
 
 ## Tasks
 
@@ -65,7 +65,7 @@ Simplify the create program functionality to create programs as "empty vessels" 
 - Simpler initial program creation process
 
 ## Notes
-- Programs will exist as empty vessels until users add submissions
+- Programs will exist as templates until users add progress reports
 - Submissions can be added for any reporting period (quarter, half, yearly)
 - Targets and attachments are added when creating/editing submissions
 - This approach is more flexible and matches how initiatives work 

@@ -8,6 +8,7 @@
 .text-info { color: var(--info-color) !important; }
 .text-dark { color: var(--dark-color) !important; }
 .text-light { color: var(--light-color) !important; }
+.text-white { color: #fff !important; }
 
 /* Background colors */
 .bg-primary { background-color: var(--primary-color) !important; }

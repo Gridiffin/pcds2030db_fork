@@ -49,14 +49,29 @@ The Create Program page and related functions are not following the centralized 
 - [x] Updated all database operations to use correct column names
 - [x] Ensured consistency with `db_names.php` configuration
 
-### Task 5: Test and validate
-- [ ] Test program creation functionality
-- [ ] Verify data is stored correctly
-- [ ] Check that all form fields work as expected
+### Task 5: Test and validate ✅ COMPLETED
+- [x] Test program creation functionality
+- [x] Verify data is stored correctly
+- [x] Check that all form fields work as expected
+- [x] Fixed delete program functionality (removed non-existent columns)
+- [x] Added toast notification to view programs page
 
 ## Implementation Status
 - [x] Task 1: Update configuration files
 - [x] Task 2: Fix create_simple_program function
 - [x] Task 3: Update form fields  
 - [x] Task 4: Update related functions
-- [ ] Task 5: Test and validate 
+- [x] Task 5: Test and validate
+
+## Additional Fixes Completed
+
+### Fix 1: Delete Program Functionality
+- [x] Fixed `delete_program.php` - removed references to non-existent `owner_agency_id` and `is_assigned` columns
+- [x] Updated query to use correct column names: `agency_id` and proper user agency lookup
+- [x] Maintained security by checking user's agency ownership
+
+### Fix 2: Toast Notification System
+- [x] Added toast notification functionality to `view_programs.php`
+- [x] Integrated with existing `showToast` function from `main.js`
+- [x] Shows notifications for program creation, deletion, and other operations
+- [x] Uses session-based message system for consistent user experience 

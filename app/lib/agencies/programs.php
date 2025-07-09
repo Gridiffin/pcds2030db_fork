@@ -261,7 +261,7 @@ function create_wizard_program_draft($data) {
 }
 
 /**
- * Create simple program as empty vessel (no initial submission)
+ * Create simple program template (no initial submission)
  */
 function create_simple_program($data) {
     global $conn, $programsTable, $programIdCol, $programNameCol, $programDescriptionCol, $programNumberCol, 
@@ -317,7 +317,7 @@ function create_simple_program($data) {
     try {
         $conn->begin_transaction();
         
-        // Create the program (empty vessel) with program number if available
+        // Create the program template with program number if available
         $stmt = $conn->prepare("INSERT INTO $programsTable ($programNameCol, $programDescriptionCol, $programNumberCol, $programAgencyIdCol, $programInitiativeIdCol, $programCreatedByCol, $programCreatedAtCol) VALUES (?, ?, ?, ?, ?, ?, NOW())");
         $stmt->bind_param("sssiii", $program_name, $brief_description, $program_number, $agency_id, $initiative_id, $user_id);
         if (!$stmt->execute()) throw new Exception('Failed to create program: ' . $stmt->error);
@@ -328,14 +328,14 @@ function create_simple_program($data) {
         $assignment_stmt->bind_param("ii", $program_id, $user_id);
         if (!$assignment_stmt->execute()) throw new Exception('Failed to create user assignment: ' . $assignment_stmt->error);
         
-        // Note: No initial submission is created - programs exist as empty vessels
-        // Submissions will be created when users add them for specific periods
+        // Note: No initial submission is created - programs exist as templates
+        // Submissions will be created when users add progress reports for specific periods
         
         $conn->commit();
         log_audit_action('create_program', "Program Name: $program_name | Program ID: $program_id | Program Number: $program_number", 'success', $user_id);
         return [
             'success' => true, 
-            'message' => 'Program created successfully as an empty vessel. Add submissions for specific periods when ready to report progress.',
+            'message' => 'Program template created successfully. Add progress reports for specific periods when ready to report progress.',
             'program_id' => $program_id,
             'program_number' => $program_number
         ];

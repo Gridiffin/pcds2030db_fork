@@ -241,7 +241,7 @@ $showNoSubmissionsAlert = !$has_submissions && $is_owner; // Show alert if progr
 <?php if ($showNoSubmissionsAlert): ?>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        showToast('Empty Vessel Program', 'This program has no submissions yet. <a href="<?= APP_URL ?>/app/views/agency/programs/add_submission.php?program_id=<?= $program_id ?>" class="alert-link">Add your first submission</a>.', 'info', 10000);
+        showToast('Program Template', 'This program is a template. <a href="<?= APP_URL ?>/app/views/agency/programs/add_submission.php?program_id=<?= $program_id ?>" class="alert-link">Add your first progress report</a>.', 'info', 10000);
     });
 </script>
 <?php endif; ?>

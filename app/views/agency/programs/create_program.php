@@ -73,7 +73,7 @@ require_once '../../layouts/header.php';
 // Configure modern page header
 $header_config = [
     'title' => 'Create New Program',
-    'subtitle' => 'Create a new program as an empty vessel. Add submissions for specific periods later.',
+    'subtitle' => 'Create a new program template. Add progress reports for specific periods when ready.',
     'variant' => 'white',
     'actions' => [
         [
@@ -257,7 +257,7 @@ require_once '../../layouts/page_header.php';
                                         <ul class="list-unstyled mb-0">
                                             <li class="mb-2">
                                                 <i class="fas fa-check-circle text-success me-2"></i>
-                                                Create program (empty vessel)
+                                                Create program template
                                             </li>
                                             <li class="mb-2">
                                                 <i class="fas fa-calendar-plus text-primary me-2"></i>

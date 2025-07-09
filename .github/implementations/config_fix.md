@@ -45,10 +45,10 @@ Update the configuration files to properly detect and use the new directory stru
 - ✅ **Agency program listing screen updated** - Now properly handles:
   - Programs with draft submissions
   - Programs with submitted submissions  
-  - Empty vessel programs (no submissions)
+  - Program templates (no submissions)
   - Proper action buttons for each program type
 - ✅ **Agency program details screen updated** - Now properly handles:
-  - Programs without submissions (empty vessel programs)
+  - Programs without submissions (program templates)
   - Simplified submission display (latest submission only)
   - Updated action buttons (always show "Add Submission" and "Edit Program" for owners)
   - Better status handling for programs without submissions
