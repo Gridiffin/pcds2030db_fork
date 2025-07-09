@@ -3,6 +3,9 @@
  * Enhances the appearance of program details components
  */
 
+/* Import layout styles */
+@import url('./program-details/layout.css');
+
 /* Card styling enhancements */
 .program-info-card,
 .performance-card {

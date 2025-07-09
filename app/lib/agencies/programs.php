@@ -126,17 +126,19 @@ function create_agency_program($data) {
     if ($program_number && !is_valid_program_number_format($program_number, false)) {
         return format_error(get_program_number_format_error(false), 400);
     }
-    $start_date = $validated['start_date'] ?? null;
-    $end_date = $validated['end_date'] ?? null;
+    $start_date = validate_program_date($validated['start_date'] ?? '');
+    $end_date = validate_program_date($validated['end_date'] ?? '');
+    if ($start_date === false) return format_error('Start Date must be in YYYY-MM-DD format.', 400);
+    if ($end_date === false) return format_error('End Date must be in YYYY-MM-DD format.', 400);
     $user_id = $_SESSION['user_id'];
     $user = get_user_by_id($conn, $user_id);
     $agency_id = $user ? $user['agency_id'] : null;
     // Create the program first
-    $query = "INSERT INTO programs (program_name, program_number, program_description, agency_id, initiative_id, created_by, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, NOW())";
+    $query = "INSERT INTO programs (program_name, program_number, program_description, agency_id, initiative_id, start_date, end_date, created_by, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())";
     $stmt = $conn->prepare($query);
     $program_description = $validated['description'] ?? '';
-    $stmt->bind_param("sssiii", $program_name, $program_number, $program_description, $agency_id, $initiative_id, $user_id);
+    $stmt->bind_param("sssiisss", $program_name, $program_number, $program_description, $agency_id, $initiative_id, $start_date, $end_date, $user_id);
     if ($stmt->execute()) {
         $program_id = $conn->insert_id;
         // Create user assignment for the creator
@@ -151,7 +153,7 @@ function create_agency_program($data) {
                     VALUES (?, ?, 1, 'not_started', 'not_started', ?, ?, ?, ?)";
         $sub_stmt = $conn->prepare($sub_query);
         $description = $validated['description'] ?? '';
-        $sub_stmt->bind_param("iisssi", $program_id, $period_id, $description, $start_date, $end_date, $user_id);
+        $sub_stmt->bind_param("iissss", $program_id, $period_id, $description, $start_date, $end_date, $user_id);
         $sub_stmt->execute();
         return [
             'success' => true,
@@ -175,8 +177,10 @@ function create_wizard_program_draft($data) {
     $program_name = trim($data['program_name']);
     $program_number = isset($data['program_number']) ? trim($data['program_number']) : null;
     $brief_description = isset($data['brief_description']) ? trim($data['brief_description']) : '';
-    $start_date = isset($data['start_date']) && !empty($data['start_date']) ? $data['start_date'] : null;
-    $end_date = isset($data['end_date']) && !empty($data['end_date']) ? $data['end_date'] : null;
+    $start_date = validate_program_date($data['start_date'] ?? '');
+    $end_date = validate_program_date($data['end_date'] ?? '');
+    if ($start_date === false) return ['error' => 'Start Date must be in YYYY-MM-DD format.'];
+    if ($end_date === false) return ['error' => 'End Date must be in YYYY-MM-DD format.'];
     $targets = isset($data['targets']) && is_array($data['targets']) ? $data['targets'] : [];
     $initiative_id = isset($data['initiative_id']) && !empty($data['initiative_id']) ? intval($data['initiative_id']) : null;
     $period_id = isset($data['period_id']) && !empty($data['period_id']) ? intval($data['period_id']) : null;
@@ -232,7 +236,7 @@ function create_wizard_program_draft($data) {
         // Create initial program submission
         $current_period_id = $period_id ?: 1;
         $submission_stmt = $conn->prepare("INSERT INTO program_submissions (program_id, period_id, is_draft, status_indicator, rating, description, start_date, end_date, submitted_by) VALUES (?, ?, 1, 'not_started', 'not_started', ?, ?, ?, ?)");
-        $submission_stmt->bind_param("iisssi", $program_id, $current_period_id, $brief_description, $start_date, $end_date, $user_id);
+        $submission_stmt->bind_param("iissss", $program_id, $current_period_id, $brief_description, $start_date, $end_date, $user_id);
         if (!$submission_stmt->execute()) throw new Exception('Failed to create program submission: ' . $submission_stmt->error);
         
         // Create targets if provided
@@ -273,8 +277,20 @@ function create_simple_program($data) {
     }
     $program_name = trim($data['program_name']);
     $brief_description = isset($data['brief_description']) ? trim($data['brief_description']) : '';
-    $start_date = isset($data['start_date']) && !empty($data['start_date']) ? $data['start_date'] : null;
-    $end_date = isset($data['end_date']) && !empty($data['end_date']) ? $data['end_date'] : null;
+    
+    // DEBUG: Log actual date values
+    error_log("DEBUG - Raw start_date: " . var_export($data['start_date'] ?? '', true));
+    error_log("DEBUG - Raw end_date: " . var_export($data['end_date'] ?? '', true));
+    
+    $start_date = validate_program_date($data['start_date'] ?? '');
+    $end_date = validate_program_date($data['end_date'] ?? '');
+    
+    // DEBUG: Log processed date values
+    error_log("DEBUG - Processed start_date: " . var_export($start_date, true));
+    error_log("DEBUG - Processed end_date: " . var_export($end_date, true));
+    
+    if ($start_date === false) return ['error' => 'Start Date must be in YYYY-MM-DD format.'];
+    if ($end_date === false) return ['error' => 'End Date must be in YYYY-MM-DD format.'];
     $initiative_id = isset($data['initiative_id']) && !empty($data['initiative_id']) ? intval($data['initiative_id']) : null;
     
     // Handle program number with new simplified logic
@@ -317,9 +333,19 @@ function create_simple_program($data) {
     try {
         $conn->begin_transaction();
         
-        // Create the program template with program number if available
-        $stmt = $conn->prepare("INSERT INTO $programsTable ($programNameCol, $programDescriptionCol, $programNumberCol, $programAgencyIdCol, $programInitiativeIdCol, $programCreatedByCol, $programCreatedAtCol) VALUES (?, ?, ?, ?, ?, ?, NOW())");
-        $stmt->bind_param("sssiii", $program_name, $brief_description, $program_number, $agency_id, $initiative_id, $user_id);
+        // Create the program template with program number if available  
+        $sql = "INSERT INTO programs (program_name, program_description, program_number, agency_id, initiative_id, start_date, end_date, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+        
+        // DEBUG: Log the actual SQL being prepared
+        error_log("DEBUG - SQL: " . $sql);
+        
+        $stmt = $conn->prepare($sql);
+        
+        // DEBUG: Log values being bound
+        error_log("DEBUG - About to bind: start_date='" . var_export($start_date, true) . "', end_date='" . var_export($end_date, true) . "'");
+        error_log("DEBUG - All params: " . var_export([$program_name, $brief_description, $program_number, $agency_id, $initiative_id, $start_date, $end_date, $user_id], true));
+        
+        $stmt->bind_param("sssiisss", $program_name, $brief_description, $program_number, $agency_id, $initiative_id, $start_date, $end_date, $user_id);
         if (!$stmt->execute()) throw new Exception('Failed to create program: ' . $stmt->error);
         $program_id = $conn->insert_id;
         
@@ -351,7 +377,7 @@ function create_simple_program($data) {
  */
 function update_simple_program($data) {
     global $conn, $programsTable, $programIdCol, $programNameCol, $programDescriptionCol, $programNumberCol, 
-           $programInitiativeIdCol, $programIsDeletedCol, $programUpdatedAtCol, $usersTable, $userAgencyIdCol;
+           $programAgencyIdCol, $programInitiativeIdCol, $programIsDeletedCol, $programUpdatedAtCol, $usersTable, $userAgencyIdCol, $userIdCol;
     
     if (!is_agency()) return ['error' => 'Permission denied'];
     
@@ -366,8 +392,10 @@ function update_simple_program($data) {
     $program_id = intval($data['program_id']);
     $program_name = trim($data['program_name']);
     $brief_description = isset($data['brief_description']) ? trim($data['brief_description']) : '';
-    $start_date = isset($data['start_date']) && !empty($data['start_date']) ? $data['start_date'] : null;
-    $end_date = isset($data['end_date']) && !empty($data['end_date']) ? $data['end_date'] : null;
+    $start_date = validate_program_date($data['start_date'] ?? '');
+    $end_date = validate_program_date($data['end_date'] ?? '');
+    if ($start_date === false) return ['error' => 'Start Date must be in YYYY-MM-DD format.'];
+    if ($end_date === false) return ['error' => 'End Date must be in YYYY-MM-DD format.'];
     $initiative_id = isset($data['initiative_id']) && !empty($data['initiative_id']) ? intval($data['initiative_id']) : null;
     
     // Check if user has access to this program
@@ -479,8 +507,10 @@ function update_program_draft_only($program_id, $data) {
     
     // Program number functionality removed - current schema doesn't support it
     
-    $start_date = isset($data['start_date']) && !empty($data['start_date']) ? $data['start_date'] : null;
-    $end_date = isset($data['end_date']) && !empty($data['end_date']) ? $data['end_date'] : null;
+    $start_date = validate_program_date($data['start_date'] ?? '');
+    $end_date = validate_program_date($data['end_date'] ?? '');
+    if ($start_date === false) return ['success' => false, 'error' => 'Start Date must be in YYYY-MM-DD format.'];
+    if ($end_date === false) return ['success' => false, 'error' => 'End Date must be in YYYY-MM-DD format.'];
     $targets = isset($data['targets']) && is_array($data['targets']) ? $data['targets'] : [];
     $brief_description = isset($data['brief_description']) ? trim($data['brief_description']) : '';
     
@@ -543,7 +573,7 @@ function update_program_draft_only($program_id, $data) {
                 // Create new submission
                 $current_period_id = $period_id ?: 1;
                 $insert_stmt = $conn->prepare("INSERT INTO program_submissions (program_id, period_id, is_draft, status_indicator, rating, description, start_date, end_date, submitted_by) VALUES (?, ?, 1, 'not_started', 'not_started', ?, ?, ?, ?)");
-                $insert_stmt->bind_param("iisssi", $program_id, $current_period_id, $brief_description, $start_date, $end_date, $user_id);
+                $insert_stmt->bind_param("iissss", $program_id, $current_period_id, $brief_description, $start_date, $end_date, $user_id);
                 if (!$insert_stmt->execute()) throw new Exception('Failed to create program submission: ' . $insert_stmt->error);
                 
                 // Create targets if provided
@@ -604,8 +634,10 @@ function update_wizard_program_draft($program_id, $data) {
     
     $program_name = trim($data['program_name']);
     $brief_description = isset($data['brief_description']) ? trim($data['brief_description']) : '';
-    $start_date = isset($data['start_date']) && !empty($data['start_date']) ? $data['start_date'] : null;
-    $end_date = isset($data['end_date']) && !empty($data['end_date']) ? $data['end_date'] : null;
+    $start_date = validate_program_date($data['start_date'] ?? '');
+    $end_date = validate_program_date($data['end_date'] ?? '');
+    if ($start_date === false) return ['error' => 'Start Date must be in YYYY-MM-DD format.'];
+    if ($end_date === false) return ['error' => 'End Date must be in YYYY-MM-DD format.'];
     $targets = isset($data['targets']) && is_array($data['targets']) ? $data['targets'] : [];
     $initiative_id = isset($data['initiative_id']) && !empty($data['initiative_id']) ? intval($data['initiative_id']) : null;
     $period_id = isset($data['period_id']) && !empty($data['period_id']) ? intval($data['period_id']) : null;
@@ -1621,4 +1653,19 @@ function create_program_submission($data) {
         $conn->rollback();
         return ['success' => false, 'error' => $e->getMessage()];
     }
+}
+
+
+
+/**
+ * Strictly validate a date string as YYYY-MM-DD or empty/null.
+ * Returns the date if valid, or null if empty, or false if invalid.
+ */
+function validate_program_date($date) {
+    if (empty($date)) return null;
+    $date = trim($date);
+    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+        return $date;
+    }
+    return false;
 }

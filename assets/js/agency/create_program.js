@@ -106,4 +106,28 @@ document.addEventListener('DOMContentLoaded', function() {
             finalNumberPreview.textContent = 'Will be generated automatically';
         }
     });
+
+    // Date validation for program timeline
+    const form = document.getElementById('createProgramForm');
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
+    if (form && startDateInput && endDateInput) {
+        form.addEventListener('submit', function(e) {
+            const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+            let valid = true;
+            let errorMsg = '';
+            if (startDateInput.value && !dateRegex.test(startDateInput.value)) {
+                valid = false;
+                errorMsg += 'Start Date must be in YYYY-MM-DD format. ';
+            }
+            if (endDateInput.value && !dateRegex.test(endDateInput.value)) {
+                valid = false;
+                errorMsg += 'End Date must be in YYYY-MM-DD format. ';
+            }
+            if (!valid) {
+                e.preventDefault();
+                alert(errorMsg);
+            }
+        });
+    }
 });

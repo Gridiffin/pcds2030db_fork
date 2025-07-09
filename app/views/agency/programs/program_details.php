@@ -19,6 +19,8 @@ require_once ROOT_PATH . 'app/lib/agencies/index.php';
 require_once ROOT_PATH . 'app/lib/agencies/programs.php';
 require_once ROOT_PATH . 'app/lib/rating_helpers.php';
 require_once ROOT_PATH . 'app/lib/agencies/program_attachments.php';
+require_once ROOT_PATH . 'app/lib/agencies/program-details/data-processor.php';
+require_once ROOT_PATH . 'app/lib/agencies/program-details/error-handler.php';
 
 // Verify user is an agency
 if (!is_agency()) {
@@ -151,7 +153,8 @@ $pageTitle = 'Program Details';
 
 // Additional scripts
 $additionalScripts = [
-    APP_URL . '/assets/js/utilities/rating_utils.js'
+    APP_URL . '/assets/js/utilities/rating_utils.js',
+    APP_URL . '/assets/js/agency/program_details.js'
 ];
 
 // Additional CSS for attachments
@@ -247,24 +250,25 @@ $showNoSubmissionsAlert = !$has_submissions && $is_owner; // Show alert if progr
 <?php endif; ?>
 
 <!-- Program Overview Card -->
-<div class="card shadow-sm mb-4">
-    <div class="card-header d-flex justify-content-between align-items-center">        <h5 class="card-title mb-0">
+<div class="card program-details-card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">
             <i class="fas fa-clipboard-list me-2"></i>Program Information
         </h5>
-        <div>
-            <span class="badge bg-<?php echo $status_map[$status]['class']; ?> py-2 px-3">
+        <div class="action-buttons">
+            <span class="badge status-badge bg-<?php echo $status_map[$status]['class']; ?> py-2 px-3">
                 <i class="<?php echo $status_map[$status]['icon']; ?> me-1"></i> 
                 <?php echo $status_map[$status]['label']; ?>
             </span>
             <?php if ($is_owner): ?>
-                <a href="<?php echo APP_URL; ?>/app/views/agency/programs/add_submission.php?program_id=<?php echo $program_id; ?>" class="btn btn-primary btn-sm ms-2">
+                <a href="<?php echo APP_URL; ?>/app/views/agency/programs/add_submission.php?program_id=<?php echo $program_id; ?>" class="btn btn-primary btn-sm">
                     <i class="fas fa-plus me-1"></i> Add Submission
                 </a>
-                <a href="<?php echo APP_URL; ?>/app/views/agency/programs/edit_program.php?id=<?php echo $program_id; ?>" class="btn btn-outline-primary btn-sm ms-2">
+                <a href="<?php echo APP_URL; ?>/app/views/agency/programs/edit_program.php?id=<?php echo $program_id; ?>" class="btn btn-outline-primary btn-sm">
                     <i class="fas fa-edit me-1"></i> Edit Program
                 </a>
                 <?php if ($is_draft): ?>
-                <span class="badge bg-warning text-dark ms-2" title="Latest submission is in draft status">
+                <span class="badge bg-warning text-dark" title="Latest submission is in draft status">
                     <i class="fas fa-pencil-alt me-1"></i> Draft Submission
                 </span>
                 <?php endif; ?>
@@ -278,15 +282,28 @@ $showNoSubmissionsAlert = !$has_submissions && $is_owner; // Show alert if progr
                 <h6 class="border-bottom pb-2 mb-3">Basic Information</h6>
                 
                 <div class="row">
-                    <div class="col-md-6 mb-3">                        <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="row">
                             <div class="col-md-4 text-muted">Program Name:</div>
                             <div class="col-md-8 fw-medium">
-                                
                                 <?php echo htmlspecialchars($program['program_name']); ?>
                             </div>
                         </div>
                     </div>
-                    
+                    <div class="col-md-6 mb-3">
+                        <div class="row">
+                            <div class="col-md-4 text-muted">Program Number:</div>
+                            <div class="col-md-8">
+                                <?php if (!empty($program['program_number'])): ?>
+                                    <span class="badge bg-info" title="Program Number"><?php echo htmlspecialchars($program['program_number']); ?></span>
+                                <?php else: ?>
+                                    <span class="text-muted">Not specified</span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
                     <div class="col-md-6 mb-3">
                         <div class="row">
                             <div class="col-md-4 text-muted">Program Type:</div>
@@ -299,24 +316,32 @@ $showNoSubmissionsAlert = !$has_submissions && $is_owner; // Show alert if progr
                             </div>
                         </div>
                     </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="row">
+                            <div class="col-md-4 text-muted">Initiative:</div>
+                            <div class="col-md-8">
+                                <?php if (!empty($program['initiative_name'])): ?>
+                                    <span class="fw-medium"><?php echo htmlspecialchars($program['initiative_name']); ?></span>
+                                    <?php if (!empty($program['initiative_number'])): ?>
+                                        <span class="badge bg-secondary ms-2" title="Initiative Number"><?php echo htmlspecialchars($program['initiative_number']); ?></span>
+                                    <?php endif; ?>
+                                <?php else: ?>
+                                    <span class="text-muted">Not specified</span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <div class="row">
-                            <div class="col-md-4 text-muted">Sector:</div>
-                            <div class="col-md-8"><?php echo htmlspecialchars($program['sector_name'] ?? 'Not specified'); ?></div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-6 mb-3">
-                        <div class="row">
                             <div class="col-md-4 text-muted">Timeline:</div>
                             <div class="col-md-8">
-                                <?php if (isset($program['start_date']) && $program['start_date']): ?>
+                                <?php if (!empty($program['start_date'])): ?>
                                     <i class="far fa-calendar-alt me-1"></i>
                                     <?php echo date('M j, Y', strtotime($program['start_date'])); ?>
-                                    <?php if (isset($program['end_date']) && $program['end_date']): ?>
+                                    <?php if (!empty($program['end_date'])): ?>
                                         <i class="fas fa-long-arrow-alt-right mx-1"></i>
                                         <?php echo date('M j, Y', strtotime($program['end_date'])); ?>
                                     <?php endif; ?>
@@ -541,6 +566,19 @@ $showNoSubmissionsAlert = !$has_submissions && $is_owner; // Show alert if progr
     <strong>Note:</strong> You are viewing this program in read-only mode. Only the program's owning agency can submit updates.
 </div>
 <?php endif; ?>
+
+<!-- JavaScript Configuration -->
+<script>
+// Pass PHP variables to JavaScript
+window.currentUser = {
+    id: <?php echo $_SESSION['user_id'] ?? 'null'; ?>,
+    agency_id: <?php echo $_SESSION['agency_id'] ?? 'null'; ?>,
+    role: '<?php echo $_SESSION['role'] ?? ''; ?>'
+};
+window.isOwner = <?php echo $is_owner ? 'true' : 'false'; ?>;
+window.programId = <?php echo $program_id; ?>;
+window.APP_URL = '<?php echo APP_URL; ?>';
+</script>
 
 <?php
 // Include footer

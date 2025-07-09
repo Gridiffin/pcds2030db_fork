@@ -9,6 +9,17 @@ require_once '../config/config.php';
 require_once '../lib/db_connect.php';
 require_once '../lib/session.php';
 require_once '../lib/functions.php';
+// Ensure is_focal() is available
+if (!function_exists('is_focal')) {
+    /**
+     * Checks if the current user is a focal user.
+     * Adjust this logic as per your application's requirements.
+     * Example: return isset($_SESSION['role']) && $_SESSION['role'] === 'focal';
+     */
+    function is_focal() {
+        return isset($_SESSION['role']) && $_SESSION['role'] === 'focal';
+    }
+}
 
 // Only allow logged-in users
 if (!is_logged_in()) {
@@ -87,6 +98,19 @@ function handleGet() {
     echo json_encode(['success' => true, 'data' => $submissions]);
 }
 
+/**
+ * Strictly validate a date string as YYYY-MM-DD or empty/null.
+ * Returns the date if valid, or null if empty, or false if invalid.
+ */
+function validate_program_date($date) {
+    if (empty($date)) return null;
+    $date = trim($date);
+    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+        return $date;
+    }
+    return false;
+}
+
 function handlePost($input) {
     global $conn;
     if (!is_focal()) {
@@ -106,8 +130,18 @@ function handlePost($input) {
     $status_indicator = isset($input['status_indicator']) ? $input['status_indicator'] : 'not_started';
     $rating = isset($input['rating']) ? $input['rating'] : 'not_started';
     $description = isset($input['description']) ? $input['description'] : null;
-    $start_date = isset($input['start_date']) ? $input['start_date'] : null;
-    $end_date = isset($input['end_date']) ? $input['end_date'] : null;
+    $start_date = validate_program_date($input['start_date'] ?? '');
+    $end_date = validate_program_date($input['end_date'] ?? '');
+    if ($start_date === false) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Start Date must be in YYYY-MM-DD format']);
+        return;
+    }
+    if ($end_date === false) {
+        http_response_code(400);
+        echo json_encode(['error' => 'End Date must be in YYYY-MM-DD format']);
+        return;
+    }
     $submitted_by = $is_submitted ? $_SESSION['user_id'] : null;
     $submitted_at = $is_submitted ? date('Y-m-d H:i:s') : null;
     $sql = "INSERT INTO program_submissions (program_id, period_id, is_draft, is_submitted, status_indicator, rating, description, start_date, end_date, submitted_by, submitted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -137,13 +171,36 @@ function handlePut($input) {
     $fields = [];
     $params = [];
     $types = '';
-    $allowed = ['is_draft','is_submitted','status_indicator','rating','description','start_date','end_date','is_deleted'];
+    $allowed = ['is_draft','is_submitted','status_indicator','rating','description','is_deleted'];
     foreach ($allowed as $field) {
         if (isset($input[$field])) {
             $fields[] = "$field = ?";
             $params[] = $input[$field];
             $types .= is_int($input[$field]) ? 'i' : 's';
         }
+    }
+    // Handle start_date and end_date with validation
+    if (isset($input['start_date'])) {
+        $start_date = validate_program_date($input['start_date']);
+        if ($start_date === false) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Start Date must be in YYYY-MM-DD format']);
+            return;
+        }
+        $fields[] = "start_date = ?";
+        $params[] = $start_date;
+        $types .= 's';
+    }
+    if (isset($input['end_date'])) {
+        $end_date = validate_program_date($input['end_date']);
+        if ($end_date === false) {
+            http_response_code(400);
+            echo json_encode(['error' => 'End Date must be in YYYY-MM-DD format']);
+            return;
+        }
+        $fields[] = "end_date = ?";
+        $params[] = $end_date;
+        $types .= 's';
     }
     if (isset($input['is_submitted']) && $input['is_submitted']) {
         $fields[] = "submitted_by = ?";

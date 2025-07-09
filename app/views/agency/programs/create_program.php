@@ -33,6 +33,8 @@ $message = '';
 $messageType = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    
     $program_data = [
         'program_name' => $_POST['program_name'] ?? '',
         'program_number' => $_POST['program_number'] ?? '',
@@ -225,7 +227,7 @@ require_once '../../layouts/page_header.php';
                                                    value="<?php echo htmlspecialchars($_POST['start_date'] ?? ''); ?>">
                                             <div class="form-text">
                                                 <i class="fas fa-info-circle me-1"></i>
-                                                Optional: Set a start date if the program has a specific timeline
+                                                Please enter a full date in <strong>YYYY-MM-DD</strong> format. Partial dates (year or year-month) are not accepted.
                                             </div>
                                         </div>
 
@@ -241,7 +243,7 @@ require_once '../../layouts/page_header.php';
                                                    value="<?php echo htmlspecialchars($_POST['end_date'] ?? ''); ?>">
                                             <div class="form-text">
                                                 <i class="fas fa-info-circle me-1"></i>
-                                                Optional: Set an end date if the program has a specific timeline
+                                                Please enter a full date in <strong>YYYY-MM-DD</strong> format. Partial dates (year or year-month) are not accepted.
                                             </div>
                                         </div>
                                     </div>

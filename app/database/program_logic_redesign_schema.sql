@@ -25,6 +25,11 @@ CREATE TABLE IF NOT EXISTS programs (
   FOREIGN KEY (created_by) REFERENCES users(user_id)
 );
 
+-- Migration: Add start_date and end_date columns to programs table if not exist
+ALTER TABLE programs
+    ADD COLUMN IF NOT EXISTS start_date DATE NULL AFTER program_description,
+    ADD COLUMN IF NOT EXISTS end_date DATE NULL AFTER start_date;
+
 -- 3. Program User Assignments Table
 CREATE TABLE IF NOT EXISTS program_user_assignments (
   assignment_id INT AUTO_INCREMENT PRIMARY KEY,
