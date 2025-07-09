@@ -14,7 +14,7 @@
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
--- Dumping structure for table pcds2030_dashboard.agency
+-- Dumping structure for table pcds2030_db.agency
 CREATE TABLE IF NOT EXISTS `agency` (
   `agency_id` int NOT NULL AUTO_INCREMENT,
   `agency_name` varchar(255) NOT NULL,
@@ -23,14 +23,14 @@ CREATE TABLE IF NOT EXISTS `agency` (
   PRIMARY KEY (`agency_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table pcds2030_dashboard.agency: ~4 rows (approximately)
+-- Dumping data for table pcds2030_db.agency: ~4 rows (approximately)
 INSERT INTO `agency` (`agency_id`, `agency_name`, `created_at`, `updated_at`) VALUES
 	(1, 'STIDC', '2025-07-04 10:00:00', '2025-07-04 10:00:00'),
 	(2, 'SFC', '2025-07-04 10:00:00', '2025-07-04 10:00:00'),
 	(3, 'FDS', '2025-07-04 10:00:00', '2025-07-04 10:00:00'),
 	(4, 'admin', '2025-07-05 15:16:11', '2025-07-05 15:16:11');
 
--- Dumping structure for table pcds2030_dashboard.audit_field_changes
+-- Dumping structure for table pcds2030_db.audit_field_changes
 CREATE TABLE IF NOT EXISTS `audit_field_changes` (
   `change_id` int NOT NULL AUTO_INCREMENT,
   `audit_log_id` int NOT NULL,
@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS `audit_field_changes` (
   CONSTRAINT `fk_audit_field_changes_log` FOREIGN KEY (`audit_log_id`) REFERENCES `audit_logs` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=49 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table pcds2030_dashboard.audit_field_changes: ~48 rows (approximately)
+-- Dumping data for table pcds2030_db.audit_field_changes: ~48 rows (approximately)
 INSERT INTO `audit_field_changes` (`change_id`, `audit_log_id`, `field_name`, `field_type`, `old_value`, `new_value`, `change_type`, `created_at`) VALUES
 	(1, 5, 'program_name', 'text', NULL, 'Test Program', 'added', '2025-07-05 15:34:01'),
 	(2, 5, 'description', 'text', NULL, 'This is a test program', 'added', '2025-07-05 15:34:01'),
@@ -98,7 +98,7 @@ INSERT INTO `audit_field_changes` (`change_id`, `audit_log_id`, `field_name`, `f
 	(47, 16, 'start_date', 'date', '2024-01-01', NULL, 'removed', '2025-07-05 15:39:09'),
 	(48, 16, 'end_date', 'date', '2024-12-31', NULL, 'removed', '2025-07-05 15:39:09');
 
--- Dumping structure for table pcds2030_dashboard.audit_logs
+-- Dumping structure for table pcds2030_db.audit_logs
 CREATE TABLE IF NOT EXISTS `audit_logs` (
   `id` int NOT NULL AUTO_INCREMENT,
   `user_id` int NOT NULL,
@@ -112,9 +112,9 @@ CREATE TABLE IF NOT EXISTS `audit_logs` (
   KEY `created_at` (`created_at`),
   KEY `user_id` (`user_id`),
   KEY `idx_entity_operation` (`action`,`created_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=47 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=53 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table pcds2030_dashboard.audit_logs: ~46 rows (approximately)
+-- Dumping data for table pcds2030_db.audit_logs: ~49 rows (approximately)
 INSERT INTO `audit_logs` (`id`, `user_id`, `action`, `details`, `ip_address`, `status`, `created_at`) VALUES
 	(1, 12, 'create_program_failed', 'Program Name: adasdas | Error: Unknown column \'start_date\' in \'field list\'', '127.0.0.1', 'failure', '2025-07-05 13:02:34'),
 	(2, 12, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-05 13:04:08'),
@@ -161,9 +161,15 @@ INSERT INTO `audit_logs` (`id`, `user_id`, `action`, `details`, `ip_address`, `s
 	(43, 1, 'login_failure', 'Username: admin | Reason: Invalid password', '127.0.0.1', 'failure', '2025-07-06 19:02:41'),
 	(44, 1, 'login_success', 'Username: admin', '127.0.0.1', 'success', '2025-07-06 19:02:47'),
 	(45, 1, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-06 21:56:25'),
-	(46, 12, 'login_success', 'Username: user', '127.0.0.1', 'success', '2025-07-06 21:56:31');
+	(46, 12, 'login_success', 'Username: user', '127.0.0.1', 'success', '2025-07-06 21:56:31'),
+	(47, 12, 'login_success', 'Username: user', '127.0.0.1', 'success', '2025-07-09 08:31:21'),
+	(48, 1, 'login_success', 'Username: admin', '127.0.0.1', 'success', '2025-07-09 10:29:46'),
+	(49, 12, 'login_success', 'Username: user', '127.0.0.1', 'success', '2025-07-09 10:36:27'),
+	(50, 12, 'login_success', 'Username: user', '127.0.0.1', 'success', '2025-07-09 11:28:45'),
+	(51, 12, 'create_program', 'Program Name: testing 1 (no dates) | Program ID: 4 | Program Number: 31.A', '127.0.0.1', 'success', '2025-07-09 11:47:49'),
+	(52, 12, 'create_program', 'Program Name: testing 2 (with dates) | Program ID: 5 | Program Number: 31.B', '127.0.0.1', 'success', '2025-07-09 11:50:37');
 
--- Dumping structure for view pcds2030_dashboard.audit_logs_with_changes
+-- Dumping structure for view pcds2030_db.audit_logs_with_changes
 -- Creating temporary table to overcome VIEW dependency errors
 CREATE TABLE `audit_logs_with_changes` (
 	`id` INT(10) NOT NULL,
@@ -180,7 +186,7 @@ CREATE TABLE `audit_logs_with_changes` (
 	`field_changes_summary` TEXT NULL COLLATE 'utf8mb4_0900_ai_ci'
 ) ENGINE=MyISAM;
 
--- Dumping structure for table pcds2030_dashboard.initiatives
+-- Dumping structure for table pcds2030_db.initiatives
 CREATE TABLE IF NOT EXISTS `initiatives` (
   `initiative_id` int NOT NULL AUTO_INCREMENT,
   `initiative_name` varchar(255) NOT NULL,
@@ -198,14 +204,14 @@ CREATE TABLE IF NOT EXISTS `initiatives` (
   KEY `idx_is_active` (`is_active`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table pcds2030_dashboard.initiatives: ~4 rows (approximately)
+-- Dumping data for table pcds2030_db.initiatives: ~4 rows (approximately)
 INSERT INTO `initiatives` (`initiative_id`, `initiative_name`, `initiative_number`, `initiative_description`, `start_date`, `end_date`, `is_active`, `created_by`, `created_at`, `updated_at`) VALUES
 	(1, 'PCDS2030 Conservation Initiative', 'PCDS-CI-001', 'Primary conservation initiative for PCDS2030 strategic planning', NULL, NULL, 1, 1, '2025-06-23 14:16:15', '2025-06-23 14:16:15'),
 	(2, 'inititative 1', '1', 'descirption of initative 1', '2025-06-17', '2025-06-24', 1, 1, '2025-06-24 02:03:01', '2025-07-06 13:55:06'),
 	(3, 'Achieve world class recognition for biodiversity conservation and protected areas management', '31', 'description', '2021-01-01', '2030-12-31', 1, 1, '2025-06-24 07:11:35', '2025-06-24 07:11:35'),
 	(4, 'something here', '12', '123', '2025-06-30', '2025-07-31', 1, 1, '2025-06-30 01:54:36', '2025-06-30 01:54:36');
 
--- Dumping structure for table pcds2030_dashboard.notifications
+-- Dumping structure for table pcds2030_db.notifications
 CREATE TABLE IF NOT EXISTS `notifications` (
   `notification_id` int NOT NULL AUTO_INCREMENT,
   `user_id` int NOT NULL,
@@ -219,9 +225,9 @@ CREATE TABLE IF NOT EXISTS `notifications` (
   CONSTRAINT `notifications_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table pcds2030_dashboard.notifications: ~0 rows (approximately)
+-- Dumping data for table pcds2030_db.notifications: ~0 rows (approximately)
 
--- Dumping structure for table pcds2030_dashboard.outcomes_details
+-- Dumping structure for table pcds2030_db.outcomes_details
 CREATE TABLE IF NOT EXISTS `outcomes_details` (
   `detail_id` int NOT NULL AUTO_INCREMENT,
   `detail_name` varchar(255) NOT NULL,
@@ -240,18 +246,19 @@ CREATE TABLE IF NOT EXISTS `outcomes_details` (
   CONSTRAINT `fk_outcomes_agency` FOREIGN KEY (`agency_id`) REFERENCES `agency` (`agency_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=40 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table pcds2030_dashboard.outcomes_details: ~3 rows (approximately)
+-- Dumping data for table pcds2030_db.outcomes_details: ~3 rows (approximately)
 INSERT INTO `outcomes_details` (`detail_id`, `detail_name`, `display_config`, `detail_json`, `is_cumulative`, `created_at`, `updated_at`, `is_important`, `indicator_type`, `agency_id`) VALUES
 	(19, 'TPA Protection & Biodiversity Conservation Programs (incl. community-based initiatives', NULL, '{\r\n  "layout_type": "simple",\r\n  "items": [\r\n    {\r\n      "value": "32",\r\n      "description": "On-going programs and initiatives by SFC (as of Sept 2024)"\r\n    }\r\n  ]\r\n}', 0, '2025-05-07 19:33:42', '2025-06-26 01:00:50', 1, 'conservation', 2),
 	(21, 'Certification of FMU & FPMU', NULL, '{"layout_type":"simple","items":[{"value":"56.7%","description":"1,703,164 ha Certified (May 2025)"},{"value":"71.5%","description":"127,311 ha Certified (May 2025)"}]}', 0, '2025-05-07 19:40:32', '2025-06-28 01:22:53', 1, 'certification', 3),
 	(39, 'Obtain world recognition for sustainable management practices and conservation effort', NULL, '{"layout_type": "comparison", "items": [{"label": "SDGP UNESCO Global Geopark", "value": "50%", "description": "(as of Sept 2024)"}, {"label": "Niah NP UNESCO World Heritage Site", "value": "100%", "description": "(as of Sept 2024)"}]}', 0, '2025-05-08 16:59:53', '2025-06-26 01:00:50', 1, 'recognition', 2);
 
--- Dumping structure for table pcds2030_dashboard.programs
+-- Dumping structure for table pcds2030_db.programs
 CREATE TABLE IF NOT EXISTS `programs` (
   `program_id` int NOT NULL AUTO_INCREMENT,
   `initiative_id` int NOT NULL,
-  `program_name` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
-  `program_description` text COLLATE utf8mb4_general_ci,
+  `program_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `program_number` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `program_description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
   `agency_id` int NOT NULL,
   `is_deleted` tinyint(1) DEFAULT '0',
   `created_by` int NOT NULL,
@@ -261,21 +268,28 @@ CREATE TABLE IF NOT EXISTS `programs` (
   KEY `initiative_id` (`initiative_id`),
   KEY `agency_id` (`agency_id`),
   KEY `created_by` (`created_by`),
+  KEY `idx_program_number` (`program_number`),
   CONSTRAINT `programs_ibfk_1` FOREIGN KEY (`initiative_id`) REFERENCES `initiatives` (`initiative_id`),
   CONSTRAINT `programs_ibfk_2` FOREIGN KEY (`agency_id`) REFERENCES `agency` (`agency_id`),
   CONSTRAINT `programs_ibfk_3` FOREIGN KEY (`created_by`) REFERENCES `users` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table pcds2030_dashboard.programs: ~0 rows (approximately)
+-- Dumping data for table pcds2030_db.programs: ~3 rows (approximately)
+INSERT INTO `programs` (`program_id`, `initiative_id`, `program_name`, `program_number`, `program_description`, `agency_id`, `is_deleted`, `created_by`, `created_at`, `updated_at`) VALUES
+	(1, 1, 'Test Program - New Schema', NULL, 'Test description for new schema', 1, 0, 2, '2025-07-09 00:30:11', '2025-07-09 00:30:11'),
+	(2, 1, 'Test Program - New Schema', NULL, 'Test description for new schema', 1, 0, 2, '2025-07-09 00:30:28', '2025-07-09 00:30:28'),
+	(3, 1, 'Test Program - New Schema', NULL, 'Test description for new schema', 1, 0, 2, '2025-07-09 00:30:52', '2025-07-09 00:30:52'),
+	(4, 3, 'testing 1 (no dates)', '31.A', 'description', 1, 0, 12, '2025-07-09 03:47:49', '2025-07-09 03:47:49'),
+	(5, 3, 'testing 2 (with dates)', '31.B', 'DESCRIPTION FOR PROGRAM TESTING 2', 1, 0, 12, '2025-07-09 03:50:37', '2025-07-09 03:50:37');
 
--- Dumping structure for table pcds2030_dashboard.program_attachments
+-- Dumping structure for table pcds2030_db.program_attachments
 CREATE TABLE IF NOT EXISTS `program_attachments` (
   `attachment_id` int NOT NULL AUTO_INCREMENT,
   `submission_id` int NOT NULL,
-  `file_name` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
-  `file_path` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `file_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `file_path` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `file_size` int DEFAULT NULL,
-  `file_type` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `file_type` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `uploaded_by` int NOT NULL,
   `uploaded_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `is_deleted` tinyint(1) DEFAULT '0',
@@ -286,18 +300,18 @@ CREATE TABLE IF NOT EXISTS `program_attachments` (
   CONSTRAINT `program_attachments_ibfk_2` FOREIGN KEY (`uploaded_by`) REFERENCES `users` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table pcds2030_dashboard.program_attachments: ~0 rows (approximately)
+-- Dumping data for table pcds2030_db.program_attachments: ~0 rows (approximately)
 
--- Dumping structure for table pcds2030_dashboard.program_submissions
+-- Dumping structure for table pcds2030_db.program_submissions
 CREATE TABLE IF NOT EXISTS `program_submissions` (
   `submission_id` int NOT NULL AUTO_INCREMENT,
   `program_id` int NOT NULL,
   `period_id` int NOT NULL,
   `is_draft` tinyint(1) DEFAULT '1',
   `is_submitted` tinyint(1) DEFAULT '0',
-  `status_indicator` enum('not_started','in_progress','completed','delayed') COLLATE utf8mb4_general_ci DEFAULT 'not_started',
-  `rating` enum('monthly_target_achieved','on_track_for_year','severe_delay','not_started') COLLATE utf8mb4_general_ci DEFAULT 'not_started',
-  `description` text COLLATE utf8mb4_general_ci,
+  `status_indicator` enum('not_started','in_progress','completed','delayed') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT 'not_started',
+  `rating` enum('monthly_target_achieved','on_track_for_year','severe_delay','not_started') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT 'not_started',
+  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
   `start_date` date DEFAULT NULL,
   `end_date` date DEFAULT NULL,
   `submitted_by` int DEFAULT NULL,
@@ -311,45 +325,55 @@ CREATE TABLE IF NOT EXISTS `program_submissions` (
   CONSTRAINT `program_submissions_ibfk_1` FOREIGN KEY (`program_id`) REFERENCES `programs` (`program_id`) ON DELETE CASCADE,
   CONSTRAINT `program_submissions_ibfk_2` FOREIGN KEY (`period_id`) REFERENCES `reporting_periods` (`period_id`) ON DELETE CASCADE,
   CONSTRAINT `program_submissions_ibfk_3` FOREIGN KEY (`submitted_by`) REFERENCES `users` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table pcds2030_dashboard.program_submissions: ~0 rows (approximately)
+-- Dumping data for table pcds2030_db.program_submissions: ~0 rows (approximately)
+INSERT INTO `program_submissions` (`submission_id`, `program_id`, `period_id`, `is_draft`, `is_submitted`, `status_indicator`, `rating`, `description`, `start_date`, `end_date`, `submitted_by`, `submitted_at`, `updated_at`, `is_deleted`) VALUES
+	(1, 3, 3, 1, 0, 'not_started', 'not_started', 'Test description for new schema', '2025-01-01', '2025-12-31', 2, NULL, '2025-07-09 00:30:52', 0);
 
--- Dumping structure for table pcds2030_dashboard.program_targets
+-- Dumping structure for table pcds2030_db.program_targets
 CREATE TABLE IF NOT EXISTS `program_targets` (
   `target_id` int NOT NULL AUTO_INCREMENT,
+  `target_number` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `submission_id` int NOT NULL,
-  `target_description` text COLLATE utf8mb4_general_ci,
-  `status_indicator` enum('not_started','in_progress','completed','delayed') COLLATE utf8mb4_general_ci DEFAULT 'not_started',
-  `status_description` text COLLATE utf8mb4_general_ci,
-  `remarks` text COLLATE utf8mb4_general_ci,
+  `target_description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
+  `status_indicator` enum('not_started','in_progress','completed','delayed') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT 'not_started',
+  `status_description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
+  `remarks` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
   `start_date` date DEFAULT NULL,
   `end_date` date DEFAULT NULL,
   `is_deleted` tinyint(1) DEFAULT '0',
   PRIMARY KEY (`target_id`),
   KEY `submission_id` (`submission_id`),
+  KEY `idx_target_number` (`target_number`),
   CONSTRAINT `program_targets_ibfk_1` FOREIGN KEY (`submission_id`) REFERENCES `program_submissions` (`submission_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table pcds2030_dashboard.program_targets: ~0 rows (approximately)
+-- Dumping data for table pcds2030_db.program_targets: ~0 rows (approximately)
 
--- Dumping structure for table pcds2030_dashboard.program_user_assignments
+-- Dumping structure for table pcds2030_db.program_user_assignments
 CREATE TABLE IF NOT EXISTS `program_user_assignments` (
   `assignment_id` int NOT NULL AUTO_INCREMENT,
   `program_id` int NOT NULL,
   `user_id` int NOT NULL,
-  `role` enum('editor','viewer') COLLATE utf8mb4_general_ci DEFAULT 'editor',
+  `role` enum('editor','viewer') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT 'editor',
   `assigned_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`assignment_id`),
   KEY `program_id` (`program_id`),
   KEY `user_id` (`user_id`),
   CONSTRAINT `program_user_assignments_ibfk_1` FOREIGN KEY (`program_id`) REFERENCES `programs` (`program_id`) ON DELETE CASCADE,
   CONSTRAINT `program_user_assignments_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table pcds2030_dashboard.program_user_assignments: ~0 rows (approximately)
+-- Dumping data for table pcds2030_db.program_user_assignments: ~0 rows (approximately)
+INSERT INTO `program_user_assignments` (`assignment_id`, `program_id`, `user_id`, `role`, `assigned_at`) VALUES
+	(1, 1, 2, 'editor', '2025-07-09 00:30:11'),
+	(2, 2, 2, 'editor', '2025-07-09 00:30:28'),
+	(3, 3, 2, 'editor', '2025-07-09 00:30:52'),
+	(4, 4, 12, 'editor', '2025-07-09 03:47:49'),
+	(5, 5, 12, 'editor', '2025-07-09 03:50:37');
 
--- Dumping structure for table pcds2030_dashboard.reporting_periods
+-- Dumping structure for table pcds2030_db.reporting_periods
 CREATE TABLE IF NOT EXISTS `reporting_periods` (
   `period_id` int NOT NULL AUTO_INCREMENT,
   `year` int NOT NULL,
@@ -366,7 +390,7 @@ CREATE TABLE IF NOT EXISTS `reporting_periods` (
   CONSTRAINT `chk_valid_period_numbers` CHECK ((((`period_type` = _utf8mb4'quarter') and (`period_number` between 1 and 4)) or ((`period_type` = _utf8mb4'half') and (`period_number` between 1 and 2)) or ((`period_type` = _utf8mb4'yearly') and (`period_number` = 1))))
 ) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table pcds2030_dashboard.reporting_periods: ~0 rows (approximately)
+-- Dumping data for table pcds2030_db.reporting_periods: ~0 rows (approximately)
 INSERT INTO `reporting_periods` (`period_id`, `year`, `period_type`, `period_number`, `start_date`, `end_date`, `status`, `updated_at`, `created_at`) VALUES
 	(1, 2025, 'quarter', 1, '2025-01-01', '2025-03-31', 'closed', '2025-07-06 01:54:35', '2025-04-17 02:54:12'),
 	(2, 2025, 'quarter', 2, '2025-04-01', '2025-06-30', 'closed', '2025-07-01 00:29:54', '2025-04-17 02:54:12'),
@@ -376,7 +400,7 @@ INSERT INTO `reporting_periods` (`period_id`, `year`, `period_type`, `period_num
 	(11, 2025, 'half', 1, '2025-01-01', '2025-06-30', 'closed', '2025-07-01 00:29:54', '2025-05-18 13:13:23'),
 	(12, 2025, 'half', 2, '2025-07-01', '2025-12-31', 'open', '2025-07-01 00:29:54', '2025-05-18 13:13:23');
 
--- Dumping structure for table pcds2030_dashboard.reports
+-- Dumping structure for table pcds2030_db.reports
 CREATE TABLE IF NOT EXISTS `reports` (
   `report_id` int NOT NULL AUTO_INCREMENT,
   `period_id` int NOT NULL,
@@ -394,9 +418,9 @@ CREATE TABLE IF NOT EXISTS `reports` (
   CONSTRAINT `reports_ibfk_2` FOREIGN KEY (`generated_by`) REFERENCES `users` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table pcds2030_dashboard.reports: ~0 rows (approximately)
+-- Dumping data for table pcds2030_db.reports: ~0 rows (approximately)
 
--- Dumping structure for table pcds2030_dashboard.sector_outcomes_data
+-- Dumping structure for table pcds2030_db.sector_outcomes_data
 CREATE TABLE IF NOT EXISTS `sector_outcomes_data` (
   `id` int NOT NULL AUTO_INCREMENT,
   `metric_id` int NOT NULL,
@@ -427,9 +451,9 @@ CREATE TABLE IF NOT EXISTS `sector_outcomes_data` (
   CONSTRAINT `fk_submitted_by` FOREIGN KEY (`submitted_by`) REFERENCES `users` (`user_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=32 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping data for table pcds2030_dashboard.sector_outcomes_data: ~0 rows (approximately)
+-- Dumping data for table pcds2030_db.sector_outcomes_data: ~0 rows (approximately)
 
--- Dumping structure for table pcds2030_dashboard.users
+-- Dumping structure for table pcds2030_db.users
 CREATE TABLE IF NOT EXISTS `users` (
   `user_id` int NOT NULL AUTO_INCREMENT,
   `username` varchar(100) NOT NULL,
@@ -448,7 +472,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   CONSTRAINT `users_ibfk_1` FOREIGN KEY (`agency_id`) REFERENCES `agency` (`agency_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=46 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table pcds2030_dashboard.users: ~0 rows (approximately)
+-- Dumping data for table pcds2030_db.users: ~0 rows (approximately)
 INSERT INTO `users` (`user_id`, `username`, `pw`, `fullname`, `email`, `agency_id`, `role`, `created_at`, `updated_at`, `is_active`) VALUES
 	(1, 'admin', '$2y$10$XsLEVjglthHpji3ONspyx.0YT/BxTe.fzDAUK4Jydg7oC8uQnc3V.', 'System Administrator', 'admin@pcds2030.gov.my', 4, 'admin', '2025-03-25 01:31:15', '2025-07-05 15:16:34', 1),
 	(2, 'stidc1', '$2y$10$nQCMzJPe8xSV0F0uxFebeeNtFJnsCegdRJE7GEjpBmONWn/msBfI6', 'STIDC User 1', 'stidc1@stidc.gov.my', 1, 'focal', '2025-05-23 06:27:42', '2025-06-20 08:24:39', 1),
@@ -464,7 +488,7 @@ INSERT INTO `users` (`user_id`, `username`, `pw`, `fullname`, `email`, `agency_i
 	(44, 'admin2', '$2y$10$XsLEVjglthHpji3ONspyx.0YT/BxTe.fzDAUK4Jydg7oC8uQnc3V.', 'Second Admin', 'admin2@pcds2030.gov.my', 1, 'admin', '2025-07-04 06:38:58', '2025-07-04 06:38:58', 1),
 	(45, 'superadmin', '$2y$10$XsLEVjglthHpji3ONspyx.0YT/BxTe.fzDAUK4Jydg7oC8uQnc3V.', 'Super Admin', 'superadmin@pcds2030.gov.my', 1, 'admin', '2025-07-04 06:47:20', '2025-07-04 06:47:20', 1);
 
--- Dumping structure for view pcds2030_dashboard.audit_logs_with_changes
+-- Dumping structure for view pcds2030_db.audit_logs_with_changes
 -- Removing temporary table and create final VIEW structure
 DROP TABLE IF EXISTS `audit_logs_with_changes`;
 CREATE ALGORITHM=UNDEFINED SQL SECURITY DEFINER VIEW `audit_logs_with_changes` AS select `al`.`id` AS `id`,`al`.`user_id` AS `user_id`,`al`.`action` AS `action`,`al`.`details` AS `details`,`al`.`ip_address` AS `ip_address`,`al`.`status` AS `status`,`al`.`created_at` AS `created_at`,`u`.`username` AS `username`,`u`.`fullname` AS `fullname`,`a`.`agency_name` AS `agency_name`,count(`afc`.`change_id`) AS `field_changes_count`,group_concat(concat(`afc`.`field_name`,':',`afc`.`change_type`,':',coalesce(`afc`.`old_value`,'NULL'),'->',coalesce(`afc`.`new_value`,'NULL')) separator '|') AS `field_changes_summary` from (((`audit_logs` `al` left join `users` `u` on((`al`.`user_id` = `u`.`user_id`))) left join `agency` `a` on((`u`.`agency_id` = `a`.`agency_id`))) left join `audit_field_changes` `afc` on((`al`.`id` = `afc`.`audit_log_id`))) group by `al`.`id`,`al`.`user_id`,`al`.`action`,`al`.`details`,`al`.`ip_address`,`al`.`status`,`al`.`created_at`,`u`.`username`,`u`.`fullname`,`a`.`agency_name`;

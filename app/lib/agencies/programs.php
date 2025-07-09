@@ -23,6 +23,46 @@ require_once dirname(__DIR__) . '/admins/users.php'; // Add this to use get_user
 // Include numbering helpers for hierarchical program numbering
 require_once dirname(__DIR__) . '/numbering_helpers.php';
 
+// Load centralized database configuration
+$config = include __DIR__ . '/../../config/db_names.php';
+if (!$config || !isset($config['tables']['programs'])) {
+    die('Config not loaded or missing programs table definition.');
+}
+
+// Map table names
+$programsTable = $config['tables']['programs'];
+$initiativesTable = $config['tables']['initiatives'];
+$agencyTable = $config['tables']['agency'];
+$usersTable = $config['tables']['users'];
+$programSubmissionsTable = $config['tables']['program_submissions'];
+$programTargetsTable = $config['tables']['program_targets'];
+$programUserAssignmentsTable = 'program_user_assignments'; // Not in config yet
+
+// Map column names for programs table
+$programIdCol = $config['columns']['programs']['id'];
+$programNameCol = $config['columns']['programs']['name'];
+$programNumberCol = $config['columns']['programs']['number'];
+$programDescriptionCol = $config['columns']['programs']['description'];
+$programInitiativeIdCol = $config['columns']['programs']['initiative_id'];
+$programAgencyIdCol = $config['columns']['programs']['agency_id'];
+$programIsDeletedCol = $config['columns']['programs']['is_deleted'];
+$programCreatedByCol = $config['columns']['programs']['created_by'];
+$programCreatedAtCol = $config['columns']['programs']['created_at'];
+$programUpdatedAtCol = $config['columns']['programs']['updated_at'];
+
+// Map column names for initiatives table
+$initiativeIdCol = $config['columns']['initiatives']['id'];
+$initiativeNameCol = $config['columns']['initiatives']['name'];
+$initiativeNumberCol = $config['columns']['initiatives']['number'];
+
+// Map column names for agency table
+$agencyIdCol = $config['columns']['agency']['id'];
+$agencyNameCol = $config['columns']['agency']['name'];
+
+// Map column names for users table
+$userIdCol = $config['columns']['users']['id'];
+$userAgencyIdCol = $config['columns']['users']['agency_id'];
+
 /**
  * Get programs owned by current agency, separated by type
  */
@@ -224,7 +264,9 @@ function create_wizard_program_draft($data) {
  * Create simple program as empty vessel (no initial submission)
  */
 function create_simple_program($data) {
-    global $conn;
+    global $conn, $programsTable, $programIdCol, $programNameCol, $programDescriptionCol, $programNumberCol, 
+           $programAgencyIdCol, $programInitiativeIdCol, $programIsDeletedCol, $programCreatedByCol, $programCreatedAtCol;
+    
     if (!is_agency()) return ['error' => 'Permission denied'];
     if (empty($data['program_name']) || trim($data['program_name']) === '') {
         return ['error' => 'Program name is required'];
@@ -253,7 +295,7 @@ function create_simple_program($data) {
             }
             
             // Check if number is already in use
-            $check_stmt = $conn->prepare("SELECT program_id FROM programs WHERE program_number = ? AND initiative_id = ? AND is_deleted = 0");
+            $check_stmt = $conn->prepare("SELECT $programIdCol FROM $programsTable WHERE $programNumberCol = ? AND $programInitiativeIdCol = ? AND $programIsDeletedCol = 0");
             $check_stmt->bind_param("si", $program_number, $initiative_id);
             $check_stmt->execute();
             if ($check_stmt->get_result()->num_rows > 0) {
@@ -276,7 +318,7 @@ function create_simple_program($data) {
         $conn->begin_transaction();
         
         // Create the program (empty vessel) with program number if available
-        $stmt = $conn->prepare("INSERT INTO programs (program_name, program_description, program_number, agency_id, initiative_id, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())");
+        $stmt = $conn->prepare("INSERT INTO $programsTable ($programNameCol, $programDescriptionCol, $programNumberCol, $programAgencyIdCol, $programInitiativeIdCol, $programCreatedByCol, $programCreatedAtCol) VALUES (?, ?, ?, ?, ?, ?, NOW())");
         $stmt->bind_param("sssiii", $program_name, $brief_description, $program_number, $agency_id, $initiative_id, $user_id);
         if (!$stmt->execute()) throw new Exception('Failed to create program: ' . $stmt->error);
         $program_id = $conn->insert_id;
@@ -308,7 +350,9 @@ function create_simple_program($data) {
  * Update simple program information (basic info only, not submissions)
  */
 function update_simple_program($data) {
-    global $conn;
+    global $conn, $programsTable, $programIdCol, $programNameCol, $programDescriptionCol, $programNumberCol, 
+           $programInitiativeIdCol, $programIsDeletedCol, $programUpdatedAtCol, $usersTable, $userAgencyIdCol;
+    
     if (!is_agency()) return ['error' => 'Permission denied'];
     
     if (empty($data['program_id'])) {
@@ -328,7 +372,7 @@ function update_simple_program($data) {
     
     // Check if user has access to this program
     $user_id = $_SESSION['user_id'];
-    $check_stmt = $conn->prepare("SELECT program_id FROM programs WHERE program_id = ? AND agency_id = (SELECT agency_id FROM users WHERE user_id = ?)");
+    $check_stmt = $conn->prepare("SELECT $programIdCol FROM $programsTable WHERE $programIdCol = ? AND $programAgencyIdCol = (SELECT $userAgencyIdCol FROM $usersTable WHERE $userIdCol = ?)");
     $check_stmt->bind_param("ii", $program_id, $user_id);
     $check_stmt->execute();
     if ($check_stmt->get_result()->num_rows === 0) {
@@ -353,7 +397,7 @@ function update_simple_program($data) {
             }
             
             // Check if number is already in use (excluding current program)
-            $check_stmt = $conn->prepare("SELECT program_id FROM programs WHERE program_number = ? AND initiative_id = ? AND program_id != ? AND is_deleted = 0");
+            $check_stmt = $conn->prepare("SELECT $programIdCol FROM $programsTable WHERE $programNumberCol = ? AND $programInitiativeIdCol = ? AND $programIdCol != ? AND $programIsDeletedCol = 0");
             $check_stmt->bind_param("sii", $program_number, $initiative_id, $program_id);
             $check_stmt->execute();
             if ($check_stmt->get_result()->num_rows > 0) {
@@ -372,7 +416,7 @@ function update_simple_program($data) {
         $conn->begin_transaction();
         
         // Update the program with new information
-        $stmt = $conn->prepare("UPDATE programs SET program_name = ?, program_description = ?, program_number = ?, initiative_id = ?, updated_at = NOW() WHERE program_id = ?");
+        $stmt = $conn->prepare("UPDATE $programsTable SET $programNameCol = ?, $programDescriptionCol = ?, $programNumberCol = ?, $programInitiativeIdCol = ?, $programUpdatedAtCol = NOW() WHERE $programIdCol = ?");
         $stmt->bind_param("sssii", $program_name, $brief_description, $program_number, $initiative_id, $program_id);
         if (!$stmt->execute()) throw new Exception('Failed to update program: ' . $stmt->error);
         

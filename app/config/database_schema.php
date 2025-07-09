@@ -64,17 +64,15 @@ return [
     'programs' => [
         'columns' => [
             'program_id' => ['type' => 'int', 'auto_increment' => true, 'primary' => true],
+            'initiative_id' => ['type' => 'int', 'nullable' => false],
             'program_name' => ['type' => 'varchar', 'length' => 255, 'nullable' => false],
-            'program_number' => ['type' => 'varchar', 'length' => 20, 'nullable' => true],
-            'initiative_id' => ['type' => 'int', 'nullable' => true],
+            'program_number' => ['type' => 'varchar', 'length' => 50, 'nullable' => true],
+            'program_description' => ['type' => 'text', 'nullable' => true],
             'agency_id' => ['type' => 'int', 'nullable' => false],
-            'created_at' => ['type' => 'timestamp', 'nullable' => false, 'default' => 'CURRENT_TIMESTAMP'],
-            'updated_at' => ['type' => 'timestamp', 'nullable' => false, 'default' => 'CURRENT_TIMESTAMP', 'on_update' => 'CURRENT_TIMESTAMP'],
-            'created_by' => ['type' => 'int', 'nullable' => false, 'default' => 1],
-            'attachment_count' => ['type' => 'int', 'nullable' => true, 'default' => 0],
-            'status' => ['type' => 'set', 'values' => ['not-started','in-progress','completed'], 'nullable' => true],
-            'hold_point' => ['type' => 'json', 'nullable' => true],
-            'targets_linked' => ['type' => 'int', 'nullable' => true, 'default' => 0],
+            'is_deleted' => ['type' => 'tinyint', 'length' => 1, 'nullable' => true, 'default' => 0],
+            'created_by' => ['type' => 'int', 'nullable' => false],
+            'created_at' => ['type' => 'timestamp', 'nullable' => true, 'default' => 'CURRENT_TIMESTAMP'],
+            'updated_at' => ['type' => 'timestamp', 'nullable' => true, 'default' => 'CURRENT_TIMESTAMP', 'on_update' => 'CURRENT_TIMESTAMP'],
         ],
     ],
     'program_attachments' => [
@@ -120,6 +118,7 @@ return [
     'program_targets' => [
         'columns' => [
             'target_id' => ['type' => 'int', 'auto_increment' => true, 'primary' => true],
+            'target_number' => ['type' => 'varchar', 'length' => 50, 'nullable' => true],
             'submission_id' => ['type' => 'int', 'nullable' => false],
             'target_description' => ['type' => 'text', 'nullable' => true],
             'status_indicator' => ['type' => 'enum', 'values' => ['not_started','in_progress','completed','delayed'], 'nullable' => false, 'default' => 'not_started'],

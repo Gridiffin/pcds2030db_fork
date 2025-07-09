@@ -66,4 +66,5 @@ Update the configuration files to properly detect and use the new directory stru
     - Support manual target number entry
   - Updated program details page to display program numbers
   - Updated all target insertion queries to include target_number column 
-- ✅ **Agency program editing screen updated** - Now uses a new simplified edit screen (`edit_program.php`) that only handles program information (not submissions). All 'Edit Program' buttons now point to this new screen for a cleaner workflow. 
+- ✅ **Agency program editing screen updated** - Now uses a new simplified edit screen (`edit_program.php`) that only handles program information (not submissions). All 'Edit Program' buttons now point to this new screen for a cleaner workflow.
+- ✅ **Create Program JavaScript modularized** - Extracted inline JavaScript to `assets/js/agency/create_program.js` for better maintainability and reusability. Enhanced real-time validation for program numbers with initiative-based validation. 

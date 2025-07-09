@@ -62,6 +62,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Set page title
 $pageTitle = 'Create New Program';
 
+// Additional scripts
+$additionalScripts = [
+    APP_URL . '/assets/js/agency/create_program.js'
+];
+
 // Include header
 require_once '../../layouts/header.php';
 
@@ -95,6 +100,11 @@ require_once '../../layouts/page_header.php';
                     });
                 </script>
             <?php endif; ?>
+
+            <!-- Initiative data for JavaScript -->
+            <script>
+                window.initiativeData = <?php echo json_encode($active_initiatives); ?>;
+            </script>
 
             <!-- Simple Program Creation Form -->
             <div class="card shadow-sm mb-4 w-100">
@@ -284,63 +294,6 @@ require_once '../../layouts/page_header.php';
         </div>
     </div>
 </div>
-
-
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const initiativeSelect = document.getElementById('initiative_id');
-    const programNumberInput = document.getElementById('program_number');
-
-    // Handle initiative selection for program numbering
-    initiativeSelect.addEventListener('change', function() {
-        const selectedInitiative = this.value;
-        const helpText = document.getElementById('number-help-text');
-        const finalNumberDisplay = document.getElementById('final-number-display');
-        const finalNumberPreview = document.getElementById('final-number-preview');
-        
-        if (selectedInitiative) {
-            programNumberInput.disabled = false;
-            programNumberInput.placeholder = 'Enter program number';
-            helpText.textContent = 'Enter a program number or leave blank for auto-generation';
-            
-            // Show final number preview
-            finalNumberDisplay.style.display = 'block';
-            finalNumberPreview.textContent = 'Will be generated automatically';
-        } else {
-            programNumberInput.disabled = true;
-            programNumberInput.placeholder = 'Select initiative first';
-            helpText.textContent = 'Select an initiative to enable program numbering';
-            finalNumberDisplay.style.display = 'none';
-        }
-    });
-
-    // Handle program number validation
-    programNumberInput.addEventListener('input', function() {
-        const number = this.value.trim();
-        const validationDiv = document.getElementById('number-validation');
-        const validationMessage = document.getElementById('validation-message');
-        const finalNumberPreview = document.getElementById('final-number-preview');
-        
-        if (number) {
-            // Basic validation
-            if (/^[a-zA-Z0-9.]+$/.test(number)) {
-                validationDiv.style.display = 'block';
-                validationMessage.className = 'text-success';
-                validationMessage.textContent = 'Valid program number format';
-                finalNumberPreview.textContent = number;
-            } else {
-                validationDiv.style.display = 'block';
-                validationMessage.className = 'text-danger';
-                validationMessage.textContent = 'Invalid format. Use only letters, numbers, and dots.';
-            }
-        } else {
-            validationDiv.style.display = 'none';
-            finalNumberPreview.textContent = 'Will be generated automatically';
-        }
-    });
-});
-</script>
 
 <?php
 // Include footer
