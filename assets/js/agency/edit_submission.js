@@ -113,10 +113,21 @@ function initEventListeners() {
     });
 
     // Handle form submission
+    // Track the last clicked submit button
+    let lastClickedSubmitButton = null;
+
+    document.addEventListener('click', function(e) {
+        if (e.target.type === 'submit' && e.target.form && e.target.form.id === 'submission-form') {
+            lastClickedSubmitButton = e.target;
+        }
+    });
+
     document.addEventListener('submit', function(e) {
         if (e.target.id === 'submission-form') {
             e.preventDefault();
-            handleFormSubmission(e.target);
+            // Use the submitter property if available (modern browsers), fallback to lastClickedSubmitButton
+            let submitter = e.submitter || lastClickedSubmitButton;
+            handleFormSubmission(e.target, submitter);
         }
     });
 }
@@ -210,6 +221,19 @@ function showEditSubmissionForm(data) {
     const periodInfo = data.period_info;
     const attachments = data.attachments;
     
+    // Determine if focal user and draft
+    const isFocal = window.currentUserRole === 'focal';
+    const isDraft = submission.is_draft;
+    
+    let finalizeButtonHtml = '';
+    if (isFocal && isDraft) {
+        finalizeButtonHtml = `
+            <button type="submit" name="finalize_submission" value="1" class="btn btn-success ms-2">
+                <i class="fas fa-lock me-2"></i> Finalize Submission
+            </button>
+        `;
+    }
+
     const formHtml = `
         <div class="card shadow-sm">
             <div class="card-header d-flex justify-content-between align-items-center">
@@ -226,7 +250,6 @@ function showEditSubmissionForm(data) {
                     <input type="hidden" name="program_id" value="${window.programId}">
                     <input type="hidden" name="period_id" value="${periodInfo.period_id}">
                     <input type="hidden" name="submission_id" value="${submission.submission_id}">
-                    
                     <div class="row">
                         <div class="col-md-8">
                             <!-- Description -->
@@ -235,7 +258,6 @@ function showEditSubmissionForm(data) {
                                 <textarea class="form-control" id="description" name="description" rows="3"
                                           placeholder="Describe the submission for this period">${escapeHtml(submission.description)}</textarea>
                             </div>
-
                             <!-- Targets Section -->
                             <div class="card shadow-sm">
                                 <div class="card-header">
@@ -253,10 +275,7 @@ function showEditSubmissionForm(data) {
                                     </button>
                                 </div>
                             </div>
-
-
                         </div>
-                        
                         <div class="col-md-4">
                             <!-- Submission Info -->
                             <div class="card shadow-sm mb-3">
@@ -287,7 +306,6 @@ function showEditSubmissionForm(data) {
                                     </ul>
                                 </div>
                             </div>
-
                             <!-- Attachments Section -->
                             <div class="card shadow-sm">
                                 <div class="card-body">
@@ -309,7 +327,6 @@ function showEditSubmissionForm(data) {
                             </div>
                         </div>
                     </div>
-
                     <!-- Form Actions -->
                     <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
                         <a href="view_programs.php" class="btn btn-outline-secondary">
@@ -321,6 +338,7 @@ function showEditSubmissionForm(data) {
                                 <i class="fas fa-save me-2"></i>
                                 Save as Draft
                             </button>
+                            ${finalizeButtonHtml}
                         </div>
                     </div>
                 </form>
@@ -816,7 +834,10 @@ function handleFileSelection(files) {
 /**
  * Handle form submission
  */
-function handleFormSubmission(form) {
+// Track the last clicked submit button
+let lastClickedSubmitButton = null;
+
+function handleFormSubmission(form, submitter) {
     // Serialize targets into a JSON array
     const targetContainers = form.querySelectorAll('.target-container');
     const targets = [];
@@ -836,6 +857,10 @@ function handleFormSubmission(form) {
     });
 
     const formData = new FormData(form);
+    // Add the clicked submit button's name/value to FormData
+    if (submitter && submitter.name) {
+        formData.append(submitter.name, submitter.value);
+    }
     // Remove all target_*[] fields from FormData
     [
         'target_id[]',
@@ -869,6 +894,7 @@ function handleFormSubmission(form) {
     .then(data => {
         if (data.success) {
             showToast('Success', data.message, 'success');
+            refreshReportingPeriodsDropdown();
             // Show loading spinner and refresh all submission data (including attachments)
             showLoadingSpinner();
             setTimeout(() => {
@@ -895,6 +921,8 @@ function handleFormSubmission(form) {
         deletedAttachmentIds = [];
         pendingFiles = []; // Reset pending files after successful save
         renderPendingFiles(); // Re-render pending files to show "Ready to upload"
+        // After submission, reset the tracker
+        lastClickedSubmitButton = null;
     });
 }
 
@@ -956,4 +984,28 @@ function showAuditHistory(submissionId) {
         console.error('Audit history functionality not loaded');
         showToast('Error', 'Audit history functionality not available', 'error');
     }
+} 
+
+function refreshReportingPeriodsDropdown() {
+    fetch(`${window.APP_URL}/app/ajax/get_reporting_periods.php?program_id=${window.programId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const periodSelector = document.getElementById('period_selector');
+                const currentValue = periodSelector.value;
+                periodSelector.innerHTML = '<option value="">Choose a reporting period...</option>';
+                data.periods.forEach(period => {
+                    let label = period.display_name;
+                    if (period.status === 'open') label += ' (Open)';
+                    if (period.has_submission) {
+                        label += period.is_draft ? ' - Draft' : ' - Finalized';
+                    } else {
+                        label += ' - No Submission';
+                    }
+                    periodSelector.innerHTML += `<option value="${period.period_id}" data-has-submission="${period.has_submission}" data-submission-id="${period.submission_id || ''}" data-status="${period.status}">${label}</option>`;
+                });
+                // Restore selection if possible
+                periodSelector.value = currentValue;
+            }
+        });
 } 

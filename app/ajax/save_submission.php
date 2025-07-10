@@ -133,6 +133,10 @@ try {
     // Determine submission mode - always save as draft from edit page
     $is_draft = true;
     $is_submitted = false;
+    if (isset($_POST['finalize_submission']) && $_POST['finalize_submission'] == '1') {
+        $is_draft = false;
+        $is_submitted = true;
+    }
 
     // Start transaction
     $conn->begin_transaction();
@@ -166,6 +170,11 @@ try {
         }
 
         if ($is_update) {
+            // Update submission status (is_draft, is_submitted) when editing
+            $update_status_query = "UPDATE program_submissions SET is_draft = ?, is_submitted = ?, updated_at = NOW() WHERE submission_id = ?";
+            $stmt = $conn->prepare($update_status_query);
+            $stmt->bind_param("iii", $is_draft, $is_submitted, $submission_id);
+            $stmt->execute();
             // Get existing targets for comparison
             $existing_targets_query = "SELECT * FROM program_targets WHERE submission_id = ? AND is_deleted = 0 ORDER BY target_id ASC";
             $stmt = $conn->prepare($existing_targets_query);
@@ -271,7 +280,12 @@ try {
                     $stmt->execute();
                 }
             }
-            $message = 'Submission updated as draft.';
+            // Set message based on status
+            if (!$is_draft) {
+                $message = 'Submission finalized.';
+            } else {
+                $message = 'Submission saved as draft.';
+            }
         } else {
             // Create new submission
             $insert_query = "INSERT INTO program_submissions 
@@ -302,7 +316,12 @@ try {
             $stmt->execute();
             $audit_log_id = $conn->insert_id;
             
-            $message = 'Submission created as draft.';
+            // Set message based on status
+            if (!$is_draft) {
+                $message = 'Submission finalized.';
+            } else {
+                $message = 'Submission saved as draft.';
+            }
             // Save targets to program_targets table (ONLY for new submissions)
             if (!empty($targets)) {
                 $target_insert_query = "INSERT INTO program_targets 

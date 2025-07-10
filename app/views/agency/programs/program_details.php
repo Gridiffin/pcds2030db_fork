@@ -558,7 +558,59 @@ $showNoSubmissionsAlert = !$has_submissions && $is_owner; // Show alert if progr
     </div>
 </div>
 
-
+<?php
+// Show focal-only submissions table with edit button
+if (isset($_SESSION['role']) && $_SESSION['role'] === 'focal') {
+    require_once ROOT_PATH . 'app/lib/agencies/programs.php';
+    $edit_history = get_program_edit_history($program_id);
+    $submissions = $edit_history['submissions'] ?? [];
+    ?>
+    <div class="card shadow-sm mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-history me-2"></i>All Submissions (Focal Controls)
+            </h5>
+        </div>
+        <div class="card-body">
+            <?php if (empty($submissions)): ?>
+                <div class="text-muted">No submissions found for this program.</div>
+            <?php else: ?>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Period</th>
+                                <th>Status</th>
+                                <th>Submitted By</th>
+                                <th>Submission Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($submissions as $sub): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($sub['period_display'] ?? ''); ?></td>
+                                <td>
+                                    <span class="badge bg-<?php echo ($sub['is_draft'] ? 'warning' : 'success'); ?>">
+                                        <?php echo $sub['is_draft_label'] ?? ($sub['is_draft'] ? 'Draft' : 'Final'); ?>
+                                    </span>
+                                </td>
+                                <td><?php echo htmlspecialchars($sub['submitted_by_name'] ?? ''); ?></td>
+                                <td><?php echo htmlspecialchars($sub['formatted_date'] ?? ''); ?></td>
+                                <td>
+                                    <a href="<?php echo APP_URL; ?>/app/views/agency/programs/edit_submission.php?program_id=<?php echo $program_id; ?>&period_id=<?php echo $sub['period_id']; ?>" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-edit"></i> Review Submission
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+<?php } ?>
 
 <?php if (!$is_owner): ?>
 <div class="alert alert-info">

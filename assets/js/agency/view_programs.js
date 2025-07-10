@@ -614,11 +614,13 @@ function updateMoreActionsModalContent(modal, programId, programName, programTyp
         actionButton.setAttribute('title', action.tooltip);
         actionButton.setAttribute('data-bs-toggle', 'tooltip');
         actionButton.setAttribute('data-bs-placement', 'left');
-        actionButton.innerHTML = `<i class="${action.icon} me-2"></i>${action.text}`;
-        
+        actionButton.innerHTML = `<i class=\"${action.icon} me-2\"></i>${action.text}`;
         actionsList.appendChild(actionButton);
     });
-    
+
+    // Remove focal-only finalize/revert controls from modal
+    // (No focalSection or AJAX for submissions here)
+
     // Initialize tooltips for the new buttons
     const tooltipTriggerList = [].slice.call(actionsList.querySelectorAll('[data-bs-toggle="tooltip"]'));
     tooltipTriggerList.map(function (tooltipTriggerEl) {

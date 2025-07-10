@@ -249,6 +249,7 @@ require_once '../../layouts/page_header.php';
 window.programId = <?php echo $program_id; ?>;
 window.APP_URL = '<?php echo APP_URL; ?>';
 window.submissionsByPeriod = <?php echo json_encode($submissions_by_period); ?>;
+window.currentUserRole = '<?php echo $_SESSION['role'] ?? ''; ?>';
 </script>
 
 <script src="<?php echo asset_url('js/agency', 'edit_submission.js'); ?>"></script>

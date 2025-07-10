@@ -630,22 +630,31 @@ require_once '../../layouts/page_header.php';
                                     <span <?php if ($date_iso) echo 'data-date="' . $date_iso . '"'; ?>><?php echo $date_display; ?></span>
                                 </td>
                                 <td>
-                                    <div class="btn-group btn-group-sm" role="group" aria-label="Program actions">
-                                        <a href="program_details.php?id=<?php echo $program['program_id']; ?>&period_id=<?php echo isset($program['period_id']) ? $program['period_id'] : ($current_period['period_id'] ?? ''); ?>" class="btn btn-outline-secondary" title="View Program">
+                                    <div class="btn-group btn-group-sm d-flex flex-nowrap" role="group" aria-label="Program actions">
+                                        <a href="program_details.php?id=<?php echo $program['program_id']; ?>" 
+                                           class="btn btn-outline-secondary flex-fill" 
+                                           title="View detailed program information including submissions, targets, and progress"
+                                           data-bs-toggle="tooltip" 
+                                           data-bs-placement="top">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        <?php if (isset($program['created_by']) && $program['created_by'] == $_SESSION['user_id']): ?>
-                                        <a href="add_submission.php?program_id=<?php echo $program['program_id']; ?>" class="btn btn-outline-success" title="Add Submission">
-                                            <i class="fas fa-plus"></i>
-                                        </a>
-                                        <a href="edit_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="Edit Program">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <button type="button" class="btn btn-outline-danger delete-program-btn" 
-                                            data-id="<?php echo $program['program_id']; ?>"
-                                            data-name="<?php echo htmlspecialchars($program['program_name']); ?>"
-                                            title="Delete Program">
+                                        <button type="button" class="btn btn-outline-danger flex-fill delete-program-btn" 
+                                                data-id="<?php echo $program['program_id']; ?>" 
+                                                data-name="<?php echo htmlspecialchars($program['program_name']); ?>" 
+                                                title="Permanently delete this program and all its data"
+                                                data-bs-toggle="tooltip" 
+                                                data-bs-placement="top">
                                             <i class="fas fa-trash"></i>
+                                        </button>
+                                        <?php if (isset($program['created_by']) && $program['created_by'] == $_SESSION['user_id']): ?>
+                                        <button type="button" class="btn btn-outline-secondary flex-fill more-actions-btn" 
+                                                data-program-id="<?php echo $program['program_id']; ?>"
+                                                data-program-name="<?php echo htmlspecialchars($program['program_name']); ?>"
+                                                data-program-type="<?php echo $is_assigned ? 'assigned' : 'created'; ?>"
+                                                title="Edit submission and program details"
+                                                data-bs-toggle="tooltip" 
+                                                data-bs-placement="top">
+                                            <i class="fas fa-ellipsis-v"></i>
                                         </button>
                                         <?php endif; ?>
                                     </div>
@@ -910,6 +919,10 @@ require_once '../../layouts/page_header.php';
 // Include footer
 require_once '../../layouts/footer.php';
 ?>
+
+<script>
+window.currentUserRole = '<?php echo $_SESSION['role'] ?? ''; ?>';
+</script>
 
 
 
