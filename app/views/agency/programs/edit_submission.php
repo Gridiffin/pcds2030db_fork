@@ -95,117 +95,117 @@ $header_config = [
 require_once '../../layouts/page_header.php';
 ?>
 
+<!-- Remove fixed and sticky info bar markup -->
+
 <div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <!-- Error/Success Messages -->
-            <?php if (isset($_SESSION['message'])): ?>
-                <script>
-                    document.addEventListener('DOMContentLoaded', function() {
-                        showToast('<?= ucfirst($_SESSION['message_type']) ?>', <?= json_encode($_SESSION['message']) ?>, '<?= $_SESSION['message_type'] ?>');
-                    });
-                </script>
-                <?php 
-                unset($_SESSION['message']);
-                unset($_SESSION['message_type']);
-                ?>
-            <?php endif; ?>
+    <!-- Remove .row and column wrappers for single-column layout -->
+    <!-- Main content and history sidebar will be rendered inside the main card/form -->
+    <!-- Error/Success Messages -->
+    <?php if (isset($_SESSION['message'])): ?>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                showToast('<?= ucfirst($_SESSION['message_type']) ?>', <?= json_encode($_SESSION['message']) ?>, '<?= $_SESSION['message_type'] ?>');
+            });
+        </script>
+        <?php 
+        unset($_SESSION['message']);
+        unset($_SESSION['message_type']);
+        ?>
+    <?php endif; ?>
 
-            <!-- Program Info Card -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-info-circle me-2"></i>
-                        Program Information
-                    </h5>
+    <!-- Program Info Card -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-info-circle me-2"></i>
+                Program Information
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <strong>Program Name:</strong> <?php echo htmlspecialchars($program['program_name']); ?><br>
+                    <strong>Program Number:</strong> <?php echo htmlspecialchars($program['program_number'] ?? 'Not assigned'); ?><br>
+                    <strong>Initiative:</strong> 
+                    <?php if (!empty($program['initiative_name'])): ?>
+                        <?php echo htmlspecialchars($program['initiative_name']); ?>
+                        <?php if (!empty($program['initiative_number'])): ?>
+                            (<?php echo htmlspecialchars($program['initiative_number']); ?>)
+                        <?php endif; ?>
+                    <?php else: ?>
+                        <span class="text-muted">Not linked</span>
+                    <?php endif; ?><br>
+                    <strong>Agency:</strong> <?php echo htmlspecialchars($program['agency_name'] ?? 'Unknown'); ?>
                 </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <strong>Program Name:</strong> <?php echo htmlspecialchars($program['program_name']); ?><br>
-                            <strong>Program Number:</strong> <?php echo htmlspecialchars($program['program_number'] ?? 'Not assigned'); ?><br>
-                            <strong>Initiative:</strong> 
-                            <?php if (!empty($program['initiative_name'])): ?>
-                                <?php echo htmlspecialchars($program['initiative_name']); ?>
-                                <?php if (!empty($program['initiative_number'])): ?>
-                                    (<?php echo htmlspecialchars($program['initiative_number']); ?>)
+                <div class="col-md-6">
+                    <strong>Description:</strong> <?php echo htmlspecialchars($program['program_description'] ?? 'No description'); ?><br>
+                    <strong>Created:</strong> <?php echo date('M j, Y', strtotime($program['created_at'])); ?><br>
+                    <strong>Existing Submissions:</strong> <?php echo count($existing_submissions); ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Period Selector Card -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-calendar-alt me-2"></i>
+                Select Reporting Period
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <label for="period_selector" class="form-label">
+                        Reporting Period <span class="text-danger">*</span>
+                    </label>
+                    <select class="form-select" id="period_selector" required>
+                        <option value="">Choose a reporting period...</option>
+                        <?php foreach ($reporting_periods as $period): ?>
+                            <?php 
+                            $has_submission = isset($submissions_by_period[$period['period_id']]);
+                            $submission = $has_submission ? $submissions_by_period[$period['period_id']] : null;
+                            ?>
+                            <option value="<?php echo $period['period_id']; ?>"
+                                    data-has-submission="<?php echo $has_submission ? 'true' : 'false'; ?>"
+                                    data-submission-id="<?php echo $has_submission ? $submission['submission_id'] : ''; ?>"
+                                    data-status="<?php echo $period['status']; ?>">
+                                <?php echo htmlspecialchars($period['display_name']); ?>
+                                <?php if ($period['status'] == 'open'): ?>
+                                    (Open)
                                 <?php endif; ?>
-                            <?php else: ?>
-                                <span class="text-muted">Not linked</span>
-                            <?php endif; ?><br>
-                            <strong>Agency:</strong> <?php echo htmlspecialchars($program['agency_name'] ?? 'Unknown'); ?>
-                        </div>
-                        <div class="col-md-6">
-                            <strong>Description:</strong> <?php echo htmlspecialchars($program['program_description'] ?? 'No description'); ?><br>
-                            <strong>Created:</strong> <?php echo date('M j, Y', strtotime($program['created_at'])); ?><br>
-                            <strong>Existing Submissions:</strong> <?php echo count($existing_submissions); ?>
-                        </div>
+                                <?php if ($has_submission): ?>
+                                    - <?php echo $submission['is_draft'] ? 'Draft' : 'Finalized'; ?>
+                                <?php else: ?>
+                                    - No Submission
+                                <?php endif; ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <div class="form-text">
+                        <i class="fas fa-calendar me-1"></i>
+                        Select a reporting period to edit existing submission or add a new one.
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <div class="period-status-display">
+                        <!-- Period status will be displayed here -->
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <!-- Period Selector Card -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-calendar-alt me-2"></i>
-                        Select Reporting Period
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-8">
-                            <label for="period_selector" class="form-label">
-                                Reporting Period <span class="text-danger">*</span>
-                            </label>
-                            <select class="form-select" id="period_selector" required>
-                                <option value="">Choose a reporting period...</option>
-                                <?php foreach ($reporting_periods as $period): ?>
-                                    <?php 
-                                    $has_submission = isset($submissions_by_period[$period['period_id']]);
-                                    $submission = $has_submission ? $submissions_by_period[$period['period_id']] : null;
-                                    ?>
-                                    <option value="<?php echo $period['period_id']; ?>"
-                                            data-has-submission="<?php echo $has_submission ? 'true' : 'false'; ?>"
-                                            data-submission-id="<?php echo $has_submission ? $submission['submission_id'] : ''; ?>"
-                                            data-status="<?php echo $period['status']; ?>">
-                                        <?php echo htmlspecialchars($period['display_name']); ?>
-                                        <?php if ($period['status'] == 'open'): ?>
-                                            (Open)
-                                        <?php endif; ?>
-                                        <?php if ($has_submission): ?>
-                                            - <?php echo $submission['is_draft'] ? 'Draft' : 'Finalized'; ?>
-                                        <?php else: ?>
-                                            - No Submission
-                                        <?php endif; ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                            <div class="form-text">
-                                <i class="fas fa-calendar me-1"></i>
-                                Select a reporting period to edit existing submission or add a new one.
-                            </div>
-                        </div>
-                        <div class="col-md-4 d-flex align-items-end">
-                            <div class="period-status-display">
-                                <!-- Period status will be displayed here -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <!-- Dynamic Content Area -->
+    <div id="dynamic-content">
+        <!-- Content will be loaded here based on period selection -->
+        <div class="text-center py-5">
+            <div class="mb-3">
+                <i class="fas fa-calendar-alt fa-3x text-muted"></i>
             </div>
-
-            <!-- Dynamic Content Area -->
-            <div id="dynamic-content">
-                <!-- Content will be loaded here based on period selection -->
-                <div class="text-center py-5">
-                    <div class="mb-3">
-                        <i class="fas fa-calendar-alt fa-3x text-muted"></i>
-                    </div>
-                    <h5 class="text-muted">Select a Reporting Period</h5>
-                    <p class="text-muted">Choose a reporting period from the dropdown above to view or edit submissions.</p>
-                </div>
-            </div>
+            <h5 class="text-muted">Select a Reporting Period</h5>
+            <p class="text-muted">Choose a reporting period from the dropdown above to view or edit submissions.</p>
         </div>
     </div>
 </div>
@@ -250,6 +250,7 @@ window.programId = <?php echo $program_id; ?>;
 window.APP_URL = '<?php echo APP_URL; ?>';
 window.submissionsByPeriod = <?php echo json_encode($submissions_by_period); ?>;
 window.currentUserRole = '<?php echo $_SESSION['role'] ?? ''; ?>';
+window.programName = <?= json_encode($program['program_name']) ?>;
 </script>
 
 <script src="<?php echo asset_url('js/agency', 'edit_submission.js'); ?>"></script>

@@ -112,7 +112,7 @@ $header_config = [
     'variant' => 'white',
     'actions' => [
         [
-            'url' => 'program_details.php?id=' . $program_id,
+            'url' => 'view_programs.php',
             'text' => 'Back to Program',
             'icon' => 'fas fa-arrow-left',
             'class' => 'btn-outline-secondary'

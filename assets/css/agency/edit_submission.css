@@ -414,3 +414,137 @@ template {
         border-bottom: 1px solid #000 !important;
     }
 } 
+
+/* Make targets section and history sidebar share vertical space and scroll if needed */
+#dynamic-content .col-md-8 .card.shadow-sm {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+#history-sidebar-inside-card {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+/* If inside a flex or grid, ensure parent allows stretching */
+#dynamic-content .row {
+    align-items: stretch;
+}
+
+/* Optional: Make the targets section fill available space in the card */
+#targets-container {
+    flex: 1 1 auto;
+    min-height: 0;
+} 
+
+/* Make the main card-body a flex column for vertical stretching */
+.card.shadow-sm .card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Targets section stretches to fill available space */
+.card.shadow-sm .targets-section-card {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+/* History sidebar inside the card, scrollable if needed */
+#history-sidebar-inside-card {
+    max-height: 600px;
+    overflow-y: auto;
+} 
+
+.targets-history-row {
+    display: flex;
+    flex-direction: row;
+    gap: 2rem;
+    align-items: stretch;
+    width: 100%;
+}
+
+.targets-section-card {
+    flex: 1 1 0%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.targets-section-card .card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.targets-section-card .card-body {
+    flex: 1 1 auto;
+    overflow-y: auto;
+}
+
+#history-sidebar-inside-card {
+    width: 350px;
+    max-width: 100%;
+    min-width: 250px;
+    flex-shrink: 0;
+    overflow-y: auto;
+}
+
+@media (max-width: 992px) {
+    .targets-history-row {
+        flex-direction: column;
+    }
+    #history-sidebar-inside-card {
+        width: 100%;
+        min-width: 0;
+        margin-top: 1.5rem;
+    }
+} 
+
+.info-description-row {
+    display: flex;
+    flex-direction: row;
+    gap: 2rem;
+    align-items: stretch;
+    width: 100%;
+}
+
+.info-section-card {
+    width: 350px;
+    max-width: 100%;
+    min-width: 250px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.description-section-card {
+    flex: 1 1 0%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.description-section-card textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+@media (max-width: 992px) {
+    .info-description-row {
+        flex-direction: column;
+    }
+    .info-section-card {
+        width: 100%;
+        min-width: 0;
+        margin-bottom: 1.5rem;
+    }
+} 
+
+/* Remove sticky and fixed info bar styles */ 
+
+.container-fluid {
+    margin-top: 60px;
+} 

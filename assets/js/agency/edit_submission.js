@@ -241,44 +241,18 @@ function showEditSubmissionForm(data) {
                     <i class="fas fa-edit me-2"></i>
                     Edit Submission - ${periodInfo.display_name}
                 </h5>
-                <div class="header-actions">
-                    <!-- View History button removed -->
-                </div>
+                <div class="header-actions"></div>
             </div>
             <div class="card-body">
                 <form id="submission-form" enctype="multipart/form-data">
                     <input type="hidden" name="program_id" value="${window.programId}">
                     <input type="hidden" name="period_id" value="${periodInfo.period_id}">
                     <input type="hidden" name="submission_id" value="${submission.submission_id}">
-                    <div class="row">
-                        <div class="col-md-8">
-                            <!-- Description -->
-                            <div class="mb-4">
-                                <label for="description" class="form-label">Description</label>
-                                <textarea class="form-control" id="description" name="description" rows="3"
-                                          placeholder="Describe the submission for this period">${escapeHtml(submission.description)}</textarea>
-                            </div>
-                            <!-- Targets Section -->
-                            <div class="card shadow-sm">
-                                <div class="card-header">
-                                    <h6 class="card-title mb-0">
-                                        <i class="fas fa-bullseye me-2"></i>
-                                        Targets
-                                    </h6>
-                                </div>
-                                <div class="card-body">
-                                    <div id="targets-container">
-                                        ${generateTargetsHtml(submission.targets)}
-                                    </div>
-                                    <button type="button" id="add-target-btn" class="btn btn-outline-secondary btn-sm w-100">
-                                        <i class="fas fa-plus-circle me-1"></i> Add Target
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <!-- Submission Info -->
-                            <div class="card shadow-sm mb-3">
+
+                    <!-- Two-column area: Submission Info + Description -->
+                    <div class="d-flex flex-row gap-4 info-description-row mb-4">
+                        <div class="flex-shrink-0 info-section-card" style="width: 350px; max-width: 100%; min-width: 250px;">
+                            <div class="card shadow-sm h-100">
                                 <div class="card-body">
                                     <h6 class="card-title">
                                         <i class="fas fa-info-circle me-2"></i>
@@ -306,27 +280,59 @@ function showEditSubmissionForm(data) {
                                     </ul>
                                 </div>
                             </div>
-                            <!-- Attachments Section -->
-                            <div class="card shadow-sm">
-                                <div class="card-body">
-                                    <h6 class="card-title mb-2">
-                                        <i class="fas fa-paperclip me-2"></i>
-                                        Attachments
-                                    </h6>
-                                    <button type="button" id="add-attachment-btn" class="btn btn-outline-secondary btn-sm mb-2">
-                                        <i class="fas fa-plus me-1"></i> Add File(s)
-                                    </button>
-                                    <input type="file" class="form-control d-none" name="attachments[]" id="attachments" multiple>
-                                    <div class="form-text mt-1">
-                                        You can add files one by one or in batches.
-                                    </div>
-                                    <ul id="attachments-list" class="list-unstyled small mt-2">
-                                        ${generateAttachmentsHtml(attachments)}
-                                    </ul>
-                                </div>
+                        </div>
+                        <div class="flex-grow-1 description-section-card">
+                            <div class="mb-4 h-100 d-flex flex-column">
+                                <label for="description" class="form-label">Description</label>
+                                <textarea class="form-control flex-grow-1" id="description" name="description" rows="3"
+                                          placeholder="Describe the submission for this period">${escapeHtml(submission.description)}</textarea>
                             </div>
                         </div>
                     </div>
+
+                    <!-- Attachments Section (full width) -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-body">
+                            <h6 class="card-title mb-2">
+                                <i class="fas fa-paperclip me-2"></i>
+                                Attachments
+                            </h6>
+                            <button type="button" id="add-attachment-btn" class="btn btn-outline-secondary btn-sm mb-2">
+                                <i class="fas fa-plus me-1"></i> Add File(s)
+                            </button>
+                            <input type="file" class="form-control d-none" name="attachments[]" id="attachments" multiple>
+                            <div class="form-text mt-1">
+                                You can add files one by one or in batches.
+                            </div>
+                            <ul id="attachments-list" class="list-unstyled small mt-2">
+                                ${generateAttachmentsHtml(attachments)}
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Two-column area: Targets + History Sidebar -->
+                    <div class="d-flex flex-row gap-4 targets-history-row">
+                        <div class="flex-grow-1 targets-section-card">
+                            <div class="card shadow-sm h-100">
+                                <div class="card-header">
+                                    <h6 class="card-title mb-0">
+                                        <i class="fas fa-bullseye me-2"></i>
+                                        Targets
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div id="targets-container">
+                                        ${generateTargetsHtml(submission.targets)}
+                                    </div>
+                                    <button type="button" id="add-target-btn" class="btn btn-outline-secondary btn-sm w-100">
+                                        <i class="fas fa-plus-circle me-1"></i> Add Target
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="width: 350px; max-width: 100%;" id="history-sidebar-inside-card"></div>
+                    </div>
+
                     <!-- Form Actions -->
                     <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
                         <a href="view_programs.php" class="btn btn-outline-secondary">
@@ -347,6 +353,16 @@ function showEditSubmissionForm(data) {
     `;
     
     dynamicContent.innerHTML = formHtml;
+    // Make targets section scrollable if content is too tall
+    const targetsContainerCard = document.querySelector('.col-md-8 .card.shadow-sm');
+    if (targetsContainerCard) {
+        targetsContainerCard.style.maxHeight = '600px';
+        targetsContainerCard.style.overflowY = 'auto';
+    }
+    // Render the sidebar inside the card after attachments
+    if (submission && submission.submission_id) {
+        renderHistorySidebar(submission.submission_id, 'history-sidebar-inside-card');
+    }
 }
 
 /**
@@ -1008,4 +1024,97 @@ function refreshReportingPeriodsDropdown() {
                 periodSelector.value = currentValue;
             }
         });
+} 
+
+function renderHistorySidebar(submissionId, targetId = 'history-sidebar-container') {
+    const sidebar = document.getElementById(targetId);
+    if (!sidebar) return;
+    sidebar.innerHTML = `<div class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-3 text-muted">Loading change history...</p></div>`;
+
+    fetch(`${window.APP_URL}/app/ajax/get_submission_audit_history.php?submission_id=${submissionId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success || !data.data) {
+                sidebar.innerHTML = `<div class='alert alert-warning'>No change history found for this submission.</div>`;
+                return;
+            }
+            let history = data.data.audit_history;
+            if (!history || history.length === 0) {
+                sidebar.innerHTML = `<div class='alert alert-info'>No changes have been made to this submission yet.</div>`;
+                return;
+            }
+            // Build a set of fields with history
+            const fieldSet = new Set();
+            history.forEach(entry => {
+                entry.field_changes.forEach(change => {
+                    fieldSet.add(change.field_name);
+                });
+            });
+            const fields = Array.from(fieldSet);
+            // Render clickable list of fields
+            let html = `<div class='card shadow-sm'><div class='card-header d-flex justify-content-between align-items-center'><h6 class='mb-0'><i class='fas fa-history me-2'></i>View Field Change History</h6></div><div class='card-body' id='history-sidebar-body'>`;
+            html += `<div class='mb-3'><input type='text' class='form-control form-control-sm' id='history-field-search' placeholder='Search field...'></div>`;
+            html += `<ul class='list-group'>`;
+            fields.forEach(field => {
+                const label = history.find(entry => entry.field_changes.find(c => c.field_name === field)).field_changes.find(c => c.field_name === field).field_label || field;
+                html += `<li class='list-group-item list-group-item-action history-field-item' data-field='${field}'>
+                    <i class='fas fa-angle-right me-2'></i>${label}
+                </li>`;
+            });
+            html += `</ul></div></div>`;
+            sidebar.innerHTML = html;
+            // Search logic
+            document.getElementById('history-field-search').addEventListener('input', function() {
+                const val = this.value.toLowerCase();
+                document.querySelectorAll('.history-field-item').forEach(item => {
+                    const match = item.textContent.toLowerCase().includes(val);
+                    item.style.display = match ? '' : 'none';
+                });
+            });
+            // Click logic for field items
+            document.querySelectorAll('.history-field-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const field = this.getAttribute('data-field');
+                    renderFieldHistory(submissionId, field, targetId, fields);
+                });
+            });
+        })
+        .catch(() => {
+            sidebar.innerHTML = `<div class='alert alert-danger'>Failed to load change history.</div>`;
+        });
+}
+
+function renderFieldHistory(submissionId, field, targetId, allFields) {
+    const sidebar = document.getElementById(targetId);
+    if (!sidebar) return;
+    sidebar.innerHTML = `<div class='text-center py-4'><div class='spinner-border text-primary' role='status'><span class='visually-hidden'>Loading...</span></div><p class='mt-3 text-muted'>Loading field history...</p></div>`;
+    // Use get_field_history.php for field-specific history
+    // We need program_id and period_id for this endpoint, so get them from the form
+    const programId = window.programId;
+    const periodId = document.querySelector('input[name="period_id"]').value;
+    fetch(`${window.APP_URL}/app/ajax/get_field_history.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `program_id=${encodeURIComponent(programId)}&period_id=${encodeURIComponent(periodId)}&field_name=${encodeURIComponent(field)}&limit=20&offset=0`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success || !data.entries || data.entries.length === 0) {
+            sidebar.innerHTML = `<div class='alert alert-info'>No history found for this field.</div><button class='btn btn-link mt-3' id='back-to-field-list'><i class='fas fa-arrow-left me-1'></i>Back to Fields</button>`;
+            document.getElementById('back-to-field-list').onclick = () => renderHistorySidebar(submissionId, targetId);
+            return;
+        }
+        let html = `<div class='card shadow-sm'><div class='card-header d-flex justify-content-between align-items-center'><h6 class='mb-0'><i class='fas fa-history me-2'></i>History for <span class='text-primary'>${data.field_name}</span></h6><button class='btn btn-sm btn-outline-secondary' id='back-to-field-list'><i class='fas fa-arrow-left'></i></button></div><div class='card-body'>`;
+        html += `<ul class='list-group'>`;
+        data.entries.forEach(entry => {
+            html += `<li class='list-group-item'><div class='small'><strong>${escapeHtml(entry.submitted_by || '')}</strong> <span class='text-muted'>on ${formatDate(entry.submitted_at)}</span></div><div class='ms-2'>${typeof entry.value === 'object' ? JSON.stringify(entry.value) : escapeHtml(entry.value || '—')}</div></li>`;
+        });
+        html += `</ul></div></div>`;
+        sidebar.innerHTML = html;
+        document.getElementById('back-to-field-list').onclick = () => renderHistorySidebar(submissionId, targetId);
+    })
+    .catch(() => {
+        sidebar.innerHTML = `<div class='alert alert-danger'>Failed to load field history.</div><button class='btn btn-link mt-3' id='back-to-field-list'><i class='fas fa-arrow-left me-1'></i>Back to Fields</button>`;
+        document.getElementById('back-to-field-list').onclick = () => renderHistorySidebar(submissionId, targetId);
+    });
 } 
