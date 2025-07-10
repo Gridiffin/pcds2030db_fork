@@ -487,7 +487,7 @@ function get_recent_submissions($period_id = null, $limit = 5) {
         $params = [];
     }
     
-    $query .= " ORDER BY ps.submission_date DESC LIMIT ?";
+    $query .= " ORDER BY ps.updated_at DESC LIMIT ?";
     $params[] = $limit;
     
     $stmt = $conn->prepare($query);

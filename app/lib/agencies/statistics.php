@@ -24,35 +24,15 @@ function has_content_json_schema() {
 }
 
 /**
- * Get sector name by ID
+ * Get sector name by sector ID
  * 
  * @param int $sector_id The sector ID
  * @return string The sector name or 'Unknown Sector' if not found
  */
 function get_sector_name($sector_id) {
-    global $conn;
-    
-    $sector_id = intval($sector_id);
-    if (!$sector_id) {
-        return 'Unknown Sector';
-    }
-    
-    try {
-        $query = "SELECT sector_name FROM sectors WHERE sector_id = ?";
-        $stmt = $conn->prepare($query);
-        $stmt->bind_param("i", $sector_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        if ($result->num_rows > 0) {
-            return $result->fetch_assoc()['sector_name'];
-        } else {
-            return 'Unknown Sector';
-        }
-    } catch (Exception $e) {
-        error_log("Error in get_sector_name: " . $e->getMessage());
-        return 'Unknown Sector';
-    }
+    // Since sectors table has been removed, return a default value
+    // This maintains backward compatibility while the system transitions
+    return 'Forestry Sector'; // Default to Forestry Sector for now
 }
 
 /**
@@ -61,24 +41,14 @@ function get_sector_name($sector_id) {
  * @return array List of all sectors
  */
 function get_all_sectors() {
-    global $conn;
-    
-    $sectors = [];
-    
-    try {
-        $query = "SELECT sector_id, sector_name FROM sectors ORDER BY sector_name";
-        $result = $conn->query($query);
-        
-        if ($result->num_rows > 0) {
-            while ($row = $result->fetch_assoc()) {
-                $sectors[] = $row;
-            }
-        }
-    } catch (Exception $e) {
-        error_log("Error in get_all_sectors: " . $e->getMessage());
-    }
-    
-    return $sectors;
+    // Since sectors table has been removed, return a default sector
+    // This maintains backward compatibility while the system transitions
+    return [
+        [
+            'sector_id' => 1,
+            'sector_name' => 'Forestry Sector'
+        ]
+    ];
 }
 
 /**

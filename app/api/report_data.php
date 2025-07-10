@@ -148,21 +148,11 @@ if (!$period) {
     exit;
 }
 
-// Get sector information
-$sector_query = "SELECT * FROM sectors WHERE sector_id = ?";
-$stmt = $conn->prepare($sector_query);
-$stmt->bind_param("i", $sector_id);
-$stmt->execute();
-$sector_result = $stmt->get_result();
-
-if ($sector_result->num_rows === 0) {
-    ob_end_clean(); // Clear any buffered output
-    header('HTTP/1.1 404 Not Found');
-    echo json_encode(['error' => 'Sector not found']);
-    exit;
-}
-
-$sector = $sector_result->fetch_assoc();
+// Since sectors table has been removed, use default sector info
+$sector = [
+    'sector_id' => $sector_id,
+    'sector_name' => 'Forestry Sector'
+];
 
 // Format the quarter/year string (e.g., "Q4 2024", "Half Yearly 1 2025")
 $quarter = get_period_display_name($period);

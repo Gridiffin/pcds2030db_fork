@@ -70,7 +70,8 @@ $pageTitle = 'Edit Submission - ' . $program['program_name'];
 
 // Additional CSS for edit submission page
 $additionalCSS = [
-    APP_URL . '/assets/css/agency/edit_submission.css'
+    APP_URL . '/assets/css/agency/edit_submission.css',
+    APP_URL . '/assets/css/components/submission-audit-history.css'
 ];
 
 // Include header
@@ -252,6 +253,7 @@ window.submissionsByPeriod = <?php echo json_encode($submissions_by_period); ?>;
 </script>
 
 <script src="<?php echo asset_url('js/agency', 'edit_submission.js'); ?>"></script>
+<script src="<?php echo asset_url('js/agency', 'submission-audit-history.js'); ?>"></script>
 
 <?php
 // Include footer

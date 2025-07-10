@@ -364,13 +364,6 @@ function log_detailed_data_operation($operation, $entity, $entity_id, $old_data 
     // Generate meaningful details based on operation and entity
     $details = generate_audit_details($operation, $entity, $entity_id, $old_data, $new_data);
     
-    // Log the basic audit action first
-    $audit_log_id = log_audit_action($action, $details, 'success', $user_id);
-    
-    if (!$audit_log_id) {
-        return false;
-    }
-    
     // Calculate field changes
     $field_changes = [];
     
@@ -391,7 +384,6 @@ function log_detailed_data_operation($operation, $entity, $entity_id, $old_data 
         // For update operations, compare old and new values
         foreach ($new_data as $field => $new_value) {
             $old_value = $old_data[$field] ?? null;
-            
             // Check if the value actually changed
             if ($old_value !== $new_value) {
                 $field_changes[] = [
@@ -403,7 +395,6 @@ function log_detailed_data_operation($operation, $entity, $entity_id, $old_data 
                 ];
             }
         }
-        
         // Check for removed fields
         foreach ($old_data as $field => $old_value) {
             if (!array_key_exists($field, $new_data) && $old_value !== null) {
@@ -428,12 +419,17 @@ function log_detailed_data_operation($operation, $entity, $entity_id, $old_data 
             ];
         }
     }
-    
-    // Log the field changes
-    if (!empty($field_changes)) {
-        log_field_changes($audit_log_id, $field_changes);
+    // Only log if there are real field changes
+    if (empty($field_changes)) {
+        return false;
     }
-    
+    // Log the basic audit action first
+    $audit_log_id = log_audit_action($action, $details, 'success', $user_id);
+    if (!$audit_log_id) {
+        return false;
+    }
+    // Log the field changes
+    log_field_changes($audit_log_id, $field_changes);
     return $audit_log_id;
 }
 

@@ -379,13 +379,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
             if ($sector_id) {
-                $sector_query = $conn->prepare("SELECT sector_name FROM sectors WHERE sector_id = ?");
-                $sector_query->bind_param("i", $sector_id);
-                $sector_query->execute();
-                $sector_result = $sector_query->get_result();
-                if ($sector_row = $sector_result->fetch_assoc()) {
-                    $sector_name = $sector_row['sector_name'];
-                }
+                // Since sectors table has been removed, use default sector name
+                $sector_name = 'Forestry Sector';
             }
             
             // Build after state
@@ -520,13 +515,12 @@ if ($agencies_result) {
     }
 }
 
-$sectors = [];
-$sectors_result = $conn->query("SELECT sector_id, sector_name FROM sectors ORDER BY sector_name");
-if ($sectors_result) {
-    while ($row = $sectors_result->fetch_assoc()) {
-        $sectors[] = $row;
-    }
-}
+$sectors = [
+    [
+        'sector_id' => 1,
+        'sector_name' => 'Forestry Sector'
+    ]
+];
 
 // Extract edit permissions for admin interface
 $edit_permissions = [];

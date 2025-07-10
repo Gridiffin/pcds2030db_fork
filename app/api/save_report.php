@@ -79,21 +79,10 @@ if (!$period) {
     exit;
 }
 
-$sector_query = "SELECT sector_name FROM sectors WHERE sector_id = ?";
-$stmt = $conn->prepare($sector_query);
-$stmt->bind_param("i", $sector_id);
-$stmt->execute();
-$sector_result = $stmt->get_result();
-
-if ($sector_result->num_rows === 0) {
-    ob_clean(); // Clear any output
-    header('HTTP/1.1 400 Bad Request');
-    header('Content-Type: application/json');
-    echo json_encode(['error' => 'Invalid sector']);
-    exit;
-}
-
-$sector = $sector_result->fetch_assoc();
+// Since sectors table has been removed, use default sector info
+$sector = [
+    'sector_name' => 'Forestry Sector'
+];
 
 // Check if file was uploaded
 if (!isset($_FILES['report_file']) || $_FILES['report_file']['error'] != UPLOAD_ERR_OK) {

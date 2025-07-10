@@ -66,27 +66,15 @@ function getReportingPeriods() {
  * @return array Array of sectors
  */
 function getSectors() {
-    global $conn;
-    
-    try {
-        $query = "SELECT sector_id, sector_name, description 
-                  FROM sectors 
-                  ORDER BY sector_name ASC";
-        
-        $result = $conn->query($query);
-        $sectors = [];
-        
-        if ($result && $result->num_rows > 0) {
-            while ($sector = $result->fetch_assoc()) {
-                $sectors[] = $sector;
-            }
-        }
-        
-        return $sectors;
-    } catch (Exception $e) {
-        error_log("Error fetching sectors: " . $e->getMessage());
-        return [];
-    }
+    // Since sectors table has been removed, return a default sector
+    // This maintains backward compatibility while the system transitions
+    return [
+        [
+            'sector_id' => 1,
+            'sector_name' => 'Forestry Sector',
+            'description' => 'Forestry and environmental management programs'
+        ]
+    ];
 }
 
 /**

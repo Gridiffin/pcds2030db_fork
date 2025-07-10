@@ -174,11 +174,17 @@ function showEditSubmissionForm(data) {
     
     const formHtml = `
         <div class="card shadow-sm">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title mb-0">
                     <i class="fas fa-edit me-2"></i>
                     Edit Submission - ${periodInfo.display_name}
                 </h5>
+                <div class="header-actions">
+                    <button type="button" class="btn btn-outline-info btn-sm" onclick="showAuditHistory(${submission.submission_id})">
+                        <i class="fas fa-history me-1"></i>
+                        View History
+                    </button>
+                </div>
             </div>
             <div class="card-body">
                 <form id="submission-form" enctype="multipart/form-data">
@@ -479,6 +485,10 @@ function generateTargetsHtml(targets) {
     let html = '';
     targets.forEach((target, index) => {
         const targetNumber = index + 1;
+        const tid = target.target_id ? escapeHtml(target.target_id) : '';
+        const isExisting = !!tid;
+        const historyBtn = (field) =>
+            `<button type="button" class="btn btn-link btn-sm p-0 ms-1" title="${isExisting ? 'Show History' : 'No history (unsaved target)'}" onclick="${isExisting ? `showFieldHistory('${tid}', '${field}')` : ''}" ${isExisting ? '' : 'disabled'}><i class="fas fa-history"></i></button>`;
         html += `
             <div class="target-container card shadow-sm mb-4">
                 <div class="card-header bg-light">
@@ -488,20 +498,27 @@ function generateTargetsHtml(targets) {
                     </h6>
                 </div>
                 <div class="card-body">
+                    <input type="hidden" name="target_id[]" value="${tid}">
                     <div class="row">
                         <div class="col-md-2">
-                            <label class="form-label small">Target Number</label>
+                            <label class="form-label small">Target Number
+                                ${historyBtn('target_number')}
+                            </label>
                             <input type="text" class="form-control form-control-sm" 
                                    name="target_number[]" value="${escapeHtml(target.target_number || '')}"
                                    placeholder="e.g., 1.1">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small">Target Description</label>
+                            <label class="form-label small">Target Description
+                                ${historyBtn('target_description')}
+                            </label>
                             <textarea class="form-control" name="target_text[]" rows="2" required
                                       placeholder="Describe the target">${escapeHtml(target.target_text || '')}</textarea>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label small">Status</label>
+                            <label class="form-label small">Status
+                                ${historyBtn('status_indicator')}
+                            </label>
                             <select class="form-select form-select-sm" name="target_status[]">
                                 <option value="not_started" ${target.target_status === 'not_started' ? 'selected' : ''}>Not Started</option>
                                 <option value="in_progress" ${target.target_status === 'in_progress' ? 'selected' : ''}>In Progress</option>
@@ -515,30 +532,38 @@ function generateTargetsHtml(targets) {
                             </button>
                         </div>
                     </div>
-                                <div class="row mt-3">
-                <div class="col-md-6">
-                    <label class="form-label small">Status Description</label>
-                    <textarea class="form-control form-control-sm" name="target_status_description[]" rows="2"
-                              placeholder="Provide details about the current status">${escapeHtml(target.status_description || '')}</textarea>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label small">Remarks</label>
-                    <textarea class="form-control form-control-sm" name="target_remarks[]" rows="2"
-                              placeholder="Additional remarks for this target">${escapeHtml(target.remarks || '')}</textarea>
-                </div>
-            </div>
-            <div class="row mt-3">
-                <div class="col-md-6">
-                    <label class="form-label small">Start Date</label>
-                    <input type="date" class="form-control form-control-sm" name="target_start_date[]"
-                           value="${target.start_date || ''}" placeholder="Select start date">
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label small">End Date</label>
-                    <input type="date" class="form-control form-control-sm" name="target_end_date[]"
-                           value="${target.end_date || ''}" placeholder="Select end date">
-                </div>
-            </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label class="form-label small">Status Description
+                                ${historyBtn('status_description')}
+                            </label>
+                            <textarea class="form-control form-control-sm" name="target_status_description[]" rows="2"
+                                      placeholder="Provide details about the current status">${escapeHtml(target.status_description || '')}</textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small">Remarks
+                                ${historyBtn('remarks')}
+                            </label>
+                            <textarea class="form-control form-control-sm" name="target_remarks[]" rows="2"
+                                      placeholder="Additional remarks for this target">${escapeHtml(target.remarks || '')}</textarea>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label class="form-label small">Start Date
+                                ${historyBtn('start_date')}
+                            </label>
+                            <input type="date" class="form-control form-control-sm" name="target_start_date[]"
+                                   value="${target.start_date || ''}" placeholder="Select start date">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small">End Date
+                                ${historyBtn('end_date')}
+                            </label>
+                            <input type="date" class="form-control form-control-sm" name="target_end_date[]"
+                                   value="${target.end_date || ''}" placeholder="Select end date">
+                        </div>
+                    </div>
                 </div>
             </div>
         `;
@@ -600,6 +625,7 @@ function addTargetRow() {
             </h6>
         </div>
         <div class="card-body">
+            <input type="hidden" name="target_id[]" value="">
             <div class="row">
                 <div class="col-md-2">
                     <label class="form-label small">Target Number</label>
@@ -726,15 +752,46 @@ function handleFileSelection(files) {
  * Handle form submission
  */
 function handleFormSubmission(form) {
+    // Serialize targets into a JSON array
+    const targetContainers = form.querySelectorAll('.target-container');
+    const targets = [];
+    targetContainers.forEach(container => {
+        let tid = container.querySelector('[name="target_id[]"]').value;
+        tid = tid && !isNaN(tid) && tid !== '' ? parseInt(tid, 10) : null;
+        targets.push({
+            target_id: tid,
+            target_number: container.querySelector('[name="target_number[]"]').value || '',
+            target_text: container.querySelector('[name="target_text[]"]').value || '',
+            target_status: container.querySelector('[name="target_status[]"]').value || '',
+            status_description: container.querySelector('[name="target_status_description[]"]').value || '',
+            remarks: container.querySelector('[name="target_remarks[]"]').value || '',
+            start_date: container.querySelector('[name="target_start_date[]"]').value || '',
+            end_date: container.querySelector('[name="target_end_date[]"]').value || ''
+        });
+    });
+
     const formData = new FormData(form);
-    
+    // Remove all target_*[] fields from FormData
+    [
+        'target_id[]',
+        'target_number[]',
+        'target_text[]',
+        'target_status[]',
+        'target_status_description[]',
+        'target_remarks[]',
+        'target_start_date[]',
+        'target_end_date[]'
+    ].forEach(field => formData.delete(field));
+    // Add the serialized targets JSON
+    formData.append('targets_json', JSON.stringify(targets));
+
     // Show loading state
     const submitButtons = form.querySelectorAll('button[type="submit"]');
     submitButtons.forEach(btn => {
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
     });
-    
+
     fetch(`${window.APP_URL}/app/ajax/save_submission.php`, {
         method: 'POST',
         body: formData
@@ -743,8 +800,6 @@ function handleFormSubmission(form) {
     .then(data => {
         if (data.success) {
             showToast('Success', data.message, 'success');
-            
-            // Reload the submission data to show updated form
             setTimeout(() => {
                 loadSubmissionData(formData.get('period_id'));
             }, 1500);
@@ -757,7 +812,6 @@ function handleFormSubmission(form) {
         showToast('Error', 'An error occurred while saving the submission.', 'danger');
     })
     .finally(() => {
-        // Reset button states
         submitButtons.forEach(btn => {
             btn.disabled = false;
             if (btn.name === 'save_as_draft') {
@@ -815,4 +869,105 @@ function formatFileSize(bytes) {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+/**
+ * Show audit history for a submission
+ */
+function showAuditHistory(submissionId) {
+    if (window.submissionAuditHistory) {
+        window.submissionAuditHistory.showAuditHistory(submissionId);
+    } else {
+        console.error('Audit history functionality not loaded');
+        showToast('Error', 'Audit history functionality not available', 'error');
+    }
 } 
+
+function showFieldHistory(target_id, field_name) {
+    console.log('showFieldHistory called', { target_id, field_name });
+    // Create modal if it doesn't exist
+    let modal = document.getElementById('field-history-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'field-history-modal';
+        modal.className = 'modal fade';
+        modal.tabIndex = -1;
+        modal.innerHTML = `
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-history me-2"></i>Field History</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="field-history-modal-body">
+                        <div class="text-center text-muted"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+        document.body.appendChild(modal);
+    }
+    // Show modal
+    let shown = false;
+    if (window.bootstrap && window.bootstrap.Modal) {
+        new window.bootstrap.Modal(modal).show();
+        shown = true;
+    } else if (window.$ && window.$.fn.modal) {
+        window.$(modal).modal('show');
+        shown = true;
+    } else {
+        // Fallback: force display
+        modal.style.display = 'block';
+        modal.style.background = 'rgba(0,0,0,0.5)';
+        modal.style.position = 'fixed';
+        modal.style.top = '0';
+        modal.style.left = '0';
+        modal.style.width = '100vw';
+        modal.style.height = '100vh';
+        modal.style.zIndex = '9999';
+        shown = true;
+        // Add close on click outside
+        modal.onclick = function(e) {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        };
+    }
+    if (!shown) {
+        alert('Could not show modal. Please ensure Bootstrap JS is loaded.');
+    }
+    // Fetch history
+    const url = `${window.APP_URL}/app/ajax/get_target_field_history.php?target_id=${encodeURIComponent(target_id)}&field_name=${encodeURIComponent(field_name)}`;
+    fetch(url)
+        .then(res => res.json())
+        .then(data => {
+            const body = document.getElementById('field-history-modal-body');
+            if (!data.success) {
+                body.innerHTML = `<div class='alert alert-danger'>${data.error || 'Failed to load history.'}</div>`;
+                return;
+            }
+            if (!data.changes.length) {
+                body.innerHTML = `<div class='text-muted text-center'>No history found for this field.</div>`;
+                return;
+            }
+            let html = `<table class='table table-sm table-bordered'>
+                <thead><tr><th>Date</th><th>User</th><th>Change Type</th><th>Old Value</th><th>New Value</th></tr></thead><tbody>`;
+            data.changes.forEach(change => {
+                html += `<tr>
+                    <td>${escapeHtml(change.changed_at)}</td>
+                    <td>${escapeHtml(change.user_name)}</td>
+                    <td>${escapeHtml(change.change_type)}</td>
+                    <td>${escapeHtml(change.old_value ?? '')}</td>
+                    <td>${escapeHtml(change.new_value ?? '')}</td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            body.innerHTML = html;
+        })
+        .catch(err => {
+            const body = document.getElementById('field-history-modal-body');
+            body.innerHTML = `<div class='alert alert-danger'>Error loading history.</div>`;
+        });
+} 
+window.showFieldHistory = showFieldHistory; 

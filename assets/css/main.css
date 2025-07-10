@@ -75,6 +75,7 @@
 @import 'components/admin-common.css'; /* Common admin interface components ionbuttons */
 @import 'components/outcomes.css'; /* Outcomes edit interface styling */
 @import 'components/status-grid.css';
+@import 'components/submission-audit-history.css'; /* Submission audit history component */
 
 /* Layout */
 @import 'layout/navigation.css';

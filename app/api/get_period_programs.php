@@ -107,7 +107,7 @@ try {    // Get programs that have non-draft submissions for this period (only l
     
     $programs_query = "SELECT DISTINCT p.program_id, p.program_name, p.program_number, p.initiative_id,
                       i.initiative_name, i.initiative_number, 
-                      s.sector_id, s.sector_name, u.agency_name, u.user_id as owner_agency_id
+                      p.sector_id, 'Forestry Sector' as sector_name, u.agency_name, u.user_id as owner_agency_id
                       FROM programs p
                       LEFT JOIN (
                           SELECT ps1.program_id
@@ -123,7 +123,6 @@ try {    // Get programs that have non-draft submissions for this period (only l
                           WHERE ps1.period_id IN ($period_in_clause) AND ps1.is_draft = 0
                       ) ps ON p.program_id = ps.program_id
                       LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
-                      LEFT JOIN sectors s ON p.sector_id = s.sector_id
                       LEFT JOIN users u ON p.owner_agency_id = u.user_id                      WHERE 
                             (ps.program_id IS NOT NULL)
                             ". ($sector_id ? "AND p.sector_id = ? " : "") .
@@ -181,18 +180,12 @@ try {    // Get programs that have non-draft submissions for this period (only l
     
     // If filtering by sector but no programs found, still return the sector info
     if ($sector_id && empty($programs)) {
-        // Get sector info
-        $sector_query = "SELECT sector_id, sector_name FROM sectors WHERE sector_id = ?";
-        $sector_stmt = $conn->prepare($sector_query);
-        $sector_stmt->bind_param("i", $sector_id);
-        $sector_stmt->execute();
-        $sector_result = $sector_stmt->get_result();        if ($sector_data = $sector_result->fetch_assoc()) {
-            $programs[$sector_id] = [
-                'sector_name' => $sector_data['sector_name'],
-                'programs' => []
-            ];
-            error_log("No non-draft programs found for sector {$sector_data['sector_name']}, returning empty array");
-        }
+        // Since sectors table has been removed, use default sector info
+        $programs[$sector_id] = [
+            'sector_name' => 'Forestry Sector',
+            'programs' => []
+        ];
+        error_log("No non-draft programs found for Forestry Sector, returning empty array");
     }
 
     // Return the programs
