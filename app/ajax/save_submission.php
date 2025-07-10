@@ -56,8 +56,8 @@ try {
         exit;
     }
 
-    // Verify period exists and is valid
-    $period_query = "SELECT * FROM reporting_periods WHERE period_id = ? AND status != 'closed'";
+    // Verify period exists
+    $period_query = "SELECT * FROM reporting_periods WHERE period_id = ?";
     $stmt = $conn->prepare($period_query);
     $stmt->bind_param("i", $period_id);
     $stmt->execute();
@@ -65,7 +65,7 @@ try {
 
     if (!$period) {
         http_response_code(400);
-        echo json_encode(['error' => 'Invalid or closed reporting period.']);
+        echo json_encode(['error' => 'Invalid reporting period.']);
         exit;
     }
 
@@ -115,15 +115,22 @@ try {
         }
     }
 
-    // Determine submission mode
-    $is_draft = isset($_POST['save_as_draft']) && $_POST['save_as_draft'] == '1';
-    $is_submitted = !$is_draft;
+    // Determine submission mode - always save as draft from edit page
+    $is_draft = true;
+    $is_submitted = false;
 
     // Start transaction
     $conn->begin_transaction();
 
     try {
         if ($is_update) {
+            // Get existing targets for comparison
+            $existing_targets_query = "SELECT * FROM program_targets WHERE submission_id = ? AND is_deleted = 0";
+            $stmt = $conn->prepare($existing_targets_query);
+            $stmt->bind_param("i", $submission_id);
+            $stmt->execute();
+            $existing_targets = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+            
             // Update existing submission
             $update_query = "UPDATE program_submissions 
                            SET description = ?, is_draft = ?, is_submitted = ?, 
@@ -141,26 +148,96 @@ try {
                 throw new Exception('Failed to update submission.');
             }
 
-            // Delete existing targets for this submission
-            $delete_targets_query = "UPDATE program_targets SET is_deleted = 1 WHERE submission_id = ?";
-            $stmt = $conn->prepare($delete_targets_query);
-            $stmt->bind_param("i", $submission_id);
+            // Log submission update
+            $audit_log_query = "INSERT INTO audit_logs (user_id, action, details, ip_address, status) 
+                               VALUES (?, 'update_submission', ?, ?, 'success')";
+            $stmt = $conn->prepare($audit_log_query);
+            $details = "Updated submission ID: {$submission_id} for program ID: {$program_id}";
+            $ip_address = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+            $stmt->bind_param("iss", $_SESSION['user_id'], $details, $ip_address);
             $stmt->execute();
+            $audit_log_id = $conn->insert_id;
 
-            $message = $is_draft ? 'Submission updated as draft.' : 'Submission finalized successfully.';
-        } else {
-            // Check if submission already exists for this program and period
-            $check_query = "SELECT submission_id FROM program_submissions 
-                           WHERE program_id = ? AND period_id = ? AND is_deleted = 0";
-            $stmt = $conn->prepare($check_query);
-            $stmt->bind_param("ii", $program_id, $period_id);
-            $stmt->execute();
-            $existing = $stmt->get_result()->fetch_assoc();
-
-            if ($existing) {
-                throw new Exception('A submission already exists for this period. Please edit the existing submission.');
+            // Handle target updates with proper audit logging
+            if (!empty($targets)) {
+                foreach ($targets as $index => $target) {
+                    // Check if target exists (by position/index)
+                    $existing_target = $existing_targets[$index] ?? null;
+                    
+                    if ($existing_target) {
+                        // Update existing target
+                        $update_target_query = "UPDATE program_targets 
+                                               SET target_number = ?, target_description = ?, status_indicator = ?,
+                                                   status_description = ?, remarks = ?, start_date = ?, end_date = ?
+                                               WHERE target_id = ?";
+                        
+                        $stmt = $conn->prepare($update_target_query);
+                        $start_date = !empty($target['start_date']) ? $target['start_date'] : null;
+                        $end_date = !empty($target['end_date']) ? $target['end_date'] : null;
+                        
+                        $stmt->bind_param("sssssssi", 
+                            $target['target_number'],
+                            $target['target_text'],
+                            $target['target_status'],
+                            $target['status_description'],
+                            $target['remarks'],
+                            $start_date,
+                            $end_date,
+                            $existing_target['target_id']
+                        );
+                        $stmt->execute();
+                        
+                        // Log field changes for target
+                        logTargetFieldChanges($conn, $audit_log_id, $existing_target, $target);
+                    } else {
+                        // Insert new target
+                        $insert_target_query = "INSERT INTO program_targets 
+                                               (target_number, submission_id, target_description, status_indicator, 
+                                                status_description, remarks, start_date, end_date) 
+                                               VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                        
+                        $stmt = $conn->prepare($insert_target_query);
+                        $start_date = !empty($target['start_date']) ? $target['start_date'] : null;
+                        $end_date = !empty($target['end_date']) ? $target['end_date'] : null;
+                        $remarks = $target['remarks'] ?? '';
+                        
+                        $stmt->bind_param("sissssss", 
+                            $target['target_number'],
+                            $submission_id,
+                            $target['target_text'],
+                            $target['target_status'],
+                            $target['status_description'],
+                            $remarks,
+                            $start_date,
+                            $end_date
+                        );
+                        $stmt->execute();
+                        
+                        // Log target addition
+                        logTargetAddition($conn, $audit_log_id, $target);
+                    }
+                }
+                
+                // Remove targets that are no longer in the list
+                $target_count = count($targets);
+                if (count($existing_targets) > $target_count) {
+                    for ($i = $target_count; $i < count($existing_targets); $i++) {
+                        $target_to_remove = $existing_targets[$i];
+                        
+                        // Log target removal
+                        logTargetRemoval($conn, $audit_log_id, $target_to_remove);
+                        
+                        // Delete the target
+                        $delete_target_query = "DELETE FROM program_targets WHERE target_id = ?";
+                        $stmt = $conn->prepare($delete_target_query);
+                        $stmt->bind_param("i", $target_to_remove['target_id']);
+                        $stmt->execute();
+                    }
+                }
             }
 
+            $message = 'Submission updated as draft.';
+        } else {
             // Create new submission
             $insert_query = "INSERT INTO program_submissions 
                            (program_id, period_id, description, is_draft, is_submitted, 
@@ -175,7 +252,22 @@ try {
             $stmt->execute();
 
             $submission_id = $conn->insert_id;
-            $message = $is_draft ? 'Submission created as draft.' : 'Submission created and finalized.';
+            
+            if (!$submission_id) {
+                throw new Exception('Failed to create submission.');
+            }
+
+            // Log submission creation
+            $audit_log_query = "INSERT INTO audit_logs (user_id, action, details, ip_address, status) 
+                               VALUES (?, 'create_submission', ?, ?, 'success')";
+            $stmt = $conn->prepare($audit_log_query);
+            $details = "Created new submission ID: {$submission_id} for program ID: {$program_id}";
+            $ip_address = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+            $stmt->bind_param("iss", $_SESSION['user_id'], $details, $ip_address);
+            $stmt->execute();
+            $audit_log_id = $conn->insert_id;
+            
+            $message = 'Submission created as draft.';
         }
 
         // Save targets to program_targets table
@@ -190,6 +282,7 @@ try {
             foreach ($targets as $target) {
                 $start_date = !empty($target['start_date']) ? $target['start_date'] : null;
                 $end_date = !empty($target['end_date']) ? $target['end_date'] : null;
+                $remarks = $target['remarks'] ?? '';
                 
                 $stmt->bind_param("sissssss", 
                     $target['target_number'],
@@ -197,11 +290,16 @@ try {
                     $target['target_text'],
                     $target['target_status'],
                     $target['status_description'],
-                    $target['remarks'] ?? '',
+                    $remarks,
                     $start_date,
                     $end_date
                 );
                 $stmt->execute();
+                
+                // Log target addition for new submissions
+                if (isset($audit_log_id)) {
+                    logTargetAddition($conn, $audit_log_id, $target);
+                }
             }
         }
 
@@ -263,5 +361,103 @@ try {
     http_response_code(500);
     echo json_encode(['error' => $e->getMessage()]);
     exit;
+}
+
+/**
+ * Log field changes for target updates
+ */
+function logTargetFieldChanges($conn, $audit_log_id, $existing_target, $new_target) {
+    $fields_to_check = [
+        'target_number' => 'text',
+        'target_description' => 'text', 
+        'status_indicator' => 'text',
+        'status_description' => 'text',
+        'remarks' => 'text',
+        'start_date' => 'date',
+        'end_date' => 'date'
+    ];
+    
+    foreach ($fields_to_check as $field => $type) {
+        $old_value = $existing_target[$field] ?? null;
+        $new_value = $new_target[$field] ?? null;
+        
+        // Handle field name mapping
+        if ($field === 'target_description') {
+            $new_value = $new_target['target_text'] ?? null;
+        }
+        
+        if ($old_value !== $new_value) {
+            $insert_query = "INSERT INTO audit_field_changes 
+                           (audit_log_id, field_name, field_type, old_value, new_value, change_type) 
+                           VALUES (?, ?, ?, ?, ?, 'modified')";
+            
+            $stmt = $conn->prepare($insert_query);
+            $stmt->bind_param("issss", $audit_log_id, $field, $type, $old_value, $new_value);
+            $stmt->execute();
+        }
+    }
+}
+
+/**
+ * Log target addition
+ */
+function logTargetAddition($conn, $audit_log_id, $target) {
+    $fields_to_log = [
+        'target_number' => 'text',
+        'target_description' => 'text',
+        'status_indicator' => 'text', 
+        'status_description' => 'text',
+        'remarks' => 'text',
+        'start_date' => 'date',
+        'end_date' => 'date'
+    ];
+    
+    foreach ($fields_to_log as $field => $type) {
+        $value = $target[$field] ?? null;
+        
+        // Handle field name mapping
+        if ($field === 'target_description') {
+            $value = $target['target_text'] ?? null;
+        }
+        
+        if ($value !== null) {
+            $insert_query = "INSERT INTO audit_field_changes 
+                           (audit_log_id, field_name, field_type, old_value, new_value, change_type) 
+                           VALUES (?, ?, ?, NULL, ?, 'added')";
+            
+            $stmt = $conn->prepare($insert_query);
+            $stmt->bind_param("isss", $audit_log_id, $field, $type, $value);
+            $stmt->execute();
+        }
+    }
+}
+
+/**
+ * Log target removal
+ */
+function logTargetRemoval($conn, $audit_log_id, $target) {
+    $fields_to_log = [
+        'target_number' => 'text',
+        'target_description' => 'text',
+        'status_indicator' => 'text',
+        'status_description' => 'text', 
+        'remarks' => 'text',
+        'start_date' => 'date',
+        'end_date' => 'date'
+    ];
+    
+    foreach ($fields_to_log as $field => $type) {
+        $value = $target[$field] ?? null;
+        
+        if ($value !== null) {
+            $insert_query = "INSERT INTO audit_field_changes 
+                           (audit_log_id, field_name, field_type, old_value, new_value, change_type) 
+                           VALUES (?, ?, ?, ?, NULL, 'removed')";
+            
+            $stmt = $conn->prepare($insert_query);
+            $stmt->bind_param("issss", $audit_log_id, $field, $type, $value, $value);
+            $stmt->execute();
+        }
+    }
 }
 ?> 
