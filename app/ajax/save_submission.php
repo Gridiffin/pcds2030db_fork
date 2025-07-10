@@ -85,6 +85,28 @@ try {
         }
     }
 
+    // Handle deleted attachments
+    if (!empty($_POST['deleted_attachments'])) {
+        $deleted_attachments = json_decode($_POST['deleted_attachments'], true);
+        if (is_array($deleted_attachments) && $is_update) {
+            foreach ($deleted_attachments as $attachment_id) {
+                // Get file path
+                $stmt = $conn->prepare("SELECT file_path FROM program_attachments WHERE attachment_id = ? AND submission_id = ?");
+                $stmt->bind_param("ii", $attachment_id, $submission_id);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $row = $result->fetch_assoc();
+                if ($row && !empty($row['file_path']) && file_exists($row['file_path'])) {
+                    @unlink($row['file_path']);
+                }
+                // Delete DB record
+                $stmt = $conn->prepare("DELETE FROM program_attachments WHERE attachment_id = ? AND submission_id = ?");
+                $stmt->bind_param("ii", $attachment_id, $submission_id);
+                $stmt->execute();
+            }
+        }
+    }
+
     // Prepare submission data
     $description = $_POST['description'] ?? '';
     $targets = [];

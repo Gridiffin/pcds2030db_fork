@@ -67,6 +67,21 @@ function initEventListeners() {
         }
     });
 
+    // Add remove attachment event
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-attachment-btn') || e.target.closest('.remove-attachment-btn')) {
+            e.preventDefault();
+            const btn = e.target.classList.contains('remove-attachment-btn') ? e.target : e.target.closest('.remove-attachment-btn');
+            const attachmentId = btn.getAttribute('data-attachment-id');
+            if (attachmentId) {
+                deletedAttachmentIds.push(attachmentId);
+                // Remove from UI
+                const item = btn.closest('.attachment-item');
+                if (item) item.remove();
+            }
+        }
+    });
+
     // Handle file input change
     document.addEventListener('change', function(e) {
         if (e.target.id === 'attachments') {
@@ -556,15 +571,17 @@ function generateTargetsHtml(targets) {
 /**
  * Generate HTML for attachments
  */
+let deletedAttachmentIds = [];
+let pendingFiles = [];
+
 function generateAttachmentsHtml(attachments) {
     if (!attachments || attachments.length === 0) {
-        return '<li class="text-muted">No attachments</li>';
+        return '';
     }
-    
     let html = '';
     attachments.forEach(attachment => {
         html += `
-            <li class="mb-2 d-flex justify-content-between align-items-center">
+            <li class="mb-2 d-flex justify-content-between align-items-center attachment-item" data-attachment-id="${attachment.attachment_id}">
                 <div class="d-flex align-items-center">
                     <i class="fas fa-file me-2 text-primary"></i>
                     <div>
@@ -572,16 +589,70 @@ function generateAttachmentsHtml(attachments) {
                         <small class="text-muted">${attachment.file_size_formatted} • ${formatDate(attachment.upload_date)}</small>
                     </div>
                 </div>
-                <a href="${window.APP_URL}/app/ajax/download_program_attachment.php?id=${attachment.attachment_id}" 
-                   class="btn btn-sm btn-outline-primary" target="_blank">
-                    <i class="fas fa-download"></i>
-                </a>
+                <div class="d-flex align-items-center gap-2">
+                    <a href="${window.APP_URL}/app/ajax/download_program_attachment.php?id=${attachment.attachment_id}" 
+                       class="btn btn-sm btn-outline-primary me-1" target="_blank" title="Download">
+                        <i class="fas fa-download"></i>
+                    </a>
+                    <button type="button" class="btn btn-sm btn-outline-danger remove-attachment-btn" title="Remove" data-attachment-id="${attachment.attachment_id}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
             </li>
         `;
     });
-    
     return html;
 }
+
+function renderPendingFiles() {
+    const attachmentsList = document.getElementById('attachments-list');
+    if (!attachmentsList) return;
+    // Remove all .pending-attachment items
+    attachmentsList.querySelectorAll('.pending-attachment').forEach(el => el.remove());
+    // Remove the dynamic no-attachments message if present
+    const noMsg = attachmentsList.querySelector('.no-attachments-msg');
+    if (noMsg) noMsg.remove();
+    // Check if there are any files (existing or pending)
+    const hasExisting = attachmentsList.querySelectorAll('.attachment-item').length > 0;
+    const hasPending = pendingFiles.length > 0;
+    if (!hasExisting && !hasPending) {
+        const msg = document.createElement('li');
+        msg.className = 'text-muted no-attachments-msg';
+        msg.textContent = 'No attachments';
+        attachmentsList.appendChild(msg);
+    }
+    pendingFiles.forEach((file, idx) => {
+        const listItem = document.createElement('li');
+        listItem.className = 'mb-2 d-flex justify-content-between align-items-center pending-attachment';
+        listItem.innerHTML = `
+            <div class="d-flex align-items-center">
+                <i class="fas fa-file me-2 text-primary"></i>
+                <div>
+                    <div class="fw-medium">${escapeHtml(file.name)}</div>
+                    <small class="text-muted">${formatFileSize(file.size)} • Ready to upload</small>
+                </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-danger remove-pending-file-btn" data-pending-idx="${idx}" title="Remove">
+                <i class="fas fa-trash"></i>
+            </button>
+        `;
+        attachmentsList.appendChild(listItem);
+    });
+}
+
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('remove-pending-file-btn') || e.target.closest('.remove-pending-file-btn')) {
+        const btn = e.target.classList.contains('remove-pending-file-btn') ? e.target : e.target.closest('.remove-pending-file-btn');
+        const idx = parseInt(btn.getAttribute('data-pending-idx'), 10);
+        if (!isNaN(idx)) {
+            pendingFiles.splice(idx, 1);
+            renderPendingFiles();
+            // Also clear the file input so user can re-add the same file if needed
+            const fileInput = document.getElementById('attachments');
+            if (fileInput) fileInput.value = '';
+        }
+    }
+});
 
 /**
  * Add a new target row
@@ -711,22 +782,11 @@ function renumberTargets() {
 function handleFileSelection(files) {
     const attachmentsList = document.getElementById('attachments-list');
     if (!attachmentsList) return;
-    
+    // Add new files to pendingFiles
     Array.from(files).forEach(file => {
-        const listItem = document.createElement('li');
-        listItem.className = 'mb-2 d-flex justify-content-between align-items-center';
-        listItem.innerHTML = `
-            <div class="d-flex align-items-center">
-                <i class="fas fa-file me-2 text-primary"></i>
-                <div>
-                    <div class="fw-medium">${escapeHtml(file.name)}</div>
-                    <small class="text-muted">${formatFileSize(file.size)} • Ready to upload</small>
-                </div>
-            </div>
-            <span class="badge bg-success">New</span>
-        `;
-        attachmentsList.appendChild(listItem);
+        pendingFiles.push(file);
     });
+    renderPendingFiles();
 }
 
 /**
@@ -763,6 +823,10 @@ function handleFormSubmission(form) {
         'target_start_date[]',
         'target_end_date[]'
     ].forEach(field => formData.delete(field));
+    // Append all pendingFiles to FormData
+    pendingFiles.forEach(file => {
+        formData.append('attachments[]', file);
+    });
     // Add the serialized targets JSON
     formData.append('targets_json', JSON.stringify(targets));
 
@@ -801,6 +865,10 @@ function handleFormSubmission(form) {
                 btn.innerHTML = '<i class="fas fa-check me-2"></i>Finalize Submission';
             }
         });
+        // Reset deleted attachment IDs after successful save
+        deletedAttachmentIds = [];
+        pendingFiles = []; // Reset pending files after successful save
+        renderPendingFiles(); // Re-render pending files to show "Ready to upload"
     });
 }
 
