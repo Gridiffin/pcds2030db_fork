@@ -1,0 +1,306 @@
+/**
+ * Enhanced Edit Submission Page Styles
+ * 
+ * Custom styles for the enhanced edit submission page with period selector
+ * and dynamic content areas.
+ */
+
+/* Period Selector Styles */
+.period-status-display {
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+}
+
+.period-status-display .badge {
+    font-size: 0.75rem;
+}
+
+/* Dynamic Content Area */
+#dynamic-content {
+    min-height: 400px;
+    transition: all 0.3s ease;
+}
+
+/* Loading Spinner */
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* Target Rows */
+.target-row {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6 !important;
+    transition: all 0.2s ease;
+}
+
+.target-row:hover {
+    background-color: #e9ecef;
+    border-color: #adb5bd !important;
+}
+
+.target-row .form-control,
+.target-row .form-select {
+    border: 1px solid #ced4da;
+    font-size: 0.875rem;
+}
+
+.target-row .form-control:focus,
+.target-row .form-select:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Remove Target Button */
+.remove-target-btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    border-radius: 0.25rem;
+}
+
+.remove-target-btn:hover {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
+/* Attachments List */
+#attachments-list li {
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    margin-bottom: 0.5rem;
+}
+
+#attachments-list li:hover {
+    background-color: #e9ecef;
+}
+
+#attachments-list .badge {
+    font-size: 0.625rem;
+}
+
+/* Form Actions */
+.form-actions {
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+    padding: 1rem 0;
+    margin-top: 2rem;
+}
+
+/* Card Enhancements */
+.card {
+    border: 1px solid #dee2e6;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.card-title {
+    color: #495057;
+    font-weight: 600;
+}
+
+/* Status Badges */
+.badge.bg-success {
+    background-color: #198754 !important;
+}
+
+.badge.bg-warning {
+    background-color: #ffc107 !important;
+    color: #000 !important;
+}
+
+.badge.bg-info {
+    background-color: #0dcaf0 !important;
+}
+
+.badge.bg-secondary {
+    background-color: #6c757d !important;
+}
+
+.badge.bg-light {
+    background-color: #f8f9fa !important;
+    color: #6c757d !important;
+    border: 1px solid #dee2e6;
+}
+
+/* Form Validation Styles */
+.form-control.is-invalid,
+.form-select.is-invalid {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+}
+
+.form-control.is-valid,
+.form-select.is-valid {
+    border-color: #198754;
+    box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
+}
+
+.invalid-feedback {
+    display: block;
+    width: 100%;
+    margin-top: 0.25rem;
+    font-size: 0.875em;
+    color: #dc3545;
+}
+
+.valid-feedback {
+    display: block;
+    width: 100%;
+    margin-top: 0.25rem;
+    font-size: 0.875em;
+    color: #198754;
+}
+
+/* Button States */
+.btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.btn .fa-spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .target-row .row {
+        margin: 0;
+    }
+    
+    .target-row .col-md-1,
+    .target-row .col-md-2,
+    .target-row .col-md-3,
+    .target-row .col-md-6 {
+        margin-bottom: 0.5rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .form-actions .btn {
+        width: 100%;
+    }
+}
+
+/* Template Styles */
+template {
+    display: none;
+}
+
+/* No Submission Message */
+.text-center.py-5 {
+    background-color: #f8f9fa;
+    border-radius: 0.5rem;
+    border: 2px dashed #dee2e6;
+}
+
+.text-center.py-5 .fa-3x {
+    color: #6c757d;
+}
+
+/* File Upload Area */
+.file-upload-area {
+    border: 2px dashed #dee2e6;
+    border-radius: 0.5rem;
+    padding: 2rem;
+    text-align: center;
+    background-color: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.file-upload-area:hover {
+    border-color: #adb5bd;
+    background-color: #e9ecef;
+}
+
+.file-upload-area.dragover {
+    border-color: #0d6efd;
+    background-color: #e7f1ff;
+}
+
+/* Progress Indicators */
+.progress-indicator {
+    position: relative;
+    display: inline-block;
+}
+
+.progress-indicator::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 1rem;
+    height: 1rem;
+    margin: -0.5rem 0 0 -0.5rem;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #0d6efd;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Toast Notifications */
+.toast-container {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1055;
+}
+
+.toast {
+    min-width: 300px;
+}
+
+/* Accessibility */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Focus States */
+.btn:focus,
+.form-control:focus,
+.form-select:focus {
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Print Styles */
+@media print {
+    .btn,
+    .form-actions,
+    .period-status-display {
+        display: none !important;
+    }
+    
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+    
+    .card-header {
+        background-color: white !important;
+        border-bottom: 1px solid #000 !important;
+    }
+} 

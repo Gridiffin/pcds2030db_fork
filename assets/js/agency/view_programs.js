@@ -594,9 +594,9 @@ function updateMoreActionsModalContent(modal, programId, programName, programTyp
         {
             icon: 'fas fa-edit',
             text: 'Edit Submission',
-            url: `add_submission.php?program_id=${programId}`,
+            url: `edit_submission.php?program_id=${programId}`,
             class: 'btn-outline-success',
-            tooltip: 'Edit the current submission data for this program'
+            tooltip: 'Edit submissions for this program by selecting a reporting period'
         },
         {
             icon: 'fas fa-edit',

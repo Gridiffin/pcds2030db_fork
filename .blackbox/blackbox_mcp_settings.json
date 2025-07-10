@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "github.com/planetscale/cli": {
-      "command": "pscale",
-      "args": ["mcp", "server"]
-    }
-  }
-}
