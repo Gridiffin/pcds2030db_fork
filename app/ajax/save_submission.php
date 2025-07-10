@@ -95,6 +95,9 @@ try {
         $target_numbers = $_POST['target_number'] ?? [];
         $target_statuses = $_POST['target_status'] ?? [];
         $target_status_descriptions = $_POST['target_status_description'] ?? [];
+        $target_remarks = $_POST['target_remarks'] ?? [];
+        $target_start_dates = $_POST['target_start_date'] ?? [];
+        $target_end_dates = $_POST['target_end_date'] ?? [];
         
         for ($i = 0; $i < count($target_texts); $i++) {
             $target_text = trim($target_texts[$i] ?? '');
@@ -104,6 +107,9 @@ try {
                     'target_text' => $target_text,
                     'target_status' => trim($target_statuses[$i] ?? 'not_started'),
                     'status_description' => trim($target_status_descriptions[$i] ?? ''),
+                    'remarks' => trim($target_remarks[$i] ?? ''),
+                    'start_date' => !empty($target_start_dates[$i]) ? $target_start_dates[$i] : null,
+                    'end_date' => !empty($target_end_dates[$i]) ? $target_end_dates[$i] : null,
                 ];
             }
         }

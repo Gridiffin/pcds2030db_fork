@@ -115,4 +115,23 @@ The implementation follows the project's coding standards and maintains consiste
   - Removed references to non-existent `created_at` and `submission_date` columns
   - Updated to use `updated_at` and `submitted_at` columns
   - Fixed target handling to use `program_targets` table instead of JSON storage
-  - Updated queries to match the actual database structure 
+  - Updated queries to match the actual database structure
+  - Fixed column name `u.full_name` to `u.fullname` in users table join
+  - Fixed column name `upload_date` to `uploaded_at` in program_attachments table
+
+### UI/UX Improvements Applied
+- **Removed Progress Rating Dropdown**: Eliminated the submission-level progress rating dropdown as requested
+- **Removed Submission-Level Remarks**: Removed the additional remarks field at the submission level
+- **Enhanced Target Structure**: 
+  - Added numbered target containers with clear "Target #1", "Target #2" headers
+  - Improved visual separation between targets using card-based layout
+  - Added remarks field to individual targets instead of submission level
+  - Added timeline fields (start date and end date) for each target
+  - Enhanced target numbering system that automatically renumbers after removal
+- **Improved Visual Design**: 
+  - Added card headers with icons for better target identification
+  - Enhanced spacing and layout for better readability
+  - Added hover effects and visual feedback for target containers
+  - Fixed bullseye icon color to white for better visibility
+  - Enhanced delete button styling and responsiveness
+  - Improved target deletion functionality with proper renumbering 

@@ -52,9 +52,13 @@ function initEventListeners() {
             addTargetRow();
         }
         
-        // Remove target button
-        if (e.target.classList.contains('remove-target-btn')) {
-            removeTargetRow(e.target);
+        // Remove target button - handle both button and icon clicks
+        if (e.target.classList.contains('remove-target-btn') || e.target.closest('.remove-target-btn')) {
+            e.preventDefault();
+            e.stopPropagation();
+            const button = e.target.classList.contains('remove-target-btn') ? e.target : e.target.closest('.remove-target-btn');
+            console.log('Delete button clicked:', button);
+            removeTargetRow(button);
         }
         
         // Add attachment button
@@ -209,26 +213,7 @@ function showEditSubmissionForm(data) {
                                 </div>
                             </div>
 
-                            <!-- Rating and Remarks -->
-                            <div class="row mt-4">
-                                <div class="col-md-6">
-                                    <label for="rating" class="form-label">Progress Rating</label>
-                                    <select class="form-select" id="rating" name="rating">
-                                        <option value="not-started" ${submission.rating === 'not-started' ? 'selected' : ''}>Not Started</option>
-                                        <option value="on-track" ${submission.rating === 'on-track' ? 'selected' : ''}>On Track</option>
-                                        <option value="on-track-yearly" ${submission.rating === 'on-track-yearly' ? 'selected' : ''}>On Track for Year</option>
-                                        <option value="target-achieved" ${submission.rating === 'target-achieved' ? 'selected' : ''}>Target Achieved</option>
-                                        <option value="delayed" ${submission.rating === 'delayed' ? 'selected' : ''}>Delayed</option>
-                                        <option value="severe-delay" ${submission.rating === 'severe-delay' ? 'selected' : ''}>Severe Delays</option>
-                                        <option value="completed" ${submission.rating === 'completed' ? 'selected' : ''}>Completed</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="remarks" class="form-label">Remarks</label>
-                                    <textarea class="form-control" id="remarks" name="remarks" rows="3"
-                                              placeholder="Additional remarks">${escapeHtml(submission.remarks)}</textarea>
-                                </div>
-                            </div>
+
                         </div>
                         
                         <div class="col-md-4">
@@ -291,13 +276,9 @@ function showEditSubmissionForm(data) {
                             Cancel
                         </a>
                         <div>
-                            <button type="submit" name="save_as_draft" value="1" class="btn btn-outline-primary me-2">
+                            <button type="submit" name="save_as_draft" value="1" class="btn btn-outline-primary">
                                 <i class="fas fa-save me-2"></i>
                                 Save as Draft
-                            </button>
-                            <button type="submit" class="btn btn-success">
-                                <i class="fas fa-check me-2"></i>
-                                Finalize Submission
                             </button>
                         </div>
                     </div>
@@ -451,13 +432,9 @@ function showAddSubmissionForm() {
                             Cancel
                         </a>
                         <div>
-                            <button type="submit" name="save_as_draft" value="1" class="btn btn-outline-primary me-2">
+                            <button type="submit" name="save_as_draft" value="1" class="btn btn-outline-primary">
                                 <i class="fas fa-save me-2"></i>
                                 Save as Draft
-                            </button>
-                            <button type="submit" class="btn btn-success">
-                                <i class="fas fa-check me-2"></i>
-                                Finalize Submission
                             </button>
                         </div>
                     </div>
@@ -501,41 +478,67 @@ function generateTargetsHtml(targets) {
     
     let html = '';
     targets.forEach((target, index) => {
+        const targetNumber = index + 1;
         html += `
-            <div class="target-row border rounded p-3 mb-3">
-                <div class="row">
-                    <div class="col-md-2">
-                        <label class="form-label small">Target Number</label>
-                        <input type="text" class="form-control form-control-sm" 
-                               name="target_number[]" value="${escapeHtml(target.target_number || '')}"
-                               placeholder="e.g., 1.1">
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label small">Target Description</label>
-                        <textarea class="form-control" name="target_text[]" rows="2" required
-                                  placeholder="Describe the target">${escapeHtml(target.target_text || '')}</textarea>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label small">Status</label>
-                        <select class="form-select form-select-sm" name="target_status[]">
-                            <option value="not_started" ${target.target_status === 'not_started' ? 'selected' : ''}>Not Started</option>
-                            <option value="in_progress" ${target.target_status === 'in_progress' ? 'selected' : ''}>In Progress</option>
-                            <option value="completed" ${target.target_status === 'completed' ? 'selected' : ''}>Completed</option>
-                            <option value="delayed" ${target.target_status === 'delayed' ? 'selected' : ''}>Delayed</option>
-                        </select>
-                    </div>
-                    <div class="col-md-1 d-flex align-items-end">
-                        <button type="button" class="btn btn-outline-danger btn-sm remove-target-btn" title="Remove Target">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
+            <div class="target-container card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-bullseye me-2"></i>
+                        Target #${targetNumber}
+                    </h6>
                 </div>
-                <div class="row mt-2">
-                    <div class="col-12">
-                        <label class="form-label small">Status Description</label>
-                        <textarea class="form-control form-control-sm" name="target_status_description[]" rows="1"
-                                  placeholder="Provide details about the current status">${escapeHtml(target.status_description || '')}</textarea>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-2">
+                            <label class="form-label small">Target Number</label>
+                            <input type="text" class="form-control form-control-sm" 
+                                   name="target_number[]" value="${escapeHtml(target.target_number || '')}"
+                                   placeholder="e.g., 1.1">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small">Target Description</label>
+                            <textarea class="form-control" name="target_text[]" rows="2" required
+                                      placeholder="Describe the target">${escapeHtml(target.target_text || '')}</textarea>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small">Status</label>
+                            <select class="form-select form-select-sm" name="target_status[]">
+                                <option value="not_started" ${target.target_status === 'not_started' ? 'selected' : ''}>Not Started</option>
+                                <option value="in_progress" ${target.target_status === 'in_progress' ? 'selected' : ''}>In Progress</option>
+                                <option value="completed" ${target.target_status === 'completed' ? 'selected' : ''}>Completed</option>
+                                <option value="delayed" ${target.target_status === 'delayed' ? 'selected' : ''}>Delayed</option>
+                            </select>
+                        </div>
+                        <div class="col-md-1 d-flex align-items-end">
+                            <button type="button" class="btn btn-outline-danger btn-sm remove-target-btn" title="Remove Target">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
                     </div>
+                                <div class="row mt-3">
+                <div class="col-md-6">
+                    <label class="form-label small">Status Description</label>
+                    <textarea class="form-control form-control-sm" name="target_status_description[]" rows="2"
+                              placeholder="Provide details about the current status">${escapeHtml(target.status_description || '')}</textarea>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small">Remarks</label>
+                    <textarea class="form-control form-control-sm" name="target_remarks[]" rows="2"
+                              placeholder="Additional remarks for this target">${escapeHtml(target.remarks || '')}</textarea>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <label class="form-label small">Start Date</label>
+                    <input type="date" class="form-control form-control-sm" name="target_start_date[]"
+                           value="${target.start_date || ''}" placeholder="Select start date">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small">End Date</label>
+                    <input type="date" class="form-control form-control-sm" name="target_end_date[]"
+                           value="${target.end_date || ''}" placeholder="Select end date">
+                </div>
+            </div>
                 </div>
             </div>
         `;
@@ -579,52 +582,120 @@ function generateAttachmentsHtml(attachments) {
  */
 function addTargetRow() {
     const container = document.getElementById('targets-container');
+    if (!container) {
+        console.error('Targets container not found');
+        return;
+    }
+    
+    const existingTargets = container.querySelectorAll('.target-container');
+    const targetNumber = existingTargets.length + 1;
+    
     const targetRow = document.createElement('div');
-    targetRow.className = 'target-row border rounded p-3 mb-3';
+    targetRow.className = 'target-container card shadow-sm mb-4';
     targetRow.innerHTML = `
-        <div class="row">
-            <div class="col-md-2">
-                <label class="form-label small">Target Number</label>
-                <input type="text" class="form-control form-control-sm" 
-                       name="target_number[]" placeholder="e.g., 1.1">
-            </div>
-            <div class="col-md-6">
-                <label class="form-label small">Target Description</label>
-                <textarea class="form-control" name="target_text[]" rows="2" required
-                          placeholder="Describe the target"></textarea>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label small">Status</label>
-                <select class="form-select form-select-sm" name="target_status[]">
-                    <option value="not_started">Not Started</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="completed">Completed</option>
-                    <option value="delayed">Delayed</option>
-                </select>
-            </div>
-            <div class="col-md-1 d-flex align-items-end">
-                <button type="button" class="btn btn-outline-danger btn-sm remove-target-btn" title="Remove Target">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </div>
+        <div class="card-header bg-light">
+            <h6 class="card-title mb-0">
+                <i class="fas fa-bullseye me-2"></i>
+                Target #${targetNumber}
+            </h6>
         </div>
-        <div class="row mt-2">
-            <div class="col-12">
-                <label class="form-label small">Status Description</label>
-                <textarea class="form-control form-control-sm" name="target_status_description[]" rows="1"
-                          placeholder="Provide details about the current status"></textarea>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-2">
+                    <label class="form-label small">Target Number</label>
+                    <input type="text" class="form-control form-control-sm" 
+                           name="target_number[]" placeholder="e.g., 1.1">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small">Target Description</label>
+                    <textarea class="form-control" name="target_text[]" rows="2" required
+                              placeholder="Describe the target"></textarea>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small">Status</label>
+                    <select class="form-select form-select-sm" name="target_status[]">
+                        <option value="not_started">Not Started</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                        <option value="delayed">Delayed</option>
+                    </select>
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm remove-target-btn" title="Remove Target">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <label class="form-label small">Status Description</label>
+                    <textarea class="form-control form-control-sm" name="target_status_description[]" rows="2"
+                              placeholder="Provide details about the current status"></textarea>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small">Remarks</label>
+                    <textarea class="form-control form-control-sm" name="target_remarks[]" rows="2"
+                              placeholder="Additional remarks for this target"></textarea>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <label class="form-label small">Start Date</label>
+                    <input type="date" class="form-control form-control-sm" name="target_start_date[]"
+                           placeholder="Select start date">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small">End Date</label>
+                    <input type="date" class="form-control form-control-sm" name="target_end_date[]"
+                           placeholder="Select end date">
+                </div>
             </div>
         </div>
     `;
     
     container.appendChild(targetRow);
+    
+    // Log for debugging
+    console.log(`Added target #${targetNumber}`);
 }
 
 /**
  * Remove a target row
  */
 function removeTargetRow(button) {
-    button.closest('.target-row').remove();
+    const targetContainer = button.closest('.target-container');
+    if (targetContainer) {
+        // Disable the button to prevent multiple clicks
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        
+        // Remove the container immediately
+        targetContainer.remove();
+        
+        // Renumber targets
+        renumberTargets();
+        
+        console.log('Target removed successfully');
+    } else {
+        console.error('Target container not found');
+    }
+}
+
+/**
+ * Renumber targets after removal
+ */
+function renumberTargets() {
+    const targets = document.querySelectorAll('.target-container');
+    targets.forEach((target, index) => {
+        const targetNumber = index + 1;
+        const header = target.querySelector('.card-title');
+        if (header) {
+            header.innerHTML = `<i class="fas fa-bullseye me-2"></i>Target #${targetNumber}`;
+        }
+    });
+    
+    // Log for debugging
+    console.log(`Renumbered ${targets.length} targets`);
 }
 
 /**
