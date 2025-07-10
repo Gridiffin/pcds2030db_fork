@@ -356,16 +356,22 @@ try {
                     $file_path = $upload_dir . $unique_filename;
                     
                     if (move_uploaded_file($tmp_name, $file_path)) {
-                        // Save attachment record
-                        $attachment_query = "INSERT INTO program_attachments 
-                                           (submission_id, original_filename, stored_filename, file_path, 
-                                            file_size, mime_type, uploaded_by, upload_date) 
-                                           VALUES (?, ?, ?, ?, ?, ?, ?, NOW())";
-                        
-                        $stmt = $conn->prepare($attachment_query);
-                        $stmt->bind_param("isssssi", $submission_id, $original_name, $unique_filename, 
-                                        $file_path, $file_size, $file_type, $_SESSION['user_id']);
-                        $stmt->execute();
+                        // Prevent duplicate uploads: check if file already exists for this submission
+                        $dup_check_query = "SELECT COUNT(*) as cnt FROM program_attachments WHERE submission_id = ? AND file_name = ? AND is_deleted = 0";
+                        $dup_stmt = $conn->prepare($dup_check_query);
+                        $dup_stmt->bind_param("is", $submission_id, $original_name);
+                        $dup_stmt->execute();
+                        $dup_result = $dup_stmt->get_result();
+                        $dup_row = $dup_result->fetch_assoc();
+                        if ($dup_row['cnt'] == 0) {
+                            // Save attachment record
+                            $attachment_query = "INSERT INTO program_attachments 
+                                               (submission_id, file_name, file_path, file_size, file_type, uploaded_by, uploaded_at) 
+                                               VALUES (?, ?, ?, ?, ?, ?, NOW())";
+                            $stmt = $conn->prepare($attachment_query);
+                            $stmt->bind_param("issssi", $submission_id, $original_name, $file_path, $file_size, $file_type, $_SESSION['user_id']);
+                            $stmt->execute();
+                        }
                     }
                 }
             }

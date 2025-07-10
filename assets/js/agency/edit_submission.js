@@ -74,10 +74,33 @@ function initEventListeners() {
             const btn = e.target.classList.contains('remove-attachment-btn') ? e.target : e.target.closest('.remove-attachment-btn');
             const attachmentId = btn.getAttribute('data-attachment-id');
             if (attachmentId) {
-                deletedAttachmentIds.push(attachmentId);
-                // Remove from UI
-                const item = btn.closest('.attachment-item');
-                if (item) item.remove();
+                // Call backend to delete the attachment
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                fetch(`${window.APP_URL}/app/ajax/delete_program_attachment.php`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `attachment_id=${encodeURIComponent(attachmentId)}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast('Success', 'Attachment deleted successfully', 'success');
+                        showLoadingSpinner();
+                        // Use the current period ID from the form or global context
+                        const periodId = document.querySelector('input[name="period_id"]').value;
+                        loadSubmissionData(periodId);
+                    } else {
+                        showToast('Error', data.error || 'Failed to delete attachment', 'danger');
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-trash"></i>';
+                    }
+                })
+                .catch(error => {
+                    showToast('Error', 'Failed to delete attachment', 'danger');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-trash"></i>';
+                });
             }
         }
     });
@@ -580,12 +603,13 @@ function generateAttachmentsHtml(attachments) {
     }
     let html = '';
     attachments.forEach(attachment => {
+        const displayName = attachment.original_filename && attachment.original_filename.trim() !== '' ? attachment.original_filename : 'Unnamed file';
         html += `
             <li class="mb-2 d-flex justify-content-between align-items-center attachment-item" data-attachment-id="${attachment.attachment_id}">
                 <div class="d-flex align-items-center">
                     <i class="fas fa-file me-2 text-primary"></i>
                     <div>
-                        <div class="fw-medium">${escapeHtml(attachment.original_filename)}</div>
+                        <div class="fw-medium">${escapeHtml(displayName)}</div>
                         <small class="text-muted">${attachment.file_size_formatted} • ${formatDate(attachment.upload_date)}</small>
                     </div>
                 </div>
@@ -845,9 +869,11 @@ function handleFormSubmission(form) {
     .then(data => {
         if (data.success) {
             showToast('Success', data.message, 'success');
+            // Show loading spinner and refresh all submission data (including attachments)
+            showLoadingSpinner();
             setTimeout(() => {
                 loadSubmissionData(formData.get('period_id'));
-            }, 1500);
+            }, 1000);
         } else {
             showToast('Error', data.error || 'An error occurred while saving the submission.', 'danger');
         }

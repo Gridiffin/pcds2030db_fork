@@ -121,9 +121,11 @@ try {
     $attachments_result = $stmt->get_result();
     $attachments = $attachments_result->fetch_all(MYSQLI_ASSOC);
 
-    // Format file sizes
+    // Format file sizes and map fields for frontend compatibility
     foreach ($attachments as &$attachment) {
         $attachment['file_size_formatted'] = formatFileSize($attachment['file_size']);
+        $attachment['original_filename'] = $attachment['file_name'];
+        $attachment['upload_date'] = $attachment['uploaded_at'];
     }
 
     // Prepare response
