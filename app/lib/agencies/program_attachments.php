@@ -44,6 +44,11 @@ function upload_program_attachment($program_id, $file, $description = '', $submi
         return ['error' => 'Invalid program ID'];
     }
     
+    // Validate submission_id is provided
+    if ($submission_id === null || $submission_id <= 0) {
+        return ['error' => 'Submission ID is required for attachment upload'];
+    }
+    
     // Verify user owns the program or has access
     if (!verify_program_access($program_id)) {
         log_audit_action(
@@ -53,6 +58,16 @@ function upload_program_attachment($program_id, $file, $description = '', $submi
             $_SESSION['user_id']
         );
         return ['error' => 'Access denied to this program'];
+    }
+    
+    // Verify submission exists and belongs to the program
+    $stmt = $conn->prepare("SELECT submission_id FROM program_submissions WHERE submission_id = ? AND program_id = ? AND is_deleted = 0");
+    $stmt->bind_param("ii", $submission_id, $program_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 0) {
+        return ['error' => 'Invalid submission ID or submission does not belong to this program'];
     }
     
     // Validate file upload
@@ -249,9 +264,9 @@ function get_program_attachments($program_id) {
         return [];
     }
     
-    // Get the latest submission for this program to find attachments
+    // Get all attachments for this program across all submissions
     $stmt = $conn->prepare("
-        SELECT pa.*, u.username as uploaded_by_name
+        SELECT pa.*, u.username as uploaded_by_name, ps.period_id
         FROM program_attachments pa
         LEFT JOIN users u ON pa.uploaded_by = u.user_id
         LEFT JOIN program_submissions ps ON pa.submission_id = ps.submission_id
@@ -273,7 +288,54 @@ function get_program_attachments($program_id) {
             'description' => $row['description'] ?? '',
             'upload_date' => $row['uploaded_at'],
             'uploaded_by' => $row['uploaded_by_name'],
-            'file_size_formatted' => format_file_size($row['file_size'])
+            'file_size_formatted' => format_file_size($row['file_size']),
+            'submission_id' => $row['submission_id'],
+            'period_id' => $row['period_id']
+        ];
+    }
+    
+    return $attachments;
+}
+
+/**
+ * Get attachments for a specific submission
+ *
+ * @param int $submission_id Submission ID
+ * @return array Array of attachments
+ */
+function get_submission_attachments($submission_id) {
+    global $conn;
+    
+    $submission_id = intval($submission_id);
+    if ($submission_id <= 0) {
+        return [];
+    }
+    
+    // Get attachments for this specific submission
+    $stmt = $conn->prepare("
+        SELECT pa.*, u.username as uploaded_by_name
+        FROM program_attachments pa
+        LEFT JOIN users u ON pa.uploaded_by = u.user_id
+        WHERE pa.submission_id = ? AND pa.is_deleted = 0
+        ORDER BY pa.uploaded_at DESC
+    ");
+    $stmt->bind_param("i", $submission_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    $attachments = [];
+    while ($row = $result->fetch_assoc()) {
+        $attachments[] = [
+            'attachment_id' => $row['attachment_id'],
+            'original_filename' => $row['file_name'],
+            'file_size' => $row['file_size'],
+            'mime_type' => $row['file_type'],
+            'file_type' => $row['file_type'],
+            'description' => $row['description'] ?? '',
+            'upload_date' => $row['uploaded_at'],
+            'uploaded_by' => $row['uploaded_by_name'],
+            'file_size_formatted' => format_file_size($row['file_size']),
+            'submission_id' => $row['submission_id']
         ];
     }
     
