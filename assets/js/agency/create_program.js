@@ -78,8 +78,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 isValid = false;
                 message = `Program number must start with "${initiativeNumber}."`;
             }
-            // Check if it has content after the initiative number
-            else if (number === initiativeNumber + '.') {
+            // Check if it has content after the initiative number using regex
+            const validPattern = new RegExp('^' + initiativeNumber.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&') + '\\.[a-zA-Z0-9]+$');
+            if (!validPattern.test(number)) {
                 isValid = false;
                 message = 'Please add a suffix after the initiative number (e.g., 1, A, 2B)';
             }
@@ -93,12 +94,38 @@ document.addEventListener('DOMContentLoaded', function() {
                 message = `Valid program number format (${initiativeNumber}.suffix)`;
             }
             
-            // Update UI
-            validationDiv.style.display = 'block';
-            validationMessage.className = isValid ? 'text-success' : 'text-danger';
-            validationMessage.textContent = message;
-            programNumberInput.classList.remove('is-valid', 'is-invalid');
-            programNumberInput.classList.add(isValid ? 'is-valid' : 'is-invalid');
+            // AJAX duplicate check
+            if (isValid) {
+                fetch(`${window.APP_URL}/app/ajax/check_program_number_duplicate.php`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
+                        initiative_id: selectedInitiative,
+                        program_number: number
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.exists) {
+                        isValid = false;
+                        message = 'Duplicate program number. This number is already in use for the selected initiative.';
+                        programNumberInput.classList.remove('is-valid');
+                        programNumberInput.classList.add('is-invalid');
+                    } else {
+                        programNumberInput.classList.remove('is-invalid');
+                        programNumberInput.classList.add('is-valid');
+                    }
+                    validationDiv.style.display = 'block';
+                    validationMessage.className = isValid ? 'text-success' : 'text-danger';
+                    validationMessage.textContent = message;
+                });
+            } else {
+                validationDiv.style.display = 'block';
+                validationMessage.className = isValid ? 'text-success' : 'text-danger';
+                validationMessage.textContent = message;
+                programNumberInput.classList.remove('is-valid', 'is-invalid');
+                programNumberInput.classList.add(isValid ? 'is-valid' : 'is-invalid');
+            }
             finalNumberPreview.textContent = number;
         } else {
             validationDiv.style.display = 'none';

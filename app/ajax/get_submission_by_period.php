@@ -98,6 +98,7 @@ try {
     $formatted_targets = [];
     foreach ($targets as $target) {
         $formatted_targets[] = [
+            'target_id' => $target['target_id'],
             'target_number' => $target['target_number'],
             'target_text' => $target['target_description'],
             'target_status' => $target['status_indicator'],

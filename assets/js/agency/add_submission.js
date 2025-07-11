@@ -2,12 +2,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const periodSelect = document.getElementById('period_id');
     const targetsContainer = document.getElementById('targets-container');
     const addTargetBtn = document.getElementById('add-target-btn');
+    
+    // Get program data for target number construction
+    const programNumber = window.programNumber || '';
+    
     // Highlight open periods
     Array.from(periodSelect.options).forEach(option => {
         if (option.dataset.status === 'open') {
             option.classList.add('text-success', 'fw-bold');
         }
     });
+    
     // Target management
     let targetCounter = 0;
     const addNewTarget = () => {
@@ -22,9 +27,16 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div class="row g-2">
                 <div class="col-6">
-                    <input type="text" class="form-control form-control-sm" name="target_number[]" placeholder="Target Number">
+                    <label class="form-label small">Target Number</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text">${programNumber}.</span>
+                        <input type="number" min="1" class="form-control form-control-sm target-counter-input" 
+                               name="target_counter[]" placeholder="Counter (e.g., 1)">
+                    </div>
+                    <input type="hidden" name="target_number[]" value="">
                 </div>
                 <div class="col-6">
+                    <label class="form-label small">Status</label>
                     <select class="form-select form-select-sm" name="target_status[]">
                         <option value="not_started">Not Started</option>
                         <option value="in_progress">In Progress</option>
@@ -38,11 +50,18 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
         targetsContainer.appendChild(targetEntry);
+        
         // Add remove functionality
         const removeBtn = targetEntry.querySelector('.remove-target');
         removeBtn.addEventListener('click', () => {
             targetEntry.remove();
             updateTargetNumbers();
+        });
+        
+        // Add target number validation
+        const counterInput = targetEntry.querySelector('.target-counter-input');
+        counterInput.addEventListener('blur', () => {
+            validateTargetNumber(counterInput);
         });
     };
     const updateTargetNumbers = () => {
@@ -55,11 +74,67 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         targetCounter = targets.length;
     };
+    
+    // Target number validation function
+    const validateTargetNumber = (input) => {
+        const value = input.value.trim();
+        const targetEntry = input.closest('.target-entry');
+        const hiddenInput = targetEntry.querySelector('input[name="target_number[]"]');
+        
+        // Remove existing validation classes
+        input.classList.remove('is-valid', 'is-invalid');
+        
+        // Clear validation message
+        const existingFeedback = targetEntry.querySelector('.invalid-feedback');
+        if (existingFeedback) {
+            existingFeedback.remove();
+        }
+        
+        // If empty, it's valid (optional field)
+        if (value === '') {
+            hiddenInput.value = '';
+            return true;
+        }
+        
+        // Check if it's a positive number
+        const numValue = parseInt(value, 10);
+        if (isNaN(numValue) || numValue < 1) {
+            input.classList.add('is-invalid');
+            const feedback = document.createElement('div');
+            feedback.className = 'invalid-feedback';
+            feedback.textContent = 'Please enter a positive number';
+            input.parentNode.appendChild(feedback);
+            return false;
+        }
+        
+        // Check for duplicates within the same submission
+        const allCounterInputs = targetsContainer.querySelectorAll('.target-counter-input');
+        let duplicateCount = 0;
+        allCounterInputs.forEach(otherInput => {
+            if (otherInput !== input && otherInput.value.trim() === value) {
+                duplicateCount++;
+            }
+        });
+        
+        if (duplicateCount > 0) {
+            input.classList.add('is-invalid');
+            const feedback = document.createElement('div');
+            feedback.className = 'invalid-feedback';
+            feedback.textContent = 'This target number is already used';
+            input.parentNode.appendChild(feedback);
+            return false;
+        }
+        
+        // Valid - construct full target number
+        const fullTargetNumber = `${programNumber}.${value}`;
+        hiddenInput.value = fullTargetNumber;
+        input.classList.add('is-valid');
+        return true;
+    };
+    
     addTargetBtn.addEventListener('click', addNewTarget);
     // Add one target by default
     addNewTarget();
-    // Auto-generate target numbers if not provided
-    // (Optional: implement if needed)
 
     // Modern multi-file upload UX
     const addAttachmentBtn = document.getElementById('add-attachment-btn');
@@ -104,10 +179,26 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // On form submit, append all files to FormData
+    // On form submit, validate target numbers and append all files to FormData
     const form = document.getElementById('addSubmissionForm');
     if (form) {
         form.addEventListener('submit', function(e) {
+            // Validate all target numbers before submission
+            const allCounterInputs = targetsContainer.querySelectorAll('.target-counter-input');
+            let hasValidationErrors = false;
+            
+            allCounterInputs.forEach(input => {
+                if (!validateTargetNumber(input)) {
+                    hasValidationErrors = true;
+                }
+            });
+            
+            if (hasValidationErrors) {
+                e.preventDefault();
+                showToast('Error', 'Please fix the target number validation errors before submitting.', 'danger');
+                return;
+            }
+            
             if (selectedFiles.length > 0) {
                 // Remove any existing file inputs
                 const oldInputs = form.querySelectorAll('input[type="file"][name="attachments[]"]');

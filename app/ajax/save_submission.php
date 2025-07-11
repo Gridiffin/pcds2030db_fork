@@ -116,11 +116,18 @@ try {
         $decoded_targets = json_decode($_POST['targets_json'], true);
         if (is_array($decoded_targets)) {
             foreach ($decoded_targets as $target) {
+                // Validate and normalize target status
+                $target_status = trim($target['target_status'] ?? 'not_started');
+                $valid_statuses = ['not_started', 'in_progress', 'completed', 'delayed'];
+                if (!in_array($target_status, $valid_statuses)) {
+                    $target_status = 'not_started'; // Default to not_started if invalid
+                }
+                
                 $targets[] = [
                     'target_id' => isset($target['target_id']) && $target['target_id'] !== '' ? intval($target['target_id']) : null,
                     'target_number' => trim($target['target_number'] ?? ''),
                     'target_text' => trim($target['target_text'] ?? ''),
-                    'target_status' => trim($target['target_status'] ?? 'not_started'),
+                    'target_status' => $target_status,
                     'status_description' => trim($target['status_description'] ?? ''),
                     'remarks' => trim($target['remarks'] ?? ''),
                     'start_date' => !empty($target['start_date']) ? $target['start_date'] : null,
@@ -189,21 +196,44 @@ try {
             $matched_existing_ids = [];
             // Update or insert targets
             foreach ($targets as $target) {
-                if (!empty($target['target_id']) && isset($existing_targets_map[$target['target_id']])) {
-                    $existing_target = $existing_targets_map[$target['target_id']];
+                // Debug logging
+                error_log("Processing target: target_id=" . ($target['target_id'] ?? 'null') . ", target_number=" . ($target['target_number'] ?? 'null'));
+                
+                if (!empty($target['target_id']) && isset($existing_targets_map[intval($target['target_id'])])) {
+                    $existing_target = $existing_targets_map[intval($target['target_id'])];
+                    error_log("Found existing target: target_id=" . $existing_target['target_id']);
+                    
                     // Compare all fields
                     $changed = false;
+                    $field_changes = [];
                     foreach ([
                         'target_number', 'target_description', 'status_indicator',
                         'status_description', 'remarks', 'start_date', 'end_date'
                     ] as $field) {
                         $old_val = $existing_target[$field] ?? null;
-                        $new_val = $field === 'target_description' ? $target['target_text'] : $target[$field] ?? null;
-                        if ($old_val != $new_val) {
+                        $new_val = null;
+                        
+                        // Map form field names to database field names
+                        if ($field === 'target_description') {
+                            $new_val = $target['target_text'] ?? null;
+                        } elseif ($field === 'status_indicator') {
+                            $new_val = $target['target_status'] ?? null;
+                        } else {
+                            $new_val = $target[$field] ?? null;
+                        }
+                        
+                        // Normalize values for comparison
+                        $old_val = $old_val !== null ? trim($old_val) : null;
+                        $new_val = $new_val !== null ? trim($new_val) : null;
+                        
+                        if ($old_val !== $new_val) {
                             $changed = true;
-                            break;
+                            $field_changes[] = "$field: '$old_val' -> '$new_val'";
                         }
                     }
+                    
+                    error_log("Target comparison result: changed=" . ($changed ? 'true' : 'false') . ", changes: " . implode(', ', $field_changes));
+                    
                     if ($changed) {
                         // Update existing target
                         $update_target_query = "UPDATE program_targets 
@@ -230,8 +260,9 @@ try {
                             error_log('No audit_log_id available for logTargetFieldChanges');
                         }
                     }
-                    $matched_existing_ids[] = $target['target_id'];
+                    $matched_existing_ids[] = intval($target['target_id']);
                 } else {
+                    error_log("Target not found in existing targets, treating as new: target_id=" . ($target['target_id'] ?? 'null'));
                     // Insert new target
                     $insert_target_query = "INSERT INTO program_targets 
                         (target_number, submission_id, target_description, status_indicator, 
@@ -434,6 +465,12 @@ function logTargetFieldChanges($conn, $audit_log_id, $existing_target, $new_targ
         'end_date' => 'date'
     ];
     
+    $target_id = $existing_target['target_id'];
+    $has_changes = false;
+    
+    // Debug logging
+    error_log("logTargetFieldChanges: target_id = {$target_id}, audit_log_id = {$audit_log_id}");
+    
     foreach ($fields_to_check as $field => $type) {
         $old_value = $existing_target[$field] ?? null;
         $new_value = $new_target[$field] ?? null;
@@ -441,17 +478,47 @@ function logTargetFieldChanges($conn, $audit_log_id, $existing_target, $new_targ
         // Handle field name mapping
         if ($field === 'target_description') {
             $new_value = $new_target['target_text'] ?? null;
+        } elseif ($field === 'status_indicator') {
+            $new_value = $new_target['target_status'] ?? null;
         }
         
+        // Normalize values for comparison (trim whitespace, handle nulls)
+        $old_value = $old_value !== null ? trim($old_value) : null;
+        $new_value = $new_value !== null ? trim($new_value) : null;
+        
+        // Debug logging for field comparison
+        error_log("Field {$field}: old='{$old_value}' vs new='{$new_value}'");
+        
         if ($old_value !== $new_value) {
+            $has_changes = true;
+            error_log("Change detected for field {$field}");
+            
             $insert_query = "INSERT INTO audit_field_changes 
-                           (audit_log_id, field_name, field_type, old_value, new_value, change_type) 
-                           VALUES (?, ?, ?, ?, ?, 'modified')";
+                           (audit_log_id, target_id, field_name, field_type, old_value, new_value, change_type) 
+                           VALUES (?, ?, ?, ?, ?, ?, 'modified')";
             
             $stmt = $conn->prepare($insert_query);
-            $stmt->bind_param("issss", $audit_log_id, $field, $type, $old_value, $new_value);
+            $stmt->bind_param("iissss", $audit_log_id, $target_id, $field, $type, $old_value, $new_value);
             $stmt->execute();
+            
+            if ($stmt->affected_rows > 0) {
+                error_log("Successfully logged change for field {$field}");
+            } else {
+                error_log("Failed to log change for field {$field}");
+            }
         }
+    }
+    
+    // If no individual field changes were detected, log a general modification
+    if (!$has_changes) {
+        error_log("No specific field changes detected, logging general modification");
+        $insert_query = "INSERT INTO audit_field_changes 
+                       (audit_log_id, target_id, field_name, field_type, old_value, new_value, change_type) 
+                       VALUES (?, ?, 'target_modified', 'text', NULL, NULL, 'modified')";
+        
+        $stmt = $conn->prepare($insert_query);
+        $stmt->bind_param("ii", $audit_log_id, $target_id);
+        $stmt->execute();
     }
 }
 
@@ -459,6 +526,11 @@ function logTargetFieldChanges($conn, $audit_log_id, $existing_target, $new_targ
  * Log target addition
  */
 function logTargetAddition($conn, $audit_log_id, $target) {
+    // Get the target_id that was just inserted
+    $target_id = $conn->insert_id;
+    
+    error_log("logTargetAddition: target_id = {$target_id}, audit_log_id = {$audit_log_id}");
+    
     $fields_to_log = [
         'target_number' => 'text',
         'target_description' => 'text',
@@ -469,23 +541,48 @@ function logTargetAddition($conn, $audit_log_id, $target) {
         'end_date' => 'date'
     ];
     
+    $has_fields = false;
+    
     foreach ($fields_to_log as $field => $type) {
         $value = $target[$field] ?? null;
         
         // Handle field name mapping
         if ($field === 'target_description') {
             $value = $target['target_text'] ?? null;
+        } elseif ($field === 'status_indicator') {
+            $value = $target['target_status'] ?? null;
         }
         
-        if ($value !== null) {
+        if ($value !== null && trim($value) !== '') {
+            $has_fields = true;
+            error_log("Logging addition for field {$field} with value '{$value}'");
+            
             $insert_query = "INSERT INTO audit_field_changes 
-                           (audit_log_id, field_name, field_type, old_value, new_value, change_type) 
-                           VALUES (?, ?, ?, NULL, ?, 'added')";
+                           (audit_log_id, target_id, field_name, field_type, old_value, new_value, change_type) 
+                           VALUES (?, ?, ?, ?, NULL, ?, 'added')";
             
             $stmt = $conn->prepare($insert_query);
-            $stmt->bind_param("isss", $audit_log_id, $field, $type, $value);
+            $stmt->bind_param("iisss", $audit_log_id, $target_id, $field, $type, $value);
             $stmt->execute();
+            
+            if ($stmt->affected_rows > 0) {
+                error_log("Successfully logged addition for field {$field}");
+            } else {
+                error_log("Failed to log addition for field {$field}");
+            }
         }
+    }
+    
+    // If no specific fields were logged, log a general addition
+    if (!$has_fields) {
+        error_log("No specific fields to log, logging general addition");
+        $insert_query = "INSERT INTO audit_field_changes 
+                       (audit_log_id, target_id, field_name, field_type, old_value, new_value, change_type) 
+                       VALUES (?, ?, 'target_added', 'text', NULL, NULL, 'added')";
+        
+        $stmt = $conn->prepare($insert_query);
+        $stmt->bind_param("ii", $audit_log_id, $target_id);
+        $stmt->execute();
     }
 }
 
@@ -493,6 +590,8 @@ function logTargetAddition($conn, $audit_log_id, $target) {
  * Log target removal
  */
 function logTargetRemoval($conn, $audit_log_id, $target) {
+    $target_id = $target['target_id'];
+    
     $fields_to_log = [
         'target_number' => 'text',
         'target_description' => 'text',
@@ -503,16 +602,30 @@ function logTargetRemoval($conn, $audit_log_id, $target) {
         'end_date' => 'date'
     ];
     
+    $has_fields = false;
+    
     foreach ($fields_to_log as $field => $type) {
         $value = $target[$field] ?? null;
-        if ($value !== null) {
+        if ($value !== null && trim($value) !== '') {
+            $has_fields = true;
             $insert_query = "INSERT INTO audit_field_changes 
-                           (audit_log_id, field_name, field_type, old_value, new_value, change_type) 
-                           VALUES (?, ?, ?, ?, NULL, 'removed')";
+                           (audit_log_id, target_id, field_name, field_type, old_value, new_value, change_type) 
+                           VALUES (?, ?, ?, ?, ?, NULL, 'removed')";
             $stmt = $conn->prepare($insert_query);
-            $stmt->bind_param("isss", $audit_log_id, $field, $type, $value);
+            $stmt->bind_param("iisss", $audit_log_id, $target_id, $field, $type, $value);
             $stmt->execute();
         }
+    }
+    
+    // If no specific fields were logged, log a general removal
+    if (!$has_fields) {
+        $insert_query = "INSERT INTO audit_field_changes 
+                       (audit_log_id, target_id, field_name, field_type, old_value, new_value, change_type) 
+                       VALUES (?, ?, 'target_removed', 'text', NULL, NULL, 'removed')";
+        
+        $stmt = $conn->prepare($insert_query);
+        $stmt->bind_param("ii", $audit_log_id, $target_id);
+        $stmt->execute();
     }
 }
 ?> 

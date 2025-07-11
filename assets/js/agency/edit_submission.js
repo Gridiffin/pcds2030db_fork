@@ -221,6 +221,15 @@ function showEditSubmissionForm(data) {
     const periodInfo = data.period_info;
     const attachments = data.attachments;
     
+    // --- NEW: Build targetId to index mapping ---
+    window.targetIdToIndex = {};
+    if (Array.isArray(submission.targets)) {
+        submission.targets.forEach((t, idx) => {
+            if (t.target_id) window.targetIdToIndex[t.target_id] = idx + 1;
+        });
+    }
+    // --- END NEW ---
+    
     // Determine if focal user and draft
     const isFocal = window.currentUserRole === 'focal';
     const isDraft = submission.is_draft;
@@ -552,10 +561,19 @@ function generateTargetsHtml(targets) {
     }
     
     let html = '';
+    const programNumber = window.programNumber || '';
+    
     targets.forEach((target, index) => {
         const targetNumber = index + 1;
         const tid = target.target_id ? escapeHtml(target.target_id) : '';
         const isExisting = !!tid;
+        // Parse the counter from the full target_number if possible
+        let counter = '';
+        if (target.target_number) {
+            // Extract the last part after the last dot (most robust approach)
+            const match = target.target_number.match(/\.([^.]+)$/);
+            counter = match ? match[1] : '';
+        }
         html += `
             <div class="target-container card shadow-sm mb-4">
                 <div class="card-header bg-light">
@@ -566,19 +584,24 @@ function generateTargetsHtml(targets) {
                 </div>
                 <div class="card-body">
                     <input type="hidden" name="target_id[]" value="${tid}">
-                    <div class="row">
-                        <div class="col-md-2">
+                    <div class="row align-items-end">
+                        <div class="col-md-6">
                             <label class="form-label small">Target Number</label>
-                            <input type="text" class="form-control form-control-sm" 
-                                   name="target_number[]" value="${escapeHtml(target.target_number || '')}"
-                                   placeholder="e.g., 1.1">
+                            <div class="input-group">
+                                <span class="input-group-text">${programNumber}.</span>
+                                <input type="number" min="1" class="form-control form-control-sm target-counter-input" 
+                                       name="target_counter[]" value="${escapeHtml(counter)}" placeholder="Counter (e.g., 1)">
+                            </div>
+                            <input type="hidden" name="target_number[]" value="${escapeHtml(target.target_number || '')}">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small">Target Description</label>
                             <textarea class="form-control" name="target_text[]" rows="2" required
                                       placeholder="Describe the target">${escapeHtml(target.target_text || '')}</textarea>
                         </div>
-                        <div class="col-md-3">
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
                             <label class="form-label small">Status</label>
                             <select class="form-select form-select-sm" name="target_status[]">
                                 <option value="not_started" ${target.target_status === 'not_started' ? 'selected' : ''}>Not Started</option>
@@ -587,22 +610,17 @@ function generateTargetsHtml(targets) {
                                 <option value="delayed" ${target.target_status === 'delayed' ? 'selected' : ''}>Delayed</option>
                             </select>
                         </div>
-                        <div class="col-md-1 d-flex align-items-end">
-                            <button type="button" class="btn btn-outline-danger btn-sm remove-target-btn" title="Remove Target">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="row mt-3">
-                        <div class="col-md-6">
-                            <label class="form-label small">Status Description</label>
-                            <textarea class="form-control form-control-sm" name="target_status_description[]" rows="2"
-                                      placeholder="Provide details about the current status">${escapeHtml(target.status_description || '')}</textarea>
-                        </div>
                         <div class="col-md-6">
                             <label class="form-label small">Remarks</label>
                             <textarea class="form-control form-control-sm" name="target_remarks[]" rows="2"
                                       placeholder="Additional remarks for this target">${escapeHtml(target.remarks || '')}</textarea>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-12">
+                            <label class="form-label small">Status Description</label>
+                            <textarea class="form-control form-control-sm" name="target_status_description[]" rows="2"
+                                      placeholder="Provide details about the current status">${escapeHtml(target.status_description || '')}</textarea>
                         </div>
                     </div>
                     <div class="row mt-3">
@@ -736,42 +754,43 @@ function addTargetRow() {
         </div>
         <div class="card-body">
             <input type="hidden" name="target_id[]" value="">
-            <div class="row">
-                <div class="col-md-2">
+            <div class="row align-items-end">
+                <div class="col-md-6">
                     <label class="form-label small">Target Number</label>
-                    <input type="text" class="form-control form-control-sm" 
-                           name="target_number[]" placeholder="e.g., 1.1">
+                    <div class="input-group">
+                        <span class="input-group-text">${programNumber}.</span>
+                        <input type="number" min="1" class="form-control form-control-sm target-counter-input" 
+                               name="target_counter[]" placeholder="Counter (e.g., 1)">
+                    </div>
+                    <input type="hidden" name="target_number[]" value="">
                 </div>
                 <div class="col-md-6">
                     <label class="form-label small">Target Description</label>
                     <textarea class="form-control" name="target_text[]" rows="2" required
                               placeholder="Describe the target"></textarea>
                 </div>
-                <div class="col-md-3">
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-6">
                     <label class="form-label small">Status</label>
                     <select class="form-select form-select-sm" name="target_status[]">
-                        <option value="not_started">Not Started</option>
+                        <option value="not_started" selected>Not Started</option>
                         <option value="in_progress">In Progress</option>
                         <option value="completed">Completed</option>
                         <option value="delayed">Delayed</option>
                     </select>
                 </div>
-                <div class="col-md-1 d-flex align-items-end">
-                    <button type="button" class="btn btn-outline-danger btn-sm remove-target-btn" title="Remove Target">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="row mt-3">
-                <div class="col-md-6">
-                    <label class="form-label small">Status Description</label>
-                    <textarea class="form-control form-control-sm" name="target_status_description[]" rows="2"
-                              placeholder="Provide details about the current status"></textarea>
-                </div>
                 <div class="col-md-6">
                     <label class="form-label small">Remarks</label>
                     <textarea class="form-control form-control-sm" name="target_remarks[]" rows="2"
                               placeholder="Additional remarks for this target"></textarea>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-12">
+                    <label class="form-label small">Status Description</label>
+                    <textarea class="form-control form-control-sm" name="target_status_description[]" rows="2"
+                              placeholder="Provide details about the current status"></textarea>
                 </div>
             </div>
             <div class="row mt-3">
@@ -857,18 +876,41 @@ function handleFormSubmission(form, submitter) {
     // Serialize targets into a JSON array
     const targetContainers = form.querySelectorAll('.target-container');
     const targets = [];
+            const programNumber = window.programNumber || '';
     targetContainers.forEach(container => {
-        let tid = container.querySelector('[name="target_id[]"]').value;
+        // Safely get form elements with null checks
+        const targetIdElement = container.querySelector('[name="target_id[]"]');
+        const counterElement = container.querySelector('[name="target_counter[]"]');
+        const textElement = container.querySelector('[name="target_text[]"]');
+        const statusElement = container.querySelector('[name="target_status[]"]');
+        const statusDescElement = container.querySelector('[name="target_status_description[]"]');
+        const remarksElement = container.querySelector('[name="target_remarks[]"]');
+        const startDateElement = container.querySelector('[name="target_start_date[]"]');
+        const endDateElement = container.querySelector('[name="target_end_date[]"]');
+        
+        // Skip if essential elements are missing
+        if (!textElement || !counterElement) {
+            console.warn('Skipping target container with missing essential elements:', container);
+            return;
+        }
+        
+        // Parse target ID safely
+        let tid = targetIdElement ? targetIdElement.value : '';
         tid = tid && !isNaN(tid) && tid !== '' ? parseInt(tid, 10) : null;
+        
+        // Get counter value safely
+        const counter = counterElement.value || '';
+        const fullTargetNumber = counter ? `${programNumber}.${counter}` : '';
+        
         targets.push({
             target_id: tid,
-            target_number: container.querySelector('[name="target_number[]"]').value || '',
-            target_text: container.querySelector('[name="target_text[]"]').value || '',
-            target_status: container.querySelector('[name="target_status[]"]').value || '',
-            status_description: container.querySelector('[name="target_status_description[]"]').value || '',
-            remarks: container.querySelector('[name="target_remarks[]"]').value || '',
-            start_date: container.querySelector('[name="target_start_date[]"]').value || '',
-            end_date: container.querySelector('[name="target_end_date[]"]').value || ''
+            target_number: fullTargetNumber,
+            target_text: textElement.value || '',
+            target_status: statusElement ? statusElement.value : '',
+            status_description: statusDescElement ? statusDescElement.value : '',
+            remarks: remarksElement ? remarksElement.value : '',
+            start_date: startDateElement ? startDateElement.value : '',
+            end_date: endDateElement ? endDateElement.value : ''
         });
     });
 
@@ -1088,33 +1130,231 @@ function renderFieldHistory(submissionId, field, targetId, allFields) {
     const sidebar = document.getElementById(targetId);
     if (!sidebar) return;
     sidebar.innerHTML = `<div class='text-center py-4'><div class='spinner-border text-primary' role='status'><span class='visually-hidden'>Loading...</span></div><p class='mt-3 text-muted'>Loading field history...</p></div>`;
+    
     // Use get_field_history.php for field-specific history
     // We need program_id and period_id for this endpoint, so get them from the form
     const programId = window.programId;
     const periodId = document.querySelector('input[name="period_id"]').value;
+    
     fetch(`${window.APP_URL}/app/ajax/get_field_history.php`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `program_id=${encodeURIComponent(programId)}&period_id=${encodeURIComponent(periodId)}&field_name=${encodeURIComponent(field)}&limit=20&offset=0`
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+            program_id: programId,
+            period_id: periodId,
+            field_name: field,
+            offset: 0,
+            limit: 20 // Reduced from 50 to 20
+        })
     })
     .then(response => response.json())
     .then(data => {
-        if (!data.success || !data.entries || data.entries.length === 0) {
-            sidebar.innerHTML = `<div class='alert alert-info'>No history found for this field.</div><button class='btn btn-link mt-3' id='back-to-field-list'><i class='fas fa-arrow-left me-1'></i>Back to Fields</button>`;
-            document.getElementById('back-to-field-list').onclick = () => renderHistorySidebar(submissionId, targetId);
+        if (data.error) {
+            sidebar.innerHTML = `<div class='alert alert-danger'>${data.error}</div>`;
             return;
         }
-        let html = `<div class='card shadow-sm'><div class='card-header d-flex justify-content-between align-items-center'><h6 class='mb-0'><i class='fas fa-history me-2'></i>History for <span class='text-primary'>${data.field_name}</span></h6><button class='btn btn-sm btn-outline-secondary' id='back-to-field-list'><i class='fas fa-arrow-left'></i></button></div><div class='card-body'>`;
-        html += `<ul class='list-group'>`;
-        data.entries.forEach(entry => {
-            html += `<li class='list-group-item'><div class='small'><strong>${escapeHtml(entry.submitted_by || '')}</strong> <span class='text-muted'>on ${formatDate(entry.submitted_at)}</span></div><div class='ms-2'>${typeof entry.value === 'object' ? JSON.stringify(entry.value) : escapeHtml(entry.value || '—')}</div></li>`;
+        
+        if (!data.history || data.history.length === 0) {
+            sidebar.innerHTML = `
+                <div class='text-center py-4'>
+                    <i class='fas fa-history text-muted' style='font-size: 2rem;'></i>
+                    <p class='mt-3 text-muted'>No history found for this field.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Group history entries by target_id
+        const groupedHistory = {};
+        data.history.forEach(entry => {
+            const targetKey = entry.target_id || 'no_target';
+            if (!groupedHistory[targetKey]) {
+                groupedHistory[targetKey] = [];
+            }
+            groupedHistory[targetKey].push(entry);
         });
-        html += `</ul></div></div>`;
-        sidebar.innerHTML = html;
-        document.getElementById('back-to-field-list').onclick = () => renderHistorySidebar(submissionId, targetId);
+        
+        // Debug: Log the first few entries to see what data we're getting
+        console.log('History data sample:', data.history.slice(0, 3));
+        console.log('Grouped history keys:', Object.keys(groupedHistory));
+        
+        let historyHtml = `
+            <div class='history-header mb-3'>
+                <div class='d-flex justify-content-between align-items-center'>
+                    <h6 class='mb-0'><i class='fas fa-history'></i> Field History: ${getFieldDisplayName(field)}</h6>
+                    <button class='btn btn-sm btn-outline-secondary back-to-fields-btn' onclick="renderHistorySidebar(${submissionId}, '${targetId}')">
+                        <i class='fas fa-arrow-left'></i> Back to Fields
+                    </button>
+                </div>
+                <small class='text-muted'>Showing ${data.history.length} of ${data.total_count || data.history.length} changes</small>
+            </div>
+        `;
+        
+        // Sort targets by their most recent change date (newest first)
+        const sortedTargetKeys = Object.keys(groupedHistory).sort((a, b) => {
+            if (a === 'no_target') return 1;
+            if (b === 'no_target') return -1;
+            
+            const targetA = groupedHistory[a];
+            const targetB = groupedHistory[b];
+            
+            // Get the most recent change date for each target
+            const latestA = Math.max(...targetA.map(entry => new Date(entry.submitted_at).getTime()));
+            const latestB = Math.max(...targetB.map(entry => new Date(entry.submitted_at).getTime()));
+            
+            // Sort by most recent first
+            return latestB - latestA;
+        });
+        
+        // Limit the number of target groups shown to prevent overflow
+        const maxTargetGroups = 3;
+        const limitedTargetKeys = sortedTargetKeys.slice(0, maxTargetGroups);
+        
+        limitedTargetKeys.forEach(targetKey => {
+            const entries = groupedHistory[targetKey];
+            const firstEntry = entries[0];
+            
+            // Get target label
+            let targetLabel = 'Unknown Target';
+            if (targetKey === 'no_target') {
+                targetLabel = 'General Changes';
+            } else if (window.targetIdToIndex && firstEntry.target_id) {
+                const index = window.targetIdToIndex[firstEntry.target_id];
+                if (index) {
+                    targetLabel = `Target #${index}`;
+                } else if (firstEntry.target_number && firstEntry.target_number.trim() !== '') {
+                    targetLabel = `Target #${firstEntry.target_number}`;
+                } else {
+                    targetLabel = `Target (ID: ${firstEntry.target_id})`;
+                }
+            } else if (firstEntry.target_number && firstEntry.target_number.trim() !== '') {
+                targetLabel = `Target #${firstEntry.target_number}`;
+            } else {
+                targetLabel = `Target (ID: ${firstEntry.target_id})`;
+            }
+            
+            historyHtml += `
+                <div class='target-history-group mb-3'>
+                    <div class='target-header d-flex align-items-center mb-2'>
+                        <span class='badge bg-primary me-2'>${targetLabel}</span>
+                        <small class='text-muted'>${entries.length} change${entries.length > 1 ? 's' : ''}</small>
+                    </div>
+                    <div class='target-changes'>
+            `;
+            
+            // Sort entries by date (newest first) and limit to 5 entries per target
+            entries.sort((a, b) => new Date(b.submitted_at) - new Date(a.submitted_at));
+            const limitedEntries = entries.slice(0, 5);
+            
+            limitedEntries.forEach(entry => {
+                const changeTypeClass = getChangeTypeClass(entry.change_type);
+                const changeTypeIcon = getChangeTypeIcon(entry.change_type);
+                const changeTypeText = getChangeTypeText(entry.change_type);
+                
+                let valueDisplay = '';
+                if (entry.change_type === 'modified') {
+                    valueDisplay = `
+                        <div class='change-values'>
+                            <div class='old-value'><strong>From:</strong> ${entry.old_value || '<em>empty</em>'}</div>
+                            <div class='new-value'><strong>To:</strong> ${entry.new_value || '<em>empty</em>'}</div>
+                        </div>
+                    `;
+                } else if (entry.change_type === 'added') {
+                    valueDisplay = `<div class='new-value'><strong>Added:</strong> ${entry.new_value || '<em>empty</em>'}</div>`;
+                } else if (entry.change_type === 'removed') {
+                    valueDisplay = `<div class='old-value'><strong>Removed:</strong> ${entry.old_value || '<em>empty</em>'}</div>`;
+                }
+                
+                historyHtml += `
+                    <div class='change-entry mb-2 p-2 border-start border-3 ${changeTypeClass}'>
+                        <div class='change-header d-flex justify-content-between align-items-start'>
+                            <div class='change-type'>
+                                <i class='${changeTypeIcon}'></i>
+                                <span class='ms-1'>${changeTypeText}</span>
+                            </div>
+                            <div class='change-meta text-end'>
+                                <div class='change-date small'>${entry.formatted_date}</div>
+                                <div class='change-user small text-muted'>by ${entry.submitted_by}</div>
+                                ${entry.is_draft ? '<div class="draft-badge small text-warning">Draft</div>' : ''}
+                            </div>
+                        </div>
+                        ${valueDisplay}
+                    </div>
+                `;
+            });
+            
+            // Show "more" indicator if there are more entries
+            if (entries.length > 5) {
+                historyHtml += `
+                    <div class='text-center mt-2'>
+                        <small class='text-muted'>+${entries.length - 5} more changes</small>
+                    </div>
+                `;
+            }
+            
+            historyHtml += `
+                    </div>
+                </div>
+            `;
+        });
+        
+        // Show "more targets" indicator if there are more target groups
+        if (sortedTargetKeys.length > maxTargetGroups) {
+            historyHtml += `
+                <div class='text-center mt-3'>
+                    <small class='text-muted'>+${sortedTargetKeys.length - maxTargetGroups} more targets</small>
+                </div>
+            `;
+        }
+        
+        sidebar.innerHTML = historyHtml;
     })
-    .catch(() => {
-        sidebar.innerHTML = `<div class='alert alert-danger'>Failed to load field history.</div><button class='btn btn-link mt-3' id='back-to-field-list'><i class='fas fa-arrow-left me-1'></i>Back to Fields</button>`;
-        document.getElementById('back-to-field-list').onclick = () => renderHistorySidebar(submissionId, targetId);
+    .catch(error => {
+        console.error('Error loading field history:', error);
+        sidebar.innerHTML = `<div class='alert alert-danger'>Error loading history: ${error.message}</div>`;
     });
+}
+
+// Helper functions for change types
+function getChangeTypeClass(changeType) {
+    switch (changeType) {
+        case 'added': return 'border-success bg-light';
+        case 'modified': return 'border-warning bg-light';
+        case 'removed': return 'border-danger bg-light';
+        default: return 'border-secondary bg-light';
+    }
+}
+
+function getChangeTypeIcon(changeType) {
+    switch (changeType) {
+        case 'added': return 'fas fa-plus-circle text-success';
+        case 'modified': return 'fas fa-edit text-warning';
+        case 'removed': return 'fas fa-minus-circle text-danger';
+        default: return 'fas fa-circle text-secondary';
+    }
+}
+
+function getChangeTypeText(changeType) {
+    switch (changeType) {
+        case 'added': return 'Added';
+        case 'modified': return 'Modified';
+        case 'removed': return 'Removed';
+        default: return 'Changed';
+    }
+}
+
+function getFieldDisplayName(fieldName) {
+    const fieldNames = {
+        'target_number': 'Target Number',
+        'target_description': 'Target Description',
+        'status_indicator': 'Status',
+        'status_description': 'Status Description',
+        'remarks': 'Remarks',
+        'start_date': 'Start Date',
+        'end_date': 'End Date',
+        'description': 'Description'
+    };
+    return fieldNames[fieldName] || fieldName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 } 

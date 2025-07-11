@@ -251,6 +251,8 @@ window.APP_URL = '<?php echo APP_URL; ?>';
 window.submissionsByPeriod = <?php echo json_encode($submissions_by_period); ?>;
 window.currentUserRole = '<?php echo $_SESSION['role'] ?? ''; ?>';
 window.programName = <?= json_encode($program['program_name']) ?>;
+window.programNumber = <?= json_encode($program['program_number'] ?? '') ?>;
+window.initiativeNumber = <?= json_encode($program['initiative_number'] ?? '') ?>;
 </script>
 
 <script src="<?php echo asset_url('js/agency', 'edit_submission.js'); ?>"></script>

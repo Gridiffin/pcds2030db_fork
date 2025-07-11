@@ -126,6 +126,17 @@ function create_agency_program($data) {
     if ($program_number && !is_valid_program_number_format($program_number, false)) {
         return format_error(get_program_number_format_error(false), 400);
     }
+    
+    // Check for duplicate program number if provided
+    if ($program_number) {
+        $check_stmt = $conn->prepare("SELECT program_id FROM programs WHERE program_number = ? AND initiative_id = ? AND is_deleted = 0");
+        $check_stmt->bind_param("si", $program_number, $initiative_id);
+        $check_stmt->execute();
+        if ($check_stmt->get_result()->num_rows > 0) {
+            return format_error('Duplicate program number. This number is already in use for the selected initiative.', 400);
+        }
+    }
+    
     $start_date = validate_program_date($validated['start_date'] ?? '');
     $end_date = validate_program_date($validated['end_date'] ?? '');
     if ($start_date === false) return format_error('Start Date must be in YYYY-MM-DD format.', 400);
@@ -315,7 +326,7 @@ function create_simple_program($data) {
             $check_stmt->bind_param("si", $program_number, $initiative_id);
             $check_stmt->execute();
             if ($check_stmt->get_result()->num_rows > 0) {
-                return ['error' => 'Program number already exists for this initiative'];
+                return ['error' => 'Duplicate program number. This number is already in use for the selected initiative.'];
             }
         } else {
             // Auto-generate program number for the initiative
@@ -429,7 +440,7 @@ function update_simple_program($data) {
             $check_stmt->bind_param("sii", $program_number, $initiative_id, $program_id);
             $check_stmt->execute();
             if ($check_stmt->get_result()->num_rows > 0) {
-                return ['error' => 'Program number already exists for this initiative'];
+                return ['error' => 'Duplicate program number. This number is already in use for the selected initiative.'];
             }
         } else {
             // Auto-generate program number for the initiative

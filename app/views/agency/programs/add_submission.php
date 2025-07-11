@@ -372,6 +372,11 @@ require_once '../../layouts/page_header.php';
     </div>
 </div>
 
+<script>
+// Pass program data to JavaScript
+window.programId = <?php echo json_encode($program_id); ?>;
+window.programNumber = <?php echo json_encode($program['program_number'] ?? ''); ?>;
+</script>
 <script src="<?php echo asset_url('js/agency', 'add_submission.js'); ?>"></script>
 
 <?php

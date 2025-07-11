@@ -58,7 +58,14 @@ $allowed_fields = [
     'impact_measurement',
     'outcome_measurement',
     'targets', // Re-enabled for history functionality
-    'remarks'
+    'remarks',
+    'target_number',
+    'target_description',
+    'status_indicator',
+    'status_description',
+    'start_date',
+    'end_date',
+    'description'
 ];
 
 if (!in_array($field_name, $allowed_fields)) {
@@ -73,10 +80,10 @@ error_log("get_field_history.php: Starting request - program_id: $program_id, pe
 try {
     // Check if user has access to this program
     $stmt = $conn->prepare("
-        SELECT p.id, p.agency_id, a.name as agency_name 
+        SELECT p.program_id, p.agency_id, a.agency_name 
         FROM programs p 
-        JOIN agencies a ON p.agency_id = a.id 
-        WHERE p.id = ?
+        JOIN agency a ON p.agency_id = a.agency_id 
+        WHERE p.program_id = ?
     ");
     $stmt->bind_param("i", $program_id);
     $stmt->execute();
@@ -90,10 +97,20 @@ try {
     }
     
     // Check if user belongs to the program's agency (for agency users)
-    if ($_SESSION['role'] === 'agency' && $_SESSION['agency_id'] != $program['agency_id']) {
-        http_response_code(403);
-        echo json_encode(['error' => 'Access denied']);
-        exit;
+    if ($_SESSION['role'] !== 'admin') {
+        // Get user's agency_id
+        $user_agency_query = "SELECT agency_id FROM users WHERE user_id = ?";
+        $stmt = $conn->prepare($user_agency_query);
+        $stmt->bind_param("i", $_SESSION['user_id']);
+        $stmt->execute();
+        $user_result = $stmt->get_result();
+        $user = $user_result->fetch_assoc();
+        
+        if (!$user || $user['agency_id'] != $program['agency_id']) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Access denied']);
+            exit;
+        }
     }
     
     // Get the field history with pagination
@@ -102,6 +119,9 @@ try {
     // Get total count for this field
     $total_count = get_field_edit_history_count($program_id, $field_name, $period_id);
     
+    // Debug logging
+    error_log("get_field_history.php: Found {$total_count} total records, returning " . count($field_history) . " records");
+    
     // Calculate if there are more records
     $has_more = ($offset + $limit) < $total_count;
     
@@ -109,7 +129,7 @@ try {
     $response = [
         'success' => true,
         'field_name' => $field_name,
-        'entries' => $field_history,
+        'history' => $field_history,
         'has_more' => $has_more,
         'total_count' => $total_count,
         'current_offset' => $offset,
@@ -139,67 +159,83 @@ try {
 function get_field_edit_history_paginated($program_id, $field_name, $period_id, $offset = 0, $limit = 5) {
     global $conn;
     
-    $stmt = $conn->prepare("
-        SELECT 
-            s.id,
-            s.submitted_at,
-            s.submission_data,
-            COALESCE(CONCAT(u.first_name, ' ', u.last_name), 'System') as submitted_by,
-            u.email as submitter_email
-        FROM program_submissions s
-        LEFT JOIN users u ON s.submitted_by = u.id
-        WHERE s.program_id = ?
-        AND s.period_id = ?
-        AND s.submission_data IS NOT NULL
-        AND JSON_EXTRACT(s.submission_data, CONCAT('$.', ?)) IS NOT NULL
-        ORDER BY s.submitted_at DESC
-        LIMIT ? OFFSET ?
-    ");
+    // Get submission IDs for this program and period
+    $submission_query = "SELECT submission_id FROM program_submissions 
+                        WHERE program_id = ? AND period_id = ? AND is_deleted = 0";
+    $stmt = $conn->prepare($submission_query);
+    $stmt->bind_param("ii", $program_id, $period_id);
+    $stmt->execute();
+    $submissions = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     
-    $stmt->bind_param("iisii", $program_id, $period_id, $field_name, $limit, $offset);
+    error_log("get_field_edit_history_paginated: Found " . count($submissions) . " submissions for program_id={$program_id}, period_id={$period_id}");
+    
+    if (empty($submissions)) {
+        return [];
+    }
+    
+    $submission_ids = array_column($submissions, 'submission_id');
+    $placeholders = str_repeat('?,', count($submission_ids) - 1) . '?';
+    
+    // Query audit field changes with target information
+    $query = "
+        SELECT 
+            afc.change_id,
+            afc.audit_log_id,
+            afc.target_id,
+            afc.field_name,
+            afc.old_value,
+            afc.new_value,
+            afc.change_type,
+            afc.created_at,
+            al.user_id,
+            u.fullname as submitted_by,
+            u.email as submitter_email,
+            ps.submission_id,
+            ps.is_draft,
+            ps.submitted_at,
+            pt.target_number
+        FROM audit_field_changes afc
+        JOIN audit_logs al ON afc.audit_log_id = al.id
+        LEFT JOIN users u ON al.user_id = u.user_id
+        LEFT JOIN program_submissions ps ON al.details LIKE CONCAT('%submission ID: ', ps.submission_id, '%')
+        LEFT JOIN program_targets pt ON afc.target_id = pt.target_id
+        WHERE ps.submission_id IN ($placeholders)
+        AND afc.field_name = ?
+        ORDER BY afc.created_at DESC
+        LIMIT ? OFFSET ?
+    ";
+    
+    $params = array_merge($submission_ids, [$field_name, $limit, $offset]);
+    $types = str_repeat('i', count($submission_ids)) . 'sii';
+    
+    error_log("get_field_edit_history_paginated: Query params - submission_ids: " . implode(',', $submission_ids) . ", field_name: {$field_name}");
+    
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param($types, ...$params);
     $stmt->execute();
     $result = $stmt->get_result();
-    $submissions = $result->fetch_all(MYSQLI_ASSOC);
     
     $history = [];
-    $seen_values = [];
-    
-    foreach ($submissions as $submission) {
-        $data = json_decode($submission['submission_data'], true);
-        $value = $data[$field_name] ?? null;
-        
-        // Special handling for targets field (legacy and new)
-        if ($field_name === 'targets') {
-            if (isset($data['targets']) && is_array($data['targets'])) {
-                $value = $data['targets'];
-            } elseif (isset($data['target']) && !empty($data['target'])) {
-                $value = [['text' => $data['target'], 'target_text' => $data['target']]];
-            }
-        }
-        
-        // Skip if no value or empty value
-        if ($value === null || $value === '' || (is_array($value) && empty($value))) {
-            continue;
-        }
-        
-        // Create a hash of the value to detect duplicates/changes
-        $value_hash = is_array($value) ? md5(json_encode($value)) : md5((string)$value);
-        if (in_array($value_hash, $seen_values)) {
-            continue;
-        }
-        $seen_values[] = $value_hash;
-        
+    while ($record = $result->fetch_assoc()) {
         $history[] = [
-            'submission_id' => $submission['id'],
-            'submitted_at' => $submission['submitted_at'],
-            'submitted_by' => $submission['submitted_by'],
-            'submitter_email' => $submission['submitter_email'],
-            'value' => $value, // Keep original structure for rendering
-            'value_length' => is_array($value) ? count($value) : strlen($value),
-            'formatted_date' => date('M j, Y g:i A', strtotime($submission['submitted_at'])),
-            'is_draft' => 0 // TODO: Add draft detection if needed
+            'change_id' => $record['change_id'],
+            'audit_log_id' => $record['audit_log_id'],
+            'target_id' => $record['target_id'],
+            'target_number' => $record['target_number'],
+            'field_name' => $record['field_name'],
+            'old_value' => $record['old_value'],
+            'new_value' => $record['new_value'],
+            'change_type' => $record['change_type'],
+            'submitted_at' => $record['created_at'],
+            'submitted_by' => $record['submitted_by'] ?: 'System',
+            'submitter_email' => $record['submitter_email'],
+            'submission_id' => $record['submission_id'],
+            'is_draft' => $record['is_draft'],
+            'formatted_date' => $record['created_at'] ? date('M j, Y g:i A', strtotime($record['created_at'])) : 'Not specified'
         ];
     }
+    
+    error_log("get_field_edit_history_paginated: Returning " . count($history) . " history records");
     
     return $history;
 }
@@ -215,16 +251,35 @@ function get_field_edit_history_paginated($program_id, $field_name, $period_id, 
 function get_field_edit_history_count($program_id, $field_name, $period_id) {
     global $conn;
     
-    $stmt = $conn->prepare("
-        SELECT COUNT(DISTINCT s.id) as count
-        FROM program_submissions s
-        WHERE s.program_id = ?
-        AND s.period_id = ?
-        AND s.submission_data IS NOT NULL
-        AND JSON_EXTRACT(s.submission_data, CONCAT('$.', ?)) IS NOT NULL
-    ");
+    // Get submission IDs for this program and period
+    $submission_query = "SELECT submission_id FROM program_submissions 
+                        WHERE program_id = ? AND period_id = ? AND is_deleted = 0";
+    $stmt = $conn->prepare($submission_query);
+    $stmt->bind_param("ii", $program_id, $period_id);
+    $stmt->execute();
+    $submissions = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     
-    $stmt->bind_param("iis", $program_id, $period_id, $field_name);
+    if (empty($submissions)) {
+        return 0;
+    }
+    
+    $submission_ids = array_column($submissions, 'submission_id');
+    $placeholders = str_repeat('?,', count($submission_ids) - 1) . '?';
+    
+    $query = "
+        SELECT COUNT(*) as count
+        FROM audit_field_changes afc
+        JOIN audit_logs al ON afc.audit_log_id = al.id
+        LEFT JOIN program_submissions ps ON al.details LIKE CONCAT('%submission ID: ', ps.submission_id, '%')
+        WHERE ps.submission_id IN ($placeholders)
+        AND afc.field_name = ?
+    ";
+    
+    $params = array_merge($submission_ids, [$field_name]);
+    $types = str_repeat('i', count($submission_ids)) . 's';
+    
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param($types, ...$params);
     $stmt->execute();
     $result = $stmt->get_result();
     $row = $result->fetch_assoc();
