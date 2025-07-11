@@ -75,6 +75,18 @@ if (!in_array($field_name, $allowed_fields)) {
     exit;
 }
 
+// Add field label mapping
+$field_labels = [
+    'target_number' => 'Target Number',
+    'target_description' => 'Target Description',
+    'status_indicator' => 'Status Indicator',
+    'status_description' => 'Achievements/Status',
+    'remarks' => 'Remarks',
+    'start_date' => 'Start Date',
+    'end_date' => 'End Date',
+    'description' => 'Description'
+];
+
 error_log("get_field_history.php: Starting request - program_id: $program_id, period_id: $period_id, field_name: $field_name, offset: $offset, limit: $limit");
 
 try {
@@ -129,7 +141,11 @@ try {
     $response = [
         'success' => true,
         'field_name' => $field_name,
-        'history' => $field_history,
+        'field_label' => $field_labels[$field_name] ?? $field_name,
+        'history' => array_map(function($entry) use ($field_labels, $field_name) {
+            $entry['field_label'] = $field_labels[$field_name] ?? $field_name;
+            return $entry;
+        }, $field_history),
         'has_more' => $has_more,
         'total_count' => $total_count,
         'current_offset' => $offset,

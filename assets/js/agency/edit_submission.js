@@ -602,7 +602,7 @@ function generateTargetsHtml(targets) {
                     </div>
                     <div class="row mt-3">
                         <div class="col-md-6">
-                            <label class="form-label small">Status</label>
+                            <label class="form-label small">Status Indicator</label>
                             <select class="form-select form-select-sm" name="target_status[]">
                                 <option value="not_started" ${target.target_status === 'not_started' ? 'selected' : ''}>Not Started</option>
                                 <option value="in_progress" ${target.target_status === 'in_progress' ? 'selected' : ''}>In Progress</option>
@@ -618,9 +618,9 @@ function generateTargetsHtml(targets) {
                     </div>
                     <div class="row mt-3">
                         <div class="col-md-12">
-                            <label class="form-label small">Status Description</label>
+                            <label class="form-label small">Achievements/Status</label>
                             <textarea class="form-control form-control-sm" name="target_status_description[]" rows="2"
-                                      placeholder="Provide details about the current status">${escapeHtml(target.status_description || '')}</textarea>
+                                      placeholder="Provide details about achievements and current status">${escapeHtml(target.status_description || '')}</textarea>
                         </div>
                     </div>
                     <div class="row mt-3">
@@ -772,7 +772,7 @@ function addTargetRow() {
             </div>
             <div class="row mt-3">
                 <div class="col-md-6">
-                    <label class="form-label small">Status</label>
+                    <label class="form-label small">Status Indicator</label>
                     <select class="form-select form-select-sm" name="target_status[]">
                         <option value="not_started" selected>Not Started</option>
                         <option value="in_progress">In Progress</option>
@@ -788,9 +788,9 @@ function addTargetRow() {
             </div>
             <div class="row mt-3">
                 <div class="col-md-12">
-                    <label class="form-label small">Status Description</label>
+                    <label class="form-label small">Achievements/Status</label>
                     <textarea class="form-control form-control-sm" name="target_status_description[]" rows="2"
-                              placeholder="Provide details about the current status"></textarea>
+                              placeholder="Provide details about achievements and current status"></textarea>
                 </div>
             </div>
             <div class="row mt-3">
@@ -1349,8 +1349,8 @@ function getFieldDisplayName(fieldName) {
     const fieldNames = {
         'target_number': 'Target Number',
         'target_description': 'Target Description',
-        'status_indicator': 'Status',
-        'status_description': 'Status Description',
+        'status_indicator': 'Status Indicator',
+        'status_description': 'Achievements/Status',
         'remarks': 'Remarks',
         'start_date': 'Start Date',
         'end_date': 'End Date',

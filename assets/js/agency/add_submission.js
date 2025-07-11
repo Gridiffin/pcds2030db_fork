@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <input type="hidden" name="target_number[]" value="">
                 </div>
                 <div class="col-6">
-                    <label class="form-label small">Status</label>
+                    <label class="form-label small">Status Indicator</label>
                     <select class="form-select form-select-sm" name="target_status[]">
                         <option value="not_started">Not Started</option>
                         <option value="in_progress">In Progress</option>
@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
             <div class="mt-2">
-                <textarea class="form-control form-control-sm" name="target_status_description[]" rows="1" placeholder="Status description"></textarea>
+                <textarea class="form-control form-control-sm" name="target_status_description[]" rows="1" placeholder="Achievements/Status"></textarea>
             </div>
         `;
         targetsContainer.appendChild(targetEntry);
