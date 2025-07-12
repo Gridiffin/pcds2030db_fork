@@ -515,6 +515,8 @@ if ($agencies_result) {
     }
 }
 
+// Remove sector dropdown and sector queries
+// Replace with agency-based or default logic where necessary
 $sectors = [
     [
         'sector_id' => 1,

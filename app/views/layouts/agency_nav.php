@@ -98,11 +98,7 @@ if (!function_exists('format_time_ago')) {
                         <i class="fas fa-chart-line me-1"></i> Outcomes
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link <?php if ($current_page == 'view_all_sectors.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/agency/sectors/view_all_sectors.php">
-                        <i class="fas fa-globe me-1"></i> All Sectors
-                    </a>
-                </li>
+                <!-- Remove 'All Sectors' nav link as sector functionality is deprecated -->
             </ul>            <div class="d-flex align-items-center ms-auto">
                 <!-- Public Reports Icon -->
                 <div class="me-3">

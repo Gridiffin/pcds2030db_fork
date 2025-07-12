@@ -196,26 +196,27 @@ $header_config = [
 // Include modern page header
 require_once '../../layouts/page_header.php';
 
-// Define status mapping for display
+// Include rating helpers for status mapping
+require_once PROJECT_ROOT_PATH . 'lib/rating_helpers.php';
+
+// Define status mapping for display using new rating system
 $status_map = [
-    'on-track' => ['label' => 'On Track', 'class' => 'warning', 'icon' => 'fas fa-chart-line'],
-    'on-track-yearly' => ['label' => 'On Track for Year', 'class' => 'warning', 'icon' => 'fas fa-calendar-check'],
-    'target-achieved' => ['label' => 'Monthly Target Achieved', 'class' => 'success', 'icon' => 'fas fa-check-circle'],
-    'delayed' => ['label' => 'Delayed', 'class' => 'danger', 'icon' => 'fas fa-exclamation-circle'],
-    'severe-delay' => ['label' => 'Severe Delays', 'class' => 'danger', 'icon' => 'fas fa-exclamation-triangle'],
-    'completed' => ['label' => 'Completed', 'class' => 'primary', 'icon' => 'fas fa-flag-checkered'],
-    'not-started' => ['label' => 'Not Started', 'class' => 'secondary', 'icon' => 'fas fa-hourglass-start']
+    'not_started' => ['label' => 'Not Started', 'class' => 'secondary', 'icon' => 'fas fa-hourglass-start'],
+    'on_track_for_year' => ['label' => 'On Track for Year', 'class' => 'warning', 'icon' => 'fas fa-calendar-check'],
+    'monthly_target_achieved' => ['label' => 'Monthly Target Achieved', 'class' => 'success', 'icon' => 'fas fa-check-circle'],
+    'severe_delay' => ['label' => 'Severe Delays', 'class' => 'danger', 'icon' => 'fas fa-exclamation-triangle']
 ];
 
-// Convert status for display
+// Convert status for display using new rating system
 if ($has_submissions) {
-    $status = convert_legacy_status($rating);
+    // Use the rating directly from database (no conversion needed)
+    $status = $rating;
     if (!isset($status_map[$status])) {
-        $status = 'not-started';
+        $status = 'not_started';
     }
 } else {
     // Program has no submissions - show as "not-started"
-    $status = 'not-started';
+    $status = 'not_started';
 }
 
 // Initialize alert flags

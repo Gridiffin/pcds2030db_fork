@@ -229,17 +229,6 @@ if (isset($_SESSION['message']) && !empty($_SESSION['message'])) {
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <label for="sectorFilter" class="form-label">Sector</label>
-                            <select class="form-select" id="sectorFilter">
-                                <option value="">All Sectors</option>
-                                <?php foreach ($sectors as $sector): ?>
-                                    <option value="<?php echo $sector['sector_id']; ?>">
-                                        <?php echo htmlspecialchars($sector['sector_name']); ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
                             <label for="initiativeFilter" class="form-label">Current Initiative</label>
                             <select class="form-select" id="initiativeFilter">
                                 <option value="">All Initiatives</option>

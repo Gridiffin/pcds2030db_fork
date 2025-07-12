@@ -199,35 +199,84 @@ $program_param_types = str_repeat('i', count($period_ids) * 2) . 'i'; // period_
 
 if (!empty($selected_program_ids_raw)) {
     error_log("Selected program IDs raw: {$selected_program_ids_raw}");
-    
     if (is_string($selected_program_ids_raw)) {
         $selected_program_ids = array_map('intval', explode(',', $selected_program_ids_raw));
     } elseif (is_array($selected_program_ids_raw)) {
         $selected_program_ids = array_map('intval', $selected_program_ids_raw);
     }
-    
-    // Filter out any zero or negative IDs to prevent issues
-    $selected_program_ids = array_filter($selected_program_ids, function($id) {
-        return $id > 0;
-    });
-    
-    // If we have valid program IDs, update the query
+    $selected_program_ids = array_filter($selected_program_ids, function($id) { return $id > 0; });
     if (!empty($selected_program_ids)) {
         $placeholders = implode(',', array_fill(0, count($selected_program_ids), '?'));
         $program_filter_condition = "p.program_id IN ($placeholders)";
-        
-        // Reset params and add period_ids twice (for both IN clauses in the subquery), then all program IDs
-        $program_params = array_merge($period_ids, $period_ids); // period_ids appear twice in subquery
-        $program_param_types = str_repeat('i', count($period_ids) * 2);
-        
-        // Add each program_id to params
-        foreach ($selected_program_ids as $prog_id) {
-            $program_params[] = $prog_id;
-            $program_param_types .= "i";
-        }
-        
+        $program_params = array_merge($period_ids, $period_ids, $selected_program_ids);
+        $program_param_types = str_repeat('i', count($period_ids) * 2) . str_repeat('i', count($selected_program_ids));
         error_log("Filtering by " . count($selected_program_ids) . " selected programs");
     }
+}
+
+// Refactored: Fetch latest non-draft submission for each program and period, then fetch targets from program_targets
+$programs_query = "
+    SELECT p.program_id, p.program_name, p.rating, i.initiative_id, i.initiative_name,
+           ps.submission_id, ps.period_id, rp.period_number, rp.period_type, rp.year
+    FROM programs p
+    LEFT JOIN (
+        SELECT ps1.*
+        FROM program_submissions ps1
+        INNER JOIN (
+            SELECT program_id, period_id, MAX(submission_date) as latest_date, MAX(submission_id) as latest_submission_id
+            FROM program_submissions
+            WHERE period_id IN ($period_in_clause) AND is_draft = 0
+            GROUP BY program_id, period_id
+        ) ps2 ON ps1.program_id = ps2.program_id 
+             AND ps1.period_id = ps2.period_id
+             AND ps1.submission_date = ps2.latest_date 
+             AND ps1.submission_id = ps2.latest_submission_id
+        WHERE ps1.period_id IN ($period_in_clause) AND ps1.is_draft = 0
+    ) ps ON p.program_id = ps.program_id
+    LEFT JOIN reporting_periods rp ON ps.period_id = rp.period_id
+    LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
+    WHERE $program_filter_condition
+    GROUP BY p.program_id, p.program_name, i.initiative_id, i.initiative_name, ps.submission_id, ps.period_id, rp.period_number, rp.period_type, rp.year
+    ORDER BY p.program_name";
+
+$stmt = $conn->prepare($programs_query);
+if (!$stmt) {
+    error_log("Failed to prepare statement: " . $conn->error);
+    ob_end_clean();
+    header('HTTP/1.1 500 Internal Server Error');
+    echo json_encode(['error' => 'Database error preparing statement']);
+    exit;
+}
+$stmt->bind_param($program_param_types, ...$program_params);
+$stmt->execute();
+$programs_result = $stmt->get_result();
+$programs = [];
+while ($program = $programs_result->fetch_assoc()) {
+    $submission_id = $program['submission_id'];
+    $targets = [];
+    if ($submission_id) {
+        // Fetch targets for this submission
+        $target_stmt = $conn->prepare("SELECT target_id, target_number, target_description, status_indicator, status_description, remarks, start_date, end_date FROM program_targets WHERE submission_id = ? AND is_deleted = 0");
+        $target_stmt->bind_param("i", $submission_id);
+        $target_stmt->execute();
+        $target_result = $target_stmt->get_result();
+        while ($target = $target_result->fetch_assoc()) {
+            $targets[] = $target;
+        }
+        $target_stmt->close();
+    }
+    $programs[] = [
+        'program_id' => $program['program_id'],
+        'program_name' => $program['program_name'],
+        'rating' => $program['rating'] ?? 'not_started',
+        'initiative_id' => $program['initiative_id'],
+        'initiative_name' => $program['initiative_name'],
+        'period_id' => $program['period_id'],
+        'period_number' => $program['period_number'],
+        'period_type' => $program['period_type'],
+        'year' => $program['year'],
+        'targets' => $targets
+    ];
 }
 
 // Add debug logging
@@ -258,253 +307,6 @@ if (!empty($program_orders) && !empty($selected_program_ids)) {
     }
 } else {
     error_log("No program orders provided or no programs selected, using default alphabetical order");
-}
-
-$programs_query = "SELECT p.program_id, p.program_name, 
-                    GROUP_CONCAT(ps.content_json ORDER BY rp.period_number ASC SEPARATOR '|||') as all_content_json,
-                    GROUP_CONCAT(CONCAT(rp.period_number, ':', ps.period_id) ORDER BY rp.period_number ASC SEPARATOR ',') as period_info,
-                    i.initiative_id, i.initiative_name
-                  FROM programs p
-                  LEFT JOIN (
-                      SELECT ps1.*
-                      FROM program_submissions ps1
-                      INNER JOIN (
-                          SELECT program_id, period_id, MAX(submission_date) as latest_date, MAX(submission_id) as latest_submission_id
-                          FROM program_submissions
-                          WHERE period_id IN ($period_in_clause) AND is_draft = 0
-                          GROUP BY program_id, period_id
-                      ) ps2 ON ps1.program_id = ps2.program_id 
-                           AND ps1.period_id = ps2.period_id
-                           AND ps1.submission_date = ps2.latest_date 
-                           AND ps1.submission_id = ps2.latest_submission_id
-                      WHERE ps1.period_id IN ($period_in_clause) AND ps1.is_draft = 0
-                  ) ps ON p.program_id = ps.program_id
-                  LEFT JOIN reporting_periods rp ON ps.period_id = rp.period_id
-                  LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
-                  WHERE $program_filter_condition
-                  GROUP BY p.program_id, p.program_name, i.initiative_id, i.initiative_name
-                  ORDER BY $order_by_clause";
-
-$stmt = $conn->prepare($programs_query);
-if (!$stmt) {
-    error_log("Failed to prepare statement: " . $conn->error);
-    ob_end_clean();
-    header('HTTP/1.1 500 Internal Server Error');
-    echo json_encode(['error' => 'Database error preparing statement']);
-    exit;
-}
-
-// Bind parameters using the array
-$stmt->bind_param($program_param_types, ...$program_params);
-$stmt->execute();
-$programs_result = $stmt->get_result();
-$programs_count = $programs_result->num_rows;
-error_log("Query returned {$programs_count} programs");
-
-$programs = [];
-while ($program = $programs_result->fetch_assoc()) {
-    // Handle aggregated content from multiple periods
-    $all_content_jsons = $program['all_content_json'] ? explode('|||', $program['all_content_json']) : [];
-    $period_info = $program['period_info'] ? explode(',', $program['period_info']) : [];
-    
-    // Initialize arrays to collect targets and statuses from all periods
-    $all_target_texts = [];
-    $all_status_texts = [];
-    $latest_rating = 'not-reported'; // Default rating
-    
-    // Process each period's content
-    foreach ($all_content_jsons as $index => $content_json) {
-        if (empty(trim($content_json))) continue;
-        
-        $content = json_decode($content_json, true);
-        if (!$content) continue;
-        
-        // Extract period info for logging
-        $period_quarter = isset($period_info[$index]) ? explode(':', $period_info[$index])[0] : 'unknown';
-        
-        // Update rating to the latest one (from last period processed)
-        if (isset($content['rating'])) {
-            $latest_rating = $content['rating'];
-        } elseif (isset($content['status'])) {
-            $latest_rating = $content['status'];
-        }
-        
-        // Process targets from this period
-        if (isset($content['targets']) && is_array($content['targets']) && !empty($content['targets'])) {
-            // New format with targets array
-            foreach ($content['targets'] as $target_index => $t) {
-                $target_text = $t['target_text'] ?? $t['text'] ?? 'No target set';
-                $status_desc = $t['status_description'] ?? 'No status update available';
-                
-                // Calculate target_id using the same logic as get_program_targets.php
-                // This is a sequential counter across all periods for this program
-                $target_id = count($all_target_texts) + 1;
-                
-                // Check if target filtering is enabled and if this target is selected
-                $program_id_str = strval($submission['program_id']);
-                $should_include_target = true;
-                
-                if (!empty($selected_targets) && isset($selected_targets[$program_id_str])) {
-                    $selected_target_ids = array_map('intval', $selected_targets[$program_id_str]);
-                    $should_include_target = in_array($target_id, $selected_target_ids);
-                }
-                
-                if ($should_include_target) {
-                    // Clean up newlines
-                    $target_text = str_replace(['\\n', '\\r', '\\r\\n'], "\n", $target_text);
-                    $status_desc = str_replace(['\\n', '\\r', '\\r\\n'], "\n", $status_desc);
-                    
-                    $all_target_texts[] = $target_text;
-                    $all_status_texts[] = $status_desc;
-                }
-            }
-        } elseif (isset($content['target'])) {
-            // Old format with direct target property
-            $target_text = $content['target'] ?? 'No target set';
-            $status_description = $content['status_text'] ?? 'No status update available';
-            
-            // Check if targets are semicolon-separated
-            if (strpos($target_text, ';') !== false) {
-                $target_parts = array_map('trim', explode(';', $target_text));
-                $status_parts = array_map('trim', explode(';', $status_description));
-                
-                foreach ($target_parts as $idx => $target_part) {
-                    if (!empty($target_part)) {
-                        // Calculate target_id for this target part
-                        $target_id = count($all_target_texts) + 1;
-                        
-                        // Check if target filtering is enabled and if this target is selected
-                        $program_id_str = strval($submission['program_id']);
-                        $should_include_target = true;
-                        
-                        if (!empty($selected_targets) && isset($selected_targets[$program_id_str])) {
-                            $selected_target_ids = array_map('intval', $selected_targets[$program_id_str]);
-                            $should_include_target = in_array($target_id, $selected_target_ids);
-                        }
-                        
-                        if ($should_include_target) {
-                            $all_target_texts[] = $target_part;
-                            $all_status_texts[] = isset($status_parts[$idx]) ? $status_parts[$idx] : 'No status update available';
-                        }
-                    }
-                }
-            } else {
-                // Single target
-                $target_id = count($all_target_texts) + 1;
-                
-                // Check if target filtering is enabled and if this target is selected
-                $program_id_str = strval($submission['program_id']);
-                $should_include_target = true;
-                
-                if (!empty($selected_targets) && isset($selected_targets[$program_id_str])) {
-                    $selected_target_ids = array_map('intval', $selected_targets[$program_id_str]);
-                    $should_include_target = in_array($target_id, $selected_target_ids);
-                }
-                
-                if ($should_include_target) {
-                    $target_text = str_replace(['\\n', '\\r', '\\r\\n'], "\n", $target_text);
-                    $status_description = str_replace(['\\n', '\\r', '\\r\\n'], "\n", $status_description);
-                    
-                    $all_target_texts[] = $target_text;
-                    $all_status_texts[] = $status_description;
-                }
-            }
-        }
-        
-        error_log("Program {$program['program_id']}: Processed Q{$period_quarter} with " . 
-                 (isset($content['targets']) ? count($content['targets']) : '1') . " targets");
-    }
-    
-    // Combine all targets and statuses from all periods
-    $target = !empty($all_target_texts) ? implode("\n", $all_target_texts) : 'No target set';
-    $status_text = !empty($all_status_texts) ? implode("\n", $all_status_texts) : 'No status update available';
-    
-    // Final cleanup of newlines
-    $target = preg_replace('/\\\\[rn]/', "\n", $target);
-    $status_text = preg_replace('/\\\\[rn]/', "\n", $status_text);
-    
-    // Map status to color (green, yellow, red, grey)
-    $status_color = 'grey'; // Default for not reported
-    
-    // Get the rating from the latest period's content
-    $rating = $latest_rating;
-    
-    // Use the same color mapping as the rating_helpers.php and program admin
-    switch ($rating) {
-        case 'target-achieved':
-        case 'completed':
-            $status_color = 'green';
-            break;
-        case 'on-track':
-        case 'on-track-yearly':
-            $status_color = 'yellow';  // Fixed: on-track-yearly should be yellow, not green
-            break;
-        case 'delayed':
-        case 'severe-delay':
-            $status_color = 'red';
-            break;
-        case 'not-started':
-        default:
-            $status_color = 'grey';
-    }
-    // Calculate text complexity metrics to help with frontend layout decisions
-    // Handle different types of newlines that might appear in the data 
-    // Note: We do this normalization again to be absolutely sure we have consistent newlines
-    $normalized_target = str_replace(['\n', '\r', '\r\n', '\\n', '\\r', '\\r\\n'], "\n", $target);
-    $normalized_status = str_replace(['\n', '\r', '\r\n', '\\n', '\\r', '\\r\\n'], "\n", $status_text);
-    
-    // Split by normalized newlines
-    $target_lines = explode("\n", $normalized_target);
-    $status_lines = explode("\n", $normalized_status);
-    
-    // Filter out empty lines (which could create phantom bullets)
-    $target_lines = array_filter($target_lines, function($line) {
-        return trim($line) !== '';
-    });
-    
-    $status_lines = array_filter($status_lines, function($line) {
-        return trim($line) !== '';
-    });
-    
-    // Calculate average and max characters per line to better estimate space needs
-    $target_chars = array_map('strlen', $target_lines);
-    $status_chars = array_map('strlen', $status_lines);
-      // Calculate wrapping metrics based on actual column widths
-    $target_col_chars_per_line = 33; // Target column can fit 33 chars before wrapping (verified)
-    $status_col_chars_per_line = 72; // Status column can fit ~72 chars before wrapping
-    
-    // Calculate how many wrapped lines would be needed for each bullet
-    $target_wrapped_lines = 0;
-    foreach ($target_chars as $char_count) {
-        $target_wrapped_lines += max(1, ceil($char_count / $target_col_chars_per_line));
-    }
-    
-    $status_wrapped_lines = 0;
-    foreach ($status_chars as $char_count) {
-        $status_wrapped_lines += max(1, ceil($char_count / $status_col_chars_per_line));
-    }
-    
-    $text_metrics = [
-        'target_bullet_count' => count($target_lines),
-        'target_max_chars' => !empty($target_chars) ? max($target_chars) : 0,
-        'target_total_chars' => array_sum($target_chars),
-        'target_wrapped_lines' => $target_wrapped_lines, // New metric for more accurate height calculation
-        'status_bullet_count' => count($status_lines),
-        'status_max_chars' => !empty($status_chars) ? max($status_chars) : 0,
-        'status_total_chars' => array_sum($status_chars),
-        'status_wrapped_lines' => $status_wrapped_lines, // New metric for more accurate height calculation
-        'name_length' => strlen($program['program_name'])
-    ];      $programs[] = [
-        'name' => $program['program_name'],
-        'target' => $target,
-        'rating' => $status_color,
-        'rating_value' => $rating, // Include the actual rating value for debugging
-        'status' => $status_text,
-        'text_metrics' => $text_metrics,
-        'initiative_id' => $program['initiative_id'],
-        'initiative_name' => $program['initiative_name'] ?? 'No Initiative'
-    ];
-    error_log('Program name in API response: ' . $program['program_name']);
 }
 
 // --- 3. Get Monthly Labels ---

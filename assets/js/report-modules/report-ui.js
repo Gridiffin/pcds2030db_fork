@@ -157,10 +157,9 @@ if (typeof window.ReportUI !== 'undefined') {
      * Update report name based on selected sector and period
      */
     function updateReportName() {
-        if (elements.sectorSelect && elements.periodSelect && elements.sectorSelect.value && elements.periodSelect.value) {
-            const sectorText = elements.sectorSelect.options[elements.sectorSelect.selectedIndex].text;
+        if (elements.periodSelect && elements.periodSelect.value) {
             const periodText = elements.periodSelect.options[elements.periodSelect.selectedIndex].text;
-            elements.reportNameInput.value = `${sectorText} Report - ${periodText}`;
+            elements.reportNameInput.value = `Forestry Report - ${periodText}`;
         }
     }
 
@@ -172,13 +171,13 @@ if (typeof window.ReportUI !== 'undefined') {
         e.preventDefault();
         
         // Validate form
-        if (!elements.periodSelect.value || !elements.sectorSelect.value || !elements.reportNameInput.value) {
+        if (!elements.periodSelect.value || !elements.reportNameInput.value) {
             alert('Please fill out all required fields.');
             return;
         }
         
         const periodId = elements.periodSelect.value;
-        const sectorId = elements.sectorSelect.value;
+        const sectorId = 1; // Hardcoded to Forestry sector
         const reportName = elements.reportNameInput.value;
         const reportDescription = elements.reportDescInput.value || '';
         const isPublic = elements.isPublicCheckbox.checked ? 1 : 0;        // Get selected program IDs with their order from global state

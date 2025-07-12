@@ -24,41 +24,13 @@ function has_content_json_schema() {
 }
 
 /**
- * Get sector name by sector ID
+ * Get all programs, optionally filtered by period
  * 
- * @param int $sector_id The sector ID
- * @return string The sector name or 'Unknown Sector' if not found
- */
-function get_sector_name($sector_id) {
-    // Since sectors table has been removed, return a default value
-    // This maintains backward compatibility while the system transitions
-    return 'Forestry Sector'; // Default to Forestry Sector for now
-}
-
-/**
- * Get all sectors
- * 
- * @return array List of all sectors
- */
-function get_all_sectors() {
-    // Since sectors table has been removed, return a default sector
-    // This maintains backward compatibility while the system transitions
-    return [
-        [
-            'sector_id' => 1,
-            'sector_name' => 'Forestry Sector'
-        ]
-    ];
-}
-
-/**
- * Get all programs from all sectors, optionally filtered by period
- * 
- * This function retrieves programs from all sectors, for the agency view
+ * This function retrieves programs for the agency view
  * 
  * @param int $period_id Optional period ID to filter by specific reporting period
  * @param array $filters Optional filters to apply
- * @return array List of programs from all sectors
+ * @return array List of programs
  */
 function get_all_sectors_programs($period_id = null, $filters = []) {
     global $conn;
@@ -67,9 +39,8 @@ function get_all_sectors_programs($period_id = null, $filters = []) {
         return ['error' => 'Permission denied'];
     }
     
-    // Get current agency's sector for highlighting
+    // Get current agency
     $agency_id = $_SESSION['user_id'];
-    $current_sector_id = $_SESSION['sector_id'] ?? 0;
     
     // Initialize query parts
     $has_content_json = has_content_json_schema();
@@ -112,7 +83,6 @@ function get_all_sectors_programs($period_id = null, $filters = []) {
                 p.end_date,
                 p.created_at,
                 p.updated_at,
-                p.sector_id,
                 p.users_assigned AS agency_id,
                 a.agency_name";
     
@@ -178,13 +148,6 @@ function get_all_sectors_programs($period_id = null, $filters = []) {
     
     // Apply additional filters
     if (!empty($filters)) {
-        // Filter by sector_id
-        if (isset($filters['sector_id']) && $filters['sector_id']) {
-            $filterConditions[] = "p.sector_id = ?";
-            $filterParams[] = $filters['sector_id'];
-            $filterTypes .= "i";
-        }
-        
         // Filter by agency_id
         if (isset($filters['agency_id']) && $filters['agency_id']) {
             $filterConditions[] = "p.users_assigned = ?";
@@ -212,7 +175,7 @@ function get_all_sectors_programs($period_id = null, $filters = []) {
     }
       // Finalize query
     $query .= " GROUP BY p.program_id, p.program_name, p.start_date, p.end_date, 
-                p.created_at, p.updated_at, p.sector_id, p.users_assigned, a.agency_name";
+                p.created_at, p.updated_at, p.users_assigned, a.agency_name";
     
     // Add additional GROUP BY fields based on schema
     if ($has_content_json) {
@@ -221,9 +184,7 @@ function get_all_sectors_programs($period_id = null, $filters = []) {
         $query .= ", ps.target, ps.achievement, ps.status_date, ps.status_text";
     }
     
-    $query .= ", ps.is_draft ORDER BY (p.sector_id = ?) DESC, p.created_at DESC";
-    $filterParams[] = $current_sector_id;
-    $filterTypes .= "i";
+    $query .= ", ps.is_draft ORDER BY p.created_at DESC";
     
     // Execute query
     try {
@@ -250,6 +211,8 @@ function get_all_sectors_programs($period_id = null, $filters = []) {
         return ['error' => 'Database error: ' . $e->getMessage()];
     }
 }
+
+
 
 /**
  * Get submission status for an agency

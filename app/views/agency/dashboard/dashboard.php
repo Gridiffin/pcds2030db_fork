@@ -36,24 +36,7 @@ $current_period = get_current_reporting_period();
 $period_id = isset($_GET['period_id']) ? intval($_GET['period_id']) : ($current_period['period_id'] ?? null);
 $viewing_period = $period_id ? get_reporting_period($period_id) : $current_period;
 
-// Get agency sector name - since sector table is being removed, use agency-based mapping
-$sector_id = 1; // Default to Forestry sector (ID: 1)
-
-// Map agency to sector based on agency name or ID
-if (isset($_SESSION['agency_id'])) {
-    switch ($_SESSION['agency_id']) {
-        case 1: // STIDC
-        case 2: // SFC  
-        case 3: // FDS
-            $sector_id = 1; // All forestry-related agencies map to Forestry sector
-            break;
-        default:
-            $sector_id = 1; // Default to Forestry sector
-            break;
-    }
-}
-
-$agency_sector = get_sector_name($sector_id);
+// Agency dashboard - no sector functionality needed
 
 // Initialize dashboard controller for initial rendering
 $dashboardController = new DashboardController($conn);
@@ -68,8 +51,8 @@ $stats = $dashboardData['stats'];
 $chartData = $dashboardData['chart_data'];
 $recentUpdates = $dashboardData['recent_updates'];
 
-// Get outcomes statistics for the agency's sector
-$outcomes_stats = get_agency_outcomes_statistics($sector_id, $period_id);
+// Get outcomes statistics for the agency
+$outcomes_stats = get_agency_outcomes_statistics(null, $period_id);
 
 // Additional scripts needed for dashboard
 $additionalScripts = [

@@ -19,6 +19,7 @@ require_once PROJECT_ROOT_PATH . 'lib/functions.php';
 require_once PROJECT_ROOT_PATH . 'lib/agencies/programs.php';
 require_once PROJECT_ROOT_PATH . 'lib/initiative_functions.php';
 require_once PROJECT_ROOT_PATH . 'lib/numbering_helpers.php';
+require_once PROJECT_ROOT_PATH . 'lib/rating_helpers.php';
 
 // Verify user is an agency
 if (!is_agency()) {
@@ -72,7 +73,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'brief_description' => $_POST['brief_description'] ?? '',
         'start_date' => $_POST['start_date'] ?? '',
         'end_date' => $_POST['end_date'] ?? '',
-        'initiative_id' => !empty($_POST['initiative_id']) ? intval($_POST['initiative_id']) : null
+        'initiative_id' => !empty($_POST['initiative_id']) ? intval($_POST['initiative_id']) : null,
+        'rating' => $_POST['rating'] ?? 'not_started'
     ];
     
     // Update program using simplified function
@@ -83,8 +85,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['message'] = $result['message'];
         $_SESSION['message_type'] = 'success';
         
-        // Redirect to program details
-        header('Location: program_details.php?id=' . $program_id);
+        // Redirect to program list
+        header('Location: view_programs.php');
         exit;
     } else {
         $message = $result['error'] ?? 'An error occurred while updating the program.';
@@ -229,6 +231,34 @@ require_once '../../layouts/page_header.php';
                                         A brief overview to help identify this program
                                     </div>
                                 </div>
+
+                                <!-- Program Rating - Only visible to focal users -->
+                                <?php if (is_focal_user()): ?>
+                                <div class="mb-4">
+                                    <label for="rating" class="form-label">
+                                        Program Rating <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-select" id="rating" name="rating" required>
+                                        <option value="">Select a rating</option>
+                                        <?php 
+                                        $current_rating = $_POST['rating'] ?? $program['rating'] ?? RATING_NOT_STARTED;
+                                        $rating_options = get_rating_options();
+                                        foreach ($rating_options as $value => $label): 
+                                        ?>
+                                            <option value="<?php echo htmlspecialchars($value); ?>" <?php echo $current_rating == $value ? 'selected' : ''; ?>>
+                                                <?php echo htmlspecialchars($label); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <div class="form-text">
+                                        <i class="fas fa-chart-line me-1"></i>
+                                        Summarized rating of this program
+                                    </div>
+                                </div>
+                                <?php else: ?>
+                                <!-- Hidden rating field for non-focal users -->
+                                <input type="hidden" name="rating" value="<?php echo htmlspecialchars($program['rating'] ?? RATING_NOT_STARTED); ?>">
+                                <?php endif; ?>
                             </div>
 
                             <div class="col-md-4">

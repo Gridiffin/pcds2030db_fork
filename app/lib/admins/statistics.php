@@ -222,8 +222,14 @@ function get_admin_programs_list($period_id = null, $filters = []) {
                 p.program_id, p.program_name, p.program_number, p.agency_id, p.created_at,
                 p.initiative_id, i.initiative_name, i.initiative_number,
                 a.agency_name,
-                latest_sub.submission_id, latest_sub.is_draft, latest_sub.submission_date, latest_sub.updated_at, latest_sub.period_id AS submission_period_id,
-                COALESCE(JSON_UNQUOTE(JSON_EXTRACT(latest_sub.content_json, '$.rating')), 'not-started') as rating
+                latest_sub.submission_id, latest_sub.is_draft, latest_sub.submitted_at, latest_sub.updated_at, latest_sub.period_id AS submission_period_id,
+                COALESCE(
+                  MAX(CASE WHEN pt.status_indicator = 'delayed' THEN 'delayed' END),
+                  MAX(CASE WHEN pt.status_indicator = 'in_progress' THEN 'in_progress' END),
+                  MAX(CASE WHEN pt.status_indicator = 'completed' THEN 'completed' END),
+                  MAX(CASE WHEN pt.status_indicator = 'not_started' THEN 'not_started' END),
+                  'not_started'
+                ) as rating
             FROM programs p
             JOIN users u ON p.agency_id = u.agency_id
             LEFT JOIN agency a ON u.agency_id = a.agency_id
@@ -237,7 +243,8 @@ function get_admin_programs_list($period_id = null, $filters = []) {
                     WHERE period_id = ?
                     GROUP BY program_id
                 ) ps2 ON ps1.program_id = ps2.program_id AND ps1.submission_id = ps2.max_submission_id
-            ) latest_sub ON p.program_id = latest_sub.program_id";
+            ) latest_sub ON p.program_id = latest_sub.program_id
+            LEFT JOIN program_targets pt ON latest_sub.submission_id = pt.submission_id AND pt.is_deleted = 0";
     
     $params = [$period_id];
     $param_types = 'i';
@@ -247,15 +254,9 @@ function get_admin_programs_list($period_id = null, $filters = []) {
         // Remove any reference to ps.status (column deleted)
         // Use rating from JSON content instead
         if (isset($filters['status']) && $filters['status'] !== 'all' && $filters['status'] !== '') {
-            $conditions[] = "COALESCE(JSON_UNQUOTE(JSON_EXTRACT(latest_sub.content_json, '$.rating')), 'not-started') = ?";
+            $conditions[] = "COALESCE(latest_sub.status_indicator, 'not-started') = ?";
             $params[] = $filters['status'];
             $param_types .= 's';
-        }
-        
-        if (isset($filters['sector_id']) && $filters['sector_id'] !== 'all' && $filters['sector_id'] !== 0 && $filters['sector_id'] !== '') {
-            $conditions[] = "p.sector_id = ?";
-            $params[] = $filters['sector_id'];
-            $param_types .= "i";
         }
         
         if (isset($filters['agency_id']) && $filters['agency_id'] !== 'all' && $filters['agency_id'] !== 0 && $filters['agency_id'] !== '') {
@@ -283,9 +284,8 @@ function get_admin_programs_list($period_id = null, $filters = []) {
         $sql .= " WHERE " . implode(" AND ", $conditions);
     }
     
-    // ORDER BY and LIMIT clauses should not introduce a GROUP BY that causes this issue.
-    // If a GROUP BY is necessary, it must include all non-aggregated selected columns.
-    // For now, let's assume the GROUP BY was the issue and remove/adjust it if it's further down.
+    // After building $sql and appending WHERE clause (if any), append GROUP BY p.program_id, then ORDER BY, then LIMIT/OFFSET.
+    // Remove GROUP BY from the main query string if it was already there.
     // The error occurs at line 310, which is $stmt = $conn->prepare($sql);
     // This implies the $sql string itself is the problem before prepare.
 
@@ -324,8 +324,14 @@ function get_admin_programs_list($period_id = null, $filters = []) {
                 p.program_id, p.program_name, p.program_number, p.agency_id, p.created_at,
                 p.initiative_id, i.initiative_name, i.initiative_number,
                 a.agency_name,
-                latest_sub.submission_id, latest_sub.is_draft, latest_sub.submission_date, latest_sub.updated_at, latest_sub.period_id AS submission_period_id,
-                COALESCE(JSON_UNQUOTE(JSON_EXTRACT(latest_sub.content_json, '$.rating')), 'not-started') as rating
+                latest_sub.submission_id, latest_sub.is_draft, latest_sub.submitted_at, latest_sub.updated_at, latest_sub.period_id AS submission_period_id,
+                COALESCE(
+                  MAX(CASE WHEN pt.status_indicator = 'delayed' THEN 'delayed' END),
+                  MAX(CASE WHEN pt.status_indicator = 'in_progress' THEN 'in_progress' END),
+                  MAX(CASE WHEN pt.status_indicator = 'completed' THEN 'completed' END),
+                  MAX(CASE WHEN pt.status_indicator = 'not_started' THEN 'not_started' END),
+                  'not_started'
+                ) as rating
             FROM programs p
             JOIN users u ON p.agency_id = u.agency_id
             LEFT JOIN agency a ON u.agency_id = a.agency_id
@@ -339,7 +345,8 @@ function get_admin_programs_list($period_id = null, $filters = []) {
                     WHERE period_id = ?
                     GROUP BY program_id
                 ) ps2 ON ps1.program_id = ps2.program_id AND ps1.submission_id = ps2.max_submission_id
-            ) latest_sub ON p.program_id = latest_sub.program_id";
+            ) latest_sub ON p.program_id = latest_sub.program_id
+            LEFT JOIN program_targets pt ON latest_sub.submission_id = pt.submission_id AND pt.is_deleted = 0";
 
 
     $params = []; // Re-initialize params for this corrected SQL structure
@@ -356,7 +363,7 @@ function get_admin_programs_list($period_id = null, $filters = []) {
         $param_types .= 'ss';
     }    // Add other filters as before
     if (isset($filters['status']) && $filters['status'] !== 'all' && $filters['status'] !== '') {
-        $where_clauses[] = "COALESCE(JSON_UNQUOTE(JSON_EXTRACT(latest_sub.content_json, '$.rating')), 'not-started') = ?";
+        $where_clauses[] = "COALESCE(latest_sub.status_indicator, 'not-started') = ?";
         $params[] = $filters['status'];
         $param_types .= "s";
     }
@@ -385,7 +392,7 @@ function get_admin_programs_list($period_id = null, $filters = []) {
     // ORDER BY clause
     $order_by_column = $filters['sort_by'] ?? 'p.program_name';
     $order_by_direction = $filters['sort_order'] ?? 'ASC';
-    $sql .= " ORDER BY $order_by_column $order_by_direction";
+    $sql .= " GROUP BY p.program_id ORDER BY $order_by_column $order_by_direction";
 
     // LIMIT and OFFSET for pagination
     if (isset($filters['limit'])) {

@@ -139,8 +139,8 @@ function formatPeriod($report) {
 
 // Fetch data for page
 $periods = getReportingPeriods();
-$sectors = getSectors();
-// Remove the direct loading of reports - will be handled by pagination
+// Remove sector dropdown and sector logic
+// Replace with agency-based or default logic where necessary
 $agencies = get_all_agencies($conn);
 
 // Additional CSS files for this page

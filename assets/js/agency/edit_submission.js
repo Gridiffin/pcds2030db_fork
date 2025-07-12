@@ -243,6 +243,13 @@ function showEditSubmissionForm(data) {
         `;
     }
 
+    // Add Save and Exit button
+    let saveAndExitButtonHtml = `
+        <button type="submit" name="save_and_exit" value="1" class="btn btn-primary ms-2">
+            <i class="fas fa-save me-2"></i> Save and Exit
+        </button>
+    `;
+
     const formHtml = `
         <div class="card shadow-sm">
             <div class="card-header d-flex justify-content-between align-items-center">
@@ -353,6 +360,7 @@ function showEditSubmissionForm(data) {
                                 <i class="fas fa-save me-2"></i>
                                 Save as Draft
                             </button>
+                            ${saveAndExitButtonHtml}
                             ${finalizeButtonHtml}
                         </div>
                     </div>
@@ -953,6 +961,10 @@ function handleFormSubmission(form, submitter) {
         if (data.success) {
             showToast('Success', data.message, 'success');
             refreshReportingPeriodsDropdown();
+            if (submitter && submitter.name === 'save_and_exit') {
+                window.location.href = window.APP_URL + '/app/views/agency/programs/view_programs.php';
+                return;
+            }
             // Show loading spinner and refresh all submission data (including attachments)
             showLoadingSpinner();
             setTimeout(() => {

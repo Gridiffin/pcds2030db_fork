@@ -1415,20 +1415,20 @@ currentXPos += colWidths[1];                /**
                 
                 let ratingColor = themeColors.greyStatus; // Default color for not-started
                 
-                // Map API color values to theme colors
+                // Map database rating values to theme colors
                 switch (rating) {
-                    case 'green':
+                    case 'monthly_target_achieved':
                         ratingColor = themeColors.greenStatus; // Green for Monthly Target Achieved
                         break;
-                    case 'red':
-                        ratingColor = themeColors.redStatus;  // Red for Delayed/Severe Issues
+                    case 'severe_delay':
+                        ratingColor = themeColors.redStatus;  // Red for Severe Delays
                         break;
-                    case 'yellow':
-                        ratingColor = themeColors.yellowStatus; // Yellow for On Track/Minor Issues
+                    case 'on_track_for_year':
+                        ratingColor = themeColors.yellowStatus; // Yellow for On Track
                         break;
-                    case 'grey':
+                    case 'not_started':
                     default:
-                        ratingColor = themeColors.greyStatus; // Gray for Not Started/Not Reported
+                        ratingColor = themeColors.greyStatus; // Gray for Not Started
                         break;
                 }
 

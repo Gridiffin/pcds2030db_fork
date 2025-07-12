@@ -253,51 +253,39 @@ require_once '../../layouts/page_header.php';
                         <?php                        foreach ($programs_with_drafts as $program): 
                             // Determine program type (assigned or custom)
                             $is_assigned = isset($program['is_assigned']) && $program['is_assigned'] ? true : false;
-                              // Convert rating for display
-                            $current_rating = isset($program['rating']) ? convert_legacy_rating($program['rating']) : 'not-started';
+                              // Include rating helpers for status mapping
+                            require_once PROJECT_ROOT_PATH . 'lib/rating_helpers.php';
+                            
+                            // Use rating directly from database (no conversion needed)
+                            $current_rating = isset($program['rating']) ? $program['rating'] : 'not_started';
                             
                             // Map database rating values to display labels, classes, and icons
                             $rating_map = [
-                                'on-track' => [
-                                    'label' => 'On Track', 
-                                    'class' => 'success',
-                                    'icon' => 'fas fa-check-circle'
+                                'not_started' => [
+                                    'label' => 'Not Started', 
+                                    'class' => 'secondary',
+                                    'icon' => 'fas fa-hourglass-start'
                                 ],
-                                'on-track-yearly' => [
+                                'on_track_for_year' => [
                                     'label' => 'On Track for Year', 
                                     'class' => 'warning',
                                     'icon' => 'fas fa-calendar-check'
                                 ],
-                                'target-achieved' => [
-                                    'label' => 'Target Achieved', 
+                                'monthly_target_achieved' => [
+                                    'label' => 'Monthly Target Achieved', 
                                     'class' => 'success',
-                                    'icon' => 'fas fa-trophy'
+                                    'icon' => 'fas fa-check-circle'
                                 ],
-                                'delayed' => [
-                                    'label' => 'Delayed', 
-                                    'class' => 'warning',
-                                    'icon' => 'fas fa-clock'
-                                ],
-                                'severe-delay' => [
+                                'severe_delay' => [
                                     'label' => 'Severe Delays', 
                                     'class' => 'danger',
                                     'icon' => 'fas fa-exclamation-triangle'
-                                ],
-                                'completed' => [
-                                    'label' => 'Completed', 
-                                    'class' => 'primary',
-                                    'icon' => 'fas fa-flag-checkered'
-                                ],
-                                'not-started' => [
-                                    'label' => 'Not Started', 
-                                    'class' => 'secondary',
-                                    'icon' => 'fas fa-circle'
                                 ]
                             ];
                             
                             // Set default if rating is not in our map
                             if (!isset($rating_map[$current_rating])) {
-                                $current_rating = 'not-started';
+                                $current_rating = 'not_started';
                             }
                             
                             // Check if this is a draft
@@ -346,13 +334,10 @@ require_once '../../layouts/page_header.php';
                                 </td>
                                 <td data-rating="<?php echo $current_rating; ?>" data-rating-order="<?php 
                                     $rating_order = [
-                                        'target-achieved' => 1,
-                                        'on-track' => 2, 
-                                        'on-track-yearly' => 2,
-                                        'delayed' => 3,
-                                        'severe-delay' => 4,
-                                        'completed' => 5,
-                                        'not-started' => 6
+                                        'monthly_target_achieved' => 1,
+                                        'on_track_for_year' => 2,
+                                        'severe_delay' => 3,
+                                        'not_started' => 4
                                     ];
                                     echo $rating_order[$current_rating] ?? 999;
                                 ?>">
@@ -512,50 +497,36 @@ require_once '../../layouts/page_header.php';
                             $is_assigned = isset($program['is_assigned']) && $program['is_assigned'] ? true : false;
                             
                             // Convert rating for display
-                            $current_rating = isset($program['rating']) ? convert_legacy_rating($program['rating']) : 'not-started';
+                            // Use rating directly from database (no conversion needed)
+                            $current_rating = isset($program['rating']) ? $program['rating'] : 'not_started';
                             
                             // Map database rating values to display labels, classes, and icons
                             $rating_map = [
-                                'on-track' => [
-                                    'label' => 'On Track', 
-                                    'class' => 'success',
-                                    'icon' => 'fas fa-check-circle'
+                                'not_started' => [
+                                    'label' => 'Not Started', 
+                                    'class' => 'secondary',
+                                    'icon' => 'fas fa-hourglass-start'
                                 ],
-                                'on-track-yearly' => [
+                                'on_track_for_year' => [
                                     'label' => 'On Track for Year', 
                                     'class' => 'warning',
                                     'icon' => 'fas fa-calendar-check'
                                 ],
-                                'target-achieved' => [
-                                    'label' => 'Target Achieved', 
+                                'monthly_target_achieved' => [
+                                    'label' => 'Monthly Target Achieved', 
                                     'class' => 'success',
-                                    'icon' => 'fas fa-trophy'
+                                    'icon' => 'fas fa-check-circle'
                                 ],
-                                'delayed' => [
-                                    'label' => 'Delayed', 
-                                    'class' => 'warning',
-                                    'icon' => 'fas fa-clock'
-                                ],
-                                'severe-delay' => [
+                                'severe_delay' => [
                                     'label' => 'Severe Delays', 
                                     'class' => 'danger',
                                     'icon' => 'fas fa-exclamation-triangle'
-                                ],
-                                'completed' => [
-                                    'label' => 'Completed', 
-                                    'class' => 'primary',
-                                    'icon' => 'fas fa-flag-checkered'
-                                ],
-                                'not-started' => [
-                                    'label' => 'Not Started', 
-                                    'class' => 'secondary',
-                                    'icon' => 'fas fa-circle'
                                 ]
                             ];
                             
                             // Set default if rating is not in our map
                             if (!isset($rating_map[$current_rating])) {
-                                $current_rating = 'not-started';
+                                $current_rating = 'not_started';
                             }                        ?>                            <tr data-program-type="<?php echo $is_assigned ? 'assigned' : 'created'; ?>">
                                 <!-- Finalized programs initiative column -->
                                 <td class="text-truncate program-name-col">
@@ -598,13 +569,10 @@ require_once '../../layouts/page_header.php';
                                 </td>
                                 <td data-rating="<?php echo $current_rating; ?>" data-rating-order="<?php 
                                     $rating_order = [
-                                        'target-achieved' => 1,
-                                        'on-track' => 2, 
-                                        'on-track-yearly' => 2,
-                                        'delayed' => 3,
-                                        'severe-delay' => 4,
-                                        'completed' => 5,
-                                        'not-started' => 6
+                                        'monthly_target_achieved' => 1,
+                                        'on_track_for_year' => 2,
+                                        'severe_delay' => 3,
+                                        'not_started' => 4
                                     ];
                                     echo $rating_order[$current_rating] ?? 999;
                                 ?>">

@@ -387,8 +387,10 @@ function create_simple_program($data) {
  * Update simple program information (basic info only, not submissions)
  */
 function update_simple_program($data) {
-    global $conn, $programsTable, $programIdCol, $programNameCol, $programDescriptionCol, $programNumberCol, 
-           $programAgencyIdCol, $programInitiativeIdCol, $programIsDeletedCol, $programUpdatedAtCol, $usersTable, $userAgencyIdCol, $userIdCol;
+    global $conn;
+    
+    // Include the new rating helpers
+    require_once dirname(__DIR__) . '/rating_helpers.php';
     
     if (!is_agency()) return ['error' => 'Permission denied'];
     
@@ -403,73 +405,49 @@ function update_simple_program($data) {
     $program_id = intval($data['program_id']);
     $program_name = trim($data['program_name']);
     $brief_description = isset($data['brief_description']) ? trim($data['brief_description']) : '';
-    $start_date = validate_program_date($data['start_date'] ?? '');
-    $end_date = validate_program_date($data['end_date'] ?? '');
-    if ($start_date === false) return ['error' => 'Start Date must be in YYYY-MM-DD format.'];
-    if ($end_date === false) return ['error' => 'End Date must be in YYYY-MM-DD format.'];
     $initiative_id = isset($data['initiative_id']) && !empty($data['initiative_id']) ? intval($data['initiative_id']) : null;
+    $rating = isset($data['rating']) ? trim($data['rating']) : RATING_NOT_STARTED;
+    
+    // Validate rating using new helper function
+    if (!is_valid_rating($rating)) {
+        return ['error' => 'Invalid rating value provided'];
+    }
     
     // Check if user has access to this program
     $user_id = $_SESSION['user_id'];
-    $check_stmt = $conn->prepare("SELECT $programIdCol FROM $programsTable WHERE $programIdCol = ? AND $programAgencyIdCol = (SELECT $userAgencyIdCol FROM $usersTable WHERE $userIdCol = ?)");
+    $check_stmt = $conn->prepare("SELECT program_id FROM programs WHERE program_id = ? AND agency_id = (SELECT agency_id FROM users WHERE user_id = ?)");
     $check_stmt->bind_param("ii", $program_id, $user_id);
     $check_stmt->execute();
     if ($check_stmt->get_result()->num_rows === 0) {
         return ['error' => 'Program not found or access denied'];
     }
     
-    // Handle program number with new simplified logic
+    // Handle program number
     $program_number = null;
-    if ($initiative_id) {
-        // If initiative is selected, handle program number
-        if (!empty($data['program_number'])) {
-            // User provided a program number - validate it
-            $program_number = trim($data['program_number']);
-            if (!is_valid_program_number_format($program_number, false)) {
-                return ['error' => get_program_number_format_error(false)];
-            }
-            
-            // Validate hierarchical format if initiative is linked
-            $format_validation = validate_program_number_format($program_number, $initiative_id);
-            if (!$format_validation['valid']) {
-                return ['error' => $format_validation['message']];
-            }
-            
-            // Check if number is already in use (excluding current program)
-            $check_stmt = $conn->prepare("SELECT $programIdCol FROM $programsTable WHERE $programNumberCol = ? AND $programInitiativeIdCol = ? AND $programIdCol != ? AND $programIsDeletedCol = 0");
-            $check_stmt->bind_param("sii", $program_number, $initiative_id, $program_id);
-            $check_stmt->execute();
-            if ($check_stmt->get_result()->num_rows > 0) {
-                return ['error' => 'Duplicate program number. This number is already in use for the selected initiative.'];
-            }
-        } else {
-            // Auto-generate program number for the initiative
-            $program_number = generate_next_program_number($initiative_id);
-            if (!$program_number) {
-                return ['error' => 'Failed to generate program number for this initiative'];
-            }
-        }
+    if ($initiative_id && !empty($data['program_number'])) {
+        $program_number = trim($data['program_number']);
     }
     
     try {
         $conn->begin_transaction();
         
-        // Update the program with new information
-        $stmt = $conn->prepare("UPDATE $programsTable SET $programNameCol = ?, $programDescriptionCol = ?, $programNumberCol = ?, $programInitiativeIdCol = ?, $programUpdatedAtCol = NOW() WHERE $programIdCol = ?");
-        $stmt->bind_param("sssii", $program_name, $brief_description, $program_number, $initiative_id, $program_id);
-        if (!$stmt->execute()) throw new Exception('Failed to update program: ' . $stmt->error);
+        // Simple update query
+        $stmt = $conn->prepare("UPDATE programs SET program_name = ?, program_description = ?, program_number = ?, initiative_id = ?, rating = ?, updated_at = NOW() WHERE program_id = ?");
+        $stmt->bind_param("sssssi", $program_name, $brief_description, $program_number, $initiative_id, $rating, $program_id);
+        
+        if (!$stmt->execute()) {
+            throw new Exception('Failed to update program: ' . $stmt->error);
+        }
         
         $conn->commit();
-        log_audit_action('update_program', "Program Name: $program_name | Program ID: $program_id | Program Number: $program_number", 'success', $user_id);
+        
         return [
             'success' => true, 
             'message' => 'Program information updated successfully.',
-            'program_id' => $program_id,
-            'program_number' => $program_number
+            'program_id' => $program_id
         ];
     } catch (Exception $e) {
         $conn->rollback();
-        log_audit_action('update_program_failed', "Program Name: $program_name | Program ID: $program_id | Error: " . $e->getMessage(), 'failure', $user_id);
         return ['error' => 'Database error: ' . $e->getMessage()];
     }
 }

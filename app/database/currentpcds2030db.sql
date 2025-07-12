@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS `agency` (
   PRIMARY KEY (`agency_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table pcds2030_db.agency: ~4 rows (approximately)
+-- Dumping data for table pcds2030_db.agency: ~5 rows (approximately)
 INSERT INTO `agency` (`agency_id`, `agency_name`, `created_at`, `updated_at`) VALUES
 	(1, 'STIDC', '2025-07-04 10:00:00', '2025-07-04 10:00:00'),
 	(2, 'SFC', '2025-07-04 10:00:00', '2025-07-04 10:00:00'),
@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS `audit_field_changes` (
   CONSTRAINT `fk_audit_field_changes_log` FOREIGN KEY (`audit_log_id`) REFERENCES `audit_logs` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=915 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table pcds2030_db.audit_field_changes: ~830 rows (approximately)
+-- Dumping data for table pcds2030_db.audit_field_changes: ~906 rows (approximately)
 INSERT INTO `audit_field_changes` (`change_id`, `audit_log_id`, `target_id`, `field_name`, `field_type`, `old_value`, `new_value`, `target_snapshot`, `change_type`, `created_at`) VALUES
 	(1, 5, NULL, 'program_name', 'text', NULL, 'Test Program', NULL, 'added', '2025-07-05 15:34:01'),
 	(2, 5, NULL, 'description', 'text', NULL, 'This is a test program', NULL, 'added', '2025-07-05 15:34:01'),
@@ -882,7 +882,112 @@ INSERT INTO `audit_field_changes` (`change_id`, `audit_log_id`, `target_id`, `fi
 	(911, 153, NULL, 'target_description', 'text', 'gsagsgds', NULL, NULL, 'removed', '2025-07-10 15:00:15'),
 	(912, 153, NULL, 'status_indicator', 'text', 'not_started', NULL, NULL, 'removed', '2025-07-10 15:00:15'),
 	(913, 153, NULL, 'status_description', 'text', 'dsdsfdsfds', NULL, NULL, 'removed', '2025-07-10 15:00:15'),
-	(914, 153, NULL, 'remarks', 'text', 'dsfdsfdsfds', NULL, NULL, 'removed', '2025-07-10 15:00:15');
+	(914, 153, NULL, 'remarks', 'text', 'dsfdsfdsfds', NULL, NULL, 'removed', '2025-07-10 15:00:15'),
+	(915, 157, 107, 'target_number', 'text', NULL, '313131', NULL, 'added', '2025-07-11 01:09:40'),
+	(916, 157, 107, 'target_description', 'text', NULL, 'target A (this is changed)', NULL, 'added', '2025-07-11 01:09:40'),
+	(917, 157, 107, 'status_description', 'text', NULL, 'status A', NULL, 'added', '2025-07-11 01:09:40'),
+	(918, 157, 108, 'target_number', 'text', NULL, '21212', NULL, 'added', '2025-07-11 01:09:40'),
+	(919, 157, 108, 'target_description', 'text', NULL, 'target B', NULL, 'added', '2025-07-11 01:09:40'),
+	(920, 157, 108, 'status_description', 'text', NULL, 'status B', NULL, 'added', '2025-07-11 01:09:40'),
+	(921, 157, 105, 'target_number', 'text', '313131', NULL, NULL, 'removed', '2025-07-11 01:09:40'),
+	(922, 157, 105, 'target_description', 'text', 'target A', NULL, NULL, 'removed', '2025-07-11 01:09:40'),
+	(923, 157, 105, 'status_indicator', 'text', 'in_progress', NULL, NULL, 'removed', '2025-07-11 01:09:40'),
+	(924, 157, 105, 'status_description', 'text', 'status A', NULL, NULL, 'removed', '2025-07-11 01:09:40'),
+	(925, 157, 106, 'target_number', 'text', '21212', NULL, NULL, 'removed', '2025-07-11 01:09:40'),
+	(926, 157, 106, 'target_description', 'text', 'target B', NULL, NULL, 'removed', '2025-07-11 01:09:40'),
+	(927, 157, 106, 'status_indicator', 'text', 'completed', NULL, NULL, 'removed', '2025-07-11 01:09:40'),
+	(928, 157, 106, 'status_description', 'text', 'status B', NULL, NULL, 'removed', '2025-07-11 01:09:40'),
+	(929, 158, 109, 'target_number', 'text', NULL, '313131', NULL, 'added', '2025-07-11 01:11:43'),
+	(930, 158, 109, 'target_description', 'text', NULL, 'target A (this is changed)', NULL, 'added', '2025-07-11 01:11:43'),
+	(931, 158, 109, 'status_description', 'text', NULL, 'status A', NULL, 'added', '2025-07-11 01:11:43'),
+	(932, 158, 109, 'remarks', 'text', NULL, 'ini remark', NULL, 'added', '2025-07-11 01:11:43'),
+	(933, 158, 110, 'target_number', 'text', NULL, '21212', NULL, 'added', '2025-07-11 01:11:43'),
+	(934, 158, 110, 'target_description', 'text', NULL, 'target B', NULL, 'added', '2025-07-11 01:11:43'),
+	(935, 158, 110, 'status_description', 'text', NULL, 'status B', NULL, 'added', '2025-07-11 01:11:43'),
+	(936, 158, 107, 'target_number', 'text', '313131', NULL, NULL, 'removed', '2025-07-11 01:11:43'),
+	(937, 158, 107, 'target_description', 'text', 'target A (this is changed)', NULL, NULL, 'removed', '2025-07-11 01:11:43'),
+	(938, 158, 107, 'status_indicator', 'text', 'in_progress', NULL, NULL, 'removed', '2025-07-11 01:11:43'),
+	(939, 158, 107, 'status_description', 'text', 'status A', NULL, NULL, 'removed', '2025-07-11 01:11:43'),
+	(940, 158, 108, 'target_number', 'text', '21212', NULL, NULL, 'removed', '2025-07-11 01:11:43'),
+	(941, 158, 108, 'target_description', 'text', 'target B', NULL, NULL, 'removed', '2025-07-11 01:11:43'),
+	(942, 158, 108, 'status_indicator', 'text', 'completed', NULL, NULL, 'removed', '2025-07-11 01:11:43'),
+	(943, 158, 108, 'status_description', 'text', 'status B', NULL, NULL, 'removed', '2025-07-11 01:11:43'),
+	(944, 159, 111, 'target_number', 'text', NULL, '313131', NULL, 'added', '2025-07-11 01:16:04'),
+	(945, 159, 111, 'target_description', 'text', NULL, 'target A (this is changed)', NULL, 'added', '2025-07-11 01:16:04'),
+	(946, 159, 111, 'status_indicator', 'text', NULL, 'in_progress', NULL, 'added', '2025-07-11 01:16:04'),
+	(947, 159, 111, 'status_description', 'text', NULL, 'status A', NULL, 'added', '2025-07-11 01:16:04'),
+	(948, 159, 111, 'remarks', 'text', NULL, 'ini remark lagi', NULL, 'added', '2025-07-11 01:16:04'),
+	(949, 159, 112, 'target_number', 'text', NULL, '21212', NULL, 'added', '2025-07-11 01:16:04'),
+	(950, 159, 112, 'target_description', 'text', NULL, 'target B', NULL, 'added', '2025-07-11 01:16:04'),
+	(951, 159, 112, 'status_indicator', 'text', NULL, 'completed', NULL, 'added', '2025-07-11 01:16:04'),
+	(952, 159, 112, 'status_description', 'text', NULL, 'status B', NULL, 'added', '2025-07-11 01:16:04'),
+	(953, 159, 109, 'target_number', 'text', '313131', NULL, NULL, 'removed', '2025-07-11 01:16:04'),
+	(954, 159, 109, 'target_description', 'text', 'target A (this is changed)', NULL, NULL, 'removed', '2025-07-11 01:16:04'),
+	(955, 159, 109, 'status_indicator', 'text', 'in_progress', NULL, NULL, 'removed', '2025-07-11 01:16:04'),
+	(956, 159, 109, 'status_description', 'text', 'status A', NULL, NULL, 'removed', '2025-07-11 01:16:04'),
+	(957, 159, 109, 'remarks', 'text', 'ini remark', NULL, NULL, 'removed', '2025-07-11 01:16:04'),
+	(958, 159, 110, 'target_number', 'text', '21212', NULL, NULL, 'removed', '2025-07-11 01:16:04'),
+	(959, 159, 110, 'target_description', 'text', 'target B', NULL, NULL, 'removed', '2025-07-11 01:16:04'),
+	(960, 159, 110, 'status_indicator', 'text', 'completed', NULL, NULL, 'removed', '2025-07-11 01:16:04'),
+	(961, 159, 110, 'status_description', 'text', 'status B', NULL, NULL, 'removed', '2025-07-11 01:16:04'),
+	(962, 160, 113, 'target_number', 'text', NULL, '313131', NULL, 'added', '2025-07-11 01:35:38'),
+	(963, 160, 113, 'target_description', 'text', NULL, 'target A (this is changed again)', NULL, 'added', '2025-07-11 01:35:38'),
+	(964, 160, 113, 'status_indicator', 'text', NULL, 'in_progress', NULL, 'added', '2025-07-11 01:35:38'),
+	(965, 160, 113, 'status_description', 'text', NULL, 'status A', NULL, 'added', '2025-07-11 01:35:38'),
+	(966, 160, 113, 'remarks', 'text', NULL, 'ini remark lagi', NULL, 'added', '2025-07-11 01:35:38'),
+	(967, 160, 114, 'target_number', 'text', NULL, '21212', NULL, 'added', '2025-07-11 01:35:38'),
+	(968, 160, 114, 'target_description', 'text', NULL, 'target B', NULL, 'added', '2025-07-11 01:35:38'),
+	(969, 160, 114, 'status_indicator', 'text', NULL, 'completed', NULL, 'added', '2025-07-11 01:35:38'),
+	(970, 160, 114, 'status_description', 'text', NULL, 'status B', NULL, 'added', '2025-07-11 01:35:38'),
+	(971, 160, 111, 'target_number', 'text', '313131', NULL, NULL, 'removed', '2025-07-11 01:35:38'),
+	(972, 160, 111, 'target_description', 'text', 'target A (this is changed)', NULL, NULL, 'removed', '2025-07-11 01:35:38'),
+	(973, 160, 111, 'status_indicator', 'text', 'in_progress', NULL, NULL, 'removed', '2025-07-11 01:35:38'),
+	(974, 160, 111, 'status_description', 'text', 'status A', NULL, NULL, 'removed', '2025-07-11 01:35:38'),
+	(975, 160, 111, 'remarks', 'text', 'ini remark lagi', NULL, NULL, 'removed', '2025-07-11 01:35:38'),
+	(976, 160, 112, 'target_number', 'text', '21212', NULL, NULL, 'removed', '2025-07-11 01:35:38'),
+	(977, 160, 112, 'target_description', 'text', 'target B', NULL, NULL, 'removed', '2025-07-11 01:35:38'),
+	(978, 160, 112, 'status_indicator', 'text', 'completed', NULL, NULL, 'removed', '2025-07-11 01:35:38'),
+	(979, 160, 112, 'status_description', 'text', 'status B', NULL, NULL, 'removed', '2025-07-11 01:35:38'),
+	(980, 164, 116, 'target_number', 'text', NULL, '999', NULL, 'added', '2025-07-11 01:38:12'),
+	(981, 164, 116, 'target_description', 'text', NULL, 'target 111', NULL, 'added', '2025-07-11 01:38:12'),
+	(982, 164, 116, 'status_indicator', 'text', NULL, 'in_progress', NULL, 'added', '2025-07-11 01:38:12'),
+	(983, 164, 116, 'status_description', 'text', NULL, 'status 1', NULL, 'added', '2025-07-11 01:38:12'),
+	(984, 164, 117, 'target_number', 'text', NULL, '121', NULL, 'added', '2025-07-11 01:38:12'),
+	(985, 164, 117, 'target_description', 'text', NULL, 'target 222', NULL, 'added', '2025-07-11 01:38:12'),
+	(986, 164, 117, 'status_indicator', 'text', NULL, 'in_progress', NULL, 'added', '2025-07-11 01:38:12'),
+	(987, 164, 115, 'target_number', 'text', '999', NULL, NULL, 'removed', '2025-07-11 01:38:12'),
+	(988, 164, 115, 'target_description', 'text', 'target 111', NULL, NULL, 'removed', '2025-07-11 01:38:12'),
+	(989, 164, 115, 'status_indicator', 'text', 'in_progress', NULL, NULL, 'removed', '2025-07-11 01:38:12'),
+	(990, 164, 115, 'status_description', 'text', 'status 1', NULL, NULL, 'removed', '2025-07-11 01:38:12'),
+	(991, 165, 118, 'target_number', 'text', NULL, '999', NULL, 'added', '2025-07-11 01:42:48'),
+	(992, 165, 118, 'target_description', 'text', NULL, 'target 112', NULL, 'added', '2025-07-11 01:42:48'),
+	(993, 165, 118, 'status_indicator', 'text', NULL, 'in_progress', NULL, 'added', '2025-07-11 01:42:48'),
+	(994, 165, 118, 'status_description', 'text', NULL, 'status 1', NULL, 'added', '2025-07-11 01:42:48'),
+	(995, 165, 119, 'target_number', 'text', NULL, '121', NULL, 'added', '2025-07-11 01:42:48'),
+	(996, 165, 119, 'target_description', 'text', NULL, 'target 222', NULL, 'added', '2025-07-11 01:42:48'),
+	(997, 165, 119, 'status_indicator', 'text', NULL, 'in_progress', NULL, 'added', '2025-07-11 01:42:48'),
+	(998, 165, 116, 'target_number', 'text', '999', NULL, NULL, 'removed', '2025-07-11 01:42:48'),
+	(999, 165, 116, 'target_description', 'text', 'target 111', NULL, NULL, 'removed', '2025-07-11 01:42:48'),
+	(1000, 165, 116, 'status_indicator', 'text', 'in_progress', NULL, NULL, 'removed', '2025-07-11 01:42:48'),
+	(1001, 165, 116, 'status_description', 'text', 'status 1', NULL, NULL, 'removed', '2025-07-11 01:42:48'),
+	(1002, 165, 117, 'target_number', 'text', '121', NULL, NULL, 'removed', '2025-07-11 01:42:48'),
+	(1003, 165, 117, 'target_description', 'text', 'target 222', NULL, NULL, 'removed', '2025-07-11 01:42:48'),
+	(1004, 165, 117, 'status_indicator', 'text', 'in_progress', NULL, NULL, 'removed', '2025-07-11 01:42:48'),
+	(1005, 168, 120, 'target_description', 'text', 'target test 1', 'target test 1.1', NULL, 'modified', '2025-07-11 02:34:23'),
+	(1006, 168, 120, 'status_indicator', 'text', 'in_progress', 'not_started', NULL, 'modified', '2025-07-11 02:34:23'),
+	(1007, 168, 120, 'remarks', 'text', NULL, '', NULL, 'modified', '2025-07-11 02:34:23'),
+	(1008, 169, 120, 'status_indicator', 'text', 'not_started', 'in_progress', NULL, 'modified', '2025-07-11 02:37:27'),
+	(1009, 170, 120, 'start_date', 'date', NULL, '2025-07-04', NULL, 'modified', '2025-07-11 02:38:04'),
+	(1010, 170, 120, 'end_date', 'date', NULL, '2025-07-11', NULL, 'modified', '2025-07-11 02:38:04'),
+	(1011, 171, 121, 'target_number', 'text', NULL, '31.2.2', NULL, 'added', '2025-07-11 02:38:57'),
+	(1012, 171, 121, 'target_description', 'text', NULL, 'target lagi', NULL, 'added', '2025-07-11 02:38:57'),
+	(1013, 171, 121, 'status_indicator', 'text', NULL, 'delayed', NULL, 'added', '2025-07-11 02:38:57'),
+	(1014, 171, 121, 'status_description', 'text', NULL, 'statusss', NULL, 'added', '2025-07-11 02:38:57'),
+	(1015, 171, 121, 'remarks', 'text', NULL, 'reamsksks', NULL, 'added', '2025-07-11 02:38:57'),
+	(1016, 171, 121, 'start_date', 'date', NULL, '2025-07-04', NULL, 'added', '2025-07-11 02:38:57'),
+	(1017, 171, 121, 'end_date', 'date', NULL, '2025-07-18', NULL, 'added', '2025-07-11 02:38:57'),
+	(1018, 172, 118, 'target_number', 'text', '999', '', NULL, 'modified', '2025-07-11 02:56:37'),
+	(1019, 172, 119, 'target_number', 'text', '121', '', NULL, 'modified', '2025-07-11 02:56:37');
 
 -- Dumping structure for table pcds2030_db.audit_logs
 CREATE TABLE IF NOT EXISTS `audit_logs` (
@@ -900,7 +1005,7 @@ CREATE TABLE IF NOT EXISTS `audit_logs` (
   KEY `idx_entity_operation` (`action`,`created_at`)
 ) ENGINE=InnoDB AUTO_INCREMENT=156 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table pcds2030_db.audit_logs: ~109 rows (approximately)
+-- Dumping data for table pcds2030_db.audit_logs: ~153 rows (approximately)
 INSERT INTO `audit_logs` (`id`, `user_id`, `action`, `details`, `ip_address`, `status`, `created_at`) VALUES
 	(1, 12, 'create_program_failed', 'Program Name: adasdas | Error: Unknown column \'start_date\' in \'field list\'', '127.0.0.1', 'failure', '2025-07-05 13:02:34'),
 	(2, 12, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-05 13:04:08'),
@@ -1051,7 +1156,23 @@ INSERT INTO `audit_logs` (`id`, `user_id`, `action`, `details`, `ip_address`, `s
 	(152, 12, 'update_submission', 'Updated submission ID: 5 for program ID: 12', '127.0.0.1', 'success', '2025-07-10 23:00:11'),
 	(153, 12, 'update_submission', 'Updated submission ID: 5 for program ID: 12', '127.0.0.1', 'success', '2025-07-10 23:00:15'),
 	(154, 12, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-10 23:51:32'),
-	(155, 12, 'login_success', 'Username: user', '127.0.0.1', 'success', '2025-07-11 08:07:05');
+	(155, 12, 'login_success', 'Username: user', '127.0.0.1', 'success', '2025-07-11 08:07:05'),
+	(156, 12, 'create_program', 'Program Name: program B | Program ID: 13 | Program Number: 31.1', '127.0.0.1', 'success', '2025-07-11 09:08:00'),
+	(157, 12, 'update_submission', 'Updated submission ID: 6 for program ID: 13', '127.0.0.1', 'success', '2025-07-11 09:09:40'),
+	(158, 12, 'update_submission', 'Updated submission ID: 6 for program ID: 13', '127.0.0.1', 'success', '2025-07-11 09:11:43'),
+	(159, 12, 'update_submission', 'Updated submission ID: 6 for program ID: 13', '127.0.0.1', 'success', '2025-07-11 09:16:04'),
+	(160, 12, 'update_submission', 'Updated submission ID: 6 for program ID: 13', '127.0.0.1', 'success', '2025-07-11 09:35:38'),
+	(161, 12, 'delete_program', 'Program Name: program A | Program ID: 12', '127.0.0.1', 'success', '2025-07-11 09:36:05'),
+	(162, 12, 'delete_program', 'Program Name: program B | Program ID: 13', '127.0.0.1', 'success', '2025-07-11 09:36:08'),
+	(163, 12, 'create_program', 'Program Name: program test 1 | Program ID: 14 | Program Number: 31.1', '127.0.0.1', 'success', '2025-07-11 09:36:32'),
+	(164, 12, 'update_submission', 'Updated submission ID: 7 for program ID: 14', '127.0.0.1', 'success', '2025-07-11 09:38:12'),
+	(165, 12, 'update_submission', 'Updated submission ID: 7 for program ID: 14', '127.0.0.1', 'success', '2025-07-11 09:42:48'),
+	(166, 12, 'create_program', 'Program Name: program testing 2 | Program ID: 15 | Program Number: 31.2', '127.0.0.1', 'success', '2025-07-11 10:11:37'),
+	(168, 12, 'update_submission', 'Updated submission ID: 8 for program ID: 15', '127.0.0.1', 'success', '2025-07-11 10:34:23'),
+	(169, 12, 'update_submission', 'Updated submission ID: 8 for program ID: 15', '127.0.0.1', 'success', '2025-07-11 10:37:27'),
+	(170, 12, 'update_submission', 'Updated submission ID: 8 for program ID: 15', '127.0.0.1', 'success', '2025-07-11 10:38:03'),
+	(171, 12, 'update_submission', 'Updated submission ID: 8 for program ID: 15', '127.0.0.1', 'success', '2025-07-11 10:38:57'),
+	(172, 12, 'update_submission', 'Updated submission ID: 7 for program ID: 14', '127.0.0.1', 'success', '2025-07-11 10:56:37');
 
 -- Dumping structure for view pcds2030_db.audit_logs_with_changes
 -- Creating temporary table to overcome VIEW dependency errors
@@ -1161,12 +1282,13 @@ CREATE TABLE IF NOT EXISTS `programs` (
   CONSTRAINT `programs_ibfk_3` FOREIGN KEY (`created_by`) REFERENCES `users` (`user_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table pcds2030_db.programs: ~3 rows (approximately)
+-- Dumping data for table pcds2030_db.programs: ~5 rows (approximately)
 INSERT INTO `programs` (`program_id`, `initiative_id`, `program_name`, `program_number`, `rating`, `program_description`, `start_date`, `end_date`, `agency_id`, `is_deleted`, `created_by`, `created_at`, `updated_at`) VALUES
 	(1, 1, 'Test Program - New Schema', NULL, 'not_started', 'Test description for new schema', NULL, NULL, 5, 0, 2, '2025-07-09 00:30:11', '2025-07-09 06:52:50'),
 	(2, 1, 'Test Program - New Schema', NULL, 'not_started', 'Test description for new schema', NULL, NULL, 5, 0, 2, '2025-07-09 00:30:28', '2025-07-09 06:52:51'),
 	(3, 1, 'Test Program - New Schema', NULL, 'not_started', 'Test description for new schema', NULL, NULL, 5, 0, 2, '2025-07-09 00:30:52', '2025-07-09 06:52:53'),
-	(12, 3, 'program A', '31.A', 'not_started', 'short summaryw', '2025-07-03', '2025-07-10', 5, 0, 12, '2025-07-10 05:46:47', '2025-07-10 05:46:47');
+	(14, 3, 'program test 1', '31.1', 'not_started', 'summary', '2025-07-04', '2025-07-11', 5, 0, 12, '2025-07-11 01:36:32', '2025-07-11 01:36:32'),
+	(15, 3, 'program testing 2', '31.2', 'not_started', 'brieffffff', '2025-07-04', '2025-07-11', 5, 0, 12, '2025-07-11 02:11:37', '2025-07-11 02:11:37');
 
 -- Dumping structure for table pcds2030_db.program_attachments
 CREATE TABLE IF NOT EXISTS `program_attachments` (
@@ -1186,10 +1308,9 @@ CREATE TABLE IF NOT EXISTS `program_attachments` (
   CONSTRAINT `program_attachments_ibfk_2` FOREIGN KEY (`uploaded_by`) REFERENCES `users` (`user_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table pcds2030_db.program_attachments: ~4 rows (approximately)
+-- Dumping data for table pcds2030_db.program_attachments: ~1 rows (approximately)
 INSERT INTO `program_attachments` (`attachment_id`, `submission_id`, `file_name`, `file_path`, `file_size`, `file_type`, `uploaded_by`, `uploaded_at`, `is_deleted`) VALUES
-	(8, 5, 'Forestry_Q5-2025_20250709030726.pptx', '../../uploads/programs/attachments/5/1752153629_686fbe1df314a.pptx', 149101, 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 12, '2025-07-10 13:20:29', 0),
-	(9, 5, 'outcome_data.csv', '../../uploads/programs/attachments/5/1752154177_686fc041930f6.csv', 591, 'application/vnd.ms-excel', 12, '2025-07-10 13:29:37', 0);
+	(10, 7, 'Forestry_Q5-2025_20250709030726.pptx', '../../uploads/programs/attachments/7/1752202597_68707d65532d0.pptx', 149101, 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 12, '2025-07-11 02:56:37', 0);
 
 -- Dumping structure for table pcds2030_db.program_submissions
 CREATE TABLE IF NOT EXISTS `program_submissions` (
@@ -1212,10 +1333,11 @@ CREATE TABLE IF NOT EXISTS `program_submissions` (
   CONSTRAINT `program_submissions_ibfk_3` FOREIGN KEY (`submitted_by`) REFERENCES `users` (`user_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table pcds2030_db.program_submissions: ~1 rows (approximately)
+-- Dumping data for table pcds2030_db.program_submissions: ~3 rows (approximately)
 INSERT INTO `program_submissions` (`submission_id`, `program_id`, `period_id`, `is_draft`, `is_submitted`, `description`, `submitted_by`, `submitted_at`, `updated_at`, `is_deleted`) VALUES
 	(1, 3, 3, 1, 0, 'Test description for new schema', 2, NULL, '2025-07-09 00:30:52', 0),
-	(5, 12, 2, 1, 0, 'description shaja', 12, NULL, '2025-07-10 15:00:15', 0);
+	(7, 14, 2, 1, 0, 'desssisis', 12, '2025-07-10 17:37:07', '2025-07-11 02:56:37', 0),
+	(8, 15, 2, 1, 0, 'dsesse', 12, '2025-07-10 18:22:13', '2025-07-11 02:38:57', 0);
 
 -- Dumping structure for table pcds2030_db.program_targets
 CREATE TABLE IF NOT EXISTS `program_targets` (
@@ -1235,10 +1357,12 @@ CREATE TABLE IF NOT EXISTS `program_targets` (
   CONSTRAINT `program_targets_ibfk_1` FOREIGN KEY (`submission_id`) REFERENCES `program_submissions` (`submission_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=105 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table pcds2030_db.program_targets: ~2 rows (approximately)
+-- Dumping data for table pcds2030_db.program_targets: ~3 rows (approximately)
 INSERT INTO `program_targets` (`target_id`, `target_number`, `submission_id`, `target_description`, `status_indicator`, `status_description`, `remarks`, `start_date`, `end_date`, `is_deleted`) VALUES
-	(103, '123', 5, 'target 1', 'completed', 'status description 123333', 'remark', NULL, NULL, 0),
-	(104, '', 5, 'gsagsgds', 'not_started', 'dsdsfdsfds', 'dsfdsfdsfds', NULL, NULL, 0);
+	(118, '', 7, 'target 112', 'in_progress', 'status 1', '', NULL, NULL, 0),
+	(119, '', 7, 'target 222', 'in_progress', '', '', NULL, NULL, 0),
+	(120, '31.2.1', 8, 'target test 1.1', 'in_progress', 'statusssss test 1', '', '2025-07-04', '2025-07-11', 0),
+	(121, '31.2.2', 8, 'target lagi', 'delayed', 'statusss', 'reamsksks', '2025-07-04', '2025-07-18', 0);
 
 -- Dumping structure for table pcds2030_db.program_user_assignments
 CREATE TABLE IF NOT EXISTS `program_user_assignments` (
@@ -1254,12 +1378,13 @@ CREATE TABLE IF NOT EXISTS `program_user_assignments` (
   CONSTRAINT `program_user_assignments_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table pcds2030_db.program_user_assignments: ~3 rows (approximately)
+-- Dumping data for table pcds2030_db.program_user_assignments: ~4 rows (approximately)
 INSERT INTO `program_user_assignments` (`assignment_id`, `program_id`, `user_id`, `role`, `assigned_at`) VALUES
 	(1, 1, 2, 'editor', '2025-07-09 00:30:11'),
 	(2, 2, 2, 'editor', '2025-07-09 00:30:28'),
 	(3, 3, 2, 'editor', '2025-07-09 00:30:52'),
-	(12, 12, 12, 'editor', '2025-07-10 05:46:47');
+	(14, 14, 12, 'editor', '2025-07-11 01:36:32'),
+	(15, 15, 12, 'editor', '2025-07-11 02:11:37');
 
 -- Dumping structure for table pcds2030_db.reporting_periods
 CREATE TABLE IF NOT EXISTS `reporting_periods` (

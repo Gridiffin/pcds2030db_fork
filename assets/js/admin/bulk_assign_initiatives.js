@@ -15,13 +15,11 @@ document.addEventListener('DOMContentLoaded', function() {
  */
 function initializeFiltering() {
     const searchInput = document.getElementById('programSearch');
-    const sectorFilter = document.getElementById('sectorFilter');
     const initiativeFilter = document.getElementById('initiativeFilter');
     const resetButton = document.getElementById('resetFilters');
     
     // Add event listeners
     searchInput?.addEventListener('input', filterPrograms);
-    sectorFilter?.addEventListener('change', filterPrograms);
     initiativeFilter?.addEventListener('change', filterPrograms);
     resetButton?.addEventListener('click', resetFilters);
 }
@@ -118,25 +116,18 @@ function initializeBulkAssignment() {
  */
 function filterPrograms() {
     const searchValue = document.getElementById('programSearch')?.value.toLowerCase() || '';
-    const sectorValue = document.getElementById('sectorFilter')?.value || '';
     const initiativeValue = document.getElementById('initiativeFilter')?.value || '';
     
     const rows = document.querySelectorAll('#programsTable tbody tr');
     
     rows.forEach(row => {
         const programName = row.querySelector('td:nth-child(2)')?.textContent.toLowerCase() || '';
-        const sectorId = row.getAttribute('data-sector-id') || '';
         const initiativeId = row.getAttribute('data-initiative-id') || '';
         
         let visible = true;
         
         // Search filter
         if (searchValue && !programName.includes(searchValue)) {
-            visible = false;
-        }
-        
-        // Sector filter
-        if (sectorValue && sectorId !== sectorValue) {
             visible = false;
         }
         
@@ -163,7 +154,6 @@ function filterPrograms() {
  */
 function resetFilters() {
     document.getElementById('programSearch').value = '';
-    document.getElementById('sectorFilter').value = '';
     document.getElementById('initiativeFilter').value = '';
     
     // Show all rows
