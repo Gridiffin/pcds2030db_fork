@@ -146,7 +146,7 @@ $header_config = [
                        </button>'
         ],
         [
-            'url' => 'view_outcome.php?id=' . $outcome_id,
+            'url' => 'submit_outcomes.php',
             'text' => 'Cancel',
             'icon' => 'fas fa-times',
             'class' => 'btn-outline-secondary'
@@ -208,14 +208,26 @@ require_once '../../layouts/page_header.php';
                 <?php if ($outcome['type'] === 'kpi'): ?>
                     <?php $kpi_data = is_array($outcome['data']) ? $outcome['data'] : json_decode($outcome['data'], true); ?>
                     <?php if (!empty($kpi_data)): ?>
-                        <div class="row mb-4">
-                            <?php foreach ($kpi_data as $key => $value): ?>
-                                <div class="col-md-4 mb-3">
-                                    <label class="form-label text-uppercase text-muted small" for="kpi_<?= htmlspecialchars($key) ?>"><?= htmlspecialchars($key) ?></label>
-                                    <input type="text" class="form-control" id="kpi_<?= htmlspecialchars($key) ?>" name="data[<?= htmlspecialchars($key) ?>]" value="<?= htmlspecialchars($value) ?>">
+                        <?php foreach ($kpi_data as $idx => $item): ?>
+                            <div class="row mb-3 align-items-end">
+                                <div class="col-md-5">
+                                    <label class="form-label">Description</label>
+                                    <input type="text" class="form-control" name="data[<?= $idx ?>][description]" value="<?= htmlspecialchars($item['description'] ?? '') ?>">
                                 </div>
-                            <?php endforeach; ?>
-                        </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Value</label>
+                                    <input type="text" class="form-control" name="data[<?= $idx ?>][value]" value="<?= htmlspecialchars($item['value'] ?? '') ?>">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Unit</label>
+                                    <input type="text" class="form-control" name="data[<?= $idx ?>][unit]" value="<?= htmlspecialchars($item['unit'] ?? '') ?>">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Extra</label>
+                                    <input type="text" class="form-control" name="data[<?= $idx ?>][extra]" value="<?= htmlspecialchars($item['extra'] ?? '') ?>">
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
                     <?php else: ?>
                         <div class="alert alert-warning text-center my-4">
                             <i class="fas fa-exclamation-circle me-2"></i> No KPI data available for this outcome.
@@ -331,7 +343,7 @@ require_once '../../layouts/page_header.php';
                     <i class="fas fa-edit me-1"></i> Editing mode - Make your changes and click Save
                 </small>
                 <div>
-                    <button type="button" class="btn btn-outline-secondary btn-sm me-2" onclick="window.location.href='view_outcome.php?id=<?= $outcome_id ?>'">
+                    <button type="button" class="btn btn-outline-secondary btn-sm me-2" onclick="window.location.href='submit_outcomes.php'">
                         <i class="fas fa-times me-1"></i> Cancel
                     </button>
                     <button type="button" class="btn btn-success me-2 saveOutcomeBtn">

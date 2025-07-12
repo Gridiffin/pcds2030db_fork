@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS `audit_field_changes` (
   CONSTRAINT `fk_audit_field_changes_log` FOREIGN KEY (`audit_log_id`) REFERENCES `audit_logs` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=1021 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table pcds2030_db.audit_field_changes: ~935 rows (approximately)
+-- Dumping data for table pcds2030_db.audit_field_changes: ~936 rows (approximately)
 INSERT INTO `audit_field_changes` (`change_id`, `audit_log_id`, `target_id`, `field_name`, `field_type`, `old_value`, `new_value`, `target_snapshot`, `change_type`, `created_at`) VALUES
 	(1, 5, NULL, 'program_name', 'text', NULL, 'Test Program', NULL, 'added', '2025-07-05 15:34:01'),
 	(2, 5, NULL, 'description', 'text', NULL, 'This is a test program', NULL, 'added', '2025-07-05 15:34:01'),
@@ -1004,9 +1004,9 @@ CREATE TABLE IF NOT EXISTS `audit_logs` (
   KEY `created_at` (`created_at`),
   KEY `user_id` (`user_id`),
   KEY `idx_entity_operation` (`action`,`created_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=186 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=187 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table pcds2030_db.audit_logs: ~166 rows (approximately)
+-- Dumping data for table pcds2030_db.audit_logs: ~174 rows (approximately)
 INSERT INTO `audit_logs` (`id`, `user_id`, `action`, `details`, `ip_address`, `status`, `created_at`) VALUES
 	(1, 12, 'create_program_failed', 'Program Name: adasdas | Error: Unknown column \'start_date\' in \'field list\'', '127.0.0.1', 'failure', '2025-07-05 13:02:34'),
 	(2, 12, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-05 13:04:08'),
@@ -1186,7 +1186,8 @@ INSERT INTO `audit_logs` (`id`, `user_id`, `action`, `details`, `ip_address`, `s
 	(182, 12, 'update_program_failed', 'Program Name: program testing 2 | Program ID: 15 | Error: Data truncated for column \'rating\' at row 1', '127.0.0.1', 'failure', '2025-07-12 11:22:48'),
 	(183, 12, 'update_program_failed', 'Program Name: program testing 2 | Program ID: 15 | Error: Data truncated for column \'rating\' at row 1', '127.0.0.1', 'failure', '2025-07-12 11:23:01'),
 	(184, 12, 'update_program_failed', 'Program Name: program testing 2 | Program ID: 15 | Error: Data truncated for column \'rating\' at row 1', '127.0.0.1', 'failure', '2025-07-12 11:29:50'),
-	(185, 12, 'update_submission', 'Updated submission ID: 8 for program ID: 15', '127.0.0.1', 'success', '2025-07-12 11:49:18');
+	(185, 12, 'update_submission', 'Updated submission ID: 8 for program ID: 15', '127.0.0.1', 'success', '2025-07-12 11:49:18'),
+	(186, 12, 'login_success', 'Username: user', '127.0.0.1', 'success', '2025-07-12 19:12:57');
 
 -- Dumping structure for view pcds2030_db.audit_logs_with_changes
 -- Creating temporary table to overcome VIEW dependency errors
@@ -1263,9 +1264,9 @@ CREATE TABLE IF NOT EXISTS `outcomes` (
 INSERT INTO `outcomes` (`id`, `code`, `type`, `title`, `description`, `data`, `updated_at`) VALUES
 	(1, 'timber_export', 'graph', 'Timber Export Value (RM)', 'Monthly timber export values', '{}', '2025-07-12 12:51:21'),
 	(2, 'degraded_area', 'graph', 'Total Degraded Area Restored (Ha)', 'Monthly degraded area restored', '{}', '2025-07-12 12:51:21'),
-	(3, 'kpi_programs', 'kpi', 'TPA Protection & Biodiversity Conservation Programs', 'Ongoing programs and initiatives by SFC (as of December 2024)', '{"unit": "programs", "value": 76}', '2025-07-12 12:51:21'),
-	(4, 'kpi_certification', 'kpi', 'Certification of FMU & FPMU', 'FMU and FPMU certified as of June 2025', '{"fmu_pct": 56.8, "fmu_val": 1705761, "fpmu_pct": 72.2, "fpmu_val": 128601}', '2025-07-12 12:51:21'),
-	(5, 'kpi_global', 'kpi', 'Global Recognition', 'SDGP UNESCO Global Geopark and ASEAN Heritage Parks (as of June 2025)', '{"sdgp": 100, "asean": 100}', '2025-07-12 12:51:21');
+	(3, 'kpi_programs', 'kpi', 'TPA Protection & Biodiversity Conservation Programs', 'Ongoing programs and initiatives by SFC (as of December 2024)', '[{"unit": "programs", "value": 76, "description": "On-going programs and initiatives by SFC (as of December 2024)"}]', '2025-07-12 19:44:52'),
+	(4, 'kpi_certification', 'kpi', 'Certification of FMU & FPMU', 'FMU and FPMU certified as of June 2025', '[{"unit": "%", "extra": "1,705,761 ha FMU Certified", "value": 56.8, "description": "FMU Certified (as of June 2025)"}, {"unit": "%", "extra": "128,601 ha FPMU Certified", "value": 72.2, "description": "FPMU Certified (as of June 2025)"}]', '2025-07-12 19:44:52'),
+	(5, 'kpi_global', 'kpi', 'Global Recognition', 'SDGP UNESCO Global Geopark and ASEAN Heritage Parks (as of June 2025)', '[{"unit": "%", "value": 100, "description": "SDGP UNESCO Global Geopark"}, {"unit": "%", "value": 100, "description": "ASEAN Heritage Parks"}]', '2025-07-12 19:44:52');
 
 -- Dumping structure for table pcds2030_db.programs
 CREATE TABLE IF NOT EXISTS `programs` (
@@ -1388,7 +1389,7 @@ CREATE TABLE IF NOT EXISTS `program_user_assignments` (
   CONSTRAINT `program_user_assignments_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table pcds2030_db.program_user_assignments: ~0 rows (approximately)
+-- Dumping data for table pcds2030_db.program_user_assignments: ~5 rows (approximately)
 INSERT INTO `program_user_assignments` (`assignment_id`, `program_id`, `user_id`, `role`, `assigned_at`) VALUES
 	(1, 1, 2, 'editor', '2025-07-09 00:30:11'),
 	(2, 2, 2, 'editor', '2025-07-09 00:30:28'),
@@ -1413,7 +1414,7 @@ CREATE TABLE IF NOT EXISTS `reporting_periods` (
   CONSTRAINT `chk_valid_period_numbers` CHECK ((((`period_type` = _utf8mb4'quarter') and (`period_number` between 1 and 4)) or ((`period_type` = _utf8mb4'half') and (`period_number` between 1 and 2)) or ((`period_type` = _utf8mb4'yearly') and (`period_number` = 1))))
 ) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table pcds2030_db.reporting_periods: ~0 rows (approximately)
+-- Dumping data for table pcds2030_db.reporting_periods: ~7 rows (approximately)
 INSERT INTO `reporting_periods` (`period_id`, `year`, `period_type`, `period_number`, `start_date`, `end_date`, `status`, `updated_at`, `created_at`) VALUES
 	(1, 2025, 'quarter', 1, '2025-01-01', '2025-03-31', 'closed', '2025-07-06 01:54:35', '2025-04-17 02:54:12'),
 	(2, 2025, 'quarter', 2, '2025-04-01', '2025-06-30', 'closed', '2025-07-01 00:29:54', '2025-04-17 02:54:12'),
@@ -1462,7 +1463,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   CONSTRAINT `users_ibfk_1` FOREIGN KEY (`agency_id`) REFERENCES `agency` (`agency_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=46 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table pcds2030_db.users: ~0 rows (approximately)
+-- Dumping data for table pcds2030_db.users: ~13 rows (approximately)
 INSERT INTO `users` (`user_id`, `username`, `pw`, `fullname`, `email`, `agency_id`, `role`, `created_at`, `updated_at`, `is_active`) VALUES
 	(1, 'admin', '$2y$10$XsLEVjglthHpji3ONspyx.0YT/BxTe.fzDAUK4Jydg7oC8uQnc3V.', 'System Administrator', 'admin@pcds2030.gov.my', 4, 'admin', '2025-03-25 01:31:15', '2025-07-05 15:16:34', 1),
 	(2, 'stidc1', '$2y$10$nQCMzJPe8xSV0F0uxFebeeNtFJnsCegdRJE7GEjpBmONWn/msBfI6', 'STIDC User 1', 'stidc1@stidc.gov.my', 1, 'focal', '2025-05-23 06:27:42', '2025-06-20 08:24:39', 1),

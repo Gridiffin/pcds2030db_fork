@@ -164,13 +164,21 @@ require_once '../../layouts/page_header.php';
                     <?php if ($type === 'kpi'): ?>
                         <?php if (!empty($outcome['data']) && is_array($outcome['data'])): ?>
                             <div class="row">
-                                <?php foreach ($outcome['data'] as $key => $value): ?>
-                                    <div class="col-md-4 mb-3">
+                                <?php foreach ($outcome['data'] as $item): ?>
+                                    <div class="col-md-6 mb-3">
                                         <div class="card card-body shadow-sm h-100">
-                                            <div class="fw-bold text-uppercase text-muted small mb-1"><?= htmlspecialchars($key) ?></div>
-                                            <div class="fs-4 fw-semibold">
-                                                <?= is_numeric($value) ? number_format($value, 2) : htmlspecialchars($value) ?>
+                                            <div class="fw-bold mb-1"><?= htmlspecialchars($item['description'] ?? '') ?></div>
+                                            <div class="fs-2 fw-semibold text-primary">
+                                                <?= isset($item['value']) ? htmlspecialchars($item['value']) : '' ?>
+                                                <?php if (!empty($item['unit'])): ?>
+                                                    <span class="fs-5 text-muted ms-1"><?= htmlspecialchars($item['unit']) ?></span>
+                                                <?php endif; ?>
                                             </div>
+                                            <?php if (!empty($item['extra'])): ?>
+                                                <div class="text-muted small mt-2">
+                                                    <?= htmlspecialchars($item['extra']) ?>
+                                                </div>
+                                            <?php endif; ?>
                                         </div>
                                     </div>
                                 <?php endforeach; ?>
