@@ -13,6 +13,7 @@ require_once ROOT_PATH . 'app/lib/session.php';
 require_once ROOT_PATH . 'app/lib/functions.php';
 require_once ROOT_PATH . 'app/lib/agency_functions.php';
 require_once ROOT_PATH . 'app/lib/audit_log.php';
+require_once ROOT_PATH . 'app/lib/agencies/outcomes.php';
 
 // Verify user is an agency user
 if (!is_agency()) {
@@ -21,38 +22,28 @@ if (!is_agency()) {
 }
 
 // Get outcome ID from URL
-$outcome_id = isset($_GET['outcome_id']) ? intval($_GET['outcome_id']) : 0;
-
+$outcome_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 if ($outcome_id === 0) {
     $_SESSION['error_message'] = 'Invalid outcome ID.';
     header('Location: submit_outcomes.php');
     exit;
 }
 
-$sector_id = $_SESSION['sector_id'] ?? 0;
-
-// Get outcome data
-$query = "SELECT sod.*, u.username as submitted_by_username 
-          FROM sector_outcomes_data sod 
-          LEFT JOIN users u ON sod.submitted_by = u.user_id 
-          WHERE sod.metric_id = ? AND sod.sector_id = ?";
-$stmt = $conn->prepare($query);
-$stmt->bind_param("ii", $outcome_id, $sector_id);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows === 0) {
-    $_SESSION['error_message'] = 'Outcome not found or you do not have permission to view it.';
+// Fetch outcome from new outcomes table
+$outcome = get_outcome_by_id($outcome_id);
+if (!$outcome) {
+    $_SESSION['error_message'] = 'Outcome not found.';
     header('Location: submit_outcomes.php');
     exit;
 }
 
-$row = $result->fetch_assoc();
-$table_name = $row['table_name'];
-$created_at = new DateTime($row['created_at']);
-$updated_at = new DateTime($row['updated_at']);
-$outcome_data = json_decode($row['data_json'], true);
-$is_draft = (bool)$row['is_draft'];
+// Extract fields
+$title = $outcome['title'];
+$code = $outcome['code'];
+$type = $outcome['type'];
+$description = $outcome['description'];
+$data = $outcome['data'];
+$updated_at = new DateTime($outcome['updated_at']);
 
 // Success message handling
 $success_message = '';
@@ -61,7 +52,7 @@ if (isset($_GET['saved']) && $_GET['saved'] == '1') {
 }
 
 // Parse the data structure (compatible with edit_outcome.php format)
-$data_array = $outcome_data ?? ['columns' => [], 'data' => []];
+$data_array = $data ?? ['columns' => [], 'data' => []];
 
 // Ensure we have the correct structure
 if (!isset($data_array['columns']) || !isset($data_array['data'])) {
@@ -96,11 +87,11 @@ require_once '../../layouts/header.php';
 // Configure modern page header
 $header_config = [
     'title' => 'View Outcome Details',
-    'subtitle' => htmlspecialchars($table_name) . ($is_draft ? ' (Draft)' : ' (Submitted)'),
+    'subtitle' => htmlspecialchars($outcome['title']),
     'variant' => 'white',
     'actions' => [
         [
-            'url' => 'edit_outcome.php?outcome_id=' . $outcome_id,
+            'url' => 'edit_outcome.php?id=' . $outcome_id,
             'text' => 'Edit Outcome',
             'icon' => 'fas fa-edit',
             'class' => 'btn-outline-primary'
@@ -132,13 +123,9 @@ require_once '../../layouts/page_header.php';
         <div class="card-header bg-info text-white">
             <div class="d-flex justify-content-between align-items-center">
                 <h5 class="card-title m-0">
-                    <i class="fas fa-table me-2"></i><?= htmlspecialchars($table_name) ?>
+                    <i class="fas fa-table me-2"></i><?= htmlspecialchars($outcome['title']) ?>
                 </h5>
-                <div>
-                    <span class="badge bg-success">
-                        <i class="fas fa-check-circle me-1"></i> Flexible Structure
-                    </span>
-                </div>
+                <!-- Removed the green badge for Flexible Structure -->
             </div>
         </div>
         
@@ -148,12 +135,6 @@ require_once '../../layouts/page_header.php';
                 <button class="nav-link active" id="table-tab" data-bs-toggle="tab" data-bs-target="#table-view" 
                     type="button" role="tab" aria-controls="table-view" aria-selected="true">
                     <i class="fas fa-table me-1"></i> Table View
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="structure-tab" data-bs-toggle="tab" data-bs-target="#structure-view" 
-                    type="button" role="tab" aria-controls="structure-view" aria-selected="false">
-                    <i class="fas fa-cogs me-1"></i> Structure Info
                 </button>
             </li>
             <li class="nav-item" role="presentation">
@@ -170,203 +151,117 @@ require_once '../../layouts/page_header.php';
             <div class="tab-pane fade show active" id="table-view" role="tabpanel" aria-labelledby="table-tab">
                 <div class="card-body">
                     <div class="row mb-4">
-                        <div class="col-md-6">
+                        <div class="col-md-12">
                             <div class="mb-3">
-                                <strong>Outcome ID:</strong> <?= $outcome_id ?>
+                                <strong>Description:</strong> <?= htmlspecialchars($description) ?>
                             </div>
                             <div class="mb-3">
-                                <strong>Structure Type:</strong> 
-                                <span class="badge bg-primary">Flexible Table</span>
-                            </div>
-                            <div class="mb-3">
-                                <strong>Created:</strong> <?= $created_at->format('F j, Y g:i A') ?>
-                            </div>
-                            <?php if ($created_at->format('Y-m-d H:i:s') !== $updated_at->format('Y-m-d H:i:s')): ?>
-                            <div class="mb-3">
-                                <strong>Last Updated:</strong> <?= $updated_at->format('F j, Y g:i A') ?>
-                            </div>
-                            <?php endif; ?>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <strong>Columns:</strong> <?= count($columns) ?>
-                            </div>
-                            <div class="mb-3">
-                                <strong>Rows:</strong> <?= count($row_labels) ?>
-                            </div>
-                            <div class="mb-3">
-                                <strong>Data Points:</strong> <?= count($columns) * count($row_labels) ?>
+                                <strong>Updated:</strong> <?= $updated_at->format('F j, Y g:i A') ?>
                             </div>
                         </div>
                     </div>
 
-                    <?php if ($has_data): ?>
-                    <!-- View Mode: Read-only Table -->
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-hover">
-                            <thead class="table-light">
-                                <tr>
-                                    <th style="width: 150px;">Row</th>
-                                    <?php foreach ($columns as $column): ?>
-                                        <th class="text-center">
-                                            <?php if (is_array($column)): ?>
-                                                <?= htmlspecialchars($column['label'] ?? $column['id']) ?>
-                                                <?php if (!empty($column['unit'])): ?>
-                                                    <br><small class="text-muted">(<?= htmlspecialchars($column['unit']) ?>)</small>
-                                                <?php endif; ?>
-                                            <?php else: ?>
-                                                <?= htmlspecialchars($column) ?>
-                                            <?php endif; ?>
-                                        </th>
-                                    <?php endforeach; ?>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($row_labels as $row_label): ?>
+                    <?php if ($type === 'kpi'): ?>
+                        <?php if (!empty($outcome['data']) && is_array($outcome['data'])): ?>
+                            <div class="row">
+                                <?php foreach ($outcome['data'] as $key => $value): ?>
+                                    <div class="col-md-4 mb-3">
+                                        <div class="card card-body shadow-sm h-100">
+                                            <div class="fw-bold text-uppercase text-muted small mb-1"><?= htmlspecialchars($key) ?></div>
+                                            <div class="fs-4 fw-semibold">
+                                                <?= is_numeric($value) ? number_format($value, 2) : htmlspecialchars($value) ?>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php else: ?>
+                            <div class="alert alert-warning text-center my-4">
+                                <i class="fas fa-exclamation-circle me-2"></i> No KPI data available for this outcome.
+                            </div>
+                        <?php endif; ?>
+                    <?php elseif ($type === 'graph'): ?>
+                        <?php if ($has_data): ?>
+                        <!-- View Mode: Read-only Table -->
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead class="table-light">
                                     <tr>
-                                        <td>
-                                            <span class="row-badge">
-                                                <?= htmlspecialchars($row_label) ?>
-                                            </span>
-                                        </td>
+                                        <th style="width: 150px;">Row</th>
                                         <?php foreach ($columns as $column): ?>
-                                            <td class="text-end">
-                                                <?php 
+                                            <th class="text-center">
+                                                <?php if (is_array($column)): ?>
+                                                    <?= htmlspecialchars($column['label'] ?? $column['id']) ?>
+                                                    <?php if (!empty($column['unit'])): ?>
+                                                        <br><small class="text-muted">(<?= htmlspecialchars($column['unit']) ?>)</small>
+                                                    <?php endif; ?>
+                                                <?php else: ?>
+                                                    <?= htmlspecialchars($column) ?>
+                                                <?php endif; ?>
+                                            </th>
+                                        <?php endforeach; ?>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($row_labels as $row_label): ?>
+                                        <tr>
+                                            <td>
+                                                <span class="row-badge">
+                                                    <?= htmlspecialchars($row_label) ?>
+                                                </span>
+                                            </td>
+                                            <?php foreach ($columns as $column): ?>
+                                                <td class="text-end">
+                                                    <?php 
+                                                    $col_id = $column['id'] ?? $column;
+                                                    $value = $data[$row_label][$col_id] ?? 0;
+                                                    // Handle empty strings and non-numeric values safely
+                                                    if (is_numeric($value) && $value !== '') {
+                                                        echo number_format((float)$value, 2);
+                                                    } else {
+                                                        echo htmlspecialchars($value);
+                                                    }
+                                                    ?>
+                                                </td>
+                                            <?php endforeach; ?>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                    <!-- Total Row -->
+                                    <?php if (!empty($columns)): ?>
+                                    <tr class="table-light">
+                                        <td class="fw-bold">TOTAL</td>
+                                        <?php foreach ($columns as $column): ?>
+                                            <td class="fw-bold text-end">
+                                                <?php
                                                 $col_id = $column['id'] ?? $column;
-                                                $value = $data[$row_label][$col_id] ?? 0;
-                                                // Handle empty strings and non-numeric values safely
-                                                if (is_numeric($value) && $value !== '') {
-                                                    echo number_format((float)$value, 2);
-                                                } else {
-                                                    echo htmlspecialchars($value);
+                                                $total = 0;
+                                                foreach ($row_labels as $row_label) {
+                                                    $cell_value = $data[$row_label][$col_id] ?? 0;
+                                                    // Only add numeric values to total
+                                                    if (is_numeric($cell_value) && $cell_value !== '') {
+                                                        $total += (float)$cell_value;
+                                                    }
                                                 }
+                                                echo number_format($total, 2);
                                                 ?>
                                             </td>
                                         <?php endforeach; ?>
                                     </tr>
-                                <?php endforeach; ?>
-                                
-                                <!-- Total Row -->
-                                <?php if (!empty($columns)): ?>
-                                <tr class="table-light">
-                                    <td class="fw-bold">TOTAL</td>
-                                    <?php foreach ($columns as $column): ?>
-                                        <td class="fw-bold text-end">
-                                            <?php
-                                            $col_id = $column['id'] ?? $column;
-                                            $total = 0;
-                                            foreach ($row_labels as $row_label) {
-                                                $cell_value = $data[$row_label][$col_id] ?? 0;
-                                                // Only add numeric values to total
-                                                if (is_numeric($cell_value) && $cell_value !== '') {
-                                                    $total += (float)$cell_value;
-                                                }
-                                            }
-                                            echo number_format($total, 2);
-                                            ?>
-                                        </td>
-                                    <?php endforeach; ?>
-                                </tr>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                    <?php else: ?>
-                    <!-- Empty State -->
-                    <div class="text-center py-5">
-                        <div class="mb-3">
-                            <i class="fas fa-table fa-3x text-muted"></i>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
                         </div>
-                        <h5 class="text-muted">No Data Available</h5>
-                        <p class="text-muted">This outcome doesn't have any data yet.</p>
-                        <a href="edit_outcome.php?outcome_id=<?= $outcome_id ?>" class="btn btn-primary">
-                            <i class="fas fa-edit me-1"></i> Add Data
-                        </a>
-                    </div>
+                        <?php else: ?>
+                        <!-- Empty State -->
+                        <div class="text-center py-5">
+                            <div class="mb-3">
+                                <i class="fas fa-table fa-3x text-muted"></i>
+                            </div>
+                            <h5 class="text-muted">No Data Available</h5>
+                            <p class="text-muted">This outcome doesn't have any data yet.</p>
+                        </div>
+                        <?php endif; ?>
                     <?php endif; ?>
-                </div>
-            </div>
-            
-            <!-- Structure Info Tab -->
-            <div class="tab-pane fade" id="structure-view" role="tabpanel" aria-labelledby="structure-tab">
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6 class="text-primary">
-                                <i class="fas fa-list me-2"></i>Row Configuration
-                            </h6>
-                            <?php if (!empty($row_labels)): ?>
-                            <div class="table-responsive">
-                                <table class="table table-sm">
-                                    <thead>
-                                        <tr>
-                                            <th>Label</th>
-                                            <th>Index</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php foreach ($row_labels as $index => $row_label): ?>
-                                        <tr>
-                                            <td><?= htmlspecialchars($row_label) ?></td>
-                                            <td>
-                                                <span class="badge bg-secondary"><?= $index + 1 ?></span>
-                                            </td>
-                                        </tr>
-                                        <?php endforeach; ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <?php else: ?>
-                            <p class="text-muted">No rows defined yet.</p>
-                            <?php endif; ?>
-                        </div>
-                        <div class="col-md-6">
-                            <h6 class="text-success">
-                                <i class="fas fa-columns me-2"></i>Column Configuration
-                            </h6>
-                            <?php if (!empty($columns)): ?>
-                            <div class="table-responsive">
-                                <table class="table table-sm">
-                                    <thead>
-                                        <tr>
-                                            <th>Label</th>
-                                            <th>Type</th>
-                                            <th>Unit</th>
-                                            <th>Index</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php foreach ($columns as $index => $column): ?>
-                                        <tr>
-                                            <?php if (is_array($column)): ?>
-                                                <td><?= htmlspecialchars($column['label'] ?? $column['id']) ?></td>
-                                                <td><?= htmlspecialchars($column['type'] ?? '-') ?></td>
-                                                <td><?= htmlspecialchars($column['unit'] ?? '-') ?></td>
-                                            <?php else: ?>
-                                                <td><?= htmlspecialchars($column) ?></td>
-                                                <td>-</td>
-                                                <td>-</td>
-                                            <?php endif; ?>
-                                            <td><span class="badge bg-info"><?= $index + 1 ?></span></td>
-                                        </tr>
-                                        <?php endforeach; ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <?php else: ?>
-                            <p class="text-muted">No columns defined yet.</p>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                    
-                    <!-- Raw Data Preview -->
-                    <hr class="my-4">
-                    <h6 class="text-warning">
-                        <i class="fas fa-code me-2"></i>Raw Data Structure
-                    </h6>
-                    <pre class="bg-light p-3 rounded" style="max-height: 200px; overflow-y: auto;">
-                        <code><?= htmlspecialchars(json_encode($data_array, JSON_PRETTY_PRINT)) ?></code>
-                    </pre>
                 </div>
             </div>
             
@@ -455,9 +350,6 @@ require_once '../../layouts/page_header.php';
                         </div>
                         <h5 class="text-muted">No Data to Chart</h5>
                         <p class="text-muted">Add some data to this outcome to see charts.</p>
-                        <a href="edit_outcome.php?outcome_id=<?= $outcome_id ?>" class="btn btn-primary">
-                            <i class="fas fa-edit me-1"></i> Add Data
-                        </a>
                     </div>
                     <?php endif; ?>
                 </div>
@@ -490,8 +382,7 @@ window.tableRows = <?= json_encode($row_labels) ?>;
 // Additional data for context
 const outcomeInfo = {
     id: <?= $outcome_id ?>,
-    tableName: <?= json_encode($table_name) ?>,
-    isDraft: <?= json_encode($is_draft) ?>,
+    title: <?= json_encode($outcome['title']) ?>,
     hasData: <?= json_encode($has_data) ?>
 };
 

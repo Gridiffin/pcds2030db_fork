@@ -20,6 +20,7 @@ require_once ROOT_PATH . 'app/lib/functions.php';
 require_once ROOT_PATH . 'app/lib/admins/index.php';
 require_once ROOT_PATH . 'app/lib/rating_helpers.php';
 require_once ROOT_PATH . 'app/lib/db_names_helper.php';
+require_once ROOT_PATH . 'app/lib/admins/outcomes.php'; // For new outcomes table functions
 
 // Verify user is admin
 if (!is_admin()) {
@@ -148,9 +149,9 @@ if (!$period) {
     exit;
 }
 
-// Since sectors table has been removed, use default sector info
+// Remove all sector logic and references
 $sector = [
-    'sector_id' => $sector_id,
+    'sector_id' => 1,
     'sector_name' => 'Forestry Sector'
 ];
 
@@ -158,11 +159,11 @@ $sector = [
 $quarter = get_period_display_name($period);
 
 // --- 1. Get Sector Leads (agencies with this sector, including focal agencies) ---
+// Remove sector_leads and sector-based filtering from queries and outputs
 $sector_leads_query = "SELECT GROUP_CONCAT(agency_name SEPARATOR '; ') as sector_leads 
                       FROM users 
-                      WHERE sector_id = ? AND role IN ('agency', 'focal') AND is_active = 1";
+                      WHERE role IN ('agency', 'focal') AND is_active = 1";
 $stmt = $conn->prepare($sector_leads_query);
-$stmt->bind_param("i", $sector_id);
 $stmt->execute();
 $sector_leads_result = $stmt->get_result();
 $sector_leads_row = $sector_leads_result->fetch_assoc();
@@ -320,326 +321,12 @@ $year_before_previous = $current_year - 2;
 $sector_outcomes = [];
 $charts_data = [];
 
-// Fetch outcomes_details data for KPI sections
-$outcomes_details = []; // This will hold the KPI data to be sent to the client
-
-// Process selected KPI IDs if provided - KPI selection functionality is removed.
-// The following block that processed $selected_kpi_ids_raw and fetched specific KPIs
-// is now entirely commented out or removed, so $outcomes_details remains empty here.
-
-/*
-if (!empty($selected_kpi_ids_raw)) {
-    $selected_kpi_ids = [];
-    if (is_string($selected_kpi_ids_raw)) {
-        $selected_kpi_ids = array_map('intval', explode(',', $selected_kpi_ids_raw));
-    } elseif (is_array($selected_kpi_ids_raw)) {
-        $selected_kpi_ids = array_map('intval', $selected_kpi_ids_raw);
-    }
-
-    $selected_kpi_ids = array_filter($selected_kpi_ids, function($id) {
-        return $id > 0;
-    });
-
-    if (!empty($selected_kpi_ids)) {
-        try {
-            $placeholders = implode(',', array_fill(0, count($selected_kpi_ids), '?'));
-            $order_fields = implode(',', $selected_kpi_ids);              $kpi_query = "SELECT detail_id, detail_name, detail_json FROM outcomes_details 
-                          WHERE is_draft = 0 AND detail_id IN ($placeholders)
-                          ORDER BY FIELD(detail_id, $order_fields)";
-            
-            $stmt_kpi = $conn->prepare($kpi_query);
-            if (!$stmt_kpi) {
-                throw new Exception("Database query preparation failed: " . $conn->error);
-            }
-            
-            $types = str_repeat('i', count($selected_kpi_ids));
-            $bind_params = array_merge([$types], $selected_kpi_ids);
-            
-            $ref_params = [];
-            foreach ($bind_params as $key => $value) {
-                $ref_params[$key] = &$bind_params[$key];
-            }
-            call_user_func_array([$stmt_kpi, 'bind_param'], $ref_params);
-
-            $stmt_kpi->execute();
-            $result_kpi = $stmt_kpi->get_result();
-              while ($row = $result_kpi->fetch_assoc()) {
-                $outcomes_details[] = [
-                    'id' => $row['detail_id'],
-                    'name' => $row['detail_name'],
-                    'detail_json' => $row['detail_json']
-                ];
-            }
-            $stmt_kpi->close();
-        } catch (Exception $e) {
-            ob_end_clean();
-            header('HTTP/1.1 500 Internal Server Error');
-            echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
-            exit;
-        }
-    }
+// Fetch all outcomes from the new outcomes table
+$outcomes = get_all_outcomes();
+$outcomes_by_code = [];
+foreach ($outcomes as $outcome) {
+    $outcomes_by_code[$outcome['code']] = $outcome;
 }
-*/
-
-// Fallback to old logic if no KPIs were selected or fetched (Now default behavior as $outcomes_details is empty)
-if (empty($outcomes_details)) {// First, try to find a "TPA Protection" metric specifically
-    $tpa_query = "SELECT detail_id, detail_name, detail_json FROM outcomes_details 
-                  WHERE is_draft = 0 
-                  AND (detail_name LIKE '%TPA%' OR detail_name LIKE '%Protection%' OR detail_name LIKE '%Biodiversity%') 
-                  ORDER BY created_at DESC LIMIT 1";
-    $tpa_result = $conn->query($tpa_query);    // Then get other metrics
-    $other_metrics_query = "SELECT detail_id, detail_name, detail_json FROM outcomes_details 
-                              WHERE is_draft = 0 
-                              AND (detail_name NOT LIKE '%TPA%' AND detail_name NOT LIKE '%Protection%' AND detail_name NOT LIKE '%Biodiversity%')
-                              ORDER BY created_at DESC LIMIT 2";
-    $other_metrics_result = $conn->query($other_metrics_query);    if ($tpa_result && $tpa_result->num_rows > 0) {
-        $row = $tpa_result->fetch_assoc();
-        $outcomes_details[] = [
-            'id' => $row['detail_id'],
-            'name' => $row['detail_name'],
-            'detail_json' => $row['detail_json']
-        ];
-    }    if ($other_metrics_result && $other_metrics_result->num_rows > 0) {
-        while ($row = $other_metrics_result->fetch_assoc()) {
-            // Ensure we don't add more than 3 KPIs in total for fallback
-            if (count($outcomes_details) < 3) {
-                $outcomes_details[] = [
-                    'id' => $row['detail_id'],
-                    'name' => $row['detail_name'],
-                    'detail_json' => $row['detail_json']
-                ];
-            }
-        }
-    }
-}
-
-// Calculate the latest 3 years dynamically
-$degraded_area_years = [
-    strval($year_before_previous), // 2023
-    strval($previous_year),        // 2024
-    strval($current_year)          // 2025
-];
-
-// Initialize degraded area data for the latest 3 years dynamically
-$degraded_area_data = [];
-foreach ($degraded_area_years as $year) {
-    $degraded_area_data[$year] = array_fill(0, 12, 0);
-}
-$degraded_area_units = '';
-
-// Query to find Total Degraded Area records
-$degraded_area_query = "SELECT m.data_json, m.table_name, m.row_config, m.column_config
-                        FROM sector_outcomes_data m 
-                        WHERE m.sector_id = ? 
-                        AND m.table_name = 'TOTAL DEGRADED AREA'
-                        AND m.is_draft = 0
-                        ORDER BY m.updated_at DESC LIMIT 1"; // Assuming one relevant record
-
-$stmt_degraded = $conn->prepare($degraded_area_query);
-if ($stmt_degraded) {
-    $stmt_degraded->bind_param("i", $sector_id);
-    $stmt_degraded->execute();
-    $degraded_result = $stmt_degraded->get_result();
-
-    if ($degraded_result->num_rows > 0) {
-        $row_degraded = $degraded_result->fetch_assoc();
-        $data_json_degraded = json_decode($row_degraded['data_json'], true);
-        $row_config = json_decode($row_degraded['row_config'], true);
-        $column_config = json_decode($row_degraded['column_config'], true);
-
-        // Check the actual data structure to determine the correct parsing approach
-        if (isset($data_json_degraded['data']) && isset($data_json_degraded['columns'])) {
-            // Standard format: {columns: [years], data: {month: {year: value}}}
-            $year_columns = $data_json_degraded['columns'];
-            $monthly_data_rows = $data_json_degraded['data'];
-        } else {
-            // No valid data structure found
-            $year_columns = [];
-            $monthly_data_rows = [];
-        }
-
-        if (!empty($year_columns) && !empty($monthly_data_rows)) {
-
-            foreach ($monthly_labels as $month_index => $month_name_short) {
-                // Find the full month name key used in data_json (e.g., 'January', 'February')
-                $full_month_name = '';
-                foreach (array_keys($monthly_data_rows) as $json_month_key) {
-                    if (strtoupper(substr($json_month_key, 0, 3)) === $month_name_short) {
-                        $full_month_name = $json_month_key;
-                        break;
-                    }
-                }                if ($full_month_name && isset($monthly_data_rows[$full_month_name])) {
-                    $month_values = $monthly_data_rows[$full_month_name];
-                    foreach ($degraded_area_years as $year) {
-                        // Standard format - use year as string key
-                        if (in_array($year, $year_columns) && isset($month_values[$year]) && is_numeric($month_values[$year])) {
-                            $degraded_area_data[$year][$month_index] = floatval($month_values[$year]);
-                        }
-                    }
-                }
-            }
-
-            // Extract units - check column_config first, then data_json, then default
-            $degraded_area_units = 'Ha'; // Default
-            
-            if (!empty($column_config) && isset($column_config['columns'])) {
-                // Try to get units from column config
-                foreach ($column_config['columns'] as $col) {
-                    if (!empty($col['unit'])) {
-                        $degraded_area_units = $col['unit'];
-                        break;
-                    }
-                }
-            } elseif (isset($data_json_degraded['units'])) {
-                // Try to get units from data_json
-                if (is_array($data_json_degraded['units'])) {
-                    $degraded_area_units = $data_json_degraded['units'][$current_year] ?? 
-                                         $data_json_degraded['units'][$previous_year] ?? 
-                                         $data_json_degraded['units'][array_key_first($data_json_degraded['units'])] ?? 'Ha';
-                } else {
-                    $degraded_area_units = $data_json_degraded['units'];
-                }
-            }
-        }
-    }
-    $stmt_degraded->close();
-} else {
-    // Handle error in preparing statement if necessary
-    error_log("Failed to prepare statement for degraded area data: " . $conn->error);
-}
-
-// Initialize timber export data for current year and previous year (instead of hardcoded 2022/2023)
-$timber_export_data = [
-    $current_year => array_fill(0, 12, 0), // Initialize with zeros for each month of current year
-    $previous_year => array_fill(0, 12, 0)  // Initialize with zeros for each month of previous year
-];
-
-// Query to find Timber Export Value records
-$timber_query = "SELECT m.data_json, m.table_name, m.row_config, m.column_config
-                FROM sector_outcomes_data m 
-                WHERE m.sector_id = ? 
-                AND m.table_name = 'TIMBER EXPORT VALUE'
-                AND m.is_draft = 0
-                ORDER BY m.updated_at DESC LIMIT 1";
-                
-$stmt = $conn->prepare($timber_query);
-$stmt->bind_param("i", $sector_id);
-$stmt->execute();
-$timber_result = $stmt->get_result();
-
-if ($timber_result->num_rows > 0) {
-    // Process timber export metrics data
-    while ($row = $timber_result->fetch_assoc()) {
-        $data = json_decode($row['data_json'], true);
-        $row_config = json_decode($row['row_config'], true);
-        $column_config = json_decode($row['column_config'], true);
-        
-        error_log("Processing TIMBER EXPORT data structure: " . json_encode([
-            'has_columns' => isset($data['columns']),
-            'has_data' => isset($data['data']), 
-            'columns' => $data['columns'] ?? null,
-            'data_keys' => isset($data['data']) ? array_keys($data['data']) : null
-        ]));
-        
-        // Process the standard format: {columns: [years], data: {month: {year: value}}}
-        if (isset($data['columns']) && isset($data['data'])) {
-            $current_year_str = (string)$current_year;
-            $previous_year_str = (string)$previous_year;
-            
-            // Check if the data follows the format where years are columns
-            if (in_array($current_year_str, $data['columns']) || in_array($previous_year_str, $data['columns'])) {
-                // Direct year-based structure with months as keys
-                foreach ($data['data'] as $month => $values) {
-                    // Get month index (0-based)
-                    $month_index = array_search(strtoupper(substr($month, 0, 3)), array_map('strtoupper', $monthly_labels));
-                    if ($month_index !== false) {
-                        // Store values for current year if available
-                        if (isset($values[$current_year_str]) && is_numeric($values[$current_year_str])) {
-                            $timber_export_data[$current_year][$month_index] = floatval($values[$current_year_str]);
-                            error_log("Set timber data for {$current_year} month {$month_index}: " . $values[$current_year_str]);
-                        }
-                        // Store values for previous year if available
-                        if (isset($values[$previous_year_str]) && is_numeric($values[$previous_year_str])) {
-                            $timber_export_data[$previous_year][$month_index] = floatval($values[$previous_year_str]);
-                            error_log("Set timber data for {$previous_year} month {$month_index}: " . $values[$previous_year_str]);
-                        }
-                    }
-                }
-                // We found the data, no need to look further
-                break;
-            }
-        }
-        
-        // Alternative structure checks (keep existing logic as fallback)
-        if (isset($data['columns']) && isset($data['data'])) {
-            // Legacy format fallback
-            $current_year_str = (string)$current_year;
-            $previous_year_str = (string)$previous_year;
-            
-            // Check if the data follows the format where years are columns
-            if (in_array($current_year_str, $data['columns']) || in_array($previous_year_str, $data['columns'])) {
-                // Direct year-based structure with months as keys
-                foreach ($data['data'] as $month => $values) {
-                    // Get month index (0-based)
-                    $month_index = array_search(strtoupper(substr($month, 0, 3)), array_map('strtoupper', $monthly_labels));
-                    if ($month_index !== false) {
-                        // Store values for current year if available
-                        if (isset($values[$current_year_str]) && is_numeric($values[$current_year_str])) {
-                            $timber_export_data[$current_year][$month_index] = floatval($values[$current_year_str]);
-                        }
-                        // Store values for previous year if available
-                        if (isset($values[$previous_year_str]) && is_numeric($values[$previous_year_str])) {
-                            $timber_export_data[$previous_year][$month_index] = floatval($values[$previous_year_str]);
-                        }
-                    }
-                }
-                // We found the data, no need to look further
-                break;
-            } else {
-                // Try the alternative structure where column names contain "timber export"
-                foreach ($data['columns'] as $column) {
-                    if (stripos($column, 'timber export') !== false || stripos($column, 'export value') !== false) {
-                        // This column contains timber export data
-                        foreach ($data['data'] as $month => $values) {
-                            if (isset($values[$column]) && is_numeric($values[$column])) {
-                                // Get month index (0-based)
-                                $month_index = array_search(strtoupper(substr($month, 0, 3)), array_map('strtoupper', $monthly_labels));
-                                if ($month_index !== false) {
-                                    // Check if year is specified in the data
-                                    if (isset($data['year'])) {
-                                        $year = (int)$data['year'];
-                                        if ($year == $current_year) {
-                                            $timber_export_data[$current_year][$month_index] = floatval($values[$column]);
-                                        } else if ($year == $previous_year) {
-                                            $timber_export_data[$previous_year][$month_index] = floatval($values[$column]);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-// Now query for other metrics data
-$metrics_query = "SELECT * FROM sector_outcomes_data 
-                  WHERE sector_id = ? AND period_id = ? AND is_draft = 0";
-$stmt = $conn->prepare($metrics_query);
-$stmt->bind_param("ii", $sector_id, $period_id);
-$stmt->execute();
-$metrics_result = $stmt->get_result();
-
-// Prepare the main chart data with the timber export values we found
-$main_chart_data = [
-    'labels' => $monthly_labels,
-    'data' . $previous_year => $timber_export_data[$previous_year],
-    'data' . $current_year => $timber_export_data[$current_year],
-    'total' . $previous_year => array_sum($timber_export_data[$previous_year]),
-    'total' . $current_year => array_sum($timber_export_data[$current_year])
-];
 
 // Add degraded area chart data using dynamic years
 $degraded_area_chart_data_prepared = [
@@ -663,19 +350,22 @@ $secondary_chart_data = [
     'total' . $current_year => "0"
 ];
 
-if ($metrics_result->num_rows > 0) {
-    // Process each metric
-    while ($metric = $metrics_result->fetch_assoc()) {
-        $data = json_decode($metric['data_json'], true);
-        
-        // Determine if it's a chart or a KPI based on the data structure
-        if (isset($data['type'])) {
-            if ($data['type'] === 'chart') {
-                $charts_data[$data['key']] = $data;
-            }
-        }
-    }
-}
+// Now query for other metrics data
+$metrics_query = "SELECT * FROM sector_outcomes_data 
+                  WHERE period_id = ? AND is_draft = 0";
+$stmt = $conn->prepare($metrics_query);
+$stmt->bind_param("i", $period_id);
+$stmt->execute();
+$metrics_result = $stmt->get_result();
+
+// Prepare the main chart data with the timber export values we found
+$main_chart_data = [
+    'labels' => $monthly_labels,
+    'data' . $previous_year => $timber_export_data[$previous_year],
+    'data' . $current_year => $timber_export_data[$current_year],
+    'total' . $previous_year => array_sum($timber_export_data[$previous_year]),
+    'total' . $current_year => array_sum($timber_export_data[$current_year])
+];
 
 // Set the chart titles and values based on the sector
 switch ($sector_id) {
@@ -737,7 +427,7 @@ $report_data = [
     'programs' => $programs, // Add programs with the correct key name that the frontend expects
     'charts' => $charts_data,    'draftDate' => $draft_date,
     'sector_id' => $sector_id,  // Include sector_id for client-side use
-    'outcomes_details' => $outcomes_details,  // This is the primary source for KPIs now
+    'outcomes' => $outcomes_by_code,  // This is the primary source for KPIs now
 ];
 
 // Remove any undefined variables reference that could cause PHP warnings

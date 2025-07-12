@@ -240,7 +240,27 @@ if (typeof window.ReportUI !== 'undefined') {
                 console.log('Programs in API data:', data.programs);
                 console.log('Sector info:', data.reportTitle, 'sector_id:', data.sector_id);
                 elements.statusMessage.textContent = 'Generating PPTX...';
-                return ReportPopulator.generatePresentation(data, elements.statusMessage);
+                // --- Map new outcomes object to outcomes_details array for slide populator ---
+                // Define the codes for the 3 KPI outcomes (update these codes as per your DB seed)
+                const KPI_CODES = ['kpi_1', 'kpi_2', 'kpi_3']; // Example codes, replace with actual codes
+                const outcomes = data.outcomes || {};
+                const outcomes_details = KPI_CODES.map(code => {
+                    const outcome = outcomes[code];
+                    if (outcome) {
+                        return {
+                            name: outcome.title || outcome.code,
+                            detail_json: JSON.stringify(outcome.data)
+                        };
+                    }
+                    return null;
+                }).filter(Boolean);
+                // Inject outcomes_details for slide populator compatibility
+                const dataForSlides = {
+                    ...data,
+                    outcomes_details
+                };
+                // --- End mapping ---
+                return ReportPopulator.generatePresentation(dataForSlides, elements.statusMessage);
             })
             .then(blob => {
                 elements.statusMessage.textContent = 'Saving report...';

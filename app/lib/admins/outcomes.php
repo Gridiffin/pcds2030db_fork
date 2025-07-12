@@ -81,105 +81,86 @@ function get_outcome_history($metric_id) {
     return $history;
 }
 
+// --- NEW OUTCOMES TABLE FUNCTIONS ---
 /**
- * Get all outcomes with JSON-based storage
- *
- * @param int|null $period_id Optional period ID to filter outcomes by
- * @param bool $include_drafts Whether to include draft (unsubmitted) outcomes
- * @return array List of outcomes
+ * Get all fixed outcomes from the new outcomes table
+ * @return array
  */
-function get_all_outcomes_data($period_id = null, $include_drafts = true) {
+function get_all_outcomes() {
     global $conn;
-    
-    $query = "SELECT sod.metric_id, sod.sector_id, sod.period_id, sod.table_name, sod.is_draft, sod.is_important,
-              rp.year, rp.quarter, sod.created_at, sod.updated_at 
-              FROM sector_outcomes_data sod
-              LEFT JOIN reporting_periods rp ON sod.period_id = rp.period_id";
-    
-    if (!$include_drafts) {
-        $query .= " WHERE sod.is_draft = 0";
-    } else {
-        $query .= " WHERE 1=1";
-    }
-    
-    // Add period filter if provided
-    if ($period_id) {
-        $query .= " AND sod.period_id = " . intval($period_id);
-    }
-    
-    $query .= " ORDER BY sod.metric_id DESC";
-    
+    $query = "SELECT * FROM outcomes ORDER BY id ASC";
     $result = $conn->query($query);
-    
     $outcomes = [];
     if ($result) {
         while ($row = $result->fetch_assoc()) {
+            $row['data'] = json_decode($row['data'], true);
             $outcomes[] = $row;
         }
     }
-
     return $outcomes;
 }
 
 /**
- * Get outcomes data for a specific metric ID
- *
- * @param int $metric_id The metric ID to retrieve
- * @return array|null The outcome data or null if not found
+ * Get outcome by code from the new outcomes table
+ * @param string $code
+ * @return array|null
  */
-function get_outcome_data($metric_id) {
+function get_outcome_by_code($code) {
     global $conn;
-      // Query the sector_outcomes_data table with proper JOINs for reporting period information
-    $query = "SELECT sod.*, rp.year, rp.quarter, rp.status as period_status,
-              COALESCE(u.username, 'System') as submitted_by_username
-              FROM sector_outcomes_data sod
-              LEFT JOIN reporting_periods rp ON sod.period_id = rp.period_id
-              LEFT JOIN users u ON sod.submitted_by = u.user_id
-              WHERE sod.metric_id = ?
-              LIMIT 1";
-    
+    $query = "SELECT * FROM outcomes WHERE code = ?";
     $stmt = $conn->prepare($query);
-    if (!$stmt) {
-        error_log("Failed to prepare statement: " . $conn->error);
-        return null;
-    }
-    
-    $stmt->bind_param("i", $metric_id);
-    
-    if (!$stmt->execute()) {
-        error_log("Failed to execute query: " . $stmt->error);
-        return null;
-    }
-    
+    $stmt->bind_param("s", $code);
+    $stmt->execute();
     $result = $stmt->get_result();
-    
     if ($result && $result->num_rows > 0) {
-        $data = $result->fetch_assoc();
-        
-        // Handle flexible structure data
-        if (!empty($data['table_structure_type']) && $data['table_structure_type'] === 'flexible') {
-            // Parse row and column configurations for flexible structures
-            if (!empty($data['row_config'])) {
-                $data['parsed_row_config'] = json_decode($data['row_config'], true);
-            }
-            if (!empty($data['column_config'])) {
-                $data['parsed_column_config'] = json_decode($data['column_config'], true);
-            }
-        }
-        
-        return $data;
+        $outcome = $result->fetch_assoc();
+        $outcome['data'] = json_decode($outcome['data'], true);
+        return $outcome;
     }
-    
     return null;
 }
 
 /**
- * Parse JSON data from sector outcomes
- *
- * @param string $json_data The JSON data string
- * @return array|null Parsed data or null if invalid
+ * Get outcome by ID from the new outcomes table
+ * @param int $id
+ * @return array|null
  */
-function parse_outcome_json_data($json_data) {
+function get_outcome_by_id($id) {
+    global $conn;
+    $query = "SELECT * FROM outcomes WHERE id = ?";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($result && $result->num_rows > 0) {
+        $outcome = $result->fetch_assoc();
+        $outcome['data'] = json_decode($outcome['data'], true);
+        return $outcome;
+    }
+    return null;
+}
+
+/**
+ * Update outcome data by code in the new outcomes table
+ * @param string $code
+ * @param array $data
+ * @return bool
+ */
+function update_outcome_data_by_code($code, $data) {
+    global $conn;
+    $data_json = json_encode($data);
+    $query = "UPDATE outcomes SET data = ?, updated_at = NOW() WHERE code = ?";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("ss", $data_json, $code);
+    return $stmt->execute();
+}
+
+/**
+ * Parse outcome JSON data
+ * @param string $json_data
+ * @return array|null
+ */
+function parse_outcome_json($json_data) {
     if (empty($json_data)) {
         return null;
     }
@@ -195,332 +176,34 @@ function parse_outcome_json_data($json_data) {
 }
 
 /**
- * Get outcome data with parsed JSON for display
- *
- * @param int $metric_id The metric ID to retrieve
- * @return array|null The outcome data with parsed JSON or null if not found
- */
-function get_outcome_data_for_display($metric_id) {
-    $outcome_data = get_outcome_data($metric_id);
-    
-    if (!$outcome_data) {
-        return null;
-    }
-    
-    // Parse the JSON data if it exists
-    if (!empty($outcome_data['data_json'])) {
-        $parsed_data = parse_outcome_json_data($outcome_data['data_json']);
-        $outcome_data['parsed_data'] = $parsed_data;
-    }
-    
-    return $outcome_data;
-}
-
-/**
- * Check if a metric ID exists in the outcomes table
- *
- * @param int $metric_id The metric ID to check
- * @return bool True if exists, false otherwise
- */
-function outcome_exists($metric_id) {
-    global $conn;
-    
-    $query = "SELECT COUNT(*) as count FROM sector_outcomes_data WHERE metric_id = ? AND is_draft = 0";
-    $stmt = $conn->prepare($query);
-    
-    if (!$stmt) {
-        return false;
-    }
-    
-    $stmt->bind_param("i", $metric_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($result) {
-        $row = $result->fetch_assoc();
-        return $row['count'] > 0;
-    }
-    
-    return false;
-}
-
-/**
- * Update an existing outcome with new data
- *
- * @param int $metric_id The metric ID to update
- * @param array $data The updated outcome data
- * @return bool True if successful, false otherwise
- */
-function update_outcome_data($metric_id, $data) {
-    global $conn;
-    
-    if (empty($metric_id) || !is_numeric($metric_id) || empty($data)) {
-        return false;
-    }
-    
-    // Start transaction
-    $conn->begin_transaction();
-    
-    try {
-        // Check if the outcome exists
-        if (!outcome_exists($metric_id)) {
-            error_log("Outcome with ID {$metric_id} not found for updating.");
-            $conn->rollback();
-            return false;
-        }
-        
-        // Prepare JSON data if needed
-        if (isset($data['data_json']) && is_array($data['data_json'])) {
-            $data['data_json'] = json_encode($data['data_json']);
-            
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                error_log("JSON encoding error: " . json_last_error_msg());
-                $conn->rollback();
-                return false;
-            }
-        }
-        
-        // Build the update query dynamically based on provided fields
-        $update_fields = [];
-        $types = '';
-        $values = [];
-        
-        foreach ($data as $field => $value) {
-            // Skip metric_id as it's our WHERE condition
-            if ($field === 'metric_id') {
-                continue;
-            }
-            
-            $update_fields[] = "{$field} = ?";
-            
-            // Add to parameter binding
-            if (is_int($value)) {
-                $types .= 'i';
-            } elseif (is_float($value)) {
-                $types .= 'd';
-            } elseif (is_bool($value)) {
-                $types .= 'i';
-                $value = $value ? 1 : 0;
-            } else {
-                $types .= 's';
-            }
-            
-            $values[] = $value;
-        }
-        
-        if (empty($update_fields)) {
-            $conn->rollback();
-            return false;
-        }
-        
-        // Add metric_id to the values array and parameter binding
-        $types .= 'i';
-        $values[] = $metric_id;
-        
-        $query = "UPDATE sector_outcomes_data SET " . implode(', ', $update_fields) . 
-                 " WHERE metric_id = ?";
-        
-        $stmt = $conn->prepare($query);
-        if (!$stmt) {
-            error_log("Failed to prepare update statement: " . $conn->error);
-            $conn->rollback();
-            return false;
-        }
-          // Use a different approach to bind parameters dynamically
-        $stmt->bind_param($types, ...$values);
-        
-        if (!$stmt->execute()) {
-            error_log("Failed to execute update query: " . $stmt->error);
-            $conn->rollback();
-            return false;
-        }
-        
-        // Commit transaction
-        $conn->commit();
-        return true;
-        
-    } catch (Exception $e) {
-        error_log("Exception in update_outcome_data: " . $e->getMessage());
-        $conn->rollback();
-        return false;
-    }
-}
-
-/**
- * Create a new outcome record
- *
- * @param array $data The outcome data to insert
- * @return int|false The new metric ID if successful, false otherwise
- */
-function create_outcome_data($data) {
-    global $conn;
-    
-    if (empty($data)) {
-        return false;
-    }
-    
-    // Start transaction
-    $conn->begin_transaction();
-    
-    try {
-        // Required fields
-        if (!isset($data['sector_id']) || !isset($data['period_id']) || !isset($data['table_name'])) {
-            error_log("Missing required fields for outcome creation");
-            $conn->rollback();
-            return false;
-        }
-        
-        // Prepare JSON data if needed
-        if (isset($data['data_json']) && is_array($data['data_json'])) {
-            $data['data_json'] = json_encode($data['data_json']);
-            
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                error_log("JSON encoding error: " . json_last_error_msg());
-                $conn->rollback();
-                return false;
-            }
-        }
-        
-        // Build the insert query dynamically
-        $fields = array_keys($data);
-        $placeholders = array_fill(0, count($fields), '?');
-        
-        $query = "INSERT INTO sector_outcomes_data (" . implode(', ', $fields) . 
-                 ") VALUES (" . implode(', ', $placeholders) . ")";
-        
-        $stmt = $conn->prepare($query);
-        if (!$stmt) {
-            error_log("Failed to prepare insert statement: " . $conn->error);
-            $conn->rollback();
-            return false;
-        }
-        
-        // Determine parameter types
-        $types = '';
-        $values = [];
-        
-        foreach ($data as $value) {
-            if (is_int($value)) {
-                $types .= 'i';
-            } elseif (is_float($value)) {
-                $types .= 'd';
-            } elseif (is_bool($value)) {
-                $types .= 'i';
-                $value = $value ? 1 : 0;
-            } else {
-                $types .= 's';
-            }
-            
-            $values[] = $value;
-        }
-        
-        // Bind parameters
-        $stmt->bind_param($types, ...$values);
-        
-        if (!$stmt->execute()) {
-            error_log("Failed to execute insert query: " . $stmt->error);
-            $conn->rollback();
-            return false;
-        }
-        
-        $new_id = $stmt->insert_id;
-        
-        // Commit transaction
-        $conn->commit();
-        return $new_id;
-        
-    } catch (Exception $e) {
-        error_log("Exception in create_outcome_data: " . $e->getMessage());
-        $conn->rollback();
-        return false;
-    }
-}
-
-/**
- * Get outcomes statistics for admin dashboard
- *
- * @param int|null $period_id Optional period ID to filter by
+ * Get outcomes statistics for dashboard
+ * 
+ * @param int|null $period_id Optional period ID to filter outcomes by
  * @return array Array containing outcomes statistics
  */
 function get_outcomes_statistics($period_id = null) {
     global $conn;
     
-    $stats = [
-        'total_outcomes' => 0,
-        'submitted_outcomes' => 0,
-        'draft_outcomes' => 0,
-        'recent_outcomes' => [],
-        'sectors_with_outcomes' => 0
-    ];
+    // Get total outcomes count
+    $total_query = "SELECT COUNT(*) as total FROM outcomes";
+    $total_result = $conn->query($total_query);
+    $total_outcomes = $total_result ? $total_result->fetch_assoc()['total'] : 0;
     
-    try {
-        // Build base query
-        $where_clause = "WHERE 1=1";
-        $params = [];
-        $param_types = "";
-        
-        if ($period_id) {
-            $where_clause .= " AND sod.period_id = ?";
-            $params[] = $period_id;
-            $param_types .= "i";
+    // Get outcomes by type
+    $type_query = "SELECT type, COUNT(*) as count FROM outcomes GROUP BY type";
+    $type_result = $conn->query($type_query);
+    $outcomes_by_type = [];
+    if ($type_result) {
+        while ($row = $type_result->fetch_assoc()) {
+            $outcomes_by_type[$row['type']] = $row['count'];
         }
-        
-        // Get total counts
-        $query = "SELECT 
-                    COUNT(*) as total_outcomes,
-                    SUM(CASE WHEN is_draft = 0 THEN 1 ELSE 0 END) as submitted_outcomes,
-                    SUM(CASE WHEN is_draft = 1 THEN 1 ELSE 0 END) as draft_outcomes,
-                    COUNT(DISTINCT sector_id) as sectors_with_outcomes
-                  FROM sector_outcomes_data sod 
-                  $where_clause";
-        
-        if (!empty($params)) {
-            $stmt = $conn->prepare($query);
-            $stmt->bind_param($param_types, ...$params);
-            $stmt->execute();
-            $result = $stmt->get_result();
-        } else {
-            $result = $conn->query($query);
-        }
-        
-        if ($result && $row = $result->fetch_assoc()) {
-            $stats['total_outcomes'] = (int)$row['total_outcomes'];
-            $stats['submitted_outcomes'] = (int)$row['submitted_outcomes'];
-            $stats['draft_outcomes'] = (int)$row['draft_outcomes'];
-            $stats['sectors_with_outcomes'] = (int)$row['sectors_with_outcomes'];
-        }
-        
-        // Get recent outcomes (last 5)
-        $recent_query = "SELECT sod.metric_id, sod.table_name, sod.is_draft, 
-                                sod.created_at, sod.updated_at,
-                                rp.year, rp.quarter,
-                                COALESCE(u.username, 'System') as submitted_by_username
-                         FROM sector_outcomes_data sod
-                         LEFT JOIN reporting_periods rp ON sod.period_id = rp.period_id
-                         LEFT JOIN users u ON sod.submitted_by = u.user_id
-                         $where_clause
-                         ORDER BY sod.updated_at DESC 
-                         LIMIT 5";
-        
-        if (!empty($params)) {
-            $stmt = $conn->prepare($recent_query);
-            $stmt->bind_param($param_types, ...$params);
-            $stmt->execute();
-            $result = $stmt->get_result();
-        } else {
-            $result = $conn->query($recent_query);
-        }
-        
-        if ($result) {
-            while ($row = $result->fetch_assoc()) {
-                $stats['recent_outcomes'][] = $row;
-            }
-        }
-        
-    } catch (Exception $e) {
-        error_log("Error in get_outcomes_statistics: " . $e->getMessage());
     }
     
-    return $stats;
+    return [
+        'total_outcomes' => $total_outcomes,
+        'outcomes_by_type' => $outcomes_by_type,
+        'chart_outcomes' => $outcomes_by_type['chart'] ?? 0,
+        'kpi_outcomes' => $outcomes_by_type['kpi'] ?? 0
+    ];
 }
 ?>

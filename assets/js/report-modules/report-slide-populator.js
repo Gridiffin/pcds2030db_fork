@@ -138,28 +138,7 @@ if (typeof window.ReportPopulator !== 'undefined') {
                 }
             });
         } else {
-            console.warn("No KPI data available in outcomes_details. Falling back to legacy or default KPIs if defined.");
-            // Fallback to legacy kpi1, kpi2, kpi3 if outcomes_details is empty
-            // This part can be adjusted or removed if strict adherence to selected KPIs is required
-            // and no fallback to old kpi objects is desired when outcomes_details is empty.
-            if (data.kpi1) {
-                console.log("Fallback to legacy kpi1");
-                // Assuming kpi1, kpi2, kpi3 are simple {name, value, description}
-                // We might need a simplified layout or a specific layout_type for these.
-                // For now, let's assume a default simple layout.
-                ReportStyler.createKpiBox(slide, pptx, themeColors, defaultFont, data.kpi1.name, { layout_type: 'simple', items: [{ value: data.kpi1.value, description: data.kpi1.description }] }, 0);
-            }
-            if (data.kpi2) {
-                console.log("Fallback to legacy kpi2");
-                ReportStyler.createKpiBox(slide, pptx, themeColors, defaultFont, data.kpi2.name, { layout_type: 'simple', items: [{ value: data.kpi2.value, description: data.kpi2.description }] }, 1);
-            }
-            if (data.kpi3) {
-                console.log("Fallback to legacy kpi3");
-                ReportStyler.createKpiBox(slide, pptx, themeColors, defaultFont, data.kpi3.name, { layout_type: 'simple', items: [{ value: data.kpi3.value, description: data.kpi3.description }] }, 2);
-            }
-            if (!data.kpi1 && !data.kpi2 && !data.kpi3) {
-                 console.warn("No KPI data available at all.");
-            }
+            console.warn("No KPI data available in outcomes_details. No fallback available.");
         }
     }
 

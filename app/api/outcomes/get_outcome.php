@@ -14,9 +14,9 @@ if (!defined('PROJECT_ROOT_PATH')) {
 require_once PROJECT_ROOT_PATH . 'app/config/config.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/functions.php'; // Contains legacy functions
-require_once PROJECT_ROOT_PATH . 'app/lib/admins/outcomes.php'; // Contains updated outcome functions
-require_once PROJECT_ROOT_PATH . 'app/lib/admins/index.php'; // Contains is_admin
+require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/admins/outcomes.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/admins/index.php';
 
 // Validate user is authenticated
 if (!isset($_SESSION['user_id'])) {
@@ -40,8 +40,8 @@ if (!isset($_GET['outcome_id']) || !is_numeric($_GET['outcome_id'])) {
 
 $outcome_id = (int) $_GET['outcome_id'];
 
-// Get outcome data using the dedicated function
-$outcome = get_outcome_data($outcome_id);
+// Get outcome data from new outcomes table
+$outcome = get_outcome_by_id($outcome_id);
 
 if (!$outcome) {
     header('Content-Type: application/json');
@@ -52,16 +52,18 @@ if (!$outcome) {
     exit;
 }
 
-// Ensure data_json is properly formatted
-if (isset($outcome['data_json']) && is_string($outcome['data_json'])) {
-    // If already a JSON string, parse it
-    $outcome['data_json'] = json_decode($outcome['data_json'], true);
-}
-
 // Return outcome data
 header('Content-Type: application/json');
 echo json_encode([
     'success' => true,
-    'outcome' => $outcome
+    'outcome' => [
+        'id' => $outcome['id'],
+        'code' => $outcome['code'],
+        'type' => $outcome['type'],
+        'title' => $outcome['title'],
+        'description' => $outcome['description'],
+        'data' => $outcome['data'],
+        'updated_at' => $outcome['updated_at']
+    ]
 ]);
 exit;

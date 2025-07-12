@@ -765,7 +765,7 @@ function get_entity_name($entity, $entity_id) {
     $entity_table_map = [
         'program' => 'programs',
         'user' => 'users',
-        'outcome' => 'outcomes_details',
+        'outcome' => 'outcomes',
         'initiative' => 'initiatives',
         'agency' => 'agency',
         'period' => 'reporting_periods'

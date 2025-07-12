@@ -13,6 +13,7 @@ require_once ROOT_PATH . 'app/lib/session.php';
 require_once ROOT_PATH . 'app/lib/functions.php';
 require_once ROOT_PATH . 'app/lib/admin_functions.php';
 require_once ROOT_PATH . 'app/lib/audit_log.php';
+require_once ROOT_PATH . 'app/lib/admins/outcomes.php';
 
 // Verify user is an admin
 if (!is_admin()) {
@@ -24,90 +25,31 @@ if (!is_admin()) {
 $message = '';
 $message_type = '';
 
-// Get outcome ID from URL (using metric_id for admin consistency)
-$metric_id = isset($_GET['metric_id']) ? intval($_GET['metric_id']) : 0;
-
-if ($metric_id === 0) {
+// Get outcome ID from URL
+$outcome_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+if ($outcome_id === 0) {
     $_SESSION['error_message'] = 'Invalid outcome ID.';
     header('Location: manage_outcomes.php');
     exit;
 }
 
-// Load existing outcome data - admin can edit any outcome regardless of sector
-$query = "SELECT table_name, data_json, is_draft, sector_id FROM sector_outcomes_data WHERE metric_id = ? LIMIT 1";
-$stmt = $conn->prepare($query);
-$stmt->bind_param("i", $metric_id);
-$stmt->execute();
-$result = $stmt->get_result();
-
-$table_name = '';
-$is_outcome_draft = 1; // Default to draft
-$sector_id = 0;
-$data_array = [
-    'columns' => [],
-    'data' => []
-];
-
-if ($result->num_rows > 0) {
-    $row = $result->fetch_assoc();
-    $table_name = $row['table_name'];
-    $is_outcome_draft = $row['is_draft']; // Store the current draft status
-    $sector_id = $row['sector_id'];
-    $data_array = json_decode($row['data_json'], true);
-    if (!is_array($data_array)) {
-        $data_array = ['columns' => [], 'data' => []];
-    }
-} else {
+// Fetch outcome from new outcomes table
+$outcome = get_outcome_by_id($outcome_id);
+if (!$outcome) {
     $_SESSION['error_message'] = 'Outcome not found.';
     header('Location: manage_outcomes.php');
     exit;
 }
 
+// Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $post_table_name = trim($_POST['table_name'] ?? '');
-    $post_data_json = $_POST['data_json'] ?? '';
-    $is_draft = isset($_POST['is_draft']) ? intval($_POST['is_draft']) : 0;
-
-    if ($post_table_name === '' || $post_data_json === '') {
-        $message = 'Table name and data are required.';
-        $message_type = 'danger';
+    $post_data = $_POST['data'] ?? [];
+    if (update_outcome_data_by_code($outcome['code'], $post_data)) {
+        header('Location: view_outcome.php?id=' . $outcome_id . '&saved=1');
+        exit;
     } else {
-        $post_data_array = json_decode($post_data_json, true);
-        if ($post_data_array === null) {
-            $message = 'Invalid JSON data.';
-            $message_type = 'danger';
-        } else {
-            // Update existing record in sector_outcomes_data
-            $update_query = "UPDATE sector_outcomes_data SET table_name = ?, data_json = ?, is_draft = ?, updated_at = NOW() WHERE metric_id = ?";
-            $stmt_update = $conn->prepare($update_query);
-            $data_json_str = json_encode($post_data_array);
-            $stmt_update->bind_param("ssii", $post_table_name, $data_json_str, $is_draft, $metric_id);
-            
-            if ($stmt_update->execute()) {
-                // Log successful outcome edit
-                log_audit_action(
-                    'outcome_updated',
-                    "Admin updated outcome '{$post_table_name}' (Metric ID: {$metric_id}) for sector {$sector_id}" . ($is_draft ? ' as draft' : ''),
-                    'success',
-                    $_SESSION['user_id']
-                );
-                
-                // Redirect to view outcome details after successful save
-                header('Location: view_outcome.php?metric_id=' . $metric_id . '&saved=1');
-                exit;
-            } else {
-                $message = 'Error updating outcome: ' . $conn->error;
-                $message_type = 'danger';
-                
-                // Log outcome update failure
-                log_audit_action(
-                    'outcome_update_failed',
-                    "Admin failed to update outcome '{$post_table_name}' (Metric ID: {$metric_id}) for sector {$sector_id}: " . $conn->error,
-                    'failure',
-                    $_SESSION['user_id']
-                );
-            }
-        }
+        $message = 'Error updating outcome.';
+        $message_type = 'danger';
     }
 }
 
@@ -125,7 +67,7 @@ require_once '../../layouts/header.php';
 // Configure modern page header
 $header_config = [
     'title' => 'Edit Outcome',
-    'subtitle' => 'Edit existing outcome with dynamic table structure' . ($is_outcome_draft ? ' (Draft)' : ' (Submitted)'),
+    'subtitle' => 'Edit existing outcome with dynamic table structure' . ($outcome['is_draft'] ? ' (Draft)' : ' (Submitted)'),
     'variant' => 'white',
     'actions' => [
         [
@@ -135,13 +77,13 @@ $header_config = [
             'class' => 'btn-outline-primary'
         ],
         [
-            'url' => 'view_outcome.php?metric_id=' . $metric_id,
+            'url' => 'view_outcome.php?id=' . $outcome_id,
             'text' => 'View Outcome',
             'icon' => 'fas fa-eye',
             'class' => 'btn-outline-info'
         ],
         [
-            'html' => '<span class="badge ' . ($is_outcome_draft ? 'bg-warning text-dark' : 'bg-success') . '"><i class="fas ' . ($is_outcome_draft ? 'fa-edit' : 'fa-check') . ' me-1"></i>' . ($is_outcome_draft ? 'Draft' : 'Submitted') . '</span>'
+            'html' => '<span class="badge ' . ($outcome['is_draft'] ? 'bg-warning text-dark' : 'bg-success') . '"><i class="fas ' . ($outcome['is_draft'] ? 'fa-edit' : 'fa-check') . ' me-1"></i>' . ($outcome['is_draft'] ? 'Draft' : 'Submitted') . '</span>'
         ]
     ]
 ];
@@ -161,13 +103,25 @@ require_once '../../layouts/page_header.php';
     <div class="card mb-4">
         <div class="card-header">
             <h5 class="card-title m-0">Edit Outcome</h5>
-            <p class="text-muted mb-0 small">Outcome ID: <?= $metric_id ?> | Sector ID: <?= $sector_id ?></p>
+            <p class="text-muted mb-0 small">Outcome ID: <?= $outcome_id ?> | Code: <?= htmlspecialchars($outcome['code']) ?></p>
         </div>
         <div class="card-body">
             <form id="editOutcomeForm" method="post" action="">
                 <div class="mb-3">
-                    <label for="tableNameInput" class="form-label">Table Name</label>
-                    <input type="text" class="form-control" id="tableNameInput" name="table_name" required value="<?= htmlspecialchars($table_name) ?>" />
+                    <label for="outcomeCodeInput" class="form-label">Outcome Code</label>
+                    <input type="text" class="form-control" id="outcomeCodeInput" name="code" required value="<?= htmlspecialchars($outcome['code']) ?>" />
+                </div>
+                <div class="mb-3">
+                    <label for="outcomeTypeInput" class="form-label">Outcome Type</label>
+                    <input type="text" class="form-control" id="outcomeTypeInput" name="type" required value="<?= htmlspecialchars($outcome['type']) ?>" />
+                </div>
+                <div class="mb-3">
+                    <label for="outcomeTitleInput" class="form-label">Outcome Title</label>
+                    <input type="text" class="form-control" id="outcomeTitleInput" name="title" required value="<?= htmlspecialchars($outcome['title']) ?>" />
+                </div>
+                <div class="mb-3">
+                    <label for="outcomeDescriptionInput" class="form-label">Outcome Description</label>
+                    <textarea class="form-control" id="outcomeDescriptionInput" name="description" rows="3"><?= htmlspecialchars($outcome['description']) ?></textarea>
                 </div>
 
                 <div class="mb-3">
@@ -191,8 +145,8 @@ require_once '../../layouts/page_header.php';
                             <?php
                             // Get row labels from existing data or use default if no data exists
                             $row_labels = [];
-                            if (!empty($data_array['data']) && is_array($data_array['data'])) {
-                                $row_labels = array_keys($data_array['data']);
+                            if (!empty($outcome['data']) && is_array($outcome['data'])) {
+                                $row_labels = array_keys($outcome['data']);
                             }
                             
                             // If no existing data, provide a default structure that can be modified
@@ -217,11 +171,11 @@ require_once '../../layouts/page_header.php';
                     </table>
                 </div>
 
-                <input type="hidden" name="data_json" id="dataJsonInput" />
-                <input type="hidden" name="is_draft" id="isDraftInput" value="<?= $is_outcome_draft ?>" />
+                <input type="hidden" name="data" id="dataJsonInput" />
+                <input type="hidden" name="is_draft" id="isDraftInput" value="<?= $outcome['is_draft'] ?>" />
 
                 <div class="d-flex justify-content-end gap-2">
-                    <a href="view_outcome.php?metric_id=<?= $metric_id ?>" class="btn btn-outline-secondary">
+                    <a href="view_outcome.php?id=<?= $outcome_id ?>" class="btn btn-outline-secondary">
                         <i class="fas fa-times me-1"></i> Cancel
                     </a>
                     <button type="submit" class="btn btn-success" id="submitBtn">
@@ -239,11 +193,11 @@ document.addEventListener('DOMContentLoaded', function() {
     window.editOutcomeJsDisabled = true;
 
     // Initialize data from PHP
-    let columns = <?= json_encode($data_array['columns'] ?? []) ?>;
-    let data = <?= json_encode($data_array['data'] ?? []) ?>;
+    let columns = <?= json_encode($outcome['columns'] ?? []) ?>;
+    let data = <?= json_encode($outcome['data'] ?? []) ?>;
 
     // Set up save button to work with the main form
-    const saveBtn = document.getElementById('saveBtn');
+    const saveBtn = document.getElementById('submitBtn');
     if (saveBtn) {
         saveBtn.addEventListener('click', function(e) {
             document.getElementById('isDraftInput').value = '0';
@@ -589,7 +543,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('addRowBtn').addEventListener('click', addRow);
 
     // Handle button clicks to set draft status
-    document.getElementById('saveBtn').addEventListener('click', function(e) {
+    document.getElementById('submitBtn').addEventListener('click', function(e) {
         document.getElementById('isDraftInput').value = '0';
         // Save as final outcome clicked
     });
@@ -611,10 +565,10 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('dataJsonInput').value = JSON.stringify(collectedData);
         
         // Basic validation
-        const tableName = document.getElementById('tableNameInput').value.trim();
-        if (!tableName) {
+        const outcomeCode = document.getElementById('outcomeCodeInput').value.trim();
+        if (!outcomeCode) {
             e.preventDefault();
-            alert('Please enter a table name.');
+            alert('Please enter an outcome code.');
             return false;
         }
         

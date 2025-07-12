@@ -1515,14 +1515,14 @@ function display_before_after_changes($changes_made) {
 function get_outcome_name_by_id($outcome_id) {
     global $conn;
     
-    $stmt = $conn->prepare("SELECT detail_name FROM outcomes_details WHERE detail_id = ?");
+    $stmt = $conn->prepare("SELECT title FROM outcomes WHERE id = ?");
     $stmt->bind_param("i", $outcome_id);
     $stmt->execute();
     $result = $stmt->get_result();
     
     if ($row = $result->fetch_assoc()) {
         $stmt->close();
-        return $row['detail_name'];
+        return $row['title'];
     }
     
     $stmt->close();
