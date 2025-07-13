@@ -1072,12 +1072,18 @@ if (typeof window.ReportStyler !== 'undefined') {
         const columns = degradedAreaMetricData.columns || [];
         const rows = degradedAreaMetricData.rows || [];
         const labels = rows.map(row => row.month || row.label || '');
-        // Build a data series for each column (year)
-        const chartDataSeries = columns.map((col, idx) => ({
-            name: typeof col === 'object' ? (col.label || col.id || '') : col,
+        // Get current and previous year from quarter
+        const currentYear = parseInt(chartApiData.quarter?.split('-')[1]) || new Date().getFullYear();
+        const previousYear = currentYear - 1;
+        const yearsToShow = [currentYear.toString(), previousYear.toString()].filter(y => columns.includes(y));
+        // Build chart data for only those two years, treating 0 as null
+        const chartDataSeries = yearsToShow.map((year, idx) => ({
+            name: year,
             labels: labels,
-            values: rows.map(row => row[col] ?? 0),
-            opts: { color: getChartSeriesColors(columns.length)[idx % columns.length] }
+            values: rows.map(row => {
+                const v = row[year];
+                return (v === 0 || v === '0' || v === null || v === undefined) ? null : v;
+            })
         }));
         if (chartDataSeries.length === 0) {
             console.error('No data series to plot for Total Degraded Area chart - this should not happen with zero value support.');
@@ -1088,23 +1094,12 @@ if (typeof window.ReportStyler !== 'undefined') {
             });
             return;
         }
-        // Calculate the maximum value for axis scaling
-        const allValues = chartDataSeries.flatMap(series => series.values);
+        // Find max value for axis scaling
+        const allValues = chartDataSeries.flatMap(series => series.values.filter(v => v !== null));
         const maxVal = Math.max(...allValues, 0);
         const chartOptions = getDegradedAreaChartOptions(position, themeColors, defaultFont, chartTitle, chartUnit, maxVal);
-        chartOptions.chartColors = getChartSeriesColors(columns.length).slice(0, chartDataSeries.length);
-        createChartTitle(slide, chartTitle, {
-            x: position.x, 
-            y: position.y - 0.05,
-            w: position.w, 
-            h: 0.15
-        }, themeColors, defaultFont);
-        chartDataSeries.forEach(series => {
-            series.name = String(series.name || '');
-            if (Array.isArray(series.labels)) {
-                series.labels = series.labels.map(l => String(l || ''));
-            }
-        });
+        // Add chart title above the chart
+        createChartTitle(slide, chartApiData.title || 'Total Degraded Area', position, themeColors, defaultFont);
         slide.addChart(pptx.ChartType.line, chartDataSeries, chartOptions);
         console.log("Total Degraded Area chart added to slide.");
     }
@@ -1548,26 +1543,30 @@ slide.addText(statusText, {
      * @param {Object} data - The data from the API
      */
     function addTimberExportChart(slide, pptx, themeColors, defaultFont, data) {
-        console.log("Adding timber export line chart with real data");
         const container = createChartContainer(slide, pptx, themeColors);
         createChartTitle(slide, 'Timber Export Value (RM)', container, themeColors, defaultFont);
         if (!data || !data.charts || !data.charts.main_chart || !data.charts.main_chart.data) {
-            console.warn("No timber export data available, using placeholder");
             return;
         }
         const timberData = data.charts.main_chart.data;
-        console.log("Timber export data from API:", timberData);
         const columns = timberData.columns || [];
         const rows = timberData.rows || [];
         const labels = rows.map(row => row.month || row.label || '');
-        // Build a data series for each column (year)
-        const chartData = columns.map((col, idx) => ({
-            name: typeof col === 'object' ? (col.label || col.id || '') : col,
+        // Get current and previous year from quarter
+        const currentYear = parseInt(data.quarter?.split('-')[1]) || new Date().getFullYear();
+        const previousYear = currentYear - 1;
+        const yearsToShow = [currentYear.toString(), previousYear.toString()].filter(y => columns.includes(y));
+        // Build chart data for only those two years, treating 0 as null
+        const chartData = yearsToShow.map((year, idx) => ({
+            name: year,
             labels: labels,
-            values: rows.map(row => row[col] ?? 0)
+            values: rows.map(row => {
+                const v = row[year];
+                return (v === 0 || v === '0' || v === null || v === undefined) ? null : v;
+            })
         }));
         // Find max value for axis scaling
-        const allValues = chartData.flatMap(series => series.values);
+        const allValues = chartData.flatMap(series => series.values.filter(v => v !== null));
         const maxMonthlyValue = Math.max(...allValues, 0);
         const chartOptions = getLineChartOptions(container, themeColors, defaultFont);
         if (maxMonthlyValue > 0) {
@@ -1575,68 +1574,7 @@ slide.addText(statusText, {
             chartOptions.valAxisMaxVal = maxMonthlyValue * 1.1;
             chartOptions.valAxisMajorUnit = calculateMajorUnit(maxMonthlyValue * 1.1);
         }
-        chartData.forEach(series => {
-            series.name = String(series.name || '');
-            if (Array.isArray(series.labels)) {
-                series.labels = series.labels.map(l => String(l || ''));
-            }
-        });
         slide.addChart(pptx.ChartType.line || 'line', chartData, chartOptions);
-        console.log("Line chart with real data added to slide");
-    }
-
-    function addTotalDegradedAreaChart(slide, pptx, themeColors, defaultFont, chartApiData, position) {
-        console.log("Adding Total Degraded Area chart with data:", chartApiData);
-        if (!chartApiData || !chartApiData.data || !chartApiData.data.columns || !chartApiData.data.rows) {
-            console.error('Total Degraded Area chart data from API is missing or malformed.', chartApiData);
-            createTextBox(slide, 'Total Degraded Area data unavailable.', { 
-                x: position.x, y: position.y, w: position.w, h: 0.5, 
-                fontFace: defaultFont, fontSize: 10, color: themeColors.redStatus || 'FF0000', 
-                align: 'center', valign: 'middle' 
-            });
-            return;
-        }
-        const degradedAreaMetricData = chartApiData.data;
-        const chartTitle = chartApiData.title || 'Total Degraded Area';
-        const chartUnit = degradedAreaMetricData.units || 'Ha';
-        const columns = degradedAreaMetricData.columns || [];
-        const rows = degradedAreaMetricData.rows || [];
-        const labels = rows.map(row => row.month || row.label || '');
-        // Build a data series for each column (year)
-        const chartDataSeries = columns.map((col, idx) => ({
-            name: typeof col === 'object' ? (col.label || col.id || '') : col,
-            labels: labels,
-            values: rows.map(row => row[col] ?? 0),
-            opts: { color: getChartSeriesColors(columns.length)[idx % columns.length] }
-        }));
-        if (chartDataSeries.length === 0) {
-            console.error('No data series to plot for Total Degraded Area chart - this should not happen with zero value support.');
-            createTextBox(slide, 'Unable to generate Total Degraded Area chart.', { 
-                x: position.x, y: position.y, w: position.w, h: 0.5, 
-                fontFace: defaultFont, fontSize: 10, color: themeColors.text || '000000', 
-                align: 'center', valign: 'middle' 
-            });
-            return;
-        }
-        // Calculate the maximum value for axis scaling
-        const allValues = chartDataSeries.flatMap(series => series.values);
-        const maxVal = Math.max(...allValues, 0);
-        const chartOptions = getDegradedAreaChartOptions(position, themeColors, defaultFont, chartTitle, chartUnit, maxVal);
-        chartOptions.chartColors = getChartSeriesColors(columns.length).slice(0, chartDataSeries.length);
-        createChartTitle(slide, chartTitle, {
-            x: position.x, 
-            y: position.y - 0.05,
-            w: position.w, 
-            h: 0.15
-        }, themeColors, defaultFont);
-        chartDataSeries.forEach(series => {
-            series.name = String(series.name || '');
-            if (Array.isArray(series.labels)) {
-                series.labels = series.labels.map(l => String(l || ''));
-            }
-        });
-        slide.addChart(pptx.ChartType.line, chartDataSeries, chartOptions);
-        console.log("Total Degraded Area chart added to slide.");
     }
 
     return {
