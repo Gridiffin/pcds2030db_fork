@@ -1093,6 +1093,47 @@ if (typeof window.ReportStyler !== 'undefined') {
             });
             return;
         }
+        // Calculate total values for each year
+        const yearTotals = {};
+        yearsToShow.forEach(year => {
+            const vals = rows.map(row => {
+                const v = row[year];
+                return (v === 0 || v === '0' || v === null || v === undefined) ? null : v;
+            }).filter(v => v !== null && v !== undefined);
+            yearTotals[year] = vals.length > 0 ? vals.reduce((a, b) => a + b, 0) : 0;
+        });
+        
+        // Format the totals for degraded area (no RM prefix, just numbers)
+        const formattedPreviousYearTotal = yearTotals[previousYear].toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        const formattedCurrentYearTotal = yearTotals[currentYear].toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        
+        // Format years as requested - abbreviated with apostrophe (e.g., '24 Total)
+        const currentYearAbbr = "'" + currentYear.toString().substring(2) + " Total";
+        const previousYearAbbr = "'" + previousYear.toString().substring(2) + " Total";
+        
+        // Add total boxes using the working implementation
+        createTotalValueBox(
+            slide, 
+            pptx, 
+            themeColors, 
+            currentYearAbbr, 
+            formattedCurrentYearTotal, 
+            position.x + 0.10, // Small margin from left edge
+            position.y + position.h - 0.38, // Positioned slightly higher to prevent overlap with container bottom
+            defaultFont
+        );
+        
+        createTotalValueBox(
+            slide, 
+            pptx, 
+            themeColors, 
+            previousYearAbbr, 
+            formattedPreviousYearTotal, 
+            position.x + 2.15, // Slightly more spacing between boxes for large numbers
+            position.y + position.h - 0.38, // Same vertical position as current year
+            defaultFont
+        );
+        
         // Find max value for axis scaling
         const allValues = chartDataSeries.flatMap(series => series.values.filter(v => v !== null));
         const maxVal = Math.max(...allValues, 0);
@@ -1555,6 +1596,59 @@ slide.addText(statusText, {
         const currentYear = parseInt(data.quarter?.split('-')[1]) || new Date().getFullYear();
         const previousYear = currentYear - 1;
         const yearsToShow = [currentYear.toString(), previousYear.toString()].filter(y => columns.includes(y));
+        
+        // Calculate total values for each year
+        const yearTotals = {};
+        yearsToShow.forEach(year => {
+            const vals = rows.map(row => {
+                const v = row[year];
+                return (v === 0 || v === '0' || v === null || v === undefined) ? null : v;
+            }).filter(v => v !== null && v !== undefined);
+            yearTotals[year] = vals.length > 0 ? vals.reduce((a, b) => a + b, 0) : 0;
+        });
+        
+        // Format the totals with adaptive precision and add RM prefix
+        const formatNumberWithSmartPrecision = (num) => {
+            if (num >= 10000000) { // Over 10 million
+                return num.toLocaleString('en-US', {maximumFractionDigits: 0}); // No decimals
+            } else if (num >= 1000000) { // 1-10 million
+                return num.toLocaleString('en-US', {maximumFractionDigits: 1}); // One decimal
+            } else {
+                return num.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}); // Two decimals
+            }
+        };
+        
+        // Format the totals with adaptive precision and add RM prefix
+        const formattedPreviousYearTotal = `RM ${formatNumberWithSmartPrecision(yearTotals[previousYear])}`;
+        const formattedCurrentYearTotal = `RM ${formatNumberWithSmartPrecision(yearTotals[currentYear])}`;
+        
+        // Format years as requested - abbreviated with apostrophe (e.g., '24 Total)
+        const currentYearAbbr = "'" + currentYear.toString().substring(2) + " Total";
+        const previousYearAbbr = "'" + previousYear.toString().substring(2) + " Total";
+        
+        // Add total boxes using the working implementation
+        createTotalValueBox(
+            slide, 
+            pptx, 
+            themeColors, 
+            currentYearAbbr, 
+            formattedCurrentYearTotal, 
+            container.x + 0.10, // Small margin from left edge
+            container.y + container.h - 0.38, // Positioned slightly higher to prevent overlap with container bottom
+            defaultFont
+        );
+        
+        createTotalValueBox(
+            slide, 
+            pptx, 
+            themeColors, 
+            previousYearAbbr, 
+            formattedPreviousYearTotal, 
+            container.x + 2.15, // Slightly more spacing between boxes for large numbers
+            container.y + container.h - 0.38, // Same vertical position as current year
+            defaultFont
+        );
+        
         // Build chart data for only those two years, treating 0 as null
         const chartData = yearsToShow.map((year, idx) => ({
             name: year,
