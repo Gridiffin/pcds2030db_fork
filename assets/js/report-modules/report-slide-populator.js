@@ -206,31 +206,39 @@ if (typeof window.ReportPopulator !== 'undefined') {
         // Add each legend item with positions specified in the design
         ReportStyler.addLegendItem(slide, pptx, legendItems[0].color, legendItems[0].label, 
             1.000, 7.118, 1.323, 7.059, defaultFont);
-            
         ReportStyler.addLegendItem(slide, pptx, legendItems[1].color, legendItems[1].label, 
             2.953, 7.118, 3.272, 7.059, defaultFont);
-            
         ReportStyler.addLegendItem(slide, pptx, legendItems[2].color, legendItems[2].label, 
             4.776, 7.087, 5.094, 7.102, defaultFont);
-            
         ReportStyler.addLegendItem(slide, pptx, legendItems[3].color, legendItems[3].label, 
             6.146, 7.087, 6.520, 7.110, defaultFont);
         
-        // Add year indicator circles and text
-        // Previous year (orange)
+        // Stack year indicator circles vertically, closer to the color legends
+        // Previous year (orange) on top, current year (blue) below
+        const yearCircleX = 7.457; // moved 0.2 left
+        const yearCircleY1 = 7.13; // moved slightly down
+        const yearCircleY2 = 7.287;  // moved slightly down
+        const yearTextX = 7.589;    // moved 0.2 left
+        const yearTextY1 = 7.063; // moved slightly down
+        const yearTextY2 = 7.22;  // moved slightly down
         ReportStyler.addYearIndicator(slide, pptx, previousYear.toString(), 'ED7D31',
-            7.657, 7.193, 7.689, 7.126, defaultFont);
-            
-        // Current year (blue)
+            yearCircleX, yearCircleY1, yearTextX, yearTextY1, defaultFont);
         ReportStyler.addYearIndicator(slide, pptx, currentYear.toString(), '0070C0',
-            8.193, 7.193, 8.244, 7.126, defaultFont);
+            yearCircleX, yearCircleY2, yearTextX, yearTextY2, defaultFont);
         
-        // Format current date for the draft text
+        // Format current date for the draft text (use 3-letter month abbreviation)
         const today = new Date();
-        const draftDateString = `DRAFT ${today.getDate()} ${today.toLocaleString('en-US', { month: 'long' })} ${today.getFullYear()}`;
-        
-        // Add Draft text box
-        ReportStyler.createDraftText(slide, draftDateString, defaultFont);
+        const draftDateString = `DRAFT ${today.getDate()} ${today.toLocaleString('en-US', { month: 'short' })} ${today.getFullYear()}`;
+        // Add Draft text box to the right of the stacked year circles (smaller width, shifted up, allow word wrap)
+        slide.addText(draftDateString, {
+            x: 8.1, y: 7.05, w: 1.1, h: 0.5,
+            fontSize: 10.5, bold: true,
+            fontFace: defaultFont,
+            color: 'FF0000',
+            align: 'left',
+            valign: 'middle',
+            wrap: true
+        });
     }
 
     /**
