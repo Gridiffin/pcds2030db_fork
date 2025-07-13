@@ -52,24 +52,24 @@ if (isset($_GET['saved']) && $_GET['saved'] == '1') {
 }
 
 // Parse the data structure (compatible with edit_outcome.php format)
-$data_array = $data ?? ['columns' => [], 'data' => []];
+$data_array = $data ?? ['columns' => [], 'rows' => []];
 
 // Ensure we have the correct structure
-if (!isset($data_array['columns']) || !isset($data_array['data'])) {
-    $data_array = ['columns' => [], 'data' => []];
+if (!isset($data_array['columns']) || !isset($data_array['rows'])) {
+    $data_array = ['columns' => [], 'rows' => []];
 }
 
 $columns = $data_array['columns'] ?? [];
-$data = $data_array['data'] ?? [];
+$rows = $data_array['rows'] ?? [];
 
-// Get row labels from the data
+// Get row labels from the rows array
 $row_labels = [];
-if (!empty($data) && is_array($data)) {
-    $row_labels = array_keys($data);
+foreach ($rows as $row) {
+    $row_labels[] = $row['month'] ?? $row['label'] ?? '';
 }
 
 // If no data exists, show empty state
-$has_data = !empty($columns) && !empty($row_labels);
+$has_data = !empty($columns) && !empty($rows);
 
 // Add CSS references
 $additionalStyles = [
@@ -211,19 +211,18 @@ require_once '../../layouts/page_header.php';
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach ($row_labels as $row_label): ?>
+                                    <?php foreach ($rows as $row): ?>
                                         <tr>
                                             <td>
                                                 <span class="row-badge">
-                                                    <?= htmlspecialchars($row_label) ?>
+                                                    <?= htmlspecialchars($row['month'] ?? $row['label'] ?? '') ?>
                                                 </span>
                                             </td>
                                             <?php foreach ($columns as $column): ?>
                                                 <td class="text-end">
                                                     <?php 
-                                                    $col_id = $column['id'] ?? $column;
-                                                    $value = $data[$row_label][$col_id] ?? 0;
-                                                    // Handle empty strings and non-numeric values safely
+                                                    $col_id = is_array($column) ? ($column['id'] ?? $column) : $column;
+                                                    $value = $row[$col_id] ?? 0;
                                                     if (is_numeric($value) && $value !== '') {
                                                         echo number_format((float)$value, 2);
                                                     } else {
@@ -241,10 +240,10 @@ require_once '../../layouts/page_header.php';
                                         <?php foreach ($columns as $column): ?>
                                             <td class="fw-bold text-end">
                                                 <?php
-                                                $col_id = $column['id'] ?? $column;
+                                                $col_id = is_array($column) ? ($column['id'] ?? $column) : $column;
                                                 $total = 0;
-                                                foreach ($row_labels as $row_label) {
-                                                    $cell_value = $data[$row_label][$col_id] ?? 0;
+                                                foreach ($rows as $row) {
+                                                    $cell_value = $row[$col_id] ?? 0;
                                                     // Only add numeric values to total
                                                     if (is_numeric($cell_value) && $cell_value !== '') {
                                                         $total += (float)$cell_value;
@@ -383,53 +382,41 @@ require_once '../../layouts/page_header.php';
 <!-- Pass data to JavaScript -->
 <script>
 // Prepare data for chart in a simple, compatible format
-window.tableData = <?= json_encode($data) ?>;
-window.tableColumns = <?= json_encode($columns) ?>;
-window.tableRows = <?= json_encode($row_labels) ?>;
+window.outcomeData = <?= json_encode($data_array) ?>;
 
-// Additional data for context
+const columns = window.outcomeData.columns || [];
+const rows = window.outcomeData.rows || [];
+const rowLabels = rows.map(row => row.month || row.label || '');
+
 const outcomeInfo = {
     id: <?= $outcome_id ?>,
     title: <?= json_encode($outcome['title']) ?>,
     hasData: <?= json_encode($has_data) ?>
 };
 
-// Initialize table data and chart functionality
-
-// Initialize chart functionality if Chart.js is available
+// Table rendering (replace PHP table rendering with JS if needed)
+// Chart rendering
 function initializeChart() {
-    if (typeof Chart !== 'undefined' && window.tableData && window.tableColumns && window.tableRows) {
-        // Get the canvas element
+    if (typeof Chart !== 'undefined' && columns.length > 0 && rows.length > 0) {
         const canvas = document.getElementById('metricChart');
-        
-        if (canvas && Object.keys(window.tableData).length > 0) {
-            // Clear any previous chart
+        if (canvas) {
             if (window.currentChart) {
                 window.currentChart.destroy();
             }
-            
-            // Get chart settings from form inputs
             const chartType = document.getElementById('chartType') ? document.getElementById('chartType').value : 'bar';
             const cumulativeView = document.getElementById('cumulativeView') ? document.getElementById('cumulativeView').checked : false;
-            
-            // Create chart data - ensure all values are numeric
-            const labels = window.tableRows;
-            const datasets = window.tableColumns.map((column, index) => {
-                // Handle both string columns and object columns
-                const colId = typeof column === 'object' ? (column['id'] || '') : column;
-                const colLabel = typeof column === 'object' ? (column['label'] || column['id'] || '') : column;
-                
-                let data = labels.map(row => {
-                    const cellValue = window.tableData[row] ? window.tableData[row][colId] : null;
-                    // Convert to number, handle empty strings and null values
+            const labels = rowLabels;
+            const datasets = columns.map((col, index) => {
+                const colId = typeof col === 'object' ? (col.id || '') : col;
+                const colLabel = typeof col === 'object' ? (col.label || col.id || '') : col;
+                let data = rows.map(row => {
+                    let value = row[colId];
                     let numericValue = 0;
-                    if (cellValue !== null && cellValue !== '' && cellValue !== undefined) {
-                        numericValue = parseFloat(cellValue) || 0;
+                    if (value !== null && value !== '' && value !== undefined) {
+                        numericValue = parseFloat(value) || 0;
                     }
                     return numericValue;
                 });
-                
-                // Apply cumulative calculation if enabled
                 if (cumulativeView) {
                     const cumulativeData = [];
                     let runningTotal = 0;
@@ -439,7 +426,6 @@ function initializeChart() {
                     }
                     data = cumulativeData;
                 }
-                
                 const colors = [
                     'rgba(54, 162, 235, 0.8)',
                     'rgba(255, 99, 132, 0.8)',
@@ -448,7 +434,6 @@ function initializeChart() {
                     'rgba(153, 102, 255, 0.8)',
                     'rgba(255, 159, 64, 0.8)'
                 ];
-                
                 return {
                     label: colLabel + (cumulativeView ? ' (Cumulative)' : ''),
                     data: data,
@@ -458,8 +443,6 @@ function initializeChart() {
                     fill: chartType === 'area'
                 };
             });
-            
-            // Create chart with basic configuration
             window.currentChart = new Chart(canvas, {
                 type: chartType === 'area' ? 'line' : chartType,
                 data: {
@@ -478,7 +461,6 @@ function initializeChart() {
                                     size: 14,
                                     weight: '600'
                                 },
-                                // Format large numbers (e.g., financial data)
                                 callback: function(value) {
                                     if (value >= 1000000000) {
                                         return 'RM ' + (value / 1000000000).toFixed(1) + 'B';
@@ -600,12 +582,12 @@ document.addEventListener('DOMContentLoaded', function() {
     if (downloadBtn) {
         downloadBtn.addEventListener('click', function() {
             // Create CSV content
-            let csv = 'Row,' + window.tableColumns.map(col => typeof col === 'object' ? (col['id'] || '') : col).join(',') + '\n';
-            window.tableRows.forEach(row => {
-                let rowData = [row];
-                window.tableColumns.forEach(col => {
+            let csv = 'Row,' + columns.map(col => typeof col === 'object' ? (col['id'] || '') : col).join(',') + '\n';
+            rows.forEach(row => {
+                let rowData = [row.month || row.label || ''];
+                columns.forEach(col => {
                     const colId = typeof col === 'object' ? (col['id'] || '') : col;
-                    rowData.push(window.tableData[row] ? (window.tableData[row][colId] || 0) : 0);
+                    rowData.push(row[colId] || 0);
                 });
                 csv += rowData.join(',') + '\n';
             });
