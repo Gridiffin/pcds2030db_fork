@@ -152,190 +152,33 @@ if (typeof window.ReportPopulator !== 'undefined') {
      * @param {string} defaultFont - The default font
      */
     function addProgramDataTable(slide, data, pptx, themeColors, defaultFont) {
-        // Initialize programs array
+        let currentQuarter = (data && data.quarter) ? data.quarter : '';
+        // Always use data.programs as the source for the PPTX table
         let programs = [];
-        let currentQuarter = '';
-        
-        // Try to get the current quarter from the data
-        if (data && data.quarter) {
-            currentQuarter = data.quarter;
-        }
-        
         if (data && data.programs && Array.isArray(data.programs)) {
-            // If programs data is already provided in the expected format, use it directly
-            programs = data.programs;        } else if (data && data.program_submissions && Array.isArray(data.program_submissions)) {
-            // Extract from program_submissions if available
-            programs = data.program_submissions.map(submission => {
-                // Extract target from content_json if available
-                let target = 'Not specified';
-                let status = 'Not available';
-                
-                if (submission.content_json) {
-                    try {
-                        const content = typeof submission.content_json === 'string' 
-                            ? JSON.parse(submission.content_json) 
-                            : submission.content_json;
-                        
-                        console.log('Processing content_json for program:', submission.program_name, content);
-                          // Get the first target or combine multiple targets
-                        if (content.targets && content.targets.length > 0) {
-                            // Process multiple targets and combine them with newlines
-                            const targetTexts = [];
-                            const statusTexts = [];
-                            
-                            content.targets.forEach(t => {
-                                // Get target text with fallbacks
-                                const targetText = t.target_text || t.text || 'No target specified';
-                                targetTexts.push(targetText);
-                                
-                                // Get status with fallbacks
-                                const statusDesc = t.status_description || 'Status not available';
-                                statusTexts.push(statusDesc);
-                            });
-                            
-                            // Join with newlines to create bullet points
-                            target = targetTexts.join('\n');
-                            console.log('Combined targets:', targetTexts.length, target);
-                            
-                            // Join status descriptions with newlines
-                            status = statusTexts.join('\n');
-                            console.log('Combined status descriptions:', statusTexts.length, status);
-                        } else if (content.target) {
-                            // Old format with direct target property
-                            target = content.target;
-                            status = content.status_text || status;
-                        }
-                    } catch (e) {
-                        console.error('Error parsing content_json:', e, submission.content_json);
-                    }
+            programs = data.programs.map(program => {
+                let target = 'N/A';
+                if (program.targets && program.targets.length > 0) {
+                    target = program.targets.map(t => t.target_description || '').join('\n');
                 }
-                  return {
-                    name: submission.program_name || 'Unnamed Program',
-                    target: target,
-                    rating: submission.rating || 'not-started',
-                    status: status,
-                    text_metrics: submission.text_metrics || {
-                        // Create basic text metrics if not provided
-                        name_length: (submission.program_name || 'Unnamed Program').length,
-                        target_bullet_count: target.split('\n').length,
-                        target_max_chars: Math.max(...target.split('\n').map(line => line.length), 0),
-                        status_bullet_count: status.split('\n').length,
-                        status_max_chars: Math.max(...status.split('\n').map(line => line.length), 0)
-                    }
-                };
-            });        } else if (data && data.projects && Array.isArray(data.projects)) {
-            // Extract from projects data structure (new API format)
-            programs = data.projects.map(project => {
-                const targetText = project.target || 'Not specified';
-                const statusText = project.status || 'Not available';
-                return {
-                    name: project.name || 'Unnamed Program',
-                    target: targetText,
-                    rating: project.rating || 'not-started',
-                    status: statusText,
-                    text_metrics: project.text_metrics || {
-                        // Create basic text metrics if not provided
-                        name_length: (project.name || 'Unnamed Program').length,
-                        target_bullet_count: targetText.split('\n').length,
-                        target_max_chars: Math.max(...targetText.split('\n').map(line => line.length), 0),
-                        status_bullet_count: statusText.split('\n').length,
-                        status_max_chars: Math.max(...statusText.split('\n').map(line => line.length), 0)
-                    }
-                };
-            });
-        } else if (data && data.sector_programs && Array.isArray(data.sector_programs)) {
-            // Extract from sector_programs data structure if available
-            programs = data.sector_programs.map(program => {
-                const targetText = program.target || 'Not specified';
-                const statusText = program.status_description || 'Not available';
+                let statusText = 'N/A';
+                if (program.targets && program.targets.length > 0) {
+                    statusText = program.targets.map(t => t.status_description || '').join('\n');
+                }
                 return {
                     name: program.program_name || 'Unnamed Program',
-                    target: targetText,
+                    target: target,
                     rating: program.rating || 'not-started',
                     status: statusText,
                     text_metrics: program.text_metrics || {
-                        // Create basic text metrics if not provided
                         name_length: (program.program_name || 'Unnamed Program').length,
-                        target_bullet_count: targetText.split('\n').length,
-                        target_max_chars: Math.max(...targetText.split('\n').map(line => line.length), 0),
+                        target_bullet_count: target.split('\n').length,
+                        target_max_chars: Math.max(...target.split('\n').map(line => line.length), 0),
                         status_bullet_count: statusText.split('\n').length,
                         status_max_chars: Math.max(...statusText.split('\n').map(line => line.length), 0)
                     }
                 };
             });
-        } else {
-            // Fallback to extract any program-related data we can find
-            try {
-                // Try to find programs in various data structures
-                const possibleProgramArrays = [
-                    data.programs,
-                    data.programsList,
-                    data.sector_data && data.sector_data.programs
-                ];
-                
-                for (const programArray of possibleProgramArrays) {
-                    if (programArray && Array.isArray(programArray) && programArray.length > 0) {                        programs = programArray.map(prog => {
-                            const targetText = prog.target || 'Not specified';
-                            const statusText = prog.status || prog.status_description || 'Not available';
-                            const programName = prog.program_name || prog.name || 'Unnamed Program';
-                            
-                            return {
-                                name: programName,
-                                target: targetText,
-                                rating: prog.rating || 'not-started',
-                                status: statusText,
-                                text_metrics: prog.text_metrics || {
-                                    // Create basic text metrics if not provided
-                                    name_length: programName.length,
-                                    target_bullet_count: targetText.split('\n').length,
-                                    target_max_chars: Math.max(...targetText.split('\n').map(line => line.length), 0),
-                                    status_bullet_count: statusText.split('\n').length,
-                                    status_max_chars: Math.max(...statusText.split('\n').map(line => line.length), 0)
-                                }
-                            };
-                        });
-                        break;
-                    }
-                }
-                  // If we still don't have programs data, create a fallback sample
-                if (programs.length === 0) {
-                    console.warn('No program data found in report data. Using placeholder data.');
-                    console.warn('Data received from API:', JSON.stringify(data));
-                    console.warn('Data.programs:', data.programs);
-                    console.warn('Data.program_submissions:', data.program_submissions);
-                    console.warn('Data.projects:', data.projects);
-                      programs = [
-                        {
-                            name: 'Forest Conservation',
-                            target: '50,000 ha protected',
-                            rating: 'on-track',
-                            status: 'Target achieved',
-                            text_metrics: {
-                                name_length: 'Forest Conservation'.length,
-                                target_bullet_count: 1,
-                                target_max_chars: '50,000 ha protected'.length,
-                                status_bullet_count: 1,
-                                status_max_chars: 'Target achieved'.length
-                            }
-                        },
-                        {
-                            name: 'Timber Export Growth',
-                            target: 'RM 5.2 bil annual export',
-                            rating: 'minor-delays',
-                            status: 'Slightly below target',
-                            text_metrics: {
-                                name_length: 'Timber Export Growth'.length,
-                                target_bullet_count: 1,
-                                target_max_chars: 'RM 5.2 bil annual export'.length,
-                                status_bullet_count: 1,
-                                status_max_chars: 'Slightly below target'.length
-                            }
-                        }
-                    ];
-                }
-            } catch (e) {
-                console.error('Error extracting program data:', e);
-            }
         }
         
         // Create the program data table
