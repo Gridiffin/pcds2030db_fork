@@ -1012,8 +1012,7 @@ if (typeof window.ReportStyler !== 'undefined') {
         const chartOptions = getLineChartOptions(position, themeColors, defaultFont);
         
         // Override/set specific options for this chart
-        chartOptions.showLegend = true;
-        chartOptions.legendPos = 'b'; // Legend at the bottom
+        chartOptions.showLegend = false; // Remove legend
         chartOptions.catAxisTitle = 'Month';
         chartOptions.valAxisTitle = `${chartTitle} (${chartUnit})`;
         
