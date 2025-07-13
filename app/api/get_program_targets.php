@@ -103,33 +103,18 @@ try {
     // Create placeholders for program IDs
     $program_placeholders = implode(',', array_fill(0, count($selected_program_ids), '?'));
 
-    // Query to get programs with their targets (using same logic as report_data.php)
-    $programs_query = "SELECT p.program_id, p.program_name, 
-                        GROUP_CONCAT(ps.content_json ORDER BY rp.quarter ASC SEPARATOR '|||') as all_content_json,
-                        GROUP_CONCAT(CONCAT(rp.quarter, ':', ps.period_id) ORDER BY rp.quarter ASC SEPARATOR ',') as period_info
+    // Query to get programs with their targets (simplified for single submission per program/period)
+    $programs_query = "SELECT p.program_id, p.program_name, ps.submission_id
                       FROM programs p
-                      LEFT JOIN (
-                          SELECT ps1.*
-                          FROM program_submissions ps1
-                          INNER JOIN (
-                              SELECT program_id, period_id, MAX(submission_date) as latest_date, MAX(submission_id) as latest_submission_id
-                              FROM program_submissions
-                              WHERE period_id IN ($period_in_clause) AND is_draft = 0
-                              GROUP BY program_id, period_id
-                          ) ps2 ON ps1.program_id = ps2.program_id 
-                               AND ps1.period_id = ps2.period_id
-                               AND ps1.submission_date = ps2.latest_date 
-                               AND ps1.submission_id = ps2.latest_submission_id
-                          WHERE ps1.period_id IN ($period_in_clause) AND ps1.is_draft = 0
-                      ) ps ON p.program_id = ps.program_id
-                      LEFT JOIN reporting_periods rp ON ps.period_id = rp.period_id
+                      LEFT JOIN program_submissions ps ON p.program_id = ps.program_id 
+                          AND ps.period_id IN ($period_in_clause) 
+                          AND ps.is_draft = 0
                       WHERE p.program_id IN ($program_placeholders)
-                      GROUP BY p.program_id, p.program_name
                       ORDER BY p.program_name";
 
-    // Prepare parameters (period_ids twice for both IN clauses, then program_ids)
-    $params = array_merge($period_ids, $period_ids, $selected_program_ids);
-    $param_types = str_repeat('i', count($period_ids) * 2) . str_repeat('i', count($selected_program_ids));
+    // Prepare parameters (period_ids for IN clause, then program_ids)
+    $params = array_merge($period_ids, $selected_program_ids);
+    $param_types = str_repeat('i', count($period_ids)) . str_repeat('i', count($selected_program_ids));
 
     $stmt = $conn->prepare($programs_query);
     if (!$stmt) {
@@ -145,96 +130,57 @@ try {
     while ($program = $result->fetch_assoc()) {
         $program_targets = [];
 
-        // Process aggregated content from multiple periods (same logic as report_data.php)
-        $all_content_jsons = $program['all_content_json'] ? explode('|||', $program['all_content_json']) : [];
-        $period_info = $program['period_info'] ? explode(',', $program['period_info']) : [];
-
-        $target_counter = 1;
-
-        // Process each period's content
-        foreach ($all_content_jsons as $index => $content_json) {
-            if (empty(trim($content_json))) continue;
-
-            $content = json_decode($content_json, true);
-            if (!$content) continue;
-
-            // Extract period info for labeling
-            $period_quarter = isset($period_info[$index]) ? explode(':', $period_info[$index])[0] : 'unknown';
-            $period_label = "Q{$period_quarter}";
-
-            // Process targets from this period
-            if (isset($content['targets']) && is_array($content['targets']) && !empty($content['targets'])) {
-                // New format with targets array
-                foreach ($content['targets'] as $target_index => $t) {
-                    $target_text = $t['target_text'] ?? $t['text'] ?? 'No target set';
-                    $status_desc = $t['status_description'] ?? 'No status update available';
-
-                    // Clean up newlines
-                    $target_text = str_replace(['\\n', '\\r', '\\r\\n'], "\n", $target_text);
-                    $status_desc = str_replace(['\\n', '\\r', '\\r\\n'], "\n", $status_desc);
-
-                    $program_targets[] = [
-                        'target_id' => $target_counter,
-                        'target_number' => $target_counter,
-                        'target_text' => $target_text,
-                        'status_description' => $status_desc,
-                        'period_label' => $period_label,
-                        'period_quarter' => $period_quarter,
-                        'source_period_id' => isset($period_info[$index]) ? explode(':', $period_info[$index])[1] : null,
-                        'selected' => true // Default to selected
-                    ];
-
-                    $target_counter++;
-                }
-            } elseif (isset($content['target'])) {
-                // Old format with direct target property
-                $target_text = $content['target'] ?? 'No target set';
-                $status_description = $content['status_text'] ?? 'No status update available';
-
-                // Check if targets are semicolon-separated
-                if (strpos($target_text, ';') !== false) {
-                    $target_parts = array_map('trim', explode(';', $target_text));
-                    $status_parts = array_map('trim', explode(';', $status_description));
-
-                    foreach ($target_parts as $idx => $target_part) {
-                        if (!empty($target_part)) {
-                            $target_part = str_replace(['\\n', '\\r', '\\r\\n'], "\n", $target_part);
-                            $status_part = isset($status_parts[$idx]) ? $status_parts[$idx] : 'No status update available';
-                            $status_part = str_replace(['\\n', '\\r', '\\r\\n'], "\n", $status_part);
-
-                            $program_targets[] = [
-                                'target_id' => $target_counter,
-                                'target_number' => $target_counter,
-                                'target_text' => $target_part,
-                                'status_description' => $status_part,
-                                'period_label' => $period_label,
-                                'period_quarter' => $period_quarter,
-                                'source_period_id' => isset($period_info[$index]) ? explode(':', $period_info[$index])[1] : null,
-                                'selected' => true
-                            ];
-
-                            $target_counter++;
-                        }
-                    }
-                } else {
-                    // Single target
-                    $target_text = str_replace(['\\n', '\\r', '\\r\\n'], "\n", $target_text);
-                    $status_description = str_replace(['\\n', '\\r', '\\r\\n'], "\n", $status_description);
-
-                    $program_targets[] = [
-                        'target_id' => $target_counter,
-                        'target_number' => $target_counter,
-                        'target_text' => $target_text,
-                        'status_description' => $status_description,
-                        'period_label' => $period_label,
-                        'period_quarter' => $period_quarter,
-                        'source_period_id' => isset($period_info[$index]) ? explode(':', $period_info[$index])[1] : null,
-                        'selected' => true
-                    ];
-
-                    $target_counter++;
+        // Fetch targets for this program's submission
+        if ($program['submission_id']) {
+            // Get period information for this submission
+            $period_query = "SELECT rp.period_type, rp.period_number, rp.year 
+                           FROM program_submissions ps 
+                           JOIN reporting_periods rp ON ps.period_id = rp.period_id 
+                           WHERE ps.submission_id = ?";
+            $period_stmt = $conn->prepare($period_query);
+            $period_stmt->bind_param("i", $program['submission_id']);
+            $period_stmt->execute();
+            $period_result = $period_stmt->get_result();
+            $period_data = $period_result->fetch_assoc();
+            $period_stmt->close();
+            
+            // Generate period label
+            $period_label = '';
+            if ($period_data) {
+                if ($period_data['period_type'] === 'quarter') {
+                    $period_label = "Q{$period_data['period_number']}";
+                } elseif ($period_data['period_type'] === 'half') {
+                    $period_label = "H{$period_data['period_number']}";
+                } elseif ($period_data['period_type'] === 'yearly') {
+                    $period_label = "Y{$period_data['year']}";
                 }
             }
+            
+            $target_query = "SELECT target_id, target_number, target_description, status_indicator, status_description, remarks, start_date, end_date 
+                           FROM program_targets 
+                           WHERE submission_id = ? AND is_deleted = 0 
+                           ORDER BY target_id";
+            $target_stmt = $conn->prepare($target_query);
+            $target_stmt->bind_param("i", $program['submission_id']);
+            $target_stmt->execute();
+            $target_result = $target_stmt->get_result();
+            
+            while ($target = $target_result->fetch_assoc()) {
+                $program_targets[] = [
+                    'target_id' => $target['target_id'],
+                    'target_number' => $target['target_number'],
+                    'target_text' => $target['target_description'], // Backward compatibility
+                    'target_description' => $target['target_description'],
+                    'status_indicator' => $target['status_indicator'],
+                    'status_description' => $target['status_description'],
+                    'remarks' => $target['remarks'],
+                    'start_date' => $target['start_date'],
+                    'end_date' => $target['end_date'],
+                    'period_label' => $period_label,
+                    'selected' => true // Default to selected
+                ];
+            }
+            $target_stmt->close();
         }
 
         // Add program to results if it has targets

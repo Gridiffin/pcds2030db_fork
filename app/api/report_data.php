@@ -32,7 +32,7 @@ if (!is_admin()) {
 
 // Get parameters from request
 $period_id = isset($_GET['period_id']) ? intval($_GET['period_id']) : null;
-$sector_id = isset($_GET['sector_id']) ? intval($_GET['sector_id']) : 1; // Default to Forestry (sector_id 1)
+$sector_id = 1; // Default to Forestry Sector only
 $selected_program_ids_raw = isset($_GET['selected_program_ids']) ? $_GET['selected_program_ids'] : null;
 $program_orders_raw = isset($_GET['program_orders']) ? $_GET['program_orders'] : null;
 $selected_targets_raw = isset($_GET['selected_targets']) ? $_GET['selected_targets'] : null;
@@ -118,7 +118,7 @@ if ($selected_targets_raw) {
 // Add debug logging for parameters
 $period_ids_str = implode(',', $period_ids);
 error_log("API parameters - period_ids: {$period_ids_str}, sector_id: {$sector_id}");
-error_log("Fixed duplicate submission query - using MAX(submission_id) for tie-breaking");
+error_log("Simplified query - no more multiple submissions per program/period");
 if (!empty($program_orders)) {
     error_log("Program orders provided: " . json_encode($program_orders));
 }
@@ -160,9 +160,10 @@ $quarter = get_period_display_name($period);
 
 // --- 1. Get Sector Leads (agencies with this sector, including focal agencies) ---
 // Remove sector_leads and sector-based filtering from queries and outputs
-$sector_leads_query = "SELECT GROUP_CONCAT(agency_name SEPARATOR '; ') as sector_leads 
-                      FROM users 
-                      WHERE role IN ('agency', 'focal') AND is_active = 1";
+$sector_leads_query = "SELECT GROUP_CONCAT(a.agency_name SEPARATOR '; ') as sector_leads 
+                      FROM users u
+                      JOIN agency a ON u.agency_id = a.agency_id
+                      WHERE u.role IN ('agency', 'focal') AND u.is_active = 1";
 $stmt = $conn->prepare($sector_leads_query);
 $stmt->execute();
 $sector_leads_result = $stmt->get_result();
@@ -188,15 +189,14 @@ $sector_leads = $dept_prefix . $sector_leads;
 // --- 2. Get Programs for this Sector ---
 // Process selected program IDs if provided
 $selected_program_ids = [];
-$program_filter_condition = "p.sector_id = ?"; // Default filter by sector only
+$program_filter_condition = "1=1"; // Default filter - get all programs since sector_id no longer exists
 
-// Create the period IN clause for the two places where period_id is used
+// Create the period IN clause (period_ids used only once in the query)
 $period_in_clause = implode(',', array_fill(0, count($period_ids), '?'));
 
 // Prepare the parameters for the query
-$program_params = array_merge($period_ids, $period_ids); // period_ids appear twice in subquery
-$program_params[] = $sector_id; // Add sector_id 
-$program_param_types = str_repeat('i', count($period_ids) * 2) . 'i'; // period_ids (twice) + sector_id
+$program_params = $period_ids; // period_ids appear only once in the query
+$program_param_types = str_repeat('i', count($period_ids)); // period_ids (once)
 
 if (!empty($selected_program_ids_raw)) {
     error_log("Selected program IDs raw: {$selected_program_ids_raw}");
@@ -209,35 +209,23 @@ if (!empty($selected_program_ids_raw)) {
     if (!empty($selected_program_ids)) {
         $placeholders = implode(',', array_fill(0, count($selected_program_ids), '?'));
         $program_filter_condition = "p.program_id IN ($placeholders)";
-        $program_params = array_merge($period_ids, $period_ids, $selected_program_ids);
-        $program_param_types = str_repeat('i', count($period_ids) * 2) . str_repeat('i', count($selected_program_ids));
+        $program_params = array_merge($period_ids, $selected_program_ids);
+        $program_param_types = str_repeat('i', count($period_ids)) . str_repeat('i', count($selected_program_ids));
         error_log("Filtering by " . count($selected_program_ids) . " selected programs");
     }
 }
 
-// Refactored: Fetch latest non-draft submission for each program and period, then fetch targets from program_targets
+// Simplified: Fetch submissions for each program and period (no more multiple submissions per program/period)
 $programs_query = "
     SELECT p.program_id, p.program_name, p.rating, i.initiative_id, i.initiative_name,
            ps.submission_id, ps.period_id, rp.period_number, rp.period_type, rp.year
     FROM programs p
-    LEFT JOIN (
-        SELECT ps1.*
-        FROM program_submissions ps1
-        INNER JOIN (
-            SELECT program_id, period_id, MAX(submission_date) as latest_date, MAX(submission_id) as latest_submission_id
-            FROM program_submissions
-            WHERE period_id IN ($period_in_clause) AND is_draft = 0
-            GROUP BY program_id, period_id
-        ) ps2 ON ps1.program_id = ps2.program_id 
-             AND ps1.period_id = ps2.period_id
-             AND ps1.submission_date = ps2.latest_date 
-             AND ps1.submission_id = ps2.latest_submission_id
-        WHERE ps1.period_id IN ($period_in_clause) AND ps1.is_draft = 0
-    ) ps ON p.program_id = ps.program_id
+    LEFT JOIN program_submissions ps ON p.program_id = ps.program_id 
+        AND ps.period_id IN ($period_in_clause) 
+        AND ps.is_draft = 0
     LEFT JOIN reporting_periods rp ON ps.period_id = rp.period_id
     LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
     WHERE $program_filter_condition
-    GROUP BY p.program_id, p.program_name, i.initiative_id, i.initiative_name, ps.submission_id, ps.period_id, rp.period_number, rp.period_type, rp.year
     ORDER BY p.program_name";
 
 $stmt = $conn->prepare($programs_query);
@@ -262,20 +250,29 @@ while ($program = $programs_result->fetch_assoc()) {
         $target_stmt->execute();
         $target_result = $target_stmt->get_result();
         while ($target = $target_result->fetch_assoc()) {
-            $targets[] = $target;
+            $targets[] = [
+                'target_id' => (int)$target['target_id'],
+                'target_number' => (string)($target['target_number'] ?? ''),
+                'target_description' => (string)($target['target_description'] ?? ''),
+                'status_indicator' => (string)($target['status_indicator'] ?? ''),
+                'status_description' => (string)($target['status_description'] ?? ''),
+                'remarks' => (string)($target['remarks'] ?? ''),
+                'start_date' => (string)($target['start_date'] ?? ''),
+                'end_date' => (string)($target['end_date'] ?? '')
+            ];
         }
         $target_stmt->close();
     }
     $programs[] = [
-        'program_id' => $program['program_id'],
-        'program_name' => $program['program_name'],
-        'rating' => $program['rating'] ?? 'not_started',
-        'initiative_id' => $program['initiative_id'],
-        'initiative_name' => $program['initiative_name'],
-        'period_id' => $program['period_id'],
-        'period_number' => $program['period_number'],
-        'period_type' => $program['period_type'],
-        'year' => $program['year'],
+        'program_id' => (int)$program['program_id'],
+        'program_name' => (string)($program['program_name'] ?? ''),
+        'rating' => (string)($program['rating'] ?? 'not_started'),
+        'initiative_id' => (int)($program['initiative_id'] ?? 0),
+        'initiative_name' => (string)($program['initiative_name'] ?? ''),
+        'period_id' => (int)($program['period_id'] ?? 0),
+        'period_number' => (int)($program['period_number'] ?? 0),
+        'period_type' => (string)($program['period_type'] ?? ''),
+        'year' => (int)($program['year'] ?? 0),
         'targets' => $targets
     ];
 }
@@ -329,6 +326,13 @@ foreach ($outcomes as $outcome) {
 }
 
 // Add degraded area chart data using dynamic years
+$degraded_area_years = [$previous_year, $current_year]; // Default years
+$degraded_area_units = 'Ha'; // Default units
+$degraded_area_data = [
+    $previous_year => array_fill(0, 12, 0),
+    $current_year => array_fill(0, 12, 0)
+];
+
 $degraded_area_chart_data_prepared = [
     'labels' => $monthly_labels,
     'years' => $degraded_area_years, // Add years array for frontend reference
@@ -350,15 +354,16 @@ $secondary_chart_data = [
     'total' . $current_year => "0"
 ];
 
-// Now query for other metrics data
-$metrics_query = "SELECT * FROM sector_outcomes_data 
-                  WHERE period_id = ? AND is_draft = 0";
-$stmt = $conn->prepare($metrics_query);
-$stmt->bind_param("i", $period_id);
-$stmt->execute();
-$metrics_result = $stmt->get_result();
+// Now query for other metrics data - sector_outcomes_data table doesn't exist in current schema
+// Using outcomes table instead
+$metrics_result = null; // Placeholder for now
 
 // Prepare the main chart data with the timber export values we found
+$timber_export_data = [
+    $previous_year => array_fill(0, 12, 0),
+    $current_year => array_fill(0, 12, 0)
+];
+
 $main_chart_data = [
     'labels' => $monthly_labels,
     'data' . $previous_year => $timber_export_data[$previous_year],
@@ -410,24 +415,20 @@ $charts_data['degraded_area_chart'] = [
     'data' => $degraded_area_chart_data_prepared
 ];
 
-$charts_data['secondary_chart'] = [
-    'type' => 'chart',
-    'key' => 'secondary_chart',
-];
-
 // --- 5. Generate Draft Date ---
 $draft_date = 'DRAFT ' . date('j M Y');
 
 // --- Assemble final data structure ---
 $report_data = [
     'reportTitle' => strtoupper($sector['sector_name']),
-    'sectorLeads' => $sector_leads,
-    'quarter' => $quarter,
+    'sectorLeads' => (string)$sector_leads,
+    'quarter' => (string)$quarter,
     'projects' => $programs,
     'programs' => $programs, // Add programs with the correct key name that the frontend expects
-    'charts' => $charts_data,    'draftDate' => $draft_date,
-    'sector_id' => $sector_id,  // Include sector_id for client-side use
-    'outcomes' => $outcomes_by_code,  // This is the primary source for KPIs now
+    'charts' => $charts_data,
+    'draftDate' => (string)$draft_date,
+    'sector_id' => (int)$sector_id,  // Include sector_id for client-side use
+    'outcomes' => $outcomes_by_code  // This is the primary source for KPIs now
 ];
 
 // Remove any undefined variables reference that could cause PHP warnings

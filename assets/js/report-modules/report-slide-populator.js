@@ -21,7 +21,8 @@ if (typeof window.ReportPopulator !== 'undefined') {
             const defaultFont = ReportStyler.getDefaultFont();
             
             // Extract sector name from report data
-            const sectorName = data.reportTitle ? data.reportTitle.split(' ')[0] : 'Forestry';
+            const sectorName = data.reportTitle ? String(data.reportTitle).split(' ')[0] : 'Forestry';
+            console.log('Sector name being used:', sectorName, 'Type:', typeof sectorName);
             
             // Add top and bottom sections
             addTopSection(slide, data, pptx, themeColors, defaultFont, sectorName);
@@ -363,7 +364,9 @@ if (typeof window.ReportPopulator !== 'undefined') {
         ReportStyler.addSectorIcon(slide, pptx, themeColors, iconPath);
         
         // Add sector name and target text
-        ReportStyler.addSectorText(slide, sectorName, 'RM 8 bil in exports by 2030', themeColors, defaultFont);
+        const safeSectorName = String(sectorName || 'Forestry');
+        console.log('Safe sector name:', safeSectorName, 'Type:', typeof safeSectorName);
+        ReportStyler.addSectorText(slide, safeSectorName, 'RM 8 bil in exports by 2030', themeColors, defaultFont);
         
         // Create MUDeNR outcomes box
         const mudenrBox = ReportStyler.createMudenrBox(slide, pptx, themeColors);
@@ -372,7 +375,9 @@ if (typeof window.ReportPopulator !== 'undefined') {
         ReportStyler.addMudenrOutcomes(slide, pptx, mudenrBox, defaultFont, themeColors);
         
         // Create quarter box with yellow indicator
-        ReportStyler.createQuarterBox(slide, pptx, themeColors, data.quarter || 'Q2 2025', defaultFont);
+        const quarterText = data.quarter || 'Q2 2025';
+        console.log('Quarter text being used:', quarterText, 'Type:', typeof quarterText);
+        ReportStyler.createQuarterBox(slide, pptx, themeColors, String(quarterText), defaultFont);
     }
 
     /**
@@ -439,6 +444,10 @@ if (typeof window.ReportPopulator !== 'undefined') {
                 console.log('Starting presentation generation with data:', data);
                 console.log('Data contains programs array?', Array.isArray(data.programs), 'Length:', data.programs ? data.programs.length : 0);
                 console.log('Data contains projects array?', Array.isArray(data.projects), 'Length:', data.projects ? data.projects.length : 0);
+                console.log('Data.quarter:', data.quarter, 'Type:', typeof data.quarter);
+                console.log('Data.reportTitle:', data.reportTitle, 'Type:', typeof data.reportTitle);
+                console.log('Data.sectorLeads:', data.sectorLeads, 'Type:', typeof data.sectorLeads);
+                console.log('Data.draftDate:', data.draftDate, 'Type:', typeof data.draftDate);
                 
                 // Update status if available
                 if (statusMessage) statusMessage.textContent = 'Creating presentation...';
@@ -488,3 +497,8 @@ if (typeof window.ReportPopulator !== 'undefined') {
 })();
 
 } // End ReportPopulator guard
+
+// Defensive wrapper for chart rendering
+function safeChartField(field, fallback = '') {
+    return typeof field === 'string' ? field : (field !== undefined && field !== null ? String(field) : fallback);
+}

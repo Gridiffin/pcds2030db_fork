@@ -35,7 +35,7 @@ $offset = ($page - 1) * $per_page;
  * @return string Formatted period name
  */
 function formatPeriod($report) {
-    if (!$report || !isset($report['quarter'], $report['year'])) {
+    if (!$report || !isset($report['period_type'], $report['period_number'], $report['year'])) {
         return 'Unknown';
     }
     
@@ -80,11 +80,19 @@ function getPaginatedReports($offset, $per_page, $search = '') {
         $where_clause = " WHERE (
             r.report_name LIKE ? OR 
             u.username LIKE ? OR 
-            CONCAT('Q', rp.quarter, ' ', rp.year) LIKE ? OR
             CASE 
-                WHEN rp.quarter = 5 THEN CONCAT('H1 ', rp.year)
-                WHEN rp.quarter = 6 THEN CONCAT('H2 ', rp.year)
-                ELSE CONCAT('Q', rp.quarter, ' ', rp.year)
+                WHEN rp.period_type = 'quarter' THEN CONCAT('Q', rp.period_number, ' ', rp.year)
+                WHEN rp.period_type = 'half' AND rp.period_number = 1 THEN CONCAT('H1 ', rp.year)
+                WHEN rp.period_type = 'half' AND rp.period_number = 2 THEN CONCAT('H2 ', rp.year)
+                WHEN rp.period_type = 'yearly' THEN CONCAT('Y', rp.year)
+                ELSE CONCAT('Q', rp.period_number, ' ', rp.year)
+            END LIKE ? OR
+            CASE 
+                WHEN rp.period_type = 'quarter' THEN CONCAT('Q', rp.period_number, ' ', rp.year)
+                WHEN rp.period_type = 'half' AND rp.period_number = 1 THEN CONCAT('H1 ', rp.year)
+                WHEN rp.period_type = 'half' AND rp.period_number = 2 THEN CONCAT('H2 ', rp.year)
+                WHEN rp.period_type = 'yearly' THEN CONCAT('Y', rp.year)
+                ELSE CONCAT('Q', rp.period_number, ' ', rp.year)
             END LIKE ?
         )";
         $search_param = "%{$search}%";
@@ -106,7 +114,7 @@ function getPaginatedReports($offset, $per_page, $search = '') {
     
     // Get paginated reports
     $reports_query = "SELECT r.report_id, r.report_name, r.pptx_path, r.generated_at, r.is_public,
-                             rp.quarter, rp.year, u.username " . 
+                             rp.period_type, rp.period_number, rp.year, u.username " . 
                      $base_query . $where_clause . 
                      " ORDER BY r.generated_at DESC LIMIT ? OFFSET ?";
     

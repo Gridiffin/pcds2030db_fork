@@ -1143,6 +1143,13 @@ if (typeof window.ReportStyler !== 'undefined') {
             h: 0.15 // Reduced height for title to bring it closer to chart
         }, themeColors, defaultFont);
 
+        chartDataSeries.forEach(series => {
+            series.name = String(series.name || '');
+            if (Array.isArray(series.labels)) {
+                series.labels = series.labels.map(l => String(l || ''));
+            }
+        });
+
         slide.addChart(pptx.ChartType.line, chartDataSeries, chartOptions);
         console.log("Total Degraded Area chart added to slide.");
     }
@@ -1724,6 +1731,13 @@ slide.addText(statusText, {
             chartOptions.valAxisMaxVal = maxMonthlyValue * 1.1; // Add 10% buffer
             chartOptions.valAxisMajorUnit = calculateMajorUnit(maxMonthlyValue * 1.1);
         }
+        
+        chartData.forEach(series => {
+            series.name = String(series.name || '');
+            if (Array.isArray(series.labels)) {
+                series.labels = series.labels.map(l => String(l || ''));
+            }
+        });
         
         // Add chart (no need to set axis titles as they've been removed)
         slide.addChart(pptx.ChartType.line || 'line', chartData, chartOptions);
