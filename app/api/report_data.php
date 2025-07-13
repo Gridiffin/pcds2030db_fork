@@ -364,13 +364,11 @@ $timber_export_data = [
     $current_year => array_fill(0, 12, 0)
 ];
 
-$main_chart_data = [
-    'labels' => $monthly_labels,
-    'data' . $previous_year => $timber_export_data[$previous_year],
-    'data' . $current_year => $timber_export_data[$current_year],
-    'total' . $previous_year => array_sum($timber_export_data[$previous_year]),
-    'total' . $current_year => array_sum($timber_export_data[$current_year])
-];
+// Use actual outcome data for timber export chart
+$main_chart_data = $outcomes_by_code['timber_export']['data'] ?? [];
+
+// Use actual outcome data for degraded area chart
+$degraded_area_chart_data_prepared = $outcomes_by_code['degraded_area']['data'] ?? [];
 
 // Set the chart titles and values based on the sector
 switch ($sector_id) {
@@ -378,29 +376,25 @@ switch ($sector_id) {
         $main_chart_title = "Timber Export Value (RM)";
         $secondary_chart_title = "Total Degraded Area Restored (Ha)";
         break;
-            
     case 2: // Land
         $main_chart_title = "Land Development (Ha)";
         $secondary_chart_title = "Land Title Applications Processed";
         break;
-            
     case 3: // Environment
         $main_chart_title = "Air Quality Index";
         $secondary_chart_title = "Waste Management (Tons)";
         break;
-            
     case 4: // Natural Resources
         $main_chart_title = "Resource Extraction (Units)";
         $secondary_chart_title = "Sustainable Resource Management (%)";
         break;
-            
     case 5: // Urban Development
         $main_chart_title = "Urban Growth (km²)";
         $secondary_chart_title = "Housing Development (Units)";
         break;
 }
 
-// Store default charts in the arrays
+// Store charts in the arrays using real data
 $charts_data['main_chart'] = [
     'type' => 'chart',
     'key' => 'main_chart',
@@ -411,7 +405,7 @@ $charts_data['main_chart'] = [
 $charts_data['degraded_area_chart'] = [
     'type' => 'chart',
     'key' => 'degraded_area_chart',
-    'title' => 'Total Degraded Area (' . ($degraded_area_units ?: 'Ha') . ')',
+    'title' => 'Total Degraded Area (Ha)',
     'data' => $degraded_area_chart_data_prepared
 ];
 
