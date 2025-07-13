@@ -646,19 +646,18 @@ if (typeof window.ReportStyler !== 'undefined') {
         // Chart container is at x: 9.17 inches, width: 4.05 inches (ends at 13.22 inches)
         const chartContainerEndX = (9.17 + 4.05) * 2.54; // Convert inches to cm
         const kpiBoxWidthCm = 10.0;     // Width of a single KPI box in cm
+        const kpiBoxHeightCm = 1.57;    // Height of a single KPI box in cm (REVERTED)
         const firstKpiHorizontalPosCm = chartContainerEndX - kpiBoxWidthCm; // Align right edge with chart end
-        const kpiBoxHeightCm = 1.57;    // Height of a single KPI box in cm
 
         let yPosCm;
         if (boxIndex === 0) {
-            yPosCm = 7.64; // Vertical position for the first box
+            yPosCm = 7.64; // Vertical position for the first box (REVERTED)
         } else if (boxIndex === 1) {
-            yPosCm = 9.31; // Vertical position for the second box
+            yPosCm = 9.31; // Vertical position for the second box (REVERTED)
         } else if (boxIndex === 2) {
-            yPosCm = 10.97; // Vertical position for the third box
+            yPosCm = 10.97; // Vertical position for the third box (REVERTED)
         } else {
             // Fallback for any additional boxes, though typically only 3 are expected
-            // This maintains a consistent spacing based on the last defined gap if more than 3 KPIs were somehow processed.
             const previousBoxYPosCm = 10.97;
             const verticalSpacingCm = 1.5; // Default spacing if more than 3 boxes
             yPosCm = previousBoxYPosCm + ((boxIndex - 2) * (kpiBoxHeightCm + verticalSpacingCm));
@@ -687,7 +686,7 @@ if (typeof window.ReportStyler !== 'undefined') {
                 renderDetailedListKpiLayout(slide, pptx, themeColors, defaultFont, kpiName, detailJson.items, xPosIn, yPosIn, boxWidthIn, boxHeightIn);
                 break;
             case 'comparison':
-                renderComparisonKpiLayout(slide, pptx, themeColors, defaultFont, kpiName, detailJson.items, xPosIn, yPosIn, boxWidthIn, boxHeightIn);
+                renderComparisonKpiLayout(slide, pptx, themeColors, defaultFont, kpiName, detailJson.items, xPosIn, yPosIn, boxWidthIn, boxHeightIn); // No extra height
                 break;
             default:
                 console.warn(`Unsupported KPI layout_type: ${detailJson.layout_type}`);
@@ -886,9 +885,9 @@ if (typeof window.ReportStyler !== 'undefined') {
     }    
     
     function renderComparisonKpiLayout(slide, pptx, themeColors, defaultFont, kpiName, items, boxXIn, boxYIn, boxWidthIn, boxHeightIn) {
-        const boxPadding = 0.03; // Reduced fixed padding
+        const boxPadding = 0.03;
 
-        const kpiNameW = boxWidthIn * 0.38; // Slightly reduced kpiName width proportion
+        const kpiNameW = boxWidthIn * 0.38;
         const kpiNameX = boxXIn + boxPadding;
         const kpiNameY = boxYIn + boxPadding;
         const kpiNameH = boxHeightIn - (2 * boxPadding);
@@ -897,78 +896,74 @@ if (typeof window.ReportStyler !== 'undefined') {
             x: kpiNameX, y: kpiNameY, w: kpiNameW, h: kpiNameH,
             fontSize: 8, bold: true, fontFace: defaultFont,
             color: themeColors.primary, align: 'left', valign: 'top',
-            breakLine: true, 
-            fit: 'shrink' 
+            breakLine: true, fit: 'shrink'
         });
 
         const dataAreaX = kpiNameX + kpiNameW + boxPadding;
-        const dataAreaW = boxWidthIn - kpiNameW - (3 * boxPadding); 
+        const dataAreaW = boxWidthIn - kpiNameW - (3 * boxPadding);
         const dataAreaY = boxYIn + boxPadding;
         const dataAreaH = boxHeightIn - (2 * boxPadding);
 
         const displayItems = items && items.length ? items.slice(0, 2) : [];
+        const colCount = 2;
+        const colW = dataAreaW / colCount;
+        const valueH = dataAreaH * 0.45; // 45% for value
+        const descH = dataAreaH * 0.55;  // 55% for description
 
-        if (displayItems.length > 0) {
-            const numDataRows = displayItems.length;
-            const dataRowH = dataAreaH / numDataRows; 
+        // Center columns vertically in the data area
+        const valueY = dataAreaY;
+        const descY = dataAreaY + valueH;
 
-            displayItems.forEach((item, index) => {
-                const currentRowY = dataAreaY + (index * dataRowH);
-                const itemInternalPadding = 0.02;                const valueColWProportion = 0.35; // Value column now takes 35% of data area width (reduced from 40%)
-                const valueColW = dataAreaW * valueColWProportion; 
-                const textStackColX = dataAreaX + valueColW + (itemInternalPadding / 2); // Reduced padding between value and text stack
-                // Ensure textStackColW is not negative and extend its width to be closer to the value
-                const textStackColW = Math.max(0, dataAreaW - valueColW - itemInternalPadding); // Reduced padding from 2*itemInternalPadding to just itemInternalPadding
-
-                let valueText = item.value || '0';
-                const valueFontSize = 16; // Reduced font size for value
-                
-                const valueElX = dataAreaX + itemInternalPadding; 
-                const valueElY = currentRowY + itemInternalPadding;
-                const valueElH = dataRowH - (2 * itemInternalPadding);
-                const actualValueW = valueColW - itemInternalPadding;
-
-                let valueOpts = {
-                    x: valueElX, y: valueElY, w: actualValueW, h: valueElH,
-                    fontSize: valueFontSize, bold: true, fontFace: defaultFont,
-                    color: themeColors.secondary || '4472C4', align: 'center', valign: 'middle',
-                    fit: 'shrink' 
-                };
-                slide.addText(String(valueText), valueOpts);
-
-
-                const labelStackH = dataRowH - (2 * itemInternalPadding);
-                const labelHProportion = 0.45; // Label takes 45% of stack height
-                const labelH = labelStackH * labelHProportion; 
-                const descH = labelStackH * (1 - labelHProportion);  
-
-                const labelY = currentRowY + itemInternalPadding;
-                const descY = labelY + labelH; 
-
-                if (item.label) {
-                    slide.addText(item.label || '', {
-                        x: textStackColX, y: labelY, w: textStackColW, h: labelH,
-                        fontSize: 6, bold: true, fontFace: defaultFont, // Increased font size slightly
-                        color: themeColors.text, align: 'left', valign: 'top',
-                        breakLine: true, fit: 'shrink' 
-                    });
-                }
-
-                if (item.description) {
-                    slide.addText(item.description || '', {
-                        x: textStackColX, y: descY, w: textStackColW, h: descH,
-                        fontSize: 6, italic: true, fontFace: defaultFont, // Increased font size slightly
-                        color: themeColors.lightText, align: 'left', valign: 'top',
-                        breakLine: true, fit: 'shrink' 
-                    });
-                }
+        for (let i = 0; i < colCount; i++) {
+            const item = displayItems[i] || {};
+            const colX = dataAreaX + i * colW;
+            // Value (top, centered, bold, large)
+            slide.addText(item.value || '', {
+                x: colX,
+                y: valueY,
+                w: colW,
+                h: valueH,
+                fontSize: 16,
+                bold: true,
+                fontFace: defaultFont,
+                color: themeColors.secondary || '4472C4',
+                align: 'center',
+                valign: 'middle',
+                fit: 'shrink'
             });
-        } else {
-            slide.addText('No data available.', {
-                x: dataAreaX, y: dataAreaY, w: dataAreaW, h: dataAreaH,
-                fontSize: 8, fontFace: defaultFont, color: themeColors.lightText,
-                align: 'center', valign: 'middle'
-            });
+            // Add percent symbol as superscript if value is not empty
+            if ((item.value || '').toString().trim() !== '') {
+                slide.addText('%', {
+                    x: colX + colW * 0.63, // Move a little farther from the value
+                    y: valueY + valueH * 0.10, // Slightly above the middle
+                    w: colW * 0.15,
+                    h: valueH * 0.5,
+                    fontSize: 12, // Bigger font size
+                    fontFace: defaultFont,
+                    color: themeColors.lightText || '888888',
+                    align: 'left',
+                    valign: 'top',
+                    bold: false,
+                    italic: false
+                });
+            }
+            // Description (bottom, full width, smaller, italic, wraps)
+            if (item.description) {
+                slide.addText(item.description, {
+                    x: colX,
+                    y: descY,
+                    w: colW,
+                    h: descH,
+                    fontSize: 6,
+                    italic: true,
+                    fontFace: defaultFont,
+                    color: themeColors.lightText,
+                    align: 'left',
+                    valign: 'top',
+                    breakLine: true,
+                    fit: 'shrink'
+                });
+            }
         }
     }
     
