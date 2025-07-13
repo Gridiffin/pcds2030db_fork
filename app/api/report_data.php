@@ -419,6 +419,61 @@ $charts_data['degraded_area_chart'] = [
 $draft_date = 'DRAFT ' . date('j M Y');
 
 // --- Assemble final data structure ---
+// Build KPI boxes from outcomes_by_code
+$kpi_boxes = [];
+if (isset($outcomes_by_code['kpi_programs'])) {
+    $kpi = $outcomes_by_code['kpi_programs'];
+    $items = [];
+    if (is_array($kpi['data'])) {
+        foreach ($kpi['data'] as $entry) {
+            $items[] = [
+                'value' => $entry['value'],
+                'description' => $entry['description']
+            ];
+        }
+    }
+    $kpi_boxes[] = [
+        'name' => $kpi['title'],
+        'layout_type' => 'simple',
+        'items' => $items
+    ];
+}
+if (isset($outcomes_by_code['kpi_certification'])) {
+    $kpi = $outcomes_by_code['kpi_certification'];
+    $items = [];
+    if (is_array($kpi['data'])) {
+        foreach ($kpi['data'] as $entry) {
+            $items[] = [
+                'value' => $entry['value'],
+                'description' => $entry['description'],
+                'extra' => isset($entry['extra']) ? $entry['extra'] : ''
+            ];
+        }
+    }
+    $kpi_boxes[] = [
+        'name' => $kpi['title'],
+        'layout_type' => 'comparison', // changed from 'simple' to 'comparison'
+        'items' => $items
+    ];
+}
+if (isset($outcomes_by_code['kpi_global'])) {
+    $kpi = $outcomes_by_code['kpi_global'];
+    $items = [];
+    if (is_array($kpi['data'])) {
+        foreach ($kpi['data'] as $entry) {
+            $items[] = [
+                'value' => $entry['value'],
+                'description' => $entry['description']
+            ];
+        }
+    }
+    $kpi_boxes[] = [
+        'name' => $kpi['title'],
+        'layout_type' => 'comparison',
+        'items' => $items
+    ];
+}
+
 $report_data = [
     'reportTitle' => strtoupper($sector['sector_name']),
     'sectorLeads' => (string)$sector_leads,
@@ -428,7 +483,8 @@ $report_data = [
     'charts' => $charts_data,
     'draftDate' => (string)$draft_date,
     'sector_id' => (int)$sector_id,  // Include sector_id for client-side use
-    'outcomes' => $outcomes_by_code  // This is the primary source for KPIs now
+    'outcomes' => $outcomes_by_code,  // This is the primary source for KPIs now
+    'kpi_boxes' => $kpi_boxes // New structure for frontend/styler
 ];
 
 // Remove any undefined variables reference that could cause PHP warnings

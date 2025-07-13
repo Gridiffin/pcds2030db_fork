@@ -84,62 +84,18 @@ if (typeof window.ReportPopulator !== 'undefined') {
      * @param {string} defaultFont - The default font
      */
     function addKpiBoxes(slide, data, pptx, themeColors, defaultFont) {
-        console.log("Adding KPI boxes with outcomes_details data");        if (data && data.outcomes_details && data.outcomes_details.length > 0) {
-            console.log("Using outcomes_details data for KPIs:", data.outcomes_details);
-
-            data.outcomes_details.forEach((kpi, index) => {
+        console.log("Adding KPI boxes with kpi_boxes data");
+        if (data && data.kpi_boxes && data.kpi_boxes.length > 0) {
+            console.log("Using kpi_boxes data for KPIs:", data.kpi_boxes);
+            data.kpi_boxes.forEach((kpi, index) => {
                 if (index < 3) { // Ensure we only process up to 3 KPIs
-                    try {
-                        const detailJson = JSON.parse(kpi.detail_json);
-                        
-                        // Check if this is a legacy format (without layout_type)
-                        // If so, adapt it to a format our new renderer can handle
-                        if (!detailJson.layout_type) {
-                            // Convert legacy format to new format
-                            console.log(`Converting legacy format for KPI: ${kpi.name}`);
-                            
-                            // Determine if this contains multiple values (indicated by ; in value or description)
-                            const hasMultipleValues = 
-                                (detailJson.value && detailJson.value.includes(';')) || 
-                                (detailJson.description && detailJson.description.includes(';'));
-                            
-                            if (hasMultipleValues) {
-                                // Split values and descriptions at semicolons
-                                const values = detailJson.value ? detailJson.value.split(';') : ['N/A'];
-                                const descriptions = detailJson.description ? detailJson.description.split(';') : [''];
-                                
-                                // Create items array
-                                const items = values.map((val, idx) => ({
-                                    value: val.trim(),
-                                    description: descriptions[idx] ? descriptions[idx].trim() : ''
-                                }));
-                                
-                                // Use detailed_list layout for multiple items
-                                detailJson.layout_type = 'detailed_list';
-                                detailJson.items = items;
-                            } else {
-                                // Use simple layout for single value/description
-                                detailJson.layout_type = 'simple';
-                                detailJson.items = [{
-                                    value: detailJson.value || 'N/A',
-                                    description: detailJson.description || ''
-                                }];
-                            }
-                        }
-                        
-                        // Call a generic KPI box creation function from ReportStyler
-                        // The ReportStyler will handle layout based on detailJson.layout_type and detailJson.items
-                        ReportStyler.createKpiBox(slide, pptx, themeColors, defaultFont, kpi.name, detailJson, index);
-                        console.log(`Added KPI box ${index + 1} for:`, kpi.name);
-                    } catch (e) {
-                        console.error("Error parsing detail_json for KPI:", kpi.name, e);
-                        // Optionally, add a placeholder or error message on the slide
-                        ReportStyler.createErrorKpiBox(slide, pptx, themeColors, defaultFont, `Error: KPI ${index + 1} data invalid`, index);
-                    }
+                    // Pass the box directly to the styler
+                    ReportStyler.createKpiBox(slide, pptx, themeColors, defaultFont, kpi.name, kpi, index);
+                    console.log(`Added KPI box ${index + 1} for:`, kpi.name);
                 }
             });
         } else {
-            console.warn("No KPI data available in outcomes_details. No fallback available.");
+            console.warn("No KPI data available in kpi_boxes. No fallback available.");
         }
     }
 
