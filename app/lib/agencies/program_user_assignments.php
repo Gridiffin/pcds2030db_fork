@@ -102,14 +102,14 @@ function can_edit_program_with_user_restrictions($program_id, $user_id = null) {
     // Focal users can edit programs within their agency (check agency access first)
     if (is_focal_user()) {
         $focal_agency_id = $_SESSION['agency_id'] ?? null;
-        if ($focal_agency_id && can_edit_program($program_id)) {
+        if ($focal_agency_id && can_edit_program_agency_level($program_id)) {
             return true;
         }
         // If focal user's agency doesn't have access, follow normal rules
     }
     
-    // Check agency-level permissions first
-    if (!can_edit_program($program_id)) {
+    // Check agency-level permissions first (avoid circular dependency)
+    if (!can_edit_program_agency_level($program_id)) {
         return false;
     }
     

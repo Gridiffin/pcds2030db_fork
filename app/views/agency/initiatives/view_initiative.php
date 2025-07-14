@@ -39,7 +39,7 @@ if (!$initiative_id) {
 }
 
 // Get initiative details
-$agency_id = $_SESSION['user_id'];
+$agency_id = $_SESSION['agency_id'] ?? null;
 $initiative = get_agency_initiative_details($initiative_id, $agency_id);
 
 if (!$initiative) {

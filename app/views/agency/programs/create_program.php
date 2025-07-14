@@ -30,7 +30,7 @@ if (!is_agency()) {
 $active_initiatives = get_initiatives_for_select(true);
 
 // Get users in current agency for assignment
-$agency_id = $_SESSION['agency_id'];
+$agency_id = $_SESSION['agency_id'] ?? null;
 $agency_users = [];
 if ($agency_id) {
     $stmt = $conn->prepare("

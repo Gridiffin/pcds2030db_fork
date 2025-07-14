@@ -63,7 +63,7 @@ $end_date_col = get_column_name('initiatives', 'end_date');
 $is_active_col = get_column_name('initiatives', 'is_active');
 
 // Get initiatives for current agency
-$agency_id = $_SESSION['user_id'];
+$agency_id = $_SESSION['agency_id'] ?? null;
 $initiatives = get_agency_initiatives($agency_id, $filters);
 
 // Additional scripts

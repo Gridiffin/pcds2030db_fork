@@ -54,46 +54,77 @@ function load_user_assignments_if_needed() {
 function get_user_program_role($program_id, $agency_id = null) {
     global $conn;
     
-    $program_id = intval($program_id);
-    if ($program_id <= 0) {
-        return false;
+    // Add recursion protection
+    static $recursion_protection = [];
+    $call_key = $program_id . '_' . ($agency_id ?? 'null');
+    
+    if (isset($recursion_protection[$call_key])) {
+        error_log("Recursion detected in get_user_program_role for program_id: $program_id, agency_id: $agency_id");
+        return false; // Break recursion
     }
     
+    $recursion_protection[$call_key] = true;
+    
+    $program_id = intval($program_id);
+    if ($program_id <= 0) {
+        unset($recursion_protection[$call_key]);
+        return false;
+    }
+
     // Use session agency_id if not provided
     if ($agency_id === null) {
         $agency_id = $_SESSION['agency_id'] ?? 0;
     }
     $agency_id = intval($agency_id);
-    
+
     if ($agency_id <= 0) {
+        unset($recursion_protection[$call_key]);
         return false;
     }
-    
+
     // Check program_agency_assignments table
     $stmt = $conn->prepare("
         SELECT role 
         FROM program_agency_assignments 
         WHERE program_id = ? AND agency_id = ? AND is_active = 1
     ");
-    $stmt->bind_param("ii", $program_id, $agency_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
     
-    if ($row = $result->fetch_assoc()) {
-        return $row['role'];
+    if (!$stmt) {
+        error_log("Failed to prepare statement in get_user_program_role: " . $conn->error);
+        unset($recursion_protection[$call_key]);
+        return false;
     }
     
+    $stmt->bind_param("ii", $program_id, $agency_id);
+    $result = $stmt->execute();
+    
+    if (!$result) {
+        error_log("Failed to execute statement in get_user_program_role: " . $stmt->error);
+        unset($recursion_protection[$call_key]);
+        return false;
+    }
+    
+    $result = $stmt->get_result();
+
+    if ($row = $result->fetch_assoc()) {
+        $role = $row['role'];
+        unset($recursion_protection[$call_key]);
+        return $role;
+    }
+
+    unset($recursion_protection[$call_key]);
     return false;
 }
 
 /**
- * Check if user can edit a program
+ * Check if user can edit a program at agency level only (no user restrictions)
+ * This is used internally to avoid circular dependencies
  *
  * @param int $program_id Program ID
  * @param int $agency_id Agency ID (optional)
- * @return bool True if user can edit
+ * @return bool True if user can edit at agency level
  */
-function can_edit_program($program_id, $agency_id = null) {
+function can_edit_program_agency_level($program_id, $agency_id = null) {
     // Focal users can edit programs within their agency (check agency access first)
     if (is_focal_user()) {
         $focal_agency_id = $_SESSION['agency_id'] ?? null;
@@ -107,7 +138,19 @@ function can_edit_program($program_id, $agency_id = null) {
     }
     
     $role = get_user_program_role($program_id, $agency_id);
-    $can_edit_agency_level = in_array($role, ['owner', 'editor']);
+    return in_array($role, ['owner', 'editor']);
+}
+
+/**
+ * Check if user can edit a program
+ *
+ * @param int $program_id Program ID
+ * @param int $agency_id Agency ID (optional)
+ * @return bool True if user can edit
+ */
+function can_edit_program($program_id, $agency_id = null) {
+    // Check agency-level permissions first
+    $can_edit_agency_level = can_edit_program_agency_level($program_id, $agency_id);
     
     // If no agency-level access, return false
     if (!$can_edit_agency_level) {
