@@ -552,9 +552,9 @@ $showNoSubmissionsAlert = !$has_submissions && $is_owner;
                                 <i class="fas fa-edit me-2"></i>Edit Program
                             </a>
                         <?php endif; ?>
-                        <a href="<?php echo APP_URL; ?>/app/views/agency/reports/view_reports.php" class="btn btn-outline-info">
-                            <i class="fas fa-chart-bar me-2"></i>View Reports
-                        </a>
+                        <button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#viewSubmissionsModal">
+                            <i class="fas fa-list-alt me-2"></i>View Submissions
+                        </button>
                     </div>
                 </div>
             </div>
@@ -649,9 +649,8 @@ $showNoSubmissionsAlert = !$has_submissions && $is_owner;
                 </div>
                 <div class="card-body">
                     <?php foreach ($related_programs as $related): ?>
-                        <div class="related-program-item mb-2">
-                            <a href="<?php echo APP_URL; ?>/app/views/agency/programs/enhanced_program_details.php?id=<?php echo $related['program_id']; ?>" 
-                               class="text-decoration-none">
+                        <div class="related-program-item mb-2 d-flex align-items-center justify-content-between">
+                            <div>
                                 <div class="related-program-name small fw-medium"><?php echo htmlspecialchars($related['program_name']); ?></div>
                                 <div class="related-program-meta text-muted small">
                                     <?php if (!empty($related['program_number'])): ?>
@@ -659,6 +658,9 @@ $showNoSubmissionsAlert = !$has_submissions && $is_owner;
                                     <?php endif; ?>
                                     <?php echo htmlspecialchars($related['agency_name']); ?>
                                 </div>
+                            </div>
+                            <a href="<?php echo APP_URL; ?>/app/views/agency/programs/program_details.php?id=<?php echo $related['program_id']; ?>" class="btn btn-sm btn-outline-primary ms-2" title="View Details">
+                                <i class="fas fa-eye"></i> View Details
                             </a>
                         </div>
                     <?php endforeach; ?>
@@ -675,6 +677,51 @@ $showNoSubmissionsAlert = !$has_submissions && $is_owner;
     <strong>Note:</strong> You are viewing this program in read-only mode. Only the program's owning agency can submit updates.
 </div>
 <?php endif; ?>
+
+<!-- View Submissions Modal -->
+<div class="modal fade" id="viewSubmissionsModal" tabindex="-1" aria-labelledby="viewSubmissionsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="viewSubmissionsModalLabel"><i class="fas fa-list-alt me-2"></i>Submissions by Reporting Period</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <?php if (!empty($latest_by_period)): ?>
+          <div class="list-group">
+            <?php foreach ($latest_by_period as $period_id => $submission): ?>
+              <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap">
+                <div>
+                  <div class="fw-medium">
+                    <i class="fas fa-calendar-alt me-1 text-primary"></i>
+                    <?php echo htmlspecialchars($submission['period_display'] ?? 'Unknown Period'); ?>
+                  </div>
+                  <div class="small text-muted">
+                    Submitted: <?php echo !empty($submission['submission_date']) ? date('M j, Y', strtotime($submission['submission_date'])) : 'N/A'; ?>
+                    <?php if (!empty($submission['submitted_by_name'])): ?>
+                      &bull; By <?php echo htmlspecialchars($submission['submitted_by_name']); ?>
+                    <?php endif; ?>
+                  </div>
+                </div>
+                <a href="<?php echo APP_URL; ?>/app/views/agency/programs/edit_submission.php?program_id=<?php echo $program_id; ?>&period_id=<?php echo $period_id; ?>" class="btn btn-sm btn-outline-primary ms-2" title="View Submission">
+                  <i class="fas fa-eye"></i> View
+                </a>
+              </div>
+            <?php endforeach; ?>
+          </div>
+        <?php else: ?>
+          <div class="text-center text-muted py-4">
+            <i class="fas fa-folder-open fa-2x mb-2"></i>
+            <div>No submissions found for this program.</div>
+          </div>
+        <?php endif; ?>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- JavaScript Configuration -->
 <script>

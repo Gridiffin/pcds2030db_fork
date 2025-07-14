@@ -853,6 +853,28 @@ function get_program_details($program_id, $allow_cross_agency = false) {
             }
         }
         // Set latest_submissions_by_period
+        // Add period_display and submission_date for each grouped submission
+        foreach ($submissions_by_period as $pid => &$sub) {
+            // Format period_display
+            if (isset($sub['year']) && isset($sub['period_type']) && isset($sub['period_number'])) {
+                if ($sub['period_type'] === 'quarter') {
+                    $sub['period_display'] = "Q{$sub['period_number']}-{$sub['year']}";
+                } elseif ($sub['period_type'] === 'half') {
+                    $sub['period_display'] = "H{$sub['period_number']}-{$sub['year']}";
+                } elseif ($sub['period_type'] === 'yearly') {
+                    $sub['period_display'] = "Y{$sub['period_number']}-{$sub['year']}";
+                } else {
+                    $sub['period_display'] = "{$sub['period_type']} {$sub['period_number']}-{$sub['year']}";
+                }
+            } elseif (isset($sub['period_name'])) {
+                $sub['period_display'] = $sub['period_name'];
+            } else {
+                $sub['period_display'] = 'Unknown Period';
+            }
+            // Set submission_date
+            $sub['submission_date'] = $sub['submitted_at'] ?? null;
+        }
+        unset($sub); // break reference
         $program['latest_submissions_by_period'] = $submissions_by_period;
         // Set current submission (most recent overall)
         $program['current_submission'] = $program['submissions'][0];
