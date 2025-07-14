@@ -464,6 +464,10 @@ function validate_login($username, $password) {
         unset($user['pw']);
         $_SESSION = $user;
         
+        // Explicitly set agency_id in session to ensure consistency across the system
+        // For regular users, user_id serves as agency_id based on the database schema
+        $_SESSION['agency_id'] = $user['agency_id'];
+        
         // Log successful login
         log_login_attempt($username, true, '', $user['user_id']);
         

@@ -9,6 +9,25 @@
  */
 
 if (!defined('PROJECT_ROOT_PATH')) {
+        // Check if current user can remove agency assignment (must be owner, focal, or admin)
+    // Focal users can only remove assignments from programs their agency has access to
+    if (!is_admin() && !is_focal_user() && !is_program_owner($program_id)) {
+        return ['error' => 'Permission denied'];
+    }
+    
+    // Additional check for focal users - they can only remove assignments from programs their agency has access to
+    if (is_focal_user()) {
+        $focal_agency_id = $_SESSION['agency_id'] ?? null;
+        if ($focal_agency_id) {
+            $focal_role = get_user_program_role($program_id, $focal_agency_id);
+            if (!$focal_role) {
+                return ['error' => 'Permission denied - your agency does not have access to this program'];
+            }
+        }
+    }
+}
+
+if (!defined('PROJECT_ROOT_PATH')) {
     define('PROJECT_ROOT_PATH', rtrim(dirname(dirname(dirname(__DIR__))), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
 }
 
@@ -35,36 +54,91 @@ function load_user_assignments_if_needed() {
 function get_user_program_role($program_id, $agency_id = null) {
     global $conn;
     
-    $program_id = intval($program_id);
-    if ($program_id <= 0) {
-        return false;
+    // Add recursion protection
+    static $recursion_protection = [];
+    $call_key = $program_id . '_' . ($agency_id ?? 'null');
+    
+    if (isset($recursion_protection[$call_key])) {
+        error_log("Recursion detected in get_user_program_role for program_id: $program_id, agency_id: $agency_id");
+        return false; // Break recursion
     }
     
+    $recursion_protection[$call_key] = true;
+    
+    $program_id = intval($program_id);
+    if ($program_id <= 0) {
+        unset($recursion_protection[$call_key]);
+        return false;
+    }
+
     // Use session agency_id if not provided
     if ($agency_id === null) {
         $agency_id = $_SESSION['agency_id'] ?? 0;
     }
     $agency_id = intval($agency_id);
-    
+
     if ($agency_id <= 0) {
+        unset($recursion_protection[$call_key]);
         return false;
     }
-    
+
     // Check program_agency_assignments table
     $stmt = $conn->prepare("
         SELECT role 
         FROM program_agency_assignments 
         WHERE program_id = ? AND agency_id = ? AND is_active = 1
     ");
-    $stmt->bind_param("ii", $program_id, $agency_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
     
-    if ($row = $result->fetch_assoc()) {
-        return $row['role'];
+    if (!$stmt) {
+        error_log("Failed to prepare statement in get_user_program_role: " . $conn->error);
+        unset($recursion_protection[$call_key]);
+        return false;
     }
     
+    $stmt->bind_param("ii", $program_id, $agency_id);
+    $result = $stmt->execute();
+    
+    if (!$result) {
+        error_log("Failed to execute statement in get_user_program_role: " . $stmt->error);
+        unset($recursion_protection[$call_key]);
+        return false;
+    }
+    
+    $result = $stmt->get_result();
+
+    if ($row = $result->fetch_assoc()) {
+        $role = $row['role'];
+        unset($recursion_protection[$call_key]);
+        return $role;
+    }
+
+    unset($recursion_protection[$call_key]);
     return false;
+}
+
+/**
+ * Check if user can edit a program at agency level only (no user restrictions)
+ * This is used internally to avoid circular dependencies
+ *
+ * @param int $program_id Program ID
+ * @param int $agency_id Agency ID (optional)
+ * @return bool True if user can edit at agency level
+ */
+function can_edit_program_agency_level($program_id, $agency_id = null) {
+    // Focal users can edit programs within their agency (check agency access first)
+    if (is_focal_user()) {
+        $focal_agency_id = $_SESSION['agency_id'] ?? null;
+        if ($focal_agency_id) {
+            $role = get_user_program_role($program_id, $focal_agency_id);
+            if ($role) {
+                return true; // Focal users can edit any program their agency has access to
+            }
+        }
+        // If focal user's agency doesn't have access, follow normal rules
+    }
+    
+    $role = get_user_program_role($program_id, $agency_id);
+    return in_array($role, ['owner', 'editor']);
 }
 
 /**
@@ -75,13 +149,8 @@ function get_user_program_role($program_id, $agency_id = null) {
  * @return bool True if user can edit
  */
 function can_edit_program($program_id, $agency_id = null) {
-    // Focal users can edit all programs
-    if (is_focal_user()) {
-        return true;
-    }
-    
-    $role = get_user_program_role($program_id, $agency_id);
-    $can_edit_agency_level = in_array($role, ['owner', 'editor']);
+    // Check agency-level permissions first
+    $can_edit_agency_level = can_edit_program_agency_level($program_id, $agency_id);
     
     // If no agency-level access, return false
     if (!$can_edit_agency_level) {
@@ -106,9 +175,16 @@ function can_edit_program($program_id, $agency_id = null) {
  * @return bool True if user can view
  */
 function can_view_program($program_id, $agency_id = null) {
-    // Focal users can view all programs
+    // Focal users can view programs within their agency (check agency access first)
     if (is_focal_user()) {
-        return true;
+        $focal_agency_id = $_SESSION['agency_id'] ?? null;
+        if ($focal_agency_id) {
+            $role = get_user_program_role($program_id, $focal_agency_id);
+            if ($role) {
+                return true; // Focal users can view any program their agency has access to
+            }
+        }
+        // If focal user's agency doesn't have access, follow normal rules
     }
     
     $role = get_user_program_role($program_id, $agency_id);
@@ -123,9 +199,16 @@ function can_view_program($program_id, $agency_id = null) {
  * @return bool True if user is owner
  */
 function is_program_owner($program_id, $agency_id = null) {
-    // Focal users are treated as owners for all programs
+    // Focal users are treated as owners for programs within their agency
     if (is_focal_user()) {
-        return true;
+        $focal_agency_id = $_SESSION['agency_id'] ?? null;
+        if ($focal_agency_id) {
+            $role = get_user_program_role($program_id, $focal_agency_id);
+            if ($role) {
+                return true; // Focal users are owners of any program their agency has access to
+            }
+        }
+        // If focal user's agency doesn't have access, follow normal rules
     }
     
     $role = get_user_program_role($program_id, $agency_id);
@@ -199,8 +282,20 @@ function assign_agency_to_program($program_id, $agency_id, $role = 'viewer', $no
     }
     
     // Check if current user can assign agencies (must be owner, focal, or admin)
+    // Focal users can only assign within programs their agency has access to
     if (!is_admin() && !is_focal_user() && !is_program_owner($program_id)) {
         return ['error' => 'Permission denied'];
+    }
+    
+    // Additional check for focal users - they can only assign to programs their agency has access to
+    if (is_focal_user()) {
+        $focal_agency_id = $_SESSION['agency_id'] ?? null;
+        if ($focal_agency_id) {
+            $focal_role = get_user_program_role($program_id, $focal_agency_id);
+            if (!$focal_role) {
+                return ['error' => 'Permission denied - your agency does not have access to this program'];
+            }
+        }
     }
     
     // Check if assignment already exists

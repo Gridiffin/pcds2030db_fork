@@ -34,7 +34,7 @@ function require_agency($redirect_url = 'login.php') {
  * @return int|null Agency ID or null if not an agency
  */
 function get_agency_id() {
-    return is_agency() ? $_SESSION['user_id'] : null;
+    return is_agency() ? ($_SESSION['agency_id'] ?? null) : null;
 }
 
 /**

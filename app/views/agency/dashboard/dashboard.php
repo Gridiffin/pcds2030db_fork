@@ -41,7 +41,7 @@ $viewing_period = $period_id ? get_reporting_period($period_id) : $current_perio
 // Initialize dashboard controller for initial rendering
 $dashboardController = new DashboardController($conn);
 $dashboardData = $dashboardController->getDashboardData(
-    $_SESSION['user_id'], 
+    $_SESSION['agency_id'] ?? null, 
     $period_id,
     false  // Default to excluding assigned programs for initial load
 );

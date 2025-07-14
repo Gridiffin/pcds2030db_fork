@@ -470,7 +470,7 @@ require_once '../../layouts/page_header.php';
 
                         <!-- Form Actions -->
                         <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
-                            <a href="program_details.php?id=<?php echo $program_id; ?>" class="btn btn-outline-secondary">
+                            <a href="view_programs.php" class="btn btn-outline-secondary">
                                 <i class="fas fa-times me-2"></i>
                                 Cancel
                             </a>

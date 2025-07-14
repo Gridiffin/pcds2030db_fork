@@ -16,11 +16,17 @@ document.addEventListener('DOMContentLoaded', function() {
     if (typeof TablePagination !== 'undefined') {
         initializePagination();
     } else {
-        // Wait for TablePagination to be loaded
+        // Wait for TablePagination to be loaded with timeout to prevent infinite loops
+        let attempts = 0;
+        const maxAttempts = 50; // 5 seconds maximum wait time
         const checkForTablePagination = setInterval(() => {
+            attempts++;
             if (typeof TablePagination !== 'undefined') {
                 clearInterval(checkForTablePagination);
                 initializePagination();
+            } else if (attempts >= maxAttempts) {
+                clearInterval(checkForTablePagination);
+                console.error('TablePagination not found after 5 seconds. Pagination will not be initialized.');
             }
         }, 100);
     }
