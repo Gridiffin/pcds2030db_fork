@@ -69,6 +69,38 @@ if (is_focal_user()) {
 - ✅ Removed global focal access bypass
 - ✅ All users (including focal) see only agency-assigned programs
 
+## Program Visibility Fix
+
+### ✅ Fixed New Programs Not Showing in View Programs List
+**Error**: Newly created programs were not appearing in the view programs list
+
+**Root Cause**: Program creation functions only created `program_user_assignments` but not `program_agency_assignments`. However, the view programs query required agency assignments to show programs.
+
+**Files Fixed**:
+- ✅ `app/lib/agencies/programs.php` - Added agency assignment creation to all program creation functions
+- ✅ Database - Created missing agency assignments for existing programs
+
+**Changes Made**:
+- Updated `create_agency_program()` to create agency assignments
+- Updated `create_wizard_program_draft()` to create agency assignments  
+- Updated `create_simple_program()` to create agency assignments
+- Added database script to fix existing programs without agency assignments
+
+**Before**:
+```php
+// Only created user assignment
+INSERT INTO program_user_assignments (program_id, user_id, role, assigned_by) VALUES (?, ?, 'editor', ?)
+```
+
+**After**:
+```php
+// Creates both user and agency assignments
+INSERT INTO program_user_assignments (program_id, user_id, role, assigned_by) VALUES (?, ?, 'editor', ?)
+INSERT INTO program_agency_assignments (program_id, agency_id, role, assigned_by, notes) VALUES (?, ?, 'owner', ?, 'Auto-assigned during program creation')
+```
+
+**Result**: New programs now properly appear in the view programs list immediately after creation.
+
 ## Security Model After Fix
 
 ### Permission Hierarchy (Agency-Scoped):
@@ -97,10 +129,37 @@ if (is_focal_user()) {
 3. Attempt direct URL access to Agency B program - should be denied
 4. Test assignment functions - should only work on Agency A programs
 
+## Database Integrity Fixes
+
+### ✅ Fixed `assigned_by` Field Requirements
+**Error**: `Database error: Field 'assigned_by' doesn't have a default value`
+
+**Root Cause**: Multiple INSERT statements were missing the required `assigned_by` field
+
+**Files Fixed**:
+- ✅ `app/lib/agencies/programs.php` - Fixed 3 INSERT statements for program creation
+- ✅ `app/api/program_user_assignments.php` - Added `assigned_by` field and validation
+
+**Changes Made**:
+- Updated all `program_user_assignments` INSERT statements to include `assigned_by`
+- Added session validation to ensure valid user ID before assignment
+- Self-assignment for program creators (creator assigns themselves as editor)
+
+**Before**:
+```sql
+INSERT INTO program_user_assignments (program_id, user_id, role) VALUES (?, ?, 'editor')
+```
+
+**After**:
+```sql
+INSERT INTO program_user_assignments (program_id, user_id, role, assigned_by) VALUES (?, ?, 'editor', ?)
+```
+
 ## Database Integrity
 - ✅ No schema changes required
 - ✅ Existing permission tables remain valid
 - ✅ Audit trail preserved
+- ✅ **`assigned_by` field errors resolved**
 
 ## Files Modified
 1. `app/lib/agencies/program_agency_assignments.php` - Core permission functions

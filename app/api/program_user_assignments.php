@@ -90,9 +90,17 @@ function handlePost($input) {
     $program_id = intval($input['program_id']);
     $user_id = intval($input['user_id']);
     $role = isset($input['role']) ? $input['role'] : 'editor';
-    $sql = "INSERT INTO program_user_assignments (program_id, user_id, role) VALUES (?, ?, ?)";
+    $assigned_by = $_SESSION['user_id'] ?? 0;
+    
+    if ($assigned_by <= 0) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Invalid session - user not logged in']);
+        return;
+    }
+    
+    $sql = "INSERT INTO program_user_assignments (program_id, user_id, role, assigned_by) VALUES (?, ?, ?, ?)";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param('iis', $program_id, $user_id, $role);
+    $stmt->bind_param('iisi', $program_id, $user_id, $role, $assigned_by);
     if ($stmt->execute()) {
         echo json_encode(['success' => true, 'assignment_id' => $conn->insert_id]);
     } else {
