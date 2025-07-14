@@ -1,8 +1,9 @@
 <?php
 /**
- * Program Details View
+ * Enhanced Program Details View
  * 
- * Displays detailed information about a specific program.
+ * Displays comprehensive information about a specific program including
+ * submissions, targets, attachments, and timeline.
  */
 
 // Define the root path
@@ -41,8 +42,8 @@ if (!$program_id) {
     exit;
 }
 
-// Get program details
-$program = get_program_details($program_id, true); // Always allow cross-agency viewing
+// Get comprehensive program details
+$program = get_program_details($program_id, true);
 
 // Allow all users to view any program
 $allow_view = true;
@@ -55,7 +56,7 @@ if (!$program) {
     exit;
 }
 
-// Get program attachments (permission check is handled by the function)
+// Get program attachments
 $program_attachments = get_program_attachments($program_id);
 
 // Get related programs if this program is linked to an initiative
@@ -144,23 +145,29 @@ if ($has_submissions && isset($latest_submission['content_json']) && !empty($lat
     $remarks = $latest_submission['remarks'] ?? '';
 }
 
+// Determine rating for badge - use same logic as view_programs.php for consistency
+$rating = isset($program['rating']) ? $program['rating'] : 'not_started';
+
 // Get all reporting periods for display
 $all_periods = get_all_reporting_periods();
 $latest_by_period = $program['latest_submissions_by_period'] ?? [];
 
+// Get submission history for timeline
+$submission_history = get_program_edit_history($program_id);
+
 // Set page title
-$pageTitle = 'Program Details';
+$pageTitle = 'Enhanced Program Details';
 
 // Additional scripts
 $additionalScripts = [
     APP_URL . '/assets/js/utilities/rating_utils.js',
-    APP_URL . '/assets/js/agency/program_details.js'
+    APP_URL . '/assets/js/agency/enhanced_program_details.js'
 ];
 
-// Additional CSS for attachments
+// Additional CSS
 $additionalCSS = [
-    APP_URL . '/assets/css/admin/programs.css', // Reuse admin attachment styling
-    APP_URL . '/assets/css/components/period-performance.css' // Performance section styling
+    APP_URL . '/assets/css/components/program-details.css',
+    APP_URL . '/assets/css/components/period-performance.css'
 ];
 
 // Include header
@@ -181,7 +188,7 @@ $program_display_name .= htmlspecialchars($program['program_name']);
 $header_config = [
     'title' => 'Program Details',
     'subtitle' => $program_display_name,
-    'subtitle_html' => true, // Allow HTML in subtitle
+    'subtitle_html' => true,
     'variant' => 'white',
     'actions' => [
         [
@@ -196,9 +203,6 @@ $header_config = [
 // Include modern page header
 require_once '../../layouts/page_header.php';
 
-// Include rating helpers for status mapping
-require_once PROJECT_ROOT_PATH . 'lib/rating_helpers.php';
-
 // Define status mapping for display using new rating system
 $status_map = [
     'not_started' => ['label' => 'Not Started', 'class' => 'secondary', 'icon' => 'fas fa-hourglass-start'],
@@ -209,20 +213,18 @@ $status_map = [
 
 // Convert status for display using new rating system
 if ($has_submissions) {
-    // Use the rating directly from database (no conversion needed)
     $status = $rating;
     if (!isset($status_map[$status])) {
         $status = 'not_started';
     }
 } else {
-    // Program has no submissions - show as "not-started"
     $status = 'not_started';
 }
 
 // Initialize alert flags
-$showDraftAlert = $is_draft && $is_owner; // Only show draft alert if user owns the program and has draft submission
-$showNoTargetsAlert = $has_submissions && empty($targets) && $is_owner; // Only show no targets alert if user owns the program and has submissions but no targets
-$showNoSubmissionsAlert = !$has_submissions && $is_owner; // Show alert if program has no submissions yet
+$showDraftAlert = $is_draft && $is_owner;
+$showNoTargetsAlert = $has_submissions && empty($targets) && $is_owner;
+$showNoSubmissionsAlert = !$has_submissions && $is_owner;
 ?>
 
 <!-- Toast Notifications -->
@@ -250,371 +252,425 @@ $showNoSubmissionsAlert = !$has_submissions && $is_owner; // Show alert if progr
 </script>
 <?php endif; ?>
 
-<!-- Program Overview Card -->
-<div class="card program-details-card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="card-title mb-0">
-            <i class="fas fa-clipboard-list me-2"></i>Program Information
-        </h5>
-        <div class="action-buttons">
-            <span class="badge status-badge bg-<?php echo $status_map[$status]['class']; ?> py-2 px-3">
-                <i class="<?php echo $status_map[$status]['icon']; ?> me-1"></i> 
-                <?php echo $status_map[$status]['label']; ?>
-            </span>
-            <?php if ($is_owner): ?>
-                <a href="<?php echo APP_URL; ?>/app/views/agency/programs/add_submission.php?program_id=<?php echo $program_id; ?>" class="btn btn-primary btn-sm">
-                    <i class="fas fa-plus me-1"></i> Add Submission
-                </a>
-                <a href="<?php echo APP_URL; ?>/app/views/agency/programs/edit_program.php?id=<?php echo $program_id; ?>" class="btn btn-outline-primary btn-sm">
-                    <i class="fas fa-edit me-1"></i> Edit Program
-                </a>
-                <?php if ($is_draft): ?>
-                <span class="badge bg-warning text-dark" title="Latest submission is in draft status">
-                    <i class="fas fa-pencil-alt me-1"></i> Draft Submission
-                </span>
-                <?php endif; ?>
-            <?php endif; ?>
-        </div>
-    </div>
-    <div class="card-body">
-        <div class="row">
-            <!-- Program Basic Info -->
-            <div class="col-lg-12 mb-4">
-                <h6 class="border-bottom pb-2 mb-3">Basic Information</h6>
-                
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <div class="row">
-                            <div class="col-md-4 text-muted">Program Name:</div>
-                            <div class="col-md-8 fw-medium">
-                                <?php echo htmlspecialchars($program['program_name']); ?>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <div class="row">
-                            <div class="col-md-4 text-muted">Program Number:</div>
-                            <div class="col-md-8">
-                                <?php if (!empty($program['program_number'])): ?>
-                                    <span class="badge bg-info" title="Program Number"><?php echo htmlspecialchars($program['program_number']); ?></span>
-                                <?php else: ?>
-                                    <span class="text-muted">Not specified</span>
-                                <?php endif; ?>
-                            </div>
-                        </div>
+<!-- Enhanced Program Overview -->
+<div class="container-fluid">
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <!-- Program Information Card -->
+            <div class="card program-info-card shadow-sm mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-clipboard-list me-2"></i>Program Information
+                    </h5>
+                    <div class="action-buttons">
+                        <span class="badge status-badge bg-<?php echo $status_map[$status]['class']; ?> py-2 px-3">
+                            <i class="<?php echo $status_map[$status]['icon']; ?> me-1"></i> 
+                            <?php echo $status_map[$status]['label']; ?>
+                        </span>
+                        <?php if ($is_owner): ?>
+                            <a href="<?php echo APP_URL; ?>/app/views/agency/programs/add_submission.php?program_id=<?php echo $program_id; ?>" class="btn btn-primary btn-sm">
+                                <i class="fas fa-plus me-1"></i> Add Submission
+                            </a>
+                            <a href="<?php echo APP_URL; ?>/app/views/agency/programs/edit_program.php?id=<?php echo $program_id; ?>" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-edit me-1"></i> Edit Program
+                            </a>
+                            <?php if ($is_draft): ?>
+                            <span class="badge bg-warning text-dark" title="Latest submission is in draft status">
+                                <i class="fas fa-pencil-alt me-1"></i> Draft Submission
+                            </span>
+                            <?php endif; ?>
+                        <?php endif; ?>
                     </div>
                 </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <div class="row">
-                            <div class="col-md-4 text-muted">Program Type:</div>
-                            <div class="col-md-8">
-                                <?php if (isset($program['is_assigned']) && $program['is_assigned']): ?>
-                                    <span class="badge bg-info">Assigned Program</span>
-                                <?php else: ?>
-                                    <span class="badge bg-success">Agency-Created</span>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <div class="row">
-                            <div class="col-md-4 text-muted">Initiative:</div>
-                            <div class="col-md-8">
-                                <?php if (!empty($program['initiative_name'])): ?>
-                                    <span class="fw-medium"><?php echo htmlspecialchars($program['initiative_name']); ?></span>
-                                    <?php if (!empty($program['initiative_number'])): ?>
-                                        <span class="badge bg-secondary ms-2" title="Initiative Number"><?php echo htmlspecialchars($program['initiative_number']); ?></span>
-                                    <?php endif; ?>
-                                <?php else: ?>
-                                    <span class="text-muted">Not specified</span>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <div class="row">
-                            <div class="col-md-4 text-muted">Timeline:</div>
-                            <div class="col-md-8">
-                                <?php if (!empty($program['start_date'])): ?>
-                                    <i class="far fa-calendar-alt me-1"></i>
-                                    <?php echo date('M j, Y', strtotime($program['start_date'])); ?>
-                                    <?php if (!empty($program['end_date'])): ?>
-                                        <i class="fas fa-long-arrow-alt-right mx-1"></i>
-                                        <?php echo date('M j, Y', strtotime($program['end_date'])); ?>
-                                    <?php endif; ?>
-                                <?php else: ?>
-                                    <span class="text-muted">Not specified</span>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <div class="row">
-                            <div class="col-md-4 text-muted">Last Updated:</div>
-                            <div class="col-md-8">
-                                <?php if ($has_submissions && isset($latest_submission['submission_date']) && $latest_submission['submission_date']): ?>
-                                    <i class="far fa-clock me-1"></i>
-                                    <?php echo date('M j, Y', strtotime($latest_submission['submission_date'])); ?>
-                                    <span class="text-muted small ms-2">(Latest submission)</span>
-                                <?php elseif (isset($program['created_at']) && $program['created_at']): ?>
-                                    <i class="far fa-clock me-1"></i>
-                                    <?php echo date('M j, Y', strtotime($program['created_at'])); ?>
-                                    <span class="text-muted small ms-2">(Program created)</span>
-                                <?php else: ?>
-                                    <span class="text-muted">Not available</span>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <?php if (!empty($program['description'])): ?>
-                <div class="mt-4">
-                    <h6 class="border-bottom pb-2 mb-3">Description</h6>
-                    <div class="p-3 bg-light rounded border">
-                        <?php echo nl2br(htmlspecialchars($program['description'])); ?>
-                    </div>
-                </div>
-                <?php endif; ?>            </div>
-        </div>
-    </div>
-</div>
-
-<?php if ($has_submissions): ?>
-<!-- Latest Submission Card -->
-<div class="card shadow-sm mb-4">
-    <div class="card-header">
-        <h5 class="card-title mb-0">
-            <i class="fas fa-file-alt me-2"></i>Latest Submission
-        </h5>
-    </div>
-    <div class="card-body">
-        <?php if (!empty($targets)): ?>
-            <div class="mb-4">
-                <h6 class="border-bottom pb-2 mb-3">Targets</h6>
-                <div class="row">
-                    <?php foreach ($targets as $index => $target): ?>
+                <div class="card-body">
+                    <div class="row">
                         <div class="col-md-6 mb-3">
-                            <div class="card border">
-                                <div class="card-body">
-                                    <h6 class="card-title">
+                            <div class="info-item">
+                                <div class="info-icon">
+                                    <i class="fas fa-tag text-primary"></i>
+                                </div>
+                                <div class="info-content">
+                                    <div class="info-label">Program Name</div>
+                                    <div class="info-value fw-medium"><?php echo htmlspecialchars($program['program_name']); ?></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="info-item">
+                                <div class="info-icon">
+                                    <i class="fas fa-hashtag text-info"></i>
+                                </div>
+                                <div class="info-content">
+                                    <div class="info-label">Program Number</div>
+                                    <div class="info-value">
+                                        <?php if (!empty($program['program_number'])): ?>
+                                            <span class="badge bg-info"><?php echo htmlspecialchars($program['program_number']); ?></span>
+                                        <?php else: ?>
+                                            <span class="text-muted">Not specified</span>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="info-item">
+                                <div class="info-icon">
+                                    <i class="fas fa-layer-group text-success"></i>
+                                </div>
+                                <div class="info-content">
+                                    <div class="info-label">Program Type</div>
+                                    <div class="info-value">
+                                        <?php if (isset($program['is_assigned']) && $program['is_assigned']): ?>
+                                            <span class="badge bg-info">Assigned Program</span>
+                                        <?php else: ?>
+                                            <span class="badge bg-success">Agency-Created</span>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="info-item">
+                                <div class="info-icon">
+                                    <i class="fas fa-project-diagram text-warning"></i>
+                                </div>
+                                <div class="info-content">
+                                    <div class="info-label">Initiative</div>
+                                    <div class="info-value">
+                                        <?php if (!empty($program['initiative_name'])): ?>
+                                            <span class="fw-medium"><?php echo htmlspecialchars($program['initiative_name']); ?></span>
+                                            <?php if (!empty($program['initiative_number'])): ?>
+                                                <span class="badge bg-secondary ms-2" title="Initiative Number"><?php echo htmlspecialchars($program['initiative_number']); ?></span>
+                                            <?php endif; ?>
+                                        <?php else: ?>
+                                            <span class="text-muted">Not specified</span>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="info-item">
+                                <div class="info-icon">
+                                    <i class="fas fa-calendar-alt text-danger"></i>
+                                </div>
+                                <div class="info-content">
+                                    <div class="info-label">Timeline</div>
+                                    <div class="info-value">
+                                        <?php if (!empty($program['start_date'])): ?>
+                                            <i class="far fa-calendar-alt me-1"></i>
+                                            <?php echo date('M j, Y', strtotime($program['start_date'])); ?>
+                                            <?php if (!empty($program['end_date'])): ?>
+                                                <i class="fas fa-long-arrow-alt-right mx-1"></i>
+                                                <?php echo date('M j, Y', strtotime($program['end_date'])); ?>
+                                            <?php endif; ?>
+                                        <?php else: ?>
+                                            <span class="text-muted">Not specified</span>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="info-item">
+                                <div class="info-icon">
+                                    <i class="fas fa-clock text-secondary"></i>
+                                </div>
+                                <div class="info-content">
+                                    <div class="info-label">Last Updated</div>
+                                    <div class="info-value">
+                                        <?php if ($has_submissions && isset($latest_submission['submission_date']) && $latest_submission['submission_date']): ?>
+                                            <i class="far fa-clock me-1"></i>
+                                            <?php echo date('M j, Y', strtotime($latest_submission['submission_date'])); ?>
+                                            <span class="text-muted small ms-2">(Latest submission)</span>
+                                        <?php elseif (isset($program['created_at']) && $program['created_at']): ?>
+                                            <i class="far fa-clock me-1"></i>
+                                            <?php echo date('M j, Y', strtotime($program['created_at'])); ?>
+                                            <span class="text-muted small ms-2">(Program created)</span>
+                                        <?php else: ?>
+                                            <span class="text-muted">Not available</span>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <?php if (!empty($program['description'])): ?>
+                    <div class="mt-4">
+                        <h6 class="info-section-title">
+                            <i class="fas fa-align-left me-2"></i>Description
+                        </h6>
+                        <div class="description-box">
+                            <?php echo nl2br(htmlspecialchars($program['description'])); ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- Targets and Progress Section -->
+            <?php if ($has_submissions && !empty($targets)): ?>
+            <div class="card performance-card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bullseye me-2"></i>Targets & Progress
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="targets-container">
+                        <?php foreach ($targets as $index => $target): ?>
+                            <div class="target-item mb-4">
+                                <div class="target-header d-flex justify-content-between align-items-center mb-3">
+                                    <h6 class="target-title mb-0">
+                                        <i class="fas fa-target me-2 text-primary"></i>
                                         Target <?php echo $index + 1; ?>
                                         <?php if (!empty($target['target_number'])): ?>
                                             <span class="badge bg-info ms-2"><?php echo htmlspecialchars($target['target_number']); ?></span>
                                         <?php endif; ?>
                                     </h6>
-                                    <p class="card-text"><?php echo htmlspecialchars($target['text']); ?></p>
+                                    <div class="target-progress">
+                                        <div class="progress" style="width: 100px; height: 8px;">
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: 75%"></div>
+                                        </div>
+                                        <small class="text-muted">75% Complete</small>
+                                    </div>
+                                </div>
+                                <div class="target-content">
+                                    <div class="target-description mb-3">
+                                        <strong>Target:</strong>
+                                        <p class="mb-2"><?php echo htmlspecialchars($target['text']); ?></p>
+                                    </div>
                                     <?php if (!empty($target['status_description'])): ?>
-                                        <div class="mt-2">
-                                            <strong>Status:</strong> <?php echo htmlspecialchars($target['status_description']); ?>
+                                        <div class="target-status mb-3">
+                                            <strong>Status:</strong>
+                                            <div class="status-pill rating-target-achieved">
+                                                <i class="fas fa-info-circle"></i>
+                                                <?php echo htmlspecialchars($target['status_description']); ?>
+                                            </div>
                                         </div>
                                     <?php endif; ?>
                                     <?php if (!empty($target['start_date']) || !empty($target['end_date'])): ?>
-                                        <div class="mt-2 small text-muted">
-                                            <?php if (!empty($target['start_date'])): ?>
-                                                <i class="far fa-calendar-alt me-1"></i>Start: <?php echo date('M j, Y', strtotime($target['start_date'])); ?>
-                                            <?php endif; ?>
-                                            <?php if (!empty($target['end_date'])): ?>
-                                                <br><i class="far fa-calendar-alt me-1"></i>End: <?php echo date('M j, Y', strtotime($target['end_date'])); ?>
-                                            <?php endif; ?>
+                                        <div class="target-timeline">
+                                            <strong>Timeline:</strong>
+                                            <div class="timeline-info mt-2">
+                                                <?php if (!empty($target['start_date'])): ?>
+                                                    <span class="badge bg-light text-dark me-2">
+                                                        <i class="far fa-calendar-alt me-1"></i>Start: <?php echo date('M j, Y', strtotime($target['start_date'])); ?>
+                                                    </span>
+                                                <?php endif; ?>
+                                                <?php if (!empty($target['end_date'])): ?>
+                                                    <span class="badge bg-light text-dark">
+                                                        <i class="far fa-calendar-alt me-1"></i>End: <?php echo date('M j, Y', strtotime($target['end_date'])); ?>
+                                                    </span>
+                                                <?php endif; ?>
+                                            </div>
                                         </div>
                                     <?php endif; ?>
                                 </div>
                             </div>
+                        <?php endforeach; ?>
+                    </div>
+                    
+                    <?php if (!empty($remarks)): ?>
+                        <div class="remarks-section mt-4">
+                            <h6 class="info-section-title">
+                                <i class="fas fa-comment me-2"></i>Remarks
+                            </h6>
+                            <div class="remarks-container">
+                                <?php echo nl2br(htmlspecialchars($remarks)); ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <!-- Submission Timeline -->
+            <?php if (!empty($submission_history['submissions'])): ?>
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-history me-2"></i>Submission Timeline
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline-container">
+                        <?php foreach ($submission_history['submissions'] as $submission): ?>
+                            <div class="timeline-item">
+                                <div class="timeline-marker">
+                                    <i class="fas fa-circle"></i>
+                                </div>
+                                <div class="timeline-content">
+                                    <div class="timeline-header">
+                                        <h6 class="timeline-title"><?php echo htmlspecialchars($submission['period_display']); ?></h6>
+                                        <span class="badge bg-<?php echo ($submission['is_draft'] ? 'warning' : 'success'); ?>">
+                                            <?php echo $submission['is_draft_label']; ?>
+                                        </span>
+                                    </div>
+                                    <div class="timeline-meta">
+                                        <small class="text-muted">
+                                            <i class="fas fa-user me-1"></i>
+                                            <?php echo htmlspecialchars($submission['submitted_by_name'] ?? 'Unknown'); ?>
+                                            <i class="fas fa-clock ms-2 me-1"></i>
+                                            <?php echo htmlspecialchars($submission['formatted_date']); ?>
+                                        </small>
+                                    </div>
+                                    <?php if ($is_owner): ?>
+                                        <div class="timeline-actions mt-2">
+                                            <a href="<?php echo APP_URL; ?>/app/views/agency/programs/edit_submission.php?program_id=<?php echo $program_id; ?>&period_id=<?php echo $submission['period_id']; ?>" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-edit me-1"></i> Review
+                                            </a>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Quick Actions -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2"></i>Quick Actions
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <?php if ($is_owner): ?>
+                            <a href="<?php echo APP_URL; ?>/app/views/agency/programs/add_submission.php?program_id=<?php echo $program_id; ?>" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Add New Submission
+                            </a>
+                            <a href="<?php echo APP_URL; ?>/app/views/agency/programs/edit_program.php?id=<?php echo $program_id; ?>" class="btn btn-outline-primary">
+                                <i class="fas fa-edit me-2"></i>Edit Program
+                            </a>
+                        <?php endif; ?>
+                        <a href="<?php echo APP_URL; ?>/app/views/agency/reports/view_reports.php" class="btn btn-outline-info">
+                            <i class="fas fa-chart-bar me-2"></i>View Reports
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Program Statistics -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>Statistics
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="stat-item d-flex justify-content-between align-items-center mb-3">
+                        <span>Total Submissions</span>
+                        <span class="badge bg-primary"><?php echo count($submission_history['submissions']); ?></span>
+                    </div>
+                    <div class="stat-item d-flex justify-content-between align-items-center mb-3">
+                        <span>Targets</span>
+                        <span class="badge bg-info"><?php echo count($targets); ?></span>
+                    </div>
+                    <div class="stat-item d-flex justify-content-between align-items-center mb-3">
+                        <span>Attachments</span>
+                        <span class="badge bg-secondary"><?php echo count($program_attachments); ?></span>
+                    </div>
+                    <div class="stat-item d-flex justify-content-between align-items-center">
+                        <span>Last Activity</span>
+                        <small class="text-muted" id="last-activity-value">
+                            <?php if ($has_submissions && isset($latest_submission['submission_date'])): ?>
+                                <?php echo date('M j', strtotime($latest_submission['submission_date'])); ?>
+                            <?php else: ?>
+                                Never
+                            <?php endif; ?>
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Program Attachments -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-paperclip me-2"></i>Attachments
+                    </h6>
+                    <span class="badge bg-secondary">
+                        <?php echo count($program_attachments); ?>
+                    </span>
+                </div>
+                <div class="card-body">
+                    <?php if (!empty($program_attachments)): ?>
+                        <div class="attachments-list">
+                            <?php foreach ($program_attachments as $attachment): ?>
+                                <div class="attachment-item mb-3">
+                                    <div class="attachment-info d-flex align-items-center">
+                                        <div class="attachment-icon me-2">
+                                            <i class="fas <?php echo get_file_icon($attachment['mime_type']); ?> text-primary"></i>
+                                        </div>
+                                        <div class="attachment-details flex-grow-1">
+                                            <div class="attachment-name small fw-medium"><?php echo htmlspecialchars($attachment['original_filename']); ?></div>
+                                            <div class="attachment-meta text-muted small">
+                                                <?php echo $attachment['file_size_formatted']; ?> • 
+                                                <?php echo date('M j, Y', strtotime($attachment['upload_date'])); ?>
+                                            </div>
+                                        </div>
+                                        <div class="attachment-actions">
+                                            <a href="<?php echo APP_URL; ?>/app/ajax/download_program_attachment.php?id=<?php echo $attachment['attachment_id']; ?>" 
+                                               class="btn btn-sm btn-outline-primary" 
+                                               target="_blank"
+                                               title="Download">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php else: ?>
+                        <div class="text-center py-3">
+                            <i class="fas fa-folder-open fa-2x text-muted mb-2"></i>
+                            <p class="text-muted small mb-0">No attachments</p>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- Related Programs -->
+            <?php if (!empty($related_programs)): ?>
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-link me-2"></i>Related Programs
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <?php foreach ($related_programs as $related): ?>
+                        <div class="related-program-item mb-2">
+                            <a href="<?php echo APP_URL; ?>/app/views/agency/programs/enhanced_program_details.php?id=<?php echo $related['program_id']; ?>" 
+                               class="text-decoration-none">
+                                <div class="related-program-name small fw-medium"><?php echo htmlspecialchars($related['program_name']); ?></div>
+                                <div class="related-program-meta text-muted small">
+                                    <?php if (!empty($related['program_number'])): ?>
+                                        <?php echo htmlspecialchars($related['program_number']); ?> •
+                                    <?php endif; ?>
+                                    <?php echo htmlspecialchars($related['agency_name']); ?>
+                                </div>
+                            </a>
                         </div>
                     <?php endforeach; ?>
                 </div>
             </div>
-        <?php endif; ?>
-        
-        <?php if (!empty($remarks)): ?>
-            <div class="mb-4">
-                <h6 class="border-bottom pb-2 mb-3">Remarks</h6>
-                <div class="p-3 bg-light rounded border">
-                    <?php echo nl2br(htmlspecialchars($remarks)); ?>
-                </div>
-            </div>
-        <?php endif; ?>
-        
-        <div class="row">
-            <div class="col-md-6">
-                <strong>Submission Date:</strong>
-                <?php if (isset($latest_submission['submission_date']) && $latest_submission['submission_date']): ?>
-                    <?php echo date('M j, Y g:i A', strtotime($latest_submission['submission_date'])); ?>
-                <?php else: ?>
-                    <span class="text-muted">Not submitted</span>
-                <?php endif; ?>
-            </div>
-            <div class="col-md-6">
-                <strong>Status:</strong>
-                <span class="badge bg-<?php echo $status_map[$status]['class']; ?>">
-                    <i class="<?php echo $status_map[$status]['icon']; ?> me-1"></i> 
-                    <?php echo $status_map[$status]['label']; ?>
-                </span>
-            </div>
-        </div>
-    </div>
-</div>
-<?php else: ?>
-<!-- No Submissions Card -->
-<div class="card shadow-sm mb-4">
-    <div class="card-header">
-        <h5 class="card-title mb-0">
-            <i class="fas fa-folder-open me-2"></i>Submissions
-        </h5>
-    </div>
-    <div class="card-body text-center py-4">
-        <div class="mb-3">
-            <i class="fas fa-folder-open fa-3x text-muted"></i>
-        </div>
-        <h6 class="text-muted">No Submissions Yet</h6>
-        <p class="text-muted mb-3">This program is ready for submissions. Add your first submission to start tracking progress.</p>
-        <?php if ($is_owner): ?>
-            <a href="<?php echo APP_URL; ?>/app/views/agency/programs/add_submission.php?program_id=<?php echo $program_id; ?>" class="btn btn-primary">
-                <i class="fas fa-plus me-1"></i> Add First Submission
-            </a>
-        <?php endif; ?>
-    </div>
-</div>
-<?php endif; ?>
-
-<!-- Program Attachments Section -->
-<div class="card mb-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="card-title m-0">
-            <i class="fas fa-paperclip me-2 text-primary"></i>Program Attachments
-        </h5>
-        <span class="badge bg-secondary">
-            <?php echo count($program_attachments); ?> 
-            <?php echo count($program_attachments) === 1 ? 'file' : 'files'; ?>
-        </span>
-    </div>
-    <div class="card-body">
-        <?php if (!empty($program_attachments)): ?>
-            <div class="attachments-list">
-                <?php foreach ($program_attachments as $attachment): ?>
-                    <div class="attachment-item d-flex justify-content-between align-items-center border rounded p-3 mb-3">
-                        <div class="attachment-info d-flex align-items-center">
-                            <div class="attachment-icon me-3">
-                                <i class="fas <?php echo get_file_icon($attachment['mime_type']); ?> fa-2x text-primary"></i>
-                            </div>
-                            <div class="attachment-details">
-                                <h6 class="mb-1 fw-bold"><?php echo htmlspecialchars($attachment['original_filename']); ?></h6>
-                                <div class="attachment-meta text-muted small">
-                                    <span class="me-3">
-                                        <i class="fas fa-hdd me-1"></i>
-                                        <?php echo $attachment['file_size_formatted']; ?>
-                                    </span>
-                                    <span class="me-3">
-                                        <i class="fas fa-calendar me-1"></i>
-                                        <?php echo date('M j, Y \a\t g:i A', strtotime($attachment['upload_date'])); ?>
-                                    </span>
-                                    <span>
-                                        <i class="fas fa-user me-1"></i>
-                                        <?php echo htmlspecialchars($attachment['uploaded_by'] ?? 'Unknown'); ?>
-                                    </span>
-                                </div>
-                                <?php if (!empty($attachment['description'])): ?>
-                                    <div class="attachment-description mt-2">
-                                        <small class="text-muted">
-                                            <i class="fas fa-comment me-1"></i>
-                                            <?php echo htmlspecialchars($attachment['description']); ?>
-                                        </small>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                        <div class="attachment-actions">
-                            <a href="<?php echo APP_URL; ?>/app/ajax/download_program_attachment.php?id=<?php echo $attachment['attachment_id']; ?>" 
-                               class="btn btn-sm btn-outline-primary" 
-                               target="_blank"
-                               title="Download <?php echo htmlspecialchars($attachment['original_filename']); ?>">
-                                <i class="fas fa-download me-1"></i> Download
-                            </a>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        <?php else: ?>
-            <div class="text-center py-4">
-                <div class="mb-3">
-                    <i class="fas fa-folder-open fa-3x text-muted"></i>
-                </div>
-                <h6 class="text-muted">No Attachments</h6>
-                <p class="text-muted mb-0">
-                    This program doesn't have any supporting documents uploaded.
-                    <?php if ($is_owner): ?>
-                        <br><a href="<?php echo APP_URL; ?>/app/views/agency/programs/edit_program.php?id=<?php echo $program_id; ?>" class="text-decoration-none">Upload attachments</a> in the program editor.
-                    <?php endif; ?>
-                </p>
-            </div>
-        <?php endif; ?>
-    </div>
-</div>
-
-<?php
-// Show focal-only submissions table with edit button
-if (isset($_SESSION['role']) && $_SESSION['role'] === 'focal') {
-    require_once ROOT_PATH . 'app/lib/agencies/programs.php';
-    $edit_history = get_program_edit_history($program_id);
-    $submissions = $edit_history['submissions'] ?? [];
-    ?>
-    <div class="card shadow-sm mb-4">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="card-title mb-0">
-                <i class="fas fa-history me-2"></i>All Submissions (Focal Controls)
-            </h5>
-        </div>
-        <div class="card-body">
-            <?php if (empty($submissions)): ?>
-                <div class="text-muted">No submissions found for this program.</div>
-            <?php else: ?>
-                <div class="table-responsive">
-                    <table class="table table-bordered table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Period</th>
-                                <th>Status</th>
-                                <th>Submitted By</th>
-                                <th>Submission Date</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        <?php foreach ($submissions as $sub): ?>
-                            <tr>
-                                <td><?php echo htmlspecialchars($sub['period_display'] ?? ''); ?></td>
-                                <td>
-                                    <span class="badge bg-<?php echo ($sub['is_draft'] ? 'warning' : 'success'); ?>">
-                                        <?php echo $sub['is_draft_label'] ?? ($sub['is_draft'] ? 'Draft' : 'Final'); ?>
-                                    </span>
-                                </td>
-                                <td><?php echo htmlspecialchars($sub['submitted_by_name'] ?? ''); ?></td>
-                                <td><?php echo htmlspecialchars($sub['formatted_date'] ?? ''); ?></td>
-                                <td>
-                                    <a href="<?php echo APP_URL; ?>/app/views/agency/programs/edit_submission.php?program_id=<?php echo $program_id; ?>&period_id=<?php echo $sub['period_id']; ?>" class="btn btn-sm btn-primary">
-                                        <i class="fas fa-edit"></i> Review Submission
-                                    </a>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
             <?php endif; ?>
         </div>
     </div>
-<?php } ?>
+</div>
 
 <?php if (!$is_owner): ?>
-<div class="alert alert-info">
+<div class="alert alert-info mt-4">
     <i class="fas fa-info-circle me-2"></i>
     <strong>Note:</strong> You are viewing this program in read-only mode. Only the program's owning agency can submit updates.
 </div>
@@ -636,7 +692,4 @@ window.APP_URL = '<?php echo APP_URL; ?>';
 <?php
 // Include footer
 require_once '../../layouts/footer.php';
-?>
-
-
-
+?> 

@@ -83,6 +83,11 @@ try {
             echo json_encode(['error' => 'Submission not found or access denied.']);
             exit;
         }
+        // Update the submission and set updated_at = NOW()
+        $update_query = "UPDATE program_submissions SET description = ?, is_draft = ?, is_submitted = ?, updated_at = NOW() WHERE submission_id = ?";
+        $stmt = $conn->prepare($update_query);
+        $stmt->bind_param("siii", $description, $is_draft, $is_submitted, $submission_id);
+        $stmt->execute();
     }
 
     // Handle deleted attachments

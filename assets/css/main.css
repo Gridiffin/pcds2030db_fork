@@ -62,6 +62,7 @@
 @import 'components/sectors-view.css'; /* Sectors view component styles */
 @import 'components/admin.css'; /* Add the new admin components CSS */
 @import 'components/program-details.css'; /* Program details component styling */
+@import 'components/enhanced-program-details.css'; /* Enhanced program details styling */
 @import 'components/progress.css'; /* Progress indicators with forest theme */
 @import 'components/progress.css'; /* Progress indicators with forest theme */
 @import 'components/program-animations.css'; /* Program animations */
