@@ -44,6 +44,22 @@ if (is_focal_user()) {
 #### Fixed Functions:
 - ✅ `assign_user_to_program()` - Focal users can only assign within agency programs
 - ✅ `remove_user_from_program()` - Focal users can only remove from agency programs
+- ✅ `get_assignable_users_for_program()` - **EXCLUDED focal users from restriction lists**
+
+### ✅ User Restriction Interface Security
+**Files**: `app/views/agency/programs/create_program.php`, `app/views/agency/programs/edit_program.php`
+
+#### Fixed Logic:
+- ✅ **Removed focal users from "Restrict editing to specific users" options**
+- ✅ Only regular agency users appear in user restriction selections
+- ✅ Focal users bypass user-level restrictions entirely
+
+#### Security Rationale:
+**Focal users should NOT appear in user restriction lists because:**
+- They have ultimate access within their agency
+- They should bypass all user-level restrictions
+- Including them defeats the purpose of their elevated privileges
+- User restrictions are meant for regular agency users only
 
 ### ✅ Program Listing Security  
 **File**: `app/views/agency/programs/view_programs.php`

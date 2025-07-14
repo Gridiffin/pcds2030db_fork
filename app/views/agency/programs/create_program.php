@@ -36,7 +36,7 @@ if ($agency_id) {
     $stmt = $conn->prepare("
         SELECT user_id, username, fullname 
         FROM users 
-        WHERE agency_id = ? AND role IN ('agency', 'focal') AND is_active = 1
+        WHERE agency_id = ? AND role = 'agency' AND is_active = 1
         ORDER BY fullname, username
     ");
     $stmt->bind_param("i", $agency_id);

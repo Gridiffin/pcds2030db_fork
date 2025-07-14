@@ -411,7 +411,7 @@ function get_assignable_users_for_program($program_id, $agency_id = null) {
         LEFT JOIN program_user_assignments pua ON u.user_id = pua.user_id 
             AND pua.program_id = ? AND pua.is_active = 1
         WHERE u.agency_id = ? 
-            AND u.role IN ('agency', 'focal')
+            AND u.role = 'agency'
             AND u.is_active = 1
         ORDER BY u.fullname, u.username
     ");
