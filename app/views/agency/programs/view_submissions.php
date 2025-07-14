@@ -306,72 +306,74 @@ require_once '../../layouts/page_header.php';
                                         <!-- Target Description -->
                                         <div class="mb-3">
                                             <h6 class="text-muted mb-2">
-                                                <i class="fas fa-align-left me-1"></i>Description
+                                                <i class="fas fa-align-left me-1"></i>Target Name/Description
                                             </h6>
                                             <?php if (!empty($target['target_description'])): ?>
                                                 <p class="mb-0 small"><?php echo nl2br(htmlspecialchars($target['target_description'])); ?></p>
                                             <?php else: ?>
-                                                <p class="text-muted mb-0 small fst-italic">No description provided</p>
+                                                <p class="text-muted mb-0 small">-</p>
                                             <?php endif; ?>
                                         </div>
 
                                         <!-- Status Description -->
-                                        <?php if (!empty($target['status_description'])): ?>
                                         <div class="mb-3">
                                             <h6 class="text-muted mb-2">
-                                                <i class="fas fa-info-circle me-1"></i>Status Update
+                                                <i class="fas fa-info-circle me-1"></i>Achievements/Status Description
                                             </h6>
-                                            <div class="bg-light p-2 rounded">
-                                                <p class="mb-0 small"><?php echo nl2br(htmlspecialchars($target['status_description'])); ?></p>
-                                            </div>
+                                            <?php if (!empty($target['status_description'])): ?>
+                                                <div class="bg-light p-2 rounded">
+                                                    <p class="mb-0 small"><?php echo nl2br(htmlspecialchars($target['status_description'])); ?></p>
+                                                </div>
+                                            <?php else: ?>
+                                                <p class="text-muted mb-0 small">-</p>
+                                            <?php endif; ?>
                                         </div>
-                                        <?php endif; ?>
 
                                         <!-- Timeline -->
-                                        <?php if (!empty($target['start_date']) || !empty($target['end_date'])): ?>
                                         <div class="mb-3">
                                             <h6 class="text-muted mb-2">
                                                 <i class="fas fa-calendar-alt me-1"></i>Timeline
                                             </h6>
                                             <div class="row small">
-                                                <?php if (!empty($target['start_date'])): ?>
-                                                    <div class="col-6">
-                                                        <div class="d-flex align-items-center">
-                                                            <i class="fas fa-play text-success me-1"></i>
-                                                            <div>
-                                                                <div class="fw-medium">Start Date</div>
-                                                                <small class="text-muted"><?php echo date('M j, Y', strtotime($target['start_date'])); ?></small>
-                                                            </div>
+                                                <div class="col-6">
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="fas fa-play text-success me-2"></i>
+                                                        <div>
+                                                            <div class="fw-medium">Start Date</div>
+                                                            <small class="text-muted">
+                                                                <?php echo !empty($target['start_date']) ? date('M j, Y', strtotime($target['start_date'])) : '-'; ?>
+                                                            </small>
                                                         </div>
                                                     </div>
-                                                <?php endif; ?>
+                                                </div>
                                                 
-                                                <?php if (!empty($target['end_date'])): ?>
-                                                    <div class="col-6">
-                                                        <div class="d-flex align-items-center">
-                                                            <i class="fas fa-flag text-danger me-1"></i>
-                                                            <div>
-                                                                <div class="fw-medium">End Date</div>
-                                                                <small class="text-muted"><?php echo date('M j, Y', strtotime($target['end_date'])); ?></small>
-                                                            </div>
+                                                <div class="col-6">
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="fas fa-flag text-danger me-2"></i>
+                                                        <div>
+                                                            <div class="fw-medium">End Date</div>
+                                                            <small class="text-muted">
+                                                                <?php echo !empty($target['end_date']) ? date('M j, Y', strtotime($target['end_date'])) : '-'; ?>
+                                                            </small>
                                                         </div>
                                                     </div>
-                                                <?php endif; ?>
+                                                </div>
                                             </div>
                                         </div>
-                                        <?php endif; ?>
 
                                         <!-- Remarks -->
-                                        <?php if (!empty($target['remarks'])): ?>
                                         <div class="mb-0">
                                             <h6 class="text-muted mb-2">
                                                 <i class="fas fa-comment me-1"></i>Remarks
                                             </h6>
-                                            <div class="alert alert-light mb-0">
-                                                <small><?php echo nl2br(htmlspecialchars($target['remarks'])); ?></small>
-                                            </div>
+                                            <?php if (!empty($target['remarks'])): ?>
+                                                <div class="alert alert-light mb-0">
+                                                    <small><?php echo nl2br(htmlspecialchars($target['remarks'])); ?></small>
+                                                </div>
+                                            <?php else: ?>
+                                                <p class="text-muted mb-0 small">-</p>
+                                            <?php endif; ?>
                                         </div>
-                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </div>
@@ -434,10 +436,18 @@ require_once '../../layouts/page_header.php';
             ?>
             <div class="card shadow-sm mb-4">
                 <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-paperclip me-2 text-success"></i>
-                        Program Attachments
-                    </h5>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-paperclip me-2 text-success"></i>
+                            Program Attachments
+                        </h5>
+                        <?php if ($is_owner): ?>
+                            <a href="edit_submission.php?program_id=<?php echo $program_id; ?>&period_id=<?php echo $period_id; ?>" 
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-edit me-1"></i>Edit Submission
+                            </a>
+                        <?php endif; ?>
+                    </div>
                 </div>
                 <div class="card-body">
                     <div class="row">
@@ -449,6 +459,9 @@ require_once '../../layouts/page_header.php';
                                         <div class="fw-medium"><?php echo htmlspecialchars($attachment['filename'] ?? 'Unknown file'); ?></div>
                                         <small class="text-muted">
                                             Uploaded: <?php echo !empty($attachment['uploaded_at']) ? date('M j, Y', strtotime($attachment['uploaded_at'])) : 'Unknown date'; ?>
+                                            <?php if (!empty($attachment['uploaded_by'])): ?>
+                                                <br>By: <span class="fw-medium"><?php echo htmlspecialchars($attachment['uploaded_by']); ?></span>
+                                            <?php endif; ?>
                                         </small>
                                     </div>
                                     <a href="<?php echo htmlspecialchars($attachment['file_path'] ?? '#'); ?>" 
