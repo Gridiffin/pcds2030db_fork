@@ -110,4 +110,25 @@ function get_rating_options() {
         RATING_SEVERE_DELAY => 'Severe Delays'
     ];
 }
-?> 
+
+/**
+ * Get rating information (label and color)
+ * 
+ * @param string $rating The rating value
+ * @return array Array with 'label' and 'color' keys
+ */
+function get_rating_info($rating) {
+    if (!is_valid_rating($rating)) {
+        $rating = RATING_NOT_STARTED;
+    }
+    
+    $info = [
+        RATING_NOT_STARTED => ['label' => 'Not Started', 'color' => '#6c757d'],
+        RATING_ON_TRACK => ['label' => 'On Track', 'color' => '#ffc107'],
+        RATING_TARGET_ACHIEVED => ['label' => 'Monthly Target Achieved', 'color' => '#198754'],
+        RATING_SEVERE_DELAY => ['label' => 'Severe Delays', 'color' => '#dc3545']
+    ];
+    
+    return $info[$rating];
+}
+?>

@@ -281,14 +281,15 @@ function get_program_attachments($program_id) {
     while ($row = $result->fetch_assoc()) {
         $attachments[] = [
             'attachment_id' => $row['attachment_id'],
+            'filename' => $row['file_name'],
             'original_filename' => $row['file_name'],
+            'file_path' => $row['file_path'],
             'file_size' => $row['file_size'],
-            'mime_type' => $row['file_type'],
             'file_type' => $row['file_type'],
-            'description' => $row['description'] ?? '',
+            'uploaded_at' => $row['uploaded_at'],
             'upload_date' => $row['uploaded_at'],
             'uploaded_by' => $row['uploaded_by_name'],
-            'file_size_formatted' => format_file_size($row['file_size']),
+            'file_size_formatted' => format_file_size($row['file_size'] ?? 0),
             'submission_id' => $row['submission_id'],
             'period_id' => $row['period_id']
         ];
