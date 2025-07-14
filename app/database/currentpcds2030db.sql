@@ -1443,6 +1443,41 @@ INSERT INTO `programs` (`program_id`, `initiative_id`, `program_name`, `program_
 	(16, 3, 'a real program', '31.A', 'not_started', 'descicicic', '2025-07-12', '2025-07-20', 5, 0, 12, '2025-07-13 02:32:44', '2025-07-13 02:32:44', 0),
 	(17, 3, 'helloooooooo', '31.B', 'not_started', 'adsasdas', NULL, NULL, 2, 0, 5, '2025-07-13 03:38:38', '2025-07-13 03:38:38', 0);
 
+-- Dumping structure for table pcds2030_db.program_agency_assignments
+CREATE TABLE IF NOT EXISTS `program_agency_assignments` (
+  `assignment_id` int NOT NULL AUTO_INCREMENT,
+  `program_id` int NOT NULL,
+  `agency_id` int NOT NULL,
+  `role` enum('owner','editor','viewer') COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'viewer',
+  `assigned_by` int NOT NULL,
+  `assigned_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `is_active` tinyint(1) DEFAULT '1',
+  `notes` text COLLATE utf8mb4_general_ci,
+  PRIMARY KEY (`assignment_id`),
+  UNIQUE KEY `unique_program_agency` (`program_id`,`agency_id`),
+  KEY `assigned_by` (`assigned_by`),
+  KEY `idx_program_id` (`program_id`),
+  KEY `idx_agency_id` (`agency_id`),
+  KEY `idx_role` (`role`),
+  KEY `idx_active` (`is_active`),
+  KEY `idx_program_agency_role` (`program_id`,`agency_id`,`role`),
+  KEY `idx_assignment_lookup` (`program_id`,`is_active`),
+  CONSTRAINT `program_agency_assignments_ibfk_1` FOREIGN KEY (`program_id`) REFERENCES `programs` (`program_id`) ON DELETE CASCADE,
+  CONSTRAINT `program_agency_assignments_ibfk_2` FOREIGN KEY (`agency_id`) REFERENCES `agency` (`agency_id`) ON DELETE CASCADE,
+  CONSTRAINT `program_agency_assignments_ibfk_3` FOREIGN KEY (`assigned_by`) REFERENCES `users` (`user_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Dumping data for table pcds2030_db.program_agency_assignments: ~0 rows (approximately)
+INSERT INTO `program_agency_assignments` (`assignment_id`, `program_id`, `agency_id`, `role`, `assigned_by`, `assigned_at`, `updated_at`, `is_active`, `notes`) VALUES
+	(1, 1, 5, 'owner', 2, '2025-07-14 06:35:03', '2025-07-14 06:35:03', 1, 'Migrated from original program ownership'),
+	(2, 2, 5, 'owner', 2, '2025-07-14 06:35:03', '2025-07-14 06:35:03', 1, 'Migrated from original program ownership'),
+	(3, 3, 5, 'owner', 2, '2025-07-14 06:35:03', '2025-07-14 06:35:03', 1, 'Migrated from original program ownership'),
+	(4, 14, 5, 'owner', 12, '2025-07-14 06:35:03', '2025-07-14 06:35:03', 1, 'Migrated from original program ownership'),
+	(5, 15, 5, 'owner', 12, '2025-07-14 06:35:03', '2025-07-14 06:35:03', 1, 'Migrated from original program ownership'),
+	(6, 16, 5, 'owner', 12, '2025-07-14 06:35:03', '2025-07-14 06:35:03', 1, 'Migrated from original program ownership'),
+	(7, 17, 2, 'owner', 5, '2025-07-14 06:35:03', '2025-07-14 06:35:03', 1, 'Migrated from original program ownership');
+
 -- Dumping structure for table pcds2030_db.program_attachments
 CREATE TABLE IF NOT EXISTS `program_attachments` (
   `attachment_id` int NOT NULL AUTO_INCREMENT,
@@ -1461,7 +1496,7 @@ CREATE TABLE IF NOT EXISTS `program_attachments` (
   CONSTRAINT `program_attachments_ibfk_2` FOREIGN KEY (`uploaded_by`) REFERENCES `users` (`user_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table pcds2030_db.program_attachments: ~1 rows (approximately)
+-- Dumping data for table pcds2030_db.program_attachments: ~0 rows (approximately)
 INSERT INTO `program_attachments` (`attachment_id`, `submission_id`, `file_name`, `file_path`, `file_size`, `file_type`, `uploaded_by`, `uploaded_at`, `is_deleted`) VALUES
 	(10, 7, 'Forestry_Q5-2025_20250709030726.pptx', '../../uploads/programs/attachments/7/1752202597_68707d65532d0.pptx', 149101, 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 12, '2025-07-11 02:56:37', 0);
 
