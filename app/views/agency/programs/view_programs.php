@@ -16,6 +16,7 @@ require_once PROJECT_ROOT_PATH . 'lib/db_connect.php';
 require_once PROJECT_ROOT_PATH . 'lib/session.php';
 require_once PROJECT_ROOT_PATH . 'lib/functions.php';
 require_once PROJECT_ROOT_PATH . 'lib/agencies/index.php';
+require_once PROJECT_ROOT_PATH . 'lib/agencies/program_agency_assignments.php';
 require_once PROJECT_ROOT_PATH . 'lib/rating_helpers.php';
 require_once PROJECT_ROOT_PATH . 'lib/initiative_functions.php';
 
@@ -53,41 +54,82 @@ $agency_id = $_SESSION['agency_id'] ?? null;
 $programs = [];
 
 if ($agency_id !== null) {
-    // Fetch all programs for the agency with latest submission info (if any)
-    $query = "SELECT p.*, 
-                     i.initiative_name,
-                     i.initiative_number,
-                     i.initiative_id,
-                     latest_sub.is_draft,
-                     latest_sub.period_id,
-                     latest_sub.submission_id as latest_submission_id,
-                     latest_sub.submitted_at,
-                     rp.period_type,
-                     rp.period_number,
-                     rp.year as period_year,
-                     COALESCE(latest_sub.submitted_at, p.created_at) as updated_at
-              FROM programs p 
-              LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
-              LEFT JOIN (
-                  SELECT ps1.*
-                  FROM program_submissions ps1
-                  INNER JOIN (
-                      SELECT program_id, MAX(submission_id) as max_submission_id
-                      FROM program_submissions
-                      WHERE is_deleted = 0
-                      GROUP BY program_id
-                  ) ps2 ON ps1.program_id = ps2.program_id AND ps1.submission_id = ps2.max_submission_id
-              ) latest_sub ON p.program_id = latest_sub.program_id
-              LEFT JOIN reporting_periods rp ON latest_sub.period_id = rp.period_id
-              WHERE p.agency_id = ? AND p.is_deleted = 0
-              ORDER BY p.program_name";
-    
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param("i", $agency_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    while ($row = $result->fetch_assoc()) {
-        $programs[] = $row;
+    // Build query based on user role - focal users see all programs, others see assigned programs
+    if (is_focal_user()) {
+        // Focal users can see all programs
+        $query = "SELECT p.*, 
+                         i.initiative_name,
+                         i.initiative_number,
+                         i.initiative_id,
+                         latest_sub.is_draft,
+                         latest_sub.period_id,
+                         latest_sub.submission_id as latest_submission_id,
+                         latest_sub.submitted_at,
+                         rp.period_type,
+                         rp.period_number,
+                         rp.year as period_year,
+                         COALESCE(latest_sub.submitted_at, p.created_at) as updated_at
+                  FROM programs p 
+                  LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
+                  LEFT JOIN (
+                      SELECT ps1.*
+                      FROM program_submissions ps1
+                      INNER JOIN (
+                          SELECT program_id, MAX(submission_id) as max_submission_id
+                          FROM program_submissions
+                          WHERE is_deleted = 0
+                          GROUP BY program_id
+                      ) ps2 ON ps1.program_id = ps2.program_id AND ps1.submission_id = ps2.max_submission_id
+                  ) latest_sub ON p.program_id = latest_sub.program_id
+                  LEFT JOIN reporting_periods rp ON latest_sub.period_id = rp.period_id
+                  WHERE p.is_deleted = 0
+                  ORDER BY p.program_name";
+        
+        $stmt = $conn->prepare($query);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        while ($row = $result->fetch_assoc()) {
+            $programs[] = $row;
+        }
+    } else {
+        // Regular agency users see programs they have access to via assignments
+        $query = "SELECT DISTINCT p.*, 
+                         i.initiative_name,
+                         i.initiative_number,
+                         i.initiative_id,
+                         latest_sub.is_draft,
+                         latest_sub.period_id,
+                         latest_sub.submission_id as latest_submission_id,
+                         latest_sub.submitted_at,
+                         rp.period_type,
+                         rp.period_number,
+                         rp.year as period_year,
+                         COALESCE(latest_sub.submitted_at, p.created_at) as updated_at,
+                         paa.role as user_role
+                  FROM programs p 
+                  LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
+                  LEFT JOIN program_agency_assignments paa ON p.program_id = paa.program_id AND paa.agency_id = ? AND paa.is_active = 1
+                  LEFT JOIN (
+                      SELECT ps1.*
+                      FROM program_submissions ps1
+                      INNER JOIN (
+                          SELECT program_id, MAX(submission_id) as max_submission_id
+                          FROM program_submissions
+                          WHERE is_deleted = 0
+                          GROUP BY program_id
+                      ) ps2 ON ps1.program_id = ps2.program_id AND ps1.submission_id = ps2.max_submission_id
+                  ) latest_sub ON p.program_id = latest_sub.program_id
+                  LEFT JOIN reporting_periods rp ON latest_sub.period_id = rp.period_id
+                  WHERE p.is_deleted = 0 AND paa.assignment_id IS NOT NULL
+                  ORDER BY p.program_name";
+        
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("i", $agency_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        while ($row = $result->fetch_assoc()) {
+            $programs[] = $row;
+        }
     }
 }
 

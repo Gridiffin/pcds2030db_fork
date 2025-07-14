@@ -17,6 +17,8 @@ require_once PROJECT_ROOT_PATH . 'lib/db_connect.php';
 require_once PROJECT_ROOT_PATH . 'lib/session.php';
 require_once PROJECT_ROOT_PATH . 'lib/functions.php';
 require_once PROJECT_ROOT_PATH . 'lib/agencies/programs.php';
+require_once PROJECT_ROOT_PATH . 'lib/agencies/program_agency_assignments.php';
+require_once PROJECT_ROOT_PATH . 'lib/agencies/program_user_assignments.php';
 require_once PROJECT_ROOT_PATH . 'lib/initiative_functions.php';
 require_once PROJECT_ROOT_PATH . 'lib/numbering_helpers.php';
 require_once PROJECT_ROOT_PATH . 'lib/rating_helpers.php';
@@ -41,25 +43,34 @@ if (!$program_id) {
 $program = get_program_details($program_id);
 
 if (!$program) {
-    $_SESSION['message'] = 'Program not found or access denied.';
+    $_SESSION['message'] = 'Program not found.';
     $_SESSION['message_type'] = 'danger';
     header('Location: view_programs.php');
     exit;
 }
 
-// Check if user owns this program
-$user_id = $_SESSION['user_id'];
-$is_owner = ($program['created_by'] == $user_id);
-
-if (!$is_owner && !is_focal_user()) {
-    $_SESSION['message'] = 'You can only edit programs you own.';
+// Check if user can edit this program using new permission system
+if (!can_edit_program($program_id)) {
+    $_SESSION['message'] = 'You do not have permission to edit this program.';
     $_SESSION['message_type'] = 'danger';
     header('Location: view_programs.php');
     exit;
 }
+
+// For legacy compatibility
+$is_owner = is_program_owner($program_id);
 
 // Get active initiatives for dropdown
 $active_initiatives = get_initiatives_for_select(true);
+
+// Get users in assigned agencies for user assignment
+$assignable_users = get_assignable_users_for_program($program_id);
+
+// Get current user assignments for this program
+$current_user_assignments = get_program_assigned_users($program_id);
+
+// Check if program has editor restrictions
+$restrict_editors = program_has_editor_restrictions($program_id);
 
 // Process form submission
 $message = '';
@@ -81,6 +92,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $result = update_simple_program($program_data);
     
     if (isset($result['success']) && $result['success']) {
+        // Handle user assignment settings
+        $new_restrict_editors = isset($_POST['restrict_editors']) ? 1 : 0;
+        $assigned_editor_users = isset($_POST['assigned_editors']) ? $_POST['assigned_editors'] : [];
+        
+        // Update editor restrictions
+        set_program_editor_restrictions($program_id, $new_restrict_editors);
+        
+        if ($new_restrict_editors) {
+            // Remove all current user assignments
+            foreach ($current_user_assignments as $assignment) {
+                remove_user_from_program($program_id, $assignment['user_id']);
+            }
+            
+            // Add new assignments
+            if (!empty($assigned_editor_users)) {
+                foreach ($assigned_editor_users as $user_id) {
+                    assign_user_to_program($program_id, intval($user_id), 'editor', 'Updated during program edit');
+                }
+            }
+        } else {
+            // Remove all user assignments when restrictions are disabled
+            foreach ($current_user_assignments as $assignment) {
+                remove_user_from_program($program_id, $assignment['user_id']);
+            }
+        }
+        
         // Set success message and redirect
         $_SESSION['message'] = $result['message'];
         $_SESSION['message_type'] = 'success';
@@ -305,6 +342,95 @@ require_once '../../layouts/page_header.php';
                                     </div>
                                 </div>
 
+                                <!-- User Permissions Section -->
+                                <div class="card shadow-sm mt-3">
+                                    <div class="card-header">
+                                        <h6 class="card-title mb-0">
+                                            <i class="fas fa-users me-2"></i>
+                                            User Permissions
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <!-- Current Status -->
+                                        <div class="alert alert-<?php echo $restrict_editors ? 'warning' : 'success'; ?> mb-3">
+                                            <i class="fas fa-<?php echo $restrict_editors ? 'lock' : 'unlock'; ?> me-2"></i>
+                                            <strong>Current Status:</strong> 
+                                            <?php if ($restrict_editors): ?>
+                                                Editing restricted to specific users
+                                            <?php else: ?>
+                                                All agency users can edit
+                                            <?php endif; ?>
+                                        </div>
+
+                                        <!-- Restrict Editors Toggle -->
+                                        <div class="mb-3">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" 
+                                                       id="restrict_editors" name="restrict_editors"
+                                                       <?php echo $restrict_editors ? 'checked' : ''; ?>>
+                                                <label class="form-check-label" for="restrict_editors">
+                                                    <strong>Restrict editing to specific users</strong>
+                                                </label>
+                                            </div>
+                                            <div class="form-text">
+                                                <i class="fas fa-info-circle me-1"></i>
+                                                When disabled, all agency users can edit. When enabled, only selected users can edit.
+                                            </div>
+                                        </div>
+
+                                        <!-- User Selection (shown when restrictions are enabled) -->
+                                        <div id="userSelectionSection" style="display: <?php echo $restrict_editors ? 'block' : 'none'; ?>;">
+                                            <label class="form-label">
+                                                <i class="fas fa-user-edit me-1"></i>
+                                                Select users who can edit this program:
+                                            </label>
+                                            
+                                            <?php if (!empty($assignable_users)): ?>
+                                                <div class="user-checkboxes" style="max-height: 200px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 0.375rem; padding: 0.75rem;">
+                                                    <?php 
+                                                    // Create array of currently assigned editor user IDs for easy checking
+                                                    $assigned_editor_ids = array_column(array_filter($current_user_assignments, function($assignment) {
+                                                        return $assignment['role'] === 'editor';
+                                                    }), 'user_id');
+                                                    ?>
+                                                    
+                                                    <?php foreach ($assignable_users as $user): ?>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" 
+                                                                   name="assigned_editors[]" 
+                                                                   value="<?php echo $user['user_id']; ?>"
+                                                                   id="user_<?php echo $user['user_id']; ?>"
+                                                                   <?php echo in_array($user['user_id'], $assigned_editor_ids) ? 'checked' : ''; ?>>
+                                                            <label class="form-check-label" for="user_<?php echo $user['user_id']; ?>">
+                                                                <strong><?php echo htmlspecialchars($user['fullname'] ?: $user['username']); ?></strong>
+                                                                <br><small class="text-muted"><?php echo htmlspecialchars($user['username']); ?></small>
+                                                                <?php if ($user['current_role']): ?>
+                                                                    <span class="badge bg-info ms-2"><?php echo ucfirst($user['current_role']); ?></span>
+                                                                <?php endif; ?>
+                                                            </label>
+                                                        </div>
+                                                    <?php endforeach; ?>
+                                                </div>
+                                                
+                                                <!-- Select All / None buttons -->
+                                                <div class="mt-2">
+                                                    <button type="button" class="btn btn-sm btn-outline-primary me-2" onclick="selectAllUsers()">
+                                                        <i class="fas fa-check-double me-1"></i>Select All
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="selectNoUsers()">
+                                                        <i class="fas fa-times me-1"></i>Select None
+                                                    </button>
+                                                </div>
+                                            <?php else: ?>
+                                                <div class="alert alert-info">
+                                                    <i class="fas fa-info-circle me-2"></i>
+                                                    No assignable users found.
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <!-- Info Card -->
                                 <div class="card shadow-sm mt-3">
                                     <div class="card-body">
@@ -426,6 +552,44 @@ document.addEventListener('DOMContentLoaded', function() {
             finalNumberPreview.textContent = 'Will be generated automatically';
         }
     });
+
+// Handle restrict editors toggle
+document.getElementById('restrict_editors').addEventListener('change', function() {
+    const userSection = document.getElementById('userSelectionSection');
+    if (this.checked) {
+        userSection.style.display = 'block';
+    } else {
+        userSection.style.display = 'none';
+        // Uncheck all user checkboxes when disabling restrictions
+        const userCheckboxes = document.querySelectorAll('input[name="assigned_editors[]"]');
+        userCheckboxes.forEach(checkbox => checkbox.checked = false);
+    }
+});
+
+// Select all users function
+function selectAllUsers() {
+    const userCheckboxes = document.querySelectorAll('input[name="assigned_editors[]"]');
+    userCheckboxes.forEach(checkbox => checkbox.checked = true);
+}
+
+// Select no users function
+function selectNoUsers() {
+    const userCheckboxes = document.querySelectorAll('input[name="assigned_editors[]"]');
+    userCheckboxes.forEach(checkbox => checkbox.checked = false);
+}
+
+// Initialize user selection section on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const restrictCheckbox = document.getElementById('restrict_editors');
+    const userSection = document.getElementById('userSelectionSection');
+    
+    // Show/hide user section based on initial checkbox state
+    if (restrictCheckbox.checked) {
+        userSection.style.display = 'block';
+    } else {
+        userSection.style.display = 'none';
+    }
+});
 });
 </script>
 

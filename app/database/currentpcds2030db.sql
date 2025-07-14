@@ -49,9 +49,9 @@ CREATE TABLE IF NOT EXISTS `audit_field_changes` (
   KEY `idx_created_at` (`created_at`),
   KEY `idx_target_id` (`target_id`),
   CONSTRAINT `fk_audit_field_changes_log` FOREIGN KEY (`audit_log_id`) REFERENCES `audit_logs` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=1021 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1029 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table pcds2030_db.audit_field_changes: ~936 rows (approximately)
+-- Dumping data for table pcds2030_db.audit_field_changes: ~935 rows (approximately)
 INSERT INTO `audit_field_changes` (`change_id`, `audit_log_id`, `target_id`, `field_name`, `field_type`, `old_value`, `new_value`, `target_snapshot`, `change_type`, `created_at`) VALUES
 	(1, 5, NULL, 'program_name', 'text', NULL, 'Test Program', NULL, 'added', '2025-07-05 15:34:01'),
 	(2, 5, NULL, 'description', 'text', NULL, 'This is a test program', NULL, 'added', '2025-07-05 15:34:01'),
@@ -988,7 +988,15 @@ INSERT INTO `audit_field_changes` (`change_id`, `audit_log_id`, `target_id`, `fi
 	(1017, 171, 121, 'end_date', 'date', NULL, '2025-07-18', NULL, 'added', '2025-07-11 02:38:57'),
 	(1018, 172, 118, 'target_number', 'text', '999', '', NULL, 'modified', '2025-07-11 02:56:37'),
 	(1019, 172, 119, 'target_number', 'text', '121', '', NULL, 'modified', '2025-07-11 02:56:37'),
-	(1020, 185, 120, 'target_description', 'text', 'target test 1.1', 'target test 1.1.1', NULL, 'modified', '2025-07-12 03:49:18');
+	(1020, 185, 120, 'target_description', 'text', 'target test 1.1', 'target test 1.1.1', NULL, 'modified', '2025-07-12 03:49:18'),
+	(1021, 191, 122, 'remarks', 'text', NULL, '', NULL, 'modified', '2025-07-13 02:33:35'),
+	(1022, 204, 123, 'target_number', 'text', NULL, '31.A.2', NULL, 'added', '2025-07-13 03:37:35'),
+	(1023, 204, 123, 'target_description', 'text', NULL, 'dadadas', NULL, 'added', '2025-07-13 03:37:35'),
+	(1024, 204, 123, 'status_indicator', 'text', NULL, 'completed', NULL, 'added', '2025-07-13 03:37:35'),
+	(1025, 204, 123, 'status_description', 'text', NULL, 'afdsfsdfsdfjfhuidghiudhgisudhgiushguishdgudshfusidghsyudgfjshbcjzcmburteoishdjszbfyusdgfsjbjshfjs', NULL, 'added', '2025-07-13 03:37:35'),
+	(1026, 204, 123, 'remarks', 'text', NULL, 'a', NULL, 'added', '2025-07-13 03:37:35'),
+	(1027, 211, 124, 'remarks', 'text', NULL, '', NULL, 'modified', '2025-07-13 03:39:10'),
+	(1028, 211, 125, 'remarks', 'text', NULL, '', NULL, 'modified', '2025-07-13 03:39:10');
 
 -- Dumping structure for table pcds2030_db.audit_logs
 CREATE TABLE IF NOT EXISTS `audit_logs` (
@@ -1004,9 +1012,9 @@ CREATE TABLE IF NOT EXISTS `audit_logs` (
   KEY `created_at` (`created_at`),
   KEY `user_id` (`user_id`),
   KEY `idx_entity_operation` (`action`,`created_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=187 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=317 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table pcds2030_db.audit_logs: ~174 rows (approximately)
+-- Dumping data for table pcds2030_db.audit_logs: ~281 rows (approximately)
 INSERT INTO `audit_logs` (`id`, `user_id`, `action`, `details`, `ip_address`, `status`, `created_at`) VALUES
 	(1, 12, 'create_program_failed', 'Program Name: adasdas | Error: Unknown column \'start_date\' in \'field list\'', '127.0.0.1', 'failure', '2025-07-05 13:02:34'),
 	(2, 12, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-05 13:04:08'),
@@ -1187,7 +1195,137 @@ INSERT INTO `audit_logs` (`id`, `user_id`, `action`, `details`, `ip_address`, `s
 	(183, 12, 'update_program_failed', 'Program Name: program testing 2 | Program ID: 15 | Error: Data truncated for column \'rating\' at row 1', '127.0.0.1', 'failure', '2025-07-12 11:23:01'),
 	(184, 12, 'update_program_failed', 'Program Name: program testing 2 | Program ID: 15 | Error: Data truncated for column \'rating\' at row 1', '127.0.0.1', 'failure', '2025-07-12 11:29:50'),
 	(185, 12, 'update_submission', 'Updated submission ID: 8 for program ID: 15', '127.0.0.1', 'success', '2025-07-12 11:49:18'),
-	(186, 12, 'login_success', 'Username: user', '127.0.0.1', 'success', '2025-07-12 19:12:57');
+	(186, 12, 'login_success', 'Username: user', '127.0.0.1', 'success', '2025-07-12 19:12:57'),
+	(187, 1, 'login_success', 'Username: admin', '127.0.0.1', 'success', '2025-07-13 10:09:05'),
+	(188, 1, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-13 10:32:06'),
+	(189, 12, 'login_success', 'Username: user', '127.0.0.1', 'success', '2025-07-13 10:32:11'),
+	(190, 12, 'create_program', 'Program Name: a real program | Program ID: 16 | Program Number: 31.A', '127.0.0.1', 'success', '2025-07-13 10:32:44'),
+	(191, 12, 'update_submission', 'Updated submission ID: 9 for program ID: 16', '127.0.0.1', 'success', '2025-07-13 10:33:35'),
+	(192, 12, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-13 10:33:44'),
+	(193, 1, 'login_success', 'Username: admin', '127.0.0.1', 'success', '2025-07-13 10:33:48'),
+	(194, 1, 'save_report', 'Successfully saved Report: \'1\' for Forestry Sector - Q2 2025 (ID: 1, File: Forestry_Sector_Q2-2025_20250713031711.pptx, Size: 132,794 bytes)', '127.0.0.1', 'success', '2025-07-13 11:17:11'),
+	(195, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713031711.pptx (Size: 132794 bytes)', '127.0.0.1', 'success', '2025-07-13 11:17:16'),
+	(196, 1, 'save_report', 'Successfully saved Report: \'2\' for Forestry Sector - Q2 2025 (ID: 2, File: Forestry_Sector_Q2-2025_20250713032525.pptx, Size: 132,794 bytes)', '127.0.0.1', 'success', '2025-07-13 11:25:25'),
+	(197, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713032525.pptx (Size: 132794 bytes)', '127.0.0.1', 'success', '2025-07-13 11:25:29'),
+	(198, 1, 'save_report', 'Successfully saved Report: \'3\' for Forestry Sector - Q2 2025 (ID: 3, File: Forestry_Sector_Q2-2025_20250713033122.pptx, Size: 55,834 bytes)', '127.0.0.1', 'success', '2025-07-13 11:31:22'),
+	(199, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713033122.pptx (Size: 55834 bytes)', '127.0.0.1', 'success', '2025-07-13 11:31:33'),
+	(200, 1, 'save_report', 'Successfully saved Report: \'4\' for Forestry Sector - Q2 2025 (ID: 4, File: Forestry_Sector_Q2-2025_20250713033622.pptx, Size: 132,810 bytes)', '127.0.0.1', 'success', '2025-07-13 11:36:22'),
+	(201, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713033622.pptx (Size: 132810 bytes)', '127.0.0.1', 'success', '2025-07-13 11:36:26'),
+	(202, 1, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-13 11:36:44'),
+	(203, 12, 'login_success', 'Username: user', '127.0.0.1', 'success', '2025-07-13 11:36:52'),
+	(204, 12, 'update_submission', 'Updated submission ID: 9 for program ID: 16', '127.0.0.1', 'success', '2025-07-13 11:37:34'),
+	(205, 12, 'update_submission', 'Updated submission ID: 9 for program ID: 16', '127.0.0.1', 'success', '2025-07-13 11:37:39'),
+	(206, 12, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-13 11:37:55'),
+	(207, 12, 'login_success', 'Username: user', '127.0.0.1', 'success', '2025-07-13 11:38:03'),
+	(208, 12, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-13 11:38:09'),
+	(209, 5, 'login_success', 'Username: sfc1', '127.0.0.1', 'success', '2025-07-13 11:38:18'),
+	(210, 5, 'create_program', 'Program Name: helloooooooo | Program ID: 17 | Program Number: 31.B', '127.0.0.1', 'success', '2025-07-13 11:38:38'),
+	(211, 5, 'update_submission', 'Updated submission ID: 10 for program ID: 17', '127.0.0.1', 'success', '2025-07-13 11:39:10'),
+	(212, 5, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-13 11:39:14'),
+	(213, 1, 'login_success', 'Username: admin', '127.0.0.1', 'success', '2025-07-13 11:39:18'),
+	(214, 1, 'save_report', 'Successfully saved Report: \'5\' for Forestry Sector - Q2 2025 (ID: 5, File: Forestry_Sector_Q2-2025_20250713033950.pptx, Size: 137,009 bytes)', '127.0.0.1', 'success', '2025-07-13 11:39:50'),
+	(215, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713033950.pptx (Size: 137009 bytes)', '127.0.0.1', 'success', '2025-07-13 11:39:53'),
+	(216, 1, 'save_report', 'Successfully saved Report: \'6\' for Forestry Sector - Q2 2025 (ID: 6, File: Forestry_Sector_Q2-2025_20250713034814.pptx, Size: 138,041 bytes)', '127.0.0.1', 'success', '2025-07-13 11:48:14'),
+	(217, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713034814.pptx (Size: 138041 bytes)', '127.0.0.1', 'success', '2025-07-13 11:48:17'),
+	(218, 1, 'save_report', 'Successfully saved Report: \'7\' for Forestry Sector - Q2 2025 (ID: 7, File: Forestry_Sector_Q2-2025_20250713041510.pptx, Size: 148,436 bytes)', '127.0.0.1', 'success', '2025-07-13 12:15:10'),
+	(219, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713041510.pptx (Size: 148436 bytes)', '127.0.0.1', 'success', '2025-07-13 12:15:20'),
+	(220, 1, 'save_report', 'Successfully saved Report: \'8\' for Forestry Sector - Q2 2025 (ID: 8, File: Forestry_Sector_Q2-2025_20250713042352.pptx, Size: 150,077 bytes)', '127.0.0.1', 'success', '2025-07-13 12:23:52'),
+	(221, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713042352.pptx (Size: 150077 bytes)', '127.0.0.1', 'success', '2025-07-13 12:24:00'),
+	(222, 1, 'save_report', 'Successfully saved Report: \'9\' for Forestry Sector - Q2 2025 (ID: 9, File: Forestry_Sector_Q2-2025_20250713043024.pptx, Size: 150,242 bytes)', '127.0.0.1', 'success', '2025-07-13 12:30:24'),
+	(223, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713043024.pptx (Size: 150242 bytes)', '127.0.0.1', 'success', '2025-07-13 12:30:26'),
+	(224, 1, 'save_report', 'Successfully saved Report: \'10\' for Forestry Sector - Q2 2025 (ID: 10, File: Forestry_Sector_Q2-2025_20250713043627.pptx, Size: 150,242 bytes)', '127.0.0.1', 'success', '2025-07-13 12:36:27'),
+	(225, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713043627.pptx (Size: 150242 bytes)', '127.0.0.1', 'success', '2025-07-13 12:36:29'),
+	(226, 1, 'save_report', 'Successfully saved Report: \'12\' for Forestry Sector - Q2 2025 (ID: 11, File: Forestry_Sector_Q2-2025_20250713043858.pptx, Size: 150,242 bytes)', '127.0.0.1', 'success', '2025-07-13 12:38:58'),
+	(227, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713043858.pptx (Size: 150242 bytes)', '127.0.0.1', 'success', '2025-07-13 12:39:01'),
+	(228, 1, 'save_report', 'Successfully saved Report: \'13\' for Forestry Sector - Q2 2025 (ID: 12, File: Forestry_Sector_Q2-2025_20250713044454.pptx, Size: 150,242 bytes)', '127.0.0.1', 'success', '2025-07-13 12:44:54'),
+	(229, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713044454.pptx (Size: 150242 bytes)', '127.0.0.1', 'success', '2025-07-13 12:44:57'),
+	(230, 1, 'save_report', 'Successfully saved Report: \'11\' for Forestry Sector - Q2 2025 (ID: 13, File: Forestry_Sector_Q2-2025_20250713044841.pptx, Size: 145,958 bytes)', '127.0.0.1', 'success', '2025-07-13 12:48:41'),
+	(231, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713044841.pptx (Size: 145958 bytes)', '127.0.0.1', 'success', '2025-07-13 12:48:46'),
+	(232, 1, 'save_report', 'Successfully saved Report: \'14\' for Forestry Sector - Q2 2025 (ID: 14, File: Forestry_Sector_Q2-2025_20250713045240.pptx, Size: 149,094 bytes)', '127.0.0.1', 'success', '2025-07-13 12:52:40'),
+	(233, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713045240.pptx (Size: 149094 bytes)', '127.0.0.1', 'success', '2025-07-13 12:52:47'),
+	(234, 1, 'save_report', 'Successfully saved Report: \'15\' for Forestry Sector - Q2 2025 (ID: 15, File: Forestry_Sector_Q2-2025_20250713045644.pptx, Size: 149,102 bytes)', '127.0.0.1', 'success', '2025-07-13 12:56:44'),
+	(235, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713045644.pptx (Size: 149102 bytes)', '127.0.0.1', 'success', '2025-07-13 12:56:47'),
+	(236, 1, 'save_report', 'Successfully saved Report: \'16\' for Forestry Sector - Q2 2025 (ID: 16, File: Forestry_Sector_Q2-2025_20250713050121.pptx, Size: 149,183 bytes)', '127.0.0.1', 'success', '2025-07-13 13:01:21'),
+	(237, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713050121.pptx (Size: 149183 bytes)', '127.0.0.1', 'success', '2025-07-13 13:01:25'),
+	(238, 1, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-13 18:38:29'),
+	(239, 12, 'login_success', 'Username: user', '127.0.0.1', 'success', '2025-07-13 18:38:34'),
+	(240, 12, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-13 18:56:57'),
+	(241, 1, 'login_success', 'Username: admin', '127.0.0.1', 'success', '2025-07-13 18:57:01'),
+	(242, 1, 'save_report', 'Successfully saved Report: \'aaaa\' for Forestry Sector - Q2 2025 (ID: 17, File: Forestry_Sector_Q2-2025_20250713105803.pptx, Size: 149,183 bytes)', '127.0.0.1', 'success', '2025-07-13 18:58:03'),
+	(243, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713105803.pptx (Size: 149183 bytes)', '127.0.0.1', 'success', '2025-07-13 18:58:07'),
+	(244, 1, 'save_report', 'Successfully saved Report: \'1111\' for Forestry Sector - Q2 2025 (ID: 18, File: Forestry_Sector_Q2-2025_20250713110251.pptx, Size: 121,369 bytes)', '127.0.0.1', 'success', '2025-07-13 19:02:51'),
+	(245, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713110251.pptx (Size: 121369 bytes)', '127.0.0.1', 'success', '2025-07-13 19:02:53'),
+	(246, 1, 'save_report', 'Successfully saved Report: \'123\' for Forestry Sector - Q2 2025 (ID: 19, File: Forestry_Sector_Q2-2025_20250713110651.pptx, Size: 162,976 bytes)', '127.0.0.1', 'success', '2025-07-13 19:06:51'),
+	(247, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713110651.pptx (Size: 162976 bytes)', '127.0.0.1', 'success', '2025-07-13 19:07:02'),
+	(248, 1, 'save_report', 'Successfully saved Report: \'Forestry Report - Q2-2025\' for Forestry Sector - Q2 2025 (ID: 20, File: Forestry_Sector_Q2-2025_20250713112038.pptx, Size: 154,263 bytes)', '127.0.0.1', 'success', '2025-07-13 19:20:38'),
+	(249, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713112038.pptx (Size: 154263 bytes)', '127.0.0.1', 'success', '2025-07-13 19:20:40'),
+	(250, 1, 'save_report', 'Successfully saved Report: \'767676\' for Forestry Sector - Q2 2025 (ID: 21, File: Forestry_Sector_Q2-2025_20250713112606.pptx, Size: 154,182 bytes)', '127.0.0.1', 'success', '2025-07-13 19:26:06'),
+	(251, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713112606.pptx (Size: 154182 bytes)', '127.0.0.1', 'success', '2025-07-13 19:26:09'),
+	(252, 1, 'save_report', 'Successfully saved Report: \'90909\' for Forestry Sector - Q2 2025 (ID: 22, File: Forestry_Sector_Q2-2025_20250713113220.pptx, Size: 154,263 bytes)', '127.0.0.1', 'success', '2025-07-13 19:32:20'),
+	(253, 1, 'save_report', 'Successfully saved Report: \'afasdgdsgds\' for Forestry Sector - Q2 2025 (ID: 23, File: Forestry_Sector_Q2-2025_20250713113934.pptx, Size: 154,139 bytes)', '127.0.0.1', 'success', '2025-07-13 19:39:34'),
+	(254, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713113934.pptx (Size: 154139 bytes)', '127.0.0.1', 'success', '2025-07-13 19:39:37'),
+	(255, 1, 'save_report', 'Successfully saved Report: \'hgdhdhdgdf\' for Forestry Sector - Q2 2025 (ID: 24, File: Forestry_Sector_Q2-2025_20250713114548.pptx, Size: 154,139 bytes)', '127.0.0.1', 'success', '2025-07-13 19:45:48'),
+	(256, 1, 'save_report', 'Successfully saved Report: \'popopop\' for Forestry Sector - Q2 2025 (ID: 25, File: Forestry_Sector_Q2-2025_20250713115313.pptx, Size: 154,139 bytes)', '127.0.0.1', 'success', '2025-07-13 19:53:13'),
+	(257, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713115313.pptx (Size: 154139 bytes)', '127.0.0.1', 'success', '2025-07-13 19:53:18'),
+	(258, 1, 'save_report', 'Successfully saved Report: \'Forestry Report - Q2-2025\' for Forestry Sector - Q2 2025 (ID: 26, File: Forestry_Sector_Q2-2025_20250713120139.pptx, Size: 148,258 bytes)', '127.0.0.1', 'success', '2025-07-13 20:01:39'),
+	(259, 1, 'save_report', 'Successfully saved Report: \'Forestry Report - Q2-2025\' for Forestry Sector - Q2 2025 (ID: 27, File: Forestry_Sector_Q2-2025_20250713120550.pptx, Size: 113,905 bytes)', '127.0.0.1', 'success', '2025-07-13 20:05:50'),
+	(260, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713120550.pptx (Size: 113905 bytes)', '127.0.0.1', 'success', '2025-07-13 20:05:54'),
+	(261, 1, 'delete_report', 'Failed to delete report (ID: 27). Error: Unknown column \'u.agency_name\' in \'field list\'', '127.0.0.1', 'failure', '2025-07-13 20:06:05'),
+	(262, 1, 'save_report', 'Successfully saved Report: \'Forestry Report - Q2-2025\' for Forestry Sector - Q2 2025 (ID: 28, File: Forestry_Sector_Q2-2025_20250713120614.pptx, Size: 113,905 bytes)', '127.0.0.1', 'success', '2025-07-13 20:06:14'),
+	(263, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713120614.pptx (Size: 113905 bytes)', '127.0.0.1', 'success', '2025-07-13 20:06:17'),
+	(264, 1, 'save_report', 'Successfully saved Report: \'Forestry Report - Q2-2025\' for Forestry Sector - Q2 2025 (ID: 29, File: Forestry_Sector_Q2-2025_20250713121046.pptx, Size: 113,984 bytes)', '127.0.0.1', 'success', '2025-07-13 20:10:46'),
+	(265, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713121046.pptx (Size: 113984 bytes)', '127.0.0.1', 'success', '2025-07-13 20:10:48'),
+	(266, 1, 'save_report', 'Successfully saved Report: \'Forestry Report - Q2-2025\' for Forestry Sector - Q2 2025 (ID: 30, File: Forestry_Sector_Q2-2025_20250713121154.pptx, Size: 113,984 bytes)', '127.0.0.1', 'success', '2025-07-13 20:11:54'),
+	(267, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713121154.pptx (Size: 113984 bytes)', '127.0.0.1', 'success', '2025-07-13 20:11:56'),
+	(268, 1, 'save_report', 'Successfully saved Report: \'Forestry Report - Q2-2025\' for Forestry Sector - Q2 2025 (ID: 31, File: Forestry_Sector_Q2-2025_20250713121610.pptx, Size: 113,903 bytes)', '127.0.0.1', 'success', '2025-07-13 20:16:10'),
+	(269, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713121610.pptx (Size: 113903 bytes)', '127.0.0.1', 'success', '2025-07-13 20:16:15'),
+	(270, 1, 'save_report', 'Successfully saved Report: \'Forestry Report - Q2-2025\' for Forestry Sector - Q2 2025 (ID: 32, File: Forestry_Sector_Q2-2025_20250713121855.pptx, Size: 118,415 bytes)', '127.0.0.1', 'success', '2025-07-13 20:18:55'),
+	(271, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713121855.pptx (Size: 118415 bytes)', '127.0.0.1', 'success', '2025-07-13 20:18:58'),
+	(272, 1, 'save_report', 'Successfully saved Report: \'23423423\' for Forestry Sector - Q2 2025 (ID: 33, File: Forestry_Sector_Q2-2025_20250713122001.pptx, Size: 162,976 bytes)', '127.0.0.1', 'success', '2025-07-13 20:20:01'),
+	(273, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713122001.pptx (Size: 162976 bytes)', '127.0.0.1', 'success', '2025-07-13 20:20:04'),
+	(274, 1, 'save_report', 'Successfully saved Report: \'Forestry Report - Q2-2025\' for Forestry Sector - Q2 2025 (ID: 34, File: Forestry_Sector_Q2-2025_20250713122713.pptx, Size: 144,781 bytes)', '127.0.0.1', 'success', '2025-07-13 20:27:13'),
+	(275, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713122713.pptx (Size: 144781 bytes)', '127.0.0.1', 'success', '2025-07-13 20:27:18'),
+	(276, 1, 'save_report', 'Successfully saved Report: \'adadasd\' for Forestry Sector - Q2 2025 (ID: 35, File: Forestry_Sector_Q2-2025_20250713123141.pptx, Size: 145,600 bytes)', '127.0.0.1', 'success', '2025-07-13 20:31:41'),
+	(277, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713123141.pptx (Size: 145600 bytes)', '127.0.0.1', 'success', '2025-07-13 20:31:45'),
+	(278, 1, 'save_report', 'Successfully saved Report: \'qweqwqw\' for Forestry Sector - Q2 2025 (ID: 36, File: Forestry_Sector_Q2-2025_20250713124231.pptx, Size: 145,681 bytes)', '127.0.0.1', 'success', '2025-07-13 20:42:31'),
+	(279, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713124231.pptx (Size: 145681 bytes)', '127.0.0.1', 'success', '2025-07-13 20:42:33'),
+	(280, 1, 'save_report', 'Successfully saved Report: \'76867876\' for Forestry Sector - Q2 2025 (ID: 37, File: Forestry_Sector_Q2-2025_20250713124442.pptx, Size: 149,613 bytes)', '127.0.0.1', 'success', '2025-07-13 20:44:42'),
+	(281, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713124442.pptx (Size: 149613 bytes)', '127.0.0.1', 'success', '2025-07-13 20:44:44'),
+	(282, 1, 'save_report', 'Successfully saved Report: \'khjkghjgnc\' for Forestry Sector - Q2 2025 (ID: 38, File: Forestry_Sector_Q2-2025_20250713125047.pptx, Size: 161,666 bytes)', '127.0.0.1', 'success', '2025-07-13 20:50:47'),
+	(283, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713125047.pptx (Size: 161666 bytes)', '127.0.0.1', 'success', '2025-07-13 20:50:49'),
+	(284, 1, 'save_report', 'Successfully saved Report: \'ouhjggfc\' for Forestry Sector - Q2 2025 (ID: 39, File: Forestry_Sector_Q2-2025_20250713130201.pptx, Size: 153,561 bytes)', '127.0.0.1', 'success', '2025-07-13 21:02:01'),
+	(285, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713130201.pptx (Size: 153561 bytes)', '127.0.0.1', 'success', '2025-07-13 21:02:03'),
+	(286, 1, 'save_report', 'Successfully saved Report: \'klklklkl\' for Forestry Sector - Q2 2025 (ID: 40, File: Forestry_Sector_Q2-2025_20250713131059.pptx, Size: 150,715 bytes)', '127.0.0.1', 'success', '2025-07-13 21:10:59'),
+	(287, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713131059.pptx (Size: 150715 bytes)', '127.0.0.1', 'success', '2025-07-13 21:11:01'),
+	(288, 1, 'save_report', 'Successfully saved Report: \'jhvcxfghjkh,mbnvc\' for Forestry Sector - Q2 2025 (ID: 41, File: Forestry_Sector_Q2-2025_20250713131508.pptx, Size: 150,648 bytes)', '127.0.0.1', 'success', '2025-07-13 21:15:08'),
+	(289, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713131508.pptx (Size: 150648 bytes)', '127.0.0.1', 'success', '2025-07-13 21:15:10'),
+	(290, 1, 'save_report', 'Successfully saved Report: \'bbvvbvbvb\' for Forestry Sector - Q2 2025 (ID: 42, File: Forestry_Sector_Q2-2025_20250713132103.pptx, Size: 150,729 bytes)', '127.0.0.1', 'success', '2025-07-13 21:21:03'),
+	(291, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713132103.pptx (Size: 150729 bytes)', '127.0.0.1', 'success', '2025-07-13 21:21:05'),
+	(292, 1, 'save_report', 'Successfully saved Report: \'aaacacacac\' for Forestry Sector - Q2 2025 (ID: 43, File: Forestry_Sector_Q2-2025_20250713133839.pptx, Size: 150,729 bytes)', '127.0.0.1', 'success', '2025-07-13 21:38:39'),
+	(293, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713133839.pptx (Size: 150729 bytes)', '127.0.0.1', 'success', '2025-07-13 21:38:42'),
+	(294, 1, 'save_report', 'Successfully saved Report: \'b\' for Forestry Sector - Q2 2025 (ID: 44, File: Forestry_Sector_Q2-2025_20250713134012.pptx, Size: 145,600 bytes)', '127.0.0.1', 'success', '2025-07-13 21:40:12'),
+	(295, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713134012.pptx (Size: 145600 bytes)', '127.0.0.1', 'success', '2025-07-13 21:40:15'),
+	(296, 1, 'save_report', 'Successfully saved Report: \'adasdas\' for Forestry Sector - Q2 2025 (ID: 45, File: Forestry_Sector_Q2-2025_20250713134632.pptx, Size: 145,618 bytes)', '127.0.0.1', 'success', '2025-07-13 21:46:32'),
+	(297, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713134632.pptx (Size: 145618 bytes)', '127.0.0.1', 'success', '2025-07-13 21:46:34'),
+	(298, 1, 'save_report', 'Successfully saved Report: \'nmnmnmnn\' for Forestry Sector - Q2 2025 (ID: 46, File: Forestry_Sector_Q2-2025_20250713135046.pptx, Size: 146,473 bytes)', '127.0.0.1', 'success', '2025-07-13 21:50:46'),
+	(299, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713135046.pptx (Size: 146473 bytes)', '127.0.0.1', 'success', '2025-07-13 21:50:48'),
+	(300, 1, 'save_report', 'Successfully saved Report: \'nmfhdgsd\' for Forestry Sector - Q2 2025 (ID: 47, File: Forestry_Sector_Q2-2025_20250713135304.pptx, Size: 146,473 bytes)', '127.0.0.1', 'success', '2025-07-13 21:53:04'),
+	(301, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713135304.pptx (Size: 146473 bytes)', '127.0.0.1', 'success', '2025-07-13 21:53:09'),
+	(302, 1, 'save_report', 'Successfully saved Report: \'bnbnbn\' for Forestry Sector - Q2 2025 (ID: 48, File: Forestry_Sector_Q2-2025_20250713135636.pptx, Size: 153,690 bytes)', '127.0.0.1', 'success', '2025-07-13 21:56:36'),
+	(303, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713135636.pptx (Size: 153690 bytes)', '127.0.0.1', 'success', '2025-07-13 21:56:40'),
+	(304, 1, 'save_report', 'Successfully saved Report: \'ffffff\' for Forestry Sector - Q2 2025 (ID: 49, File: Forestry_Sector_Q2-2025_20250713140646.pptx, Size: 153,607 bytes)', '127.0.0.1', 'success', '2025-07-13 22:06:46'),
+	(305, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713140646.pptx (Size: 153607 bytes)', '127.0.0.1', 'success', '2025-07-13 22:06:49'),
+	(306, 1, 'save_report', 'Successfully saved Report: \'avcvcvc\' for Forestry Sector - Q2 2025 (ID: 50, File: Forestry_Sector_Q2-2025_20250713141736.pptx, Size: 153,688 bytes)', '127.0.0.1', 'success', '2025-07-13 22:17:36'),
+	(307, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713141736.pptx (Size: 153688 bytes)', '127.0.0.1', 'success', '2025-07-13 22:17:39'),
+	(308, 1, 'save_report', 'Successfully saved Report: \'fhdsgssgs\' for Forestry Sector - Q2 2025 (ID: 51, File: Forestry_Sector_Q2-2025_20250713142131.pptx, Size: 153,609 bytes)', '127.0.0.1', 'success', '2025-07-13 22:21:31'),
+	(309, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713142131.pptx (Size: 153609 bytes)', '127.0.0.1', 'success', '2025-07-13 22:21:34'),
+	(310, 1, 'save_report', 'Successfully saved Report: \'hergergerg\' for Forestry Sector - Q2 2025 (ID: 52, File: Forestry_Sector_Q2-2025_20250713142443.pptx, Size: 153,609 bytes)', '127.0.0.1', 'success', '2025-07-13 22:24:43'),
+	(311, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713142443.pptx (Size: 153609 bytes)', '127.0.0.1', 'success', '2025-07-13 22:24:45'),
+	(312, 1, 'save_report', 'Successfully saved Report: \'baabijas\' for Forestry Sector - Q2 2025 (ID: 53, File: Forestry_Sector_Q2-2025_20250713142849.pptx, Size: 153,609 bytes)', '127.0.0.1', 'success', '2025-07-13 22:28:49'),
+	(313, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713142849.pptx (Size: 153609 bytes)', '127.0.0.1', 'success', '2025-07-13 22:28:55'),
+	(314, 1, 'save_report', 'Successfully saved Report: \'aajasjassaf\' for Forestry Sector - Q2 2025 (ID: 54, File: Forestry_Sector_Q2-2025_20250713143122.pptx, Size: 153,608 bytes)', '127.0.0.1', 'success', '2025-07-13 22:31:22'),
+	(315, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713143122.pptx (Size: 153608 bytes)', '127.0.0.1', 'success', '2025-07-13 22:31:24'),
+	(316, 12, 'login_success', 'Username: user', '127.0.0.1', 'success', '2025-07-14 09:09:50');
 
 -- Dumping structure for view pcds2030_db.audit_logs_with_changes
 -- Creating temporary table to overcome VIEW dependency errors
@@ -1262,11 +1400,11 @@ CREATE TABLE IF NOT EXISTS `outcomes` (
 
 -- Dumping data for table pcds2030_db.outcomes: ~5 rows (approximately)
 INSERT INTO `outcomes` (`id`, `code`, `type`, `title`, `description`, `data`, `updated_at`) VALUES
-	(1, 'timber_export', 'graph', 'Timber Export Value (RM)', 'Monthly timber export values', '{}', '2025-07-12 12:51:21'),
-	(2, 'degraded_area', 'graph', 'Total Degraded Area Restored (Ha)', 'Monthly degraded area restored', '{}', '2025-07-12 12:51:21'),
-	(3, 'kpi_programs', 'kpi', 'TPA Protection & Biodiversity Conservation Programs', 'Ongoing programs and initiatives by SFC (as of December 2024)', '[{"unit": "programs", "value": 76, "description": "On-going programs and initiatives by SFC (as of December 2024)"}]', '2025-07-12 19:44:52'),
-	(4, 'kpi_certification', 'kpi', 'Certification of FMU & FPMU', 'FMU and FPMU certified as of June 2025', '[{"unit": "%", "extra": "1,705,761 ha FMU Certified", "value": 56.8, "description": "FMU Certified (as of June 2025)"}, {"unit": "%", "extra": "128,601 ha FPMU Certified", "value": 72.2, "description": "FPMU Certified (as of June 2025)"}]', '2025-07-12 19:44:52'),
-	(5, 'kpi_global', 'kpi', 'Global Recognition', 'SDGP UNESCO Global Geopark and ASEAN Heritage Parks (as of June 2025)', '[{"unit": "%", "value": 100, "description": "SDGP UNESCO Global Geopark"}, {"unit": "%", "value": 100, "description": "ASEAN Heritage Parks"}]', '2025-07-12 19:44:52');
+	(1, 'timber_export', 'graph', 'Timber Export Value (RM)', 'Monthly timber export values', '{"rows": [{"2022": 408531176.77, "2023": 263569916.63, "2024": 276004972.69, "2025": 0, "2026": 0, "month": "January"}, {"2022": 239761718.38, "2023": 226356164.3, "2024": 191530929.47, "2025": 0, "2026": 0, "month": "February"}, {"2022": 394935606.46, "2023": 261778295.29, "2024": 214907671.7, "2025": 0, "2026": 0, "month": "March"}, {"2022": 400891037.27, "2023": 215771835.07, "2024": 232014272.14, "2025": 0, "2026": 0, "month": "April"}, {"2022": 345725679.36, "2023": 324280067.64, "2024": 324627750.87, "2025": 0, "2026": 0, "month": "May"}, {"2022": 268966198.26, "2023": 235560482.89, "2024": 212303812.34, "2025": 0, "2026": 0, "month": "June"}, {"2022": 359792973.34, "2023": 244689028.37, "2024": 274788036.68, "2025": 0, "2026": 0, "month": "July"}, {"2022": 310830376.16, "2023": 344761866.36, "2024": 210420404.31, "2025": 0, "2026": 0, "month": "August"}, {"2022": 318990291.52, "2023": 210214202.2, "2024": 191837139, "2025": 0, "2026": 0, "month": "September"}, {"2022": 304693148.3, "2023": 266639022.25, "2024": 0, "2025": 0, "2026": 0, "month": "October"}, {"2022": 303936172.09, "2023": 296062485.55, "2024": 0, "2025": 0, "2026": 0, "month": "November"}, {"2022": 289911760.38, "2023": 251155864.77, "2024": 0, "2025": 0, "2026": 0, "month": "December"}], "columns": ["2022", "2023", "2024", "2025", "2026"]}', '2025-07-13 18:43:29'),
+	(2, 'degraded_area', 'graph', 'Total Degraded Area Restored (Ha)', 'Monthly degraded area restored', '{"rows": [{"2022": 787.01, "2023": 1856.37, "2024": 3572.12, "2025": 5.6, "2026": 0, "month": "January"}, {"2022": 912.41, "2023": 3449.94, "2024": 6911.42, "2025": 86.5, "2026": 0, "month": "February"}, {"2022": 513.04, "2023": 2284.69, "2024": 3565.31, "2025": 62.2, "2026": 0, "month": "March"}, {"2022": 428.18, "2023": 1807.69, "2024": 2243.09, "2025": 127.3, "2026": 0, "month": "April"}, {"2022": 485.08, "2023": 3255.8, "2024": 3190.19, "2025": 42, "2026": 0, "month": "May"}, {"2022": 1277.9, "2023": 3120.66, "2024": 3618.48, "2025": 0, "2026": 0, "month": "June"}, {"2022": 745.15, "2023": 2562.38, "2024": 1378.09, "2025": 0, "2026": 0, "month": "July"}, {"2022": 762.69, "2023": 2474.93, "2024": 1536.83, "2025": 0, "2026": 0, "month": "August"}, {"2022": 579.09, "2023": 3251.93, "2024": 1141.79, "2025": 0, "2026": 0, "month": "September"}, {"2022": 676.27, "2023": 3086.64, "2024": 1311.2, "2025": 0, "2026": 0, "month": "October"}, {"2022": 2012.35, "2023": 3081.63, "2024": 942.5, "2025": 0, "2026": 0, "month": "November"}, {"2022": 1114.64, "2023": 3240.14, "2024": 969, "2025": 0, "2026": 0, "month": "December"}], "columns": ["2022", "2023", "2024", "2025", "2026"]}', '2025-07-13 18:43:53'),
+	(3, 'kpi_programs', 'kpi', 'TPA Protection & Biodiversity Conservation Programs', 'Ongoing programs and initiatives by SFC (as of December 2024)', '[{"unit": "programs", "extra": "", "value": "70", "description": "On-going programs and initiatives by SFC (as of December 2024)"}]', '2025-07-12 20:15:03'),
+	(4, 'kpi_certification', 'kpi', 'Certification of FMU & FPMU', 'FMU and FPMU certified as of June 2025', '[{"unit": "%", "extra": "1,705,761 ha FMU Certified", "value": 56.8, "description": "1,705,761 ha FMU Certified (as of June 2025)"}, {"unit": "%", "extra": "128,601 ha FPMU Certified", "value": 72.2, "description": "128,601 ha FPMU Certified (as of June 2025)"}]', '2025-07-13 12:29:54'),
+	(5, 'kpi_global', 'kpi', 'Obtain world recognition for sustainable management practices and conservation effort', 'SDGP UNESCO Global Geopark and ASEAN Heritage Parks (as of June 2025)', '[{"unit": "%", "value": 100, "description": "SDGP  UNESCO Global Geopark(as of June 2025)"}, {"unit": "%", "value": 100, "description": "Lambir Hill NP and Bako NP inscribed as ASEAN Heritage Park(as of June 2025)"}]', '2025-07-13 12:28:11');
 
 -- Dumping structure for table pcds2030_db.programs
 CREATE TABLE IF NOT EXISTS `programs` (
@@ -1283,23 +1421,27 @@ CREATE TABLE IF NOT EXISTS `programs` (
   `created_by` int NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `restrict_editors` tinyint(1) DEFAULT '0' COMMENT 'Whether to restrict editing to specific users within the agency (0=all can edit, 1=only assigned users can edit)',
   PRIMARY KEY (`program_id`),
   KEY `initiative_id` (`initiative_id`),
   KEY `agency_id` (`agency_id`),
   KEY `created_by` (`created_by`),
   KEY `idx_program_number` (`program_number`),
+  KEY `idx_restrict_editors` (`restrict_editors`),
   CONSTRAINT `programs_ibfk_1` FOREIGN KEY (`initiative_id`) REFERENCES `initiatives` (`initiative_id`),
   CONSTRAINT `programs_ibfk_2` FOREIGN KEY (`agency_id`) REFERENCES `agency` (`agency_id`),
   CONSTRAINT `programs_ibfk_3` FOREIGN KEY (`created_by`) REFERENCES `users` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table pcds2030_db.programs: ~5 rows (approximately)
-INSERT INTO `programs` (`program_id`, `initiative_id`, `program_name`, `program_number`, `rating`, `program_description`, `start_date`, `end_date`, `agency_id`, `is_deleted`, `created_by`, `created_at`, `updated_at`) VALUES
-	(1, 1, 'Test Program - New Schema', NULL, 'severe_delay', 'Test description for new schema', NULL, NULL, 5, 0, 2, '2025-07-09 00:30:11', '2025-07-12 03:25:13'),
-	(2, 1, 'Test Program - New Schema', NULL, 'not_started', 'Test description for new schema', NULL, NULL, 5, 0, 2, '2025-07-09 00:30:28', '2025-07-09 06:52:51'),
-	(3, 1, 'Test Program - New Schema', NULL, 'not_started', 'Test description for new schema', NULL, NULL, 5, 0, 2, '2025-07-09 00:30:52', '2025-07-09 06:52:53'),
-	(14, 3, 'program test 1', '31.1', 'not_started', 'summary', '2025-07-04', '2025-07-11', 5, 0, 12, '2025-07-11 01:36:32', '2025-07-11 01:36:32'),
-	(15, 3, 'program testing 2', '31.2', 'on_track_for_year', 'brieffffff', '2025-07-04', '2025-07-11', 5, 0, 12, '2025-07-11 02:11:37', '2025-07-12 03:44:24');
+-- Dumping data for table pcds2030_db.programs: ~7 rows (approximately)
+INSERT INTO `programs` (`program_id`, `initiative_id`, `program_name`, `program_number`, `rating`, `program_description`, `start_date`, `end_date`, `agency_id`, `is_deleted`, `created_by`, `created_at`, `updated_at`, `restrict_editors`) VALUES
+	(1, 1, 'Test Program - New Schema', NULL, 'severe_delay', 'Test description for new schema', NULL, NULL, 5, 0, 2, '2025-07-09 00:30:11', '2025-07-12 03:25:13', 0),
+	(2, 1, 'Test Program - New Schema', NULL, 'not_started', 'Test description for new schema', NULL, NULL, 5, 0, 2, '2025-07-09 00:30:28', '2025-07-09 06:52:51', 0),
+	(3, 1, 'Test Program - New Schema', NULL, 'not_started', 'Test description for new schema', NULL, NULL, 5, 0, 2, '2025-07-09 00:30:52', '2025-07-09 06:52:53', 0),
+	(14, 3, 'program test 1', '31.1', 'on_track_for_year', 'summary', '2025-07-04', '2025-07-11', 5, 0, 12, '2025-07-11 01:36:32', '2025-07-14 01:41:48', 0),
+	(15, 3, 'program testing 2', '31.2', 'on_track_for_year', 'brieffffff', '2025-07-04', '2025-07-11', 5, 0, 12, '2025-07-11 02:11:37', '2025-07-12 03:44:24', 0),
+	(16, 3, 'a real program', '31.A', 'not_started', 'descicicic', '2025-07-12', '2025-07-20', 5, 0, 12, '2025-07-13 02:32:44', '2025-07-13 02:32:44', 0),
+	(17, 3, 'helloooooooo', '31.B', 'not_started', 'adsasdas', NULL, NULL, 2, 0, 5, '2025-07-13 03:38:38', '2025-07-13 03:38:38', 0);
 
 -- Dumping structure for table pcds2030_db.program_attachments
 CREATE TABLE IF NOT EXISTS `program_attachments` (
@@ -1319,7 +1461,7 @@ CREATE TABLE IF NOT EXISTS `program_attachments` (
   CONSTRAINT `program_attachments_ibfk_2` FOREIGN KEY (`uploaded_by`) REFERENCES `users` (`user_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table pcds2030_db.program_attachments: ~0 rows (approximately)
+-- Dumping data for table pcds2030_db.program_attachments: ~1 rows (approximately)
 INSERT INTO `program_attachments` (`attachment_id`, `submission_id`, `file_name`, `file_path`, `file_size`, `file_type`, `uploaded_by`, `uploaded_at`, `is_deleted`) VALUES
 	(10, 7, 'Forestry_Q5-2025_20250709030726.pptx', '../../uploads/programs/attachments/7/1752202597_68707d65532d0.pptx', 149101, 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 12, '2025-07-11 02:56:37', 0);
 
@@ -1342,13 +1484,15 @@ CREATE TABLE IF NOT EXISTS `program_submissions` (
   CONSTRAINT `program_submissions_ibfk_1` FOREIGN KEY (`program_id`) REFERENCES `programs` (`program_id`) ON DELETE CASCADE,
   CONSTRAINT `program_submissions_ibfk_2` FOREIGN KEY (`period_id`) REFERENCES `reporting_periods` (`period_id`) ON DELETE CASCADE,
   CONSTRAINT `program_submissions_ibfk_3` FOREIGN KEY (`submitted_by`) REFERENCES `users` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table pcds2030_db.program_submissions: ~3 rows (approximately)
+-- Dumping data for table pcds2030_db.program_submissions: ~5 rows (approximately)
 INSERT INTO `program_submissions` (`submission_id`, `program_id`, `period_id`, `is_draft`, `is_submitted`, `description`, `submitted_by`, `submitted_at`, `updated_at`, `is_deleted`) VALUES
 	(1, 3, 3, 1, 0, 'Test description for new schema', 2, NULL, '2025-07-09 00:30:52', 0),
 	(7, 14, 2, 1, 0, 'desssisis', 12, '2025-07-10 17:37:07', '2025-07-11 02:56:37', 0),
-	(8, 15, 2, 1, 0, 'dsesse', 12, '2025-07-10 18:22:13', '2025-07-12 03:49:18', 0);
+	(8, 15, 2, 1, 0, 'dsesse', 12, '2025-07-10 18:22:13', '2025-07-12 03:49:18', 0),
+	(9, 16, 2, 0, 1, 'abababaa', 12, '2025-07-12 18:33:14', '2025-07-13 03:37:39', 0),
+	(10, 17, 2, 0, 1, 'adasdasdas', 5, '2025-07-12 19:39:01', '2025-07-13 03:39:10', 0);
 
 -- Dumping structure for table pcds2030_db.program_targets
 CREATE TABLE IF NOT EXISTS `program_targets` (
@@ -1366,36 +1510,49 @@ CREATE TABLE IF NOT EXISTS `program_targets` (
   KEY `submission_id` (`submission_id`),
   KEY `idx_target_number` (`target_number`),
   CONSTRAINT `program_targets_ibfk_1` FOREIGN KEY (`submission_id`) REFERENCES `program_submissions` (`submission_id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=122 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=126 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table pcds2030_db.program_targets: ~4 rows (approximately)
+-- Dumping data for table pcds2030_db.program_targets: ~8 rows (approximately)
 INSERT INTO `program_targets` (`target_id`, `target_number`, `submission_id`, `target_description`, `status_indicator`, `status_description`, `remarks`, `start_date`, `end_date`, `is_deleted`) VALUES
 	(118, '', 7, 'target 112', 'in_progress', 'status 1', '', NULL, NULL, 0),
 	(119, '', 7, 'target 222', 'in_progress', '', '', NULL, NULL, 0),
 	(120, '31.2.1', 8, 'target test 1.1.1', 'in_progress', 'statusssss test 1', '', '2025-07-04', '2025-07-11', 0),
-	(121, '31.2.2', 8, 'target lagi', 'delayed', 'statusss', 'reamsksks', '2025-07-04', '2025-07-18', 0);
+	(121, '31.2.2', 8, 'target lagi', 'delayed', 'statusss', 'reamsksks', '2025-07-04', '2025-07-18', 0),
+	(122, '31.A.1', 9, 'targeetette', 'in_progress', 'statsususus', '', NULL, NULL, 0),
+	(123, '31.A.2', 9, 'dadadas', 'completed', 'afdsfsdfsdfjfhuidghiudhgisudhgiushguishdgudshfusidghsyudgfjshbcjzcmburteoishdjszbfyusdgfsjbjshfjs', 'a', NULL, NULL, 0),
+	(124, '31.B.1', 10, 'adasdasdas', 'in_progress', 'adasdas', '', NULL, NULL, 0),
+	(125, '31.B.2', 10, 'ggfdhdfhdhdfhfd', 'completed', 'fhdghgdhdhdfhdf', '', NULL, NULL, 0);
 
 -- Dumping structure for table pcds2030_db.program_user_assignments
 CREATE TABLE IF NOT EXISTS `program_user_assignments` (
   `assignment_id` int NOT NULL AUTO_INCREMENT,
   `program_id` int NOT NULL,
   `user_id` int NOT NULL,
-  `role` enum('editor','viewer') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT 'editor',
+  `role` enum('editor','viewer') COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'viewer',
   `assigned_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `assigned_by` int NOT NULL,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `is_active` tinyint(1) DEFAULT '1',
+  `notes` text COLLATE utf8mb4_general_ci,
   PRIMARY KEY (`assignment_id`),
   KEY `program_id` (`program_id`),
   KEY `user_id` (`user_id`),
+  KEY `idx_program_user_role` (`program_id`,`user_id`,`role`),
+  KEY `fk_user_assigned_by` (`assigned_by`),
+  CONSTRAINT `fk_user_assigned_by` FOREIGN KEY (`assigned_by`) REFERENCES `users` (`user_id`),
   CONSTRAINT `program_user_assignments_ibfk_1` FOREIGN KEY (`program_id`) REFERENCES `programs` (`program_id`) ON DELETE CASCADE,
   CONSTRAINT `program_user_assignments_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table pcds2030_db.program_user_assignments: ~5 rows (approximately)
-INSERT INTO `program_user_assignments` (`assignment_id`, `program_id`, `user_id`, `role`, `assigned_at`) VALUES
-	(1, 1, 2, 'editor', '2025-07-09 00:30:11'),
-	(2, 2, 2, 'editor', '2025-07-09 00:30:28'),
-	(3, 3, 2, 'editor', '2025-07-09 00:30:52'),
-	(14, 14, 12, 'editor', '2025-07-11 01:36:32'),
-	(15, 15, 12, 'editor', '2025-07-11 02:11:37');
+-- Dumping data for table pcds2030_db.program_user_assignments: ~7 rows (approximately)
+INSERT INTO `program_user_assignments` (`assignment_id`, `program_id`, `user_id`, `role`, `assigned_at`, `assigned_by`, `updated_at`, `is_active`, `notes`) VALUES
+	(1, 1, 2, 'editor', '2025-07-09 00:30:11', 1, '2025-07-14 06:39:07', 1, NULL),
+	(2, 2, 2, 'editor', '2025-07-09 00:30:28', 1, '2025-07-14 06:39:07', 1, NULL),
+	(3, 3, 2, 'editor', '2025-07-09 00:30:52', 1, '2025-07-14 06:39:07', 1, NULL),
+	(14, 14, 12, 'editor', '2025-07-11 01:36:32', 1, '2025-07-14 06:39:07', 1, NULL),
+	(15, 15, 12, 'editor', '2025-07-11 02:11:37', 1, '2025-07-14 06:39:07', 1, NULL),
+	(16, 16, 12, 'editor', '2025-07-13 02:32:44', 1, '2025-07-14 06:39:07', 1, NULL),
+	(17, 17, 5, 'editor', '2025-07-13 03:38:38', 1, '2025-07-14 06:39:07', 1, NULL);
 
 -- Dumping structure for table pcds2030_db.reporting_periods
 CREATE TABLE IF NOT EXISTS `reporting_periods` (
@@ -1440,9 +1597,64 @@ CREATE TABLE IF NOT EXISTS `reports` (
   KEY `period_id` (`period_id`),
   CONSTRAINT `reports_ibfk_1` FOREIGN KEY (`period_id`) REFERENCES `reporting_periods` (`period_id`),
   CONSTRAINT `reports_ibfk_2` FOREIGN KEY (`generated_by`) REFERENCES `users` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=55 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table pcds2030_db.reports: ~0 rows (approximately)
+-- Dumping data for table pcds2030_db.reports: ~52 rows (approximately)
+INSERT INTO `reports` (`report_id`, `period_id`, `report_name`, `description`, `pdf_path`, `pptx_path`, `generated_by`, `generated_at`, `is_public`) VALUES
+	(1, 2, '1', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713031711.pptx', 1, '2025-07-13 03:17:11', 0),
+	(2, 2, '2', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713032525.pptx', 1, '2025-07-13 03:25:25', 0),
+	(3, 2, '3', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713033122.pptx', 1, '2025-07-13 03:31:22', 0),
+	(4, 2, '4', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713033622.pptx', 1, '2025-07-13 03:36:22', 0),
+	(5, 2, '5', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713033950.pptx', 1, '2025-07-13 03:39:50', 0),
+	(6, 2, '6', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713034814.pptx', 1, '2025-07-13 03:48:14', 0),
+	(7, 2, '7', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713041510.pptx', 1, '2025-07-13 04:15:10', 0),
+	(8, 2, '8', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713042352.pptx', 1, '2025-07-13 04:23:52', 0),
+	(9, 2, '9', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713043024.pptx', 1, '2025-07-13 04:30:24', 0),
+	(10, 2, '10', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713043627.pptx', 1, '2025-07-13 04:36:27', 0),
+	(11, 2, '12', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713043858.pptx', 1, '2025-07-13 04:38:58', 0),
+	(12, 2, '13', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713044454.pptx', 1, '2025-07-13 04:44:54', 0),
+	(13, 2, '11', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713044841.pptx', 1, '2025-07-13 04:48:41', 0),
+	(14, 2, '14', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713045240.pptx', 1, '2025-07-13 04:52:40', 0),
+	(15, 2, '15', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713045644.pptx', 1, '2025-07-13 04:56:44', 0),
+	(16, 2, '16', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713050121.pptx', 1, '2025-07-13 05:01:21', 0),
+	(17, 2, 'aaaa', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713105803.pptx', 1, '2025-07-13 10:58:03', 0),
+	(18, 2, '1111', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713110251.pptx', 1, '2025-07-13 11:02:51', 0),
+	(19, 2, '123', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713110651.pptx', 1, '2025-07-13 11:06:51', 0),
+	(20, 2, 'Forestry Report - Q2-2025', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713112038.pptx', 1, '2025-07-13 11:20:38', 0),
+	(21, 2, '767676', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713112606.pptx', 1, '2025-07-13 11:26:06', 0),
+	(22, 2, '90909', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713113220.pptx', 1, '2025-07-13 11:32:20', 0),
+	(23, 2, 'afasdgdsgds', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713113934.pptx', 1, '2025-07-13 11:39:34', 0),
+	(24, 2, 'hgdhdhdgdf', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713114548.pptx', 1, '2025-07-13 11:45:48', 0),
+	(25, 2, 'popopop', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713115313.pptx', 1, '2025-07-13 11:53:13', 0),
+	(26, 2, 'Forestry Report - Q2-2025', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713120139.pptx', 1, '2025-07-13 12:01:39', 0),
+	(27, 2, 'Forestry Report - Q2-2025', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713120550.pptx', 1, '2025-07-13 12:05:50', 0),
+	(28, 2, 'Forestry Report - Q2-2025', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713120614.pptx', 1, '2025-07-13 12:06:14', 0),
+	(29, 2, 'Forestry Report - Q2-2025', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713121046.pptx', 1, '2025-07-13 12:10:46', 0),
+	(30, 2, 'Forestry Report - Q2-2025', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713121154.pptx', 1, '2025-07-13 12:11:54', 0),
+	(31, 2, 'Forestry Report - Q2-2025', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713121610.pptx', 1, '2025-07-13 12:16:10', 0),
+	(32, 2, 'Forestry Report - Q2-2025', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713121855.pptx', 1, '2025-07-13 12:18:55', 0),
+	(33, 2, '23423423', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713122001.pptx', 1, '2025-07-13 12:20:01', 0),
+	(34, 2, 'Forestry Report - Q2-2025', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713122713.pptx', 1, '2025-07-13 12:27:13', 0),
+	(35, 2, 'adadasd', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713123141.pptx', 1, '2025-07-13 12:31:41', 0),
+	(36, 2, 'qweqwqw', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713124231.pptx', 1, '2025-07-13 12:42:31', 0),
+	(37, 2, '76867876', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713124442.pptx', 1, '2025-07-13 12:44:42', 0),
+	(38, 2, 'khjkghjgnc', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713125047.pptx', 1, '2025-07-13 12:50:47', 0),
+	(39, 2, 'ouhjggfc', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713130201.pptx', 1, '2025-07-13 13:02:01', 0),
+	(40, 2, 'klklklkl', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713131059.pptx', 1, '2025-07-13 13:10:59', 0),
+	(41, 2, 'jhvcxfghjkh,mbnvc', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713131508.pptx', 1, '2025-07-13 13:15:08', 0),
+	(42, 2, 'bbvvbvbvb', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713132103.pptx', 1, '2025-07-13 13:21:03', 0),
+	(43, 2, 'aaacacacac', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713133839.pptx', 1, '2025-07-13 13:38:39', 0),
+	(44, 2, 'b', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713134012.pptx', 1, '2025-07-13 13:40:12', 0),
+	(45, 2, 'adasdas', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713134632.pptx', 1, '2025-07-13 13:46:32', 0),
+	(46, 2, 'nmnmnmnn', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713135046.pptx', 1, '2025-07-13 13:50:46', 0),
+	(47, 2, 'nmfhdgsd', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713135304.pptx', 1, '2025-07-13 13:53:04', 0),
+	(48, 2, 'bnbnbn', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713135636.pptx', 1, '2025-07-13 13:56:36', 0),
+	(49, 2, 'ffffff', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713140646.pptx', 1, '2025-07-13 14:06:46', 0),
+	(50, 2, 'avcvcvc', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713141736.pptx', 1, '2025-07-13 14:17:36', 0),
+	(51, 2, 'fhdsgssgs', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713142131.pptx', 1, '2025-07-13 14:21:31', 0),
+	(52, 2, 'hergergerg', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713142443.pptx', 1, '2025-07-13 14:24:43', 0),
+	(53, 2, 'baabijas', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713142849.pptx', 1, '2025-07-13 14:28:49', 0),
+	(54, 2, 'aajasjassaf', '', '', 'app/reports/pptx/Forestry_Sector_Q2-2025_20250713143122.pptx', 1, '2025-07-13 14:31:22', 0);
 
 -- Dumping structure for table pcds2030_db.users
 CREATE TABLE IF NOT EXISTS `users` (

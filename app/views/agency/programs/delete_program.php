@@ -16,6 +16,7 @@ require_once PROJECT_ROOT_PATH . 'lib/db_connect.php';
 require_once PROJECT_ROOT_PATH . 'lib/session.php';
 require_once PROJECT_ROOT_PATH . 'lib/functions.php';
 require_once PROJECT_ROOT_PATH . 'lib/agencies/index.php';
+require_once PROJECT_ROOT_PATH . 'lib/agencies/program_agency_assignments.php';
 require_once PROJECT_ROOT_PATH . 'lib/audit_log.php';
 
 // Verify user is an agency
@@ -28,18 +29,30 @@ if (!is_agency()) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['program_id'])) {
     $program_id = intval($_POST['program_id']);
     $user_id = $_SESSION['user_id'];
-      // Verify program exists and belongs to this agency
-    $query = "SELECT program_name FROM programs WHERE program_id = ? AND agency_id = (SELECT agency_id FROM users WHERE user_id = ?)";
+    
+    // Check if user is owner using new permission system
+    if (!is_program_owner($program_id)) {
+        // Log failed deletion attempt - unauthorized
+        log_audit_action('delete_program_failed', "Program ID: $program_id | Error: Unauthorized access - not program owner", 'failure', $user_id);
+        
+        $_SESSION['message'] = 'You do not have permission to delete this program. Only program owners can delete programs.';
+        $_SESSION['message_type'] = 'danger';
+        header('Location: ' . APP_URL . '/app/views/agency/programs/view_programs.php');
+        exit;
+    }
+    
+    // Get program details for logging
+    $query = "SELECT program_name FROM programs WHERE program_id = ? AND is_deleted = 0";
     $stmt = $conn->prepare($query);
-    $stmt->bind_param("ii", $program_id, $user_id);
+    $stmt->bind_param("i", $program_id);
     $stmt->execute();
     $result = $stmt->get_result();
     
     if ($result->num_rows === 0) {
-        // Log failed deletion attempt - unauthorized or program not found
-        log_audit_action('delete_program_failed', "Program ID: $program_id | Error: Unauthorized access or program not found", 'failure', $user_id);
+        // Log failed deletion attempt - program not found
+        log_audit_action('delete_program_failed', "Program ID: $program_id | Error: Program not found", 'failure', $user_id);
         
-        $_SESSION['message'] = 'You do not have permission to delete this program.';
+        $_SESSION['message'] = 'Program not found.';
         $_SESSION['message_type'] = 'danger';
         header('Location: ' . APP_URL . '/app/views/agency/programs/view_programs.php');
         exit;

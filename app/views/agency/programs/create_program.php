@@ -16,6 +16,7 @@ require_once PROJECT_ROOT_PATH . 'lib/db_connect.php';
 require_once PROJECT_ROOT_PATH . 'lib/session.php';
 require_once PROJECT_ROOT_PATH . 'lib/functions.php';
 require_once PROJECT_ROOT_PATH . 'lib/agencies/programs.php';
+require_once PROJECT_ROOT_PATH . 'lib/agencies/program_user_assignments.php';
 require_once PROJECT_ROOT_PATH . 'lib/initiative_functions.php';
 require_once PROJECT_ROOT_PATH . 'lib/numbering_helpers.php';
 
@@ -27,6 +28,24 @@ if (!is_agency()) {
 
 // Get active initiatives for dropdown
 $active_initiatives = get_initiatives_for_select(true);
+
+// Get users in current agency for assignment
+$agency_id = $_SESSION['agency_id'];
+$agency_users = [];
+if ($agency_id) {
+    $stmt = $conn->prepare("
+        SELECT user_id, username, fullname 
+        FROM users 
+        WHERE agency_id = ? AND role IN ('agency', 'focal') AND is_active = 1
+        ORDER BY fullname, username
+    ");
+    $stmt->bind_param("i", $agency_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    while ($row = $result->fetch_assoc()) {
+        $agency_users[] = $row;
+    }
+}
 
 // Process form submission
 $message = '';
@@ -44,10 +63,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'initiative_id' => !empty($_POST['initiative_id']) ? intval($_POST['initiative_id']) : null
     ];
     
+    // Handle user assignment settings
+    $restrict_editors = isset($_POST['restrict_editors']) ? 1 : 0;
+    $assigned_editor_users = isset($_POST['assigned_editors']) ? $_POST['assigned_editors'] : [];
+    
     // Create new program using simplified function
     $result = create_simple_program($program_data);
     
-    if (isset($result['success']) && $result['success']) {
+    if (isset($result['success']) && $result['success'] && isset($result['program_id'])) {
+        $program_id = $result['program_id'];
+        
+        // Set editor restrictions
+        if ($restrict_editors) {
+            set_program_editor_restrictions($program_id, true);
+            
+            // Assign selected users as editors
+            if (!empty($assigned_editor_users)) {
+                foreach ($assigned_editor_users as $user_id) {
+                    assign_user_to_program($program_id, intval($user_id), 'editor', 'Assigned during program creation');
+                }
+            }
+        }
+        
         // Set success message and redirect
         $_SESSION['message'] = $result['message'];
         $_SESSION['message_type'] = 'success';
@@ -249,6 +286,74 @@ require_once '../../layouts/page_header.php';
                                     </div>
                                 </div>
 
+                                <!-- User Permissions Section -->
+                                <div class="card shadow-sm mt-3">
+                                    <div class="card-header">
+                                        <h6 class="card-title mb-0">
+                                            <i class="fas fa-users me-2"></i>
+                                            User Permissions
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <!-- Restrict Editors Toggle -->
+                                        <div class="mb-3">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" 
+                                                       id="restrict_editors" name="restrict_editors"
+                                                       <?php echo (isset($_POST['restrict_editors']) && $_POST['restrict_editors']) ? 'checked' : ''; ?>>
+                                                <label class="form-check-label" for="restrict_editors">
+                                                    <strong>Restrict editing to specific users</strong>
+                                                </label>
+                                            </div>
+                                            <div class="form-text">
+                                                <i class="fas fa-info-circle me-1"></i>
+                                                By default, all agency users can edit. Enable this to limit editing to selected users only.
+                                            </div>
+                                        </div>
+
+                                        <!-- User Selection (shown when restrictions are enabled) -->
+                                        <div id="userSelectionSection" style="display: none;">
+                                            <label class="form-label">
+                                                <i class="fas fa-user-edit me-1"></i>
+                                                Select users who can edit this program:
+                                            </label>
+                                            
+                                            <?php if (!empty($agency_users)): ?>
+                                                <div class="user-checkboxes" style="max-height: 200px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 0.375rem; padding: 0.75rem;">
+                                                    <?php foreach ($agency_users as $user): ?>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" 
+                                                                   name="assigned_editors[]" 
+                                                                   value="<?php echo $user['user_id']; ?>"
+                                                                   id="user_<?php echo $user['user_id']; ?>"
+                                                                   <?php echo (isset($_POST['assigned_editors']) && in_array($user['user_id'], $_POST['assigned_editors'])) ? 'checked' : ''; ?>>
+                                                            <label class="form-check-label" for="user_<?php echo $user['user_id']; ?>">
+                                                                <strong><?php echo htmlspecialchars($user['fullname'] ?: $user['username']); ?></strong>
+                                                                <br><small class="text-muted"><?php echo htmlspecialchars($user['username']); ?></small>
+                                                            </label>
+                                                        </div>
+                                                    <?php endforeach; ?>
+                                                </div>
+                                                
+                                                <!-- Select All / None buttons -->
+                                                <div class="mt-2">
+                                                    <button type="button" class="btn btn-sm btn-outline-primary me-2" onclick="selectAllUsers()">
+                                                        <i class="fas fa-check-double me-1"></i>Select All
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="selectNoUsers()">
+                                                        <i class="fas fa-times me-1"></i>Select None
+                                                    </button>
+                                                </div>
+                                            <?php else: ?>
+                                                <div class="alert alert-info">
+                                                    <i class="fas fa-info-circle me-2"></i>
+                                                    No other users found in your agency.
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <!-- Info Card -->
                                 <div class="card shadow-sm mt-3">
                                     <div class="card-body">
@@ -296,6 +401,46 @@ require_once '../../layouts/page_header.php';
         </div>
     </div>
 </div>
+
+<script>
+// Handle restrict editors toggle
+document.getElementById('restrict_editors').addEventListener('change', function() {
+    const userSection = document.getElementById('userSelectionSection');
+    if (this.checked) {
+        userSection.style.display = 'block';
+    } else {
+        userSection.style.display = 'none';
+        // Uncheck all user checkboxes when disabling restrictions
+        const userCheckboxes = document.querySelectorAll('input[name="assigned_editors[]"]');
+        userCheckboxes.forEach(checkbox => checkbox.checked = false);
+    }
+});
+
+// Select all users function
+function selectAllUsers() {
+    const userCheckboxes = document.querySelectorAll('input[name="assigned_editors[]"]');
+    userCheckboxes.forEach(checkbox => checkbox.checked = true);
+}
+
+// Select no users function
+function selectNoUsers() {
+    const userCheckboxes = document.querySelectorAll('input[name="assigned_editors[]"]');
+    userCheckboxes.forEach(checkbox => checkbox.checked = false);
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const restrictCheckbox = document.getElementById('restrict_editors');
+    const userSection = document.getElementById('userSelectionSection');
+    
+    // Show/hide user section based on initial checkbox state
+    if (restrictCheckbox.checked) {
+        userSection.style.display = 'block';
+    } else {
+        userSection.style.display = 'none';
+    }
+});
+</script>
 
 <?php
 // Include footer

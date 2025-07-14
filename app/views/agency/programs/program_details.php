@@ -20,6 +20,7 @@ require_once ROOT_PATH . 'app/lib/agencies/index.php';
 require_once ROOT_PATH . 'app/lib/agencies/programs.php';
 require_once ROOT_PATH . 'app/lib/rating_helpers.php';
 require_once ROOT_PATH . 'app/lib/agencies/program_attachments.php';
+require_once ROOT_PATH . 'app/lib/agencies/program_agency_assignments.php';
 require_once ROOT_PATH . 'app/lib/agencies/program-details/data-processor.php';
 require_once ROOT_PATH . 'app/lib/agencies/program-details/error-handler.php';
 
@@ -45,9 +46,17 @@ if (!$program_id) {
 // Get comprehensive program details
 $program = get_program_details($program_id, true);
 
-// Allow all users to view any program
-$allow_view = true;
-$is_owner = isset($program['owner_agency_id']) && $program['owner_agency_id'] == $_SESSION['user_id'];
+// Check permissions using new system
+$allow_view = can_view_program($program_id);
+$can_edit = can_edit_program($program_id);
+$is_owner = is_program_owner($program_id);
+
+if (!$allow_view) {
+    $_SESSION['message'] = 'You do not have permission to view this program.';
+    $_SESSION['message_type'] = 'danger';
+    header('Location: view_programs.php');
+    exit;
+}
 
 if (!$program) {
     $_SESSION['message'] = 'Program not found.';
@@ -732,6 +741,7 @@ window.currentUser = {
     role: '<?php echo $_SESSION['role'] ?? ''; ?>'
 };
 window.isOwner = <?php echo $is_owner ? 'true' : 'false'; ?>;
+window.canEdit = <?php echo $can_edit ? 'true' : 'false'; ?>;
 window.programId = <?php echo $program_id; ?>;
 window.APP_URL = '<?php echo APP_URL; ?>';
 </script>

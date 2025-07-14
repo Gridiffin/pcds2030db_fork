@@ -19,6 +19,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/agencies/programs.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/agencies/program_attachments.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/agencies/program_agency_assignments.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/rating_helpers.php';
 
 // Verify user is an agency
@@ -48,8 +49,19 @@ if (!$program) {
     exit;
 }
 
-// Check if user is the program owner
-$is_owner = isset($program['owner_agency_id']) && $program['owner_agency_id'] == $_SESSION['user_id'];
+// Check if user has access to this program and get their role
+$user_role = get_user_program_role($program_id);
+if (!$user_role) {
+    $_SESSION['message'] = 'You do not have access to this program.';
+    $_SESSION['message_type'] = 'danger';
+    header('Location: view_programs.php');
+    exit;
+}
+
+// Define permission levels
+$can_view = can_view_program($program_id);
+$can_edit = can_edit_program($program_id);
+$is_owner = is_program_owner($program_id);
 
 // Get the specific submission for this program and period
 $submission_query = "SELECT ps.*, 
@@ -121,8 +133,8 @@ $header_config = [
     ]
 ];
 
-// Add edit button if user is owner
-if ($is_owner) {
+// Add edit button if user can edit
+if ($can_edit) {
     $header_config['actions'][] = [
         'url' => 'edit_submission.php?program_id=' . $program_id . '&period_id=' . $period_id,
         'text' => 'Edit Submission',
@@ -421,7 +433,7 @@ require_once '../../layouts/page_header.php';
                     </div>
                     <h6 class="text-muted">No Targets Defined</h6>
                     <p class="text-muted mb-0">This submission doesn't have any targets defined yet.</p>
-                    <?php if ($is_owner): ?>
+                    <?php if ($can_edit): ?>
                         <p class="text-muted small">You can add targets when editing this submission.</p>
                     <?php endif; ?>
                 </div>
@@ -441,7 +453,7 @@ require_once '../../layouts/page_header.php';
                             <i class="fas fa-paperclip me-2 text-success"></i>
                             Program Attachments
                         </h5>
-                        <?php if ($is_owner): ?>
+                        <?php if ($can_edit): ?>
                             <a href="edit_submission.php?program_id=<?php echo $program_id; ?>&period_id=<?php echo $period_id; ?>" 
                                class="btn btn-sm btn-outline-primary">
                                 <i class="fas fa-edit me-1"></i>Edit Submission
@@ -559,7 +571,7 @@ require_once '../../layouts/page_header.php';
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <?php if ($is_owner): ?>
+                        <?php if ($can_edit): ?>
                             <a href="edit_submission.php?program_id=<?php echo $program_id; ?>&period_id=<?php echo $period_id; ?>" 
                                class="btn btn-primary">
                                 <i class="fas fa-edit me-2"></i>Edit This Submission
@@ -577,10 +589,15 @@ require_once '../../layouts/page_header.php';
                                 <i class="fas fa-plus me-2"></i>Add New Submission
                             </a>
                         <?php else: ?>
-                            <p class="text-muted mb-2 small">
-                                <i class="fas fa-info-circle me-1"></i>
-                                You have view-only access to this submission.
-                            </p>
+                            <div class="alert alert-info mb-3">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <div>
+                                        <div class="fw-medium">Access Level: <?php echo ucfirst($user_role); ?></div>
+                                        <small>You have <?php echo $user_role; ?> access to this program.</small>
+                                    </div>
+                                </div>
+                            </div>
                         <?php endif; ?>
                         
                         <a href="program_details.php?id=<?php echo $program_id; ?>" 
