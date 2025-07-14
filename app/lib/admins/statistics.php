@@ -48,10 +48,10 @@ function get_admin_dashboard_stats() {
         // Get program submission counts
         $query = "SELECT 
                     u.user_id,
-                    (SELECT COUNT(*) FROM programs p WHERE p.users_assigned = u.user_id) AS agency_programs,
+                    (SELECT COUNT(*) FROM programs p WHERE p.agency_id = u.agency_id) AS agency_programs,
                     (SELECT COUNT(*) FROM program_submissions ps 
                      JOIN programs p ON ps.program_id = p.program_id 
-                     WHERE p.users_assigned = u.user_id AND ps.period_id = ?) AS submitted_programs
+                     WHERE p.agency_id = u.agency_id AND ps.period_id = ?) AS submitted_programs
                   FROM users u
                   WHERE u.role IN ('agency', 'focal')";
         
@@ -531,12 +531,12 @@ function get_recent_submissions($period_id = null, $limit = 5) {
 function get_admin_program_details($program_id) {
     global $conn;
     
-    $stmt = $conn->prepare("SELECT p.*, a.agency_name, u.user_id as users_assigned,
+    $stmt = $conn->prepare("SELECT p.*, a.agency_name, u.user_id as assigned_user_id,
                                   i.initiative_id, i.initiative_name, i.initiative_number, 
                                   i.initiative_description, i.start_date as initiative_start_date, 
                                   i.end_date as initiative_end_date
                           FROM programs p
-                          LEFT JOIN users u ON p.users_assigned = u.user_id
+                          LEFT JOIN users u ON p.agency_id = u.agency_id
                           LEFT JOIN agency a ON u.agency_id = a.agency_id
                           LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
                           WHERE p.program_id = ?");
@@ -550,8 +550,12 @@ function get_admin_program_details($program_id) {
     
     $program = $result->fetch_assoc();
     
+    // Set is_assigned field based on program data
+    // A program is considered "assigned" if it has admin-specific settings or was created through assignment
+    $program['is_assigned'] = !empty($program['edit_permissions']) ? 1 : 0;
+    
     // Get submissions for this program with reporting period details
-    $stmt = $conn->prepare("SELECT ps.*, rp.year, rp.quarter
+    $stmt = $conn->prepare("SELECT ps.*, rp.year, rp.period_type, rp.period_number
                           FROM program_submissions ps 
                           JOIN reporting_periods rp ON ps.period_id = rp.period_id
                           WHERE ps.program_id = ? 

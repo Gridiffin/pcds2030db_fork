@@ -7,7 +7,11 @@
  */
 function get_all_agency_users(mysqli $conn): array {
     $agencies = [];
-    $sql = "SELECT user_id, agency_name FROM users WHERE role IN ('agency', 'focal') AND is_active = 1 ORDER BY agency_name ASC";
+    $sql = "SELECT u.user_id, a.agency_name 
+            FROM users u 
+            JOIN agency a ON u.agency_id = a.agency_id 
+            WHERE u.role IN ('agency', 'focal') AND u.is_active = 1 
+            ORDER BY a.agency_name ASC";
     $result = $conn->query($sql);
     if ($result && $result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {

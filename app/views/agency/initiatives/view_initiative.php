@@ -85,7 +85,7 @@ if (!empty($programs)) {
     $score_sum = 0;
     
     foreach ($programs as $program) {
-        $status = convert_legacy_rating($program['rating']);
+        $status = convert_legacy_rating($program['rating'] ?? 'not_started');
         
         // Assign scores based on status
         switch ($status) {
@@ -449,7 +449,7 @@ require_once '../../layouts/page_header.php';
                     ];
                     
                     foreach ($programs as $program) {
-                        $status = convert_legacy_rating($program['rating']);
+                        $status = convert_legacy_rating($program['rating'] ?? 'not_started');
                         if (isset($rating_distribution[$status])) {
                             $rating_distribution[$status]++;
                         } else {
@@ -552,7 +552,7 @@ require_once '../../layouts/page_header.php';
                                     </div>
                                     <div class="ms-2">
                                         <?php
-                                        $status = convert_legacy_rating($program['rating']);
+                                        $status = convert_legacy_rating($program['rating'] ?? 'not_started');
                                         $status_colors = [
                                             'target-achieved' => 'success',
                                             'on-track' => 'warning',

@@ -110,4 +110,65 @@ function get_rating_options() {
         RATING_SEVERE_DELAY => 'Severe Delays'
     ];
 }
-?> 
+
+/**
+ * Convert legacy or display rating values to database enum values
+ * 
+ * @param string $rating The rating value to convert
+ * @return string Database-compatible rating value
+ */
+function convert_legacy_rating($rating) {
+    // Handle null or empty values
+    if (empty($rating)) {
+        return 'not_started';
+    }
+    
+    // If already a valid database value, return as-is
+    if (is_valid_rating($rating)) {
+        return $rating;
+    }
+    
+    // Convert legacy/display values to database enum values
+    $conversion_map = [
+        // Legacy format conversions
+        'not-started' => 'not_started',
+        'on-track' => 'on_track_for_year',
+        'on-track-yearly' => 'on_track_for_year',
+        'target-achieved' => 'monthly_target_achieved',
+        'monthly-target-achieved' => 'monthly_target_achieved',
+        'severe-delay' => 'severe_delay',
+        'delayed' => 'severe_delay',
+        
+        // Display label conversions
+        'Not Started' => 'not_started',
+        'On Track' => 'on_track_for_year',
+        'On Track for Year' => 'on_track_for_year',
+        'Monthly Target Achieved' => 'monthly_target_achieved',
+        'Target Achieved' => 'monthly_target_achieved',
+        'Severe Delays' => 'severe_delay',
+        'Severe Delay' => 'severe_delay',
+        'Delayed' => 'severe_delay',
+        
+        // Additional variations
+        'completed' => 'monthly_target_achieved', // Treat completed as target achieved
+        'in_progress' => 'on_track_for_year',
+        'in-progress' => 'on_track_for_year'
+    ];
+    
+    // Convert to lowercase for case-insensitive matching
+    $rating_lower = strtolower((string)$rating);
+    
+    // Check conversion map
+    if (isset($conversion_map[$rating_lower])) {
+        return $conversion_map[$rating_lower];
+    }
+    
+    // Check exact match in conversion map
+    if (isset($conversion_map[$rating])) {
+        return $conversion_map[$rating];
+    }
+    
+    // Default fallback
+    return 'not_started';
+}
+?>

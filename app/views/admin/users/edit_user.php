@@ -60,9 +60,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Get all sectors for dropdown
-$sectors = get_all_sectors();
-
 // Get all agency groups for dropdown
 $config = include __DIR__ . '/../../../config/db_names.php';
 if (!$config || !isset($config['tables']['agency'])) {

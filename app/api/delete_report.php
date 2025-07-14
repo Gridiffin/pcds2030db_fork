@@ -77,7 +77,7 @@ try {
     // Get the report details before deletion for audit logging
     $query = "SELECT r.report_id, r.report_name, r.pptx_path, r.generated_at,
                      u.username, u.agency_name,
-                     rp.quarter, rp.year
+                     rp.period_type, rp.period_number, rp.year
               FROM reports r 
               LEFT JOIN users u ON r.generated_by = u.user_id 
               LEFT JOIN reporting_periods rp ON r.period_id = rp.period_id 

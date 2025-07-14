@@ -81,16 +81,12 @@ $selected_period_id = isset($_GET['period_id']) ? intval($_GET['period_id']) : n
 $all_periods = [];
 $selected_period = null;
 
-// Fetch all periods for selector
-if ($conn) {
-    $periods_result = $conn->query("SELECT * FROM reporting_periods ORDER BY year DESC, period_type ASC, period_number DESC");
-    if ($periods_result) {
-        while ($row = $periods_result->fetch_assoc()) {
-            $all_periods[] = $row;
-            if ($selected_period_id && $row['period_id'] == $selected_period_id) {
-                $selected_period = $row;
-            }
-        }
+// Fetch all periods for selector using the proper function
+$all_periods = get_all_reporting_periods();
+foreach ($all_periods as $period) {
+    if ($selected_period_id && $period['period_id'] == $selected_period_id) {
+        $selected_period = $period;
+        break;
     }
 }
 
@@ -213,9 +209,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($owner_agency_id <= 0) {
                 throw new Exception('Valid owner agency is required.');
             }
-            if ($sector_id <= 0) {
-                throw new Exception('Valid sector is required.');
-            }
+            // Note: Sector validation removed as system uses fixed Forestry sector
+            // if ($sector_id <= 0) {
+            //     throw new Exception('Valid sector is required.');
+            // }
             
             // Validate date formats if provided
             if ($start_date && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $start_date)) {
@@ -313,27 +310,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                              program_name = ?, 
                              program_number = ?,
                              initiative_id = ?,
-                             owner_agency_id = ?, 
-                             sector_id = ?,
+                             agency_id = ?, 
                              start_date = ?, 
                              end_date = ?,
-                             is_assigned = ?,
-                             edit_permissions = ?,
                              updated_at = NOW()
                              WHERE program_id = ?";
                              
             $program_stmt = $conn->prepare($program_query);
             // FIXED: Correct parameter binding types: s,s,i,i,i,s,s,i,s,i
-            $program_stmt->bind_param('ssiisssisi', 
+            $program_stmt->bind_param('ssiissi', 
                 $program_name, 
                 $program_number,
                 $initiative_id,
                 $owner_agency_id,
-                $sector_id,
                 $start_date,
                 $end_date,
-                $is_assigned,
-                $edit_permissions_json,
                 $program_id
             );
             
@@ -370,7 +361,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $agency_name = '';
             $sector_name = '';
             if ($owner_agency_id) {
-                $agency_query = $conn->prepare("SELECT agency_name FROM users WHERE user_id = ?");
+                $agency_query = $conn->prepare("
+                    SELECT a.agency_name 
+                    FROM users u 
+                    JOIN agency a ON u.agency_id = a.agency_id 
+                    WHERE u.user_id = ?
+                ");
                 $agency_query->bind_param("i", $owner_agency_id);
                 $agency_query->execute();
                 $agency_result = $agency_query->get_result();
@@ -508,7 +504,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Get agencies and sectors for dropdowns (including focal users)
 $agencies = [];
-$agencies_result = $conn->query("SELECT user_id as agency_id, agency_name FROM users WHERE role IN ('agency', 'focal') AND is_active = 1 ORDER BY agency_name");
+$agencies_result = $conn->query("
+    SELECT u.user_id as agency_id, a.agency_name 
+    FROM users u 
+    JOIN agency a ON u.agency_id = a.agency_id 
+    WHERE u.role IN ('agency', 'focal') AND u.is_active = 1 
+    ORDER BY a.agency_name
+");
 if ($agencies_result) {
     while ($row = $agencies_result->fetch_assoc()) {
         $agencies[] = $row;
@@ -740,7 +742,7 @@ require_once '../../layouts/page_header.php';
                                         <option value="">Select Agency</option>
                                         <?php foreach ($agencies as $agency): ?>
                                             <option value="<?php echo $agency['agency_id']; ?>" 
-                                                    <?php echo ($program['owner_agency_id'] == $agency['agency_id']) ? 'selected' : ''; ?>>
+                                                    <?php echo (($program['agency_id'] ?? '') == $agency['agency_id']) ? 'selected' : ''; ?>>
                                                 <?php echo htmlspecialchars($agency['agency_name']); ?>
                                             </option>
                                         <?php endforeach; ?>
@@ -753,8 +755,7 @@ require_once '../../layouts/page_header.php';
                                     <select class="form-select" id="sector_id" name="sector_id" required>
                                         <option value="">Select Sector</option>
                                         <?php foreach ($sectors as $sector): ?>
-                                            <option value="<?php echo $sector['sector_id']; ?>" 
-                                                    <?php echo ($program['sector_id'] == $sector['sector_id']) ? 'selected' : ''; ?>>
+                                            <option value="<?php echo $sector['sector_id']; ?>" selected>
                                                 <?php echo htmlspecialchars($sector['sector_name']); ?>
                                             </option>
                                         <?php endforeach; ?>

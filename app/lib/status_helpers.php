@@ -16,7 +16,7 @@ require_once 'rating_helpers.php';
  */
 function get_status_display_name($status) {
     // First convert any legacy status values
-    $status = convert_legacy_rating($status);
+    $status = convert_legacy_rating($status ?? 'not_started');
     
     // Map status values to their display names
     $status_map = [

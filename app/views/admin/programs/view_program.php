@@ -56,6 +56,95 @@ if (!empty($program['initiative_id'])) {
     );
 }
 
+// Extract targets from current submission - check both program_targets table and content_json
+$targets = [];
+
+if (isset($program['current_submission']) && !empty($program['current_submission'])) {
+    $current_submission = $program['current_submission'];
+    
+    // First, try to get targets from program_targets table (modern approach)
+    if (!empty($current_submission['submission_id'])) {
+        $submission_id = $current_submission['submission_id'];
+        $targets_query = "SELECT target_id, target_number, target_description, status_indicator, 
+                                 status_description, remarks, start_date, end_date 
+                          FROM program_targets 
+                          WHERE submission_id = ? AND is_deleted = 0 
+                          ORDER BY target_id";
+        
+        $targets_stmt = $conn->prepare($targets_query);
+        $targets_stmt->bind_param("i", $submission_id);
+        $targets_stmt->execute();
+        $targets_result = $targets_stmt->get_result();
+        
+        while ($target_row = $targets_result->fetch_assoc()) {
+            $targets[] = [
+                'text' => htmlspecialchars($target_row['target_description'] ?? ''),
+                'status_description' => htmlspecialchars($target_row['status_description'] ?? ''),
+                'target_number' => htmlspecialchars($target_row['target_number'] ?? ''),
+                'start_date' => $target_row['start_date'] ?? '',
+                'end_date' => $target_row['end_date'] ?? '',
+                'target_id' => $target_row['target_id'] ?? '',
+                'status_indicator' => $target_row['status_indicator'] ?? ''
+            ];
+        }
+        $targets_stmt->close();
+    }
+    
+    // If no targets found in program_targets table, try content_json (legacy approach)
+    if (empty($targets) && isset($current_submission['content_json']) && !empty($current_submission['content_json'])) {
+        $content = json_decode($current_submission['content_json'], true);
+        
+        if ($content && is_array($content)) {
+            // Handle new target structure (array of targets)
+            if (isset($content['targets']) && is_array($content['targets'])) {
+                foreach ($content['targets'] as $target) {
+                    if (isset($target['target_text']) && !empty($target['target_text'])) {
+                        $targets[] = [
+                            'text' => htmlspecialchars($target['target_text']),
+                            'status_description' => htmlspecialchars($target['status_description'] ?? ''),
+                            'target_number' => htmlspecialchars($target['target_number'] ?? ''),
+                            'start_date' => $target['start_date'] ?? '',
+                            'end_date' => $target['end_date'] ?? ''
+                        ];
+                    }
+                }
+            } 
+            // Handle legacy target structure (single target string)
+            elseif (isset($content['target']) && !empty($content['target'])) {
+                $target_text = $content['target'];
+                $status_description = $content['status_text'] ?? '';
+                
+                // Check if target contains multiple targets separated by semicolon
+                if (strpos($target_text, ';') !== false) {
+                    $target_parts = array_map('trim', explode(';', $target_text));
+                    $status_parts = array_map('trim', explode(';', $status_description));
+                    
+                    foreach ($target_parts as $index => $target_part) {
+                        if (!empty($target_part)) {
+                            $targets[] = [
+                                'text' => htmlspecialchars($target_part),
+                                'status_description' => htmlspecialchars(isset($status_parts[$index]) ? $status_parts[$index] : ''),
+                                'target_number' => '',
+                                'start_date' => '',
+                                'end_date' => ''
+                            ];
+                        }
+                    }
+                } else {
+                    // Single target
+                    $targets[] = [
+                        'text' => htmlspecialchars($target_text),
+                        'status_description' => htmlspecialchars($status_description),
+                        'target_number' => '',
+                        'start_date' => '',
+                        'end_date' => ''
+                    ];
+                }
+            }
+        }
+    }
+}
+
 // Remove all content_json and per-submission rating logic
 // Refactor to use only programs.rating for all rating display and logic
 $rating = $program['rating'] ?? 'not-started';
@@ -135,6 +224,7 @@ require_once '../../layouts/page_header.php';
 </div>
 <?php endif; ?>
 
+
 <div class="row">    <!-- Program Information Card -->
     <div class="col-lg-12 mb-4">
         <div class="card shadow-sm program-info-card">
@@ -173,7 +263,8 @@ require_once '../../layouts/page_header.php';
                             <div class="col-md-6 mb-3">
                                 <div class="row">
                                     <div class="col-md-4 text-muted">Program Type:</div>
-                                    <div class="col-md-8">                                        <?php if ($program['is_assigned']): ?>
+                                    <div class="col-md-8">
+                                        <?php if (isset($program['is_assigned']) && $program['is_assigned']): ?>
                                             <span class="badge bg-info">Assigned Program</span>
                                         <?php else: ?>
                                             <span class="badge bg-success">Agency-Created</span>
@@ -187,14 +278,14 @@ require_once '../../layouts/page_header.php';
                             <div class="col-md-6 mb-3">
                                 <div class="row">
                                     <div class="col-md-4 text-muted">Agency:</div>
-                                    <div class="col-md-8"><?php echo htmlspecialchars($program['agency_name']); ?></div>
+                                    <div class="col-md-8"><?php echo htmlspecialchars($program['agency_name'] ?? 'Not specified'); ?></div>
                                 </div>
                             </div>
                             
                             <div class="col-md-6 mb-3">
                                 <div class="row">
                                     <div class="col-md-4 text-muted">Sector:</div>
-                                    <div class="col-md-8"><?php echo htmlspecialchars($program['sector_name']); ?></div>
+                                    <div class="col-md-8">Forestry</div>
                                 </div>
                             </div>
                         </div>
@@ -221,7 +312,13 @@ require_once '../../layouts/page_header.php';
                             <div class="col-md-6 mb-3">
                                 <div class="row">
                                     <div class="col-md-4 text-muted">Created On:</div>
-                                    <div class="col-md-8"><?php echo date('M j, Y', strtotime($program['created_at'])); ?></div>
+                                    <div class="col-md-8">
+                                        <?php if (isset($program['created_at']) && $program['created_at']): ?>
+                                            <?php echo date('M j, Y', strtotime($program['created_at'])); ?>
+                                        <?php else: ?>
+                                            <span class="text-muted">Not available</span>
+                                        <?php endif; ?>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -266,11 +363,11 @@ require_once '../../layouts/page_header.php';
                             <?php if (!empty($program['initiative_number'])): ?>
                                 <span class="badge bg-primary initiative-number me-2" 
                                       title="Initiative Number">
-                                    <?php echo htmlspecialchars($program['initiative_number']); ?>
+                                    <?php echo htmlspecialchars($program['initiative_number'] ?? ''); ?>
                                 </span>
                             <?php endif; ?>
                             <span class="initiative-name fw-bold text-primary" style="font-size: 1.2em;">
-                                <?php echo htmlspecialchars($program['initiative_name']); ?>
+                                <?php echo htmlspecialchars($program['initiative_name'] ?? 'No Initiative'); ?>
                             </span>
                         </div>
 
@@ -280,7 +377,7 @@ require_once '../../layouts/page_header.php';
                                 <i class="fas fa-align-left me-1"></i>Description
                             </h6>
                             <p class="mb-0">
-                                <?php echo nl2br(htmlspecialchars($program['initiative_description'])); ?>
+                                <?php echo nl2br(htmlspecialchars($program['initiative_description'] ?? '')); ?>
                             </p>
                         </div>
                         <?php endif; ?>
@@ -345,7 +442,7 @@ require_once '../../layouts/page_header.php';
                                             </div>
                                             <div class="ms-2">
                                                 <?php
-                                                $status = convert_legacy_rating($related['rating']);
+                                                $status = convert_legacy_rating($related['rating'] ?? 'not_started');
                                                 $status_colors = [
                                                     'target-achieved' => 'success',
                                                     'on-track-yearly' => 'warning',
@@ -423,12 +520,18 @@ require_once '../../layouts/page_header.php';
                             <div>
                                 <div class="info-label text-muted">Submission Date</div>
                                 <div class="info-value">
-                                    <strong><?php echo date('M j, Y', strtotime($program['current_submission']['submission_date'])); ?></strong>
+                                    <?php if (!empty($program['current_submission']['submission_date'])): ?>
+                                        <strong><?php echo date('M j, Y', strtotime($program['current_submission']['submission_date'])); ?></strong>
+                                    <?php else: ?>
+                                        <span class="text-muted">Not submitted</span>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>                <?php if (!empty($targets)): ?>
+                </div>
+                
+                <?php if (!empty($targets)): ?>
                     <div class="performance-grid">
                         <?php foreach ($targets as $index => $target): ?>
                             <div class="performance-item card mb-3 shadow-sm">
@@ -439,12 +542,22 @@ require_once '../../layouts/page_header.php';
                                                 <h6 class="target-header d-flex align-items-center mb-3">
                                                     <span class="target-number me-2"><?php echo $index + 1; ?></span>
                                                     <span class="text-primary fw-bold">Program Target</span>
+                                                    <?php if (!empty($target['target_number'])): ?>
+                                                        <span class="badge bg-info ms-2"><?php echo $target['target_number']; ?></span>
+                                                    <?php endif; ?>
                                                 </h6>
                                                 <div class="target-content">
                                                     <?php if (!empty($target['text'])): ?>
-                                                        <p class="mb-0"><?php echo nl2br(htmlspecialchars($target['text'])); ?></p>
+                                                        <p class="mb-2"><?php echo nl2br($target['text']); ?></p>
                                                     <?php else: ?>
-                                                        <p class="text-muted fst-italic mb-0">No target specified</p>
+                                                        <p class="text-muted fst-italic mb-2">No target specified</p>
+                                                    <?php endif; ?>
+                                                    
+                                                    <?php if (!empty($target['status_description'])): ?>
+                                                        <div class="target-status mt-2 p-2 bg-light rounded">
+                                                            <small class="text-muted fw-bold">Status:</small>
+                                                            <div class="mt-1"><?php echo nl2br($target['status_description']); ?></div>
+                                                        </div>
                                                     <?php endif; ?>
                                                 </div>
                                             </div>
@@ -457,7 +570,7 @@ require_once '../../layouts/page_header.php';
                                                 </h6>
                                                 <div class="status-content">
                                                     <?php if (!empty($target['status_description'])): ?>
-                                                        <p class="mb-0"><?php echo nl2br(htmlspecialchars($target['status_description'])); ?></p>
+                                                        <p class="mb-0"><?php echo nl2br($target['status_description']); ?></p>
                                                     <?php else: ?>
                                                         <p class="text-muted fst-italic mb-0">No status update provided</p>
                                                     <?php endif; ?>
@@ -476,7 +589,7 @@ require_once '../../layouts/page_header.php';
                                 <i class="fas fa-award me-2"></i>Overall Achievement
                             </div>
                             <div class="achievement-content">
-                                <?php echo nl2br(htmlspecialchars($program['current_submission']['achievement'])); ?>
+                                <?php echo nl2br(htmlspecialchars($program['current_submission']['achievement'] ?? '')); ?>
                             </div>
                         </div>
                     <?php endif; ?>
@@ -491,11 +604,11 @@ require_once '../../layouts/page_header.php';
                         </div>
                     </div>
                     <?php endif; ?>
-                      <?php else: ?>
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>
-                    No targets have been specified for this program.
-                </div>
+                <?php else: ?>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        No targets have been specified for this program.
+                    </div>
                 <?php endif; ?>
             </div>
         </div>
@@ -532,7 +645,11 @@ require_once '../../layouts/page_header.php';
                                             </span>
                                             <span class="me-3">
                                                 <i class="fas fa-calendar me-1"></i>
-                                                <?php echo date('M j, Y \a\t g:i A', strtotime($attachment['upload_date'])); ?>
+                                                <?php if (isset($attachment['upload_date']) && $attachment['upload_date']): ?>
+                                                    <?php echo date('M j, Y \a\t g:i A', strtotime($attachment['upload_date'])); ?>
+                                                <?php else: ?>
+                                                    <span class="text-muted">Date not available</span>
+                                                <?php endif; ?>
                                             </span>
                                             <span>
                                                 <i class="fas fa-user me-1"></i>

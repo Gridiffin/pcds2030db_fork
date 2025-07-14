@@ -191,7 +191,7 @@ function getLinkedPrograms($outcome_id) {
     $query = "SELECT p.program_id, p.program_name, p.sector_id, a.agency_name
               FROM program_outcome_links pol
               JOIN programs p ON pol.program_id = p.program_id
-              JOIN users u ON p.users_assigned = u.user_id
+              JOIN users u ON p.agency_id = u.agency_id
               JOIN agency a ON u.agency_id = a.agency_id
               WHERE pol.outcome_id = ?
               ORDER BY p.program_name";
@@ -253,11 +253,11 @@ function getOutcomeDataWithCumulative($outcome_id, $sector_id, $period_id) {
     
     if ($outcome_info['is_cumulative']) {
         // For cumulative data, get all periods up to and including the specified period
-        $query = "SELECT sod.*, rp.year, rp.quarter 
+        $query = "SELECT sod.*, rp.year, rp.period_type, rp.period_number 
                  FROM sector_outcomes_data sod
                  JOIN reporting_periods rp ON sod.period_id = rp.period_id
                  WHERE sod.metric_id = ? AND sod.sector_id = ? AND sod.period_id <= ? AND sod.is_draft = 0
-                 ORDER BY rp.year, rp.quarter";
+                 ORDER BY rp.year, rp.period_number";
         
         $stmt = $conn->prepare($query);
         $stmt->bind_param("iii", $outcome_id, $sector_id, $period_id);
@@ -283,7 +283,7 @@ function getOutcomeDataWithCumulative($outcome_id, $sector_id, $period_id) {
         ];
     } else {
         // For non-cumulative data, get only the specific period
-        $query = "SELECT sod.*, rp.year, rp.quarter 
+        $query = "SELECT sod.*, rp.year, rp.period_type, rp.period_number 
                  FROM sector_outcomes_data sod
                  JOIN reporting_periods rp ON sod.period_id = rp.period_id
                  WHERE sod.metric_id = ? AND sod.sector_id = ? AND sod.period_id = ? AND sod.is_draft = 0";
