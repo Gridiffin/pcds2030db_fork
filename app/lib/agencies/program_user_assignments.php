@@ -90,7 +90,7 @@ function program_has_editor_restrictions($program_id) {
  * Enhanced can_edit_program function with user-level permissions
  * 
  * Permission hierarchy:
- * 1. Focal users can edit all programs
+ * 1. Focal users can edit programs within their agency (if agency has access)
  * 2. Check agency-level permissions (owner/editor)
  * 3. If agency has access, check user-level restrictions
  *
@@ -99,9 +99,13 @@ function program_has_editor_restrictions($program_id) {
  * @return bool True if user can edit
  */
 function can_edit_program_with_user_restrictions($program_id, $user_id = null) {
-    // Focal users can edit all programs
+    // Focal users can edit programs within their agency (check agency access first)
     if (is_focal_user()) {
-        return true;
+        $focal_agency_id = $_SESSION['agency_id'] ?? null;
+        if ($focal_agency_id && can_edit_program($program_id)) {
+            return true;
+        }
+        // If focal user's agency doesn't have access, follow normal rules
     }
     
     // Check agency-level permissions first
@@ -127,9 +131,13 @@ function can_edit_program_with_user_restrictions($program_id, $user_id = null) {
  * @return bool True if user can view
  */
 function can_view_program_with_user_restrictions($program_id, $user_id = null) {
-    // Focal users can view all programs
+    // Focal users can view programs within their agency (check agency access first)
     if (is_focal_user()) {
-        return true;
+        $focal_agency_id = $_SESSION['agency_id'] ?? null;
+        if ($focal_agency_id && can_view_program($program_id)) {
+            return true;
+        }
+        // If focal user's agency doesn't have access, follow normal rules
     }
     
     // Check agency-level permissions first
@@ -205,8 +213,20 @@ function assign_user_to_program($program_id, $user_id, $role = 'viewer', $notes 
     }
     
     // Check if current user can assign users (must be program owner, focal, or admin)
+    // Focal users can only assign within programs their agency has access to
     if (!is_admin() && !is_focal_user() && !is_program_owner($program_id)) {
         return ['error' => 'Permission denied'];
+    }
+    
+    // Additional check for focal users - they can only assign to programs their agency has access to
+    if (is_focal_user()) {
+        $focal_agency_id = $_SESSION['agency_id'] ?? null;
+        if ($focal_agency_id) {
+            $focal_role = get_user_program_role($program_id, $focal_agency_id);
+            if (!$focal_role) {
+                return ['error' => 'Permission denied - your agency does not have access to this program'];
+            }
+        }
     }
     
     // Verify target user exists and get their agency
@@ -284,8 +304,20 @@ function remove_user_from_program($program_id, $user_id) {
     }
     
     // Check if current user can remove users (must be program owner, focal, or admin)
+    // Focal users can only remove assignments from programs their agency has access to
     if (!is_admin() && !is_focal_user() && !is_program_owner($program_id)) {
         return ['error' => 'Permission denied'];
+    }
+    
+    // Additional check for focal users - they can only remove assignments from programs their agency has access to
+    if (is_focal_user()) {
+        $focal_agency_id = $_SESSION['agency_id'] ?? null;
+        if ($focal_agency_id) {
+            $focal_role = get_user_program_role($program_id, $focal_agency_id);
+            if (!$focal_role) {
+                return ['error' => 'Permission denied - your agency does not have access to this program'];
+            }
+        }
     }
     
     // Soft delete the assignment
