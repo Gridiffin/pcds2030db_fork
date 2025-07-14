@@ -243,9 +243,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {    // Validate inputs
 }
 
 // Fetch program data for form
-$query = "SELECT p.*, s.sector_name, i.initiative_name, i.initiative_number
+$query = "SELECT p.*, i.initiative_name, i.initiative_number
           FROM programs p
-          LEFT JOIN sectors s ON p.sector_id = s.sector_id
           LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
           WHERE p.program_id = ?";
 $stmt = $conn->prepare($query);
@@ -320,9 +319,11 @@ if ($submission_result->num_rows > 0) {
 }
 
 // Fetch list of agencies for owner selection (including both agency and focal users)
-$agencies_query = "SELECT user_id AS agency_id, agency_name FROM users 
-                  WHERE role IN ('agency', 'focal') AND is_active = 1 
-                  ORDER BY agency_name ASC";
+$agencies_query = "SELECT u.user_id AS agency_id, a.agency_name 
+                  FROM users u 
+                  JOIN agency a ON u.agency_id = a.agency_id 
+                  WHERE u.role IN ('agency', 'focal') AND u.is_active = 1 
+                  ORDER BY a.agency_name ASC";
 $agencies_result = $conn->query($agencies_query);
 $agencies = [];
 

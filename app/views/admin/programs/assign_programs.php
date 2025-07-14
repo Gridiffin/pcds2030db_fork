@@ -156,7 +156,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_program'])) {
             $conn->commit();
             
             // Get agency name for logging
-            $agency_query = "SELECT agency_name FROM users WHERE user_id = ?";
+            $agency_query = "SELECT a.agency_name 
+                           FROM users u 
+                           JOIN agency a ON u.agency_id = a.agency_id 
+                           WHERE u.user_id = ?";
             $agency_stmt = $conn->prepare($agency_query);
             $agency_stmt->bind_param("i", $agency_id);
             $agency_stmt->execute();

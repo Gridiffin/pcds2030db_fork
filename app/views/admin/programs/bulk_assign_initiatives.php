@@ -102,9 +102,6 @@ $programs = get_admin_programs_list($period_id, []);
 // Get all active initiatives
 $initiatives = get_initiatives_for_select(true);
 
-// Get all sectors for grouping
-$sectors = get_all_sectors();
-
 // Set page title
 $pageTitle = 'Bulk Initiative Assignment';
 

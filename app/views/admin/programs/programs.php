@@ -68,12 +68,13 @@ foreach ($programs as $program) {
     }
 }
 
-// Get all sectors for filter dropdown
-$sectors = get_all_sectors();
-
 // Get all agencies for filter dropdown (including both agency and focal users)
 $agencies = [];
-$agencies_query = "SELECT user_id, agency_name FROM users WHERE role IN ('agency', 'focal') ORDER BY agency_name";
+$agencies_query = "SELECT u.user_id, a.agency_name 
+                   FROM users u 
+                   JOIN agency a ON u.agency_id = a.agency_id 
+                   WHERE u.role IN ('agency', 'focal') 
+                   ORDER BY a.agency_name";
 $agencies_result = $conn->query($agencies_query);
 while ($row = $agencies_result->fetch_assoc()) {
     $agencies[] = $row;
@@ -264,11 +265,11 @@ if (isset($_SESSION['message']) && !empty($_SESSION['message'])) {
                             if (!isset($rating_map[$current_rating])) {
                                 $current_rating = 'not-started';
                             }
-                        ?>                            <tr data-program-type="<?php echo $is_assigned ? 'assigned' : 'agency'; ?>"
-                                data-sector-id="<?php echo $program['sector_id']; ?>"
-                                data-agency-id="<?php echo $program['owner_agency_id']; ?>"
-                                data-initiative-id="<?php echo $program['initiative_id'] ?? ''; ?>"
-                                data-rating="<?php echo $current_rating; ?>">
+                        ?>
+                        <tr data-program-type="<?php echo $is_assigned ? 'assigned' : 'agency'; ?>"
+                            data-agency-id="<?php echo $program['agency_id'] ?? ''; ?>"
+                            data-initiative-id="<?php echo $program['initiative_id'] ?? ''; ?>"
+                            data-rating="<?php echo $current_rating; ?>">
                                 <td class="text-truncate" style="max-width: 300px;">
                                     <div class="fw-medium">
                                         <a href="view_program.php?id=<?php echo $program['program_id']; ?>&period_id=<?php echo $period_id; ?>">
@@ -473,11 +474,11 @@ if (isset($_SESSION['message']) && !empty($_SESSION['message'])) {
                             if (!isset($rating_map[$current_rating])) {
                                 $current_rating = 'not-started';
                             }
-                        ?>                            <tr data-program-type="<?php echo $is_assigned ? 'assigned' : 'agency'; ?>"
-                                data-sector-id="<?php echo $program['sector_id']; ?>"
-                                data-agency-id="<?php echo $program['owner_agency_id']; ?>"
-                                data-initiative-id="<?php echo $program['initiative_id'] ?? ''; ?>"
-                                data-rating="<?php echo $current_rating; ?>">
+                        ?>
+                        <tr data-program-type="<?php echo $is_assigned ? 'assigned' : 'agency'; ?>"
+                            data-agency-id="<?php echo $program['agency_id'] ?? ''; ?>"
+                            data-initiative-id="<?php echo $program['initiative_id'] ?? ''; ?>"
+                            data-rating="<?php echo $current_rating; ?>">
                                 <td class="text-truncate" style="max-width: 300px;">
                                     <div class="fw-medium">
                                         <a href="view_program.php?id=<?php echo $program['program_id']; ?>&period_id=<?php echo $period_id; ?>">

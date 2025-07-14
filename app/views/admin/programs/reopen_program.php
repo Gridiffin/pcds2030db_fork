@@ -33,10 +33,10 @@ if (!$program_id || !$submission_id) {
 }
 
 // Check if submission exists and belongs to the program
-$query = "SELECT ps.*, p.program_name, u.agency_name, rp.year, rp.quarter 
+$query = "SELECT ps.*, p.program_name, a.agency_name, rp.year, rp.period_type, rp.period_number 
           FROM program_submissions ps 
           JOIN programs p ON ps.program_id = p.program_id
-          JOIN users u ON p.owner_agency_id = u.user_id
+          JOIN agency a ON p.agency_id = a.agency_id
           JOIN reporting_periods rp ON ps.period_id = rp.period_id
           WHERE ps.submission_id = ? AND ps.program_id = ?";
 $stmt = $conn->prepare($query);

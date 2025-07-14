@@ -19,7 +19,7 @@ if (!isset($_SESSION['user_id'])) {
 
 // Get recent reports from database
 $query = "SELECT r.report_id, r.report_name, r.pptx_path, r.generated_at, r.is_public,
-                 rp.quarter, rp.year, u.username
+                 rp.period_type, rp.period_number, rp.year, u.username
           FROM reports r 
           LEFT JOIN reporting_periods rp ON r.period_id = rp.period_id 
           LEFT JOIN users u ON r.generated_by = u.user_id 
