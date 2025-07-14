@@ -519,8 +519,8 @@ $showNoSubmissionsAlert = !$has_submissions && $is_owner;
                                     </div>
                                     <?php if ($is_owner): ?>
                                         <div class="timeline-actions mt-2">
-                                            <a href="<?php echo APP_URL; ?>/app/views/agency/programs/edit_submission.php?program_id=<?php echo $program_id; ?>&period_id=<?php echo $submission['period_id']; ?>" class="btn btn-sm btn-outline-primary">
-                                                <i class="fas fa-edit me-1"></i> Review
+                                            <a href="<?php echo APP_URL; ?>/app/views/agency/programs/view_submissions.php?program_id=<?php echo $program_id; ?>&period_id=<?php echo $submission['period_id']; ?>" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye me-1"></i> View
                                             </a>
                                         </div>
                                     <?php endif; ?>
@@ -703,7 +703,7 @@ $showNoSubmissionsAlert = !$has_submissions && $is_owner;
                     <?php endif; ?>
                   </div>
                 </div>
-                <a href="<?php echo APP_URL; ?>/app/views/agency/programs/edit_submission.php?program_id=<?php echo $program_id; ?>&period_id=<?php echo $period_id; ?>" class="btn btn-sm btn-outline-primary ms-2" title="View Submission">
+                <a href="<?php echo APP_URL; ?>/app/views/agency/programs/view_submissions.php?program_id=<?php echo $program_id; ?>&period_id=<?php echo $period_id; ?>" class="btn btn-sm btn-outline-primary ms-2" title="View Submission">
                   <i class="fas fa-eye"></i> View
                 </a>
               </div>
