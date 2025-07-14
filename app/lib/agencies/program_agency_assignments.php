@@ -216,6 +216,38 @@ function is_program_owner($program_id, $agency_id = null) {
 }
 
 /**
+ * Check if current user is the creator of a specific program
+ *
+ * @param int $program_id Program ID
+ * @return bool True if current user created the program
+ */
+function is_program_creator($program_id) {
+    global $conn;
+    
+    $program_id = intval($program_id);
+    if ($program_id <= 0) {
+        return false;
+    }
+    
+    $user_id = $_SESSION['user_id'] ?? null;
+    if (!$user_id) {
+        return false;
+    }
+    
+    $stmt = $conn->prepare("SELECT created_by FROM programs WHERE program_id = ? AND is_deleted = 0");
+    $stmt->bind_param("i", $program_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result && $result->num_rows > 0) {
+        $program = $result->fetch_assoc();
+        return intval($program['created_by']) === intval($user_id);
+    }
+    
+    return false;
+}
+
+/**
  * Get all agencies assigned to a program
  *
  * @param int $program_id Program ID

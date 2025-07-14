@@ -105,6 +105,90 @@
   opacity: 0.75;
 }
 
+/* Toast link styling - Clean and elegant approach */
+.toast .toast-link,
+.toast .alert-link {
+  color: #ffffff !important;
+  font-weight: var(--font-weight-semibold);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(255, 255, 255, 0.8);
+  transition: all 0.2s ease;
+  border-radius: 3px;
+  padding: 1px 3px;
+  display: inline-block;
+}
+
+.toast .toast-link:hover,
+.toast .alert-link:hover {
+  color: #ffffff !important;
+  text-decoration-color: #ffffff;
+  text-decoration-thickness: 3px;
+  background-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+/* Simple contrasting colors for different toast types */
+.toast.bg-warning .toast-link,
+.toast.bg-warning .alert-link {
+  color: #8b4513 !important;
+  text-decoration-color: rgba(139, 69, 19, 0.8);
+}
+
+.toast.bg-warning .toast-link:hover,
+.toast.bg-warning .alert-link:hover {
+  color: #654321 !important;
+  text-decoration-color: #654321;
+  background-color: rgba(139, 69, 19, 0.1);
+}
+
+/* Toast Action Button Styling */
+.toast-action {
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.toast-action-btn {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  color: var(--dark-color) !important;
+  border: none !important;
+  font-weight: var(--font-weight-semibold) !important;
+  font-size: 0.8rem !important;
+  padding: 0.4rem 0.8rem !important;
+  border-radius: 6px !important;
+  transition: all 0.2s ease !important;
+  text-decoration: none !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  white-space: nowrap;
+}
+
+.toast-action-btn:hover {
+  background-color: #ffffff !important;
+  color: var(--dark-color) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.toast-action-btn:focus {
+  background-color: #ffffff !important;
+  color: var(--dark-color) !important;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Enhanced toast content layout */
+.toast-content .toast-title {
+  font-size: 0.95rem;
+  line-height: 1.2;
+}
+
+.toast-content .toast-message {
+  font-size: 0.875rem;
+  opacity: 0.9;
+  line-height: 1.3;
+}
+
 /* Toast animations */
 @keyframes toastFadeIn {
   from {

@@ -30,12 +30,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['program_id'])) {
     $program_id = intval($_POST['program_id']);
     $user_id = $_SESSION['user_id'];
     
-    // Check if user is owner using new permission system
-    if (!is_program_owner($program_id)) {
+    // Check if user can delete program (creators and focal users)
+    $can_delete = is_focal_user() || is_program_creator($program_id);
+    if (!$can_delete) {
         // Log failed deletion attempt - unauthorized
-        log_audit_action('delete_program_failed', "Program ID: $program_id | Error: Unauthorized access - not program owner", 'failure', $user_id);
+        log_audit_action('delete_program_failed', "Program ID: $program_id | Error: Unauthorized access - not program creator or focal user", 'failure', $user_id);
         
-        $_SESSION['message'] = 'You do not have permission to delete this program. Only program owners can delete programs.';
+        $_SESSION['message'] = 'You do not have permission to delete this program. Only program creators and focal users can delete programs.';
         $_SESSION['message_type'] = 'danger';
         header('Location: ' . APP_URL . '/app/views/agency/programs/view_programs.php');
         exit;

@@ -233,14 +233,21 @@ if ($has_submissions) {
 // Initialize alert flags
 $showDraftAlert = $is_draft && $is_owner;
 $showNoTargetsAlert = $has_submissions && empty($targets) && $is_owner;
-$showNoSubmissionsAlert = !$has_submissions && $is_owner;
+$showNoSubmissionsAlert = !$has_submissions; // Show for all users, but action link only for editors
 ?>
 
 <!-- Toast Notifications -->
 <?php if ($showDraftAlert): ?>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        showToast('Draft Submission', 'This program is in draft mode. <a href="<?= APP_URL ?>/app/views/agency/programs/edit_program.php?id=<?= $program_id ?>" class="alert-link">Click here to edit and submit the final version</a>.', 'warning', 10000);
+        <?php if ($can_edit): ?>
+        showToastWithAction('Draft Submission', 'This program is in draft mode.', 'warning', 10000, {
+            text: 'Edit & Submit',
+            url: '<?= APP_URL ?>/app/views/agency/programs/edit_program.php?id=<?= $program_id ?>'
+        });
+        <?php else: ?>
+        showToast('Draft Submission', 'This program is in draft mode and pending final submission.', 'warning', 8000);
+        <?php endif; ?>
     });
 </script>
 <?php endif; ?>
@@ -248,7 +255,14 @@ $showNoSubmissionsAlert = !$has_submissions && $is_owner;
 <?php if ($showNoTargetsAlert): ?>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        showToast('No Targets', 'No targets have been added for this program. <a href="<?= APP_URL ?>/app/views/agency/programs/edit_program.php?id=<?= $program_id ?>" class="alert-link">Add targets</a>.', 'info', 10000);
+        <?php if ($can_edit): ?>
+        showToastWithAction('No Targets', 'No targets have been added for this program.', 'info', 10000, {
+            text: 'Add Targets',
+            url: '<?= APP_URL ?>/app/views/agency/programs/edit_program.php?id=<?= $program_id ?>'
+        });
+        <?php else: ?>
+        showToast('No Targets', 'This program does not have any targets defined yet.', 'info', 8000);
+        <?php endif; ?>
     });
 </script>
 <?php endif; ?>
@@ -256,7 +270,14 @@ $showNoSubmissionsAlert = !$has_submissions && $is_owner;
 <?php if ($showNoSubmissionsAlert): ?>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        showToast('Program Template', 'This program is a template. <a href="<?= APP_URL ?>/app/views/agency/programs/add_submission.php?program_id=<?= $program_id ?>" class="alert-link">Add your first progress report</a>.', 'info', 10000);
+        <?php if ($can_edit): ?>
+        showToastWithAction('Program Template', 'This program is a template.', 'info', 10000, {
+            text: 'Add Progress Report',
+            url: '<?= APP_URL ?>/app/views/agency/programs/add_submission.php?program_id=<?= $program_id ?>'
+        });
+        <?php else: ?>
+        showToast('Program Template', 'This program is a template. No progress reports have been added yet.', 'info', 8000);
+        <?php endif; ?>
     });
 </script>
 <?php endif; ?>
@@ -277,18 +298,15 @@ $showNoSubmissionsAlert = !$has_submissions && $is_owner;
                             <i class="<?php echo $status_map[$status]['icon']; ?> me-1"></i> 
                             <?php echo $status_map[$status]['label']; ?>
                         </span>
-                        <?php if ($is_owner): ?>
+                        <?php if ($can_edit): ?>
                             <a href="<?php echo APP_URL; ?>/app/views/agency/programs/add_submission.php?program_id=<?php echo $program_id; ?>" class="btn btn-primary btn-sm">
                                 <i class="fas fa-plus me-1"></i> Add Submission
                             </a>
-                            <a href="<?php echo APP_URL; ?>/app/views/agency/programs/edit_program.php?id=<?php echo $program_id; ?>" class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-edit me-1"></i> Edit Program
-                            </a>
-                            <?php if ($is_draft): ?>
-                            <span class="badge bg-warning text-dark" title="Latest submission is in draft status">
-                                <i class="fas fa-pencil-alt me-1"></i> Draft Submission
-                            </span>
-                            <?php endif; ?>
+                        <?php endif; ?>
+                        <?php if ($is_draft): ?>
+                        <span class="badge bg-warning text-dark" title="Latest submission is in draft status">
+                            <i class="fas fa-pencil-alt me-1"></i> Draft Submission
+                        </span>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -544,30 +562,6 @@ $showNoSubmissionsAlert = !$has_submissions && $is_owner;
 
         <!-- Sidebar -->
         <div class="col-lg-4">
-            <!-- Quick Actions -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header">
-                    <h6 class="card-title mb-0">
-                        <i class="fas fa-bolt me-2"></i>Quick Actions
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <?php if ($is_owner): ?>
-                            <a href="<?php echo APP_URL; ?>/app/views/agency/programs/add_submission.php?program_id=<?php echo $program_id; ?>" class="btn btn-primary">
-                                <i class="fas fa-plus me-2"></i>Add New Submission
-                            </a>
-                            <a href="<?php echo APP_URL; ?>/app/views/agency/programs/edit_program.php?id=<?php echo $program_id; ?>" class="btn btn-outline-primary">
-                                <i class="fas fa-edit me-2"></i>Edit Program
-                            </a>
-                        <?php endif; ?>
-                        <button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#viewSubmissionsModal">
-                            <i class="fas fa-list-alt me-2"></i>View Submissions
-                        </button>
-                    </div>
-                </div>
-            </div>
-
             <!-- Program Statistics -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header">

@@ -204,6 +204,88 @@ function showToast(title, message, type = 'info', duration = 5000) {
 }
 
 /**
+ * Enhanced Toast with Action Button
+ * Shows a toast notification with an optional action button
+ */
+function showToastWithAction(title, message, type = 'info', duration = 5000, action = null) {
+    // Create toast container if it doesn't exist
+    let toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+        document.body.appendChild(toastContainer);
+    }
+    
+    // Create a unique ID for this toast
+    const toastId = 'toast-action-' + Date.now();
+    
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.id = toastId;
+    toast.className = `toast align-items-stretch text-white bg-${type} border-0`;
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'assertive');
+    toast.setAttribute('aria-atomic', 'true');
+    
+    // Build action button HTML if provided
+    let actionButtonHTML = '';
+    if (action && action.text && action.url) {
+        actionButtonHTML = `
+            <div class="toast-action">
+                <a href="${action.url}" class="btn btn-light btn-sm toast-action-btn">
+                    <i class="fas fa-arrow-right me-1"></i>${action.text}
+                </a>
+            </div>
+        `;
+    }
+    
+    // Toast content with action button
+    toast.innerHTML = `
+        <div class="d-flex align-items-center w-100">
+            <div class="toast-body flex-grow-1">
+                <div class="toast-content">
+                    <div class="toast-title fw-bold mb-1">${title}</div>
+                    <div class="toast-message">${message}</div>
+                </div>
+            </div>
+            ${actionButtonHTML}
+            <button type="button" class="btn-close btn-close-white ms-2" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    `;
+    
+    // Add to container
+    toastContainer.appendChild(toast);
+    
+    // Initialize and show using Bootstrap if available
+    if (typeof bootstrap !== 'undefined' && typeof bootstrap.Toast !== 'undefined') {
+        const bsToast = new bootstrap.Toast(toast, {
+            autohide: true,
+            delay: duration
+        });
+        bsToast.show();
+        
+        // Auto-remove after hiding
+        toast.addEventListener('hidden.bs.toast', function() {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        });
+    } else {
+        // Fallback if Bootstrap isn't available
+        toast.style.opacity = '1';
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 300);
+        }, duration);
+    }
+}
+
+/**
  * Create a modal dialog
  * @param {object} options - Modal options
  * @param {string} options.title - Modal title

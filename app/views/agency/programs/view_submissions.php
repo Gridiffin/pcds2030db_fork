@@ -50,8 +50,8 @@ if (!$program) {
 }
 
 // Check if user has access to this program and get their role
-$user_role = get_user_program_role($program_id);
-if (!$user_role) {
+$agency_role = get_user_program_role($program_id);
+if (!$agency_role) {
     $_SESSION['message'] = 'You do not have access to this program.';
     $_SESSION['message_type'] = 'danger';
     header('Location: view_programs.php');
@@ -125,7 +125,7 @@ $header_config = [
     'variant' => 'white',
     'actions' => [
         [
-            'url' => 'program_details.php?id=' . $program_id,
+            'url' => 'view_programs.php',
             'text' => 'Back to Program',
             'icon' => 'fas fa-arrow-left',
             'class' => 'btn-outline-secondary'
@@ -169,7 +169,7 @@ require_once '../../layouts/page_header.php';
                 <div class="card-header">
                     <div class="d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0 me-3">
-                            <i class="fas fa-file-alt me-2 text-primary"></i>
+                            <i class="fas fa-file-alt me-2 text-white"></i>
                             Submission Details
                         </h5>
                         <div class="d-flex gap-3">
@@ -277,7 +277,7 @@ require_once '../../layouts/page_header.php';
             <div class="card shadow-sm mb-4">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-bullseye me-2 text-warning"></i>
+                        <i class="fas fa-bullseye me-2 text-white"></i>
                         Program Targets (<?php echo count($targets); ?>)
                     </h5>
                 </div>
@@ -423,7 +423,7 @@ require_once '../../layouts/page_header.php';
             <div class="card shadow-sm mb-4">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-bullseye me-2 text-warning"></i>
+                        <i class="fas fa-bullseye me-2 text-white"></i>
                         Program Targets
                     </h5>
                 </div>
@@ -589,15 +589,7 @@ require_once '../../layouts/page_header.php';
                                 <i class="fas fa-plus me-2"></i>Add New Submission
                             </a>
                         <?php else: ?>
-                            <div class="alert alert-info mb-3">
-                                <div class="d-flex align-items-center">
-                                    <i class="fas fa-info-circle me-2"></i>
-                                    <div>
-                                        <div class="fw-medium">Access Level: <?php echo ucfirst($user_role); ?></div>
-                                        <small>You have <?php echo $user_role; ?> access to this program.</small>
-                                    </div>
-                                </div>
-                            </div>
+                            <!-- No edit access - show basic navigation only -->
                         <?php endif; ?>
                         
                         <a href="program_details.php?id=<?php echo $program_id; ?>" 

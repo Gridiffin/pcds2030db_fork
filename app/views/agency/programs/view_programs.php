@@ -49,9 +49,14 @@ $additionalScripts = [
 // Get active initiatives for filtering
 $active_initiatives = get_initiatives_for_select(true);
 
+// Initialize program arrays
+$programs = [];
+$programs_with_drafts = [];
+$programs_with_submissions = [];
+$programs_without_submissions = [];
+
 // Get programs for the current agency user
 $agency_id = $_SESSION['agency_id'] ?? null;
-$programs = [];
 
 if ($agency_id !== null) {
     // Build query - both focal and regular users see programs their agency has access to
@@ -94,11 +99,6 @@ if ($agency_id !== null) {
         $programs[] = $row;
     }
 }
-
-// Separate programs into programs with draft submissions and programs with finalized submissions
-$programs_with_drafts = [];
-$programs_with_submissions = [];
-$programs_without_submissions = [];
 
 // Process programs and separate into appropriate arrays
 foreach ($programs as $program) {
@@ -375,15 +375,26 @@ require_once '../../layouts/page_header.php';
                                            data-bs-placement="top">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        <button type="button" class="btn btn-outline-danger flex-fill delete-program-btn" 
-                                                data-id="<?php echo $program['program_id']; ?>" 
-                                                data-name="<?php echo htmlspecialchars($program['program_name']); ?>" 
-                                                title="Permanently delete this program and all its data"
-                                                data-bs-toggle="tooltip" 
-                                                data-bs-placement="top">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                        <?php if (isset($program['created_by']) && $program['created_by'] == $_SESSION['user_id']): ?>
+                                        <?php 
+                                        // Check if user can delete this program (only creators and focal users)
+                                        $can_delete = is_focal_user() || is_program_creator($program['program_id']);
+                                        if ($can_delete): ?>
+                                            <button type="button" class="btn btn-outline-danger flex-fill delete-program-btn" 
+                                                    data-id="<?php echo $program['program_id']; ?>" 
+                                                    data-name="<?php echo htmlspecialchars($program['program_name']); ?>" 
+                                                    title="Permanently delete this program and all its data"
+                                                    data-bs-toggle="tooltip" 
+                                                    data-bs-placement="top">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        <?php endif; ?>
+                                        <?php 
+                                        // Check if user can edit this program (same logic as program templates)
+                                        $can_edit = can_edit_program($program['program_id']);
+                                        $is_creator = isset($program['created_by']) && $program['created_by'] == $_SESSION['user_id'];
+                                        ?>
+                                        
+                                        <?php if ($can_edit): ?>
                                         <button type="button" class="btn btn-outline-secondary flex-fill more-actions-btn" 
                                                 data-program-id="<?php echo $program['program_id']; ?>"
                                                 data-program-name="<?php echo htmlspecialchars($program['program_name']); ?>"
@@ -610,15 +621,26 @@ require_once '../../layouts/page_header.php';
                                            data-bs-placement="top">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        <button type="button" class="btn btn-outline-danger flex-fill delete-program-btn" 
-                                                data-id="<?php echo $program['program_id']; ?>" 
-                                                data-name="<?php echo htmlspecialchars($program['program_name']); ?>" 
-                                                title="Permanently delete this program and all its data"
-                                                data-bs-toggle="tooltip" 
-                                                data-bs-placement="top">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                        <?php if (isset($program['created_by']) && $program['created_by'] == $_SESSION['user_id']): ?>
+                                        <?php 
+                                        // Check if user can delete this program (only creators and focal users)
+                                        $can_delete = is_focal_user() || is_program_creator($program['program_id']);
+                                        if ($can_delete): ?>
+                                            <button type="button" class="btn btn-outline-danger flex-fill delete-program-btn" 
+                                                    data-id="<?php echo $program['program_id']; ?>" 
+                                                    data-name="<?php echo htmlspecialchars($program['program_name']); ?>" 
+                                                    title="Permanently delete this program and all its data"
+                                                    data-bs-toggle="tooltip" 
+                                                    data-bs-placement="top">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        <?php endif; ?>
+                                        <?php 
+                                        // Check if user can edit this program (same logic as program templates)
+                                        $can_edit = can_edit_program($program['program_id']);
+                                        $is_creator = isset($program['created_by']) && $program['created_by'] == $_SESSION['user_id'];
+                                        ?>
+                                        
+                                        <?php if ($can_edit): ?>
                                         <button type="button" class="btn btn-outline-secondary flex-fill more-actions-btn" 
                                                 data-program-id="<?php echo $program['program_id']; ?>"
                                                 data-program-name="<?php echo htmlspecialchars($program['program_name']); ?>"
@@ -778,23 +800,52 @@ require_once '../../layouts/page_header.php';
                                     <span <?php if ($date_iso) echo 'data-date="' . $date_iso . '"'; ?>><?php echo $date_display; ?></span>
                                 </td>
                                 <td>
-                                    <div class="btn-group btn-group-sm" role="group" aria-label="Program actions">
-                                        <a href="program_details.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-secondary" title="View Program">
+                                    <div class="btn-group btn-group-sm d-flex flex-nowrap" role="group" aria-label="Program actions">
+                                        <a href="program_details.php?id=<?php echo $program['program_id']; ?>" 
+                                           class="btn btn-outline-secondary flex-fill" 
+                                           title="View detailed program information"
+                                           data-bs-toggle="tooltip" 
+                                           data-bs-placement="top">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        <?php if (isset($program['created_by']) && $program['created_by'] == $_SESSION['user_id']): ?>
-                                        <a href="add_submission.php?program_id=<?php echo $program['program_id']; ?>" class="btn btn-outline-success" title="Add Submission">
+                                        
+                                        <?php 
+                                        // Check if user can edit this program (editors can add submissions)
+                                        $can_edit = can_edit_program($program['program_id']);
+                                        $is_creator = isset($program['created_by']) && $program['created_by'] == $_SESSION['user_id'];
+                                        ?>
+                                        
+                                        <?php if ($can_edit): ?>
+                                        <a href="add_submission.php?program_id=<?php echo $program['program_id']; ?>" 
+                                           class="btn btn-outline-success flex-fill" 
+                                           title="Add First Submission - Start progress reporting for this program"
+                                           data-bs-toggle="tooltip" 
+                                           data-bs-placement="top">
                                             <i class="fas fa-plus"></i>
                                         </a>
-                                        <a href="edit_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="Edit Program">
+                                        <?php endif; ?>
+                                        
+                                        <?php if ($is_creator): ?>
+                                        <a href="edit_program.php?id=<?php echo $program['program_id']; ?>" 
+                                           class="btn btn-outline-primary flex-fill" 
+                                           title="Edit program details and settings"
+                                           data-bs-toggle="tooltip" 
+                                           data-bs-placement="top">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <button type="button" class="btn btn-outline-danger delete-program-btn" 
-                                            data-id="<?php echo $program['program_id']; ?>"
-                                            data-name="<?php echo htmlspecialchars($program['program_name']); ?>"
-                                            title="Delete Program">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
+                                        <?php 
+                                        // Check if user can delete this program (only creators and focal users)
+                                        $can_delete = is_focal_user() || is_program_creator($program['program_id']);
+                                        if ($can_delete): ?>
+                                            <button type="button" class="btn btn-outline-danger flex-fill delete-program-btn" 
+                                                    data-id="<?php echo $program['program_id']; ?>"
+                                                    data-name="<?php echo htmlspecialchars($program['program_name']); ?>"
+                                                    title="Permanently delete this program and all its data"
+                                                    data-bs-toggle="tooltip" 
+                                                    data-bs-placement="top">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        <?php endif; ?>
                                         <?php endif; ?>
                                     </div>
                                 </td>
