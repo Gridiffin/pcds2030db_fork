@@ -7,6 +7,7 @@
 
 require_once dirname(__DIR__) . '/utilities.php';
 require_once dirname(__DIR__) . '/numbering_helpers.php';
+require_once dirname(__DIR__) . '/functions.php';
 
 if (file_exists(dirname(__FILE__) . '/core.php')) {
     require_once 'core.php';
@@ -21,6 +22,46 @@ require_once dirname(__DIR__) . '/admins/users.php'; // Add this to use get_user
 
 // Include numbering helpers for hierarchical program numbering
 require_once dirname(__DIR__) . '/numbering_helpers.php';
+
+// Load centralized database configuration
+$config = include __DIR__ . '/../../config/db_names.php';
+if (!$config || !isset($config['tables']['programs'])) {
+    die('Config not loaded or missing programs table definition.');
+}
+
+// Map table names
+$programsTable = $config['tables']['programs'];
+$initiativesTable = $config['tables']['initiatives'];
+$agencyTable = $config['tables']['agency'];
+$usersTable = $config['tables']['users'];
+$programSubmissionsTable = $config['tables']['program_submissions'];
+$programTargetsTable = $config['tables']['program_targets'];
+$programUserAssignmentsTable = 'program_user_assignments'; // Not in config yet
+
+// Map column names for programs table
+$programIdCol = $config['columns']['programs']['id'];
+$programNameCol = $config['columns']['programs']['name'];
+$programNumberCol = $config['columns']['programs']['number'];
+$programDescriptionCol = $config['columns']['programs']['description'];
+$programInitiativeIdCol = $config['columns']['programs']['initiative_id'];
+$programAgencyIdCol = $config['columns']['programs']['agency_id'];
+$programIsDeletedCol = $config['columns']['programs']['is_deleted'];
+$programCreatedByCol = $config['columns']['programs']['created_by'];
+$programCreatedAtCol = $config['columns']['programs']['created_at'];
+$programUpdatedAtCol = $config['columns']['programs']['updated_at'];
+
+// Map column names for initiatives table
+$initiativeIdCol = $config['columns']['initiatives']['id'];
+$initiativeNameCol = $config['columns']['initiatives']['name'];
+$initiativeNumberCol = $config['columns']['initiatives']['number'];
+
+// Map column names for agency table
+$agencyIdCol = $config['columns']['agency']['id'];
+$agencyNameCol = $config['columns']['agency']['name'];
+
+// Map column names for users table
+$userIdCol = $config['columns']['users']['id'];
+$userAgencyIdCol = $config['columns']['users']['agency_id'];
 
 /**
  * Get programs owned by current agency, separated by type
@@ -40,27 +81,27 @@ function get_agency_programs_by_type() {
  */
 function get_agency_programs_list($user_id, $is_assigned = false) {
     global $conn;
-    $column_check = $conn->query("SHOW COLUMNS FROM programs LIKE 'content_json'");
-    $has_content_json = $column_check->num_rows > 0;
-    if ($has_content_json) {
-        $select_fields = "p.*, p.content_json,
-            (SELECT COALESCE(ps.content_json, '{}') FROM program_submissions ps 
-             WHERE ps.program_id = p.program_id 
-             ORDER BY ps.submission_id DESC LIMIT 1) AS submission_json";
-    } else {
-        $select_fields = "p.*, 
-            (SELECT JSON_EXTRACT(ps.content_json, '$.target') FROM program_submissions ps 
-             WHERE ps.program_id = p.program_id 
-             ORDER BY ps.submission_id DESC LIMIT 1) AS current_target,
-            (SELECT JSON_EXTRACT(ps.content_json, '$.achievement') FROM program_submissions ps 
-             WHERE ps.program_id = p.program_id 
-             ORDER BY ps.submission_id DESC LIMIT 1) AS achievement";
-    }
-    $query = "SELECT $select_fields FROM programs p
-              WHERE p.owner_agency_id = ? AND p.is_assigned = ?
+    
+    $query = "SELECT p.*, 
+                     ps.status_indicator, ps.description, ps.start_date, ps.end_date,
+                     ps.is_draft, ps.submission_id,
+                     a.agency_name
+              FROM programs p
+              INNER JOIN program_user_assignments pua ON p.program_id = pua.program_id
+              LEFT JOIN (
+                  SELECT ps1.*
+                  FROM program_submissions ps1
+                  INNER JOIN (
+                      SELECT program_id, MAX(submission_id) as max_submission_id
+                      FROM program_submissions
+                      GROUP BY program_id
+                  ) ps2 ON ps1.program_id = ps2.program_id AND ps1.submission_id = ps2.max_submission_id
+              ) ps ON p.program_id = ps.program_id
+              LEFT JOIN agency a ON p.agency_id = a.agency_id
+              WHERE pua.user_id = ?
               ORDER BY p.created_at DESC";
     $stmt = $conn->prepare($query);
-    $stmt->bind_param("ii", $user_id, $is_assigned);
+    $stmt->bind_param("i", $user_id);
     $stmt->execute();
     $result = $stmt->get_result();
     $programs = [];
@@ -76,65 +117,55 @@ function get_agency_programs_list($user_id, $is_assigned = false) {
 function create_agency_program($data) {
     global $conn;
     if (!is_agency()) return format_error('Permission denied', 403);
-    $validated = validate_agency_program_input($data, ['program_name', 'rating']);
+    $validated = validate_agency_program_input($data, ['program_name', 'initiative_id']);
     if (isset($validated['error'])) return $validated;
     $program_name = $validated['program_name'];
+    $initiative_id = intval($validated['initiative_id']);
     $program_number = $validated['program_number'] ?? null;
     // Validate program_number format if provided
     if ($program_number && !is_valid_program_number_format($program_number, false)) {
         return format_error(get_program_number_format_error(false), 400);
     }
-    $start_date = $validated['start_date'] ?? null;
-    $end_date = $validated['end_date'] ?? null;
-    $rating = $validated['rating'];
-    $column_check = $conn->query("SHOW COLUMNS FROM programs LIKE 'content_json'");
-    $has_content_json = $column_check->num_rows > 0;
+    
+    // Check for duplicate program number if provided
+    if ($program_number) {
+        $check_stmt = $conn->prepare("SELECT program_id FROM programs WHERE program_number = ? AND initiative_id = ? AND is_deleted = 0");
+        $check_stmt->bind_param("si", $program_number, $initiative_id);
+        $check_stmt->execute();
+        if ($check_stmt->get_result()->num_rows > 0) {
+            return format_error('Duplicate program number. This number is already in use for the selected initiative.', 400);
+        }
+    }
+    
+    $start_date = validate_program_date($validated['start_date'] ?? '');
+    $end_date = validate_program_date($validated['end_date'] ?? '');
+    if ($start_date === false) return format_error('Start Date must be in YYYY-MM-DD format.', 400);
+    if ($end_date === false) return format_error('End Date must be in YYYY-MM-DD format.', 400);
     $user_id = $_SESSION['user_id'];
     $user = get_user_by_id($conn, $user_id);
-    $agency_group_id = $user ? $user['agency_group_id'] : null;
-    $sector_id = FORESTRY_SECTOR_ID;
-    if ($has_content_json) {
-        $content = [
-            'start_date' => $start_date,
-            'end_date' => $end_date,
-            'rating' => $rating,
-            'targets' => [],
-        ];
-        if (!empty($validated['targets'])) {
-            $content['targets'] = $validated['targets'];
-        } else if (!empty($validated['target'])) {
-            $content['targets'] = [
-                [
-                    'text' => $validated['target'],
-                    'status_description' => $validated['status_text'] ?? ''
-                ]
-            ];
-        }
-        $content_json = json_encode($content);
-        $query = "INSERT INTO programs (program_name, program_number, sector_id, owner_agency_id, agency_group, is_assigned, content_json, created_at)
-                 VALUES (?, ?, ?, ?, ?, 0, ?, NOW())";
-        $stmt = $conn->prepare($query);
-        $stmt->bind_param("ssiiis", $program_name, $program_number, $sector_id, $user_id, $agency_group_id, $content_json);
-    } else {
-        $query = "INSERT INTO programs (program_name, program_number, sector_id, owner_agency_id, agency_group, is_assigned, created_at)
-                 VALUES (?, ?, ?, ?, ?, 0, NOW())";
-        $stmt = $conn->prepare($query);
-        $stmt->bind_param("ssiii", $program_name, $program_number, $sector_id, $user_id, $agency_group_id);
-    }
+    $agency_id = $user ? $user['agency_id'] : null;
+    // Create the program first
+    $query = "INSERT INTO programs (program_name, program_number, program_description, agency_id, initiative_id, start_date, end_date, created_by, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+    $stmt = $conn->prepare($query);
+    $program_description = $validated['description'] ?? '';
+    $stmt->bind_param("sssiisss", $program_name, $program_number, $program_description, $agency_id, $initiative_id, $start_date, $end_date, $user_id);
     if ($stmt->execute()) {
         $program_id = $conn->insert_id;
-        if (!$has_content_json || isset($validated['create_submission'])) {
-            $target = $validated['target'] ?? '';
-            $achievement = $validated['achievement'] ?? '';
-            $status_text = $validated['status_text'] ?? '';
-            $sub_query = "INSERT INTO program_submissions 
-                        (program_id, period_id, target, achievement, status_text, is_draft, submission_date)
-                        VALUES (?, ?, ?, ?, ?, 1, NOW())";
-            $period_id = get_current_reporting_period()['period_id'] ?? 1;
-            $sub_stmt = $conn->prepare($sub_query);
-            $sub_stmt->bind_param("iisss", $program_id, $period_id, $target, $achievement, $status_text);
-            $sub_stmt->execute();
-        }
+        // Create user assignment for the creator
+        $assignment_query = "INSERT INTO program_user_assignments (program_id, user_id, role) VALUES (?, ?, 'editor')";
+        $assignment_stmt = $conn->prepare($assignment_query);
+        $assignment_stmt->bind_param("ii", $program_id, $user_id);
+        $assignment_stmt->execute();
+        // Create initial program submission
+        $period_id = get_current_reporting_period()['period_id'] ?? 1;
+        $sub_query = "INSERT INTO program_submissions 
+                    (program_id, period_id, is_draft, status_indicator, description, start_date, end_date, submitted_by)
+                    VALUES (?, ?, 1, 'not_started', ?, ?, ?, ?)";
+        $sub_stmt = $conn->prepare($sub_query);
+        $description = $validated['description'] ?? '';
+        $sub_stmt->bind_param("iissss", $program_id, $period_id, $description, $start_date, $end_date, $user_id);
+        $sub_stmt->execute();
         return [
             'success' => true,
             'message' => 'Program created successfully',
@@ -157,8 +188,10 @@ function create_wizard_program_draft($data) {
     $program_name = trim($data['program_name']);
     $program_number = isset($data['program_number']) ? trim($data['program_number']) : null;
     $brief_description = isset($data['brief_description']) ? trim($data['brief_description']) : '';
-    $start_date = isset($data['start_date']) && !empty($data['start_date']) ? $data['start_date'] : null;
-    $end_date = isset($data['end_date']) && !empty($data['end_date']) ? $data['end_date'] : null;
+    $start_date = validate_program_date($data['start_date'] ?? '');
+    $end_date = validate_program_date($data['end_date'] ?? '');
+    if ($start_date === false) return ['error' => 'Start Date must be in YYYY-MM-DD format.'];
+    if ($end_date === false) return ['error' => 'End Date must be in YYYY-MM-DD format.'];
     $targets = isset($data['targets']) && is_array($data['targets']) ? $data['targets'] : [];
     $initiative_id = isset($data['initiative_id']) && !empty($data['initiative_id']) ? intval($data['initiative_id']) : null;
     $period_id = isset($data['period_id']) && !empty($data['period_id']) ? intval($data['period_id']) : null;
@@ -196,32 +229,37 @@ function create_wizard_program_draft($data) {
     }
     $user_id = $_SESSION['user_id'];
     $user = get_user_by_id($conn, $user_id);
-    $agency_group_id = $user ? $user['agency_group_id'] : null;
-    $sector_id = FORESTRY_SECTOR_ID;
+    $agency_id = $user ? $user['agency_id'] : null;
     try {
         $conn->begin_transaction();
-        $stmt = $conn->prepare("INSERT INTO programs (program_name, program_number, start_date, end_date, owner_agency_id, agency_group, sector_id, initiative_id, is_assigned, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, NOW())");
-        $stmt->bind_param("ssssiiii", $program_name, $program_number, $start_date, $end_date, $user_id, $agency_group_id, $sector_id, $initiative_id);
+        
+        // Create the program
+        $stmt = $conn->prepare("INSERT INTO programs (program_name, program_number, program_description, agency_id, created_by, created_at) VALUES (?, ?, ?, ?, ?, NOW())");
+        $stmt->bind_param("sssii", $program_name, $program_number, $brief_description, $agency_id, $user_id);
         if (!$stmt->execute()) throw new Exception('Failed to create program: ' . $stmt->error);
         $program_id = $conn->insert_id;
-        if (!empty($targets) || !empty($brief_description)) {
-            // Use the selected period_id from the form if available
-            if ($period_id) {
-                $current_period_id = $period_id;
-            } else {
-                // Fallback to any open period if no period is selected
-                $fallback_query = "SELECT period_id FROM reporting_periods WHERE status = 'open' ORDER BY year DESC, quarter DESC LIMIT 1";
-                $fallback_result = $conn->query($fallback_query);
-                $current_period_id = $fallback_result && $fallback_result->num_rows > 0 ? $fallback_result->fetch_assoc()['period_id'] : 1;
+        
+        // Create user assignment for the creator
+        $assignment_stmt = $conn->prepare("INSERT INTO program_user_assignments (program_id, user_id, role) VALUES (?, ?, 'editor')");
+        $assignment_stmt->bind_param("ii", $program_id, $user_id);
+        if (!$assignment_stmt->execute()) throw new Exception('Failed to create user assignment: ' . $assignment_stmt->error);
+        
+        // Create initial program submission
+        $current_period_id = $period_id ?: 1;
+        $submission_stmt = $conn->prepare("INSERT INTO program_submissions (program_id, period_id, is_draft, status_indicator, description, start_date, end_date, submitted_by) VALUES (?, ?, 1, 'not_started', ?, ?, ?, ?)");
+        $submission_stmt->bind_param("iissss", $program_id, $current_period_id, $brief_description, $start_date, $end_date, $user_id);
+        if (!$submission_stmt->execute()) throw new Exception('Failed to create program submission: ' . $submission_stmt->error);
+        
+        // Create targets if provided
+        if (!empty($targets)) {
+            $submission_id = $conn->insert_id;
+            foreach ($targets as $target) {
+                $target_stmt = $conn->prepare("INSERT INTO program_targets (submission_id, target_description, status_indicator, status_description) VALUES (?, ?, 'not_started', ?)");
+                $target_text = $target['target'] ?? $target['target_text'] ?? '';
+                $target_status = $target['status_description'] ?? '';
+                $target_stmt->bind_param("iss", $submission_id, $target_text, $target_status);
+                $target_stmt->execute();
             }
-            
-            $content_json = [];
-            if (!empty($targets)) $content_json['targets'] = $targets;
-            if (!empty($brief_description)) $content_json['brief_description'] = $brief_description;
-            $content_json_string = json_encode($content_json);
-            $submission_stmt = $conn->prepare("INSERT INTO program_submissions (program_id, period_id, submitted_by, content_json, is_draft, submission_date, updated_at) VALUES (?, ?, ?, ?, 1, NOW(), NOW())");
-            $submission_stmt->bind_param("iiis", $program_id, $current_period_id, $user_id, $content_json_string);
-            if (!$submission_stmt->execute()) throw new Exception('Failed to create program submission: ' . $submission_stmt->error);
         }
         $conn->commit();
         log_audit_action('create_program', "Program Name: $program_name | Program ID: $program_id", 'success', $user_id);
@@ -233,6 +271,183 @@ function create_wizard_program_draft($data) {
     } catch (Exception $e) {
         $conn->rollback();
         log_audit_action('create_program_failed', "Program Name: $program_name | Error: " . $e->getMessage(), 'failure', $user_id);
+        return ['error' => 'Database error: ' . $e->getMessage()];
+    }
+}
+
+/**
+ * Create simple program template (no initial submission)
+ */
+function create_simple_program($data) {
+    global $conn, $programsTable, $programIdCol, $programNameCol, $programDescriptionCol, $programNumberCol, 
+           $programAgencyIdCol, $programInitiativeIdCol, $programIsDeletedCol, $programCreatedByCol, $programCreatedAtCol;
+    
+    if (!is_agency()) return ['error' => 'Permission denied'];
+    if (empty($data['program_name']) || trim($data['program_name']) === '') {
+        return ['error' => 'Program name is required'];
+    }
+    $program_name = trim($data['program_name']);
+    $brief_description = isset($data['brief_description']) ? trim($data['brief_description']) : '';
+    
+    // DEBUG: Log actual date values
+    error_log("DEBUG - Raw start_date: " . var_export($data['start_date'] ?? '', true));
+    error_log("DEBUG - Raw end_date: " . var_export($data['end_date'] ?? '', true));
+    
+    $start_date = validate_program_date($data['start_date'] ?? '');
+    $end_date = validate_program_date($data['end_date'] ?? '');
+    
+    // DEBUG: Log processed date values
+    error_log("DEBUG - Processed start_date: " . var_export($start_date, true));
+    error_log("DEBUG - Processed end_date: " . var_export($end_date, true));
+    
+    if ($start_date === false) return ['error' => 'Start Date must be in YYYY-MM-DD format.'];
+    if ($end_date === false) return ['error' => 'End Date must be in YYYY-MM-DD format.'];
+    $initiative_id = isset($data['initiative_id']) && !empty($data['initiative_id']) ? intval($data['initiative_id']) : null;
+    
+    // Handle program number with new simplified logic
+    $program_number = null;
+    if ($initiative_id) {
+        // If initiative is selected, handle program number
+        if (!empty($data['program_number'])) {
+            // User provided a program number - validate it
+            $program_number = trim($data['program_number']);
+            if (!is_valid_program_number_format($program_number, false)) {
+                return ['error' => get_program_number_format_error(false)];
+            }
+            
+            // Validate hierarchical format if initiative is linked
+            $format_validation = validate_program_number_format($program_number, $initiative_id);
+            if (!$format_validation['valid']) {
+                return ['error' => $format_validation['message']];
+            }
+            
+            // Check if number is already in use
+            $check_stmt = $conn->prepare("SELECT $programIdCol FROM $programsTable WHERE $programNumberCol = ? AND $programInitiativeIdCol = ? AND $programIsDeletedCol = 0");
+            $check_stmt->bind_param("si", $program_number, $initiative_id);
+            $check_stmt->execute();
+            if ($check_stmt->get_result()->num_rows > 0) {
+                return ['error' => 'Duplicate program number. This number is already in use for the selected initiative.'];
+            }
+        } else {
+            // Auto-generate program number for the initiative
+            $program_number = generate_next_program_number($initiative_id);
+            if (!$program_number) {
+                return ['error' => 'Failed to generate program number for this initiative'];
+            }
+        }
+    }
+    
+    $user_id = $_SESSION['user_id'];
+    $user = get_user_by_id($conn, $user_id);
+    $agency_id = $user ? $user['agency_id'] : null;
+    
+    try {
+        $conn->begin_transaction();
+        
+        // Create the program template with program number if available  
+        $sql = "INSERT INTO programs (program_name, program_description, program_number, agency_id, initiative_id, start_date, end_date, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+        
+        // DEBUG: Log the actual SQL being prepared
+        error_log("DEBUG - SQL: " . $sql);
+        
+        $stmt = $conn->prepare($sql);
+        
+        // DEBUG: Log values being bound
+        error_log("DEBUG - About to bind: start_date='" . var_export($start_date, true) . "', end_date='" . var_export($end_date, true) . "'");
+        error_log("DEBUG - All params: " . var_export([$program_name, $brief_description, $program_number, $agency_id, $initiative_id, $start_date, $end_date, $user_id], true));
+        
+        $stmt->bind_param("sssiisss", $program_name, $brief_description, $program_number, $agency_id, $initiative_id, $start_date, $end_date, $user_id);
+        if (!$stmt->execute()) throw new Exception('Failed to create program: ' . $stmt->error);
+        $program_id = $conn->insert_id;
+        
+        // Create user assignment for the creator
+        $assignment_stmt = $conn->prepare("INSERT INTO program_user_assignments (program_id, user_id, role) VALUES (?, ?, 'editor')");
+        $assignment_stmt->bind_param("ii", $program_id, $user_id);
+        if (!$assignment_stmt->execute()) throw new Exception('Failed to create user assignment: ' . $assignment_stmt->error);
+        
+        // Note: No initial submission is created - programs exist as templates
+        // Submissions will be created when users add progress reports for specific periods
+        
+        $conn->commit();
+        log_audit_action('create_program', "Program Name: $program_name | Program ID: $program_id | Program Number: $program_number", 'success', $user_id);
+        return [
+            'success' => true, 
+            'message' => 'Program template created successfully. Add progress reports for specific periods when ready to report progress.',
+            'program_id' => $program_id,
+            'program_number' => $program_number
+        ];
+    } catch (Exception $e) {
+        $conn->rollback();
+        log_audit_action('create_program_failed', "Program Name: $program_name | Error: " . $e->getMessage(), 'failure', $user_id);
+        return ['error' => 'Database error: ' . $e->getMessage()];
+    }
+}
+
+/**
+ * Update simple program information (basic info only, not submissions)
+ */
+function update_simple_program($data) {
+    global $conn;
+    
+    // Include the new rating helpers
+    require_once dirname(__DIR__) . '/rating_helpers.php';
+    
+    if (!is_agency()) return ['error' => 'Permission denied'];
+    
+    if (empty($data['program_id'])) {
+        return ['error' => 'Program ID is required'];
+    }
+    
+    if (empty($data['program_name']) || trim($data['program_name']) === '') {
+        return ['error' => 'Program name is required'];
+    }
+    
+    $program_id = intval($data['program_id']);
+    $program_name = trim($data['program_name']);
+    $brief_description = isset($data['brief_description']) ? trim($data['brief_description']) : '';
+    $initiative_id = isset($data['initiative_id']) && !empty($data['initiative_id']) ? intval($data['initiative_id']) : null;
+    $rating = isset($data['rating']) ? trim($data['rating']) : RATING_NOT_STARTED;
+    
+    // Validate rating using new helper function
+    if (!is_valid_rating($rating)) {
+        return ['error' => 'Invalid rating value provided'];
+    }
+    
+    // Check if user has access to this program
+    $user_id = $_SESSION['user_id'];
+    $check_stmt = $conn->prepare("SELECT program_id FROM programs WHERE program_id = ? AND agency_id = (SELECT agency_id FROM users WHERE user_id = ?)");
+    $check_stmt->bind_param("ii", $program_id, $user_id);
+    $check_stmt->execute();
+    if ($check_stmt->get_result()->num_rows === 0) {
+        return ['error' => 'Program not found or access denied'];
+    }
+    
+    // Handle program number
+    $program_number = null;
+    if ($initiative_id && !empty($data['program_number'])) {
+        $program_number = trim($data['program_number']);
+    }
+    
+    try {
+        $conn->begin_transaction();
+        
+        // Simple update query
+        $stmt = $conn->prepare("UPDATE programs SET program_name = ?, program_description = ?, program_number = ?, initiative_id = ?, rating = ?, updated_at = NOW() WHERE program_id = ?");
+        $stmt->bind_param("sssssi", $program_name, $brief_description, $program_number, $initiative_id, $rating, $program_id);
+        
+        if (!$stmt->execute()) {
+            throw new Exception('Failed to update program: ' . $stmt->error);
+        }
+        
+        $conn->commit();
+        
+        return [
+            'success' => true, 
+            'message' => 'Program information updated successfully.',
+            'program_id' => $program_id
+        ];
+    } catch (Exception $e) {
+        $conn->rollback();
         return ['error' => 'Database error: ' . $e->getMessage()];
     }
 }
@@ -265,7 +480,9 @@ function update_program_draft_only($program_id, $data) {
     // Allow focal users to update any program draft, bypass ownership check
     require_once dirname(__DIR__) . '/session.php';
     if (!is_focal_user()) {
-        $check_stmt = $conn->prepare("SELECT program_id FROM programs WHERE program_id = ? AND owner_agency_id = ?");
+        $check_stmt = $conn->prepare("SELECT p.program_id FROM programs p 
+                                     INNER JOIN program_user_assignments pua ON p.program_id = pua.program_id 
+                                     WHERE p.program_id = ? AND pua.user_id = ?");
         $check_stmt->bind_param("ii", $program_id, $user_id);
         $check_stmt->execute();
         $result = $check_stmt->get_result();
@@ -275,28 +492,14 @@ function update_program_draft_only($program_id, $data) {
     }
 
     $program_name = trim($data['program_name']);
-    $program_number = isset($data['program_number']) ? trim($data['program_number']) : null;
-    // Validate program_number format if provided
-    if ($program_number && !is_valid_program_number_format($program_number, false)) {
-        return ['success' => false, 'error' => get_program_number_format_error(false)];
-    }
-    
-    // Additional validation for hierarchical format if initiative is linked
     $initiative_id = isset($data['initiative_id']) && !empty($data['initiative_id']) ? intval($data['initiative_id']) : null;
-    if ($program_number && $initiative_id) {
-        $format_validation = validate_program_number_format($program_number, $initiative_id);
-        if (!$format_validation['valid']) {
-            return ['success' => false, 'error' => $format_validation['message']];
-        }
-        
-        // Check if number is already in use (excluding current program)
-        if (!is_program_number_available($program_number, $program_id)) {
-            return ['success' => false, 'error' => 'Program number is already in use'];
-        }
-    }
     
-    $start_date = isset($data['start_date']) && !empty($data['start_date']) ? $data['start_date'] : null;
-    $end_date = isset($data['end_date']) && !empty($data['end_date']) ? $data['end_date'] : null;
+    // Program number functionality removed - current schema doesn't support it
+    
+    $start_date = validate_program_date($data['start_date'] ?? '');
+    $end_date = validate_program_date($data['end_date'] ?? '');
+    if ($start_date === false) return ['success' => false, 'error' => 'Start Date must be in YYYY-MM-DD format.'];
+    if ($end_date === false) return ['success' => false, 'error' => 'End Date must be in YYYY-MM-DD format.'];
     $targets = isset($data['targets']) && is_array($data['targets']) ? $data['targets'] : [];
     $brief_description = isset($data['brief_description']) ? trim($data['brief_description']) : '';
     
@@ -305,42 +508,88 @@ function update_program_draft_only($program_id, $data) {
     
     try {
         $conn->begin_transaction();
-        $stmt = $conn->prepare("UPDATE programs SET program_name = ?, program_number = ?, start_date = ?, end_date = ?, initiative_id = ?, updated_at = NOW() WHERE program_id = ? AND owner_agency_id = ?");
-        $stmt->bind_param("sssssii", $program_name, $program_number, $start_date, $end_date, $initiative_id, $program_id, $user_id);
+        $stmt = $conn->prepare("UPDATE programs SET program_name = ?, program_description = ?, updated_at = NOW() WHERE program_id = ?");
+        $stmt->bind_param("ssi", $program_name, $brief_description, $program_id);
         if (!$stmt->execute()) throw new Exception('Failed to update program: ' . $stmt->error);
         
-        // Handle content submission for auto-save
+        // Handle submission update for auto-save
         if (!empty($targets) || !empty($brief_description)) {
-            $check_stmt = $conn->prepare("SELECT submission_id FROM program_submissions WHERE program_id = ?");
+            $check_stmt = $conn->prepare("SELECT submission_id FROM program_submissions WHERE program_id = ? ORDER BY submission_id DESC LIMIT 1");
             $check_stmt->bind_param("i", $program_id);
             $check_stmt->execute();
             $submission_result = $check_stmt->get_result();
             
-            $content_json = [];
-            if (!empty($targets)) $content_json['targets'] = $targets;
-            if (!empty($brief_description)) $content_json['brief_description'] = $brief_description;
-            $content_json_string = json_encode($content_json);
-            
             if ($submission_result->num_rows > 0) {
                 $submission = $submission_result->fetch_assoc();
                 $submission_id = $submission['submission_id'];
-                $update_stmt = $conn->prepare("UPDATE program_submissions SET content_json = ?, updated_at = NOW() WHERE submission_id = ?");
-                $update_stmt->bind_param("si", $content_json_string, $submission_id);
-                if (!$update_stmt->execute()) throw new Exception('Failed to update program submission: ' . $update_stmt->error);
-            } else {
-                // Use the selected period_id if available, otherwise fall back to default
-                if ($period_id) {
-                    $current_period_id = $period_id;
-                } else {
-                    // Fallback to any open period if no period is selected
-                    $fallback_query = "SELECT period_id FROM reporting_periods WHERE status = 'open' ORDER BY year DESC, quarter DESC LIMIT 1";
-                    $fallback_result = $conn->query($fallback_query);
-                    $current_period_id = $fallback_result && $fallback_result->num_rows > 0 ? $fallback_result->fetch_assoc()['period_id'] : 1;
-                }
                 
-                $insert_stmt = $conn->prepare("INSERT INTO program_submissions (program_id, period_id, submitted_by, content_json, is_draft, submission_date, updated_at) VALUES (?, ?, ?, ?, 1, NOW(), NOW())");
-                $insert_stmt->bind_param("iiis", $program_id, $current_period_id, $user_id, $content_json_string);
+                // Update submission
+                $update_stmt = $conn->prepare("UPDATE program_submissions SET description = ?, start_date = ?, end_date = ?, updated_at = NOW() WHERE submission_id = ?");
+                $update_stmt->bind_param("sssi", $brief_description, $start_date, $end_date, $submission_id);
+                if (!$update_stmt->execute()) throw new Exception('Failed to update program submission: ' . $update_stmt->error);
+                
+                // Update targets
+                if (!empty($targets)) {
+                    // Delete existing targets
+                    $delete_targets_stmt = $conn->prepare("DELETE FROM program_targets WHERE submission_id = ?");
+                    $delete_targets_stmt->bind_param("i", $submission_id);
+                    $delete_targets_stmt->execute();
+                    
+                    // Insert new targets
+                    foreach ($targets as $index => $target) {
+                        $target_stmt = $conn->prepare("INSERT INTO program_targets (submission_id, target_number, target_description, status_indicator, status_description) VALUES (?, ?, ?, 'not_started', ?)");
+                        $target_text = $target['target'] ?? $target['target_text'] ?? '';
+                        $target_status = $target['status_description'] ?? '';
+                        
+                        // Generate target number if not provided
+                        $target_number = $target['target_number'] ?? '';
+                        if (empty($target_number)) {
+                            // Get program number for auto-generation
+                            $program_stmt = $conn->prepare("SELECT program_number FROM programs WHERE program_id = ?");
+                            $program_stmt->bind_param("i", $program_id);
+                            $program_stmt->execute();
+                            $program_result = $program_stmt->get_result();
+                            if ($program_row = $program_result->fetch_assoc()) {
+                                $target_number = $program_row['program_number'] . '.' . ($index + 1);
+                            }
+                        }
+                        
+                        $target_stmt->bind_param("issi", $submission_id, $target_number, $target_text, $target_status);
+                        $target_stmt->execute();
+                    }
+                }
+            } else {
+                // Create new submission
+                $current_period_id = $period_id ?: 1;
+                $insert_stmt = $conn->prepare("INSERT INTO program_submissions (program_id, period_id, is_draft, status_indicator, description, start_date, end_date, submitted_by) VALUES (?, ?, 1, 'not_started', ?, ?, ?, ?)");
+                $insert_stmt->bind_param("iissss", $program_id, $current_period_id, $brief_description, $start_date, $end_date, $user_id);
                 if (!$insert_stmt->execute()) throw new Exception('Failed to create program submission: ' . $insert_stmt->error);
+                
+                // Create targets if provided
+                if (!empty($targets)) {
+                    $new_submission_id = $conn->insert_id;
+                    foreach ($targets as $index => $target) {
+                        $target_stmt = $conn->prepare("INSERT INTO program_targets (submission_id, target_number, target_description, status_indicator, status_description) VALUES (?, ?, ?, 'not_started', ?)");
+                        $target_text = $target['target'] ?? $target['target_text'] ?? '';
+                        $target_status = $target['status_description'] ?? '';
+                        
+                        // Generate target number if not provided
+                        $target_number = $target['target_number'] ?? '';
+                        if (empty($target_number)) {
+                            // Get program number for auto-generation
+                            $program_stmt = $conn->prepare("SELECT program_number FROM programs WHERE program_id = ?");
+                            $program_stmt->bind_param("i", $program_id);
+                            $program_stmt->execute();
+                            $program_result = $program_stmt->get_result();
+                            if ($program_row = $program_result->fetch_assoc()) {
+                                $target_number = $program_row['program_number'] . '.' . ($index + 1);
+                            }
+                        }
+                        
+                        $target_stmt->bind_param("issi", $new_submission_id, $target_number, $target_text, $target_status);
+                        $target_stmt->execute();
+                    }
+                }
             }
         }
         
@@ -363,17 +612,21 @@ function update_wizard_program_draft($program_id, $data) {
     global $conn;
     if (!is_agency()) return ['error' => 'Permission denied'];
     $user_id = $_SESSION['user_id'];
-    $check_stmt = $conn->prepare("SELECT program_id FROM programs WHERE program_id = ? AND owner_agency_id = ?");
+    // Check if user has access to this program (using agency_id instead of users_assigned)
+    $check_stmt = $conn->prepare("SELECT program_id FROM programs WHERE program_id = ? AND agency_id = (SELECT agency_id FROM users WHERE user_id = ?)");
     $check_stmt->bind_param("ii", $program_id, $user_id);
     $check_stmt->execute();
     $result = $check_stmt->get_result();
     if ($result->num_rows === 0) {
         return ['error' => 'Program not found or access denied'];
-    }    $program_name = trim($data['program_name']);
-    $program_number = isset($data['program_number']) ? trim($data['program_number']) : null;
+    }
+    
+    $program_name = trim($data['program_name']);
     $brief_description = isset($data['brief_description']) ? trim($data['brief_description']) : '';
-    $start_date = isset($data['start_date']) && !empty($data['start_date']) ? $data['start_date'] : null;
-    $end_date = isset($data['end_date']) && !empty($data['end_date']) ? $data['end_date'] : null;
+    $start_date = validate_program_date($data['start_date'] ?? '');
+    $end_date = validate_program_date($data['end_date'] ?? '');
+    if ($start_date === false) return ['error' => 'Start Date must be in YYYY-MM-DD format.'];
+    if ($end_date === false) return ['error' => 'End Date must be in YYYY-MM-DD format.'];
     $targets = isset($data['targets']) && is_array($data['targets']) ? $data['targets'] : [];
     $initiative_id = isset($data['initiative_id']) && !empty($data['initiative_id']) ? intval($data['initiative_id']) : null;
     $period_id = isset($data['period_id']) && !empty($data['period_id']) ? intval($data['period_id']) : null;
@@ -394,28 +647,12 @@ function update_wizard_program_draft($program_id, $data) {
         }
     }
     
-    // Validate program_number format if provided
-    if ($program_number && !is_valid_program_number_format($program_number, false)) {
-        return ['error' => get_program_number_format_error(false)];
-    }
-    
-    // Additional validation for hierarchical format if initiative is linked
-    if ($program_number && $initiative_id) {
-        $format_validation = validate_program_number_format($program_number, $initiative_id);
-        if (!$format_validation['valid']) {
-            return ['error' => $format_validation['message']];
-        }
-        
-        // Check if number is already in use (excluding current program)
-        if (!is_program_number_available($program_number, $program_id)) {
-            return ['error' => 'Program number is already in use'];
-        }
-    }
+    // Program number functionality removed - current schema doesn't support it
     
     try {
         $conn->begin_transaction();
           // Get current program data to check if initiative changed
-        $current_query = "SELECT initiative_id, program_number FROM programs WHERE program_id = ?";
+        $current_query = "SELECT initiative_id FROM programs WHERE program_id = ?";
         $current_stmt = $conn->prepare($current_query);
         $current_stmt->bind_param("i", $program_id);
         $current_stmt->execute();
@@ -423,23 +660,11 @@ function update_wizard_program_draft($program_id, $data) {
         $current_program = $current_result->fetch_assoc();
         
         $old_initiative_id = $current_program['initiative_id'];
-        $current_program_number = $current_program['program_number'];
         
-        // Use the provided program number (no auto-generation)
-        // If no program_number provided, keep existing number unless initiative is being removed
-        $new_program_number = $program_number;
-        if (!$new_program_number && $old_initiative_id != $initiative_id) {
-            if (!$initiative_id) {
-                // Remove from initiative - clear program number
-                $new_program_number = null;
-            } else {
-                // Keep existing number when changing initiatives
-                $new_program_number = $current_program_number;
-            }
-        }
+        // Program number functionality removed - current schema doesn't support it
         
-        $stmt = $conn->prepare("UPDATE programs SET program_name = ?, program_number = ?, start_date = ?, end_date = ?, initiative_id = ?, updated_at = NOW() WHERE program_id = ? AND owner_agency_id = ?");
-        $stmt->bind_param("sssssii", $program_name, $new_program_number, $start_date, $end_date, $initiative_id, $program_id, $user_id);
+        $stmt = $conn->prepare("UPDATE programs SET program_name = ?, program_description = ?, initiative_id = ?, updated_at = NOW() WHERE program_id = ? AND agency_id = (SELECT agency_id FROM users WHERE user_id = ?)");
+        $stmt->bind_param("ssiii", $program_name, $brief_description, $initiative_id, $program_id, $user_id);
         if (!$stmt->execute()) throw new Exception('Failed to update program: ' . $stmt->error);
         if (!empty($targets) || !empty($brief_description)) {
             $check_stmt = $conn->prepare("SELECT submission_id FROM program_submissions WHERE program_id = ?");
@@ -464,7 +689,7 @@ function update_wizard_program_draft($program_id, $data) {
                     $current_period_id = $period_id;
                 } else {
                     // Fallback to any open period if no period is selected
-                    $fallback_query = "SELECT period_id FROM reporting_periods WHERE status = 'open' ORDER BY year DESC, quarter DESC LIMIT 1";
+                    $fallback_query = "SELECT period_id FROM reporting_periods WHERE status = 'open' ORDER BY year DESC, period_type ASC, period_number DESC LIMIT 1";
                     $fallback_result = $conn->query($fallback_query);
                     $current_period_id = $fallback_result && $fallback_result->num_rows > 0 ? $fallback_result->fetch_assoc()['period_id'] : 1;
                 }
@@ -554,15 +779,13 @@ function get_program_details($program_id, $allow_cross_agency = false) {
         return false;
     }
     
-    $current_user_id = $_SESSION['user_id'];
-      // Base query to get program details with initiative information
-    $stmt = $conn->prepare("SELECT p.*, s.sector_name, u.agency_name, u.user_id as owner_agency_id,
+    // Base query to get program details with initiative and agency information
+    $stmt = $conn->prepare("SELECT p.*, a.agency_name,
                                    i.initiative_id, i.initiative_name, i.initiative_number,
                                    i.initiative_description, i.start_date as initiative_start_date,
                                    i.end_date as initiative_end_date, i.created_at as initiative_created_at
                           FROM programs p
-                          LEFT JOIN sectors s ON p.sector_id = s.sector_id
-                          LEFT JOIN users u ON p.owner_agency_id = u.user_id
+                          LEFT JOIN agency a ON p.agency_id = a.agency_id
                           LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
                           WHERE p.program_id = ?");
     $stmt->bind_param("i", $program_id);
@@ -576,12 +799,23 @@ function get_program_details($program_id, $allow_cross_agency = false) {
     $program = $result->fetch_assoc();
     
     // Access control: Check if user can view this program
-    if (!$allow_cross_agency && $program['owner_agency_id'] != $current_user_id) {
+    if (!$allow_cross_agency && $program['agency_id'] != $_SESSION['agency_id']) {
         return false;
     }
     
+    // Get assigned users for this program
+    $assign_stmt = $conn->prepare("SELECT user_id, role FROM program_user_assignments WHERE program_id = ?");
+    $assign_stmt->bind_param("i", $program_id);
+    $assign_stmt->execute();
+    $assign_result = $assign_stmt->get_result();
+    $assigned_users = [];
+    while ($row = $assign_result->fetch_assoc()) {
+        $assigned_users[] = $row;
+    }
+    $program['assigned_users'] = $assigned_users;
+    
     // Get submissions for this program with reporting period details
-    $stmt = $conn->prepare("SELECT ps.*, rp.year, rp.quarter
+    $stmt = $conn->prepare("SELECT ps.*, rp.year, rp.period_type, rp.period_number
                           FROM program_submissions ps 
                           JOIN reporting_periods rp ON ps.period_id = rp.period_id
                           WHERE ps.program_id = ? 
@@ -640,15 +874,20 @@ function get_program_details($program_id, $allow_cross_agency = false) {
 function get_program_edit_history($program_id) {
     global $conn;    // Get all submissions for this program with period information
     $stmt = $conn->prepare("
-        SELECT ps.*, rp.year, rp.quarter,
-               CONCAT('Q', rp.quarter, ' ', rp.year) as period_name,
-               ps.submission_date as effective_date,
+        SELECT ps.*, rp.year, rp.period_type, rp.period_number,
+               CASE 
+                   WHEN rp.period_type = 'quarter' THEN CONCAT('Q', rp.period_number, ' ', rp.year)
+                   WHEN rp.period_type = 'half' THEN CONCAT('H', rp.period_number, ' ', rp.year)
+                   WHEN rp.period_type = 'yearly' THEN CONCAT('Y', rp.period_number, ' ', rp.year)
+                   ELSE CONCAT(rp.period_type, ' ', rp.period_number, ' ', rp.year)
+               END as period_name,
+               ps.submitted_at as effective_date,
                u.username as submitted_by_name
         FROM program_submissions ps 
         LEFT JOIN reporting_periods rp ON ps.period_id = rp.period_id
         LEFT JOIN users u ON ps.submitted_by = u.user_id
         WHERE ps.program_id = ? 
-        ORDER BY ps.submission_id DESC, ps.submission_date DESC
+        ORDER BY ps.submission_id DESC, ps.submitted_at DESC
     ");
     
     if (!$stmt) {
@@ -687,8 +926,16 @@ function get_program_edit_history($program_id) {
         $row['is_draft_label'] = ($row['is_draft'] ?? 0) ? 'Draft' : 'Final';
         
         // Format period name if available
-        if (isset($row['year']) && isset($row['quarter'])) {
-            $row['period_display'] = "Q{$row['quarter']}-{$row['year']}";
+        if (isset($row['year']) && isset($row['period_type']) && isset($row['period_number'])) {
+            if ($row['period_type'] === 'quarter') {
+                $row['period_display'] = "Q{$row['period_number']}-{$row['year']}";
+            } elseif ($row['period_type'] === 'half') {
+                $row['period_display'] = "H{$row['period_number']}-{$row['year']}";
+            } elseif ($row['period_type'] === 'yearly') {
+                $row['period_display'] = "Y{$row['period_number']}-{$row['year']}";
+            } else {
+                $row['period_display'] = "{$row['period_type']} {$row['period_number']}-{$row['year']}";
+            }
         } elseif (isset($row['period_name'])) {
             $row['period_display'] = $row['period_name'];
         } else {
@@ -732,16 +979,22 @@ function get_program_edit_history_paginated($program_id, $page = 1, $per_page = 
     
     // Get paginated submissions
     $stmt = $conn->prepare("
-        SELECT ps.*, rp.year, rp.quarter,
-               CONCAT('Q', rp.quarter, ' ', rp.year) as period_name,
-               ps.submission_date as effective_date,
+        SELECT ps.*, rp.year, rp.period_type, rp.period_number,
+               CASE 
+                   WHEN rp.period_type = 'quarter' THEN CONCAT('Q', rp.period_number, ' ', rp.year)
+                   WHEN rp.period_type = 'half' THEN CONCAT('H', rp.period_number, ' ', rp.year)
+                   WHEN rp.period_type = 'yearly' THEN CONCAT('Y', rp.period_number, ' ', rp.year)
+                   ELSE CONCAT(rp.period_type, ' ', rp.period_number, ' ', rp.year)
+               END as period_name,
+               ps.submitted_at as effective_date,
                u.username as submitted_by_name,
-               u.agency_name as submitted_by_agency
+               a.agency_name as submitted_by_agency
         FROM program_submissions ps 
         LEFT JOIN reporting_periods rp ON ps.period_id = rp.period_id
         LEFT JOIN users u ON ps.submitted_by = u.user_id
+        LEFT JOIN agency a ON u.agency_id = a.agency_id
         WHERE ps.program_id = ? 
-        ORDER BY ps.submission_id DESC, ps.submission_date DESC
+        ORDER BY ps.submission_id DESC, ps.submitted_at DESC
         LIMIT ? OFFSET ?
     ");
     
@@ -781,8 +1034,16 @@ function get_program_edit_history_paginated($program_id, $page = 1, $per_page = 
         $row['is_draft_label'] = ($row['is_draft'] ?? 0) ? 'Draft' : 'Final';
         
         // Format period name if available
-        if (isset($row['year']) && isset($row['quarter'])) {
-            $row['period_display'] = "Q{$row['quarter']}-{$row['year']}";
+        if (isset($row['year']) && isset($row['period_type']) && isset($row['period_number'])) {
+            if ($row['period_type'] === 'quarter') {
+                $row['period_display'] = "Q{$row['period_number']}-{$row['year']}";
+            } elseif ($row['period_type'] === 'half') {
+                $row['period_display'] = "H{$row['period_number']}-{$row['year']}";
+            } elseif ($row['period_type'] === 'yearly') {
+                $row['period_display'] = "Y{$row['period_number']}-{$row['year']}";
+            } else {
+                $row['period_display'] = "{$row['period_type']} {$row['period_number']}-{$row['year']}";
+            }
         } elseif (isset($row['period_name'])) {
             $row['period_display'] = $row['period_name'];
         } else {
@@ -911,19 +1172,18 @@ function get_related_programs_by_initiative($initiative_id, $current_program_id 
         $param_types .= "i";
     }
     
-    // Access control - only show programs user can access
+    // Access control - only show programs from user's agency
     if (!$allow_cross_agency) {
-        $where_conditions[] = "p.owner_agency_id = ?";
+        $where_conditions[] = "p.agency_id = (SELECT agency_id FROM users WHERE user_id = ?)";
         $params[] = $current_user_id;
         $param_types .= "i";
     }
     
-    $sql = "SELECT p.program_id, p.program_name, p.program_number, p.owner_agency_id,
-                   u.agency_name, 
-                   COALESCE(latest_sub.is_draft, 1) as is_draft,
-                   COALESCE(JSON_UNQUOTE(JSON_EXTRACT(latest_sub.content_json, '$.rating')), 'not-started') as rating
+    $sql = "SELECT p.program_id, p.program_name, p.program_number, p.agency_id,
+                   a.agency_name, 
+                   COALESCE(latest_sub.is_draft, 1) as is_draft
             FROM programs p
-            LEFT JOIN users u ON p.owner_agency_id = u.user_id
+            LEFT JOIN agency a ON p.agency_id = a.agency_id
             LEFT JOIN (
                 SELECT ps1.*
                 FROM program_submissions ps1
@@ -961,13 +1221,20 @@ function get_current_program_state($program_id) {
     
     // Get program table data
     $stmt = $conn->prepare("
-        SELECT p.program_name, p.program_number, p.owner_agency_id, p.sector_id, 
-               p.start_date, p.end_date, p.is_assigned, p.edit_permissions,
-               u.agency_name as owner_agency_name,
-               s.sector_name
+        SELECT p.program_name, p.program_description, p.agency_id,
+               ps.status_indicator, ps.description, ps.start_date, ps.end_date,
+               a.agency_name
         FROM programs p
-        LEFT JOIN users u ON p.owner_agency_id = u.user_id
-        LEFT JOIN sectors s ON p.sector_id = s.sector_id
+        LEFT JOIN (
+            SELECT ps1.*
+            FROM program_submissions ps1
+            INNER JOIN (
+                SELECT program_id, MAX(submission_id) as max_submission_id
+                FROM program_submissions
+                GROUP BY program_id
+            ) ps2 ON ps1.program_id = ps2.program_id AND ps1.submission_id = ps2.max_submission_id
+        ) ps ON p.program_id = ps.program_id
+        LEFT JOIN agency a ON p.agency_id = a.agency_id
         WHERE p.program_id = ?
     ");
     
@@ -985,12 +1252,13 @@ function get_current_program_state($program_id) {
     }
     $stmt->close();
     
-    // Get latest submission content
+    // Get latest submission content and targets
     $submission_stmt = $conn->prepare("
-        SELECT content_json 
-        FROM program_submissions 
-        WHERE program_id = ? 
-        ORDER BY submission_id DESC 
+        SELECT ps.submission_id, ps.description, ps.status_indicator, ps.rating,
+               ps.start_date, ps.end_date, ps.is_draft
+        FROM program_submissions ps
+        WHERE ps.program_id = ? 
+        ORDER BY ps.submission_id DESC 
         LIMIT 1
     ");
     
@@ -1001,12 +1269,30 @@ function get_current_program_state($program_id) {
         $submission_data = $submission_result->fetch_assoc();
         $submission_stmt->close();
         
-        if ($submission_data && !empty($submission_data['content_json'])) {
-            $content = json_decode($submission_data['content_json'], true);
-            if (json_last_error() === JSON_ERROR_NONE && is_array($content)) {
-                // Merge submission content with program data
-                $program_data = array_merge($program_data, $content);
+        if ($submission_data) {
+            // Merge submission data with program data
+            $program_data = array_merge($program_data, $submission_data);
+            
+            // Get targets for this submission
+            $targets_stmt = $conn->prepare("
+                SELECT target_description, status_indicator, status_description
+                FROM program_targets
+                WHERE submission_id = ?
+                ORDER BY target_id
+            ");
+            $targets_stmt->bind_param("i", $submission_data['submission_id']);
+            $targets_stmt->execute();
+            $targets_result = $targets_stmt->get_result();
+            
+            $targets = array();
+            while ($target = $targets_result->fetch_assoc()) {
+                $targets[] = array(
+                    'target' => $target['target_description'],
+                    'status_description' => $target['status_description']
+                );
             }
+            $targets_stmt->close();
+            $program_data['targets'] = $targets;
         }
     }
     
@@ -1044,15 +1330,13 @@ function generate_field_changes($before_state, $after_state) {
     // Define trackable fields with their labels
     $trackable_fields = array(
         'program_name' => 'Program Name',
-        'program_number' => 'Program Number',
-        'brief_description' => 'Brief Description',
-        'owner_agency_name' => 'Owner Agency',
-        'sector_name' => 'Sector',
+        'program_description' => 'Program Description',
+        'agency_name' => 'Owner Agency',
         'start_date' => 'Start Date',
         'end_date' => 'End Date',
-        'is_assigned' => 'Assignment Status',
+        'status_indicator' => 'Status',
         'rating' => 'Rating/Status',
-        'remarks' => 'Remarks'
+        'description' => 'Description'
     );
     
     // Check basic fields for changes
@@ -1060,10 +1344,10 @@ function generate_field_changes($before_state, $after_state) {
         $before_value = trim(isset($before_state[$field]) ? $before_state[$field] : '');
         $after_value = trim(isset($after_state[$field]) ? $after_state[$field] : '');
         
-        // Special handling for assignment status
-        if ($field === 'is_assigned') {
-            $before_value = $before_value ? 'Assigned' : 'Not Assigned';
-            $after_value = $after_value ? 'Assigned' : 'Not Assigned';
+        // Special handling for status
+        if ($field === 'status') {
+            $before_value = $before_value ? ucfirst(str_replace('-', ' ', $before_value)) : 'Not Set';
+            $after_value = $after_value ? ucfirst(str_replace('-', ' ', $after_value)) : 'Not Set';
         }
         
         // Special handling for dates
@@ -1231,16 +1515,198 @@ function display_before_after_changes($changes_made) {
 function get_outcome_name_by_id($outcome_id) {
     global $conn;
     
-    $stmt = $conn->prepare("SELECT detail_name FROM outcomes_details WHERE detail_id = ?");
+    $stmt = $conn->prepare("SELECT title FROM outcomes WHERE id = ?");
     $stmt->bind_param("i", $outcome_id);
     $stmt->execute();
     $result = $stmt->get_result();
     
     if ($row = $result->fetch_assoc()) {
         $stmt->close();
-        return $row['detail_name'];
+        return $row['title'];
     }
     
     $stmt->close();
     return "Unknown Outcome (ID: $outcome_id)";
+}
+
+/**
+ * Create a new program submission with targets
+ * 
+ * @param array $data Submission data including program_id, period_id, targets, etc.
+ * @return array Result with success status and message/error
+ */
+function create_program_submission($data) {
+    global $conn;
+    
+    try {
+        // Validate required fields
+        if (empty($data['program_id']) || empty($data['period_id'])) {
+            return ['success' => false, 'error' => 'Program ID and Period ID are required.'];
+        }
+        
+        // Check if program exists and user has access
+        $program = get_program_details($data['program_id']);
+        if (!$program) {
+            return ['success' => false, 'error' => 'Program not found or access denied.'];
+        }
+        
+        // Check if submission already exists for this program and period
+        $existing_query = "SELECT submission_id FROM program_submissions 
+                          WHERE program_id = ? AND period_id = ? AND is_deleted = 0";
+        $stmt = $conn->prepare($existing_query);
+        $stmt->bind_param("ii", $data['program_id'], $data['period_id']);
+        $stmt->execute();
+        if ($stmt->get_result()->num_rows > 0) {
+            return ['success' => false, 'error' => 'A submission already exists for this program and period.'];
+        }
+        
+        // Start transaction
+        $conn->begin_transaction();
+        
+        // Create program submission
+        $submission_query = "INSERT INTO program_submissions 
+                            (program_id, period_id, is_draft, is_submitted, description, submitted_by, submitted_at)
+                            VALUES (?, ?, ?, ?, ?, ?, ?)";
+        
+        $is_draft = isset($_POST['save_as_draft']) ? 1 : 0;
+        $is_submitted = isset($_POST['submit']) ? 1 : 0;
+        $submitted_by = $_SESSION['user_id'] ?? null;
+        
+        $stmt = $conn->prepare($submission_query);
+        $stmt->bind_param("iiissss", 
+            $data['program_id'],
+            $data['period_id'],
+            $is_draft,
+            $is_submitted,
+            $data['description'],
+            $submitted_by,
+            date('Y-m-d H:i:s')
+        );
+        
+        if (!$stmt->execute()) {
+            throw new Exception("Failed to create program submission: " . $stmt->error);
+        }
+        
+        $submission_id = $conn->insert_id;
+        
+        // Create targets if provided
+        if (!empty($data['targets']) && is_array($data['targets'])) {
+            $target_query = "INSERT INTO program_targets 
+                            (submission_id, target_number, target_description, status_indicator, status_description, 
+                             start_date, end_date) 
+                            VALUES (?, ?, ?, ?, ?, ?, ?)";
+            
+            $stmt = $conn->prepare($target_query);
+            
+            foreach ($data['targets'] as $index => $target) {
+                // Generate target number if not provided
+                $target_number = $target['target_number'] ?? '';
+                if (empty($target_number) && !empty($data['program_number'])) {
+                    // Auto-generate target number based on program number
+                    $target_number = $data['program_number'] . '.' . ($index + 1);
+                }
+                
+                $stmt->bind_param("issssss", 
+                    $submission_id,
+                    $target_number,
+                    $target['target_text'],
+                    $target['target_status'],
+                    $target['status_description'],
+                    $target['start_date'],
+                    $target['end_date']
+                );
+                
+                if (!$stmt->execute()) {
+                    throw new Exception("Failed to create target: " . $stmt->error);
+                }
+            }
+        }
+        
+        // Commit transaction
+        $conn->commit();
+        
+        $action = $is_submitted ? 'submitted' : 'saved as draft';
+        return [
+            'success' => true, 
+            'message' => "Program submission successfully {$action}.",
+            'submission_id' => $submission_id
+        ];
+        
+    } catch (Exception $e) {
+        // Rollback transaction
+        $conn->rollback();
+        return ['success' => false, 'error' => $e->getMessage()];
+    }
+}
+
+/**
+ * Update an existing program submission and its targets
+ * @param array $data Submission data including program_id, period_id, description, targets, etc.
+ * @return array Result with success status and message/error
+ */
+function update_program_submission($data) {
+    global $conn;
+    try {
+        // Validate required fields
+        if (empty($data['program_id']) || empty($data['period_id'])) {
+            return ['success' => false, 'error' => 'Program ID and Period ID are required.'];
+        }
+        // Check if submission exists
+        $submission_query = "SELECT submission_id FROM program_submissions WHERE program_id = ? AND period_id = ? AND is_deleted = 0";
+        $stmt = $conn->prepare($submission_query);
+        $stmt->bind_param("ii", $data['program_id'], $data['period_id']);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($result->num_rows === 0) {
+            return ['success' => false, 'error' => 'Submission not found.'];
+        }
+        $row = $result->fetch_assoc();
+        $submission_id = $row['submission_id'];
+        // Start transaction
+        $conn->begin_transaction();
+        // Update submission
+        $update_query = "UPDATE program_submissions SET description = ?, updated_at = NOW() WHERE submission_id = ?";
+        $stmt = $conn->prepare($update_query);
+        $stmt->bind_param("si", $data['description'], $submission_id);
+        if (!$stmt->execute()) {
+            throw new Exception('Failed to update program submission: ' . $stmt->error);
+        }
+        // Update targets: delete old, insert new
+        $delete_targets_query = "DELETE FROM program_targets WHERE submission_id = ?";
+        $stmt = $conn->prepare($delete_targets_query);
+        $stmt->bind_param("i", $submission_id);
+        $stmt->execute();
+        if (!empty($data['targets']) && is_array($data['targets'])) {
+            $target_query = "INSERT INTO program_targets (submission_id, target_number, target_description, status_indicator, status_description) VALUES (?, ?, ?, ?, ?)";
+            $stmt = $conn->prepare($target_query);
+            foreach ($data['targets'] as $index => $target) {
+                $target_number = $target['target_number'] ?? '';
+                $target_text = $target['target_text'] ?? '';
+                $target_status = $target['target_status'] ?? 'not_started';
+                $status_description = $target['status_description'] ?? '';
+                $stmt->bind_param("issss", $submission_id, $target_number, $target_text, $target_status, $status_description);
+                if (!$stmt->execute()) {
+                    throw new Exception('Failed to update target: ' . $stmt->error);
+                }
+            }
+        }
+        $conn->commit();
+        return ['success' => true, 'message' => 'Submission updated successfully.'];
+    } catch (Exception $e) {
+        $conn->rollback();
+        return ['success' => false, 'error' => $e->getMessage()];
+    }
+}
+
+/**
+ * Strictly validate a date string as YYYY-MM-DD or empty/null.
+ * Returns the date if valid, or null if empty, or false if invalid.
+ */
+function validate_program_date($date) {
+    if (empty($date)) return null;
+    $date = trim($date);
+    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+        return $date;
+    }
+    return false;
 }

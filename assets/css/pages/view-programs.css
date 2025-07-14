@@ -473,3 +473,140 @@
         font-size: 0.875rem;
     }
 }
+
+/* --- Button visibility fix: ensure text is visible on white backgrounds --- */
+
+/* More Actions Button Styling */
+.more-actions-btn {
+  transition: all 0.2s ease;
+  border-radius: 0.5rem;
+  font-weight: 500;
+}
+
+.more-actions-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  background-color: rgba(108, 117, 125, 0.1);
+  border-color: #6c757d;
+}
+
+.more-actions-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* More Actions Modal Styling */
+#moreActionsModal .modal-content {
+  border-radius: 1rem;
+  border: none;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+#moreActionsModal .modal-header {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-bottom: 2px solid #dee2e6;
+  border-radius: 1rem 1rem 0 0;
+}
+
+#moreActionsModal .modal-title {
+  color: #495057;
+  font-weight: 600;
+}
+
+#moreActionsModal .program-info {
+  background-color: #f8f9fa;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  border-left: 4px solid #0d6efd;
+}
+
+#moreActionsModal .program-name-display {
+  color: #495057;
+  font-weight: 600;
+  margin: 0;
+}
+
+#moreActionsModal .program-type-display {
+  color: #6c757d;
+  font-style: italic;
+}
+
+#moreActionsModal .actions-list .btn {
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  text-align: left;
+  padding: 0.75rem 1rem;
+}
+
+#moreActionsModal .actions-list .btn:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+#moreActionsModal .actions-list .btn i {
+  width: 20px;
+  text-align: center;
+  margin-right: 0.75rem;
+}
+
+/* Ensure modal has highest z-index */
+#moreActionsModal {
+  z-index: 9999 !important;
+}
+
+/* Mobile responsive modal */
+@media (max-width: 768px) {
+  #moreActionsModal .modal-dialog {
+    margin: 1rem;
+    max-width: calc(100vw - 2rem);
+  }
+  
+  #moreActionsModal .actions-list .btn {
+    padding: 1rem;
+    font-size: 1rem;
+  }
+}
+
+/* Enhanced Tooltip Styling */
+.tooltip {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.tooltip .tooltip-inner {
+  background-color: rgba(0, 0, 0, 0.9);
+  color: white;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-width: 250px;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.tooltip.bs-tooltip-top .tooltip-arrow::before {
+  border-top-color: rgba(0, 0, 0, 0.9);
+}
+
+.tooltip.bs-tooltip-bottom .tooltip-arrow::before {
+  border-bottom-color: rgba(0, 0, 0, 0.9);
+}
+
+.tooltip.bs-tooltip-start .tooltip-arrow::before {
+  border-left-color: rgba(0, 0, 0, 0.9);
+}
+
+.tooltip.bs-tooltip-end .tooltip-arrow::before {
+  border-right-color: rgba(0, 0, 0, 0.9);
+}
+
+/* Ensure tooltips appear above other elements */
+.tooltip {
+  z-index: 9999 !important;
+}
+
+/* Force white text in danger modal headers */
+.modal-header.bg-danger, .modal-header.bg-danger * {
+  color: #fff !important;
+}

@@ -84,7 +84,7 @@ if (!function_exists('format_time_ago')) {
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <?php if ($current_page == 'view_programs.php' || $current_page == 'create_program.php' || $current_page == 'update_program.php' || $current_page == 'program_details.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/agency/programs/view_programs.php">
+                    <a class="nav-link <?php if ($current_page == 'view_programs.php' || $current_page == 'create_program.php' || $current_page == 'update_program.php' || $current_page == 'program_details.php' || $current_page == 'modules.php' || $current_page == 'add_submission.php' || $current_page == 'edit_submission.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/agency/programs/view_programs.php">
                         <i class="fas fa-project-diagram me-1"></i> My Programs
                     </a>
                 </li>
@@ -98,11 +98,7 @@ if (!function_exists('format_time_ago')) {
                         <i class="fas fa-chart-line me-1"></i> Outcomes
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link <?php if ($current_page == 'view_all_sectors.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/agency/sectors/view_all_sectors.php">
-                        <i class="fas fa-globe me-1"></i> All Sectors
-                    </a>
-                </li>
+                <!-- Remove 'All Sectors' nav link as sector functionality is deprecated -->
             </ul>            <div class="d-flex align-items-center ms-auto">
                 <!-- Public Reports Icon -->
                 <div class="me-3">
@@ -169,7 +165,7 @@ if (!function_exists('format_time_ago')) {
                 </div>
                 
                 <div class="user-info me-3 text-dark">
-                    <i class="fas fa-user-circle me-1"></i> <?php echo htmlspecialchars($_SESSION['agency_name']); ?>
+                    <i class="fas fa-user-circle me-1"></i> <?php echo htmlspecialchars($_SESSION['fullname'] ?? $_SESSION['username']); ?>
                 </div>
                 <a href="<?php echo APP_URL; ?>/logout.php" class="btn btn-outline-danger btn-sm logout-btn">
                     <i class="fas fa-sign-out-alt me-1"></i> Logout

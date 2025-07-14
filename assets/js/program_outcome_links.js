@@ -79,7 +79,7 @@ class ProgramOutcomeLinksManager {
         const filteredPrograms = this.programs.filter(program => {
             const matchesSearch = program.program_name.toLowerCase().includes(searchTerm) ||
                                 (program.agency_name && program.agency_name.toLowerCase().includes(searchTerm));
-            const matchesSector = !sectorFilter || program.sector_id == sectorFilter;
+            const matchesSector = true; // No sector filtering needed
             return matchesSearch && matchesSector;
         });
 

@@ -56,21 +56,21 @@ if (!$period_id) {
 $period_ids = [$period_id];
 
 // Get period details to check if it's half-yearly
-$period_query = "SELECT period_id, quarter, year FROM reporting_periods WHERE period_id = ?";
+    $period_query = "SELECT period_id, period_type, period_number, year FROM reporting_periods WHERE period_id = ?";
 $stmt = $conn->prepare($period_query);
 $stmt->bind_param("i", $period_id);
 $stmt->execute();
 $period_result = $stmt->get_result();
 $period_data = $period_result->fetch_assoc();
 
-// Check if this is a half-yearly period based on quarter value
-if ($period_data && isset($period_data['quarter'])) {
-    $quarter = (int)$period_data['quarter'];
+// Check if this is a half-yearly period based on period_type and period_number
+if ($period_data && $period_data['period_type'] === 'half') {
+    $period_number = (int)$period_data['period_number'];
     $year = $period_data['year'];
     
-    if ($quarter == 5) { // Half Yearly 1 includes Q1 and Q2
+    if ($period_number == 1) { // Half Yearly 1 includes Q1 and Q2
         // Find all Q1 and Q2 periods for the same year
-        $q1q2_query = "SELECT period_id FROM reporting_periods WHERE year = ? AND quarter IN (1, 2)";
+        $q1q2_query = "SELECT period_id FROM reporting_periods WHERE year = ? AND period_type = 'quarter' AND period_number IN (1, 2)";
         $stmt = $conn->prepare($q1q2_query);
         $stmt->bind_param("i", $year);
         $stmt->execute();
@@ -82,9 +82,9 @@ if ($period_data && isset($period_data['quarter'])) {
         }
         
         error_log("Half Yearly 1 ($year) selected: Including period_ids " . implode(", ", $period_ids));
-    } elseif ($quarter == 6) { // Half Yearly 2 includes Q3 and Q4
+    } elseif ($period_number == 2) { // Half Yearly 2 includes Q3 and Q4
         // Find all Q3 and Q4 periods for the same year
-        $q3q4_query = "SELECT period_id FROM reporting_periods WHERE year = ? AND quarter IN (3, 4)";
+        $q3q4_query = "SELECT period_id FROM reporting_periods WHERE year = ? AND period_type = 'quarter' AND period_number IN (3, 4)";
         $stmt = $conn->prepare($q3q4_query);
         $stmt->bind_param("i", $year);
         $stmt->execute();
@@ -107,42 +107,28 @@ try {    // Get programs that have non-draft submissions for this period (only l
     
     $programs_query = "SELECT DISTINCT p.program_id, p.program_name, p.program_number, p.initiative_id,
                       i.initiative_name, i.initiative_number, 
-                      s.sector_id, s.sector_name, u.agency_name, u.user_id as owner_agency_id
+                      1 as sector_id, 'Forestry Sector' as sector_name, a.agency_name, p.agency_id as owner_agency_id,
+                      ps.submission_id
                       FROM programs p
-                      LEFT JOIN (
-                          SELECT ps1.program_id
-                          FROM program_submissions ps1
-                          INNER JOIN (
-                              SELECT program_id, MAX(submission_date) as latest_date, MAX(submission_id) as latest_submission_id
-                              FROM program_submissions
-                              WHERE period_id IN ($period_in_clause) AND is_draft = 0
-                              GROUP BY program_id
-                          ) ps2 ON ps1.program_id = ps2.program_id 
-                               AND ps1.submission_date = ps2.latest_date 
-                               AND ps1.submission_id = ps2.latest_submission_id
-                          WHERE ps1.period_id IN ($period_in_clause) AND ps1.is_draft = 0
-                      ) ps ON p.program_id = ps.program_id
+                      LEFT JOIN program_submissions ps ON p.program_id = ps.program_id 
+                          AND ps.period_id IN ($period_in_clause) 
+                          AND ps.is_draft = 0
                       LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
-                      LEFT JOIN sectors s ON p.sector_id = s.sector_id
-                      LEFT JOIN users u ON p.owner_agency_id = u.user_id                      WHERE 
+                      LEFT JOIN agency a ON p.agency_id = a.agency_id
+                      WHERE 
                             (ps.program_id IS NOT NULL)
-                            ". ($sector_id ? "AND p.sector_id = ? " : "") .
-                            ($initiative_id ? "AND p.initiative_id = ? " : "") .
-                            (!empty($agency_ids) ? "AND p.owner_agency_id IN (" . implode(",", array_fill(0, count($agency_ids), '?')) . ") " : "") .
-                      "ORDER BY i.initiative_name, s.sector_name, u.agency_name, p.program_name";
+                            ". ($initiative_id ? "AND p.initiative_id = ? " : "") .
+                            (!empty($agency_ids) ? "AND p.agency_id IN (" . implode(",", array_fill(0, count($agency_ids), '?')) . ") " : "") .
+                      "ORDER BY i.initiative_name, a.agency_name, p.program_name";
       // Add debug logging
     $period_ids_str = implode(',', $period_ids);
-    error_log("Fetching programs for period_ids: {$period_ids_str}" . ($sector_id ? ", sector_id: {$sector_id}" : ", all sectors") . ($initiative_id ? ", initiative_id: {$initiative_id}" : ", all initiatives"));
-    error_log("Fixed duplicate submission query - using MAX(submission_id) for tie-breaking");
+    error_log("Fetching programs for period_ids: {$period_ids_str}" . ($initiative_id ? ", initiative_id: {$initiative_id}" : ", all initiatives"));
+    error_log("Simplified query - no more multiple submissions per program/period");
     
-    // Prepare statement with dynamic params - need period_ids twice for the nested subquery (once for each IN clause)
-    $param_types = str_repeat('i', count($period_ids) * 2); // Period IDs repeated for two IN clauses
-    $params = array_merge($period_ids, $period_ids); // First set for first IN clause, second set for second IN clause
+    // Prepare statement with dynamic params - simplified since we removed the nested subquery
+    $param_types = str_repeat('i', count($period_ids)); // Period IDs for the IN clause
+    $params = $period_ids; // Period IDs for the IN clause
     
-    if ($sector_id) {
-        $param_types .= 'i';
-        $params[] = $sector_id;
-    }
     if ($initiative_id) {
         $param_types .= 'i';
         $params[] = $initiative_id;
@@ -167,7 +153,36 @@ try {    // Get programs that have non-draft submissions for this period (only l
                 'programs' => []
             ];
         }
-          $programs[$program['sector_id']]['programs'][] = [
+        
+        // Fetch targets for this program's submission
+        $targets = [];
+        if ($program['submission_id']) {
+            $target_query = "SELECT target_id, target_number, target_description, status_indicator, status_description, remarks, start_date, end_date 
+                           FROM program_targets 
+                           WHERE submission_id = ? AND is_deleted = 0 
+                           ORDER BY target_id";
+            $target_stmt = $conn->prepare($target_query);
+            $target_stmt->bind_param("i", $program['submission_id']);
+            $target_stmt->execute();
+            $target_result = $target_stmt->get_result();
+            
+            while ($target = $target_result->fetch_assoc()) {
+                $targets[] = [
+                    'target_id' => $target['target_id'],
+                    'target_number' => $target['target_number'],
+                    'target_description' => $target['target_description'],
+                    'status_indicator' => $target['status_indicator'],
+                    'status_description' => $target['status_description'],
+                    'remarks' => $target['remarks'],
+                    'start_date' => $target['start_date'],
+                    'end_date' => $target['end_date'],
+                    'selected' => true // Default to selected
+                ];
+            }
+            $target_stmt->close();
+        }
+        
+        $programs[$program['sector_id']]['programs'][] = [
             'program_id' => $program['program_id'],
             'program_name' => $program['program_name'],
             'program_number' => $program['program_number'],
@@ -175,24 +190,20 @@ try {    // Get programs that have non-draft submissions for this period (only l
             'initiative_name' => $program['initiative_name'],
             'initiative_number' => $program['initiative_number'],
             'agency_name' => $program['agency_name'],
-            'owner_agency_id' => $program['owner_agency_id']
+            'owner_agency_id' => $program['owner_agency_id'],
+            'submission_id' => $program['submission_id'],
+            'targets' => $targets
         ];
     }
     
-    // If filtering by sector but no programs found, still return the sector info
-    if ($sector_id && empty($programs)) {
-        // Get sector info
-        $sector_query = "SELECT sector_id, sector_name FROM sectors WHERE sector_id = ?";
-        $sector_stmt = $conn->prepare($sector_query);
-        $sector_stmt->bind_param("i", $sector_id);
-        $sector_stmt->execute();
-        $sector_result = $sector_stmt->get_result();        if ($sector_data = $sector_result->fetch_assoc()) {
-            $programs[$sector_id] = [
-                'sector_name' => $sector_data['sector_name'],
-                'programs' => []
-            ];
-            error_log("No non-draft programs found for sector {$sector_data['sector_name']}, returning empty array");
-        }
+    // If no programs found, still return the sector info
+    if (empty($programs)) {
+        // Default to Forestry Sector
+        $programs[1] = [
+            'sector_name' => 'Forestry Sector',
+            'programs' => []
+        ];
+        error_log("No non-draft programs found for Forestry Sector, returning empty array");
     }
 
     // Return the programs

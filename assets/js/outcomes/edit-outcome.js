@@ -648,37 +648,15 @@ function saveFlexibleOutcome() {
 
 /**
  * Show toast notification
+ * Uses the global showToast function for consistency
  */
 function showToast(message, type = 'info') {
-    // Remove existing toasts
-    const existingToasts = document.querySelectorAll('.outcome-toast');
-    existingToasts.forEach(toast => toast.remove());
-    
-    // Create toast element
-    const toast = document.createElement('div');
-    toast.className = `outcome-toast alert alert-${type === 'error' ? 'danger' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info'} alert-dismissible fade show`;
-    toast.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 9999;
-        min-width: 300px;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    `;
-    
-    toast.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    
-    document.body.appendChild(toast);
-    
-    // Auto remove after 5 seconds
-    setTimeout(() => {
-        if (toast.parentNode) {
-            toast.remove();
-        }
-    }, 5000);
+    if (typeof window.showToast === 'function') {
+        window.showToast('Notification', message, type);
+    } else {
+        // Fallback if global showToast isn't loaded
+        alert(message);
+    }
 }
 
 /**

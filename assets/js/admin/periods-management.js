@@ -28,22 +28,31 @@ $(document).ready(function() {
     $('#addPeriodModal').on('hidden.bs.modal', function() {
         resetPeriodForm();
     });
-      // Handle quarter and year changes to auto-calculate dates
-    $('#quarter, #year').on('change', function() {
-        // Mark that period type/year changed, which may affect standard dates
+      // Handle period type changes to update period number options
+    $('#periodType').on('change', function() {
+        updatePeriodNumberOptions();
+        // Mark that period type changed, which may affect standard dates
+        $('#period-dates-changed').val('true');
+        updateDateFields();
+    });
+    
+    // Handle period number and year changes to auto-calculate dates
+    $('#periodNumber, #year').on('change', function() {
+        // Mark that period number/year changed, which may affect standard dates
         $('#period-dates-changed').val('true');
         updateDateFields();
     });
     
     // Track when date fields are manually edited
     $('#startDate, #endDate').on('change', function() {
-        const quarter = $('#quarter').val();
+        const periodType = $('#periodType').val();
+        const periodNumber = $('#periodNumber').val();
         const year = $('#year').val();
         
-        if (!quarter || !year) return;
+        if (!periodType || !periodNumber || !year) return;
         
-        // Check if dates match standard dates for this quarter/year
-        const standardDates = calculatePeriodDates(parseInt(quarter), parseInt(year));
+        // Check if dates match standard dates for this period type/number/year
+        const standardDates = calculatePeriodDates(periodType, parseInt(periodNumber), parseInt(year));
         if (!standardDates) return;
         
         const currentStartDate = $('#startDate').val();
@@ -146,8 +155,8 @@ function groupPeriodsByYear(periods) {
     const result = {};
     sortedYears.forEach(year => {
         result[year] = yearGroups[year].sort((a, b) => {
-            // Sort by quarter within each year
-            return a.quarter - b.quarter;
+            // Sort by period number within each year
+            return a.period_number - b.period_number;
         });
     });
     
@@ -222,12 +231,12 @@ function generatePeriodRows(periods) {
         
         // Generate period name
         let periodName = '';
-        if (period.quarter >= 1 && period.quarter <= 4) {
-            periodName = `Q${period.quarter}`;
-        } else if (period.quarter === 5) {
-            periodName = 'Half Yearly 1';
-        } else if (period.quarter === 6) {
-            periodName = 'Half Yearly 2';
+        if (period.period_type === 'quarter') {
+            periodName = `Q${period.period_number}`;
+        } else if (period.period_type === 'half') {
+            periodName = `Half Yearly ${period.period_number}`;
+        } else if (period.period_type === 'yearly') {
+            periodName = `Yearly ${period.period_number}`;
         }
         
         rowsHtml += `
@@ -311,7 +320,8 @@ function setupActionButtons() {
 function savePeriod() {
     const formData = {
         period_id: $('#periodId').val(), // Will be empty for new periods
-        quarter: $('#quarter').val(),
+        period_type: $('#periodType').val(),
+        period_number: $('#periodNumber').val(),
         year: $('#year').val(),
         start_date: $('#startDate').val(),
         end_date: $('#endDate').val(),
@@ -328,15 +338,37 @@ function savePeriod() {
     // Comprehensive validation
     let isValid = true;
     
-    // Validate quarter
-    if (!formData.quarter) {
-        $('#quarter').addClass('is-invalid');
-        $('<div class="invalid-feedback">Please select a period type.</div>').insertAfter('#quarter');
+    // Validate period type
+    if (!formData.period_type) {
+        $('#periodType').addClass('is-invalid');
+        $('<div class="invalid-feedback">Please select a period type.</div>').insertAfter('#periodType');
         isValid = false;
-    } else if (![1, 2, 3, 4, 5, 6, '1', '2', '3', '4', '5', '6'].includes(formData.quarter)) {
-        $('#quarter').addClass('is-invalid');
-        $('<div class="invalid-feedback">Invalid period type selected.</div>').insertAfter('#quarter');
+    } else if (!['quarter', 'half', 'yearly'].includes(formData.period_type)) {
+        $('#periodType').addClass('is-invalid');
+        $('<div class="invalid-feedback">Invalid period type selected.</div>').insertAfter('#periodType');
         isValid = false;
+    }
+    
+    // Validate period number
+    if (!formData.period_number) {
+        $('#periodNumber').addClass('is-invalid');
+        $('<div class="invalid-feedback">Please select a period number.</div>').insertAfter('#periodNumber');
+        isValid = false;
+    } else {
+        const periodNum = parseInt(formData.period_number);
+        if (isNaN(periodNum) || periodNum < 1) {
+            $('#periodNumber').addClass('is-invalid');
+            $('<div class="invalid-feedback">Period number must be a positive number.</div>').insertAfter('#periodNumber');
+            isValid = false;
+        } else if (formData.period_type === 'quarter' && (periodNum < 1 || periodNum > 4)) {
+            $('#periodNumber').addClass('is-invalid');
+            $('<div class="invalid-feedback">Quarter period number must be between 1 and 4.</div>').insertAfter('#periodNumber');
+            isValid = false;
+        } else if (formData.period_type === 'half' && (periodNum < 1 || periodNum > 2)) {
+            $('#periodNumber').addClass('is-invalid');
+            $('<div class="invalid-feedback">Half yearly period number must be between 1 and 2.</div>').insertAfter('#periodNumber');
+            isValid = false;
+        }
     }
     
     // Validate year
@@ -403,7 +435,15 @@ function savePeriod() {
                 const periodList = result.periods.map(p => {
                     const startDate = new Date(p.start_date).toLocaleDateString();
                     const endDate = new Date(p.end_date).toLocaleDateString();
-                    return `- ${getPeriodName(p.quarter)} ${p.year} (${startDate} - ${endDate})`;
+                    let periodName = '';
+                    if (p.period_type === 'quarter') {
+                        periodName = `Q${p.period_number}`;
+                    } else if (p.period_type === 'half') {
+                        periodName = `Half Yearly ${p.period_number}`;
+                    } else if (p.period_type === 'yearly') {
+                        periodName = `Yearly ${p.period_number}`;
+                    }
+                    return `- ${periodName} ${p.year} (${startDate} - ${endDate})`;
                 }).join('\n');
                 
                 if (!confirm(`Warning: This period overlaps with the following existing periods:\n\n${periodList}\n\nDo you want to continue anyway?`)) {
@@ -425,7 +465,8 @@ function savePeriod() {
                 url: APP_URL + '/app/ajax/check_period_exists.php',
                 type: 'POST',
                 data: {
-                    quarter: formData.quarter,
+                    period_type: formData.period_type,
+                    period_number: formData.period_number,
                     year: formData.year
                 },
                 dataType: 'json',
@@ -433,8 +474,8 @@ function savePeriod() {
                     if (response.success) {
                         if (response.exists) {
                             // Period already exists
-                            showError(`A period for ${getPeriodName(formData.quarter)} ${formData.year} already exists.`);
-                            $('#quarter, #year').addClass('is-invalid');
+                            showError(`A period for ${formData.period_type} ${formData.period_number} ${formData.year} already exists.`);
+                            $('#periodType, #periodNumber, #year').addClass('is-invalid');
                             $('<div class="invalid-feedback">This period already exists.</div>').insertAfter('#year');
                             $('#savePeriod').prop('disabled', false).html('<i class="fas fa-save me-1"></i> Save Period');
                         } else {
@@ -520,14 +561,42 @@ function getPeriodName(quarter) {
 }
 
 /**
- * Calculate and update date fields based on selected quarter and year
+ * Update period number options based on selected period type
+ */
+function updatePeriodNumberOptions() {
+    const periodType = $('#periodType').val();
+    const periodNumberSelect = $('#periodNumber');
+    
+    // Clear existing options
+    periodNumberSelect.empty();
+    periodNumberSelect.append('<option value="" disabled selected>Select Number</option>');
+    
+    if (periodType === 'quarter') {
+        // Quarters: 1-4
+        for (let i = 1; i <= 4; i++) {
+            periodNumberSelect.append(`<option value="${i}">${i}</option>`);
+        }
+    } else if (periodType === 'half') {
+        // Half yearly: 1-2
+        for (let i = 1; i <= 2; i++) {
+            periodNumberSelect.append(`<option value="${i}">${i}</option>`);
+        }
+    } else if (periodType === 'yearly') {
+        // Yearly: 1
+        periodNumberSelect.append('<option value="1">1</option>');
+    }
+}
+
+/**
+ * Calculate and update date fields based on selected period type, number and year
  * If dates have been manually edited, ask for confirmation before overwriting
  */
 function updateDateFields() {
-    const quarter = $('#quarter').val();
+    const periodType = $('#periodType').val();
+    const periodNumber = $('#periodNumber').val();
     const year = $('#year').val();
     
-    if (!quarter || !year) {
+    if (!periodType || !periodNumber || !year) {
         $('#startDate').val('');
         $('#endDate').val('');
         return;
@@ -538,8 +607,8 @@ function updateDateFields() {
     const currentEndDate = $('#endDate').val();
     const datesAlreadySet = currentStartDate && currentEndDate;
     
-    // Get the standard dates for this quarter/year
-    const standardDates = calculatePeriodDates(parseInt(quarter), parseInt(year));
+    // Get the standard dates for this period type/number/year
+    const standardDates = calculatePeriodDates(periodType, parseInt(periodNumber), parseInt(year));
     if (!standardDates) return;
     
     // If dates are already set and different from standard dates, they might be custom
@@ -574,23 +643,30 @@ function updateDateFields() {
 }
 
 /**
- * Calculate start and end dates based on quarter/period type and year
+ * Calculate start and end dates based on period type, number and year
  */
-function calculatePeriodDates(quarter, year) {
+function calculatePeriodDates(periodType, periodNumber, year) {
     const dateRanges = {
-        1: { start: [0, 1], end: [2, 31] },     // Q1: Jan 1 - Mar 31
-        2: { start: [3, 1], end: [5, 30] },     // Q2: Apr 1 - Jun 30
-        3: { start: [6, 1], end: [8, 30] },     // Q3: Jul 1 - Sep 30
-        4: { start: [9, 1], end: [11, 31] },    // Q4: Oct 1 - Dec 31
-        5: { start: [0, 1], end: [5, 30] },     // Half Yearly 1: Jan 1 - Jun 30
-        6: { start: [6, 1], end: [11, 31] }     // Half Yearly 2: Jul 1 - Dec 31
+        quarter: {
+            1: { start: [0, 1], end: [2, 31] },     // Q1: Jan 1 - Mar 31
+            2: { start: [3, 1], end: [5, 30] },     // Q2: Apr 1 - Jun 30
+            3: { start: [6, 1], end: [8, 30] },     // Q3: Jul 1 - Sep 30
+            4: { start: [9, 1], end: [11, 31] }     // Q4: Oct 1 - Dec 31
+        },
+        half: {
+            1: { start: [0, 1], end: [5, 30] },     // Half Yearly 1: Jan 1 - Jun 30
+            2: { start: [6, 1], end: [11, 31] }     // Half Yearly 2: Jul 1 - Dec 31
+        },
+        yearly: {
+            1: { start: [0, 1], end: [11, 31] }     // Yearly: Jan 1 - Dec 31
+        }
     };
     
-    if (!dateRanges[quarter]) {
+    if (!dateRanges[periodType] || !dateRanges[periodType][periodNumber]) {
         return null;
     }
     
-    const range = dateRanges[quarter];
+    const range = dateRanges[periodType][periodNumber];
     
     // Create start date
     const startDate = new Date(year, range.start[0], range.start[1]);
@@ -747,7 +823,8 @@ function editPeriod(periodId) {
             $('#addPeriodModalLabel').text('Edit Reporting Period');
               // Populate form fields
             $('#periodId').val(period.period_id);
-            $('#quarter').val(period.quarter);
+            $('#periodType').val(period.period_type);
+            $('#periodNumber').val(period.period_number);
             $('#year').val(period.year);
             
             // Get just the date part without time
@@ -757,10 +834,6 @@ function editPeriod(periodId) {
             $('#startDate').val(startDate);
             $('#endDate').val(endDate);
             $('#status').val(period.status);
-            
-            // Check if using custom dates
-            const isCustomDates = period.is_standard_dates == 0; // Using loose equality as it might be string "0"
-            $('#useCustomDates').prop('checked', isCustomDates);
             
             // Reset the period dates changed flag
             $('#period-dates-changed').val('false');
@@ -877,13 +950,21 @@ function deletePeriod(periodId) {
  */
 function checkDateOverlap(startDate, endDate, excludePeriodId = null) {
     return new Promise((resolve, reject) => {
+        // Get current form values for period type information
+        const periodType = $('#periodType').val();
+        const periodNumber = $('#periodNumber').val();
+        const year = $('#year').val();
+        
         $.ajax({
             url: APP_URL + '/app/ajax/check_period_overlap.php',
             type: 'POST',
             data: {
                 start_date: startDate,
                 end_date: endDate,
-                exclude_period_id: excludePeriodId
+                exclude_period_id: excludePeriodId,
+                period_type: periodType,
+                period_number: periodNumber,
+                year: year
             },
             dataType: 'json',
             success: function(response) {

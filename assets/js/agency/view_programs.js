@@ -6,6 +6,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize delete functionality
     initDeleteButtons();
     
+    // Initialize more actions modal functionality
+    initMoreActionsModal();
+    
+    // Initialize tooltips for all buttons
+    initTooltips();
+    
     // Initialize pagination for both tables (wait for TablePagination to be available)
     if (typeof TablePagination !== 'undefined') {
         initializePagination();
@@ -448,4 +454,176 @@ function updateNoResultsMessage(tableId) {
             noResultsRow.remove();
         }
     }
+}
+
+/**
+ * Initialize tooltips for all buttons in the tables
+ */
+function initTooltips() {
+    // Initialize tooltips for all elements with data-bs-toggle="tooltip"
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl, {
+            trigger: 'hover focus',
+            delay: { show: 300, hide: 100 }
+        });
+    });
+    
+    // Also initialize tooltips for any dynamically added content
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList') {
+                mutation.addedNodes.forEach(function(node) {
+                    if (node.nodeType === 1) { // Element node
+                        const newTooltips = node.querySelectorAll ? node.querySelectorAll('[data-bs-toggle="tooltip"]') : [];
+                        newTooltips.forEach(function(tooltipEl) {
+                            new bootstrap.Tooltip(tooltipEl, {
+                                trigger: 'hover focus',
+                                delay: { show: 300, hide: 100 }
+                            });
+                        });
+                    }
+                });
+            }
+        });
+    });
+    
+    // Observe changes to the document body
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+}
+
+/**
+ * Initialize more actions modal functionality for table action buttons
+ */
+function initMoreActionsModal() {
+    // Find all "More Actions" buttons in table action columns
+    const moreActionsButtons = document.querySelectorAll('.more-actions-btn');
+    
+    moreActionsButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const programId = this.getAttribute('data-program-id');
+            const programName = this.getAttribute('data-program-name');
+            const programType = this.getAttribute('data-program-type');
+            
+            // Show the more actions modal
+            showMoreActionsModal(programId, programName, programType);
+        });
+    });
+}
+
+/**
+ * Show the more actions modal with program-specific actions
+ */
+function showMoreActionsModal(programId, programName, programType) {
+    // Create modal HTML if it doesn't exist
+    let modal = document.getElementById('moreActionsModal');
+    if (!modal) {
+        modal = createMoreActionsModal();
+        document.body.appendChild(modal);
+    }
+    
+    // Update modal content with program-specific actions
+    updateMoreActionsModalContent(modal, programId, programName, programType);
+    
+    // Show the modal
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+}
+
+/**
+ * Create the more actions modal HTML structure
+ */
+function createMoreActionsModal() {
+    const modal = document.createElement('div');
+    modal.className = 'modal fade';
+    modal.id = 'moreActionsModal';
+    modal.setAttribute('tabindex', '-1');
+    modal.setAttribute('aria-labelledby', 'moreActionsModalLabel');
+    modal.setAttribute('aria-hidden', 'true');
+    
+    modal.innerHTML = `
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="moreActionsModalLabel">
+                        <i class="fas fa-ellipsis-v me-2"></i>Additional Actions
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="program-info mb-3">
+                        <h6 class="program-name-display"></h6>
+                        <small class="text-muted program-type-display"></small>
+                    </div>
+                    <div class="actions-list">
+                        <!-- Additional actions will be populated dynamically -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    return modal;
+}
+
+/**
+ * Update modal content with program-specific actions
+ */
+function updateMoreActionsModalContent(modal, programId, programName, programType) {
+    // Update program info
+    const nameDisplay = modal.querySelector('.program-name-display');
+    const typeDisplay = modal.querySelector('.program-type-display');
+    
+    nameDisplay.textContent = programName;
+    typeDisplay.textContent = programType === 'assigned' ? 'Assigned Program' : 'Agency-Created Program';
+    
+    // Create action buttons
+    const actionsList = modal.querySelector('.actions-list');
+    actionsList.innerHTML = '';
+    
+    const actions = [
+        {
+            icon: 'fas fa-edit',
+            text: 'Edit Submission',
+            url: `edit_submission.php?program_id=${programId}`,
+            class: 'btn-outline-success',
+            tooltip: 'Edit submissions for this program by selecting a reporting period'
+        },
+        {
+            icon: 'fas fa-edit',
+            text: 'Edit Program',
+            url: `edit_program.php?id=${programId}`,
+            class: 'btn-outline-warning',
+            tooltip: 'Modify program details, targets, and basic information'
+        }
+    ];
+    
+    actions.forEach(action => {
+        const actionButton = document.createElement('a');
+        actionButton.className = `btn ${action.class} w-100 mb-2`;
+        actionButton.href = action.url;
+        actionButton.setAttribute('title', action.tooltip);
+        actionButton.setAttribute('data-bs-toggle', 'tooltip');
+        actionButton.setAttribute('data-bs-placement', 'left');
+        actionButton.innerHTML = `<i class=\"${action.icon} me-2\"></i>${action.text}`;
+        actionsList.appendChild(actionButton);
+    });
+
+    // Remove focal-only finalize/revert controls from modal
+    // (No focalSection or AJAX for submissions here)
+
+    // Initialize tooltips for the new buttons
+    const tooltipTriggerList = [].slice.call(actionsList.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
 }

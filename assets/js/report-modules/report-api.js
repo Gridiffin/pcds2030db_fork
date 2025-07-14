@@ -19,10 +19,10 @@ if (typeof window.ReportAPI !== 'undefined') {
      */
     function fetchReportData(periodId, sectorId, selectedKpiIds = [], selectedProgramIds = [], programOrders = {}) {
         return new Promise((resolve, reject) => {
-            // Build parameters object
+            // Build parameters object - hardcode Forestry sector
             const params = {
                 'period_id': periodId,
-                'sector_id': sectorId
+                'sector_id': 1 // Hardcoded to Forestry sector
             };
             
             // Log additional info for half-yearly periods
@@ -108,25 +108,23 @@ if (typeof window.ReportAPI !== 'undefined') {
      */
     function uploadPresentation(blob, periodId, sectorId, reportName, description, isPublic) {
         return new Promise((resolve, reject) => {
-            // Get period and sector text for filename
+            // Get period text for filename
             const periodSelect = document.getElementById('periodSelect');
-            const sectorSelect = document.getElementById('sectorSelect');
             
-            if (!periodSelect || !sectorSelect) {
-                reject(new Error('Could not find period or sector selects'));
+            if (!periodSelect) {
+                reject(new Error('Could not find period select'));
                 return;
             }
             
             // Create a file name (will be ignored by server but needed for FormData)
             const periodText = periodSelect.options[periodSelect.selectedIndex].text;
-            const sectorText = sectorSelect.options[sectorSelect.selectedIndex].text;
-            const filename = `${sectorText}_${periodText.replace(' ', '_')}.pptx`;
+            const filename = `Forestry_${periodText.replace(' ', '_')}.pptx`;
             
             // Create FormData
             const formData = new FormData();
             formData.append('report_file', blob, filename);
             formData.append('period_id', periodId);
-            formData.append('sector_id', sectorId);
+            formData.append('sector_id', 1); // Hardcoded to Forestry sector
             formData.append('report_name', reportName);
             formData.append('description', description);
             formData.append('is_public', isPublic);

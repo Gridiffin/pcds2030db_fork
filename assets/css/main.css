@@ -26,7 +26,6 @@
 @import 'components/period-performance.css';
 @import 'components/bulk-assignment.css';
 @import 'components/status-grid.css';
-@import 'components/status-grid-bootstrap.css';
 @import 'components/hybrid-status-grid.css';
 
 /* Pages */
@@ -36,6 +35,7 @@
 @import 'pages/report-generator.css';
 @import 'pages/initiative-view.css';
 @import 'pages/view-programs.css';
+@import url('pages/add_submission.css');
 
 /* Custom */
 @import 'custom/theme.css';
@@ -75,6 +75,7 @@
 @import 'components/admin-common.css'; /* Common admin interface components ionbuttons */
 @import 'components/outcomes.css'; /* Outcomes edit interface styling */
 @import 'components/status-grid.css';
+@import 'components/submission-audit-history.css'; /* Submission audit history component */
 
 /* Layout */
 @import 'layout/navigation.css';

@@ -20,6 +20,7 @@ require_once PROJECT_ROOT_PATH . 'lib/agencies/initiatives.php';
 require_once PROJECT_ROOT_PATH . 'lib/initiative_functions.php';
 require_once PROJECT_ROOT_PATH . 'lib/rating_helpers.php';
 require_once PROJECT_ROOT_PATH . 'lib/asset_helpers.php';
+require_once PROJECT_ROOT_PATH . 'lib/db_names_helper.php';
 
 // Verify user is an agency
 if (!is_agency()) {
@@ -57,41 +58,20 @@ $latest_ratings_sql = "
         p.program_number,
         p.owner_agency_id,
         u.agency_name,
-        JSON_UNQUOTE(JSON_EXTRACT(ps_latest.content_json, '$.rating')) as latest_rating,
-        ps_latest.submission_date,
-        ps_latest.updated_at,
-        ps_latest.is_draft,
-        (p.owner_agency_id = ?) as is_owned_by_agency
+        p.rating,
+        p.updated_at
     FROM programs p
     LEFT JOIN users u ON p.owner_agency_id = u.user_id
-    LEFT JOIN (
-        SELECT 
-            ps1.program_id,
-            ps1.content_json,
-            ps1.submission_date,
-            ps1.updated_at,
-            ps1.is_draft
-        FROM program_submissions ps1
-        INNER JOIN (
-            SELECT 
-                program_id, 
-                MAX(updated_at) as max_updated_at
-            FROM program_submissions 
-            GROUP BY program_id
-        ) ps2 ON ps1.program_id = ps2.program_id AND ps1.updated_at = ps2.max_updated_at
-    ) ps_latest ON p.program_id = ps_latest.program_id
     WHERE p.initiative_id = ?
     ORDER BY p.program_id
 ";
 
 $stmt = $conn->prepare($latest_ratings_sql);
-$stmt->bind_param('ii', $agency_id, $initiative_id);
+$stmt->bind_param('i', $initiative_id);
 $stmt->execute();
 $result = $stmt->get_result();
 
 while ($row = $result->fetch_assoc()) {
-    // Use latest_rating from submissions if available, fallback to legacy program rating
-    $row['rating'] = $row['latest_rating'] ?? 'not-started';
     $programs[] = $row;
 }
 
@@ -147,6 +127,15 @@ if (!empty($programs)) {
     }
 }
 
+// Get column names using db_names helper
+$initiative_id_col = get_column_name('initiatives', 'id');
+$initiative_name_col = get_column_name('initiatives', 'name');
+$initiative_number_col = get_column_name('initiatives', 'number');
+$initiative_description_col = get_column_name('initiatives', 'description');
+$start_date_col = get_column_name('initiatives', 'start_date');
+$end_date_col = get_column_name('initiatives', 'end_date');
+$is_active_col = get_column_name('initiatives', 'is_active');
+
 // Set page title
 $pageTitle = 'Initiative Progress Tracker';
 
@@ -192,10 +181,10 @@ require_once '../../layouts/page_header.php';
     <div class="initiative-overview">
         <div class="initiative-title">
             <i class="fas fa-leaf"></i>
-            <?php echo htmlspecialchars($initiative['initiative_name']); ?>
-            <?php if (!empty($initiative['initiative_number'])): ?>
+            <?php echo htmlspecialchars($initiative[$initiative_name_col]); ?>
+            <?php if (!empty($initiative[$initiative_number_col])): ?>
                 <span class="badge bg-primary ms-3" style="font-size: 0.6em; padding: 0.5rem 1rem; vertical-align: middle;">
-                    #<?php echo htmlspecialchars($initiative['initiative_number']); ?>
+                    #<?php echo htmlspecialchars($initiative[$initiative_number_col]); ?>
                 </span>
             <?php endif; ?>
         </div>
@@ -204,12 +193,12 @@ require_once '../../layouts/page_header.php';
                 <i class="fas fa-calendar"></i>
                 <span>
                     <?php 
-                    if (!empty($initiative['start_date']) && !empty($initiative['end_date'])) {
-                        echo date('Y-m-d', strtotime($initiative['start_date'])) . ' to ' . date('Y-m-d', strtotime($initiative['end_date']));
+                    if (!empty($initiative[$start_date_col]) && !empty($initiative[$end_date_col])) {
+                        echo date('Y-m-d', strtotime($initiative[$start_date_col])) . ' to ' . date('Y-m-d', strtotime($initiative[$end_date_col]));
                         
                         // Calculate duration in years
-                        $start = new DateTime($initiative['start_date']);
-                        $end = new DateTime($initiative['end_date']);
+                        $start = new DateTime($initiative[$start_date_col]);
+                        $end = new DateTime($initiative[$end_date_col]);
                         $interval = $start->diff($end);
                         $years = $interval->y + ($interval->m / 12) + ($interval->d / 365);
                         echo ' (' . round($years, 1) . ' years)';
@@ -223,9 +212,9 @@ require_once '../../layouts/page_header.php';
                 <i class="fas fa-clock"></i>
                 <span>
                     <?php 
-                    if (!empty($initiative['start_date']) && !empty($initiative['end_date'])) {
-                        $start = new DateTime($initiative['start_date']);
-                        $end = new DateTime($initiative['end_date']);
+                    if (!empty($initiative[$start_date_col]) && !empty($initiative[$end_date_col])) {
+                        $start = new DateTime($initiative[$start_date_col]);
+                        $end = new DateTime($initiative[$end_date_col]);
                         $now = new DateTime();
                         
                         $total_duration = $start->diff($end);
@@ -245,7 +234,7 @@ require_once '../../layouts/page_header.php';
                 </span>
             </div>
             <div class="meta-item">
-                <?php if ($initiative['is_active']): ?>
+                <?php if ($initiative[$is_active_col]): ?>
                     <span class="badge">Status: Active</span>
                 <?php else: ?>
                     <span class="badge" style="background-color: #6c757d;">Status: Inactive</span>
@@ -261,9 +250,9 @@ require_once '../../layouts/page_header.php';
                 <div class="metric-value" style="color: #ffc107;">
                     <?php 
                     // Calculate timeline progress percentage
-                    if (!empty($initiative['start_date']) && !empty($initiative['end_date'])) {
-                        $start = new DateTime($initiative['start_date']);
-                        $end = new DateTime($initiative['end_date']);
+                    if (!empty($initiative[$start_date_col]) && !empty($initiative[$end_date_col])) {
+                        $start = new DateTime($initiative[$start_date_col]);
+                        $end = new DateTime($initiative[$end_date_col]);
                         $now = new DateTime();
                         
                         $total_duration = $start->diff($end)->days;
@@ -287,9 +276,9 @@ require_once '../../layouts/page_header.php';
                 <div class="metric-sublabel">
                     <i class="fas fa-hourglass-half"></i>
                     <?php 
-                    if (!empty($initiative['start_date']) && !empty($initiative['end_date'])) {
-                        $start = new DateTime($initiative['start_date']);
-                        $end = new DateTime($initiative['end_date']);
+                    if (!empty($initiative[$start_date_col]) && !empty($initiative[$end_date_col])) {
+                        $start = new DateTime($initiative[$start_date_col]);
+                        $end = new DateTime($initiative[$end_date_col]);
                         $now = new DateTime();
                         
                         $total_years = round($start->diff($end)->days / 365, 1);
@@ -359,13 +348,13 @@ require_once '../../layouts/page_header.php';
             </div>
             <div class="card-body">
                 <!-- Description -->
-                <?php if (!empty($initiative['initiative_description'])): ?>
+                <?php if (!empty($initiative[$initiative_description_col])): ?>
                 <div class="initiative-description mb-4">
                     <h6 class="text-muted mb-2">
                         <i class="fas fa-align-left me-1"></i>Description
                     </h6>
                     <div class="p-3 bg-light rounded">
-                        <p class="mb-0"><?php echo nl2br(htmlspecialchars($initiative['initiative_description'])); ?></p>
+                        <p class="mb-0"><?php echo nl2br(htmlspecialchars($initiative[$initiative_description_col])); ?></p>
                     </div>
                 </div>
                 <?php endif; ?>
@@ -376,23 +365,23 @@ require_once '../../layouts/page_header.php';
                         <i class="fas fa-calendar-alt me-1"></i>Timeline
                     </h6>
                     <div class="timeline-info p-3 bg-light rounded">
-                        <?php if (!empty($initiative['start_date']) || !empty($initiative['end_date'])): ?>
+                        <?php if (!empty($initiative[$start_date_col]) || !empty($initiative[$end_date_col])): ?>
                             <div class="d-flex align-items-center">
                                 <i class="fas fa-calendar-check me-2 text-success"></i>
                                 <span>
                                     <?php 
-                                    if (!empty($initiative['start_date']) && !empty($initiative['end_date'])) {
-                                        echo date('M j, Y', strtotime($initiative['start_date'])) . ' - ' . date('M j, Y', strtotime($initiative['end_date']));
+                                    if (!empty($initiative[$start_date_col]) && !empty($initiative[$end_date_col])) {
+                                        echo date('M j, Y', strtotime($initiative[$start_date_col])) . ' - ' . date('M j, Y', strtotime($initiative[$end_date_col]));
                                         
                                         // Calculate duration
-                                        $start = new DateTime($initiative['start_date']);
-                                        $end = new DateTime($initiative['end_date']);
+                                        $start = new DateTime($initiative[$start_date_col]);
+                                        $end = new DateTime($initiative[$end_date_col]);
                                         $interval = $start->diff($end);
                                         echo ' <span class="text-muted">(' . $interval->days . ' days)</span>';
-                                    } elseif (!empty($initiative['start_date'])) {
-                                        echo 'Started: ' . date('M j, Y', strtotime($initiative['start_date']));
-                                    } elseif (!empty($initiative['end_date'])) {
-                                        echo 'Due: ' . date('M j, Y', strtotime($initiative['end_date']));
+                                    } elseif (!empty($initiative[$start_date_col])) {
+                                        echo 'Started: ' . date('M j, Y', strtotime($initiative[$start_date_col]));
+                                    } elseif (!empty($initiative[$end_date_col])) {
+                                        echo 'Due: ' . date('M j, Y', strtotime($initiative[$end_date_col]));
                                     }
                                     ?>
                                 </span>

@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['program_id'])) {
     $program_id = intval($_POST['program_id']);
     $user_id = $_SESSION['user_id'];
       // Verify program exists and belongs to this agency
-    $query = "SELECT program_name FROM programs WHERE program_id = ? AND owner_agency_id = ? AND is_assigned = 0";
+    $query = "SELECT program_name FROM programs WHERE program_id = ? AND agency_id = (SELECT agency_id FROM users WHERE user_id = ?)";
     $stmt = $conn->prepare($query);
     $stmt->bind_param("ii", $program_id, $user_id);
     $stmt->execute();

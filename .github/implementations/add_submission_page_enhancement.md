@@ -1,0 +1,14 @@
+- [x] Remove duplicate Targets and Submission Info sections from the form
+- [x] Move the Targets and Submission Info cards back to the right column (col-md-4) for a balanced two-column layout
+- [x] Remove the Submit button from the add submission form, leaving only Save as Draft. Every first submission should be a draft and only focal users can submit submissions.
+- [x] Separate the scripts and styles from the add submission page into their own modular files in the assets directory.
+- [x] Import add_submission.css into main.css for automatic inclusion.
+- [x] Move the Targets section to the left side, below the Description, and expand it to the full width of the card section if possible.
+- [x] Add an attachment section under the Submission Info card on the right side of the add submission page.
+- [x] Implement a modern, user-friendly multi-file upload interface for attachments: allow adding files one by one or in batches, show a list, allow removal, and upload all on form submission.
+- [x] Remove all references to deleted columns from program_submissions logic and UI.
+- [x] Fix all redirection and back button issues for add/update submission/program.
+- [x] Replace 'Add Submission' button with 'Submission Information' for programs with draft submissions.
+- [x] Add 'Edit' button in Existing Submissions section for each draft, linking to an edit submission page.
+- [x] Implement submission_info.php and edit_submission.php pages for viewing and editing submission details, respectively.
+- [x] Implement backend integration for updating program submissions (update_program_submission). 

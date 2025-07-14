@@ -51,7 +51,11 @@ if (!empty($classes)) {
             <div class="page-header__text">
                 <h1 class="page-header__title"><?php echo htmlspecialchars($title); ?></h1>
                 <?php if (!empty($subtitle)): ?>
-                    <p class="page-header__subtitle"><?php echo htmlspecialchars($subtitle); ?></p>
+                    <?php if (!empty($header_config['subtitle_html'])): ?>
+                        <p class="page-header__subtitle"><?php echo $subtitle; ?></p>
+                    <?php else: ?>
+                        <p class="page-header__subtitle"><?php echo htmlspecialchars($subtitle); ?></p>
+                    <?php endif; ?>
                 <?php endif; ?>
             </div>
             

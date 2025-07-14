@@ -63,7 +63,7 @@ $current_period = get_current_reporting_period();
 
 // If no current period, use the latest period
 if (!$current_period) {
-    $latest_period_query = "SELECT * FROM reporting_periods ORDER BY year DESC, quarter DESC LIMIT 1";
+    $latest_period_query = "SELECT * FROM reporting_periods ORDER BY year DESC, period_type ASC, period_number DESC LIMIT 1";
     $latest_result = $conn->query($latest_period_query);
     if ($latest_result && $latest_result->num_rows > 0) {
         $current_period = $latest_result->fetch_assoc();
@@ -83,7 +83,7 @@ $selected_period = null;
 
 // Fetch all periods for selector
 if ($conn) {
-    $periods_result = $conn->query("SELECT * FROM reporting_periods ORDER BY year DESC, quarter DESC");
+    $periods_result = $conn->query("SELECT * FROM reporting_periods ORDER BY year DESC, period_type ASC, period_number DESC");
     if ($periods_result) {
         while ($row = $periods_result->fetch_assoc()) {
             $all_periods[] = $row;
@@ -379,13 +379,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
             if ($sector_id) {
-                $sector_query = $conn->prepare("SELECT sector_name FROM sectors WHERE sector_id = ?");
-                $sector_query->bind_param("i", $sector_id);
-                $sector_query->execute();
-                $sector_result = $sector_query->get_result();
-                if ($sector_row = $sector_result->fetch_assoc()) {
-                    $sector_name = $sector_row['sector_name'];
-                }
+                // Since sectors table has been removed, use default sector name
+                $sector_name = 'Forestry Sector';
             }
             
             // Build after state
@@ -520,13 +515,14 @@ if ($agencies_result) {
     }
 }
 
-$sectors = [];
-$sectors_result = $conn->query("SELECT sector_id, sector_name FROM sectors ORDER BY sector_name");
-if ($sectors_result) {
-    while ($row = $sectors_result->fetch_assoc()) {
-        $sectors[] = $row;
-    }
-}
+// Remove sector dropdown and sector queries
+// Replace with agency-based or default logic where necessary
+$sectors = [
+    [
+        'sector_id' => 1,
+        'sector_name' => 'Forestry Sector'
+    ]
+];
 
 // Extract edit permissions for admin interface
 $edit_permissions = [];
@@ -594,7 +590,7 @@ if (empty($current_targets)) {
 
 // Get available outcomes and existing program-outcome links
 $available_outcomes = [];
-$outcomes_result = $conn->query("SELECT detail_id, detail_name FROM outcomes_details ORDER BY detail_name");
+$outcomes_result = $conn->query("SELECT id, title FROM outcomes ORDER BY title");
 if ($outcomes_result) {
     while ($row = $outcomes_result->fetch_assoc()) {
         $available_outcomes[] = $row;
@@ -603,9 +599,9 @@ if ($outcomes_result) {
 
 // Get currently linked outcomes for this program
 $linked_outcomes = [];
-$linked_query = $conn->prepare("SELECT pol.outcome_id, od.detail_name 
+$linked_query = $conn->prepare("SELECT pol.outcome_id, od.title 
                                FROM program_outcome_links pol
-                               JOIN outcomes_details od ON pol.outcome_id = od.detail_id
+                               JOIN outcomes od ON pol.outcome_id = od.id
                                WHERE pol.program_id = ?");
 $linked_query->bind_param("i", $program_id);
 $linked_query->execute();
@@ -954,9 +950,9 @@ require_once '../../layouts/page_header.php';
                                                         <select class="form-select" name="outcome_id[]">
                                                             <option value="">Select Outcome</option>
                                                             <?php foreach ($available_outcomes as $outcome): ?>
-                                                                <option value="<?php echo $outcome['detail_id']; ?>" 
-                                                                        <?php echo ($outcome['detail_id'] == $outcome_id) ? 'selected' : ''; ?>>
-                                                                    <?php echo htmlspecialchars($outcome['detail_name']); ?>
+                                                                <option value="<?php echo $outcome['id']; ?>" 
+                                                                        <?php echo ($outcome['id'] == $outcome_id) ? 'selected' : ''; ?>>
+                                                                    <?php echo htmlspecialchars($outcome['title']); ?>
                                                                 </option>
                                                             <?php endforeach; ?>
                                                         </select>
@@ -1432,8 +1428,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         <select class="form-select" name="outcome_id[]">
                             <option value="">Select Outcome</option>
                             <?php foreach ($available_outcomes as $outcome): ?>
-                                <option value="<?php echo $outcome['detail_id']; ?>">
-                                    <?php echo htmlspecialchars($outcome['detail_name']); ?>
+                                <option value="<?php echo $outcome['id']; ?>">
+                                    <?php echo htmlspecialchars($outcome['title']); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>

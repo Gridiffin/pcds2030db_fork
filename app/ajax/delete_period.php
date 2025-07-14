@@ -57,7 +57,8 @@ $required_libs = [
     ROOT_PATH . 'app/lib/functions.php',     // For general functions (is_logged_in, potentially is_admin if not in admin_functions)
     ROOT_PATH . 'app/lib/admin_functions.php', // For admin-specific functions (is_admin)
     ROOT_PATH . 'app/lib/db_connect.php',    // For database connection ($conn)
-    ROOT_PATH . 'app/lib/audit_log.php'      // For audit logging
+    ROOT_PATH . 'app/lib/audit_log.php',      // For audit logging
+    ROOT_PATH . 'app/lib/db_names_helper.php' // For database name helpers
 ];
 
 foreach ($required_libs as $lib_path) {
@@ -91,7 +92,7 @@ try {
     }
 
     $periodId = intval($_POST['period_id']);    // Check if the period exists using mysqli and get period details for audit logging
-    $stmt = $conn->prepare("SELECT period_id, quarter, year, status FROM reporting_periods WHERE period_id = ?");
+    $stmt = $conn->prepare("SELECT period_id, period_type, period_number, year, status FROM reporting_periods WHERE period_id = ?");
     if (!$stmt) {
         error_log("MySQLi prepare error (check period): " . $conn->error);
         send_json_response(false, 'Database query error (check period).');
@@ -111,7 +112,7 @@ try {
     
     // Store period details for audit logging
     $period_data = $result->fetch_assoc();
-    $period_name = "Q{$period_data['quarter']} {$period_data['year']}";
+    $period_name = "{$period_data['period_type']} {$period_data['period_number']} {$period_data['year']}";
     $stmt->close();
 
     // TODO: Add dependency check here if necessary (e.g., check for submissions linked to this period)

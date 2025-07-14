@@ -577,78 +577,15 @@ function applyInitialFilters() {
 
 /**
  * Toast Notification System
- * Provides immediate feedback to users without page reloads
+ * Uses the global showToast function for consistency
  */
 function showToast(message, type = 'info', duration = 5000) {
-    // Create toast container if it doesn't exist
-    let toastContainer = document.getElementById('toast-container');
-    if (!toastContainer) {
-        toastContainer = document.createElement('div');
-        toastContainer.id = 'toast-container';
-        toastContainer.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 9999;
-            max-width: 350px;
-        `;
-        document.body.appendChild(toastContainer);
+    if (typeof window.showToast === 'function') {
+        window.showToast('Notification', message, type, duration);
+    } else {
+        // Fallback if global showToast isn't loaded
+        alert(message);
     }
-    
-    // Create toast element
-    const toastId = 'toast-' + Date.now();
-    const toast = document.createElement('div');
-    toast.id = toastId;
-    toast.className = `alert alert-${type} alert-dismissible fade show mb-2`;
-    toast.setAttribute('role', 'alert');
-    toast.style.cssText = `
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        border: none;
-    `;
-    
-    // Set icon based on type
-    let icon;
-    switch (type) {
-        case 'success':
-            icon = 'fa-check-circle';
-            break;
-        case 'danger':
-        case 'error':
-            icon = 'fa-exclamation-circle';
-            break;
-        case 'warning':
-            icon = 'fa-exclamation-triangle';
-            break;
-        default:
-            icon = 'fa-info-circle';
-    }
-    
-    toast.innerHTML = `
-        <div class="d-flex align-items-center">
-            <i class="fas ${icon} me-2"></i>
-            <div>${message}</div>
-            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    `;
-    
-    // Add to container
-    toastContainer.appendChild(toast);
-    
-    // Auto-remove after duration
-    if (duration > 0) {
-        setTimeout(() => {
-            if (document.getElementById(toastId)) {
-                toast.classList.remove('show');
-                setTimeout(() => {
-                    if (toast.parentNode) {
-                        toast.parentNode.removeChild(toast);
-                    }
-                }, 150);
-            }
-        }, duration);
-    }
-    
-    return toast;
 }
 
 /**

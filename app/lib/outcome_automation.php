@@ -27,9 +27,9 @@ function updateOutcomeDataOnProgramStatusChange($program_id, $new_status, $perio
     
     try {
         // Check if this program is linked to any outcomes
-        $links_query = "SELECT pol.outcome_id, od.detail_name, od.is_cumulative
+        $links_query = "SELECT pol.outcome_id, od.title, od.is_cumulative
                        FROM program_outcome_links pol
-                       JOIN outcomes_details od ON pol.outcome_id = od.detail_id
+                       JOIN outcomes od ON pol.outcome_id = od.id
                        WHERE pol.program_id = ?";
         
         $stmt = $conn->prepare($links_query);
@@ -59,7 +59,7 @@ function updateOutcomeDataOnProgramStatusChange($program_id, $new_status, $perio
         // Process each linked outcome
         while ($link = $links_result->fetch_assoc()) {
             $outcome_id = $link['outcome_id'];
-            $outcome_name = $link['detail_name'];
+            $outcome_name = $link['title'];
             $is_cumulative = $link['is_cumulative'];
             
             // Only process if the program is being marked as completed
@@ -188,10 +188,11 @@ function updateOutcomeDataOnProgramStatusChange($program_id, $new_status, $perio
 function getLinkedPrograms($outcome_id) {
     global $conn;
     
-    $query = "SELECT p.program_id, p.program_name, p.sector_id, u.agency_name
+    $query = "SELECT p.program_id, p.program_name, p.sector_id, a.agency_name
               FROM program_outcome_links pol
               JOIN programs p ON pol.program_id = p.program_id
-              JOIN users u ON p.owner_agency_id = u.user_id
+              JOIN users u ON p.users_assigned = u.user_id
+              JOIN agency a ON u.agency_id = a.agency_id
               WHERE pol.outcome_id = ?
               ORDER BY p.program_name";
     
@@ -239,7 +240,7 @@ function getOutcomeDataWithCumulative($outcome_id, $sector_id, $period_id) {
     global $conn;
     
     // First, check if this outcome is cumulative
-    $outcome_query = "SELECT is_cumulative, detail_name FROM outcomes_details WHERE detail_id = ?";
+    $outcome_query = "SELECT is_cumulative, title FROM outcomes WHERE id = ?";
     $stmt = $conn->prepare($outcome_query);
     $stmt->bind_param("i", $outcome_id);
     $stmt->execute();
@@ -278,7 +279,7 @@ function getOutcomeDataWithCumulative($outcome_id, $sector_id, $period_id) {
             'is_cumulative' => true,
             'cumulative_total' => $cumulative_total,
             'data_entries' => $data_entries,
-            'outcome_name' => $outcome_info['detail_name']
+            'outcome_name' => $outcome_info['title']
         ];
     } else {
         // For non-cumulative data, get only the specific period
@@ -300,7 +301,7 @@ function getOutcomeDataWithCumulative($outcome_id, $sector_id, $period_id) {
         return [
             'is_cumulative' => false,
             'data_entries' => $data_entries,
-            'outcome_name' => $outcome_info['detail_name']
+            'outcome_name' => $outcome_info['title']
         ];
     }
 }

@@ -39,18 +39,23 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 try {
     // Validate required parameters
-    if (!isset($_POST['program_id']) || !isset($_FILES['attachment_file'])) {
-        echo json_encode(['success' => false, 'error' => 'Missing required parameters']);
+    if (!isset($_POST['program_id']) || !isset($_FILES['attachment_file']) || !isset($_POST['submission_id'])) {
+        echo json_encode(['success' => false, 'error' => 'Missing required parameters (program_id, submission_id, or file)']);
         exit;
     }
     
     $program_id = intval($_POST['program_id']);
     $description = trim($_POST['description'] ?? '');
-    $submission_id = !empty($_POST['submission_id']) ? intval($_POST['submission_id']) : null;
+    $submission_id = intval($_POST['submission_id']);
     
-    // Validate program ID
+    // Validate program ID and submission ID
     if ($program_id <= 0) {
         echo json_encode(['success' => false, 'error' => 'Invalid program ID']);
+        exit;
+    }
+    
+    if ($submission_id <= 0) {
+        echo json_encode(['success' => false, 'error' => 'Invalid submission ID']);
         exit;
     }
     

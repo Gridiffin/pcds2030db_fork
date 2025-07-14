@@ -27,7 +27,7 @@ function get_admin_dashboard_stats() {
         'submissions_complete' => 0,
         'submissions_pending' => 0,
         'program_status' => [],
-        'sector_programs' => []
+        'agency_programs' => []
     ];
     
     // Get current period
@@ -48,10 +48,10 @@ function get_admin_dashboard_stats() {
         // Get program submission counts
         $query = "SELECT 
                     u.user_id,
-                    (SELECT COUNT(*) FROM programs p WHERE p.owner_agency_id = u.user_id) AS agency_programs,
+                    (SELECT COUNT(*) FROM programs p WHERE p.users_assigned = u.user_id) AS agency_programs,
                     (SELECT COUNT(*) FROM program_submissions ps 
                      JOIN programs p ON ps.program_id = p.program_id 
-                     WHERE p.owner_agency_id = u.user_id AND ps.period_id = ?) AS submitted_programs
+                     WHERE p.users_assigned = u.user_id AND ps.period_id = ?) AS submitted_programs
                   FROM users u
                   WHERE u.role IN ('agency', 'focal')";
         
@@ -90,33 +90,26 @@ function get_admin_dashboard_stats() {
         ];
     }
     
-    // Get programs by sector
-    $query = "SELECT s.sector_name, COUNT(p.program_id) as program_count
-              FROM sectors s
-              LEFT JOIN programs p ON s.sector_id = p.sector_id
-              GROUP BY s.sector_id
+    // Get programs by agency
+    $query = "SELECT a.agency_name, COUNT(p.program_id) as program_count
+              FROM agency a
+              LEFT JOIN programs p ON a.agency_id = p.agency_id
+              GROUP BY a.agency_id
               ORDER BY program_count DESC";
-    
     $result = $conn->query($query);
-    
-    $sector_data = [
+    $agency_data = [
         'labels' => [],
         'data' => [],
         'backgroundColor' => [
-            '#8591a4', // Primary color
-            '#A49885', // Secondary color
-            '#607b9b', // Variation of primary
-            '#b3a996', // Variation of secondary
-            '#4f616f'  // Another variation
+            '#8591a4', '#A49885', '#607b9b', '#b3a996', '#4f616f'
         ]
     ];
-    
     while ($row = $result->fetch_assoc()) {
-        $sector_data['labels'][] = $row['sector_name'];
-        $sector_data['data'][] = $row['program_count'];
+        $agency_data['labels'][] = $row['agency_name'];
+        $agency_data['data'][] = $row['program_count'];
     }
-    
-    $stats['sector_programs'] = $sector_data;
+    $stats['agency_programs'] = $agency_data;
+    unset($stats['sector_programs']);
     
     return $stats;
 }
@@ -226,15 +219,20 @@ function get_admin_programs_list($period_id = null, $filters = []) {
 
     // Construct the main query with subquery to get latest submission per program
     $sql = "SELECT 
-                p.program_id, p.program_name, p.program_number, p.owner_agency_id, p.sector_id, p.created_at, p.is_assigned,
+                p.program_id, p.program_name, p.program_number, p.agency_id, p.created_at,
                 p.initiative_id, i.initiative_name, i.initiative_number,
-                s.sector_name, 
-                u.agency_name,
-                latest_sub.submission_id, latest_sub.is_draft, latest_sub.submission_date, latest_sub.updated_at, latest_sub.period_id AS submission_period_id,
-                COALESCE(JSON_UNQUOTE(JSON_EXTRACT(latest_sub.content_json, '$.rating')), 'not-started') as rating
+                a.agency_name,
+                latest_sub.submission_id, latest_sub.is_draft, latest_sub.submitted_at, latest_sub.updated_at, latest_sub.period_id AS submission_period_id,
+                COALESCE(
+                  MAX(CASE WHEN pt.status_indicator = 'delayed' THEN 'delayed' END),
+                  MAX(CASE WHEN pt.status_indicator = 'in_progress' THEN 'in_progress' END),
+                  MAX(CASE WHEN pt.status_indicator = 'completed' THEN 'completed' END),
+                  MAX(CASE WHEN pt.status_indicator = 'not_started' THEN 'not_started' END),
+                  'not_started'
+                ) as rating
             FROM programs p
-            JOIN sectors s ON p.sector_id = s.sector_id
-            JOIN users u ON p.owner_agency_id = u.user_id
+            JOIN users u ON p.agency_id = u.agency_id
+            LEFT JOIN agency a ON u.agency_id = a.agency_id
             LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
             LEFT JOIN (
                 SELECT ps1.*
@@ -245,7 +243,8 @@ function get_admin_programs_list($period_id = null, $filters = []) {
                     WHERE period_id = ?
                     GROUP BY program_id
                 ) ps2 ON ps1.program_id = ps2.program_id AND ps1.submission_id = ps2.max_submission_id
-            ) latest_sub ON p.program_id = latest_sub.program_id";
+            ) latest_sub ON p.program_id = latest_sub.program_id
+            LEFT JOIN program_targets pt ON latest_sub.submission_id = pt.submission_id AND pt.is_deleted = 0";
     
     $params = [$period_id];
     $param_types = 'i';
@@ -255,19 +254,13 @@ function get_admin_programs_list($period_id = null, $filters = []) {
         // Remove any reference to ps.status (column deleted)
         // Use rating from JSON content instead
         if (isset($filters['status']) && $filters['status'] !== 'all' && $filters['status'] !== '') {
-            $conditions[] = "COALESCE(JSON_UNQUOTE(JSON_EXTRACT(latest_sub.content_json, '$.rating')), 'not-started') = ?";
+            $conditions[] = "COALESCE(latest_sub.status_indicator, 'not-started') = ?";
             $params[] = $filters['status'];
             $param_types .= 's';
         }
         
-        if (isset($filters['sector_id']) && $filters['sector_id'] !== 'all' && $filters['sector_id'] !== 0 && $filters['sector_id'] !== '') {
-            $conditions[] = "p.sector_id = ?";
-            $params[] = $filters['sector_id'];
-            $param_types .= "i";
-        }
-        
         if (isset($filters['agency_id']) && $filters['agency_id'] !== 'all' && $filters['agency_id'] !== 0 && $filters['agency_id'] !== '') {
-            $conditions[] = "p.owner_agency_id = ?";
+            $conditions[] = "p.agency_id = ?";
             $params[] = $filters['agency_id'];
             $param_types .= "i";
         }
@@ -287,20 +280,12 @@ function get_admin_programs_list($period_id = null, $filters = []) {
         $param_types .= 'ss';
     }
     
-    // Add is_assigned filter
-    if (isset($filters['is_assigned'])) {
-        $conditions[] = "p.is_assigned = ?";
-        $params[] = $filters['is_assigned'] ? 1 : 0;
-        $param_types .= "i";
-    }
-    
     if (!empty($conditions)) {
         $sql .= " WHERE " . implode(" AND ", $conditions);
     }
     
-    // ORDER BY and LIMIT clauses should not introduce a GROUP BY that causes this issue.
-    // If a GROUP BY is necessary, it must include all non-aggregated selected columns.
-    // For now, let's assume the GROUP BY was the issue and remove/adjust it if it's further down.
+    // After building $sql and appending WHERE clause (if any), append GROUP BY p.program_id, then ORDER BY, then LIMIT/OFFSET.
+    // Remove GROUP BY from the main query string if it was already there.
     // The error occurs at line 310, which is $stmt = $conn->prepare($sql);
     // This implies the $sql string itself is the problem before prepare.
 
@@ -336,15 +321,20 @@ function get_admin_programs_list($period_id = null, $filters = []) {
     // ) ps ON p.program_id = ps.program_id";
     // This subquery for ps might be causing issues with ONLY_FULL_GROUP_BY if not handled correctly when integrated.    // Simpler JOIN without subquery for ps:
     $sql = "SELECT 
-                p.program_id, p.program_name, p.program_number, p.owner_agency_id, p.sector_id, p.created_at, p.is_assigned,
+                p.program_id, p.program_name, p.program_number, p.agency_id, p.created_at,
                 p.initiative_id, i.initiative_name, i.initiative_number,
-                s.sector_name, 
-                u.agency_name,
-                latest_sub.submission_id, latest_sub.is_draft, latest_sub.submission_date, latest_sub.updated_at, latest_sub.period_id AS submission_period_id,
-                COALESCE(JSON_UNQUOTE(JSON_EXTRACT(latest_sub.content_json, '$.rating')), 'not-started') as rating
+                a.agency_name,
+                latest_sub.submission_id, latest_sub.is_draft, latest_sub.submitted_at, latest_sub.updated_at, latest_sub.period_id AS submission_period_id,
+                COALESCE(
+                  MAX(CASE WHEN pt.status_indicator = 'delayed' THEN 'delayed' END),
+                  MAX(CASE WHEN pt.status_indicator = 'in_progress' THEN 'in_progress' END),
+                  MAX(CASE WHEN pt.status_indicator = 'completed' THEN 'completed' END),
+                  MAX(CASE WHEN pt.status_indicator = 'not_started' THEN 'not_started' END),
+                  'not_started'
+                ) as rating
             FROM programs p
-            JOIN sectors s ON p.sector_id = s.sector_id
-            JOIN users u ON p.owner_agency_id = u.user_id
+            JOIN users u ON p.agency_id = u.agency_id
+            LEFT JOIN agency a ON u.agency_id = a.agency_id
             LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
             LEFT JOIN (
                 SELECT ps1.*
@@ -355,7 +345,8 @@ function get_admin_programs_list($period_id = null, $filters = []) {
                     WHERE period_id = ?
                     GROUP BY program_id
                 ) ps2 ON ps1.program_id = ps2.program_id AND ps1.submission_id = ps2.max_submission_id
-            ) latest_sub ON p.program_id = latest_sub.program_id";
+            ) latest_sub ON p.program_id = latest_sub.program_id
+            LEFT JOIN program_targets pt ON latest_sub.submission_id = pt.submission_id AND pt.is_deleted = 0";
 
 
     $params = []; // Re-initialize params for this corrected SQL structure
@@ -372,17 +363,12 @@ function get_admin_programs_list($period_id = null, $filters = []) {
         $param_types .= 'ss';
     }    // Add other filters as before
     if (isset($filters['status']) && $filters['status'] !== 'all' && $filters['status'] !== '') {
-        $where_clauses[] = "COALESCE(JSON_UNQUOTE(JSON_EXTRACT(latest_sub.content_json, '$.rating')), 'not-started') = ?";
+        $where_clauses[] = "COALESCE(latest_sub.status_indicator, 'not-started') = ?";
         $params[] = $filters['status'];
         $param_types .= "s";
     }
-    if (isset($filters['sector_id']) && $filters['sector_id'] !== 'all' && $filters['sector_id'] !== 0 && $filters['sector_id'] !== '') {
-        $where_clauses[] = "p.sector_id = ?";
-        $params[] = $filters['sector_id'];
-        $param_types .= "i";
-    }
     if (isset($filters['agency_id']) && $filters['agency_id'] !== 'all' && $filters['agency_id'] !== 0 && $filters['agency_id'] !== '') {
-        $where_clauses[] = "p.owner_agency_id = ?";
+        $where_clauses[] = "p.agency_id = ?";
         $params[] = $filters['agency_id'];
         $param_types .= "i";
     }
@@ -393,13 +379,6 @@ function get_admin_programs_list($period_id = null, $filters = []) {
         $param_types .= "s";
     }
 
-    // Add is_assigned filter
-    if (isset($filters['is_assigned'])) {
-        $where_clauses[] = "p.is_assigned = ?";
-        $params[] = $filters['is_assigned'] ? 1 : 0;
-        $param_types .= "i";
-    }
-    
     if (!empty($where_clauses)) {
         $sql .= " WHERE " . implode(" AND ", $where_clauses);
     }
@@ -413,7 +392,7 @@ function get_admin_programs_list($period_id = null, $filters = []) {
     // ORDER BY clause
     $order_by_column = $filters['sort_by'] ?? 'p.program_name';
     $order_by_direction = $filters['sort_order'] ?? 'ASC';
-    $sql .= " ORDER BY $order_by_column $order_by_direction";
+    $sql .= " GROUP BY p.program_id ORDER BY $order_by_column $order_by_direction";
 
     // LIMIT and OFFSET for pagination
     if (isset($filters['limit'])) {
@@ -445,25 +424,25 @@ function get_admin_programs_list($period_id = null, $filters = []) {
 }
 
 /**
- * Get sector data for a specific reporting period
+ * Get agency data for a specific reporting period
  *
  * @param int $period_id The reporting period ID
- * @return array Sector data including name, agency count, program count, and submission percentage
+ * @return array Agency data including name, user count, program count, and submission percentage
  */
-function get_sector_data_for_period($period_id) {
+function get_agency_data_for_period($period_id) {
     global $conn;
-    
-    $sector_data = array();
-      $sql = "SELECT 
-                s.sector_id,
-                s.sector_name,
-                COUNT(DISTINCT u.user_id) as agency_count,
+    $agency_data = array();
+    $sql = "SELECT 
+                a.agency_id,
+                a.agency_name,
+                COUNT(DISTINCT u.user_id) as user_count,
                 COUNT(DISTINCT p.program_id) as program_count,
                 IFNULL(ROUND((COUNT(DISTINCT CASE WHEN ps.submission_id IS NOT NULL THEN ps.program_id END) / 
-                    NULLIF(COUNT(DISTINCT p.program_id), 0)) * 100, 0), 0) as submission_pct            FROM 
-                sectors s
-                LEFT JOIN users u ON s.sector_id = u.sector_id AND u.role IN ('agency', 'focal')
-                LEFT JOIN programs p ON u.user_id = p.owner_agency_id
+                    NULLIF(COUNT(DISTINCT p.program_id), 0)) * 100, 0), 0) as submission_pct
+            FROM 
+                agency a
+                LEFT JOIN users u ON a.agency_id = u.agency_id AND u.role IN ('agency', 'focal')
+                LEFT JOIN programs p ON a.agency_id = p.agency_id
                 LEFT JOIN (
                     SELECT ps1.program_id, ps1.submission_id
                     FROM program_submissions ps1
@@ -476,19 +455,17 @@ function get_sector_data_for_period($period_id) {
                     WHERE ps1.period_id = ?
                 ) ps ON p.program_id = ps.program_id
             GROUP BY 
-                s.sector_id, s.sector_name
+                a.agency_id, a.agency_name
             ORDER BY 
-                s.sector_name ASC";                
+                a.agency_name ASC";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("ii", $period_id, $period_id);
     $stmt->execute();
     $result = $stmt->get_result();
-    
     while ($row = $result->fetch_assoc()) {
-        $sector_data[] = $row;
+        $agency_data[] = $row;
     }
-    
-    return $sector_data;
+    return $agency_data;
 }
 
 /**
@@ -502,10 +479,11 @@ function get_recent_submissions($period_id = null, $limit = 5) {
     global $conn;
     
     $query = "SELECT ps.*, 
-              u.agency_name, 
+              a.agency_name, 
               p.program_name 
               FROM program_submissions ps
               JOIN users u ON ps.submitted_by = u.user_id
+              LEFT JOIN agency a ON u.agency_id = a.agency_id
               JOIN programs p ON ps.program_id = p.program_id
               WHERE 1=1";
     
@@ -516,7 +494,7 @@ function get_recent_submissions($period_id = null, $limit = 5) {
         $params = [];
     }
     
-    $query .= " ORDER BY ps.submission_date DESC LIMIT ?";
+    $query .= " ORDER BY ps.updated_at DESC LIMIT ?";
     $params[] = $limit;
     
     $stmt = $conn->prepare($query);
@@ -545,27 +523,6 @@ function get_recent_submissions($period_id = null, $limit = 5) {
 }
 
 /**
- * Get all sectors
- * 
- * @return array List of all sectors
- */
-function get_all_sectors() {
-    global $conn;
-    
-    $query = "SELECT sector_id, sector_name FROM sectors ORDER BY sector_name";
-    $result = $conn->query($query);
-    
-    $sectors = [];
-    if ($result) {
-        while ($row = $result->fetch_assoc()) {
-            $sectors[] = $row;
-        }
-    }
-    
-    return $sectors;
-}
-
-/**
  * Get detailed information about a specific program for admin view
  * 
  * @param int $program_id The ID of the program to retrieve
@@ -574,13 +531,13 @@ function get_all_sectors() {
 function get_admin_program_details($program_id) {
     global $conn;
     
-    $stmt = $conn->prepare("SELECT p.*, s.sector_name, u.agency_name, u.user_id as owner_agency_id,
+    $stmt = $conn->prepare("SELECT p.*, a.agency_name, u.user_id as users_assigned,
                                   i.initiative_id, i.initiative_name, i.initiative_number, 
                                   i.initiative_description, i.start_date as initiative_start_date, 
                                   i.end_date as initiative_end_date
                           FROM programs p
-                          LEFT JOIN sectors s ON p.sector_id = s.sector_id
-                          LEFT JOIN users u ON p.owner_agency_id = u.user_id
+                          LEFT JOIN users u ON p.users_assigned = u.user_id
+                          LEFT JOIN agency a ON u.agency_id = a.agency_id
                           LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
                           WHERE p.program_id = ?");
     $stmt->bind_param("i", $program_id);
@@ -627,35 +584,6 @@ function get_admin_program_details($program_id) {
     }
     
     return $program;
-}
-
-/**
- * Get sector info by ID
- *
- * @param int $sector_id The sector ID
- * @return array|null Associative array of sector data or null if not found
- */
-function get_sector_by_id($sector_id) {
-    global $conn;
-    $sector_id = intval($sector_id);
-    if (!$sector_id) {
-        return null;
-    }
-    try {
-        $query = "SELECT * FROM sectors WHERE sector_id = ?";
-        $stmt = $conn->prepare($query);
-        $stmt->bind_param("i", $sector_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        if ($result->num_rows > 0) {
-            return $result->fetch_assoc();
-        } else {
-            return null;
-        }
-    } catch (Exception $e) {
-        error_log("Error in get_sector_by_id: " . $e->getMessage());
-        return null;
-    }
 }
 
 /**

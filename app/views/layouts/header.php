@@ -1,3 +1,35 @@
+<?php
+// Ensure asset_url function is available
+if (!function_exists('asset_url')) {
+    // Define PROJECT_ROOT_PATH if not already defined
+    if (!defined('PROJECT_ROOT_PATH')) {
+        define('PROJECT_ROOT_PATH', rtrim(dirname(dirname(dirname(__DIR__))), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
+    }
+    
+    // Include asset helpers to get asset_url function
+    if (file_exists(PROJECT_ROOT_PATH . 'lib/asset_helpers.php')) {
+        require_once PROJECT_ROOT_PATH . 'lib/asset_helpers.php';
+    } elseif (file_exists(PROJECT_ROOT_PATH . 'config/config.php')) {
+        require_once PROJECT_ROOT_PATH . 'config/config.php';
+    } else {
+        // Fallback definition if files not found
+        function asset_url($type, $file) {
+            $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+            $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+            $script_name = $_SERVER['SCRIPT_NAME'] ?? '';
+            $base_path = dirname($script_name);
+            $base_path = str_replace('\\', '/', $base_path);
+            $base_path = rtrim($base_path, '/');
+            
+            if (strpos($base_path, '/app/') !== false) {
+                $base_path = substr($base_path, 0, strpos($base_path, '/app/'));
+            }
+            
+            return $protocol . '://' . $host . $base_path . '/assets/' . $type . '/' . $file;
+        }
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>

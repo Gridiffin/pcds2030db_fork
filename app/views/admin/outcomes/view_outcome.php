@@ -22,39 +22,35 @@ if (!is_admin()) {
     exit;
 }
 
-// Check if metric_id is provided (the system uses metric_id as primary identifier)
-if (!isset($_GET['metric_id']) || !is_numeric($_GET['metric_id'])) {
+// Get outcome ID from URL
+$outcome_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+if ($outcome_id === 0) {
     $_SESSION['error_message'] = 'Invalid outcome ID.';
     header('Location: manage_outcomes.php');
     exit;
 }
 
-$metric_id = (int) $_GET['metric_id'];
-
-// Get outcome data using the updated function with improved error handling
-$outcome_details = get_outcome_data_for_display($metric_id);
-
-if (!$outcome_details) {
+// Fetch outcome from new outcomes table
+$outcome = get_outcome_by_id($outcome_id);
+if (!$outcome) {
     $_SESSION['error_message'] = 'Outcome not found.';
     header('Location: manage_outcomes.php');
     exit;
 }
 
-$table_name = $outcome_details['table_name'];
-$period_id = $outcome_details['period_id'];
-$year = $outcome_details['year'] ?? 'N/A';
-$quarter = $outcome_details['quarter'] ?? 'N/A';
-$status = $outcome_details['status'] ?? 'submitted'; // Default to submitted if not present
-$overall_rating = $outcome_details['overall_rating'] ?? null;
-
-$created_at = new DateTime($outcome_details['created_at']);
-$updated_at = new DateTime($outcome_details['updated_at']);
+// Extract fields
+$title = $outcome['title'];
+$code = $outcome['code'];
+$type = $outcome['type'];
+$description = $outcome['description'];
+$data = $outcome['data'];
+$updated_at = new DateTime($outcome['updated_at']);
 
 // Get flexible structure configuration (updated to match agency side format)
 // All outcomes now use flexible format
 
 // Parse the outcome data (new flexible format)
-$outcome_data = json_decode($outcome_details['data_json'] ?? '{}', true) ?? [];
+$outcome_data = json_decode($outcome['data_json'] ?? '{}', true) ?? [];
 
 // Check if data is in new flexible format
 $is_flexible = isset($outcome_data['columns']) && isset($outcome_data['data']);
@@ -93,9 +89,9 @@ if ($is_flexible) {
     }
 } else {
     // Legacy fallback - shouldn't happen after migration
-    $outcome_metrics_data = $outcome_details['parsed_data'] ?? [];
-    if (empty($outcome_metrics_data) && !empty($outcome_details['data_json'])) {
-        $outcome_metrics_data = json_decode($outcome_details['data_json'], true) ?? [];
+    $outcome_metrics_data = $outcome['parsed_data'] ?? [];
+    if (empty($outcome_metrics_data) && !empty($outcome['data_json'])) {
+        $outcome_metrics_data = json_decode($outcome['data_json'], true) ?? [];
     }
     
     $metric_names = $outcome_metrics_data['columns'] ?? [];
@@ -139,13 +135,13 @@ $header_config = [
             'class' => 'btn-outline-primary'
         ],
         [
-            'url' => 'outcome_history.php?metric_id=' . $metric_id,
+            'url' => 'outcome_history.php?metric_id=' . $outcome_id,
             'text' => 'View History',
             'icon' => 'fas fa-history',
             'class' => 'btn-outline-info'
         ],
         [
-            'url' => 'edit_outcome.php?metric_id=' . $metric_id,
+            'url' => 'edit_outcome.php?metric_id=' . $outcome_id,
             'text' => 'Edit Outcome',
             'icon' => 'fas fa-edit',
             'class' => 'btn-primary'
@@ -161,7 +157,7 @@ require_once '../../layouts/page_header.php';
     <div class="card mb-4 admin-card">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h5 class="card-title m-0">
-                <i class="fas fa-bullseye me-2"></i><?= htmlspecialchars($table_name) ?>
+                <i class="fas fa-bullseye me-2"></i><?= htmlspecialchars($title) ?>
             </h5>
         </div>        <!-- Tab Navigation -->
         <ul class="nav nav-tabs" id="outcomeDetailTabs" role="tablist">
@@ -192,18 +188,10 @@ require_once '../../layouts/page_header.php';
                 <div class="card-body">
                     <div class="row mb-4">
                         <div class="col-md-6">
-                            <p><strong>Outcome ID:</strong> <?= $metric_id ?></p>
+                            <p><strong>Outcome ID:</strong> <?= $outcome_id ?></p>
                         </div>
                         <div class="col-md-6">
-                            <p><strong>Created:</strong> <?= $created_at->format('F j, Y, g:i A') ?></p>
-                            <p><strong>Last Updated:</strong> <?= $updated_at->format('F j, Y, g:i A') ?></p>
-                            <?php 
-                            // Only show submitted by if available
-                            $submitted_by = $outcome_details['submitted_by_username'] ?? null;
-                            if (!empty($submitted_by)): 
-                            ?>
-                                <p><strong>Submitted By:</strong> <?= htmlspecialchars($submitted_by) ?></p>
-                            <?php endif; ?>
+                            <p><strong>Updated:</strong> <?= $updated_at->format('F j, Y, g:i A') ?></p>
                         </div>
                     </div>
 
@@ -449,8 +437,8 @@ window.tableRows = <?= json_encode($row_labels ?? []) ?>;
 
 // Additional data for context
 const outcomeInfo = {
-    id: <?= $metric_id ?>,
-    tableName: <?= json_encode($table_name) ?>,
+    id: <?= $outcome_id ?>,
+    title: <?= json_encode($title) ?>,
     hasData: <?= json_encode($is_flexible && !empty($columns) && !empty($row_labels)) ?>
 };
 
@@ -467,7 +455,7 @@ function initializeChart() {
             }
             
             // Get chart settings from form inputs
-            const chartType = document.getElementById('chartType') ? document.getElementById('chartType').value : 'bar';
+            const chartType = document.getElementById('chartTypeSelect') ? document.getElementById('chartTypeSelect').value : 'bar';
             const cumulativeView = document.getElementById('cumulativeView') ? document.getElementById('cumulativeView').checked : false;
             
             // Create chart data - ensure all values are numeric
@@ -617,7 +605,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Chart type change handler
-    const chartTypeSelect = document.getElementById('chartType');
+    const chartTypeSelect = document.getElementById('chartTypeSelect');
     if (chartTypeSelect) {
         chartTypeSelect.addEventListener('change', function() {
             initializeChart();

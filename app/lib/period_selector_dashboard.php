@@ -7,7 +7,7 @@
  */
 
 // Get all periods for the selector
-$periods_query = "SELECT * FROM reporting_periods ORDER BY year DESC, quarter DESC";
+$periods_query = "SELECT * FROM reporting_periods ORDER BY year DESC, period_type DESC, period_number DESC";
 $periods_result = $conn->query($periods_query);
 
 $periods = [];
@@ -41,63 +41,41 @@ $quarterly_options = [];
 
 foreach ($periods as $period) {
     $year = $period['year'];
-    $quarter = (int)$period['quarter'];
-    
-    // Build half-yearly options
-    $half = ($quarter === 1 || $quarter === 2) ? 1 : 2;
-    $half_key = $year . '-H' . $half;
-    if (!isset($half_year_options[$half_key])) {
-        $half_year_options[$half_key] = [
-            'year' => $year,
-            'half' => $half,
-            'periods' => [],
-            'start_date' => null,
-            'end_date' => null,
-            'status' => $period['status'],
-        ];
+    $type = $period['period_type'];
+    $num = (int)$period['period_number'];
+    // Build half-yearly options (for period_type = 'half')
+    if ($type === 'half') {
+        $half_key = $year . '-H' . $num;
+        if (!isset($half_year_options[$half_key])) {
+            $half_year_options[$half_key] = [
+                'year' => $year,
+                'half' => $num,
+                'periods' => [],
+                'start_date' => null,
+                'end_date' => null,
+                'status' => $period['status'],
+            ];
+        }
+        $half_year_options[$half_key]['periods'][] = $period;
     }
-    $half_year_options[$half_key]['periods'][] = $period;
-    
-    // Build quarterly options
-    $quarterly_options[] = $period;
+    // Build quarterly options (for period_type = 'quarter')
+    if ($type === 'quarter') {
+        $quarterly_options[] = $period;
+    }
 }
-// Now, for each half, set start_date and end_date using only the correct quarters
+// For each half, set start_date and end_date using the periods in the half (for period_type = 'half')
 foreach ($half_year_options as &$half) {
-    $quarters = array_column($half['periods'], 'quarter');
-    $dates = array_column($half['periods'], null);
-    if ($half['half'] == 1) {
-        // Only Q1 and Q2
-        $start = null; $end = null;
-        foreach ($half['periods'] as $p) {
-            if ((int)$p['quarter'] === 1 && (!$start || strtotime($p['start_date']) < strtotime($start))) {
-                $start = $p['start_date'];
-            }
-            if ((int)$p['quarter'] === 2 && (!$end || strtotime($p['end_date']) > strtotime($end))) {
-                $end = $p['end_date'];
-            }
+    $start = null; $end = null;
+    foreach ($half['periods'] as $p) {
+        if (!$start || strtotime($p['start_date']) < strtotime($start)) {
+            $start = $p['start_date'];
         }
-        // Fallback if only one period exists
-        if (!$start && isset($half['periods'][0]['start_date'])) $start = $half['periods'][0]['start_date'];
-        if (!$end && isset($half['periods'][count($half['periods'])-1]['end_date'])) $end = $half['periods'][count($half['periods'])-1]['end_date'];
-        $half['start_date'] = $start;
-        $half['end_date'] = $end;
-    } else {
-        // Only Q3 and Q4
-        $start = null; $end = null;
-        foreach ($half['periods'] as $p) {
-            if ((int)$p['quarter'] === 3 && (!$start || strtotime($p['start_date']) < strtotime($start))) {
-                $start = $p['start_date'];
-            }
-            if ((int)$p['quarter'] === 4 && (!$end || strtotime($p['end_date']) > strtotime($end))) {
-                $end = $p['end_date'];
-            }
+        if (!$end || strtotime($p['end_date']) > strtotime($end)) {
+            $end = $p['end_date'];
         }
-        // Fallback if only one period exists
-        if (!$start && isset($half['periods'][0]['start_date'])) $start = $half['periods'][0]['start_date'];
-        if (!$end && isset($half['periods'][count($half['periods'])-1]['end_date'])) $end = $half['periods'][count($half['periods'])-1]['end_date'];
-        $half['start_date'] = $start;
-        $half['end_date'] = $end;
     }
+    $half['start_date'] = $start;
+    $half['end_date'] = $end;
 }
 unset($half);
 
@@ -109,12 +87,12 @@ uksort($half_year_options, function($a, $b) {
     return $yearB <=> $yearA; // Newer years first
 });
 
-// Sort quarterly options by year DESC, quarter DESC
+// Sort quarterly options by year DESC, period_number DESC
 usort($quarterly_options, function($a, $b) {
     if ($a['year'] === $b['year']) {
-        return $b['quarter'] <=> $a['quarter']; // Q4, Q3, Q2, Q1
+        return $b['period_number'] <=> $a['period_number'];
     }
-    return $b['year'] <=> $a['year']; // Newer years first
+    return $b['year'] <=> $a['year'];
 });
 
 // Determine selected half-year key
@@ -192,7 +170,7 @@ foreach ($half_year_options as $key => $half) {
                                 <!-- Quarterly Options -->
                                 <?php foreach ($quarterly_options as $period): ?>
                                     <?php 
-                                        $display = $period['year'] . ' - ' . QUARTER_LABELS[$period['quarter']];
+                                        $display = $period['year'] . ' - ' . QUARTER_LABELS[$period['period_number']];
                                         $display .= ' (' . date('M j', strtotime($period['start_date'])) . ' - ' . date('M j, Y', strtotime($period['end_date'])) . ')';
                                         $is_selected = ($selected_period_id == $period['period_id']);
                                     ?>

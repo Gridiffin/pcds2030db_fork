@@ -31,7 +31,6 @@ $viewing_period = $period_id ? get_reporting_period($period_id) : $current_perio
 
 // Get data for the dashboard
 $submission_stats = get_period_submission_stats($period_id);
-$sector_data = get_sector_data_for_period($period_id);
 $recent_submissions = get_recent_submissions($period_id, 5);
 
 // Get outcomes statistics for the dashboard
@@ -467,171 +466,43 @@ const hasActivePeriod = <?php echo $hasActivePeriod ? 'true' : 'false'; ?>;
             </div>
         </div>
 
-        <!-- Sector Overview section - conditionally displayed based on MULTI_SECTOR_ENABLED -->
-        <?php if (MULTI_SECTOR_ENABLED): ?>        <div class="row">
-            <!-- Sector Overview -->
-            <div class="col-lg-6 mb-4">
-                <div class="card shadow-sm">
-                    <div class="card-header">
-                        <h5 class="card-title m-0">Sector Overview</h5>
-                    </div>
-                    <div class="card-body" data-period-content="sectors_section">
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-hover">
-                                <thead class="bg-light">
+        <!-- Recent Submissions -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="card-title m-0">Recent Submissions</h5>
+                </div>
+                <div class="card-body" data-period-content="submissions_section">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Agency</th>
+                                    <th>Program</th>
+                                    <th>Submitted</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (empty($recent_submissions)): ?>
                                     <tr>
-                                        <th>Sector</th>
-                                        <th>Agencies</th>
-                                        <th>Programs</th>
-                                        <th>Submissions</th>
-                                        <th>Status</th>
+                                        <td colspan="3" class="text-center py-3">No recent submissions for this period</td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($sector_data as $sector): ?>
+                                <?php else: ?>
+                                    <?php foreach ($recent_submissions as $submission): ?>
                                         <tr>
-                                            <td><?php echo $sector['sector_name']; ?></td>
-                                            <td><?php echo $sector['agency_count']; ?></td>
-                                            <td><?php echo $sector['program_count']; ?></td>
-                                            <td>
-                                                <div class="progress" style="height: 20px;">
-                                                    <div class="progress-bar bg-<?php echo $sector['submission_pct'] >= 100 ? 'success' : 'primary'; ?>" 
-                                                         style="width: <?php echo $sector['submission_pct']; ?>%">
-                                                        <?php echo $sector['submission_pct']; ?>%
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <?php if ($sector['submission_pct'] >= 100): ?>
-                                                    <span class="badge bg-success">Complete</span>
-                                                <?php elseif ($sector['submission_pct'] >= 75): ?>
-                                                    <span class="badge bg-info">Almost Complete</span>
-                                                <?php elseif ($sector['submission_pct'] >= 25): ?>
-                                                    <span class="badge bg-warning">In Progress</span>
-                                                <?php else: ?>
-                                                    <span class="badge bg-secondary">Early Stage</span>
-                                                <?php endif; ?>
-                                            </td>
+                                            <td><?php echo $submission['agency_name']; ?></td>
+                                            <td><?php echo $submission['program_name']; ?></td>
+                                            <td><?php echo date('M j, g:i a', strtotime($submission['submission_date'])); ?></td>
                                         </tr>
                                     <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
-        <?php else: ?>        <div class="row">
-            <!-- Forestry Sector Overview -->
-            <div class="col-lg-6 mb-4">
-                <div class="card shadow-sm">
-                    <div class="card-header">
-                        <h5 class="card-title m-0">Forestry Sector Overview</h5>
-                    </div>
-                    <div class="card-body" data-period-content="sectors_section">
-                        <?php 
-                        // Filter sector data to just show Forestry
-                        $forestry_data = null;
-                        foreach ($sector_data as $sector) {
-                            if ($sector['sector_id'] == FORESTRY_SECTOR_ID) {
-                                $forestry_data = $sector;
-                                break;
-                            }
-                        }
-                        
-                        if ($forestry_data): 
-                        ?>
-                        <div class="row g-4">
-                            <div class="col-md-6">
-                                <div class="card bg-light">
-                                    <div class="card-body text-center">
-                                        <h5 class="card-title">Agencies</h5>
-                                        <div class="display-6"><?php echo $forestry_data['agency_count']; ?></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="card bg-light">
-                                    <div class="card-body text-center">
-                                        <h5 class="card-title">Programs</h5>
-                                        <div class="display-6"><?php echo $forestry_data['program_count']; ?></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-12">
-                                <div class="card bg-light">
-                                    <div class="card-body text-center">
-                                        <h5 class="card-title">Submission Progress</h5>
-                                        <div class="progress mb-3" style="height: 25px;">
-                                            <div class="progress-bar bg-<?php echo $forestry_data['submission_pct'] >= 100 ? 'success' : 'primary'; ?>" 
-                                                 role="progressbar" style="width: <?php echo $forestry_data['submission_pct']; ?>%" 
-                                                 aria-valuenow="<?php echo $forestry_data['submission_pct']; ?>" aria-valuemin="0" aria-valuemax="100">
-                                                <?php echo $forestry_data['submission_pct']; ?>%
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <?php if ($forestry_data['submission_pct'] >= 100): ?>
-                                                <span class="badge bg-success">Complete</span>
-                                            <?php elseif ($forestry_data['submission_pct'] >= 75): ?>
-                                                <span class="badge bg-info">Almost Complete</span>
-                                            <?php elseif ($forestry_data['submission_pct'] >= 25): ?>
-                                                <span class="badge bg-warning">In Progress</span>
-                                            <?php else: ?>
-                                                <span class="badge bg-secondary">Early Stage</span>
-                                            <?php endif; ?>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <?php else: ?>
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle me-2"></i> 
-                            No data available for the Forestry sector.
-                        </div>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            </div>
-        <?php endif; ?>
-
-            <!-- Recent Submissions -->
-            <div class="col-lg-6 mb-4">
-                <div class="card shadow-sm">
-                    <div class="card-header">
-                        <h5 class="card-title m-0">Recent Submissions</h5>
-                    </div>
-                    <div class="card-body" data-period-content="submissions_section">
-                        <div class="table-responsive">
-                            <table class="table table-sm">
-                                <thead>
-                                    <tr>
-                                        <th>Agency</th>
-                                        <th>Program</th>
-                                        <th>Submitted</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php if (empty($recent_submissions)): ?>
-                                        <tr>
-                                            <td colspan="3" class="text-center py-3">No recent submissions for this period</td>
-                                        </tr>
-                                    <?php else: ?>
-                                        <?php foreach ($recent_submissions as $submission): ?>
-                                            <tr>
-                                                <td><?php echo $submission['agency_name']; ?></td>
-                                                <td><?php echo $submission['program_name']; ?></td>
-                                                <td><?php echo date('M j, g:i a', strtotime($submission['submission_date'])); ?></td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                    <?php endif; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>        </div>
-    </section>
+        </div>
+    </div>
 </main>
 
 <?php

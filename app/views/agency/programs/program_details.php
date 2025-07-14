@@ -19,6 +19,8 @@ require_once ROOT_PATH . 'app/lib/agencies/index.php';
 require_once ROOT_PATH . 'app/lib/agencies/programs.php';
 require_once ROOT_PATH . 'app/lib/rating_helpers.php';
 require_once ROOT_PATH . 'app/lib/agencies/program_attachments.php';
+require_once ROOT_PATH . 'app/lib/agencies/program-details/data-processor.php';
+require_once ROOT_PATH . 'app/lib/agencies/program-details/error-handler.php';
 
 // Verify user is an agency
 if (!is_agency()) {
@@ -66,30 +68,29 @@ if (!empty($program['initiative_id'])) {
     );
 }
 
-// Get current submission if available
-$current_submission = $program['current_submission'] ?? null;
-$is_draft = isset($current_submission['is_draft']) && $current_submission['is_draft'];
+// Get latest submission if available
+$latest_submission = $program['current_submission'] ?? null;
+$has_submissions = !empty($latest_submission);
+$is_draft = $has_submissions && isset($latest_submission['is_draft']) && $latest_submission['is_draft'];
 
-// Process content_json for better data access
+// Process submission data if available
 $content = [];
 $targets = [];
 $rating = 'not-started';
 $remarks = '';
 
-// Extract data from content_json if available
-if (isset($current_submission['content_json']) && !empty($current_submission['content_json'])) {
-    if (is_string($current_submission['content_json'])) {
-        $content = json_decode($current_submission['content_json'], true) ?: [];
-    } elseif (is_array($current_submission['content_json'])) {
-        $content = $current_submission['content_json'];
+if ($has_submissions && isset($latest_submission['content_json']) && !empty($latest_submission['content_json'])) {
+    if (is_string($latest_submission['content_json'])) {
+        $content = json_decode($latest_submission['content_json'], true) ?: [];
+    } elseif (is_array($latest_submission['content_json'])) {
+        $content = $latest_submission['content_json'];
     }
     
-    // If we have the new structure with targets array, use it
+    // Extract targets from content
     if (isset($content['targets']) && is_array($content['targets'])) {
         $targets = [];
         foreach ($content['targets'] as $target) {
             if (isset($target['target_text'])) {
-                // New format that uses target_text
                 $targets[] = [
                     'target_number' => $target['target_number'] ?? '',
                     'text' => $target['target_text'],
@@ -98,19 +99,17 @@ if (isset($current_submission['content_json']) && !empty($current_submission['co
                     'end_date' => $target['end_date'] ?? ''
                 ];
             } else {
-                // Format that uses text directly
                 $targets[] = $target;
             }
         }
-        $rating = $content['rating'] ?? $current_submission['status'] ?? 'not-started';
-        $remarks = $content['remarks'] ?? '';    } else {
-        // Legacy data format - handle semicolon-separated targets
-        $target_text = $content['target'] ?? $current_submission['target'] ?? '';
-        $status_description = $content['status_text'] ?? $current_submission['status_text'] ?? '';
+        $rating = $content['rating'] ?? $latest_submission['status'] ?? 'not-started';
+        $remarks = $content['remarks'] ?? '';
+    } else {
+        // Legacy data format
+        $target_text = $content['target'] ?? $latest_submission['target'] ?? '';
+        $status_description = $content['status_text'] ?? $latest_submission['status_text'] ?? '';
         
-        // Check if targets are semicolon-separated
         if (strpos($target_text, ';') !== false) {
-            // Split semicolon-separated targets and status descriptions
             $target_parts = array_map('trim', explode(';', $target_text));
             $status_parts = array_map('trim', explode(';', $status_description));
             
@@ -124,7 +123,6 @@ if (isset($current_submission['content_json']) && !empty($current_submission['co
                 }
             }
         } else {
-            // Single target
             $targets = [
                 [
                     'text' => $target_text,
@@ -133,19 +131,17 @@ if (isset($current_submission['content_json']) && !empty($current_submission['co
             ];
         }
         
-        $rating = $current_submission['status'] ?? 'not-started';
-        $remarks = $current_submission['remarks'] ?? '';
+        $rating = $latest_submission['status'] ?? 'not-started';
+        $remarks = $latest_submission['remarks'] ?? '';
     }
-} else {
-    // Fallback to direct properties if no content_json
-    if (!empty($current_submission['target'])) {
-        $targets[] = [
-            'text' => $current_submission['target'],
-            'status_description' => $current_submission['status_text'] ?? ''
-        ];
-    }
-    $rating = $current_submission['status'] ?? 'not-started';
-    $remarks = $current_submission['remarks'] ?? '';
+} elseif ($has_submissions && !empty($latest_submission['target'])) {
+    // Fallback to direct properties
+    $targets[] = [
+        'text' => $latest_submission['target'],
+        'status_description' => $latest_submission['status_text'] ?? ''
+    ];
+    $rating = $latest_submission['status'] ?? 'not-started';
+    $remarks = $latest_submission['remarks'] ?? '';
 }
 
 // Get all reporting periods for display
@@ -157,7 +153,8 @@ $pageTitle = 'Program Details';
 
 // Additional scripts
 $additionalScripts = [
-    APP_URL . '/assets/js/utilities/rating_utils.js'
+    APP_URL . '/assets/js/utilities/rating_utils.js',
+    APP_URL . '/assets/js/agency/program_details.js'
 ];
 
 // Additional CSS for attachments
@@ -199,33 +196,40 @@ $header_config = [
 // Include modern page header
 require_once '../../layouts/page_header.php';
 
-// Define status mapping for display
+// Include rating helpers for status mapping
+require_once PROJECT_ROOT_PATH . 'lib/rating_helpers.php';
+
+// Define status mapping for display using new rating system
 $status_map = [
-    'on-track' => ['label' => 'On Track', 'class' => 'warning', 'icon' => 'fas fa-chart-line'],
-    'on-track-yearly' => ['label' => 'On Track for Year', 'class' => 'warning', 'icon' => 'fas fa-calendar-check'],
-    'target-achieved' => ['label' => 'Monthly Target Achieved', 'class' => 'success', 'icon' => 'fas fa-check-circle'],
-    'delayed' => ['label' => 'Delayed', 'class' => 'danger', 'icon' => 'fas fa-exclamation-circle'],
-    'severe-delay' => ['label' => 'Severe Delays', 'class' => 'danger', 'icon' => 'fas fa-exclamation-triangle'],
-    'completed' => ['label' => 'Completed', 'class' => 'primary', 'icon' => 'fas fa-flag-checkered'],
-    'not-started' => ['label' => 'Not Started', 'class' => 'secondary', 'icon' => 'fas fa-hourglass-start']
+    'not_started' => ['label' => 'Not Started', 'class' => 'secondary', 'icon' => 'fas fa-hourglass-start'],
+    'on_track_for_year' => ['label' => 'On Track for Year', 'class' => 'warning', 'icon' => 'fas fa-calendar-check'],
+    'monthly_target_achieved' => ['label' => 'Monthly Target Achieved', 'class' => 'success', 'icon' => 'fas fa-check-circle'],
+    'severe_delay' => ['label' => 'Severe Delays', 'class' => 'danger', 'icon' => 'fas fa-exclamation-triangle']
 ];
 
-// Convert status for display
-$status = convert_legacy_status($rating);
-if (!isset($status_map[$status])) {
-    $status = 'not-started';
+// Convert status for display using new rating system
+if ($has_submissions) {
+    // Use the rating directly from database (no conversion needed)
+    $status = $rating;
+    if (!isset($status_map[$status])) {
+        $status = 'not_started';
+    }
+} else {
+    // Program has no submissions - show as "not-started"
+    $status = 'not_started';
 }
 
 // Initialize alert flags
-$showDraftAlert = $is_draft && $is_owner; // Only show draft alert if user owns the program
-$showNoTargetsAlert = empty($targets) && $is_owner; // Only show no targets alert if user owns the program
+$showDraftAlert = $is_draft && $is_owner; // Only show draft alert if user owns the program and has draft submission
+$showNoTargetsAlert = $has_submissions && empty($targets) && $is_owner; // Only show no targets alert if user owns the program and has submissions but no targets
+$showNoSubmissionsAlert = !$has_submissions && $is_owner; // Show alert if program has no submissions yet
 ?>
 
 <!-- Toast Notifications -->
 <?php if ($showDraftAlert): ?>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        showToast('Draft Submission', 'This program is in draft mode. <a href="<?= APP_URL ?>/app/views/agency/programs/update_program.php?id=<?= $program_id ?>" class="alert-link">Click here to edit and submit the final version</a>.', 'warning', 10000);
+        showToast('Draft Submission', 'This program is in draft mode. <a href="<?= APP_URL ?>/app/views/agency/programs/edit_program.php?id=<?= $program_id ?>" class="alert-link">Click here to edit and submit the final version</a>.', 'warning', 10000);
     });
 </script>
 <?php endif; ?>
@@ -233,24 +237,42 @@ $showNoTargetsAlert = empty($targets) && $is_owner; // Only show no targets aler
 <?php if ($showNoTargetsAlert): ?>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        showToast('No Targets', 'No targets have been added for this program. <a href="<?= APP_URL ?>/app/views/agency/programs/update_program.php?id=<?= $program_id ?>" class="alert-link">Add targets</a>.', 'info', 10000);
+        showToast('No Targets', 'No targets have been added for this program. <a href="<?= APP_URL ?>/app/views/agency/programs/edit_program.php?id=<?= $program_id ?>" class="alert-link">Add targets</a>.', 'info', 10000);
+    });
+</script>
+<?php endif; ?>
+
+<?php if ($showNoSubmissionsAlert): ?>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        showToast('Program Template', 'This program is a template. <a href="<?= APP_URL ?>/app/views/agency/programs/add_submission.php?program_id=<?= $program_id ?>" class="alert-link">Add your first progress report</a>.', 'info', 10000);
     });
 </script>
 <?php endif; ?>
 
 <!-- Program Overview Card -->
-<div class="card shadow-sm mb-4">
-    <div class="card-header d-flex justify-content-between align-items-center">        <h5 class="card-title mb-0">
+<div class="card program-details-card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">
             <i class="fas fa-clipboard-list me-2"></i>Program Information
         </h5>
-        <div>
-            <span class="badge bg-<?php echo $status_map[$status]['class']; ?> py-2 px-3">
+        <div class="action-buttons">
+            <span class="badge status-badge bg-<?php echo $status_map[$status]['class']; ?> py-2 px-3">
                 <i class="<?php echo $status_map[$status]['icon']; ?> me-1"></i> 
                 <?php echo $status_map[$status]['label']; ?>
-            </span>            <?php if ($is_owner && $is_draft): ?>
-            <a href="<?php echo APP_URL; ?>/app/views/agency/programs/update_program.php?id=<?php echo $program_id; ?>" class="btn btn-warning btn-sm ms-2">
-                <i class="fas fa-edit me-1"></i> Edit Draft
-            </a>
+            </span>
+            <?php if ($is_owner): ?>
+                <a href="<?php echo APP_URL; ?>/app/views/agency/programs/add_submission.php?program_id=<?php echo $program_id; ?>" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus me-1"></i> Add Submission
+                </a>
+                <a href="<?php echo APP_URL; ?>/app/views/agency/programs/edit_program.php?id=<?php echo $program_id; ?>" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-edit me-1"></i> Edit Program
+                </a>
+                <?php if ($is_draft): ?>
+                <span class="badge bg-warning text-dark" title="Latest submission is in draft status">
+                    <i class="fas fa-pencil-alt me-1"></i> Draft Submission
+                </span>
+                <?php endif; ?>
             <?php endif; ?>
         </div>
     </div>
@@ -261,17 +283,28 @@ $showNoTargetsAlert = empty($targets) && $is_owner; // Only show no targets aler
                 <h6 class="border-bottom pb-2 mb-3">Basic Information</h6>
                 
                 <div class="row">
-                    <div class="col-md-6 mb-3">                        <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="row">
                             <div class="col-md-4 text-muted">Program Name:</div>
                             <div class="col-md-8 fw-medium">
-                                <?php if (!empty($program['program_number'])): ?>
-                                    <span class="badge bg-info me-2" title="Program Number"><?php echo htmlspecialchars($program['program_number']); ?></span>
-                                <?php endif; ?>
                                 <?php echo htmlspecialchars($program['program_name']); ?>
                             </div>
                         </div>
                     </div>
-                    
+                    <div class="col-md-6 mb-3">
+                        <div class="row">
+                            <div class="col-md-4 text-muted">Program Number:</div>
+                            <div class="col-md-8">
+                                <?php if (!empty($program['program_number'])): ?>
+                                    <span class="badge bg-info" title="Program Number"><?php echo htmlspecialchars($program['program_number']); ?></span>
+                                <?php else: ?>
+                                    <span class="text-muted">Not specified</span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
                     <div class="col-md-6 mb-3">
                         <div class="row">
                             <div class="col-md-4 text-muted">Program Type:</div>
@@ -284,24 +317,32 @@ $showNoTargetsAlert = empty($targets) && $is_owner; // Only show no targets aler
                             </div>
                         </div>
                     </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="row">
+                            <div class="col-md-4 text-muted">Initiative:</div>
+                            <div class="col-md-8">
+                                <?php if (!empty($program['initiative_name'])): ?>
+                                    <span class="fw-medium"><?php echo htmlspecialchars($program['initiative_name']); ?></span>
+                                    <?php if (!empty($program['initiative_number'])): ?>
+                                        <span class="badge bg-secondary ms-2" title="Initiative Number"><?php echo htmlspecialchars($program['initiative_number']); ?></span>
+                                    <?php endif; ?>
+                                <?php else: ?>
+                                    <span class="text-muted">Not specified</span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <div class="row">
-                            <div class="col-md-4 text-muted">Sector:</div>
-                            <div class="col-md-8"><?php echo htmlspecialchars($program['sector_name'] ?? 'Not specified'); ?></div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-6 mb-3">
-                        <div class="row">
                             <div class="col-md-4 text-muted">Timeline:</div>
                             <div class="col-md-8">
-                                <?php if (isset($program['start_date']) && $program['start_date']): ?>
+                                <?php if (!empty($program['start_date'])): ?>
                                     <i class="far fa-calendar-alt me-1"></i>
                                     <?php echo date('M j, Y', strtotime($program['start_date'])); ?>
-                                    <?php if (isset($program['end_date']) && $program['end_date']): ?>
+                                    <?php if (!empty($program['end_date'])): ?>
                                         <i class="fas fa-long-arrow-alt-right mx-1"></i>
                                         <?php echo date('M j, Y', strtotime($program['end_date'])); ?>
                                     <?php endif; ?>
@@ -318,11 +359,16 @@ $showNoTargetsAlert = empty($targets) && $is_owner; // Only show no targets aler
                         <div class="row">
                             <div class="col-md-4 text-muted">Last Updated:</div>
                             <div class="col-md-8">
-                                <?php if (isset($current_submission['submission_date']) && $current_submission['submission_date']): ?>
+                                <?php if ($has_submissions && isset($latest_submission['submission_date']) && $latest_submission['submission_date']): ?>
                                     <i class="far fa-clock me-1"></i>
-                                    <?php echo date('M j, Y', strtotime($current_submission['submission_date'])); ?>
+                                    <?php echo date('M j, Y', strtotime($latest_submission['submission_date'])); ?>
+                                    <span class="text-muted small ms-2">(Latest submission)</span>
+                                <?php elseif (isset($program['created_at']) && $program['created_at']): ?>
+                                    <i class="far fa-clock me-1"></i>
+                                    <?php echo date('M j, Y', strtotime($program['created_at'])); ?>
+                                    <span class="text-muted small ms-2">(Program created)</span>
                                 <?php else: ?>
-                                    <span class="text-muted">Not submitted</span>
+                                    <span class="text-muted">Not available</span>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -341,82 +387,103 @@ $showNoTargetsAlert = empty($targets) && $is_owner; // Only show no targets aler
     </div>
 </div>
 
-<!-- All Periods & Latest Submissions Card -->
+<?php if ($has_submissions): ?>
+<!-- Latest Submission Card -->
 <div class="card shadow-sm mb-4">
     <div class="card-header">
         <h5 class="card-title mb-0">
-            <i class="fas fa-calendar-alt me-2"></i>Latest Submissions by Reporting Period
+            <i class="fas fa-file-alt me-2"></i>Latest Submission
         </h5>
     </div>
     <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-bordered align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th>Period</th>
-                        <th>Targets</th>
-                        <th>Status</th>
-                        <th>Submission</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($latest_by_period as $pid => $submission):
-                        $period = get_reporting_period($pid);
-                        if (!$period) continue;
-                        $period_name = get_period_display_name($period);
-                    ?>
-                    <tr>
-                        <td><?php echo htmlspecialchars($period_name); ?></td>
-                        <td>
-                            <?php if (!empty($submission['targets'])): ?>
-                                <ul class="mb-0 ps-3">
-                                    <?php foreach ($submission['targets'] as $t): ?>
-                                        <li>
-                                            <?php echo htmlspecialchars($t['target_text'] ?? $t['text'] ?? ''); ?>
-                                            <?php if (!empty($t['target_status'])): ?>
-                                                <?php
-                                                // Map status to badge color and label
-                                                $target_status = $t['target_status'];
-                                                $target_status_map = [
-                                                    'not-started' => ['label' => 'Not Started', 'class' => 'secondary'],
-                                                    'in-progress' => ['label' => 'In Progress', 'class' => 'info'],
-                                                    'completed' => ['label' => 'Completed', 'class' => 'success'],
-                                                    'delayed' => ['label' => 'Delayed', 'class' => 'danger'],
-                                                    'severe-delay' => ['label' => 'Severe Delay', 'class' => 'danger'],
-                                                    // Add more mappings as needed
-                                                ];
-                                                $ts = $target_status_map[$target_status] ?? ['label' => ucfirst($target_status), 'class' => 'secondary'];
-                                                ?>
-                                                <span class="badge bg-<?php echo $ts['class']; ?> ms-2" title="<?php echo htmlspecialchars($ts['label']); ?>">
-                                                    <?php echo htmlspecialchars($ts['label']); ?>
-                                                </span>
+        <?php if (!empty($targets)): ?>
+            <div class="mb-4">
+                <h6 class="border-bottom pb-2 mb-3">Targets</h6>
+                <div class="row">
+                    <?php foreach ($targets as $index => $target): ?>
+                        <div class="col-md-6 mb-3">
+                            <div class="card border">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        Target <?php echo $index + 1; ?>
+                                        <?php if (!empty($target['target_number'])): ?>
+                                            <span class="badge bg-info ms-2"><?php echo htmlspecialchars($target['target_number']); ?></span>
+                                        <?php endif; ?>
+                                    </h6>
+                                    <p class="card-text"><?php echo htmlspecialchars($target['text']); ?></p>
+                                    <?php if (!empty($target['status_description'])): ?>
+                                        <div class="mt-2">
+                                            <strong>Status:</strong> <?php echo htmlspecialchars($target['status_description']); ?>
+                                        </div>
+                                    <?php endif; ?>
+                                    <?php if (!empty($target['start_date']) || !empty($target['end_date'])): ?>
+                                        <div class="mt-2 small text-muted">
+                                            <?php if (!empty($target['start_date'])): ?>
+                                                <i class="far fa-calendar-alt me-1"></i>Start: <?php echo date('M j, Y', strtotime($target['start_date'])); ?>
                                             <?php endif; ?>
-                                        </li>
-                                    <?php endforeach; ?>
-                                </ul>
-                            <?php else: ?>
-                                <span class="text-muted">-</span>
-                            <?php endif; ?>
-                        </td>
-                        <td>
-                            <?php if (!empty($submission['targets'])): ?>
-                                <ul class="mb-0 ps-3">
-                                    <?php foreach ($submission['targets'] as $t): ?>
-                                        <li><?php echo htmlspecialchars($t['status_description'] ?? ''); ?></li>
-                                    <?php endforeach; ?>
-                                </ul>
-                            <?php else: ?>
-                                <span class="text-muted">-</span>
-                            <?php endif; ?>
-                        </td>
-                        <td><?php echo !empty($submission['submission_date']) ? date('M j, Y g:i A', strtotime($submission['submission_date'])) : '<span class="text-muted">-</span>'; ?></td>
-                    </tr>
+                                            <?php if (!empty($target['end_date'])): ?>
+                                                <br><i class="far fa-calendar-alt me-1"></i>End: <?php echo date('M j, Y', strtotime($target['end_date'])); ?>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
                     <?php endforeach; ?>
-                </tbody>
-            </table>
+                </div>
+            </div>
+        <?php endif; ?>
+        
+        <?php if (!empty($remarks)): ?>
+            <div class="mb-4">
+                <h6 class="border-bottom pb-2 mb-3">Remarks</h6>
+                <div class="p-3 bg-light rounded border">
+                    <?php echo nl2br(htmlspecialchars($remarks)); ?>
+                </div>
+            </div>
+        <?php endif; ?>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <strong>Submission Date:</strong>
+                <?php if (isset($latest_submission['submission_date']) && $latest_submission['submission_date']): ?>
+                    <?php echo date('M j, Y g:i A', strtotime($latest_submission['submission_date'])); ?>
+                <?php else: ?>
+                    <span class="text-muted">Not submitted</span>
+                <?php endif; ?>
+            </div>
+            <div class="col-md-6">
+                <strong>Status:</strong>
+                <span class="badge bg-<?php echo $status_map[$status]['class']; ?>">
+                    <i class="<?php echo $status_map[$status]['icon']; ?> me-1"></i> 
+                    <?php echo $status_map[$status]['label']; ?>
+                </span>
+            </div>
         </div>
     </div>
 </div>
+<?php else: ?>
+<!-- No Submissions Card -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-folder-open me-2"></i>Submissions
+        </h5>
+    </div>
+    <div class="card-body text-center py-4">
+        <div class="mb-3">
+            <i class="fas fa-folder-open fa-3x text-muted"></i>
+        </div>
+        <h6 class="text-muted">No Submissions Yet</h6>
+        <p class="text-muted mb-3">This program is ready for submissions. Add your first submission to start tracking progress.</p>
+        <?php if ($is_owner): ?>
+            <a href="<?php echo APP_URL; ?>/app/views/agency/programs/add_submission.php?program_id=<?php echo $program_id; ?>" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i> Add First Submission
+            </a>
+        <?php endif; ?>
+    </div>
+</div>
+<?php endif; ?>
 
 <!-- Program Attachments Section -->
 <div class="card mb-4">
@@ -484,7 +551,7 @@ $showNoTargetsAlert = empty($targets) && $is_owner; // Only show no targets aler
                 <p class="text-muted mb-0">
                     This program doesn't have any supporting documents uploaded.
                     <?php if ($is_owner): ?>
-                        <br><a href="<?php echo APP_URL; ?>/app/views/agency/programs/update_program.php?id=<?php echo $program_id; ?>" class="text-decoration-none">Upload attachments</a> in the program editor.
+                        <br><a href="<?php echo APP_URL; ?>/app/views/agency/programs/edit_program.php?id=<?php echo $program_id; ?>" class="text-decoration-none">Upload attachments</a> in the program editor.
                     <?php endif; ?>
                 </p>
             </div>
@@ -492,7 +559,59 @@ $showNoTargetsAlert = empty($targets) && $is_owner; // Only show no targets aler
     </div>
 </div>
 
-
+<?php
+// Show focal-only submissions table with edit button
+if (isset($_SESSION['role']) && $_SESSION['role'] === 'focal') {
+    require_once ROOT_PATH . 'app/lib/agencies/programs.php';
+    $edit_history = get_program_edit_history($program_id);
+    $submissions = $edit_history['submissions'] ?? [];
+    ?>
+    <div class="card shadow-sm mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-history me-2"></i>All Submissions (Focal Controls)
+            </h5>
+        </div>
+        <div class="card-body">
+            <?php if (empty($submissions)): ?>
+                <div class="text-muted">No submissions found for this program.</div>
+            <?php else: ?>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Period</th>
+                                <th>Status</th>
+                                <th>Submitted By</th>
+                                <th>Submission Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($submissions as $sub): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($sub['period_display'] ?? ''); ?></td>
+                                <td>
+                                    <span class="badge bg-<?php echo ($sub['is_draft'] ? 'warning' : 'success'); ?>">
+                                        <?php echo $sub['is_draft_label'] ?? ($sub['is_draft'] ? 'Draft' : 'Final'); ?>
+                                    </span>
+                                </td>
+                                <td><?php echo htmlspecialchars($sub['submitted_by_name'] ?? ''); ?></td>
+                                <td><?php echo htmlspecialchars($sub['formatted_date'] ?? ''); ?></td>
+                                <td>
+                                    <a href="<?php echo APP_URL; ?>/app/views/agency/programs/edit_submission.php?program_id=<?php echo $program_id; ?>&period_id=<?php echo $sub['period_id']; ?>" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-edit"></i> Review Submission
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+<?php } ?>
 
 <?php if (!$is_owner): ?>
 <div class="alert alert-info">
@@ -500,6 +619,19 @@ $showNoTargetsAlert = empty($targets) && $is_owner; // Only show no targets aler
     <strong>Note:</strong> You are viewing this program in read-only mode. Only the program's owning agency can submit updates.
 </div>
 <?php endif; ?>
+
+<!-- JavaScript Configuration -->
+<script>
+// Pass PHP variables to JavaScript
+window.currentUser = {
+    id: <?php echo $_SESSION['user_id'] ?? 'null'; ?>,
+    agency_id: <?php echo $_SESSION['agency_id'] ?? 'null'; ?>,
+    role: '<?php echo $_SESSION['role'] ?? ''; ?>'
+};
+window.isOwner = <?php echo $is_owner ? 'true' : 'false'; ?>;
+window.programId = <?php echo $program_id; ?>;
+window.APP_URL = '<?php echo APP_URL; ?>';
+</script>
 
 <?php
 // Include footer

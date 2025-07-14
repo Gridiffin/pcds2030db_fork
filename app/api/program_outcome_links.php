@@ -67,10 +67,10 @@ function handleGet() {
     if ($program_id) {
         // Get all outcomes linked to a specific program
         $sql = "SELECT pol.link_id, pol.program_id, pol.outcome_id, pol.created_at,
-                       od.detail_name, od.detail_json, od.is_cumulative,
+                       od.title, od.detail_json, od.is_cumulative,
                        u.username as created_by_name
                 FROM program_outcome_links pol
-                JOIN outcomes_details od ON pol.outcome_id = od.detail_id
+                JOIN outcomes od ON pol.outcome_id = od.id
                 LEFT JOIN users u ON pol.created_by = u.user_id
                 WHERE pol.program_id = ?
                 ORDER BY pol.created_at DESC";
@@ -120,11 +120,11 @@ function handleGet() {
         
         $sql = "SELECT pol.link_id, pol.program_id, pol.outcome_id, pol.created_at,
                        p.program_name, p.program_number,
-                       od.detail_name,
+                       od.title,
                        u.username as created_by_name
                 FROM program_outcome_links pol
                 JOIN programs p ON pol.program_id = p.program_id
-                JOIN outcomes_details od ON pol.outcome_id = od.detail_id
+                JOIN outcomes od ON pol.outcome_id = od.id
                 LEFT JOIN users u ON pol.created_by = u.user_id
                 ORDER BY pol.created_at DESC";
         
@@ -174,7 +174,7 @@ function handlePost($input) {
     }
     
     // Verify outcome exists
-    $check_outcome_sql = "SELECT detail_id FROM outcomes_details WHERE detail_id = ?";
+    $check_outcome_sql = "SELECT id FROM outcomes WHERE id = ?";
     $check_outcome_stmt = $conn->prepare($check_outcome_sql);
     $check_outcome_stmt->bind_param("i", $outcome_id);
     $check_outcome_stmt->execute();
@@ -206,11 +206,11 @@ function handlePost($input) {
         // Return the created link with details
         $get_sql = "SELECT pol.link_id, pol.program_id, pol.outcome_id, pol.created_at,
                            p.program_name, p.program_number,
-                           od.detail_name, od.is_cumulative,
+                           od.title, od.is_cumulative,
                            u.username as created_by_name
                     FROM program_outcome_links pol
                     JOIN programs p ON pol.program_id = p.program_id
-                    JOIN outcomes_details od ON pol.outcome_id = od.detail_id
+                    JOIN outcomes od ON pol.outcome_id = od.id
                     LEFT JOIN users u ON pol.created_by = u.user_id
                     WHERE pol.link_id = ?";
         

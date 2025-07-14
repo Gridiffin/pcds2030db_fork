@@ -40,13 +40,13 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 try {
     // Get form data
     $period_id = isset($_POST['period_id']) ? intval($_POST['period_id']) : null;
-    $sector_id = isset($_POST['sector_id']) ? intval($_POST['sector_id']) : null;
+    $sector_id = 1; // Default to Forestry Sector only
     $selected_programs = isset($_POST['selected_programs']) ? $_POST['selected_programs'] : [];
     $selected_targets = isset($_POST['selected_targets']) ? $_POST['selected_targets'] : [];
 
     // Validate required fields
-    if (!$period_id || !$sector_id) {
-        throw new Exception('Period and sector are required.');
+    if (!$period_id) {
+        throw new Exception('Period is required.');
     }
 
     if (empty($selected_programs)) {

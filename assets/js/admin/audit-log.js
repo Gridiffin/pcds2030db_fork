@@ -16,14 +16,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // Load initial audit logs
         loadAuditLogs();
         
-    // Set up event listeners
-    setupEventListeners();
-    
-    // Set default date range (last 30 days)
-    setDefaultDateRange();
-    
-    // Add refresh button
-    addRefreshButton();
+        // Set up event listeners
+        setupEventListeners();
+        
+        // Set default date range (last 30 days)
+        setDefaultDateRange();
     }
     
     function setupEventListeners() {
@@ -221,6 +218,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <th>User</th>
                             <th>Action</th>
                             <th>Details</th>
+                            <th>Field Changes</th>
                             <th>IP Address</th>
                             <th>Status</th>
                         </tr>
@@ -238,6 +236,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const formattedDate = log.formatted_date || 'Unknown Date';
             const actionBadge = log.action_badge || 'secondary';
             const statusBadge = log.status_badge || 'secondary';
+            const fieldChangesCount = log.field_changes_count || 0;
+            const fieldChangesSummary = log.field_changes_summary || '';
             
             tableHTML += `
                 <tr>
@@ -255,6 +255,14 @@ document.addEventListener('DOMContentLoaded', function() {
                             ${truncateText(escapeHtml(details), 100)}
                         </small>
                         ${details.length > 100 ? `<a href="#" class="view-details-link" data-details="${escapeHtml(details)}">View all</a>` : ''}
+                    </td>
+                    <td>
+                        ${fieldChangesCount > 0 ? 
+                            `<button class="btn btn-sm btn-outline-info view-field-changes" data-audit-id="${log.id}" data-changes-count="${fieldChangesCount}">
+                                <i class="fas fa-list-ul me-1"></i>${fieldChangesCount} changes
+                            </button>` : 
+                            '<span class="text-muted">No changes</span>'
+                        }
                     </td>
                     <td>
                         <small class="text-muted">${escapeHtml(ipAddress)}</small>
@@ -283,6 +291,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.preventDefault();
                 const details = this.getAttribute('data-details');
                 showDetailsModal(details);
+            });
+        });
+        
+        // Add event listeners to view-field-changes buttons
+        const fieldChangeButtons = tableContainer.querySelectorAll('.view-field-changes');
+        fieldChangeButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const auditId = this.getAttribute('data-audit-id');
+                const changesCount = this.getAttribute('data-changes-count');
+                showFieldChangesModal(auditId, changesCount);
             });
         });
     }
@@ -447,21 +466,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    function addRefreshButton() {
-        const cardHeader = document.querySelector('.card-header');
-        if (cardHeader) {
-            const refreshButton = document.createElement('button');
-            refreshButton.className = 'btn btn-sm btn-outline-primary float-end';
-            refreshButton.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh';
-            refreshButton.id = 'refreshLogs';
-            refreshButton.addEventListener('click', function(e) {
-                e.preventDefault();
-                loadAuditLogs();
-            });
-            cardHeader.appendChild(refreshButton);
-        }
-    }
-    
     function showError(message) {
         // Create or update error alert
         let alertContainer = document.getElementById('auditLogAlertContainer');
@@ -598,5 +602,121 @@ document.addEventListener('DOMContentLoaded', function() {
         // Show the modal
         const modalInstance = new bootstrap.Modal(modal);
         modalInstance.show();
+    }
+    
+    function showFieldChangesModal(auditId, changesCount) {
+        // Show loading state
+        const modal = document.createElement('div');
+        modal.className = 'modal fade';
+        modal.innerHTML = `
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Field Changes (${changesCount} changes)</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="text-center py-4">
+                            <i class="fas fa-spinner fa-spin fa-2x text-muted"></i>
+                            <p class="mt-2 text-muted">Loading field changes...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        const bootstrapModal = new bootstrap.Modal(modal);
+        bootstrapModal.show();
+        
+        // Fetch field changes
+        fetch(`${APP_URL}/app/ajax/get_audit_field_changes.php?audit_log_id=${auditId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const modalBody = modal.querySelector('.modal-body');
+                    modalBody.innerHTML = generateFieldChangesHTML(data.field_changes);
+                } else {
+                    const modalBody = modal.querySelector('.modal-body');
+                    modalBody.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Failed to load field changes: ${data.error || 'Unknown error'}
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error loading field changes:', error);
+                const modalBody = modal.querySelector('.modal-body');
+                modalBody.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Failed to load field changes: ${error.message}
+                    </div>
+                `;
+            });
+        
+        modal.addEventListener('hidden.bs.modal', function() {
+            document.body.removeChild(modal);
+        });
+    }
+    
+    function generateFieldChangesHTML(fieldChanges) {
+        if (!fieldChanges || fieldChanges.length === 0) {
+            return `
+                <div class="text-center py-4">
+                    <i class="fas fa-info-circle fa-2x text-muted"></i>
+                    <p class="mt-2 text-muted">No field changes found for this audit log entry.</p>
+                </div>
+            `;
+        }
+        
+        let html = `
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Field</th>
+                            <th>Change Type</th>
+                            <th>Old Value</th>
+                            <th>New Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+        
+        fieldChanges.forEach(change => {
+            const changeTypeBadge = getChangeTypeBadge(change.change_type);
+            const oldValue = change.old_value || '<em class="text-muted">null</em>';
+            const newValue = change.new_value || '<em class="text-muted">null</em>';
+            
+            html += `
+                <tr>
+                    <td><strong>${escapeHtml(change.field_name)}</strong></td>
+                    <td>${changeTypeBadge}</td>
+                    <td><code>${oldValue}</code></td>
+                    <td><code>${newValue}</code></td>
+                </tr>
+            `;
+        });
+        
+        html += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+        
+        return html;
+    }
+    
+    function getChangeTypeBadge(changeType) {
+        const badges = {
+            'added': '<span class="badge bg-success">Added</span>',
+            'modified': '<span class="badge bg-warning">Modified</span>',
+            'removed': '<span class="badge bg-danger">Removed</span>'
+        };
+        
+        return badges[changeType] || `<span class="badge bg-secondary">${changeType}</span>`;
     }
 });

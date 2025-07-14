@@ -117,7 +117,6 @@ document.addEventListener('DOMContentLoaded', function() {
       // Load programs based on selected period and sector
     function loadPrograms() {
         const periodId = periodSelect.value;
-        const sectorId = sectorSelect.value;
         
         // Need at least a period to load programs
         if (!periodId) {
@@ -145,7 +144,7 @@ document.addEventListener('DOMContentLoaded', function() {
         showProgramsLoading();
         
         // Build URL - always load all programs for the period, then filter on frontend
-        let url = `${APP_URL}/app/api/get_period_programs.php?period_id=${periodId}${sectorId ? '&sector_id=' + sectorId : ''}`;
+        let url = `${APP_URL}/app/api/get_period_programs.php?period_id=${periodId}`;
         
         // Log the API request for debugging
         console.log(`Requesting programs for period_id: ${periodId}`);
@@ -184,8 +183,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     sectorData.programs.forEach(program => {
                         allLoadedPrograms.push({
                             ...program,
-                            sector_name: sectorData.sector_name,
-                            sector_id: sector
+                            sector_name: 'Forestry',
+                            sector_id: 1
                         });
                     });
                 }
@@ -214,7 +213,6 @@ document.addEventListener('DOMContentLoaded', function() {
     function loadTargets() {
         const selectedPrograms = getSelectedPrograms();
         const periodId = periodSelect.value;
-        const sectorId = sectorSelect.value;
 
         if (!periodId || selectedPrograms.length === 0) {
             hideTargetSelection();
@@ -228,7 +226,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Get selected program IDs
         const programIds = selectedPrograms.map(p => p.program_id).join(',');
         
-        const url = `${APP_URL}/app/api/get_program_targets.php?period_id=${periodId}&sector_id=${sectorId}&selected_program_ids=${programIds}`;
+        const url = `${APP_URL}/app/api/get_program_targets.php?period_id=${periodId}&selected_program_ids=${programIds}`;
 
         fetch(url)
             .then(response => {
@@ -1067,12 +1065,6 @@ document.addEventListener('DOMContentLoaded', function() {
     function applyAllFilters() {
         let programs = [...allLoadedPrograms]; // Start with all loaded programs
         
-        // Apply sector filter
-        const selectedSectorId = sectorSelect?.value;
-        if (selectedSectorId) {
-            programs = programs.filter(program => program.sector_id === selectedSectorId);
-        }
-        
         // Apply agency filter using new integrated system
         const selectedAgencies = getSelectedAgencyIds();
         if (selectedAgencies.length > 0) {
@@ -1184,7 +1176,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         const orderValue = isSelected ? globalProgramSelections.get(programId).order : '';
                         
                         html += `
-                            <div class="program-checkbox-container ms-4" data-program-id="${programId}" data-agency-name="${agencyName}" data-program-name="${program.program_name}" data-program-number="${program.program_number || ''}">
+                            <div class="program-checkbox-container ms-4" data-program-id="${programId}" data-agency-name="${program.agency_name}" data-program-name="${program.program_name}" data-program-number="${program.program_number || ''}">
                                 <div class="form-check">
                                     <input type="checkbox" class="form-check-input program-checkbox" 
                                         id="program_${programId}" 

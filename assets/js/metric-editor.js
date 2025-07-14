@@ -508,90 +508,15 @@ async function handleSetAllUnits() {
 
 /**
  * Show toast notification
+ * Uses the global showToast function for consistency
  */
 function showToast(message, type = 'info') {
-    // Create toast container if it doesn't exist
-    let toastContainer = document.querySelector('.toast-container');
-    if (!toastContainer) {
-        toastContainer = document.createElement('div');
-        toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
-        document.body.appendChild(toastContainer);
+    if (typeof window.showToast === 'function') {
+        window.showToast('Notification', message, type);
+    } else {
+        // Fallback if global showToast isn't loaded
+        alert(message);
     }
-    
-    // Check active toast count to prevent too many notifications
-    const activeToasts = toastContainer.querySelectorAll('.toast');
-    const MAX_TOASTS = 3; // Maximum number of visible toasts at once
-    
-    if (activeToasts.length >= MAX_TOASTS) {
-        // If we already have similar successful updates, just update the count
-        if (type === 'success') {
-            const successToast = Array.from(activeToasts).find(t => t.classList.contains('bg-success') && 
-                                                             t.querySelector('.toast-count'));
-            if (successToast) {
-                // Get the current count and increment it
-                const countEl = successToast.querySelector('.toast-count');
-                const currentCount = parseInt(countEl.dataset.count || '1');
-                countEl.dataset.count = currentCount + 1;
-                countEl.textContent = currentCount + 1;
-                
-                // Reset the auto-hide timer for this toast
-                const bsToast = bootstrap.Toast.getInstance(successToast);
-                if (bsToast) {
-                    bsToast.hide();
-                    setTimeout(() => {
-                        bsToast.show();
-                    }, 100);
-                }
-                
-                return; // Don't create a new toast
-            } else {
-                // Remove the oldest toast
-                const oldestToast = activeToasts[0];
-                const bsToast = bootstrap.Toast.getInstance(oldestToast);
-                if (bsToast) bsToast.hide();
-            }
-        } else {
-            // For non-success toasts, remove the oldest
-            const oldestToast = activeToasts[0];
-            const bsToast = bootstrap.Toast.getInstance(oldestToast);
-            if (bsToast) bsToast.hide();
-        }
-    }
-    
-    // Create toast element
-    const toastEl = document.createElement('div');
-    toastEl.className = `toast align-items-center text-white bg-${type} border-0`;
-    toastEl.setAttribute('role', 'alert');
-    toastEl.setAttribute('aria-live', 'assertive');
-    toastEl.setAttribute('aria-atomic', 'true');
-    
-    // Set toast content
-    let countHtml = '';
-    if (type === 'success') {
-        countHtml = '<span class="toast-count ms-1" data-count="1"></span>';
-    }
-    
-    toastEl.innerHTML = `
-        <div class="d-flex">
-            <div class="toast-body">
-                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
-                ${message} ${countHtml}
-            </div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-    `;
-    
-    // Add toast to container
-    toastContainer.appendChild(toastEl);
-    
-    // Initialize and show toast using Bootstrap
-    const bsToast = new bootstrap.Toast(toastEl, { autohide: true, delay: 3000 });
-    bsToast.show();
-    
-    // Remove toast after it's hidden
-    toastEl.addEventListener('hidden.bs.toast', () => {
-        toastEl.remove();
-    });
 }
 
 /**

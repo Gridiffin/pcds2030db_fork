@@ -171,6 +171,20 @@
   float: none;
 }
 
+/* More Actions Button Support for Tables */
+.table .btn-group {
+  position: relative;
+}
+
+.table .more-actions-btn {
+  position: relative;
+  z-index: 1;
+}
+
+.table .more-actions-btn:hover {
+  z-index: 2;
+}
+
 .table .btn-group-sm .btn {
   padding: 0.35rem 0.6rem;
   line-height: 1.5;

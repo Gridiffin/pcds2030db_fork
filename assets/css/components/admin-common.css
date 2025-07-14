@@ -361,37 +361,7 @@ tr.user-inactive:hover {
   background-color: rgba(var(--forest-light-rgb), 0.1);
 }
 
-/* Button variants */
-.btn-forest {
-  background-color: var(--forest-deep);
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  font-weight: 500;
-  border-radius: 0.375rem;
-  transition: all 0.3s ease;
-}
-
-.btn-forest:hover {
-  background-color: var(--forest-medium);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.btn-forest-light {
-  background-color: white;
-  color: var(--forest-deep);
-  border: 2px solid var(--forest-deep);
-  padding: 0.5rem 1rem;
-  font-weight: 500;
-  border-radius: 0.375rem;
-  transition: all 0.3s ease;
-}
-
-.btn-forest-light:hover {
-  background-color: var(--hover-bg);
-  color: var(--forest-deep);
-}
+/* Button styles have been centralized in components/buttons.css. Remove .btn-forest and .btn-forest-light classes. */
 
 /* Breadcrumb styling */
 .breadcrumb-forest {
@@ -558,4 +528,103 @@ tr.user-inactive:hover {
     color: #fff; /* White text on hover */
     background-color: #ffc107;
     border-color: #ffc107;
+}
+
+/* --- Username + Role Badge + Full Name + Email Stacking --- */
+.user-table .fw-medium.text-forest {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+.user-table .badge {
+  margin-left: 0.5em;
+  font-size: 0.85em;
+  vertical-align: middle;
+}
+.user-table .text-muted.small {
+  font-size: 0.85em;
+  color: #888 !important;
+  margin-top: 2px;
+}
+.user-table .user-email {
+  font-family: monospace, monospace;
+  font-size: 0.95em;
+  color: #666;
+}
+.user-table .btn-copy-email {
+  color: #888;
+  font-size: 1em;
+  margin-left: 0.5em;
+  opacity: 0.7;
+  transition: color 0.2s, opacity 0.2s;
+}
+.user-table .btn-copy-email:hover,
+.user-table .btn-copy-email:focus {
+  color: var(--forest-deep);
+  opacity: 1;
+  text-decoration: none;
+}
+
+/* Equal width and word wrap for .user-table and .table-custom */
+.user-table,
+.table-custom {
+  table-layout: fixed;
+  width: 100%;
+}
+.user-table th,
+.user-table td,
+.table-custom th,
+.table-custom td {
+  width: 12.5%;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+  text-align: center;
+  vertical-align: middle;
+  padding: 12px 8px;
+}
+@media (max-width: 900px) {
+  .user-table,
+  .table-custom {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+}
+
+/* --- Copied Feedback Badge --- */
+.copied-feedback {
+  display: inline-block;
+  margin-left: 0.5em;
+  color: #2E7D32;
+  font-size: 0.95em;
+  font-weight: 600;
+  background: #eafbe7;
+  border-radius: 4px;
+  padding: 2px 8px;
+  vertical-align: middle;
+  transition: opacity 0.2s;
+}
+
+/* --- Password Toggle Icon Visibility --- */
+.input-group .toggle-password {
+  color: #537D5D;
+  opacity: 1;
+  font-size: 1.25em;
+  background: none;
+  border: none;
+  outline: none;
+  box-shadow: none;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.input-group .toggle-password:hover,
+.input-group .toggle-password:focus {
+  color: #2C3E2E;
+  background: #eafbe7;
+  border-radius: 4px;
+}
+.input-group .toggle-password i {
+  font-size: 1.25em;
+  vertical-align: middle;
 }

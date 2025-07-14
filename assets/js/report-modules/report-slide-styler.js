@@ -646,19 +646,18 @@ if (typeof window.ReportStyler !== 'undefined') {
         // Chart container is at x: 9.17 inches, width: 4.05 inches (ends at 13.22 inches)
         const chartContainerEndX = (9.17 + 4.05) * 2.54; // Convert inches to cm
         const kpiBoxWidthCm = 10.0;     // Width of a single KPI box in cm
+        const kpiBoxHeightCm = 1.57;    // Height of a single KPI box in cm (REVERTED)
         const firstKpiHorizontalPosCm = chartContainerEndX - kpiBoxWidthCm; // Align right edge with chart end
-        const kpiBoxHeightCm = 1.57;    // Height of a single KPI box in cm
 
         let yPosCm;
         if (boxIndex === 0) {
-            yPosCm = 7.64; // Vertical position for the first box
+            yPosCm = 7.64; // Vertical position for the first box (REVERTED)
         } else if (boxIndex === 1) {
-            yPosCm = 9.31; // Vertical position for the second box
+            yPosCm = 9.31; // Vertical position for the second box (REVERTED)
         } else if (boxIndex === 2) {
-            yPosCm = 10.97; // Vertical position for the third box
+            yPosCm = 10.97; // Vertical position for the third box (REVERTED)
         } else {
             // Fallback for any additional boxes, though typically only 3 are expected
-            // This maintains a consistent spacing based on the last defined gap if more than 3 KPIs were somehow processed.
             const previousBoxYPosCm = 10.97;
             const verticalSpacingCm = 1.5; // Default spacing if more than 3 boxes
             yPosCm = previousBoxYPosCm + ((boxIndex - 2) * (kpiBoxHeightCm + verticalSpacingCm));
@@ -687,7 +686,7 @@ if (typeof window.ReportStyler !== 'undefined') {
                 renderDetailedListKpiLayout(slide, pptx, themeColors, defaultFont, kpiName, detailJson.items, xPosIn, yPosIn, boxWidthIn, boxHeightIn);
                 break;
             case 'comparison':
-                renderComparisonKpiLayout(slide, pptx, themeColors, defaultFont, kpiName, detailJson.items, xPosIn, yPosIn, boxWidthIn, boxHeightIn);
+                renderComparisonKpiLayout(slide, pptx, themeColors, defaultFont, kpiName, detailJson.items, xPosIn, yPosIn, boxWidthIn, boxHeightIn); // No extra height
                 break;
             default:
                 console.warn(`Unsupported KPI layout_type: ${detailJson.layout_type}`);
@@ -886,9 +885,9 @@ if (typeof window.ReportStyler !== 'undefined') {
     }    
     
     function renderComparisonKpiLayout(slide, pptx, themeColors, defaultFont, kpiName, items, boxXIn, boxYIn, boxWidthIn, boxHeightIn) {
-        const boxPadding = 0.03; // Reduced fixed padding
+        const boxPadding = 0.03;
 
-        const kpiNameW = boxWidthIn * 0.38; // Slightly reduced kpiName width proportion
+        const kpiNameW = boxWidthIn * 0.38;
         const kpiNameX = boxXIn + boxPadding;
         const kpiNameY = boxYIn + boxPadding;
         const kpiNameH = boxHeightIn - (2 * boxPadding);
@@ -897,78 +896,74 @@ if (typeof window.ReportStyler !== 'undefined') {
             x: kpiNameX, y: kpiNameY, w: kpiNameW, h: kpiNameH,
             fontSize: 8, bold: true, fontFace: defaultFont,
             color: themeColors.primary, align: 'left', valign: 'top',
-            breakLine: true, 
-            fit: 'shrink' 
+            breakLine: true, fit: 'shrink'
         });
 
         const dataAreaX = kpiNameX + kpiNameW + boxPadding;
-        const dataAreaW = boxWidthIn - kpiNameW - (3 * boxPadding); 
+        const dataAreaW = boxWidthIn - kpiNameW - (3 * boxPadding);
         const dataAreaY = boxYIn + boxPadding;
         const dataAreaH = boxHeightIn - (2 * boxPadding);
 
         const displayItems = items && items.length ? items.slice(0, 2) : [];
+        const colCount = 2;
+        const colW = dataAreaW / colCount;
+        const valueH = dataAreaH * 0.45; // 45% for value
+        const descH = dataAreaH * 0.55;  // 55% for description
 
-        if (displayItems.length > 0) {
-            const numDataRows = displayItems.length;
-            const dataRowH = dataAreaH / numDataRows; 
+        // Center columns vertically in the data area
+        const valueY = dataAreaY;
+        const descY = dataAreaY + valueH;
 
-            displayItems.forEach((item, index) => {
-                const currentRowY = dataAreaY + (index * dataRowH);
-                const itemInternalPadding = 0.02;                const valueColWProportion = 0.35; // Value column now takes 35% of data area width (reduced from 40%)
-                const valueColW = dataAreaW * valueColWProportion; 
-                const textStackColX = dataAreaX + valueColW + (itemInternalPadding / 2); // Reduced padding between value and text stack
-                // Ensure textStackColW is not negative and extend its width to be closer to the value
-                const textStackColW = Math.max(0, dataAreaW - valueColW - itemInternalPadding); // Reduced padding from 2*itemInternalPadding to just itemInternalPadding
-
-                let valueText = item.value || '0';
-                const valueFontSize = 16; // Reduced font size for value
-                
-                const valueElX = dataAreaX + itemInternalPadding; 
-                const valueElY = currentRowY + itemInternalPadding;
-                const valueElH = dataRowH - (2 * itemInternalPadding);
-                const actualValueW = valueColW - itemInternalPadding;
-
-                let valueOpts = {
-                    x: valueElX, y: valueElY, w: actualValueW, h: valueElH,
-                    fontSize: valueFontSize, bold: true, fontFace: defaultFont,
-                    color: themeColors.secondary || '4472C4', align: 'center', valign: 'middle',
-                    fit: 'shrink' 
-                };
-                slide.addText(String(valueText), valueOpts);
-
-
-                const labelStackH = dataRowH - (2 * itemInternalPadding);
-                const labelHProportion = 0.45; // Label takes 45% of stack height
-                const labelH = labelStackH * labelHProportion; 
-                const descH = labelStackH * (1 - labelHProportion);  
-
-                const labelY = currentRowY + itemInternalPadding;
-                const descY = labelY + labelH; 
-
-                if (item.label) {
-                    slide.addText(item.label || '', {
-                        x: textStackColX, y: labelY, w: textStackColW, h: labelH,
-                        fontSize: 6, bold: true, fontFace: defaultFont, // Increased font size slightly
-                        color: themeColors.text, align: 'left', valign: 'top',
-                        breakLine: true, fit: 'shrink' 
-                    });
-                }
-
-                if (item.description) {
-                    slide.addText(item.description || '', {
-                        x: textStackColX, y: descY, w: textStackColW, h: descH,
-                        fontSize: 6, italic: true, fontFace: defaultFont, // Increased font size slightly
-                        color: themeColors.lightText, align: 'left', valign: 'top',
-                        breakLine: true, fit: 'shrink' 
-                    });
-                }
+        for (let i = 0; i < colCount; i++) {
+            const item = displayItems[i] || {};
+            const colX = dataAreaX + i * colW;
+            // Value (top, centered, bold, large)
+            slide.addText(item.value || '', {
+                x: colX,
+                y: valueY,
+                w: colW,
+                h: valueH,
+                fontSize: 16,
+                bold: true,
+                fontFace: defaultFont,
+                color: themeColors.secondary || '4472C4',
+                align: 'center',
+                valign: 'middle',
+                fit: 'shrink'
             });
-        } else {
-            slide.addText('No data available.', {
-                x: dataAreaX, y: dataAreaY, w: dataAreaW, h: dataAreaH,
-                fontSize: 8, fontFace: defaultFont, color: themeColors.lightText,
-                align: 'center', valign: 'middle'
-            });
+            // Add percent symbol as superscript if value is not empty
+            if ((item.value || '').toString().trim() !== '') {
+                slide.addText('%', {
+                    x: colX + colW * 0.63, // Move a little farther from the value
+                    y: valueY + valueH * 0.10, // Slightly above the middle
+                    w: colW * 0.15,
+                    h: valueH * 0.5,
+                    fontSize: 12, // Bigger font size
+                    fontFace: defaultFont,
+                    color: themeColors.lightText || '888888',
+                    align: 'left',
+                    valign: 'top',
+                    bold: false,
+                    italic: false
+                });
+            }
+            // Description (bottom, full width, smaller, italic, wraps)
+            if (item.description) {
+                slide.addText(item.description, {
+                    x: colX,
+                    y: descY,
+                    w: colW,
+                    h: descH,
+                    fontSize: 6,
+                    italic: true,
+                    fontFace: defaultFont,
+                    color: themeColors.lightText,
+                    align: 'left',
+                    valign: 'top',
+                    breakLine: true,
+                    fit: 'shrink'
+                });
+            }
         }
     }
     
@@ -1017,8 +1012,7 @@ if (typeof window.ReportStyler !== 'undefined') {
         const chartOptions = getLineChartOptions(position, themeColors, defaultFont);
         
         // Override/set specific options for this chart
-        chartOptions.showLegend = true;
-        chartOptions.legendPos = 'b'; // Legend at the bottom
+        chartOptions.showLegend = false; // Remove legend
         chartOptions.catAxisTitle = 'Month';
         chartOptions.valAxisTitle = `${chartTitle} (${chartUnit})`;
         
@@ -1062,7 +1056,7 @@ if (typeof window.ReportStyler !== 'undefined') {
      */
     function addTotalDegradedAreaChart(slide, pptx, themeColors, defaultFont, chartApiData, position) {
         console.log("Adding Total Degraded Area chart with data:", chartApiData);
-        if (!chartApiData || !chartApiData.data || !chartApiData.data.labels) {
+        if (!chartApiData || !chartApiData.data || !chartApiData.data.columns || !chartApiData.data.rows) {
             console.error('Total Degraded Area chart data from API is missing or malformed.', chartApiData);
             createTextBox(slide, 'Total Degraded Area data unavailable.', { 
                 x: position.x, y: position.y, w: position.w, h: 0.5, 
@@ -1070,56 +1064,26 @@ if (typeof window.ReportStyler !== 'undefined') {
                 align: 'center', valign: 'middle' 
             });
             return;
-        }        const degradedAreaMetricData = chartApiData.data;
+        }
+        const degradedAreaMetricData = chartApiData.data;
         const chartTitle = chartApiData.title || 'Total Degraded Area';
         const chartUnit = degradedAreaMetricData.units || 'Ha';
-
-        // Use dynamic years from API if available, otherwise calculate current latest 3 years
-        let yearsToShow;
-        if (degradedAreaMetricData.years && Array.isArray(degradedAreaMetricData.years)) {
-            yearsToShow = degradedAreaMetricData.years;
-        } else {
-            // Fallback: calculate latest 3 years dynamically
-            const currentYear = new Date().getFullYear();
-            yearsToShow = [
-                String(currentYear - 2), // 2023
-                String(currentYear - 1), // 2024
-                String(currentYear)      // 2025
-            ];
-        }
-        
-        const monthLabels = degradedAreaMetricData.labels || ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-        
-        const chartDataSeries = [];
-
-        // Define colors for the series
-        const seriesColors = getChartSeriesColors(yearsToShow.length);
-        let colorIndex = 0;        yearsToShow.forEach(year => {
-            const yearDataKey = `data${year}`;
-            let yearValues;
-            
-            if (degradedAreaMetricData.hasOwnProperty(yearDataKey)) {
-                // Use actual data from API
-                yearValues = degradedAreaMetricData[yearDataKey] || Array(12).fill(0);
-            } else {
-                // Create zero values for missing years to ensure all requested years appear
-                yearValues = Array(12).fill(0);
-                console.info(`No data found for year ${year}, showing zero values to maintain chart consistency.`);
-            }
-            
-            // Ensure yearValues is an array of exactly 12 numbers
-            const fullYearValues = [...yearValues];
-            while (fullYearValues.length < 12) fullYearValues.push(0);
-            const clippedYearValues = fullYearValues.slice(0, 12);
-
-            chartDataSeries.push({
-                name: year, // Legend entry for the year
-                labels: monthLabels, // X-axis labels (months)
-                values: clippedYearValues, // Y-axis values for this year (zeros if no data)
-                opts: { color: seriesColors[colorIndex % seriesColors.length] } // Series-specific color
-            });
-            colorIndex++;
-        });        // This should rarely happen now since we guarantee all years are included
+        const columns = degradedAreaMetricData.columns || [];
+        const rows = degradedAreaMetricData.rows || [];
+        const labels = rows.map(row => row.month || row.label || '');
+        // Get current and previous year from quarter
+        const currentYear = parseInt(chartApiData.quarter?.split('-')[1]) || new Date().getFullYear();
+        const previousYear = currentYear - 1;
+        const yearsToShow = [currentYear.toString(), previousYear.toString()].filter(y => columns.includes(y));
+        // Build chart data for only those two years, treating 0 as null
+        const chartDataSeries = yearsToShow.map((year, idx) => ({
+            name: year,
+            labels: labels,
+            values: rows.map(row => {
+                const v = row[year];
+                return (v === 0 || v === '0' || v === null || v === undefined) ? null : v;
+            })
+        }));
         if (chartDataSeries.length === 0) {
             console.error('No data series to plot for Total Degraded Area chart - this should not happen with zero value support.');
             createTextBox(slide, 'Unable to generate Total Degraded Area chart.', { 
@@ -1129,20 +1093,53 @@ if (typeof window.ReportStyler !== 'undefined') {
             });
             return;
         }
+        // Calculate total values for each year
+        const yearTotals = {};
+        yearsToShow.forEach(year => {
+            const vals = rows.map(row => {
+                const v = row[year];
+                return (v === 0 || v === '0' || v === null || v === undefined) ? null : v;
+            }).filter(v => v !== null && v !== undefined);
+            yearTotals[year] = vals.length > 0 ? vals.reduce((a, b) => a + b, 0) : 0;
+        });
         
-        // Calculate the maximum value for axis scaling
-        const allValues = chartDataSeries.flatMap(series => series.values);
-        const maxVal = Math.max(...allValues, 0);        // Get optimized chart options for this specific chart with dynamic scaling based on actual data
+        // Format the totals for degraded area (no RM prefix, just numbers)
+        const formattedPreviousYearTotal = yearTotals[previousYear].toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        const formattedCurrentYearTotal = yearTotals[currentYear].toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        
+        // Format years as requested - abbreviated with apostrophe (e.g., '24 Total)
+        const currentYearAbbr = "'" + currentYear.toString().substring(2) + " Total";
+        const previousYearAbbr = "'" + previousYear.toString().substring(2) + " Total";
+        
+        // Add total boxes using the working implementation
+        createTotalValueBox(
+            slide, 
+            pptx, 
+            themeColors, 
+            currentYearAbbr, 
+            formattedCurrentYearTotal, 
+            position.x + 0.10, // Small margin from left edge
+            position.y + position.h - 0.38, // Positioned slightly higher to prevent overlap with container bottom
+            defaultFont
+        );
+        
+        createTotalValueBox(
+            slide, 
+            pptx, 
+            themeColors, 
+            previousYearAbbr, 
+            formattedPreviousYearTotal, 
+            position.x + 2.15, // Slightly more spacing between boxes for large numbers
+            position.y + position.h - 0.38, // Same vertical position as current year
+            defaultFont
+        );
+        
+        // Find max value for axis scaling
+        const allValues = chartDataSeries.flatMap(series => series.values.filter(v => v !== null));
+        const maxVal = Math.max(...allValues, 0);
         const chartOptions = getDegradedAreaChartOptions(position, themeColors, defaultFont, chartTitle, chartUnit, maxVal);
-        chartOptions.chartColors = seriesColors.slice(0, chartDataSeries.length);
-          // Add chart title with even smaller gap
-        createChartTitle(slide, chartTitle, {
-            x: position.x, 
-            y: position.y - 0.05, // Very minimal gap between title and chart
-            w: position.w, 
-            h: 0.15 // Reduced height for title to bring it closer to chart
-        }, themeColors, defaultFont);
-
+        // Add chart title above the chart
+        createChartTitle(slide, chartApiData.title || 'Total Degraded Area', position, themeColors, defaultFont);
         slide.addChart(pptx.ChartType.line, chartDataSeries, chartOptions);
         console.log("Total Degraded Area chart added to slide.");
     }
@@ -1415,20 +1412,20 @@ currentXPos += colWidths[1];                /**
                 
                 let ratingColor = themeColors.greyStatus; // Default color for not-started
                 
-                // Map API color values to theme colors
+                // Map database rating values to theme colors
                 switch (rating) {
-                    case 'green':
+                    case 'monthly_target_achieved':
                         ratingColor = themeColors.greenStatus; // Green for Monthly Target Achieved
                         break;
-                    case 'red':
-                        ratingColor = themeColors.redStatus;  // Red for Delayed/Severe Issues
+                    case 'severe_delay':
+                        ratingColor = themeColors.redStatus;  // Red for Severe Delays
                         break;
-                    case 'yellow':
-                        ratingColor = themeColors.yellowStatus; // Yellow for On Track/Minor Issues
+                    case 'on_track_for_year':
+                        ratingColor = themeColors.yellowStatus; // Yellow for On Track
                         break;
-                    case 'grey':
+                    case 'not_started':
                     default:
-                        ratingColor = themeColors.greyStatus; // Gray for Not Started/Not Reported
+                        ratingColor = themeColors.greyStatus; // Gray for Not Started
                         break;
                 }
 
@@ -1586,76 +1583,31 @@ slide.addText(statusText, {
      * @param {Object} data - The data from the API
      */
     function addTimberExportChart(slide, pptx, themeColors, defaultFont, data) {
-        console.log("Adding timber export line chart with real data");
-        
-        // Create container using the styler function
         const container = createChartContainer(slide, pptx, themeColors);
-        
-        // Get current date and extract current year and previous year
-        const currentDate = new Date();
-        const currentYear = currentDate.getFullYear();
-        const previousYear = currentYear - 1;
-        
-        // Add title using the styler function
         createChartTitle(slide, 'Timber Export Value (RM)', container, themeColors, defaultFont);
-        
-        // Check if we have the required chart data from the API
-
         if (!data || !data.charts || !data.charts.main_chart || !data.charts.main_chart.data) {
-            console.warn("No timber export data available, using placeholder");
             return;
         }
-        
-        // Get timber export data from API response
         const timberData = data.charts.main_chart.data;
-        console.log("Timber export data from API:", timberData);
-        
-        // Get monthly labels directly from the data
-        const monthLabels = timberData.labels || ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-        
-        // Dynamic property names based on current and previous year
-        const currentYearProp = `data${currentYear}`;
-        const previousYearProp = `data${previousYear}`;
-        
-        // Get data for current and previous year, with fallbacks to empty arrays
-        const currentYearData = timberData[currentYearProp] || Array(12).fill(0);
-        const previousYearData = timberData[previousYearProp] || Array(12).fill(0);
-        
-        console.log(`${previousYear} Monthly data:`, previousYearData);
-        console.log(`${currentYear} Monthly data:`, currentYearData);
-        
-        // For current year, only include data up to the current month
-        const currentMonth = currentDate.getMonth(); // 0-based (0 = January)
-        
-        // Create arrays with exactly 12 values each
-        const fullPreviousYearData = [...previousYearData];
-        while (fullPreviousYearData.length < 12) {
-            fullPreviousYearData.push(0);
-        }
-        
-        const fullCurrentYearData = [...currentYearData];
-        while (fullCurrentYearData.length < 12) {
-            fullCurrentYearData.push(0);
-        }
-        
-        // Clip arrays to exactly 12 items
-        const clippedPreviousYearData = fullPreviousYearData.slice(0, 12);
-        const clippedCurrentYearData = fullCurrentYearData.slice(0, 12);
-        
-        // Calculate maximum value to help with scaling (using actual data)
-        const maxMonthlyValue = Math.max(
-            ...clippedPreviousYearData.filter(val => val !== undefined && val !== null),
-            ...clippedCurrentYearData.filter(val => val !== undefined && val !== null),
-            1 // Ensure we always have a positive value for scaling
-        );
-        console.log("Maximum monthly value:", maxMonthlyValue);
+        const columns = timberData.columns || [];
+        const rows = timberData.rows || [];
+        const labels = rows.map(row => row.month || row.label || '');
+        // Get current and previous year from quarter
+        const currentYear = parseInt(data.quarter?.split('-')[1]) || new Date().getFullYear();
+        const previousYear = currentYear - 1;
+        const yearsToShow = [currentYear.toString(), previousYear.toString()].filter(y => columns.includes(y));
         
         // Calculate total values for each year
-        const previousYearTotal = clippedPreviousYearData.reduce((sum, val) => sum + (val || 0), 0);
-        const currentYearTotal = clippedCurrentYearData.reduce((sum, val) => sum + (val || 0), 0);
+        const yearTotals = {};
+        yearsToShow.forEach(year => {
+            const vals = rows.map(row => {
+                const v = row[year];
+                return (v === 0 || v === '0' || v === null || v === undefined) ? null : v;
+            }).filter(v => v !== null && v !== undefined);
+            yearTotals[year] = vals.length > 0 ? vals.reduce((a, b) => a + b, 0) : 0;
+        });
         
-        // For large export values, reduce precision to conserve space while maintaining readability
-        // Large values (over 1 million) use fewer decimal places to prevent overflow
+        // Format the totals with adaptive precision and add RM prefix
         const formatNumberWithSmartPrecision = (num) => {
             if (num >= 10000000) { // Over 10 million
                 return num.toLocaleString('en-US', {maximumFractionDigits: 0}); // No decimals
@@ -1667,19 +1619,14 @@ slide.addText(statusText, {
         };
         
         // Format the totals with adaptive precision and add RM prefix
-        const formattedPreviousYearTotal = `RM ${formatNumberWithSmartPrecision(previousYearTotal)}`;
-        const formattedCurrentYearTotal = `RM ${formatNumberWithSmartPrecision(currentYearTotal)}`;
+        const formattedPreviousYearTotal = `RM ${formatNumberWithSmartPrecision(yearTotals[previousYear])}`;
+        const formattedCurrentYearTotal = `RM ${formatNumberWithSmartPrecision(yearTotals[currentYear])}`;
         
         // Format years as requested - abbreviated with apostrophe (e.g., '24 Total)
-        // Ensure the apostrophe is visible by using the correct character
         const currentYearAbbr = "'" + currentYear.toString().substring(2) + " Total";
         const previousYearAbbr = "'" + previousYear.toString().substring(2) + " Total";
         
-        // Position total boxes side by side at the bottom-left of chart container
-        // Make sure they're aligned properly with small separation between boxes
-        
-        // SWAPPED ORDER: Current year first (on the left), then previous year
-        // Add total box for current year at the bottom-left
+        // Add total boxes using the working implementation
         createTotalValueBox(
             slide, 
             pptx, 
@@ -1691,7 +1638,6 @@ slide.addText(statusText, {
             defaultFont
         );
         
-        // Add total box for previous year next to the current year box
         createTotalValueBox(
             slide, 
             pptx, 
@@ -1703,32 +1649,28 @@ slide.addText(statusText, {
             defaultFont
         );
         
-        // Create chart data with the real values from API
-        const chartData = [
-            {
-                name: `${previousYear} Export Value`,
-                labels: monthLabels,
-                values: clippedPreviousYearData
-            },
-            {
-                name: `${currentYear} Export Value`,
-                labels: monthLabels,
-                values: clippedCurrentYearData
-            }
-        ];        // Get chart options from the styler
+        // Build chart data for only those two years, treating 0 as null
+        const chartData = yearsToShow.map((year, idx) => ({
+            name: year,
+            labels: labels,
+            values: rows.map(row => {
+                const v = row[year];
+                return (v === 0 || v === '0' || v === null || v === undefined) ? null : v;
+            })
+        }));
+        // Find max value for axis scaling
+        const allValues = chartData.flatMap(series => series.values.filter(v => v !== null));
+        const maxMonthlyValue = Math.max(...allValues, 0);
         const chartOptions = getLineChartOptions(container, themeColors, defaultFont);
-        
-        // Calculate appropriate axis values based on actual data
         if (maxMonthlyValue > 0) {
             chartOptions.valAxisMinVal = 0;
-            chartOptions.valAxisMaxVal = maxMonthlyValue * 1.1; // Add 10% buffer
+            chartOptions.valAxisMaxVal = maxMonthlyValue * 1.1;
             chartOptions.valAxisMajorUnit = calculateMajorUnit(maxMonthlyValue * 1.1);
         }
-        
-        // Add chart (no need to set axis titles as they've been removed)
         slide.addChart(pptx.ChartType.line || 'line', chartData, chartOptions);
-        console.log("Line chart with real data added to slide");
-    }    return {
+    }
+
+    return {
         createErrorKpiBox: createErrorKpiBox,
         getDegradedAreaChartOptions: getDegradedAreaChartOptions,
         addTotalDegradedAreaChart: addTotalDegradedAreaChart,

@@ -210,24 +210,11 @@
 }
 
 /* White header buttons */
+/* Button color/background styles have been centralized in components/buttons.css. Remove .page-header--white .btn-primary and .btn-outline-primary color/background overrides. Keep only layout/spacing/transition enhancements. */
 .page-header--white .btn {
     border-radius: 0.375rem;
     font-weight: 500;
     transition: all 0.2s ease;
-}
-
-.page-header--white .btn-primary {
-    background-color: var(--bs-primary);
-    border-color: var(--bs-primary);
-    color: white;
-}
-
-.page-header--white .btn-primary:hover,
-.page-header--white .btn-primary:focus {
-    background-color: var(--bs-primary);
-    border-color: var(--bs-primary);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .page-header--white .btn-outline-primary {

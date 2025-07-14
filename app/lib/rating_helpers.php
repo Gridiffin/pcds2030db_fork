@@ -1,70 +1,16 @@
 <?php
 /**
- * Rating Helper Functions
+ * Rating Helper Functions V2 - Clean Implementation
  * 
- * Functions for working with program ratings across the application
+ * Simple functions for working with program ratings.
+ * No legacy conversion - works directly with database values.
  */
 
-/**
- * Convert legacy rating values to new rating values
- * 
- * @param string $rating The rating to convert
- * @return string The converted rating
- */
-function convert_legacy_rating($rating) {
-    if (!$rating) return 'not-started';
-    
-    $rating = strtolower(trim($rating));
-    
-    // Map of old rating values to new ones
-    $rating_map = [
-        'on track' => 'on-track',
-        'on-track' => 'on-track',
-        'on track for year' => 'on-track-yearly',
-        'on-track-yearly' => 'on-track-yearly',
-        'target achieved' => 'target-achieved',
-        'monthly target achieved' => 'target-achieved',
-        'target-achieved' => 'target-achieved',
-        'delayed' => 'delayed',
-        'severe delays' => 'severe-delay',
-        'severe delay' => 'severe-delay',
-        'severe-delay' => 'severe-delay',
-        'completed' => 'completed',
-        'not started' => 'not-started',
-        'not-started' => 'not-started'
-    ];
-    
-    return $rating_map[$rating] ?? 'not-started';
-}
-
-/**
- * Get appropriate badge HTML for a rating
- * 
- * @param string $rating The rating to get a badge for
- * @return string HTML for the rating badge
- */
-function get_rating_badge($rating) {
-    $rating = convert_legacy_rating($rating);
-    
-    $badges = [
-        'on-track' => ['class' => 'warning', 'icon' => 'calendar-check', 'label' => 'On Track'],
-        'on-track-yearly' => ['class' => 'warning', 'icon' => 'calendar-check', 'label' => 'On Track for Year'],
-        'target-achieved' => ['class' => 'success', 'icon' => 'check-circle', 'label' => 'Monthly Target Achieved'],
-        'completed' => ['class' => 'success', 'icon' => 'check-circle', 'label' => 'Monthly Target Achieved'],
-        'delayed' => ['class' => 'danger', 'icon' => 'exclamation-triangle', 'label' => 'Delayed'],
-        'severe-delay' => ['class' => 'danger', 'icon' => 'exclamation-circle', 'label' => 'Severe Delay'],
-        'not-started' => ['class' => 'secondary', 'icon' => 'clock', 'label' => 'Not Started']
-    ];
-    
-    // Set default if rating is not in our map
-    if (!isset($badges[$rating])) {
-        $rating = 'not-started';
-    }
-    
-    $badge = $badges[$rating];
-    
-    return '<span class="badge bg-' . $badge['class'] . '"><i class="fas fa-' . $badge['icon'] . ' me-1"></i> ' . $badge['label'] . '</span>';
-}
+// Database ENUM values
+define('RATING_NOT_STARTED', 'not_started');
+define('RATING_ON_TRACK', 'on_track_for_year');
+define('RATING_TARGET_ACHIEVED', 'monthly_target_achieved');
+define('RATING_SEVERE_DELAY', 'severe_delay');
 
 /**
  * Get all valid rating values
@@ -73,13 +19,10 @@ function get_rating_badge($rating) {
  */
 function get_valid_ratings() {
     return [
-        'on-track',
-        'on-track-yearly',
-        'target-achieved', 
-        'delayed',
-        'severe-delay',
-        'completed',
-        'not-started'
+        RATING_NOT_STARTED,
+        RATING_ON_TRACK,
+        RATING_TARGET_ACHIEVED,
+        RATING_SEVERE_DELAY
     ];
 }
 
@@ -90,36 +33,81 @@ function get_valid_ratings() {
  * @return bool True if rating is valid
  */
 function is_valid_rating($rating) {
-    return in_array(convert_legacy_rating($rating), get_valid_ratings());
+    return in_array($rating, get_valid_ratings());
 }
 
 /**
- * Legacy function names for backward compatibility
+ * Get rating display label
+ * 
+ * @param string $rating The rating value
+ * @return string Display label
  */
-if (!function_exists('convert_legacy_status')) {
-    function convert_legacy_status($status) {
-        return convert_legacy_rating($status);
-    }
+function get_rating_label($rating) {
+    $labels = [
+        RATING_NOT_STARTED => 'Not Started',
+        RATING_ON_TRACK => 'On Track',
+        RATING_TARGET_ACHIEVED => 'Monthly Target Achieved',
+        RATING_SEVERE_DELAY => 'Severe Delays'
+    ];
+    
+    return $labels[$rating] ?? 'Unknown';
 }
 
 /**
- * Additional legacy function names for backward compatibility
+ * Get rating badge HTML
+ * 
+ * @param string $rating The rating value
+ * @return string HTML for the rating badge
  */
-if (!function_exists('get_status_badge')) {
-    function get_status_badge($status) {
-        return get_rating_badge($status);
+function get_rating_badge($rating) {
+    if (!is_valid_rating($rating)) {
+        $rating = RATING_NOT_STARTED;
     }
+    
+    $badges = [
+        RATING_NOT_STARTED => ['class' => 'secondary', 'icon' => 'clock', 'label' => 'Not Started'],
+        RATING_ON_TRACK => ['class' => 'warning', 'icon' => 'calendar-check', 'label' => 'On Track'],
+        RATING_TARGET_ACHIEVED => ['class' => 'success', 'icon' => 'check-circle', 'label' => 'Monthly Target Achieved'],
+        RATING_SEVERE_DELAY => ['class' => 'danger', 'icon' => 'exclamation-circle', 'label' => 'Severe Delay']
+    ];
+    
+    $badge = $badges[$rating];
+    
+    return '<span class="badge bg-' . $badge['class'] . '"><i class="fas fa-' . $badge['icon'] . ' me-1"></i> ' . $badge['label'] . '</span>';
 }
 
-if (!function_exists('get_valid_statuses')) {
-    function get_valid_statuses() {
-        return get_valid_ratings();
+/**
+ * Get rating color for reports
+ * 
+ * @param string $rating The rating value
+ * @return string Color code
+ */
+function get_rating_color($rating) {
+    if (!is_valid_rating($rating)) {
+        $rating = RATING_NOT_STARTED;
     }
+    
+    $colors = [
+        RATING_NOT_STARTED => 'grey',
+        RATING_ON_TRACK => 'yellow',
+        RATING_TARGET_ACHIEVED => 'green',
+        RATING_SEVERE_DELAY => 'red'
+    ];
+    
+    return $colors[$rating];
 }
 
-if (!function_exists('is_valid_status')) {
-    function is_valid_status($status) {
-        return is_valid_rating($status);
-    }
+/**
+ * Get rating options for select dropdown
+ * 
+ * @return array Array of options for select dropdown
+ */
+function get_rating_options() {
+    return [
+        RATING_NOT_STARTED => 'Not Started',
+        RATING_ON_TRACK => 'On Track',
+        RATING_TARGET_ACHIEVED => 'Monthly Target Achieved',
+        RATING_SEVERE_DELAY => 'Severe Delays'
+    ];
 }
-?>
+?> 

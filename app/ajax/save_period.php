@@ -17,6 +17,7 @@ require_once ROOT_PATH . 'app/lib/session.php';
 require_once ROOT_PATH . 'app/lib/functions.php';
 require_once ROOT_PATH . 'app/lib/admin_functions.php';
 require_once ROOT_PATH . 'app/lib/audit_log.php';
+require_once ROOT_PATH . 'app/lib/db_names_helper.php';
 
 // Check if user is admin
 if (!is_admin()) {
@@ -34,20 +35,36 @@ try {
     // Database connection is already available via db_connect.php as $conn (MySQLi)
     
     // Get and validate input data
-    // $period_name = trim($_POST['period_name'] ?? ''); // Old way
-    $quarter = trim($_POST['quarter'] ?? '');
+    $period_type = trim($_POST['period_type'] ?? 'quarter');
+    $period_number = trim($_POST['period_number'] ?? '');
     $year = trim($_POST['year'] ?? '');
     $start_date = trim($_POST['start_date'] ?? '');
     $end_date = trim($_POST['end_date'] ?? '');
     $status = trim($_POST['status'] ?? 'closed'); // Default to closed to match ENUM and new modal
-    $use_custom_dates = isset($_POST['use_custom_dates']) ? (bool)$_POST['use_custom_dates'] : false;
     
     // Validation
-    if (empty($quarter)) {
-        throw new Exception('Period type is required');
+    if (empty($period_number)) {
+        throw new Exception('Period number is required');
     }
-    if (!in_array($quarter, ['1', '2', '3', '4', '5', '6'])) {
-        throw new Exception('Invalid period type. Must be Q1-Q4 or Half Yearly.');
+    if (!in_array($period_type, ['quarter', 'half', 'yearly'])) {
+        throw new Exception('Invalid period type. Must be quarter, half, or yearly.');
+    }
+    
+    if (!is_numeric($period_number) || $period_number < 1) {
+        throw new Exception('Period number must be a positive number');
+    }
+    
+    // Validate period number based on type
+    if ($period_type == 'quarter' && ($period_number < 1 || $period_number > 4)) {
+        throw new Exception('Quarter period number must be between 1 and 4');
+    }
+    
+    if ($period_type == 'half' && ($period_number < 1 || $period_number > 2)) {
+        throw new Exception('Half yearly period number must be between 1 and 2');
+    }
+    
+    if ($period_type == 'yearly' && $period_number != 1) {
+        throw new Exception('Yearly period number must be 1 (there is only one yearly period per year)');
     }
     
     if (empty($year)) {
@@ -59,15 +76,15 @@ try {
 
     // Construct period_name for internal use or logging if necessary
     $period_name_constructed = "";
-    $quarter_int = (int)$quarter;
+    $period_number_int = (int)$period_number;
     $year_int = (int)$year;
 
-    if ($quarter_int >= 1 && $quarter_int <= 4) {
-        $period_name_constructed = "Q{$quarter_int} {$year_int}";
-    } elseif ($quarter_int == 5) {
-        $period_name_constructed = "HY1 {$year_int}"; // Half Yearly 1
-    } elseif ($quarter_int == 6) {
-        $period_name_constructed = "HY2 {$year_int}"; // Half Yearly 2
+    if ($period_type == 'quarter') {
+        $period_name_constructed = "Q{$period_number_int} {$year_int}";
+    } elseif ($period_type == 'half') {
+        $period_name_constructed = "Half Yearly {$period_number_int} {$year_int}";
+    } elseif ($period_type == 'yearly') {
+        $period_name_constructed = "Yearly {$period_number_int} {$year_int}";
     }
     
     if (empty($start_date) || empty($end_date)) {
@@ -112,12 +129,13 @@ try {
     
     try {
         // Check if period already exists
-        $check_query = "SELECT period_id FROM reporting_periods WHERE year = ? AND quarter = ?";
+        $check_query = "SELECT period_id FROM reporting_periods 
+                       WHERE year = ? AND period_type = ? AND period_number = ?";
         $check_stmt = $conn->prepare($check_query);
         if (!$check_stmt) {
             throw new Exception('Failed to prepare check statement: ' . $conn->error);
         }
-        $check_stmt->bind_param("ii", $year_int, $quarter_int);
+        $check_stmt->bind_param("isi", $year_int, $period_type, $period_number_int);
         $check_stmt->execute();
         $result = $check_stmt->get_result();
         if ($result->num_rows > 0) {
@@ -129,18 +147,15 @@ try {
             if (!$conn->query($close_query)) {
                 throw new Exception('Failed to close existing periods: ' . $conn->error);
             }
-        }        // Insert new period (remove period_name)
-        $insert_query = "INSERT INTO reporting_periods (year, quarter, start_date, end_date, status, is_standard_dates, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())";
+        }        // Insert new period
+        $insert_query = "INSERT INTO reporting_periods (year, period_type, period_number, start_date, end_date, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())";
         $insert_stmt = $conn->prepare($insert_query);
         if (!$insert_stmt) {
             throw new Exception('Failed to prepare insert statement: ' . $conn->error);
         }
         
-        // Set is_standard_dates based on the use_custom_dates flag (inverse)
-        $is_standard_dates = $use_custom_dates ? 0 : 1;
-        
-        // Bind parameters: year, quarter, start_date, end_date, status, is_standard_dates
-        $insert_stmt->bind_param("iisssi", $year_int, $quarter_int, $start_date, $end_date, $status, $is_standard_dates);
+        // Bind parameters: year, period_type, period_number, start_date, end_date, status
+        $insert_stmt->bind_param("isisss", $year_int, $period_type, $period_number_int, $start_date, $end_date, $status);
         if (!$insert_stmt->execute()) {
             throw new Exception('Failed to save period: ' . $insert_stmt->error);
         }
@@ -161,7 +176,8 @@ try {
                 'period_id' => $period_id,
                 'period_name' => $period_name_constructed, // Use constructed name for response only
                 'year' => $year_int,
-                'quarter' => $quarter_int,
+                'period_type' => $period_type,
+                'period_number' => $period_number_int,
                 'start_date' => $start_date,
                 'end_date' => $end_date,
                 'status' => $status

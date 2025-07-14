@@ -41,11 +41,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Get all sectors for dropdown
-$sectors = get_all_sectors();
-
-// Get all agency groups for dropdown
-$agency_groups = get_all_agency_groups($conn);
+$config = include __DIR__ . '/../../../config/db_names.php';
+if (!$config || !isset($config['tables']['agency'])) {
+    die('Config not loaded or missing agency table definition.');
+}
+$agencyTable = $config['tables']['agency'];
+$agencyIdCol = $config['columns']['agency']['id'];
+$agencyNameCol = $config['columns']['agency']['name'];
+$agencies = get_all_agencies($conn);
 
 // Additional scripts
 $additionalScripts = [
@@ -110,11 +113,23 @@ require_once '../../layouts/page_header.php';
                     </div>
                     
                     <div class="col-md-6">
+                        <label for="fullname" class="form-label">Full Name *</label>
+                        <input type="text" class="form-control" id="fullname" name="fullname" required>
+                        <div class="form-text">Enter the user's full name.</div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="email" class="form-label">Email *</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                        <div class="form-text">Enter a valid email address. This will be used for notifications and password resets.</div>
+                    </div>
+                    
+                    <div class="col-md-6">
                         <label for="role" class="form-label">User Role *</label>
                         <select class="form-select" id="role" name="role" required>
                             <option value="">Select Role</option>
                             <option value="admin">Administrator</option>
-                            <option value="agency">Agency User</option>
+                            <option value="agency">Agency user</option>
                             <option value="focal">Focal</option>
                         </select>
                         <div class="form-text">Select whether this user is an Admin, Agency user, or Focal.</div>
@@ -124,9 +139,9 @@ require_once '../../layouts/page_header.php';
                         <label for="password" class="form-label">Password *</label>
                         <div class="input-group">
                             <input type="password" class="form-control" id="password" name="password" required>
-                            <button class="btn btn-outline-secondary toggle-password" type="button">
+                            <span class="input-group-text toggle-password" tabindex="-1" aria-label="Toggle password visibility">
                                 <i class="far fa-eye"></i>
-                            </button>
+                            </span>
                         </div>
                         <div class="form-text password-strength">Password should be at least 8 characters.</div>
                     </div>
@@ -135,9 +150,9 @@ require_once '../../layouts/page_header.php';
                         <label for="confirm_password" class="form-label">Confirm Password *</label>
                         <div class="input-group">
                             <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
-                            <button class="btn btn-outline-secondary toggle-password" type="button">
+                            <span class="input-group-text toggle-password" tabindex="-1" aria-label="Toggle password visibility">
                                 <i class="far fa-eye"></i>
-                            </button>
+                            </span>
                         </div>
                         <div class="form-text">Re-enter the password to confirm.</div>
                     </div>
@@ -148,29 +163,12 @@ require_once '../../layouts/page_header.php';
             <div id="agencyFields" class="mb-4" style="display: none;">
                 <h6 class="fw-bold mb-3">Agency Information <span class="text-danger">(Required for Agency Users)</span></h6>
                 <div class="row g-3">
-                    <div class="col-md-6">
-                        <label for="agency_name" class="form-label">Agency Name *</label>
-                        <input type="text" class="form-control" id="agency_name" name="agency_name">
-                        <div class="form-text">Enter the full official name of the agency.</div>
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <label for="sector_id" class="form-label">Sector *</label>
-                        <select class="form-select" id="sector_id" name="sector_id">
-                            <option value="">Select Sector</option>
-                            <?php foreach($sectors as $sector): ?>
-                                <option value="<?php echo $sector['sector_id']; ?>"><?php echo htmlspecialchars($sector['sector_name']); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                        <div class="form-text">Select which sector this agency belongs to.</div>
-                    </div>
-
                     <div class="col-md-6" id="agencyGroupField">
-                        <label for="agency_group_id" class="form-label">Agency Group</label>
-                        <select class="form-select" id="agency_group_id" name="agency_group_id">
-                            <option value="">Select Agency Group (Optional)</option>
-                            <?php foreach($agency_groups as $group): ?>
-                                <option value="<?php echo $group['agency_group_id']; ?>"><?php echo htmlspecialchars($group['group_name']); ?></option>
+                        <label for="<?php echo $agencyIdCol; ?>" class="form-label">Agency</label>
+                        <select class="form-select" id="<?php echo $agencyIdCol; ?>" name="<?php echo $agencyIdCol; ?>">
+                            <option value="">Select Agency</option>
+                            <?php foreach($agencies as $agency): ?>
+                                <option value="<?php echo $agency[$agencyIdCol]; ?>"><?php echo htmlspecialchars($agency[$agencyNameCol]); ?></option>
                             <?php endforeach; ?>
                         </select>
                         <div class="form-text">Select which group this agency belongs to. You can always edit this in the edit users page.</div>
@@ -205,9 +203,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const roleSelect = document.getElementById('role');
     const agencyFields = document.getElementById('agencyFields');
     const agencyGroupField = document.getElementById('agencyGroupField');
-    const agencyName = document.getElementById('agency_name');
-    const sectorId = document.getElementById('sector_id');
-    const agencyGroupId = document.getElementById('agency_group_id');
+    const agencyId = document.getElementById('<?php echo $agencyIdCol; ?>');
     
     // Set initial state - hide by default, show only for agency role
     if (roleSelect && agencyFields) {
@@ -215,41 +211,35 @@ document.addEventListener('DOMContentLoaded', function() {
           // Function to update agency group options based on sector
         function updateAgencyGroupOptions() {
             const selectedSectorId = sectorId.value;
-            const agencyGroups = <?php echo json_encode($agency_groups); ?>;
+            const agencies = <?php echo json_encode($agencies); ?>;
             
             // Clear current options except first one
-            while (agencyGroupId.options.length > 1) {
-                agencyGroupId.remove(1);
+            while (agencyId.options.length > 1) {
+                agencyId.remove(1);
             }
             
             // Add filtered options
-            agencyGroups.forEach(group => {
+            agencies.forEach(agency => {
                 // If no sector is selected, show all groups
                 // If sector is selected, only show groups that belong to that sector
-                if (!selectedSectorId || parseInt(group.sector_id) === parseInt(selectedSectorId)) {
-                    const option = new Option(group.group_name, group.agency_group_id);
-                    agencyGroupId.add(option);
+                if (!selectedSectorId || parseInt(agency[$agencyIdCol]) === parseInt(selectedSectorId)) {
+                    const option = new Option(agency[$agencyNameCol], agency[$agencyIdCol]);
+                    agencyId.add(option);
                 }
             });
             
             // Enable the dropdown
-            agencyGroupId.disabled = false;
+            agencyId.disabled = false;
         }
 
         // Function to update required status and show/hide fields based on role
         const updateRequiredFields = function() {
-            if (roleSelect.value === 'agency') {
+            if (roleSelect.value === 'agency' || roleSelect.value === 'focal') {
                 agencyFields.style.display = 'block';
-                agencyName.setAttribute('required', '');
-                sectorId.setAttribute('required', '');
-                agencyGroupId.setAttribute('required', '');
-                updateAgencyGroupOptions(); // Always update options when switching to agency
+                agencyId.setAttribute('required', '');
             } else {
                 agencyFields.style.display = 'none';
-                agencyName.removeAttribute('required');
-                sectorId.removeAttribute('required');
-                agencyGroupId.removeAttribute('required');
-                agencyGroupId.value = '';
+                agencyId.removeAttribute('required');
             }
         };
         
@@ -258,11 +248,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Listen for changes
         roleSelect.addEventListener('change', updateRequiredFields);
-        sectorId.addEventListener('change', function() {
-            if (roleSelect.value === 'agency') {
-                updateAgencyGroupOptions();
-            }
-        });
     }
     
     // Password toggle functionality
@@ -360,29 +345,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             // Additional validation for agency role
-            if (roleSelect.value === 'agency') {
-                const agencyName = document.getElementById('agency_name');
-                const sectorId = document.getElementById('sector_id');
-                
-                if (!agencyName.value.trim()) {
+            if (roleSelect.value === 'agency' || roleSelect.value === 'focal') {
+                if (!agencyId.value) {
                     isValid = false;
-                    setInputFeedback(agencyName, false, 'Agency name is required');
+                    setInputFeedback(agencyId, false, 'Agency is required');
                 } else {
-                    setInputFeedback(agencyName, true);
-                }
-                
-                if (!sectorId.value) {
-                    isValid = false;
-                    setInputFeedback(sectorId, false, 'Please select a sector');
-                } else {
-                    setInputFeedback(sectorId, true);
-                }
-
-                if (!agencyGroupId.value) {
-                    isValid = false;
-                    setInputFeedback(agencyGroupId, false, 'Please select an agency group');
-                } else {
-                    setInputFeedback(agencyGroupId, true);
+                    setInputFeedback(agencyId, true);
                 }
             }
             

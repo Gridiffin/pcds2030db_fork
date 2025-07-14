@@ -258,7 +258,7 @@ function assign_hierarchical_program_number($program_id, $initiative_id) {
         }
     }
     
-    $new_number = generate_next_program_number($initiative_id, 1); // Default to Level 1
+    $new_number = generate_next_program_number($initiative_id); // Default to Level 1
     
     if (!$new_number) {
         return ['success' => false, 'error' => 'Could not generate program number'];

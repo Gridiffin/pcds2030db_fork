@@ -6,7 +6,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Make sure dependencies are loaded
     if (typeof UserFormManager !== 'function' || 
-        typeof ToastManager !== 'function' || 
         typeof UserTableManager !== 'function') {
         console.error('Required components not loaded. Check script loading order.');
         return;
@@ -14,25 +13,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Import and initialize modules
     const formManager = UserFormManager();
-    const toastManager = ToastManager();
-    const tableManager = UserTableManager(formManager, toastManager);
+    const tableManager = UserTableManager(formManager);
     
-    // Setup initial event listeners
-    document.getElementById('addUserBtn').addEventListener('click', e => {
-        e.preventDefault();
-        formManager.showAddUserForm();
-    });
+    // Note: Add User functionality is handled by the page header link
+    // No need to set up event listeners for addUserBtn as it doesn't exist on this page
     
     // Initial attachment of table action event listeners
     tableManager.attachEventListeners();
     
     // Check for page messages
     if (window.pageMessages && window.pageMessages.message) {
-        toastManager.show(
-            window.pageMessages.type === 'success' ? 'Success' : 'Error', 
-            window.pageMessages.message, 
-            window.pageMessages.type
-        );
+        if (typeof window.showToast === 'function') {
+            window.showToast(
+                window.pageMessages.type === 'success' ? 'Success' : 'Error', 
+                window.pageMessages.message, 
+                window.pageMessages.type
+            );
+        } else {
+            alert(`${window.pageMessages.type === 'success' ? 'Success' : 'Error'}: ${window.pageMessages.message}`);
+        }
     }
     
     // Close form on escape key

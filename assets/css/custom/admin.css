@@ -86,3 +86,13 @@ main.flex-fill {
 .admin-content .card {
     margin-bottom: 1.5rem;
 }
+
+.user-status {
+    display: inline-block;
+    font-weight: 600;
+    color: #198754;
+    margin-left: 0.5rem;
+}
+.user-status.inactive {
+    color: #dc3545;
+}

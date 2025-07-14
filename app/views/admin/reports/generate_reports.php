@@ -41,9 +41,9 @@ function getReportingPeriods() {
     global $conn;
     
     try {
-        $query = "SELECT period_id, quarter, year, status 
+        $query = "SELECT period_id, period_type, period_number, year, status 
                   FROM reporting_periods 
-                  ORDER BY year DESC, quarter DESC";
+                  ORDER BY year DESC, period_number DESC";
         
         $result = $conn->query($query);
         $periods = [];
@@ -66,27 +66,15 @@ function getReportingPeriods() {
  * @return array Array of sectors
  */
 function getSectors() {
-    global $conn;
-    
-    try {
-        $query = "SELECT sector_id, sector_name, description 
-                  FROM sectors 
-                  ORDER BY sector_name ASC";
-        
-        $result = $conn->query($query);
-        $sectors = [];
-        
-        if ($result && $result->num_rows > 0) {
-            while ($sector = $result->fetch_assoc()) {
-                $sectors[] = $sector;
-            }
-        }
-        
-        return $sectors;
-    } catch (Exception $e) {
-        error_log("Error fetching sectors: " . $e->getMessage());
-        return [];
-    }
+    // Since sectors table has been removed, return a default sector
+    // This maintains backward compatibility while the system transitions
+    return [
+        [
+            'sector_id' => 1,
+            'sector_name' => 'Forestry Sector',
+            'description' => 'Forestry and environmental management programs'
+        ]
+    ];
 }
 
 /**
@@ -116,7 +104,7 @@ function getRecentReports($limit = 10) {
     global $conn;
     
     $query = "SELECT r.report_id, r.report_name, r.pptx_path, r.generated_at, r.is_public,
-                     rp.quarter, rp.year, u.username
+                     rp.period_type, rp.period_number, rp.year, u.username
               FROM reports r 
               LEFT JOIN reporting_periods rp ON r.period_id = rp.period_id 
               LEFT JOIN users u ON r.generated_by = u.user_id 
@@ -142,7 +130,7 @@ function getRecentReports($limit = 10) {
  * @return string Formatted period name
  */
 function formatPeriod($report) {
-    if (!$report || !isset($report['quarter'], $report['year'])) {
+    if (!$report || !isset($report['period_type'], $report['period_number'], $report['year'])) {
         return 'Unknown';
     }
     
@@ -151,9 +139,8 @@ function formatPeriod($report) {
 
 // Fetch data for page
 $periods = getReportingPeriods();
-$sectors = getSectors();
-// Remove the direct loading of reports - will be handled by pagination
-$agencies = get_all_agencies($conn);
+// System is configured for Forestry Sector only (sector_id = 1)
+// Note: $agencies variable was removed as it's not used in this file
 
 // Additional CSS files for this page
 $additionalStyles = [
@@ -302,19 +289,12 @@ $jsConfig = [
                                 </div>
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label for="sectorSelect" class="form-label">
+                                        <label class="form-label">
                                             <i class="fas fa-industry me-1"></i>Sector
-                                            <span class="text-danger">*</span>
                                         </label>
-                                        <select class="form-select" id="sectorSelect" name="sector_id" required>
-                                            <option value="">Select Sector</option>
-                                            <?php foreach ($sectors as $sector): ?>
-                                                <option value="<?php echo htmlspecialchars($sector['sector_id']); ?>">
-                                                    <?php echo htmlspecialchars($sector['sector_name']); ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        <div class="invalid-feedback">Please select a sector.</div>
+                                        <input type="text" class="form-control" value="Forestry Sector" readonly>
+                                        <input type="hidden" id="sectorSelect" name="sector_id" value="1">
+                                        <div class="form-text">System is configured for Forestry Sector only.</div>
                                     </div>
                                 </div>
                             </div>

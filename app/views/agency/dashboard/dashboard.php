@@ -36,8 +36,7 @@ $current_period = get_current_reporting_period();
 $period_id = isset($_GET['period_id']) ? intval($_GET['period_id']) : ($current_period['period_id'] ?? null);
 $viewing_period = $period_id ? get_reporting_period($period_id) : $current_period;
 
-// Get agency sector name
-$agency_sector = get_sector_name($_SESSION['sector_id']);
+// Agency dashboard - no sector functionality needed
 
 // Initialize dashboard controller for initial rendering
 $dashboardController = new DashboardController($conn);
@@ -52,8 +51,8 @@ $stats = $dashboardData['stats'];
 $chartData = $dashboardData['chart_data'];
 $recentUpdates = $dashboardData['recent_updates'];
 
-// Get outcomes statistics for the agency's sector
-$outcomes_stats = get_agency_outcomes_statistics($_SESSION['sector_id'], $period_id);
+// Get outcomes statistics for the agency
+$outcomes_stats = get_agency_outcomes_statistics(null, $period_id);
 
 // Additional scripts needed for dashboard
 $additionalScripts = [

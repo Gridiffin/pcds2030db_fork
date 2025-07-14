@@ -36,9 +36,8 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
 $user_id = intval($_GET['id']);
 
 // Get user data
-$query = "SELECT u.*, s.sector_name 
+$query = "SELECT u.*, 'Forestry Sector' as sector_name 
           FROM users u 
-          LEFT JOIN sectors s ON u.sector_id = s.sector_id 
           WHERE u.user_id = ?";
 $stmt = $conn->prepare($query);
 $stmt->bind_param("i", $user_id);

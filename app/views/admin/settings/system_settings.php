@@ -24,23 +24,7 @@ $message = '';
 $messageType = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['multi_sector'])) {
-        $multi_sector = ($_POST['multi_sector'] === '1');
-        $result = update_multi_sector_setting($multi_sector);
-        
-        if (isset($result['error'])) {
-            $message = $result['error'];
-            $messageType = 'danger';
-        } elseif (isset($result['warning'])) {
-            $message = $result['warning'];
-            $messageType = 'warning';
-        } elseif (isset($result['success'])) {
-            $message = $result['message'];
-            $messageType = 'success';
-        }
-    }
-    
-    // Process outcome creation setting
+    // Remove multi-sector settings and sector-related logic
     if (isset($_POST['allow_outcome_creation'])) {
         $allow_outcome_creation = ($_POST['allow_outcome_creation'] === '1');
         $result = update_outcome_creation_setting($allow_outcome_creation);
@@ -59,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Get current settings state
-$multi_sector_enabled = get_multi_sector_setting();
+// Remove multi-sector settings and sector-related logic
 $allow_outcome_creation_enabled = get_outcome_creation_setting();
 
 // Set page title
@@ -94,24 +78,7 @@ require_once '../../layouts/page_header.php';
         </div>
         <div class="card-body">
             <form method="post">
-                <!-- Multi-Sector Mode Section -->
-                <div class="mb-4">
-                    <h6 class="mb-1">Multi-Sector Mode</h6>
-                    <p class="text-muted mb-2">
-                        Enable or disable multi-sector functionality. When enabled, the dashboard will display all sectors.
-                        When disabled, the dashboard will focus exclusively on the Forestry sector.
-                    </p>
-                    <div class="form-check form-switch forest-switch mt-3">
-                        <!-- Hidden field to ensure the form value is always sent -->
-                        <input type="hidden" name="multi_sector" value="0">
-                        
-                        <input type="checkbox" class="form-check-input" id="multiSectorToggle" name="multi_sector" value="1"
-                            <?php echo $multi_sector_enabled ? 'checked' : ''; ?>>
-                        <label class="form-check-label" for="multiSectorToggle">
-                            <?php echo $multi_sector_enabled ? 'Enabled - All Sectors Visible' : 'Disabled - Forestry Sector Only'; ?>
-                        </label>
-                    </div>
-                </div>                <!-- Outcome Creation Section -->
+                <!-- Outcome Creation Section -->
                 <div class="mb-4">
                     <h6 class="mb-1">Outcome Creation</h6>
                     <p class="text-muted mb-2">
@@ -145,11 +112,11 @@ require_once '../../layouts/page_header.php';
                     <div class="system-status-card">
                         <div class="card-body">
                             <h6 class="card-title">Current Status</h6>
-                            <span class="status-indicator <?php echo $multi_sector_enabled ? 'status-success' : 'status-info'; ?> mb-2">
-                                <?php echo $multi_sector_enabled ? 'Enabled' : 'Disabled'; ?>
+                            <span class="status-indicator <?php echo $allow_outcome_creation_enabled ? 'status-success' : 'status-info'; ?> mb-2">
+                                <?php echo $allow_outcome_creation_enabled ? 'Enabled' : 'Disabled'; ?>
                             </span>
                             <p class="small text-secondary mb-0">
-                                <?php echo $multi_sector_enabled ? 'Dashboard will display all sectors.' : 'Dashboard is focused on the Forestry sector only.'; ?>
+                                <?php echo $allow_outcome_creation_enabled ? 'Outcome creation is allowed.' : 'Outcome creation is restricted.'; ?>
                             </p>
                         </div>
                     </div>
@@ -194,16 +161,10 @@ require_once '../../layouts/page_header.php';
               <div class="alert alert-forest alert-info mt-3">
                 <h6 class="text-forest"><i class="fas fa-flag me-2"></i>Implementation Scope</h6>
                 <p class="mb-0">
-                    <?php if ($multi_sector_enabled): ?>
-                        This system is configured for all government sectors, including Forestry, Health, Education, and more.
-                        Agency users can view data across sectors.
+                    <?php if ($allow_outcome_creation_enabled): ?>
+                        Outcome creation is allowed. Agencies and admins can create new outcomes.
                     <?php else: ?>
-                        This system is currently configured for the <strong>Forestry sector only</strong>. The following agencies are included:
-                        <ul class="mb-0 mt-2">
-                            <li>Forestry Department</li>
-                            <li>Sarawak Forestry Corporation (SFC)</li>
-                            <li>Sarawak Timber Industry Development Corporation (STIDC)</li>
-                        </ul>
+                        Outcome creation is restricted. Agencies and admins can only use existing outcome templates.
                     <?php endif; ?>
                 </p>
             </div>
@@ -214,21 +175,9 @@ require_once '../../layouts/page_header.php';
 <script>
 // Update label text when toggle changes
 document.addEventListener('DOMContentLoaded', function() {
-    const toggleSwitch = document.getElementById('multiSectorToggle');
-    const outcomeToggleSwitch = document.getElementById('outcomeCreationToggle');
+    const toggleSwitch = document.getElementById('outcomeCreationToggle');
     if (toggleSwitch) {
         toggleSwitch.addEventListener('change', function() {
-            const label = this.nextElementSibling;
-            if (this.checked) {
-                label.textContent = 'Enabled - All Sectors Visible';
-            } else {
-                label.textContent = 'Disabled - Forestry Sector Only';
-            }
-        });
-    }
-    
-    if (outcomeToggleSwitch) {
-        outcomeToggleSwitch.addEventListener('change', function() {
             const label = this.nextElementSibling;
             if (this.checked) {
                 label.textContent = 'Enabled - Outcome Creation Allowed';

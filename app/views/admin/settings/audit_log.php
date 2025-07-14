@@ -75,9 +75,9 @@ require_once '../../layouts/page_header.php';
         while ($row = $result->fetch_assoc()) {
             $tables[] = $row['TABLE_NAME'];
         }    }
-    // Ensure outcomes_details table is included in audit logs
-    if (!in_array('outcomes_details', $tables)) {
-        $tables[] = 'outcomes_details';
+    // Ensure outcomes table is included in audit logs
+    if (!in_array('outcomes', $tables)) {
+        $tables[] = 'outcomes';
     }
 
     $audit_entries = [];
@@ -114,7 +114,7 @@ require_once '../../layouts/page_header.php';
         } elseif ($table === 'users') {
             $name_column = 'username';        } elseif ($table === 'programs') {
             $name_column = 'program_name';
-        } elseif ($table === 'outcomes_details') {
+        } elseif ($table === 'outcomes') {
             $name_column = 'detail_name';
         }
 

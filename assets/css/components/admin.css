@@ -33,6 +33,92 @@
     justify-content: center;
 }
 
+/* Enhanced user table responsive styles */
+.user-table {
+    font-size: 0.9rem;
+}
+
+.user-table th,
+.user-table td {
+    padding: 0.75rem 0.5rem;
+    vertical-align: middle;
+}
+
+/* Email column with text truncation */
+.user-table td:nth-child(3) {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Full name column with proper spacing */
+.user-table td:nth-child(2) {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Role badge styling */
+.user-table .badge.bg-primary {
+    background-color: var(--primary-color) !important;
+}
+
+.user-table .badge.bg-warning {
+    background-color: #ffc107 !important;
+    color: #212529 !important;
+}
+
+.user-table .badge.bg-info {
+    background-color: #17a2b8 !important;
+}
+
+/* Responsive table adjustments */
+@media (max-width: 1200px) {
+    .user-table td:nth-child(3),
+    .user-table td:nth-child(2) {
+        max-width: 120px;
+    }
+}
+
+@media (max-width: 992px) {
+    .user-table {
+        font-size: 0.85rem;
+    }
+    
+    .user-table th,
+    .user-table td {
+        padding: 0.5rem 0.25rem;
+    }
+    
+    .user-table td:nth-child(3),
+    .user-table td:nth-child(2) {
+        max-width: 100px;
+    }
+}
+
+@media (max-width: 768px) {
+    .user-table {
+        font-size: 0.8rem;
+    }
+    
+    .user-table th,
+    .user-table td {
+        padding: 0.4rem 0.2rem;
+    }
+    
+    .user-table td:nth-child(3),
+    .user-table td:nth-child(2) {
+        max-width: 80px;
+    }
+    
+    .user-table .btn-group-sm .btn {
+        padding: 0.25rem 0.4rem;
+        font-size: 0.75rem;
+    }
+}
+
 /* User management card styles */
 .user-management-tips {
     background-color: rgba(var(--primary-rgb), 0.03);

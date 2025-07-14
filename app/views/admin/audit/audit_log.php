@@ -25,7 +25,7 @@ $currentPage = 'audit';
 
 // Additional CSS/JS for this page
 $additionalStyles = [
-    asset_url('css', 'admin/audit.css')
+    // audit.css removed - using standard Bootstrap classes
 ];
 
 $additionalScripts = [
@@ -43,22 +43,7 @@ $header_config = [
     'title' => 'Audit Log',
     'subtitle' => 'View system activity and security logs',
     'variant' => 'white',
-    'actions' => [
-        [
-            'url' => '#',
-            'text' => 'Export Log',
-            'icon' => 'fas fa-download',
-            'class' => 'btn-outline-primary',
-            'id' => 'exportLogBtn'
-        ],
-        [
-            'url' => '#',
-            'text' => 'Clear Filters',
-            'icon' => 'fas fa-filter',
-            'class' => 'btn-outline-secondary',
-            'id' => 'clearFiltersBtn'
-        ]
-    ]
+    'actions' => []
 ];
 
 // Include modern page header
@@ -133,14 +118,6 @@ require_once '../../layouts/page_header.php';
         <div class="card shadow-sm">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title m-0">Audit Log Entries</h5>
-                <div>
-                    <button class="btn btn-outline-secondary me-2" id="refreshLogs">
-                        <i class="fas fa-sync-alt me-1"></i> Refresh
-                    </button>
-                    <button class="btn btn-outline-primary" id="exportLogs">
-                        <i class="fas fa-download me-1"></i> Export Logs
-                    </button>
-                </div>
             </div>
             <div class="card-body">
                 <!-- Audit log table will be loaded here -->

@@ -16,6 +16,8 @@ require_once '../config/config.php';
 require_once ROOT_PATH . 'app/lib/db_connect.php';
 require_once ROOT_PATH . 'app/lib/session.php';
 require_once ROOT_PATH . 'app/lib/functions.php';
+require_once ROOT_PATH . 'app/lib/admin_functions.php';
+require_once ROOT_PATH . 'app/lib/db_names_helper.php';
 
 // Set JSON content type header IMMEDIATELY
 header('Content-Type: application/json');
@@ -48,49 +50,48 @@ try {
     }
 
     // Check if required parameters are provided
-    if (!isset($_POST['quarter']) || !isset($_POST['year'])) {
+    if (!isset($_POST['period_type']) || !isset($_POST['period_number']) || !isset($_POST['year'])) {
         echo json_encode([
             'success' => false,
-            'message' => 'Missing required parameters (quarter or year)'
+            'message' => 'Missing required parameters (period_type, period_number, or year)'
         ]);
         exit;
     }
 
     // Get parameters
-    $quarter = filter_input(INPUT_POST, 'quarter', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 6]]);
+    $period_type = trim($_POST['period_type'] ?? '');
+    $period_number = filter_input(INPUT_POST, 'period_number', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
     $year = filter_input(INPUT_POST, 'year', FILTER_VALIDATE_INT, ['options' => ['min_range' => 2000, 'max_range' => 2099]]);
 
     // Validate parameters
-    if ($quarter === false || $year === false) {
+    if (!in_array($period_type, ['quarter', 'half', 'yearly']) || $period_number === false || $year === false) {
         echo json_encode([
             'success' => false,
-            'message' => 'Invalid parameters for quarter or year.'
+            'message' => 'Invalid parameters for period_type, period_number, or year.'
         ]);
         exit;
     }
     
-    global $pdo;
+    global $conn;
     
-    $stmt = $pdo->prepare("
+    $stmt = $conn->prepare("
         SELECT COUNT(*) as count 
         FROM reporting_periods 
-        WHERE quarter = :quarter AND year = :year
+        WHERE period_type = ? AND period_number = ? AND year = ?
     ");
     
-    $stmt->execute([
-        ':quarter' => $quarter,
-        ':year' => $year
-    ]);
-    
-    $result = $stmt->fetch(PDO::FETCH_ASSOC);
-    $exists = $result && $result['count'] > 0;
+    $stmt->bind_param("sii", $period_type, $period_number, $year);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $row = $result->fetch_assoc();
+    $exists = $row && $row['count'] > 0;
     
     echo json_encode([
         'success' => true,
         'exists' => $exists
     ]);
     
-} catch (PDOException $e) {
+} catch (Exception $e) {
     error_log('Database error in check_period_exists.php: ' . $e->getMessage());
     if (ob_get_level() > 0) {
         ob_clean();

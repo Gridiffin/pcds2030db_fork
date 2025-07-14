@@ -157,10 +157,9 @@ if (typeof window.ReportUI !== 'undefined') {
      * Update report name based on selected sector and period
      */
     function updateReportName() {
-        if (elements.sectorSelect && elements.periodSelect && elements.sectorSelect.value && elements.periodSelect.value) {
-            const sectorText = elements.sectorSelect.options[elements.sectorSelect.selectedIndex].text;
+        if (elements.periodSelect && elements.periodSelect.value) {
             const periodText = elements.periodSelect.options[elements.periodSelect.selectedIndex].text;
-            elements.reportNameInput.value = `${sectorText} Report - ${periodText}`;
+            elements.reportNameInput.value = `Forestry Report - ${periodText}`;
         }
     }
 
@@ -172,13 +171,13 @@ if (typeof window.ReportUI !== 'undefined') {
         e.preventDefault();
         
         // Validate form
-        if (!elements.periodSelect.value || !elements.sectorSelect.value || !elements.reportNameInput.value) {
+        if (!elements.periodSelect.value || !elements.reportNameInput.value) {
             alert('Please fill out all required fields.');
             return;
         }
         
         const periodId = elements.periodSelect.value;
-        const sectorId = elements.sectorSelect.value;
+        const sectorId = 1; // Hardcoded to Forestry sector
         const reportName = elements.reportNameInput.value;
         const reportDescription = elements.reportDescInput.value || '';
         const isPublic = elements.isPublicCheckbox.checked ? 1 : 0;        // Get selected program IDs with their order from global state
@@ -241,7 +240,27 @@ if (typeof window.ReportUI !== 'undefined') {
                 console.log('Programs in API data:', data.programs);
                 console.log('Sector info:', data.reportTitle, 'sector_id:', data.sector_id);
                 elements.statusMessage.textContent = 'Generating PPTX...';
-                return ReportPopulator.generatePresentation(data, elements.statusMessage);
+                // --- Map new outcomes object to outcomes_details array for slide populator ---
+                // Define the codes for the 3 KPI outcomes (update these codes as per your DB seed)
+                const KPI_CODES = ['kpi_1', 'kpi_2', 'kpi_3']; // Example codes, replace with actual codes
+                const outcomes = data.outcomes || {};
+                const outcomes_details = KPI_CODES.map(code => {
+                    const outcome = outcomes[code];
+                    if (outcome) {
+                        return {
+                            name: outcome.title || outcome.code,
+                            detail_json: JSON.stringify(outcome.data)
+                        };
+                    }
+                    return null;
+                }).filter(Boolean);
+                // Inject outcomes_details for slide populator compatibility
+                const dataForSlides = {
+                    ...data,
+                    outcomes_details
+                };
+                // --- End mapping ---
+                return ReportPopulator.generatePresentation(dataForSlides, elements.statusMessage);
             })
             .then(blob => {
                 elements.statusMessage.textContent = 'Saving report...';
@@ -301,49 +320,18 @@ if (typeof window.ReportUI !== 'undefined') {
 
     /**
      * Show a toast notification
+     * Uses the global showToast function for consistency
      * @param {string} title - The toast title
      * @param {string} message - The toast message
      * @param {string} type - The toast type (success, info, warning, danger)
      */
     function showToast(title, message, type = 'info') {
-        // Check if toast container exists, if not create it
-        let toastContainer = document.querySelector('.toast-container');
-        if (!toastContainer) {
-            toastContainer = document.createElement('div');
-            toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
-            document.body.appendChild(toastContainer);
+        if (typeof window.showToast === 'function') {
+            window.showToast(title, message, type);
+        } else {
+            // Fallback if global showToast isn't loaded
+            alert(`${title}: ${message}`);
         }
-        
-        // Create toast element
-        const toastId = 'toast-' + Date.now();
-        const toast = document.createElement('div');
-        toast.className = `toast align-items-center text-white bg-${type} border-0`;
-        toast.id = toastId;
-        toast.setAttribute('role', 'alert');
-        toast.setAttribute('aria-live', 'assertive');
-        toast.setAttribute('aria-atomic', 'true');
-        
-        // Add toast content
-        toast.innerHTML = `
-            <div class="d-flex">
-                <div class="toast-body">
-                    <strong>${title}</strong>: ${message}
-                </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-        `;
-        
-        // Add toast to container
-        toastContainer.appendChild(toast);
-        
-        // Initialize and show toast
-        const bsToast = new bootstrap.Toast(toast, { autohide: true, delay: 5000 });
-        bsToast.show();
-        
-        // Remove toast from DOM after it's hidden
-        toast.addEventListener('hidden.bs.toast', function() {
-            toast.remove();
-        });
     }    // Expose public methods
     return {
         initUI,

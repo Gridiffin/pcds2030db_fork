@@ -44,6 +44,11 @@ function upload_program_attachment($program_id, $file, $description = '', $submi
         return ['error' => 'Invalid program ID'];
     }
     
+    // Validate submission_id is provided
+    if ($submission_id === null || $submission_id <= 0) {
+        return ['error' => 'Submission ID is required for attachment upload'];
+    }
+    
     // Verify user owns the program or has access
     if (!verify_program_access($program_id)) {
         log_audit_action(
@@ -53,6 +58,16 @@ function upload_program_attachment($program_id, $file, $description = '', $submi
             $_SESSION['user_id']
         );
         return ['error' => 'Access denied to this program'];
+    }
+    
+    // Verify submission exists and belongs to the program
+    $stmt = $conn->prepare("SELECT submission_id FROM program_submissions WHERE submission_id = ? AND program_id = ? AND is_deleted = 0");
+    $stmt->bind_param("ii", $submission_id, $program_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 0) {
+        return ['error' => 'Invalid submission ID or submission does not belong to this program'];
     }
     
     // Validate file upload
@@ -79,23 +94,18 @@ function upload_program_attachment($program_id, $file, $description = '', $submi
         // Insert attachment record
         $stmt = $conn->prepare("
             INSERT INTO program_attachments 
-            (program_id, submission_id, original_filename, stored_filename, file_path, 
-             file_size, file_type, mime_type, uploaded_by, description, upload_date) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+            (submission_id, file_name, file_path, file_size, file_type, uploaded_by, uploaded_at) 
+            VALUES (?, ?, ?, ?, ?, ?, NOW())
         ");
         
         $stmt->bind_param(
-            "iisssiisss",
-            $program_id,
+            "issiis",
             $submission_id,
             $upload_result['original_filename'],
-            $upload_result['stored_filename'],
             $upload_result['file_path'],
             $upload_result['file_size'],
             $upload_result['file_type'],
-            $upload_result['mime_type'],
-            $_SESSION['user_id'],
-            $description
+            $_SESSION['user_id']
         );
         
         if (!$stmt->execute()) {
@@ -112,7 +122,8 @@ function upload_program_attachment($program_id, $file, $description = '', $submi
             'success',
             $_SESSION['user_id']
         );
-          return [
+        
+        return [
             'success' => true,
             'attachment_id' => $attachment_id,
             'filename' => $upload_result['original_filename'],
@@ -163,10 +174,11 @@ function delete_program_attachment($attachment_id) {
     try {
         // Get attachment details
         $stmt = $conn->prepare("
-            SELECT pa.*, p.owner_agency_id 
+            SELECT pa.*, p.agency_id 
             FROM program_attachments pa 
-            JOIN programs p ON pa.program_id = p.program_id 
-            WHERE pa.attachment_id = ? AND pa.is_active = 1
+            LEFT JOIN program_submissions ps ON pa.submission_id = ps.submission_id
+            LEFT JOIN programs p ON ps.program_id = p.program_id 
+            WHERE pa.attachment_id = ? AND pa.is_deleted = 0
         ");
         $stmt->bind_param("i", $attachment_id);
         $stmt->execute();
@@ -179,7 +191,7 @@ function delete_program_attachment($attachment_id) {
         $attachment = $result->fetch_assoc();
         
         // Verify user has access
-        if ($attachment['owner_agency_id'] != $_SESSION['user_id'] && !is_admin()) {
+        if ($attachment['agency_id'] != $_SESSION['agency_id'] && !is_admin()) {
             log_audit_action(
                 'attachment_delete_denied',
                 "Unauthorized attachment deletion attempt for attachment ID: {$attachment_id}",
@@ -192,7 +204,7 @@ function delete_program_attachment($attachment_id) {
         $conn->begin_transaction();
         
         // Soft delete the attachment
-        $stmt = $conn->prepare("UPDATE program_attachments SET is_active = 0 WHERE attachment_id = ?");
+        $stmt = $conn->prepare("UPDATE program_attachments SET is_deleted = 1 WHERE attachment_id = ?");
         $stmt->bind_param("i", $attachment_id);
         
         if (!$stmt->execute()) {
@@ -209,7 +221,7 @@ function delete_program_attachment($attachment_id) {
         // Log successful deletion
         log_audit_action(
             'attachment_deleted',
-            "Attachment '{$attachment['original_filename']}' deleted from program ID: {$attachment['program_id']}",
+            "Attachment '{$attachment['file_name']}' deleted from program ID: {$attachment['program_id']}",
             'success',
             $_SESSION['user_id']
         );
@@ -234,7 +246,7 @@ function delete_program_attachment($attachment_id) {
 }
 
 /**
- * Get all attachments for a program
+ * Get attachments for a program
  *
  * @param int $program_id Program ID
  * @return array List of attachments
@@ -252,28 +264,78 @@ function get_program_attachments($program_id) {
         return [];
     }
     
+    // Get all attachments for this program across all submissions
     $stmt = $conn->prepare("
-        SELECT pa.*, u.username as uploaded_by_name
+        SELECT pa.*, u.username as uploaded_by_name, ps.period_id
         FROM program_attachments pa
         LEFT JOIN users u ON pa.uploaded_by = u.user_id
-        WHERE pa.program_id = ? AND pa.is_active = 1
-        ORDER BY pa.upload_date DESC
+        LEFT JOIN program_submissions ps ON pa.submission_id = ps.submission_id
+        WHERE ps.program_id = ? AND pa.is_deleted = 0
+        ORDER BY pa.uploaded_at DESC
     ");
     $stmt->bind_param("i", $program_id);
     $stmt->execute();
     $result = $stmt->get_result();
     
     $attachments = [];
-    while ($row = $result->fetch_assoc()) {        $attachments[] = [
+    while ($row = $result->fetch_assoc()) {
+        $attachments[] = [
             'attachment_id' => $row['attachment_id'],
-            'original_filename' => $row['original_filename'],
+            'original_filename' => $row['file_name'],
             'file_size' => $row['file_size'],
-            'mime_type' => $row['file_type'], // Add mime_type field
+            'mime_type' => $row['file_type'],
             'file_type' => $row['file_type'],
-            'description' => $row['description'],
-            'upload_date' => $row['upload_date'],
+            'description' => $row['description'] ?? '',
+            'upload_date' => $row['uploaded_at'],
             'uploaded_by' => $row['uploaded_by_name'],
-            'file_size_formatted' => format_file_size($row['file_size'])
+            'file_size_formatted' => format_file_size($row['file_size']),
+            'submission_id' => $row['submission_id'],
+            'period_id' => $row['period_id']
+        ];
+    }
+    
+    return $attachments;
+}
+
+/**
+ * Get attachments for a specific submission
+ *
+ * @param int $submission_id Submission ID
+ * @return array Array of attachments
+ */
+function get_submission_attachments($submission_id) {
+    global $conn;
+    
+    $submission_id = intval($submission_id);
+    if ($submission_id <= 0) {
+        return [];
+    }
+    
+    // Get attachments for this specific submission
+    $stmt = $conn->prepare("
+        SELECT pa.*, u.username as uploaded_by_name
+        FROM program_attachments pa
+        LEFT JOIN users u ON pa.uploaded_by = u.user_id
+        WHERE pa.submission_id = ? AND pa.is_deleted = 0
+        ORDER BY pa.uploaded_at DESC
+    ");
+    $stmt->bind_param("i", $submission_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    $attachments = [];
+    while ($row = $result->fetch_assoc()) {
+        $attachments[] = [
+            'attachment_id' => $row['attachment_id'],
+            'original_filename' => $row['file_name'],
+            'file_size' => $row['file_size'],
+            'mime_type' => $row['file_type'],
+            'file_type' => $row['file_type'],
+            'description' => $row['description'] ?? '',
+            'upload_date' => $row['uploaded_at'],
+            'uploaded_by' => $row['uploaded_by_name'],
+            'file_size_formatted' => format_file_size($row['file_size']),
+            'submission_id' => $row['submission_id']
         ];
     }
     
@@ -393,10 +455,10 @@ function process_file_upload($program_id, $file) {
 }
 
 /**
- * Verify user has access to a program
+ * Verify user has access to program
  *
  * @param int $program_id Program ID
- * @return bool Access allowed
+ * @return bool True if user has access
  */
 function verify_program_access($program_id) {
     global $conn;
@@ -409,7 +471,7 @@ function verify_program_access($program_id) {
         return false;
     }
     
-    $stmt = $conn->prepare("SELECT owner_agency_id FROM programs WHERE program_id = ?");
+    $stmt = $conn->prepare("SELECT agency_id FROM programs WHERE program_id = ?");
     $stmt->bind_param("i", $program_id);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -419,7 +481,7 @@ function verify_program_access($program_id) {
     }
     
     $program = $result->fetch_assoc();
-    return $program['owner_agency_id'] == $_SESSION['user_id'];
+    return $program['agency_id'] == $_SESSION['agency_id'];
 }
 
 /**
@@ -431,7 +493,12 @@ function verify_program_access($program_id) {
 function get_program_attachment_count($program_id) {
     global $conn;
     
-    $stmt = $conn->prepare("SELECT COUNT(*) as count FROM program_attachments WHERE program_id = ? AND is_active = 1");
+    $stmt = $conn->prepare("
+        SELECT COUNT(*) as count 
+        FROM program_attachments pa
+        LEFT JOIN program_submissions ps ON pa.submission_id = ps.submission_id
+        WHERE ps.program_id = ? AND pa.is_deleted = 0
+    ");
     $stmt->bind_param("i", $program_id);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -470,7 +537,7 @@ function get_attachment_for_download($attachment_id) {
     $attachment_id = intval($attachment_id);
     
     $stmt = $conn->prepare("
-        SELECT pa.*, p.owner_agency_id 
+        SELECT pa.*, p.agency_id 
         FROM program_attachments pa 
         JOIN programs p ON pa.program_id = p.program_id 
         WHERE pa.attachment_id = ? AND pa.is_active = 1
@@ -486,10 +553,11 @@ function get_attachment_for_download($attachment_id) {
     $attachment = $result->fetch_assoc();
     
     // Verify user has access
-    if (!is_admin() && $attachment['owner_agency_id'] != $_SESSION['user_id']) {
+    if (!is_admin() && $attachment['agency_id'] != $_SESSION['agency_id']) {
         return false;
     }
-      return $attachment;
+    
+    return $attachment;
 }
 
 /**

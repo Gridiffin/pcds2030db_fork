@@ -24,71 +24,13 @@ function has_content_json_schema() {
 }
 
 /**
- * Get sector name by ID
+ * Get all programs, optionally filtered by period
  * 
- * @param int $sector_id The sector ID
- * @return string The sector name or 'Unknown Sector' if not found
- */
-function get_sector_name($sector_id) {
-    global $conn;
-    
-    $sector_id = intval($sector_id);
-    if (!$sector_id) {
-        return 'Unknown Sector';
-    }
-    
-    try {
-        $query = "SELECT sector_name FROM sectors WHERE sector_id = ?";
-        $stmt = $conn->prepare($query);
-        $stmt->bind_param("i", $sector_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        if ($result->num_rows > 0) {
-            return $result->fetch_assoc()['sector_name'];
-        } else {
-            return 'Unknown Sector';
-        }
-    } catch (Exception $e) {
-        error_log("Error in get_sector_name: " . $e->getMessage());
-        return 'Unknown Sector';
-    }
-}
-
-/**
- * Get all sectors
- * 
- * @return array List of all sectors
- */
-function get_all_sectors() {
-    global $conn;
-    
-    $sectors = [];
-    
-    try {
-        $query = "SELECT sector_id, sector_name FROM sectors ORDER BY sector_name";
-        $result = $conn->query($query);
-        
-        if ($result->num_rows > 0) {
-            while ($row = $result->fetch_assoc()) {
-                $sectors[] = $row;
-            }
-        }
-    } catch (Exception $e) {
-        error_log("Error in get_all_sectors: " . $e->getMessage());
-    }
-    
-    return $sectors;
-}
-
-/**
- * Get all programs from all sectors, optionally filtered by period
- * 
- * This function retrieves programs from all sectors, for the agency view
+ * This function retrieves programs for the agency view
  * 
  * @param int $period_id Optional period ID to filter by specific reporting period
  * @param array $filters Optional filters to apply
- * @return array List of programs from all sectors
+ * @return array List of programs
  */
 function get_all_sectors_programs($period_id = null, $filters = []) {
     global $conn;
@@ -97,9 +39,8 @@ function get_all_sectors_programs($period_id = null, $filters = []) {
         return ['error' => 'Permission denied'];
     }
     
-    // Get current agency's sector for highlighting
+    // Get current agency
     $agency_id = $_SESSION['user_id'];
-    $current_sector_id = $_SESSION['sector_id'] ?? 0;
     
     // Initialize query parts
     $has_content_json = has_content_json_schema();
@@ -142,10 +83,8 @@ function get_all_sectors_programs($period_id = null, $filters = []) {
                 p.end_date,
                 p.created_at,
                 p.updated_at,
-                p.sector_id,
-                p.owner_agency_id AS agency_id,
-                s.sector_name,
-                u.agency_name";
+                p.users_assigned AS agency_id,
+                a.agency_name";
     
     // Add content json field or target/achievement fields based on schema
     if ($has_content_json) {
@@ -160,8 +99,8 @@ function get_all_sectors_programs($period_id = null, $filters = []) {
     // Only add is_draft since status has been removed
     $query .= ", ps.is_draft
               FROM programs p
-              JOIN sectors s ON p.sector_id = s.sector_id
-              JOIN users u ON p.owner_agency_id = u.user_id
+              JOIN users u ON p.users_assigned = u.user_id
+              JOIN agency a ON u.agency_id = a.agency_id
               JOIN (";
     
     // Use INNER JOIN to only include programs with submissions in the selected period
@@ -209,16 +148,9 @@ function get_all_sectors_programs($period_id = null, $filters = []) {
     
     // Apply additional filters
     if (!empty($filters)) {
-        // Filter by sector_id
-        if (isset($filters['sector_id']) && $filters['sector_id']) {
-            $filterConditions[] = "p.sector_id = ?";
-            $filterParams[] = $filters['sector_id'];
-            $filterTypes .= "i";
-        }
-        
         // Filter by agency_id
         if (isset($filters['agency_id']) && $filters['agency_id']) {
-            $filterConditions[] = "p.owner_agency_id = ?";
+            $filterConditions[] = "p.users_assigned = ?";
             $filterParams[] = $filters['agency_id'];
             $filterTypes .= "i";
         }
@@ -243,7 +175,7 @@ function get_all_sectors_programs($period_id = null, $filters = []) {
     }
       // Finalize query
     $query .= " GROUP BY p.program_id, p.program_name, p.start_date, p.end_date, 
-                p.created_at, p.updated_at, p.sector_id, p.owner_agency_id, s.sector_name, u.agency_name";
+                p.created_at, p.updated_at, p.users_assigned, a.agency_name";
     
     // Add additional GROUP BY fields based on schema
     if ($has_content_json) {
@@ -252,9 +184,7 @@ function get_all_sectors_programs($period_id = null, $filters = []) {
         $query .= ", ps.target, ps.achievement, ps.status_date, ps.status_text";
     }
     
-    $query .= ", ps.is_draft ORDER BY (p.sector_id = ?) DESC, p.created_at DESC";
-    $filterParams[] = $current_sector_id;
-    $filterTypes .= "i";
+    $query .= ", ps.is_draft ORDER BY p.created_at DESC";
     
     // Execute query
     try {
@@ -281,6 +211,8 @@ function get_all_sectors_programs($period_id = null, $filters = []) {
         return ['error' => 'Database error: ' . $e->getMessage()];
     }
 }
+
+
 
 /**
  * Get submission status for an agency
@@ -310,11 +242,11 @@ function get_agency_submission_status($agency_id, $period_id = null) {
         ];        // Get total programs for agency (including those with and without submissions for the period)
         if ($period_id) {
             // Count all programs owned by agency, regardless of submission status for the period
-            $query = "SELECT COUNT(*) as total FROM programs WHERE owner_agency_id = ?";
+            $query = "SELECT COUNT(*) as total FROM programs WHERE users_assigned = ?";
             $stmt = $conn->prepare($query);
             $stmt->bind_param("i", $agency_id);
         } else {
-            $query = "SELECT COUNT(*) as total FROM programs WHERE owner_agency_id = ?";
+            $query = "SELECT COUNT(*) as total FROM programs WHERE users_assigned = ?";
             $stmt = $conn->prepare($query);
             $stmt->bind_param("i", $agency_id);
         }
@@ -326,7 +258,7 @@ function get_agency_submission_status($agency_id, $period_id = null) {
             return $stats;
         }        // Get submission status counts with proper rating extraction - Fixed to avoid duplicates
         $status_query = "SELECT 
-            COALESCE(JSON_UNQUOTE(JSON_EXTRACT(ps.content_json, '$.rating')), 'not-started') as rating,
+            COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p.rating, '$.rating')), 'not-started') as rating,
             COUNT(DISTINCT p.program_id) as count,
             SUM(CASE WHEN ps.is_draft = 1 THEN 1 ELSE 0 END) as draft_count,
             SUM(CASE WHEN ps.is_draft = 0 THEN 1 ELSE 0 END) as submitted_count
@@ -342,8 +274,8 @@ function get_agency_submission_status($agency_id, $period_id = null) {
                 ) latest ON ps1.program_id = latest.program_id AND ps1.submission_id = latest.max_submission_id
                 WHERE (ps1.period_id = ? OR ? IS NULL)
             ) ps ON p.program_id = ps.program_id
-            WHERE p.owner_agency_id = ?
-            GROUP BY COALESCE(JSON_UNQUOTE(JSON_EXTRACT(ps.content_json, '$.rating')), 'not-started')";
+            WHERE p.users_assigned = ?
+            GROUP BY COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p.rating, '$.rating')), 'not-started')";
 
         $stmt = $conn->prepare($status_query);
         $stmt->bind_param("iiiii", $period_id, $period_id, $period_id, $period_id, $agency_id);
