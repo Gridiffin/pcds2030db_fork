@@ -86,6 +86,16 @@ if (!$submission) {
     exit;
 }
 
+// Get targets for this submission
+$targets_query = "SELECT * FROM program_targets 
+                  WHERE submission_id = ? AND is_deleted = 0 
+                  ORDER BY target_number ASC, target_id ASC";
+
+$stmt = $conn->prepare($targets_query);
+$stmt->bind_param("i", $submission['submission_id']);
+$stmt->execute();
+$targets = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
 // Get program rating information
 $program_rating = $program['rating'] ?? 'not_started';
 $rating_info = get_rating_info($program_rating);
@@ -146,28 +156,28 @@ require_once '../../layouts/page_header.php';
             <div class="card shadow-sm mb-4">
                 <div class="card-header">
                     <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">
+                        <h5 class="card-title mb-0 me-3">
                             <i class="fas fa-file-alt me-2 text-primary"></i>
                             Submission Details
                         </h5>
-                        <div class="d-flex gap-2">
+                        <div class="d-flex gap-3">
                             <!-- Submission Status Badge -->
                             <?php if ($submission['is_submitted']): ?>
-                                <span class="badge bg-success">
+                                <span class="badge bg-success px-3 py-2">
                                     <i class="fas fa-check-circle me-1"></i>Submitted
                                 </span>
                             <?php elseif ($submission['is_draft']): ?>
-                                <span class="badge bg-warning">
+                                <span class="badge bg-warning px-3 py-2">
                                     <i class="fas fa-edit me-1"></i>Draft
                                 </span>
                             <?php else: ?>
-                                <span class="badge bg-secondary">
+                                <span class="badge bg-secondary px-3 py-2">
                                     <i class="fas fa-clock me-1"></i>Not Started
                                 </span>
                             <?php endif; ?>
                             
                             <!-- Period Status Badge -->
-                            <span class="badge bg-<?php echo $submission['period_status'] === 'open' ? 'info' : 'secondary'; ?>">
+                            <span class="badge bg-<?php echo $submission['period_status'] === 'open' ? 'info' : 'secondary'; ?> px-3 py-2">
                                 Period: <?php echo ucfirst($submission['period_status']); ?>
                             </span>
                         </div>
@@ -249,6 +259,172 @@ require_once '../../layouts/page_header.php';
                     </div>
                 </div>
             </div>
+
+            <!-- Program Targets Section -->
+            <?php if (!empty($targets)): ?>
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bullseye me-2 text-warning"></i>
+                        Program Targets (<?php echo count($targets); ?>)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <?php foreach ($targets as $index => $target): ?>
+                            <div class="col-lg-6 mb-4">
+                                <div class="card border-start border-4 border-primary">
+                                    <div class="card-header bg-light">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h6 class="card-title mb-0 me-3">
+                                                <i class="fas fa-target me-1"></i>
+                                                Target <?php echo htmlspecialchars($target['target_number'] ?: ($index + 1)); ?>
+                                            </h6>
+                                            <span class="badge bg-<?php 
+                                                echo match($target['status_indicator']) {
+                                                    'not_started' => 'secondary',
+                                                    'in_progress' => 'warning',
+                                                    'completed' => 'success',
+                                                    'delayed' => 'danger',
+                                                    default => 'secondary'
+                                                };
+                                            ?> px-3 py-2">
+                                                <i class="fas <?php 
+                                                    echo match($target['status_indicator']) {
+                                                        'not_started' => 'fa-clock',
+                                                        'in_progress' => 'fa-spinner',
+                                                        'completed' => 'fa-check-circle',
+                                                        'delayed' => 'fa-exclamation-triangle',
+                                                        default => 'fa-question'
+                                                    };
+                                                ?> me-1"></i>
+                                                <?php echo ucwords(str_replace('_', ' ', $target['status_indicator'])); ?>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <!-- Target Description -->
+                                        <div class="mb-3">
+                                            <h6 class="text-muted mb-2">
+                                                <i class="fas fa-align-left me-1"></i>Description
+                                            </h6>
+                                            <?php if (!empty($target['target_description'])): ?>
+                                                <p class="mb-0 small"><?php echo nl2br(htmlspecialchars($target['target_description'])); ?></p>
+                                            <?php else: ?>
+                                                <p class="text-muted mb-0 small fst-italic">No description provided</p>
+                                            <?php endif; ?>
+                                        </div>
+
+                                        <!-- Status Description -->
+                                        <?php if (!empty($target['status_description'])): ?>
+                                        <div class="mb-3">
+                                            <h6 class="text-muted mb-2">
+                                                <i class="fas fa-info-circle me-1"></i>Status Update
+                                            </h6>
+                                            <div class="bg-light p-2 rounded">
+                                                <p class="mb-0 small"><?php echo nl2br(htmlspecialchars($target['status_description'])); ?></p>
+                                            </div>
+                                        </div>
+                                        <?php endif; ?>
+
+                                        <!-- Timeline -->
+                                        <?php if (!empty($target['start_date']) || !empty($target['end_date'])): ?>
+                                        <div class="mb-3">
+                                            <h6 class="text-muted mb-2">
+                                                <i class="fas fa-calendar-alt me-1"></i>Timeline
+                                            </h6>
+                                            <div class="row small">
+                                                <?php if (!empty($target['start_date'])): ?>
+                                                    <div class="col-6">
+                                                        <div class="d-flex align-items-center">
+                                                            <i class="fas fa-play text-success me-1"></i>
+                                                            <div>
+                                                                <div class="fw-medium">Start Date</div>
+                                                                <small class="text-muted"><?php echo date('M j, Y', strtotime($target['start_date'])); ?></small>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                <?php endif; ?>
+                                                
+                                                <?php if (!empty($target['end_date'])): ?>
+                                                    <div class="col-6">
+                                                        <div class="d-flex align-items-center">
+                                                            <i class="fas fa-flag text-danger me-1"></i>
+                                                            <div>
+                                                                <div class="fw-medium">End Date</div>
+                                                                <small class="text-muted"><?php echo date('M j, Y', strtotime($target['end_date'])); ?></small>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                        <?php endif; ?>
+
+                                        <!-- Remarks -->
+                                        <?php if (!empty($target['remarks'])): ?>
+                                        <div class="mb-0">
+                                            <h6 class="text-muted mb-2">
+                                                <i class="fas fa-comment me-1"></i>Remarks
+                                            </h6>
+                                            <div class="alert alert-light mb-0">
+                                                <small><?php echo nl2br(htmlspecialchars($target['remarks'])); ?></small>
+                                            </div>
+                                        </div>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <!-- Targets Summary -->
+                    <div class="mt-3 pt-3 border-top">
+                        <div class="row text-center">
+                            <?php
+                            $target_stats = array_count_values(array_column($targets, 'status_indicator'));
+                            ?>
+                            <div class="col-3">
+                                <div class="text-muted small">Not Started</div>
+                                <div class="fw-bold text-secondary"><?php echo $target_stats['not_started'] ?? 0; ?></div>
+                            </div>
+                            <div class="col-3">
+                                <div class="text-muted small">In Progress</div>
+                                <div class="fw-bold text-warning"><?php echo $target_stats['in_progress'] ?? 0; ?></div>
+                            </div>
+                            <div class="col-3">
+                                <div class="text-muted small">Completed</div>
+                                <div class="fw-bold text-success"><?php echo $target_stats['completed'] ?? 0; ?></div>
+                            </div>
+                            <div class="col-3">
+                                <div class="text-muted small">Delayed</div>
+                                <div class="fw-bold text-danger"><?php echo $target_stats['delayed'] ?? 0; ?></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <?php else: ?>
+            <!-- No Targets State -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bullseye me-2 text-warning"></i>
+                        Program Targets
+                    </h5>
+                </div>
+                <div class="card-body text-center py-4">
+                    <div class="mb-3">
+                        <i class="fas fa-target fa-3x text-muted"></i>
+                    </div>
+                    <h6 class="text-muted">No Targets Defined</h6>
+                    <p class="text-muted mb-0">This submission doesn't have any targets defined yet.</p>
+                    <?php if ($is_owner): ?>
+                        <p class="text-muted small">You can add targets when editing this submission.</p>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <?php endif; ?>
 
             <!-- Program Attachments (if any) -->
             <?php
