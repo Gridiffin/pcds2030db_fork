@@ -275,6 +275,14 @@ $showNoSubmissionsAlert = !$has_submissions; // Show for all users, but action l
 </script>
 <?php endif; ?>
 
+<?php if ($has_submissions && !$is_draft): ?>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        showToast('Finalized', 'This program\'s latest progress report is finalized.', 'success', 8000);
+    });
+</script>
+<?php endif; ?>
+
 <!-- Enhanced Program Overview -->
 <div class="container-fluid">
     <div class="row">
