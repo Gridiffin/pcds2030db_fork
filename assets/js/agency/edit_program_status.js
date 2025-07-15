@@ -67,10 +67,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 <select class='form-select' id='status-select' name='status'>
                     ${options.map(opt => `<option value='${opt.value}' ${opt.value === status ? 'selected' : ''}>${opt.label}</option>`).join('')}
                 </select>
-            </div>
-            <div class='mb-3'>
-                <label for='status-remarks' class='form-label'>Remarks (optional)</label>
-                <textarea class='form-control' id='status-remarks' name='remarks' rows='2'></textarea>
             </div>`;
         // Hold fields (initially rendered if status is 'on_hold')
         let holdFields = `<div id='hold-point-fields'>
@@ -79,8 +75,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 <input type='text' class='form-control' id='hold-reason' name='reason' value='${hold.reason || ''}' required />
             </div>
             <div class='mb-3'>
-                <label for='hold-remarks' class='form-label'>Hold Remarks (optional)</label>
-                <textarea class='form-control' id='hold-remarks' name='hold_remarks' rows='2'>${hold.remarks || ''}</textarea>
+                <label for='hold-remarks' class='form-label'>Hold Point Remarks</label>
+                <textarea class='form-control' id='hold-remarks' name='remarks' rows='2'></textarea>
             </div>
         </div>`;
         if (status === 'on_hold') {
