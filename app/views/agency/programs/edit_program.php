@@ -178,11 +178,18 @@ require_once '../../layouts/page_header.php';
 
             <!-- Simple Program Editing Form -->
             <div class="card shadow-sm mb-4 w-100">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-edit me-2"></i>
-                        Edit Program Information
-                    </h5>
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <h5 class="card-title mb-0 me-3">
+                            <i class="fas fa-edit me-2"></i>
+                            Edit Program Information
+                        </h5>
+                        <span id="program-status-badge" class="status-badge"></span>
+                    </div>
+                    <div>
+                        <button class="btn btn-outline-primary btn-sm me-2" id="edit-status-btn">Change Status</button>
+                        <button class="btn btn-outline-secondary btn-sm" id="view-status-history-btn">Status History</button>
+                    </div>
                 </div>
                 <div class="card-body">
                     <form method="post" id="editProgramForm">
@@ -477,6 +484,44 @@ require_once '../../layouts/page_header.php';
         </div>
     </div>
 </div>
+
+<!-- Minimal Status History Modal -->
+<div class="modal fade" id="statusHistoryModal" tabindex="-1" aria-labelledby="statusHistoryModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="statusHistoryModalLabel">Program Status History</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="status-history-modal-body">
+        <!-- Status history will be loaded here by JS -->
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Minimal Status Edit Modal -->
+<div class="modal fade" id="editStatusModal" tabindex="-1" aria-labelledby="editStatusModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editStatusModalLabel">Change Program Status</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="edit-status-modal-body">
+        <!-- Status edit form will be loaded here by JS -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Status/Hold Point CSS and JS for Edit Program Page -->
+<link rel="stylesheet" href="<?php echo APP_URL; ?>/assets/css/components/program-details.css">
+<!-- Ensure Bootstrap JS is loaded (assume it's included in footer or layout) -->
+<script>
+    window.programId = <?php echo json_encode($program_id); ?>;
+    window.APP_URL = '<?php echo APP_URL; ?>';
+</script>
+<script src="<?php echo APP_URL; ?>/assets/js/agency/edit_program_status.js"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

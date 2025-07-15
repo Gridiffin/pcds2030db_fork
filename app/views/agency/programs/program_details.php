@@ -258,6 +258,41 @@ if (!empty($targets)) {
 $showNoTargetsAlert = $has_submissions && !$has_targets && $is_owner;
 $showNoSubmissionsAlert = !$has_submissions; // Show for all users, but action link only for editors
 ?>
+<div class="program-status-indicator mb-3">
+  <span id="program-status-badge" class="status-badge"></span>
+  <span id="hold-point-info" class="ms-3"></span>
+  <button class="btn btn-outline-secondary btn-sm ms-2" id="view-status-history-btn"><i class="fas fa-history"></i> Status History</button>
+</div>
+
+<!-- Status History Modal -->
+<div class="modal fade" id="statusHistoryModal" tabindex="-1" aria-labelledby="statusHistoryModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="statusHistoryModalLabel">Program Status History</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="status-history-modal-body">
+        <!-- Status history will be loaded here by JS -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Status Edit Modal (for owner/focal) -->
+<div class="modal fade" id="editStatusModal" tabindex="-1" aria-labelledby="editStatusModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editStatusModalLabel">Change Program Status</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="edit-status-modal-body">
+        <!-- Status edit form will be loaded here by JS -->
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Toast Notifications -->
 <?php if ($showDraftAlert): ?>
