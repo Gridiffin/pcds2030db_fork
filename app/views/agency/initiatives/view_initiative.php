@@ -565,20 +565,14 @@ require_once '../../layouts/page_header.php';
                                         ?>
                                     </div>
                                 </div>
-                                <?php if ($program['is_owned_by_agency']): ?>
-                                    <div class="mt-2">
-                                        <a href="../programs/program_details.php?id=<?php echo $program['program_id']; ?>" 
-                                           class="btn btn-outline-primary btn-sm">
-                                            <i class="fas fa-eye me-1"></i>View Details
-                                        </a>
-                                    </div>
-                                <?php else: ?>
-                                    <div class="mt-2">
-                                        <span class="text-muted small">
-                                            <i class="fas fa-lock me-1"></i>View-only (other agency)
-                                        </span>
-                                    </div>
-                                <?php endif; ?>
+                                <div class="d-flex align-items-center mt-2">
+                                    <?php if (!$program['is_owned_by_agency']): ?>
+                                        <span class="text-muted small me-2"><i class="fas fa-lock"></i> View-only (other agency)</span>
+                                    <?php endif; ?>
+                                    <a href="../programs/program_details.php?id=<?php echo (int)$program['program_id']; ?>" class="btn btn-outline-primary btn-sm ms-auto">
+                                        <i class="fas fa-eye me-1"></i> View Details
+                                    </a>
+                                </div>
                             </div>
                         <?php endforeach; ?>
                     </div>

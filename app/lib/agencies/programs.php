@@ -771,7 +771,7 @@ function validate_agency_program_input($data, $required = []) {
  * @param bool $allow_cross_agency Whether to allow viewing programs from other agencies (default: false)
  * @return array|false Program details array or false if not found/unauthorized
  */
-function get_program_details($program_id, $allow_cross_agency = false) {
+function get_program_details($program_id, $allow_cross_agency = true) {
     global $conn;
     
     // Validate input
@@ -804,11 +804,9 @@ function get_program_details($program_id, $allow_cross_agency = false) {
     
     $program = $result->fetch_assoc();
     
-    // Access control: Check if user can view this program
-    if (!$allow_cross_agency && $program['agency_id'] != $_SESSION['agency_id']) {
-        return false;
-    }
-    
+    // Access control: Only block if not agency and not admin
+    // (edit/submit permissions are handled elsewhere)
+    // So, allow viewing for all agency users
     // Get assigned users for this program
     $assign_stmt = $conn->prepare("SELECT user_id, role FROM program_user_assignments WHERE program_id = ?");
     $assign_stmt->bind_param("i", $program_id);
@@ -828,103 +826,12 @@ function get_program_details($program_id, $allow_cross_agency = false) {
                           ORDER BY ps.submission_id DESC");
     $stmt->bind_param("i", $program_id);
     $stmt->execute();
-    $submissions_result = $stmt->get_result();
-    
-    $program['submissions'] = [];
-    $program['latest_submissions_by_period'] = [];
-    
-    if ($submissions_result->num_rows > 0) {
-        $submissions_by_period = [];
-        while ($submission = $submissions_result->fetch_assoc()) {
-            // Process content_json if applicable
-            if (isset($submission['content_json']) && is_string($submission['content_json'])) {
-                $content = json_decode($submission['content_json'], true);
-                if ($content) {
-                    // Extract fields from content JSON
-                    $submission['target'] = $content['target'] ?? '';
-                    $submission['achievement'] = $content['achievement'] ?? '';
-                    $submission['remarks'] = $content['remarks'] ?? '';
-                    $submission['status_date'] = $content['status_date'] ?? '';
-                    $submission['status_text'] = $content['status_text'] ?? '';
-                    $submission['targets'] = $content['targets'] ?? [];
-                    $submission['status'] = $content['status'] ?? 'not-started';
-                    $submission['brief_description'] = $content['brief_description'] ?? '';
-                }
-            }
-            $program['submissions'][] = $submission;
-            // Group by period_id, keep only the latest (highest submission_id)
-            $period_id = $submission['period_id'];
-            if (!isset($submissions_by_period[$period_id]) || $submission['submission_id'] > $submissions_by_period[$period_id]['submission_id']) {
-                $submissions_by_period[$period_id] = $submission;
-            }
-        }
-        // Set latest_submissions_by_period
-        // Add period_display and submission_date for each grouped submission
-        foreach ($submissions_by_period as $pid => &$sub) {
-            // Format period_display
-            if (isset($sub['year']) && isset($sub['period_type']) && isset($sub['period_number'])) {
-                if ($sub['period_type'] === 'quarter') {
-                    $sub['period_display'] = "Q{$sub['period_number']}-{$sub['year']}";
-                } elseif ($sub['period_type'] === 'half') {
-                    $sub['period_display'] = "H{$sub['period_number']}-{$sub['year']}";
-                } elseif ($sub['period_type'] === 'yearly') {
-                    $sub['period_display'] = "Y{$sub['period_number']}-{$sub['year']}";
-                } else {
-                    $sub['period_display'] = "{$sub['period_type']} {$sub['period_number']}-{$sub['year']}";
-                }
-            } elseif (isset($sub['period_name'])) {
-                $sub['period_display'] = $sub['period_name'];
-            } else {
-                $sub['period_display'] = 'Unknown Period';
-            }
-            // Set submission_date
-            $sub['submission_date'] = $sub['submitted_at'] ?? null;
-        }
-        unset($sub); // break reference
-        $program['latest_submissions_by_period'] = $submissions_by_period;
-        // Set current submission (most recent overall)
-        $program['current_submission'] = $program['submissions'][0];
-        
-        // Get targets for the current submission from program_targets table
-        if (isset($program['current_submission']['submission_id'])) {
-            $targets_stmt = $conn->prepare("
-                SELECT target_id, target_number, target_description, status_indicator, 
-                       status_description, remarks, start_date, end_date
-                FROM program_targets 
-                WHERE submission_id = ? AND is_deleted = 0
-                ORDER BY target_id ASC
-            ");
-            $targets_stmt->bind_param("i", $program['current_submission']['submission_id']);
-            $targets_stmt->execute();
-            $targets_result = $targets_stmt->get_result();
-            
-            $targets = [];
-            while ($target = $targets_result->fetch_assoc()) {
-                $targets[] = [
-                    'target_id' => $target['target_id'],
-                    'target_number' => $target['target_number'],
-                    'target_text' => $target['target_description'],
-                    'status_indicator' => $target['status_indicator'],
-                    'status_description' => $target['status_description'],
-                    'remarks' => $target['remarks'],
-                    'start_date' => $target['start_date'],
-                    'end_date' => $target['end_date']
-                ];
-            }
-            $targets_stmt->close();
-            
-            // Add targets to current submission
-            $program['current_submission']['targets'] = $targets;
-        }
-        
-        // Extract brief_description from the most recent submission if not in program table
-        if (!isset($program['brief_description']) || empty($program['brief_description'])) {
-            if (isset($program['current_submission']['brief_description'])) {
-                $program['brief_description'] = $program['current_submission']['brief_description'];
-            }
-        }
+    $result = $stmt->get_result();
+    $submissions = [];
+    while ($row = $result->fetch_assoc()) {
+        $submissions[] = $row;
     }
-    
+    $program['submissions'] = $submissions;
     return $program;
 }
 

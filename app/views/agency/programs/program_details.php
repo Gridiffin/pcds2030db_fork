@@ -47,17 +47,25 @@ if (!$program_id) {
 $program = get_program_details($program_id, true);
 
 // Check permissions using new system
-$allow_view = can_view_program($program_id);
-$can_edit = can_edit_program($program_id);
-$is_owner = is_program_owner($program_id);
-
-if (!$allow_view) {
-    $_SESSION['message'] = 'You do not have permission to view this program.';
-    $_SESSION['message_type'] = 'danger';
-    header('Location: view_programs.php');
-    exit;
-}
-
+// $allow_view = can_view_program($program_id);
+// $can_edit = can_edit_program($program_id);
+// $is_owner = is_program_owner($program_id);
+//
+// if (!$allow_view) {
+//     $_SESSION['message'] = 'You do not have permission to view this program.';
+//     $_SESSION['message_type'] = 'danger';
+//     header('Location: view_programs.php');
+//     exit;
+// }
+//
+// if (!$program) {
+//     $_SESSION['message'] = 'Program not found.';
+//     $_SESSION['message_type'] = 'danger';
+//     header('Location: view_programs.php');
+//     exit;
+// }
+//
+// Instead, just check if the program exists:
 if (!$program) {
     $_SESSION['message'] = 'Program not found.';
     $_SESSION['message_type'] = 'danger';
@@ -150,6 +158,10 @@ $latest_by_period = $program['latest_submissions_by_period'] ?? [];
 
 // Get submission history for timeline
 $submission_history = get_program_edit_history($program_id);
+
+// Define edit/owner variables for use in the view
+$can_edit = can_edit_program($program_id);
+$is_owner = is_program_owner($program_id);
 
 // Set page title
 $pageTitle = 'Enhanced Program Details';
@@ -469,7 +481,7 @@ $showNoSubmissionsAlert = !$has_submissions; // Show for all users, but action l
                     <?php if ($has_submissions): ?>
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <?php if ($allow_view): ?>
+                            <?php if ($can_edit): ?>
                                 <?php if ($has_submissions && isset($latest_submission['period_id'])): ?>
                                     <button type="button" class="btn btn-outline-success w-100" data-bs-toggle="modal" data-bs-target="#viewSubmissionModal">
                                         <i class="fas fa-eye me-2"></i>View Submission
