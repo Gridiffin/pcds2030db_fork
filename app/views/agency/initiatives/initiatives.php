@@ -208,7 +208,7 @@ require_once '../../layouts/page_header.php';
                                 </td>
                                 <td class="text-center">
                                     <span class="badge bg-info">
-                                        <?php echo isset($initiative['agency_program_count']) ? $initiative['agency_program_count'] : 0; ?> programs
+                                        <?php echo isset($initiative['agency_program_count']) ? $initiative['agency_program_count'] : 0; ?> programs included
                                     </span>
                                 </td>
                                 <td class="text-center">

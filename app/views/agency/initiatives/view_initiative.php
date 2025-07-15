@@ -320,7 +320,7 @@ require_once '../../layouts/page_header.php';
                 <div class="metric-label">Current Status</div>
                 <div class="status-programs">
                     <i class="fas fa-star"></i>
-                    <?php echo $initiative['agency_program_count']; ?> programs running
+                    <?php echo $initiative['agency_program_count']; ?> programs included
                 </div>
             </div>
         </div>
