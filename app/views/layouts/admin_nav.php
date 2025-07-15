@@ -15,6 +15,14 @@ $is_user_page = (strpos($current_uri, '/users/') !== false);
 $is_outcome_page = (strpos($current_uri, '/outcomes/') !== false);
 $is_initiative_page = (strpos($current_uri, '/initiatives/') !== false);
 
+// Enhanced program page detection - include all program and submission related pages
+$program_pages = [
+    'programs.php', 'assign_programs.php', 'edit_program.php', 'edit_program_2.0.php', 
+    'view_program.php', 'delete_program.php', 'bulk_assign_initiatives.php', 
+    'reopen_program.php', 'unsubmit.php', 'resubmit.php', 'manage_programs.php'
+];
+$is_program_page = $is_program_page || in_array($current_page, $program_pages);
+
 // Fix: Only one nav item should have 'active' at a time
 $is_programs_active = $is_program_page;
 $is_users_active = $is_user_page;
@@ -62,6 +70,11 @@ $is_settings_page = in_array($current_page, ['reporting_periods.php', 'audit_log
                         <li>
                             <a class="dropdown-item <?php if ($current_page == 'assign_programs.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/admin/programs/assign_programs.php">
                                 <i class="fas fa-tasks me-1"></i> Assign Programs
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item <?php if ($current_page == 'bulk_assign_initiatives.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/admin/programs/bulk_assign_initiatives.php">
+                                <i class="fas fa-layer-group me-1"></i> Bulk Assign Initiatives
                             </a>
                         </li>
                     </ul>

@@ -84,7 +84,7 @@ if (!function_exists('format_time_ago')) {
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <?php if ($current_page == 'view_programs.php' || $current_page == 'create_program.php' || $current_page == 'update_program.php' || $current_page == 'program_details.php' || $current_page == 'modules.php' || $current_page == 'add_submission.php' || $current_page == 'edit_submission.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/agency/programs/view_programs.php">
+                    <a class="nav-link <?php if (in_array($current_page, ['view_programs.php', 'create_program.php', 'edit_program.php', 'program_details.php', 'view_submissions.php', 'add_submission.php', 'edit_submission.php', 'delete_program.php'])) echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/agency/programs/view_programs.php">
                         <i class="fas fa-project-diagram me-1"></i> My Programs
                     </a>
                 </li>
