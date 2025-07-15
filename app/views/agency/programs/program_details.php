@@ -80,9 +80,9 @@ $program_attachments = get_program_attachments($program_id);
 $related_programs = [];
 if (!empty($program['initiative_id'])) {
     $related_programs = get_related_programs_by_initiative(
-        $program['initiative_id'], 
-        $program_id, 
-        $source === 'all_sectors'
+        $program['initiative_id'],
+        $program_id,
+        true // Always allow cross-agency viewing
     );
 }
 
@@ -270,36 +270,6 @@ $showNoSubmissionsAlert = !$has_submissions; // Show for all users, but action l
         });
         <?php else: ?>
         showToast('Draft Submission', 'This program is in draft mode and pending final submission.', 'warning', 8000);
-        <?php endif; ?>
-    });
-</script>
-<?php endif; ?>
-
-<?php if ($showNoTargetsAlert): ?>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        <?php if ($can_edit): ?>
-        showToastWithAction('No Targets', 'No targets have been added for this program.', 'info', 10000, {
-            text: 'Add Targets',
-            url: '<?= APP_URL ?>/app/views/agency/programs/edit_program.php?id=<?= $program_id ?>'
-        });
-        <?php else: ?>
-        showToast('No Targets', 'This program does not have any targets defined yet.', 'info', 8000);
-        <?php endif; ?>
-    });
-</script>
-<?php endif; ?>
-
-<?php if ($showNoSubmissionsAlert): ?>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        <?php if ($can_edit): ?>
-        showToastWithAction('Program Template', 'This program is a template.', 'info', 10000, {
-            text: 'Add Progress Report',
-            url: '<?= APP_URL ?>/app/views/agency/programs/add_submission.php?program_id=<?= $program_id ?>'
-        });
-        <?php else: ?>
-        showToast('Program Template', 'This program is a template. No progress reports have been added yet.', 'info', 8000);
         <?php endif; ?>
     });
 </script>
@@ -638,18 +608,20 @@ $showNoSubmissionsAlert = !$has_submissions; // Show for all users, but action l
                     </h6>
                 </div>
                 <div class="card-body">
-                    <?php foreach ($related_programs as $related): ?>
-                        <div class="related-program-item mb-2 d-flex align-items-center justify-content-between">
+                    <?php foreach ($related_programs as $rel_prog): ?>
+                        <div class="mb-2 p-2 border rounded bg-light d-flex align-items-center justify-content-between">
                             <div>
-                                <div class="related-program-name small fw-medium"><?php echo htmlspecialchars($related['program_name']); ?></div>
-                                <div class="related-program-meta text-muted small">
-                                    <?php if (!empty($related['program_number'])): ?>
-                                        <?php echo htmlspecialchars($related['program_number']); ?> •
+                                <span class="fw-semibold"><?php echo htmlspecialchars($rel_prog['program_name']); ?></span>
+                                <div class="text-muted small mt-1">
+                                    <?php echo htmlspecialchars($rel_prog['program_number']); ?>
+                                    &bull;
+                                    <?php echo htmlspecialchars($rel_prog['agency_name']); ?>
+                                    <?php if ($rel_prog['agency_id'] == ($_SESSION['agency_id'] ?? null)): ?>
+                                        <span class="badge bg-success ms-2"><i class="fas fa-star me-1"></i>Your Program</span>
                                     <?php endif; ?>
-                                    <?php echo htmlspecialchars($related['agency_name']); ?>
                                 </div>
                             </div>
-                            <a href="<?php echo APP_URL; ?>/app/views/agency/programs/program_details.php?id=<?php echo $related['program_id']; ?>" class="btn btn-sm btn-outline-primary ms-2" title="View Details">
+                            <a href="program_details.php?id=<?php echo (int)$rel_prog['program_id']; ?>" class="btn btn-outline-primary btn-sm ms-2">
                                 <i class="fas fa-eye"></i> View Details
                             </a>
                         </div>

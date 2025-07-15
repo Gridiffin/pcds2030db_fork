@@ -832,6 +832,12 @@ function get_program_details($program_id, $allow_cross_agency = true) {
         $submissions[] = $row;
     }
     $program['submissions'] = $submissions;
+    // Set 'current_submission' to the latest submission if available
+    if (!empty($submissions)) {
+        $program['current_submission'] = $submissions[0];
+    } else {
+        $program['current_submission'] = null;
+    }
     return $program;
 }
 
