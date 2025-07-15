@@ -306,7 +306,12 @@ require_once '../../layouts/page_header.php';
                         <div class="health-score-label">Health</div>
                     </div>
                 </div>
-                <div class="metric-label">Overall Initiative Health</div>
+                <div class="metric-label d-flex align-items-center justify-content-center">
+                    Overall Initiative Health
+                    <span class="ms-2" tabindex="0" data-bs-toggle="popover" data-bs-trigger="focus hover" data-bs-placement="top" data-bs-html="true" title="How is Health Calculated?" data-bs-content="The health score is an average of all program statuses under this initiative.<br><br><strong>Scoring:</strong><br>- <strong>Completed/Target Achieved:</strong> 100<br>- <strong>On Track:</strong> 75<br>- <strong>Delayed:</strong> 50<br>- <strong>Severe Delay:</strong> 25<br>- <strong>Not Started:</strong> 10<br><br>Higher scores mean better overall program performance.">
+                        <i class="fas fa-info-circle text-secondary" style="cursor:pointer;"></i>
+                    </span>
+                </div>
                 <div class="health-description" style="color: <?php echo $health_color; ?>;">
                     <i class="fas fa-check-circle"></i>
                     <?php echo $health_description; ?>
@@ -870,7 +875,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+    popoverTriggerList.forEach(function (popoverTriggerEl) {
+        new bootstrap.Popover(popoverTriggerEl);
+    });
+});
+</script>
 
 
 <?php

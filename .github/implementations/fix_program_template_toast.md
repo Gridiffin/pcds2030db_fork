@@ -12,6 +12,7 @@ The 'Program Template' and 'No Targets' toasts are redundant and clutter the UI.
   - **Root cause:** `get_program_details` did not set `'current_submission'` in the returned array, so `$latest_submission` was always null and `$has_submissions` was always false. The fix was to set `'current_submission'` to the latest submission if available in `get_program_details`.
 - [x] 4. **Remove both the 'No Targets' and 'Program Template' toasts** from the program details view. Only the draft alert remains.
 - [ ] 5. **Add a toast for finalized programs** to inform users that the latest progress report is finalized.
-- [ ] 6. **Update the phrase from 'programs running' to 'programs included'** in the initiatives views for clarity and accuracy.
-- [ ] 7. **Test** with programs that have submissions (finalized and draft), no submissions, and no targets, to ensure correct toast and label behavior.
-- [ ] 8. **Update this file** to mark completed steps and summarize the solution. 
+- [x] 6. **Update the phrase from 'programs running' to 'programs included'** in the initiatives views for clarity and accuracy.
+- [ ] 7. **Add an info icon with a tooltip to the initiative health card** explaining how the health score is calculated.
+- [ ] 8. **Test** with programs that have submissions (finalized and draft), no submissions, and no targets, to ensure correct toast, label, and tooltip behavior.
+- [ ] 9. **Update this file** to mark completed steps and summarize the solution. 
