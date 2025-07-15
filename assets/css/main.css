@@ -114,3 +114,15 @@
 .navbar.fixed-top {
     margin-bottom: 0;
 }
+
+.btn-outline-success {
+    color: #218838;
+    background-color: #fff;
+    border: 2px solid #218838;
+    transition: background 0.2s, color 0.2s;
+}
+.btn-outline-success:hover, .btn-outline-success:focus {
+    background-color: #218838;
+    color: #fff;
+    border-color: #218838;
+}

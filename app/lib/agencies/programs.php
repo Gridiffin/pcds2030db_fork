@@ -884,6 +884,39 @@ function get_program_details($program_id, $allow_cross_agency = false) {
         $program['latest_submissions_by_period'] = $submissions_by_period;
         // Set current submission (most recent overall)
         $program['current_submission'] = $program['submissions'][0];
+        
+        // Get targets for the current submission from program_targets table
+        if (isset($program['current_submission']['submission_id'])) {
+            $targets_stmt = $conn->prepare("
+                SELECT target_id, target_number, target_description, status_indicator, 
+                       status_description, remarks, start_date, end_date
+                FROM program_targets 
+                WHERE submission_id = ? AND is_deleted = 0
+                ORDER BY target_id ASC
+            ");
+            $targets_stmt->bind_param("i", $program['current_submission']['submission_id']);
+            $targets_stmt->execute();
+            $targets_result = $targets_stmt->get_result();
+            
+            $targets = [];
+            while ($target = $targets_result->fetch_assoc()) {
+                $targets[] = [
+                    'target_id' => $target['target_id'],
+                    'target_number' => $target['target_number'],
+                    'target_text' => $target['target_description'],
+                    'status_indicator' => $target['status_indicator'],
+                    'status_description' => $target['status_description'],
+                    'remarks' => $target['remarks'],
+                    'start_date' => $target['start_date'],
+                    'end_date' => $target['end_date']
+                ];
+            }
+            $targets_stmt->close();
+            
+            // Add targets to current submission
+            $program['current_submission']['targets'] = $targets;
+        }
+        
         // Extract brief_description from the most recent submission if not in program table
         if (!isset($program['brief_description']) || empty($program['brief_description'])) {
             if (isset($program['current_submission']['brief_description'])) {

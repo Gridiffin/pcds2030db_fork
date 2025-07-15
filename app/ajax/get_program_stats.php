@@ -213,41 +213,55 @@ function get_program_timeline_data($program_id) {
  */
 function get_program_performance_trend($program_id) {
     global $conn;
-    
     $performance_trend = [];
-    
-    $query = "SELECT ps.submitted_at, 
-                     COUNT(CASE WHEN pt.status_indicator = 'completed' THEN 1 END) as completed,
-                     COUNT(CASE WHEN pt.status_indicator = 'in_progress' THEN 1 END) as in_progress,
-                     COUNT(CASE WHEN pt.status_indicator = 'delayed' THEN 1 END) as delayed,
-                     COUNT(CASE WHEN pt.status_indicator = 'not_started' THEN 1 END) as not_started,
-                     COUNT(*) as total_targets
+    // Fetch all targets for all submissions
+    $query = "SELECT ps.submission_id, ps.submitted_at, pt.status_indicator
               FROM program_submissions ps
               LEFT JOIN program_targets pt ON ps.submission_id = pt.submission_id AND pt.is_deleted = 0
               WHERE ps.program_id = ?
-              GROUP BY ps.submission_id, ps.submitted_at
               ORDER BY ps.submitted_at ASC";
-    
     $stmt = $conn->prepare($query);
     $stmt->bind_param("i", $program_id);
     $stmt->execute();
     $result = $stmt->get_result();
-    
+    // Aggregate in PHP
+    $trend_map = [];
     while ($row = $result->fetch_assoc()) {
-        $completion_rate = $row['total_targets'] > 0 ? 
-            round(($row['completed'] / $row['total_targets']) * 100, 1) : 0;
-        
-        $performance_trend[] = [
-            'date' => $row['submitted_at'],
-            'completion_rate' => $completion_rate,
-            'completed' => $row['completed'],
-            'in_progress' => $row['in_progress'],
-            'delayed' => $row['delayed'],
-            'not_started' => $row['not_started'],
-            'total_targets' => $row['total_targets']
-        ];
+        $sid = $row['submission_id'];
+        if (!isset($trend_map[$sid])) {
+            $trend_map[$sid] = [
+                'date' => $row['submitted_at'],
+                'completed' => 0,
+                'in_progress' => 0,
+                'delayed' => 0,
+                'not_started' => 0,
+                'total_targets' => 0
+            ];
+        }
+        if ($row['status_indicator']) {
+            $trend_map[$sid]['total_targets']++;
+            switch ($row['status_indicator']) {
+                case 'completed':
+                    $trend_map[$sid]['completed']++;
+                    break;
+                case 'in_progress':
+                    $trend_map[$sid]['in_progress']++;
+                    break;
+                case 'delayed':
+                    $trend_map[$sid]['delayed']++;
+                    break;
+                case 'not_started':
+                    $trend_map[$sid]['not_started']++;
+                    break;
+            }
+        }
     }
-    
+    // Calculate completion rate and build final array
+    foreach ($trend_map as $trend) {
+        $completion_rate = $trend['total_targets'] > 0 ? round(($trend['completed'] / $trend['total_targets']) * 100, 1) : 0;
+        $trend['completion_rate'] = $completion_rate;
+        $performance_trend[] = $trend;
+    }
     return $performance_trend;
 }
 ?> 

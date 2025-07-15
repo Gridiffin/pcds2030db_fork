@@ -89,69 +89,56 @@ $targets = [];
 $rating = 'not-started';
 $remarks = '';
 
-if ($has_submissions && isset($latest_submission['content_json']) && !empty($latest_submission['content_json'])) {
-    if (is_string($latest_submission['content_json'])) {
-        $content = json_decode($latest_submission['content_json'], true) ?: [];
-    } elseif (is_array($latest_submission['content_json'])) {
-        $content = $latest_submission['content_json'];
+if ($has_submissions) {
+    // Get targets from the current submission (now properly fetched from program_targets table)
+    if (isset($latest_submission['targets']) && is_array($latest_submission['targets'])) {
+        $targets = $latest_submission['targets'];
     }
     
-    // Extract targets from content
-    if (isset($content['targets']) && is_array($content['targets'])) {
-        $targets = [];
-        foreach ($content['targets'] as $target) {
-            if (isset($target['target_text'])) {
-                $targets[] = [
-                    'target_number' => $target['target_number'] ?? '',
-                    'text' => $target['target_text'],
-                    'status_description' => $target['status_description'] ?? '',
-                    'start_date' => $target['start_date'] ?? '',
-                    'end_date' => $target['end_date'] ?? ''
-                ];
-            } else {
-                $targets[] = $target;
-            }
+    // Get rating and remarks from submission
+    $rating = $latest_submission['rating'] ?? $latest_submission['status_indicator'] ?? 'not-started';
+    $remarks = $latest_submission['remarks'] ?? $latest_submission['description'] ?? '';
+    
+    // Fallback to legacy content_json if targets are not found in program_targets table
+    if (empty($targets) && isset($latest_submission['content_json']) && !empty($latest_submission['content_json'])) {
+        if (is_string($latest_submission['content_json'])) {
+            $content = json_decode($latest_submission['content_json'], true) ?: [];
+        } elseif (is_array($latest_submission['content_json'])) {
+            $content = $latest_submission['content_json'];
         }
-        $rating = $content['rating'] ?? $latest_submission['status'] ?? 'not-started';
-        $remarks = $content['remarks'] ?? '';
-    } else {
-        // Legacy data format
-        $target_text = $content['target'] ?? $latest_submission['target'] ?? '';
-        $status_description = $content['status_text'] ?? $latest_submission['status_text'] ?? '';
         
-        if (strpos($target_text, ';') !== false) {
-            $target_parts = array_map('trim', explode(';', $target_text));
-            $status_parts = array_map('trim', explode(';', $status_description));
-            
+        // Extract targets from legacy content
+        if (isset($content['targets']) && is_array($content['targets'])) {
             $targets = [];
-            foreach ($target_parts as $index => $target_part) {
-                if (!empty($target_part)) {
+            foreach ($content['targets'] as $target) {
+                if (isset($target['target_text'])) {
                     $targets[] = [
-                        'text' => $target_part,
-                        'status_description' => isset($status_parts[$index]) ? $status_parts[$index] : ''
+                        'target_number' => $target['target_number'] ?? '',
+                        'text' => $target['target_text'],
+                        'status_description' => $target['status_description'] ?? '',
+                        'start_date' => $target['start_date'] ?? '',
+                        'end_date' => $target['end_date'] ?? ''
                     ];
+                } else {
+                    $targets[] = $target;
                 }
             }
-        } else {
-            $targets = [
-                [
-                    'text' => $target_text,
-                    'status_description' => $status_description
-                ]
+        } elseif (isset($content['target']) && !empty($content['target'])) {
+            // Legacy single target format
+            $targets[] = [
+                'text' => $content['target'],
+                'status_description' => $content['status_text'] ?? ''
             ];
         }
         
-        $rating = $latest_submission['status'] ?? 'not-started';
-        $remarks = $latest_submission['remarks'] ?? '';
+        // Override rating and remarks from legacy content if available
+        if (isset($content['rating'])) {
+            $rating = $content['rating'];
+        }
+        if (isset($content['remarks'])) {
+            $remarks = $content['remarks'];
+        }
     }
-} elseif ($has_submissions && !empty($latest_submission['target'])) {
-    // Fallback to direct properties
-    $targets[] = [
-        'text' => $latest_submission['target'],
-        'status_description' => $latest_submission['status_text'] ?? ''
-    ];
-    $rating = $latest_submission['status'] ?? 'not-started';
-    $remarks = $latest_submission['remarks'] ?? '';
 }
 
 // Determine rating for badge - use same logic as view_programs.php for consistency
@@ -232,7 +219,31 @@ if ($has_submissions) {
 
 // Initialize alert flags
 $showDraftAlert = $is_draft && $is_owner;
-$showNoTargetsAlert = $has_submissions && empty($targets) && $is_owner;
+
+// Enhanced target detection - check multiple sources for targets
+$has_targets = false;
+if (!empty($targets)) {
+    $has_targets = true;
+} elseif ($has_submissions) {
+    // Check if there are any targets in the submission data
+    if (isset($latest_submission['targets']) && is_array($latest_submission['targets']) && !empty($latest_submission['targets'])) {
+        $has_targets = true;
+    } elseif (isset($latest_submission['content_json']) && !empty($latest_submission['content_json'])) {
+        $content_check = is_string($latest_submission['content_json']) ? 
+            json_decode($latest_submission['content_json'], true) : 
+            $latest_submission['content_json'];
+        
+        if (isset($content_check['targets']) && is_array($content_check['targets']) && !empty($content_check['targets'])) {
+            $has_targets = true;
+        } elseif (isset($content_check['target']) && !empty($content_check['target'])) {
+            $has_targets = true;
+        }
+    } elseif (!empty($latest_submission['target'])) {
+        $has_targets = true;
+    }
+}
+
+$showNoTargetsAlert = $has_submissions && !$has_targets && $is_owner;
 $showNoSubmissionsAlert = !$has_submissions; // Show for all users, but action link only for editors
 ?>
 
@@ -293,18 +304,13 @@ $showNoSubmissionsAlert = !$has_submissions; // Show for all users, but action l
                     <h5 class="card-title mb-0">
                         <i class="fas fa-clipboard-list me-2"></i>Program Information
                     </h5>
-                    <div class="action-buttons">
+                    <div class="status-indicators">
                         <span class="badge status-badge bg-<?php echo $status_map[$status]['class']; ?> py-2 px-3">
                             <i class="<?php echo $status_map[$status]['icon']; ?> me-1"></i> 
                             <?php echo $status_map[$status]['label']; ?>
                         </span>
-                        <?php if ($can_edit): ?>
-                            <a href="<?php echo APP_URL; ?>/app/views/agency/programs/add_submission.php?program_id=<?php echo $program_id; ?>" class="btn btn-primary btn-sm">
-                                <i class="fas fa-plus me-1"></i> Add Submission
-                            </a>
-                        <?php endif; ?>
                         <?php if ($is_draft): ?>
-                        <span class="badge bg-warning text-dark" title="Latest submission is in draft status">
+                        <span class="badge bg-warning text-dark ms-2" title="Latest submission is in draft status">
                             <i class="fas fa-pencil-alt me-1"></i> Draft Submission
                         </span>
                         <?php endif; ?>
@@ -437,78 +443,47 @@ $showNoSubmissionsAlert = !$has_submissions; // Show for all users, but action l
                 </div>
             </div>
 
-            <!-- Targets and Progress Section -->
-            <?php if ($has_submissions && !empty($targets)): ?>
-            <div class="card performance-card shadow-sm mb-4">
+            <!-- Quick Actions Section -->
+            <?php if ($can_edit): ?>
+            <div class="card quick-actions-card shadow-sm mb-4">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-bullseye me-2"></i>Targets & Progress
+                        <i class="fas fa-bolt me-2"></i>Quick Actions
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div class="targets-container">
-                        <?php foreach ($targets as $index => $target): ?>
-                            <div class="target-item mb-4">
-                                <div class="target-header d-flex justify-content-between align-items-center mb-3">
-                                    <h6 class="target-title mb-0">
-                                        <i class="fas fa-target me-2 text-primary"></i>
-                                        Target <?php echo $index + 1; ?>
-                                        <?php if (!empty($target['target_number'])): ?>
-                                            <span class="badge bg-info ms-2"><?php echo htmlspecialchars($target['target_number']); ?></span>
-                                        <?php endif; ?>
-                                    </h6>
-                                    <div class="target-progress">
-                                        <div class="progress" style="width: 100px; height: 8px;">
-                                            <div class="progress-bar bg-success" role="progressbar" style="width: 75%"></div>
-                                        </div>
-                                        <small class="text-muted">75% Complete</small>
-                                    </div>
-                                </div>
-                                <div class="target-content">
-                                    <div class="target-description mb-3">
-                                        <strong>Target:</strong>
-                                        <p class="mb-2"><?php echo htmlspecialchars($target['text']); ?></p>
-                                    </div>
-                                    <?php if (!empty($target['status_description'])): ?>
-                                        <div class="target-status mb-3">
-                                            <strong>Status:</strong>
-                                            <div class="status-pill rating-target-achieved">
-                                                <i class="fas fa-info-circle"></i>
-                                                <?php echo htmlspecialchars($target['status_description']); ?>
-                                            </div>
-                                        </div>
-                                    <?php endif; ?>
-                                    <?php if (!empty($target['start_date']) || !empty($target['end_date'])): ?>
-                                        <div class="target-timeline">
-                                            <strong>Timeline:</strong>
-                                            <div class="timeline-info mt-2">
-                                                <?php if (!empty($target['start_date'])): ?>
-                                                    <span class="badge bg-light text-dark me-2">
-                                                        <i class="far fa-calendar-alt me-1"></i>Start: <?php echo date('M j, Y', strtotime($target['start_date'])); ?>
-                                                    </span>
-                                                <?php endif; ?>
-                                                <?php if (!empty($target['end_date'])): ?>
-                                                    <span class="badge bg-light text-dark">
-                                                        <i class="far fa-calendar-alt me-1"></i>End: <?php echo date('M j, Y', strtotime($target['end_date'])); ?>
-                                                    </span>
-                                                <?php endif; ?>
-                                            </div>
-                                        </div>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                    
-                    <?php if (!empty($remarks)): ?>
-                        <div class="remarks-section mt-4">
-                            <h6 class="info-section-title">
-                                <i class="fas fa-comment me-2"></i>Remarks
-                            </h6>
-                            <div class="remarks-container">
-                                <?php echo nl2br(htmlspecialchars($remarks)); ?>
-                            </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <a href="<?php echo APP_URL; ?>/app/views/agency/programs/add_submission.php?program_id=<?php echo $program_id; ?>" class="btn btn-outline-success w-100">
+                                <i class="fas fa-plus me-2"></i>Add New Submission
+                            </a>
+                            <small class="text-muted d-block mt-1">Create a new progress report for this program</small>
                         </div>
+                        <div class="col-md-6 mb-3">
+                            <a href="<?php echo APP_URL; ?>/app/views/agency/programs/edit_program.php?id=<?php echo $program_id; ?>" class="btn btn-outline-secondary w-100">
+                                <i class="fas fa-edit me-2"></i>Edit Program Details
+                            </a>
+                            <small class="text-muted d-block mt-1">Modify program information and settings</small>
+                        </div>
+                    </div>
+                    <?php if ($has_submissions): ?>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <?php if ($allow_view): ?>
+                                <?php if ($has_submissions && isset($latest_submission['period_id'])): ?>
+                                    <button type="button" class="btn btn-outline-success w-100" data-bs-toggle="modal" data-bs-target="#viewSubmissionModal">
+                                        <i class="fas fa-eye me-2"></i>View Submission
+                                    </button>
+                                    <small class="text-muted d-block mt-1">View the latest progress report for this program</small>
+                                <?php else: ?>
+                                    <button class="btn btn-outline-success w-100" type="button" disabled title="No submissions available yet">
+                                        <i class="fas fa-eye me-2"></i>View Submission
+                                    </button>
+                                    <small class="text-muted d-block mt-1">No submissions available yet</small>
+                                <?php endif; ?>
+                            <?php endif; ?>
+                        </div>
+                    </div>
                     <?php endif; ?>
                 </div>
             </div>
@@ -612,7 +587,7 @@ $showNoSubmissionsAlert = !$has_submissions; // Show for all users, but action l
                                 <div class="attachment-item mb-3">
                                     <div class="attachment-info d-flex align-items-center">
                                         <div class="attachment-icon me-2">
-                                            <i class="fas <?php echo get_file_icon($attachment['mime_type']); ?> text-primary"></i>
+                                            <i class="fas <?php echo get_file_icon(isset($attachment['mime_type']) ? $attachment['mime_type'] : ''); ?> text-primary"></i>
                                         </div>
                                         <div class="attachment-details flex-grow-1">
                                             <div class="attachment-name small fw-medium"><?php echo htmlspecialchars($attachment['original_filename']); ?></div>
@@ -725,6 +700,46 @@ $showNoSubmissionsAlert = !$has_submissions; // Show for all users, but action l
     </div>
   </div>
 </div>
+
+<!-- View Submission Modal -->
+<?php if ($has_submissions && !empty($submission_history['submissions'])): ?>
+<div class="modal fade" id="viewSubmissionModal" tabindex="-1" aria-labelledby="viewSubmissionModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="viewSubmissionModalLabel"><i class="fas fa-eye me-2"></i>Select Submission to View</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="list-group">
+          <?php foreach ($submission_history['submissions'] as $submission): ?>
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+              <div>
+                <strong><?php echo htmlspecialchars($submission['period_display']); ?></strong>
+                <span class="badge bg-<?php echo ($submission['is_draft'] ? 'warning' : 'success'); ?> ms-2">
+                  <?php echo $submission['is_draft_label']; ?>
+                </span>
+                <br>
+                <small class="text-muted">
+                  Submitted by: <?php echo htmlspecialchars($submission['submitted_by_name'] ?? 'Unknown'); ?>
+                  &nbsp;|&nbsp;
+                  <?php echo htmlspecialchars($submission['formatted_date']); ?>
+                </small>
+              </div>
+              <a href="<?php echo APP_URL; ?>/app/views/agency/programs/view_submissions.php?program_id=<?php echo $program_id; ?>&period_id=<?php echo $submission['period_id']; ?>" class="btn btn-outline-success">
+                <i class="fas fa-eye"></i> View
+              </a>
+            </div>
+          <?php endforeach; ?>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
 
 <!-- JavaScript Configuration -->
 <script>

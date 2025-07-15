@@ -57,4 +57,61 @@ Updated both agency and admin navigation to properly detect and highlight the "M
 - [ ] Test agency navigation on all program and submission pages
 - [ ] Test admin navigation on all program management pages
 - [ ] Verify that only one tab is active at a time
-- [ ] Confirm dropdown functionality still works correctly 
+- [ ] Confirm dropdown functionality still works correctly
+
+---
+
+## Additional Fix: Target Detection Issue
+
+### Problem
+The "No Targets" toast was incorrectly showing on program details pages even when programs had submissions with targets. This was because the system was still using legacy `content_json` field instead of the new `program_targets` table.
+
+### Solution
+- [x] Updated `get_program_details()` function in `app/lib/agencies/programs.php` to fetch targets from the `program_targets` table
+- [x] Modified `program_details.php` to prioritize targets from the new table structure
+- [x] Added fallback to legacy `content_json` for backward compatibility
+- [x] Enhanced target detection logic to check multiple sources
+
+### Technical Changes
+1. **Database Query Enhancement**: Added proper JOIN with `program_targets` table in `get_program_details()`
+2. **Target Processing**: Updated target extraction logic to use new table structure first
+3. **Backward Compatibility**: Maintained support for legacy `content_json` format
+4. **Detection Logic**: Improved `$has_targets` detection to check new structure first
+
+### Benefits
+- **Accurate Detection**: No more false "No Targets" alerts when targets exist
+- **Modern Structure**: Uses current database schema instead of legacy fields
+- **Backward Compatibility**: Still supports old data format for existing records
+- **Better Performance**: Direct database queries instead of JSON parsing
+
+---
+
+## UI Improvement: Program Details Header Reorganization
+
+### Problem
+The program details header looked cluttered with multiple buttons and badges stacked vertically, making it difficult to scan and use.
+
+### Solution
+- [x] Moved "Add Submission" button from header to a dedicated "Quick Actions" section
+- [x] Cleaned up header to only show status indicators (status badge and draft indicator)
+- [x] Created a new "Quick Actions" card with organized action buttons
+- [x] Added contextual descriptions for each action
+- [x] Enhanced styling for better visual hierarchy
+
+### Technical Changes
+1. **Header Simplification**: Removed action buttons from header, kept only status indicators
+2. **Quick Actions Section**: Created new card with organized action buttons
+3. **Enhanced Styling**: Added CSS for quick actions card with hover effects and gradients
+4. **Contextual Help**: Added descriptive text under each action button
+
+### Benefits
+- **Cleaner Header**: Status information is now clearly visible without clutter
+- **Better Organization**: Actions are logically grouped in a dedicated section
+- **Improved UX**: Users can easily find and understand available actions
+- **Visual Hierarchy**: Clear separation between information display and actions
+- **Responsive Design**: Better mobile experience with organized button layout
+
+### New Quick Actions Include:
+- **Add New Submission**: Primary action for creating progress reports
+- **Edit Program Details**: Secondary action for modifying program information
+- **View Submission History**: Available when submissions exist 

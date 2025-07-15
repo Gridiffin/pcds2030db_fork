@@ -79,6 +79,96 @@
   padding: 0.4rem 1rem !important;
 }
 
+/* Quick Actions Section */
+.quick-actions-card {
+  border-radius: 0.75rem;
+  border: none;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.02), rgba(var(--primary-rgb), 0.05));
+}
+
+.quick-actions-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08) !important;
+}
+
+.quick-actions-card .card-header {
+  background: linear-gradient(45deg, rgba(var(--primary-rgb), 0.85), rgba(var(--primary-rgb), 0.95));
+  border-bottom: 1px solid rgba(var(--primary-rgb), 0.3);
+  padding: 1rem 1.25rem;
+  color: white;
+}
+
+.quick-actions-card .card-title {
+  font-weight: 600;
+  color: white !important;
+}
+
+.quick-actions-card .card-title i {
+  color: white !important;
+}
+
+.quick-actions-card .btn {
+  border-radius: 0.5rem;
+  font-weight: 500;
+  padding: 0.75rem 1rem;
+  transition: all 0.2s ease;
+  border-width: 2px;
+}
+
+.quick-actions-card .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.quick-actions-card .btn-primary {
+  background: linear-gradient(135deg, var(--primary-color), rgba(var(--primary-rgb), 0.9));
+  border-color: var(--primary-color);
+}
+
+.quick-actions-card .btn-primary:hover {
+  background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.9), var(--primary-color));
+  border-color: var(--primary-color);
+}
+
+.quick-actions-card .btn-outline-secondary {
+  color: var(--secondary-color);
+  border-color: var(--secondary-color);
+}
+
+.quick-actions-card .btn-outline-secondary:hover {
+  background-color: var(--secondary-color);
+  border-color: var(--secondary-color);
+  color: white;
+}
+
+.quick-actions-card .btn-outline-info {
+  color: var(--info-color);
+  border-color: var(--info-color);
+}
+
+.quick-actions-card .btn-outline-info:hover {
+  background-color: var(--info-color);
+  border-color: var(--info-color);
+  color: white;
+}
+
+.quick-actions-card .btn-outline-success {
+  color: var(--success-color);
+  border-color: var(--success-color);
+}
+
+.quick-actions-card .btn-outline-success:hover {
+  background-color: var(--success-color);
+  border-color: var(--success-color);
+  color: white;
+}
+
+.quick-actions-card small {
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
 /* Custom alert styling */
 .custom-alert {
   border-radius: var(--radius-lg);
