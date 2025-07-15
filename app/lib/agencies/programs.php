@@ -158,11 +158,7 @@ function create_agency_program($data) {
         $assignment_stmt->bind_param("iii", $program_id, $user_id, $user_id);
         $assignment_stmt->execute();
         
-        // Create agency assignment so program shows up in view
-        $agency_assignment_query = "INSERT INTO program_agency_assignments (program_id, agency_id, role, assigned_by, notes) VALUES (?, ?, 'owner', ?, 'Auto-assigned during program creation')";
-        $agency_assignment_stmt = $conn->prepare($agency_assignment_query);
-        $agency_assignment_stmt->bind_param("iii", $program_id, $agency_id, $user_id);
-        $agency_assignment_stmt->execute();
+        // Program ownership is now determined by agency_id in programs table
         // Create initial program submission
         $period_id = get_current_reporting_period()['period_id'] ?? 1;
         $sub_query = "INSERT INTO program_submissions 
@@ -250,10 +246,7 @@ function create_wizard_program_draft($data) {
         $assignment_stmt->bind_param("iii", $program_id, $user_id, $user_id);
         if (!$assignment_stmt->execute()) throw new Exception('Failed to create user assignment: ' . $assignment_stmt->error);
         
-        // Create agency assignment so program shows up in view
-        $agency_assignment_stmt = $conn->prepare("INSERT INTO program_agency_assignments (program_id, agency_id, role, assigned_by, notes) VALUES (?, ?, 'owner', ?, 'Auto-assigned during program creation')");
-        $agency_assignment_stmt->bind_param("iii", $program_id, $agency_id, $user_id);
-        if (!$agency_assignment_stmt->execute()) throw new Exception('Failed to create agency assignment: ' . $agency_assignment_stmt->error);
+        // Program ownership is now determined by agency_id in programs table
         
         // Create initial program submission
         $current_period_id = $period_id ?: 1;
@@ -376,10 +369,7 @@ function create_simple_program($data) {
         $assignment_stmt->bind_param("iii", $program_id, $user_id, $user_id);
         if (!$assignment_stmt->execute()) throw new Exception('Failed to create user assignment: ' . $assignment_stmt->error);
         
-        // Create agency assignment so program shows up in view
-        $agency_assignment_stmt = $conn->prepare("INSERT INTO program_agency_assignments (program_id, agency_id, role, assigned_by, notes) VALUES (?, ?, 'owner', ?, 'Auto-assigned during program creation')");
-        $agency_assignment_stmt->bind_param("iii", $program_id, $agency_id, $user_id);
-        if (!$agency_assignment_stmt->execute()) throw new Exception('Failed to create agency assignment: ' . $agency_assignment_stmt->error);
+        // Program ownership is now determined by agency_id in programs table
         
         // Note: No initial submission is created - programs exist as templates
         // Submissions will be created when users add progress reports for specific periods

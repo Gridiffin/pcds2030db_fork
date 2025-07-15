@@ -17,7 +17,7 @@ require_once PROJECT_ROOT_PATH . 'lib/db_connect.php';
 require_once PROJECT_ROOT_PATH . 'lib/session.php';
 require_once PROJECT_ROOT_PATH . 'lib/functions.php';
 require_once PROJECT_ROOT_PATH . 'lib/agencies/programs.php';
-require_once PROJECT_ROOT_PATH . 'lib/agencies/program_agency_assignments.php';
+require_once PROJECT_ROOT_PATH . 'lib/agencies/program_permissions.php';
 require_once PROJECT_ROOT_PATH . 'lib/initiative_functions.php';
 
 // Verify user is an agency

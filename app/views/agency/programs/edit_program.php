@@ -17,8 +17,8 @@ require_once PROJECT_ROOT_PATH . 'lib/db_connect.php';
 require_once PROJECT_ROOT_PATH . 'lib/session.php';
 require_once PROJECT_ROOT_PATH . 'lib/functions.php';
 require_once PROJECT_ROOT_PATH . 'lib/agencies/programs.php';
-require_once PROJECT_ROOT_PATH . 'lib/agencies/program_agency_assignments.php';
-require_once PROJECT_ROOT_PATH . 'lib/agencies/program_user_assignments.php';
+require_once PROJECT_ROOT_PATH . 'lib/agencies/program_permissions.php';
+require_once PROJECT_ROOT_PATH . 'lib/agencies/program_permissions.php';
 require_once PROJECT_ROOT_PATH . 'lib/initiative_functions.php';
 require_once PROJECT_ROOT_PATH . 'lib/numbering_helpers.php';
 require_once PROJECT_ROOT_PATH . 'lib/rating_helpers.php';
@@ -92,29 +92,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $result = update_simple_program($program_data);
     
     if (isset($result['success']) && $result['success']) {
-        // Handle user assignment settings
-        $new_restrict_editors = isset($_POST['restrict_editors']) ? 1 : 0;
-        $assigned_editor_users = isset($_POST['assigned_editors']) ? $_POST['assigned_editors'] : [];
+        // Handle user role assignments
+        $user_roles = isset($_POST['user_roles']) ? $_POST['user_roles'] : [];
         
-        // Update editor restrictions
-        set_program_editor_restrictions($program_id, $new_restrict_editors);
-        
-        if ($new_restrict_editors) {
-            // Remove all current user assignments
-            foreach ($current_user_assignments as $assignment) {
-                remove_user_from_program($program_id, $assignment['user_id']);
-            }
-            
-            // Add new assignments
-            if (!empty($assigned_editor_users)) {
-                foreach ($assigned_editor_users as $user_id) {
-                    assign_user_to_program($program_id, intval($user_id), 'editor', 'Updated during program edit');
+        // Only process user assignments if user has permission to modify permissions
+        if (is_focal_user() || is_program_creator($program_id) || is_admin()) {
+            $new_restrict_editors = isset($_POST['restrict_editors']) ? 1 : 0;
+            set_program_editor_restrictions($program_id, $new_restrict_editors);
+
+            if ($new_restrict_editors) {
+                // Remove all current user assignments
+                foreach ($current_user_assignments as $assignment) {
+                    remove_user_from_program($program_id, $assignment['user_id']);
                 }
-            }
-        } else {
-            // Remove all user assignments when restrictions are disabled
-            foreach ($current_user_assignments as $assignment) {
-                remove_user_from_program($program_id, $assignment['user_id']);
+                // Add new assignments based on user_roles array
+                foreach ($user_roles as $user_id => $role) {
+                    if (!empty($role) && in_array($role, ['editor', 'viewer'])) {
+                        assign_user_to_program($program_id, intval($user_id), $role, 'Updated during program edit');
+                    }
+                }
+            } else {
+                // Remove all user assignments when restrictions are disabled
+                foreach ($current_user_assignments as $assignment) {
+                    remove_user_from_program($program_id, $assignment['user_id']);
+                }
             }
         }
         
@@ -342,8 +343,14 @@ require_once '../../layouts/page_header.php';
                                     </div>
                                 </div>
 
-                                <!-- User Permissions Section -->
-                                <div class="card shadow-sm mt-3">
+                                <!-- User Permissions Section - Only shown to program owners, focal users, and admins -->
+                                <?php
+                                // Check if current user can modify user permissions (must be program owner or focal)
+                                $can_modify_permissions = is_focal_user() || is_program_creator($program_id) || is_admin();
+                                ?>
+
+                                <?php if ($can_modify_permissions): ?>
+                                <div class="card shadow-sm mb-4">
                                     <div class="card-header">
                                         <h6 class="card-title mb-0">
                                             <i class="fas fa-users me-2"></i>
@@ -386,41 +393,25 @@ require_once '../../layouts/page_header.php';
                                             </label>
                                             
                                             <?php if (!empty($assignable_users)): ?>
-                                                <div class="user-checkboxes" style="max-height: 200px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 0.375rem; padding: 0.75rem;">
-                                                    <?php 
-                                                    // Create array of currently assigned editor user IDs for easy checking
-                                                    $assigned_editor_ids = array_column(array_filter($current_user_assignments, function($assignment) {
-                                                        return $assignment['role'] === 'editor';
-                                                    }), 'user_id');
-                                                    ?>
-                                                    
-                                                    <?php foreach ($assignable_users as $user): ?>
-                                                        <div class="form-check">
-                                                            <input class="form-check-input" type="checkbox" 
-                                                                   name="assigned_editors[]" 
-                                                                   value="<?php echo $user['user_id']; ?>"
-                                                                   id="user_<?php echo $user['user_id']; ?>"
-                                                                   <?php echo in_array($user['user_id'], $assigned_editor_ids) ? 'checked' : ''; ?>>
-                                                            <label class="form-check-label" for="user_<?php echo $user['user_id']; ?>">
-                                                                <strong><?php echo htmlspecialchars($user['fullname'] ?: $user['username']); ?></strong>
-                                                                <br><small class="text-muted"><?php echo htmlspecialchars($user['username']); ?></small>
-                                                                <?php if ($user['current_role']): ?>
-                                                                    <span class="badge bg-info ms-2"><?php echo ucfirst($user['current_role']); ?></span>
-                                                                <?php endif; ?>
-                                                            </label>
+                                                <?php foreach ($assignable_users as $user): ?>
+                                                    <?php if ($user['user_id'] == $program['created_by'] || $user['user_role'] === 'focal') continue; ?>
+                                                    <div class="row mb-3">
+                                                        <div class="col-md-6 d-flex flex-column justify-content-center">
+                                                            <span class="fw-bold"><?php echo htmlspecialchars($user['fullname'] ?: $user['username']); ?></span>
+                                                            <span class="text-muted small"><?php echo htmlspecialchars($user['username']); ?></span>
                                                         </div>
-                                                    <?php endforeach; ?>
-                                                </div>
-                                                
-                                                <!-- Select All / None buttons -->
-                                                <div class="mt-2">
-                                                    <button type="button" class="btn btn-sm btn-outline-primary me-2" onclick="selectAllUsers()">
-                                                        <i class="fas fa-check-double me-1"></i>Select All
-                                                    </button>
-                                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="selectNoUsers()">
-                                                        <i class="fas fa-times me-1"></i>Select None
-                                                    </button>
-                                                </div>
+                                                        <div class="col-md-6">
+                                                            <select class="form-select" name="user_roles[<?php echo $user['user_id']; ?>]">
+                                                                <option value="">No Access</option>
+                                                                <option value="viewer" <?php echo ($user['current_role'] === 'viewer') ? 'selected' : ''; ?>>Viewer</option>
+                                                                <option value="editor" <?php echo ($user['current_role'] === 'editor') ? 'selected' : ''; ?>>Editor</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                <?php endforeach; ?>
+                                                <p class="form-text text-muted mt-2">
+                                                    Assign roles to users for this program. <strong>Editor:</strong> Can edit program details and submissions. <strong>Viewer:</strong> Can only view program information.
+                                                </p>
                                             <?php else: ?>
                                                 <div class="alert alert-info">
                                                     <i class="fas fa-info-circle me-2"></i>
@@ -430,6 +421,7 @@ require_once '../../layouts/page_header.php';
                                         </div>
                                     </div>
                                 </div>
+                                <?php endif; ?>
 
                                 <!-- Info Card -->
                                 <div class="card shadow-sm mt-3">
@@ -553,43 +545,29 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-// Handle restrict editors toggle
-document.getElementById('restrict_editors').addEventListener('change', function() {
-    const userSection = document.getElementById('userSelectionSection');
-    if (this.checked) {
-        userSection.style.display = 'block';
-    } else {
-        userSection.style.display = 'none';
-        // Uncheck all user checkboxes when disabling restrictions
-        const userCheckboxes = document.querySelectorAll('input[name="assigned_editors[]"]');
-        userCheckboxes.forEach(checkbox => checkbox.checked = false);
-    }
-});
+    // Handle restrict editors toggle
+    document.getElementById('restrict_editors').addEventListener('change', function() {
+        const userSection = document.getElementById('userSelectionSection');
+        if (this.checked) {
+            userSection.style.display = 'block';
+        } else {
+            userSection.style.display = 'none';
+        }
+    });
 
-// Select all users function
-function selectAllUsers() {
-    const userCheckboxes = document.querySelectorAll('input[name="assigned_editors[]"]');
-    userCheckboxes.forEach(checkbox => checkbox.checked = true);
-}
+    // Initialize user selection section on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const restrictCheckbox = document.getElementById('restrict_editors');
+        const userSection = document.getElementById('userSelectionSection');
+        
+        // Show/hide user section based on initial checkbox state
+        if (restrictCheckbox.checked) {
+            userSection.style.display = 'block';
+        } else {
+            userSection.style.display = 'none';
+        }
+    });
 
-// Select no users function
-function selectNoUsers() {
-    const userCheckboxes = document.querySelectorAll('input[name="assigned_editors[]"]');
-    userCheckboxes.forEach(checkbox => checkbox.checked = false);
-}
-
-// Initialize user selection section on page load
-document.addEventListener('DOMContentLoaded', function() {
-    const restrictCheckbox = document.getElementById('restrict_editors');
-    const userSection = document.getElementById('userSelectionSection');
-    
-    // Show/hide user section based on initial checkbox state
-    if (restrictCheckbox.checked) {
-        userSection.style.display = 'block';
-    } else {
-        userSection.style.display = 'none';
-    }
-});
 });
 </script>
 

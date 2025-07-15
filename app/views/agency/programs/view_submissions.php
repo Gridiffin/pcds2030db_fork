@@ -19,7 +19,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/agencies/programs.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/agencies/program_attachments.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/agencies/program_agency_assignments.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/agencies/program_permissions.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/rating_helpers.php';
 
 // Verify user is an agency
@@ -49,9 +49,8 @@ if (!$program) {
     exit;
 }
 
-// Check if user has access to this program and get their role
-$agency_role = get_user_program_role($program_id);
-if (!$agency_role) {
+// Check if user has access to this program
+if (!can_view_program($program_id)) {
     $_SESSION['message'] = 'You do not have access to this program.';
     $_SESSION['message_type'] = 'danger';
     header('Location: view_programs.php');

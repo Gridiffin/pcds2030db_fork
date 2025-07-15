@@ -1012,7 +1012,7 @@ CREATE TABLE IF NOT EXISTS `audit_logs` (
   KEY `created_at` (`created_at`),
   KEY `user_id` (`user_id`),
   KEY `idx_entity_operation` (`action`,`created_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=317 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=368 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Dumping data for table pcds2030_db.audit_logs: ~281 rows (approximately)
 INSERT INTO `audit_logs` (`id`, `user_id`, `action`, `details`, `ip_address`, `status`, `created_at`) VALUES
@@ -1325,7 +1325,58 @@ INSERT INTO `audit_logs` (`id`, `user_id`, `action`, `details`, `ip_address`, `s
 	(313, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713142849.pptx (Size: 153609 bytes)', '127.0.0.1', 'success', '2025-07-13 22:28:55'),
 	(314, 1, 'save_report', 'Successfully saved Report: \'aajasjassaf\' for Forestry Sector - Q2 2025 (ID: 54, File: Forestry_Sector_Q2-2025_20250713143122.pptx, Size: 153,608 bytes)', '127.0.0.1', 'success', '2025-07-13 22:31:22'),
 	(315, 1, 'file_download', 'File downloaded: Forestry_Sector_Q2-2025_20250713143122.pptx (Size: 153608 bytes)', '127.0.0.1', 'success', '2025-07-13 22:31:24'),
-	(316, 12, 'login_success', 'Username: user', '127.0.0.1', 'success', '2025-07-14 09:09:50');
+	(316, 12, 'login_success', 'Username: user', '127.0.0.1', 'success', '2025-07-14 09:09:50'),
+	(317, 12, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-14 15:06:53'),
+	(318, 6, 'login_success', 'Username: sfc2', '127.0.0.1', 'success', '2025-07-14 15:07:01'),
+	(319, 12, 'login_success', 'Username: user', '127.0.0.1', 'success', '2025-07-14 15:09:18'),
+	(320, 12, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-14 15:09:21'),
+	(321, 6, 'login_success', 'Username: sfc2', '127.0.0.1', 'success', '2025-07-14 15:09:35'),
+	(322, 5, 'login_success', 'Username: sfc1', '127.0.0.1', 'success', '2025-07-14 15:12:20'),
+	(323, 6, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-14 15:12:40'),
+	(324, 5, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-14 15:14:15'),
+	(325, 2, 'login_success', 'Username: stidc1', '127.0.0.1', 'success', '2025-07-14 15:14:24'),
+	(326, 2, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-14 15:14:34'),
+	(327, 5, 'login_success', 'Username: sfc1', '127.0.0.1', 'success', '2025-07-14 15:22:14'),
+	(328, 5, 'create_program_failed', 'Program Name: sfc program 1 | Error: Field \'assigned_by\' doesn\'t have a default value', '127.0.0.1', 'failure', '2025-07-14 15:31:35'),
+	(329, 5, 'create_program', 'Program Name: sfc program 1 | Program ID: 19 | Program Number: 31.C', '127.0.0.1', 'success', '2025-07-14 15:36:39'),
+	(330, 5, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-14 15:37:44'),
+	(331, 12, 'login_success', 'Username: user', '127.0.0.1', 'success', '2025-07-14 15:37:50'),
+	(332, 12, 'create_program', 'Program Name: aaaaaaa | Program ID: 20 | Program Number: ', '127.0.0.1', 'success', '2025-07-14 15:38:01'),
+	(333, 12, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-14 15:41:40'),
+	(334, 5, 'login_success', 'Username: sfc1', '127.0.0.1', 'success', '2025-07-14 15:41:47'),
+	(335, 5, 'create_program', 'Program Name: asffsfsdfds | Program ID: 21 | Program Number: ', '127.0.0.1', 'success', '2025-07-14 15:46:45'),
+	(336, 5, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-14 15:51:22'),
+	(337, 6, 'login_success', 'Username: sfc2', '127.0.0.1', 'success', '2025-07-14 15:51:36'),
+	(338, 6, 'login_success', 'Username: sfc2', '127.0.0.1', 'success', '2025-07-14 15:53:40'),
+	(339, 6, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-14 16:04:30'),
+	(340, 6, 'login_success', 'Username: sfc2', '127.0.0.1', 'success', '2025-07-14 16:04:40'),
+	(341, 6, 'login_success', 'Username: sfc2', '127.0.0.1', 'success', '2025-07-14 16:05:58'),
+	(342, 6, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-14 16:06:57'),
+	(343, 6, 'login_success', 'Username: sfc2', '127.0.0.1', 'success', '2025-07-14 16:18:14'),
+	(344, 6, 'login_success', 'Username: sfc2', '127.0.0.1', 'success', '2025-07-14 16:21:36'),
+	(345, 6, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-14 16:24:02'),
+	(346, 6, 'login_success', 'Username: sfc2', '127.0.0.1', 'success', '2025-07-14 16:33:22'),
+	(347, 6, 'login_success', 'Username: sfc2', '127.0.0.1', 'success', '2025-07-14 16:34:00'),
+	(348, 6, 'login_success', 'Username: sfc2', '::1', 'success', '2025-07-14 16:40:45'),
+	(349, 6, 'login_success', 'Username: sfc2', '127.0.0.1', 'success', '2025-07-14 16:41:45'),
+	(350, 6, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-14 16:47:14'),
+	(351, 6, 'login_success', 'Username: sfc2', '127.0.0.1', 'success', '2025-07-14 16:47:23'),
+	(352, 6, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-14 16:47:34'),
+	(353, 6, 'login_success', 'Username: sfc2', '127.0.0.1', 'success', '2025-07-14 16:47:41'),
+	(354, 6, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-14 16:50:42'),
+	(355, 6, 'login_success', 'Username: sfc2', '127.0.0.1', 'success', '2025-07-14 19:34:23'),
+	(356, 6, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-14 20:55:03'),
+	(357, 7, 'login_success', 'Username: sfc3', '127.0.0.1', 'success', '2025-07-14 20:55:10'),
+	(358, 7, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-14 21:07:11'),
+	(359, 7, 'login_success', 'Username: sfc3', '127.0.0.1', 'success', '2025-07-14 21:07:27'),
+	(360, 7, 'delete_program', 'Program Name: helloooooooo | Program ID: 17', '127.0.0.1', 'success', '2025-07-14 21:42:13'),
+	(361, 7, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-14 21:42:21'),
+	(362, 7, 'login_success', 'Username: sfc3', '127.0.0.1', 'success', '2025-07-14 21:42:30'),
+	(363, 7, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-14 22:24:39'),
+	(364, 7, 'login_success', 'Username: sfc3', '127.0.0.1', 'success', '2025-07-14 22:25:05'),
+	(365, 12, 'login_success', 'Username: user', '127.0.0.1', 'success', '2025-07-15 08:10:20'),
+	(366, 12, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-15 08:10:39'),
+	(367, 7, 'login_success', 'Username: sfc3', '127.0.0.1', 'success', '2025-07-15 08:10:48');
 
 -- Dumping structure for view pcds2030_db.audit_logs_with_changes
 -- Creating temporary table to overcome VIEW dependency errors
@@ -1431,7 +1482,7 @@ CREATE TABLE IF NOT EXISTS `programs` (
   CONSTRAINT `programs_ibfk_1` FOREIGN KEY (`initiative_id`) REFERENCES `initiatives` (`initiative_id`),
   CONSTRAINT `programs_ibfk_2` FOREIGN KEY (`agency_id`) REFERENCES `agency` (`agency_id`),
   CONSTRAINT `programs_ibfk_3` FOREIGN KEY (`created_by`) REFERENCES `users` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Dumping data for table pcds2030_db.programs: ~7 rows (approximately)
 INSERT INTO `programs` (`program_id`, `initiative_id`, `program_name`, `program_number`, `rating`, `program_description`, `start_date`, `end_date`, `agency_id`, `is_deleted`, `created_by`, `created_at`, `updated_at`, `restrict_editors`) VALUES
@@ -1441,42 +1492,9 @@ INSERT INTO `programs` (`program_id`, `initiative_id`, `program_name`, `program_
 	(14, 3, 'program test 1', '31.1', 'on_track_for_year', 'summary', '2025-07-04', '2025-07-11', 5, 0, 12, '2025-07-11 01:36:32', '2025-07-14 01:41:48', 0),
 	(15, 3, 'program testing 2', '31.2', 'on_track_for_year', 'brieffffff', '2025-07-04', '2025-07-11', 5, 0, 12, '2025-07-11 02:11:37', '2025-07-12 03:44:24', 0),
 	(16, 3, 'a real program', '31.A', 'not_started', 'descicicic', '2025-07-12', '2025-07-20', 5, 0, 12, '2025-07-13 02:32:44', '2025-07-13 02:32:44', 0),
-	(17, 3, 'helloooooooo', '31.B', 'not_started', 'adsasdas', NULL, NULL, 2, 0, 5, '2025-07-13 03:38:38', '2025-07-13 03:38:38', 0);
-
--- Dumping structure for table pcds2030_db.program_agency_assignments
-CREATE TABLE IF NOT EXISTS `program_agency_assignments` (
-  `assignment_id` int NOT NULL AUTO_INCREMENT,
-  `program_id` int NOT NULL,
-  `agency_id` int NOT NULL,
-  `role` enum('owner','editor','viewer') COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'viewer',
-  `assigned_by` int NOT NULL,
-  `assigned_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `is_active` tinyint(1) DEFAULT '1',
-  `notes` text COLLATE utf8mb4_general_ci,
-  PRIMARY KEY (`assignment_id`),
-  UNIQUE KEY `unique_program_agency` (`program_id`,`agency_id`),
-  KEY `assigned_by` (`assigned_by`),
-  KEY `idx_program_id` (`program_id`),
-  KEY `idx_agency_id` (`agency_id`),
-  KEY `idx_role` (`role`),
-  KEY `idx_active` (`is_active`),
-  KEY `idx_program_agency_role` (`program_id`,`agency_id`,`role`),
-  KEY `idx_assignment_lookup` (`program_id`,`is_active`),
-  CONSTRAINT `program_agency_assignments_ibfk_1` FOREIGN KEY (`program_id`) REFERENCES `programs` (`program_id`) ON DELETE CASCADE,
-  CONSTRAINT `program_agency_assignments_ibfk_2` FOREIGN KEY (`agency_id`) REFERENCES `agency` (`agency_id`) ON DELETE CASCADE,
-  CONSTRAINT `program_agency_assignments_ibfk_3` FOREIGN KEY (`assigned_by`) REFERENCES `users` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- Dumping data for table pcds2030_db.program_agency_assignments: ~0 rows (approximately)
-INSERT INTO `program_agency_assignments` (`assignment_id`, `program_id`, `agency_id`, `role`, `assigned_by`, `assigned_at`, `updated_at`, `is_active`, `notes`) VALUES
-	(1, 1, 5, 'owner', 2, '2025-07-14 06:35:03', '2025-07-14 06:35:03', 1, 'Migrated from original program ownership'),
-	(2, 2, 5, 'owner', 2, '2025-07-14 06:35:03', '2025-07-14 06:35:03', 1, 'Migrated from original program ownership'),
-	(3, 3, 5, 'owner', 2, '2025-07-14 06:35:03', '2025-07-14 06:35:03', 1, 'Migrated from original program ownership'),
-	(4, 14, 5, 'owner', 12, '2025-07-14 06:35:03', '2025-07-14 06:35:03', 1, 'Migrated from original program ownership'),
-	(5, 15, 5, 'owner', 12, '2025-07-14 06:35:03', '2025-07-14 06:35:03', 1, 'Migrated from original program ownership'),
-	(6, 16, 5, 'owner', 12, '2025-07-14 06:35:03', '2025-07-14 06:35:03', 1, 'Migrated from original program ownership'),
-	(7, 17, 2, 'owner', 5, '2025-07-14 06:35:03', '2025-07-14 06:35:03', 1, 'Migrated from original program ownership');
+	(19, 3, 'sfc program 1', '31.C', 'not_started', 'sumsmams', '2025-07-08', '2025-07-14', 2, 0, 5, '2025-07-14 07:36:39', '2025-07-14 07:46:28', 1),
+	(20, NULL, 'aaaaaaa', NULL, 'not_started', '', NULL, NULL, 5, 0, 12, '2025-07-14 07:38:01', '2025-07-14 07:38:01', 0),
+	(21, NULL, 'asffsfsdfds', NULL, 'not_started', '', NULL, NULL, 2, 0, 5, '2025-07-14 07:46:45', '2025-07-14 07:46:45', 1);
 
 -- Dumping structure for table pcds2030_db.program_attachments
 CREATE TABLE IF NOT EXISTS `program_attachments` (
@@ -1519,7 +1537,7 @@ CREATE TABLE IF NOT EXISTS `program_submissions` (
   CONSTRAINT `program_submissions_ibfk_1` FOREIGN KEY (`program_id`) REFERENCES `programs` (`program_id`) ON DELETE CASCADE,
   CONSTRAINT `program_submissions_ibfk_2` FOREIGN KEY (`period_id`) REFERENCES `reporting_periods` (`period_id`) ON DELETE CASCADE,
   CONSTRAINT `program_submissions_ibfk_3` FOREIGN KEY (`submitted_by`) REFERENCES `users` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Dumping data for table pcds2030_db.program_submissions: ~5 rows (approximately)
 INSERT INTO `program_submissions` (`submission_id`, `program_id`, `period_id`, `is_draft`, `is_submitted`, `description`, `submitted_by`, `submitted_at`, `updated_at`, `is_deleted`) VALUES
@@ -1527,7 +1545,7 @@ INSERT INTO `program_submissions` (`submission_id`, `program_id`, `period_id`, `
 	(7, 14, 2, 1, 0, 'desssisis', 12, '2025-07-10 17:37:07', '2025-07-11 02:56:37', 0),
 	(8, 15, 2, 1, 0, 'dsesse', 12, '2025-07-10 18:22:13', '2025-07-12 03:49:18', 0),
 	(9, 16, 2, 0, 1, 'abababaa', 12, '2025-07-12 18:33:14', '2025-07-13 03:37:39', 0),
-	(10, 17, 2, 0, 1, 'adasdasdas', 5, '2025-07-12 19:39:01', '2025-07-13 03:39:10', 0);
+	(11, 19, 2, 1, 0, 'pepepepe', 6, '2025-07-14 04:02:55', '2025-07-14 12:02:55', 0);
 
 -- Dumping structure for table pcds2030_db.program_targets
 CREATE TABLE IF NOT EXISTS `program_targets` (
@@ -1545,7 +1563,7 @@ CREATE TABLE IF NOT EXISTS `program_targets` (
   KEY `submission_id` (`submission_id`),
   KEY `idx_target_number` (`target_number`),
   CONSTRAINT `program_targets_ibfk_1` FOREIGN KEY (`submission_id`) REFERENCES `program_submissions` (`submission_id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=126 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=127 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Dumping data for table pcds2030_db.program_targets: ~8 rows (approximately)
 INSERT INTO `program_targets` (`target_id`, `target_number`, `submission_id`, `target_description`, `status_indicator`, `status_description`, `remarks`, `start_date`, `end_date`, `is_deleted`) VALUES
@@ -1555,8 +1573,7 @@ INSERT INTO `program_targets` (`target_id`, `target_number`, `submission_id`, `t
 	(121, '31.2.2', 8, 'target lagi', 'delayed', 'statusss', 'reamsksks', '2025-07-04', '2025-07-18', 0),
 	(122, '31.A.1', 9, 'targeetette', 'in_progress', 'statsususus', '', NULL, NULL, 0),
 	(123, '31.A.2', 9, 'dadadas', 'completed', 'afdsfsdfsdfjfhuidghiudhgisudhgiushguishdgudshfusidghsyudgfjshbcjzcmburteoishdjszbfyusdgfsjbjshfjs', 'a', NULL, NULL, 0),
-	(124, '31.B.1', 10, 'adasdasdas', 'in_progress', 'adasdas', '', NULL, NULL, 0),
-	(125, '31.B.2', 10, 'ggfdhdfhdhdfhfd', 'completed', 'fhdghgdhdhdfhdf', '', NULL, NULL, 0);
+	(126, '31.C.1', 11, 'afafafasf', 'in_progress', 'afahhhghghghg', NULL, NULL, NULL, 0);
 
 -- Dumping structure for table pcds2030_db.program_user_assignments
 CREATE TABLE IF NOT EXISTS `program_user_assignments` (
@@ -1577,7 +1594,7 @@ CREATE TABLE IF NOT EXISTS `program_user_assignments` (
   CONSTRAINT `fk_user_assigned_by` FOREIGN KEY (`assigned_by`) REFERENCES `users` (`user_id`),
   CONSTRAINT `program_user_assignments_ibfk_1` FOREIGN KEY (`program_id`) REFERENCES `programs` (`program_id`) ON DELETE CASCADE,
   CONSTRAINT `program_user_assignments_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Dumping data for table pcds2030_db.program_user_assignments: ~7 rows (approximately)
 INSERT INTO `program_user_assignments` (`assignment_id`, `program_id`, `user_id`, `role`, `assigned_at`, `assigned_by`, `updated_at`, `is_active`, `notes`) VALUES
@@ -1587,7 +1604,11 @@ INSERT INTO `program_user_assignments` (`assignment_id`, `program_id`, `user_id`
 	(14, 14, 12, 'editor', '2025-07-11 01:36:32', 1, '2025-07-14 06:39:07', 1, NULL),
 	(15, 15, 12, 'editor', '2025-07-11 02:11:37', 1, '2025-07-14 06:39:07', 1, NULL),
 	(16, 16, 12, 'editor', '2025-07-13 02:32:44', 1, '2025-07-14 06:39:07', 1, NULL),
-	(17, 17, 5, 'editor', '2025-07-13 03:38:38', 1, '2025-07-14 06:39:07', 1, NULL);
+	(18, 19, 5, 'editor', '2025-07-14 07:36:39', 5, '2025-07-14 07:46:28', 0, NULL),
+	(19, 20, 12, 'editor', '2025-07-14 07:38:01', 12, '2025-07-14 07:38:01', 1, NULL),
+	(20, 19, 6, 'editor', '2025-07-14 07:46:28', 5, '2025-07-14 07:46:28', 1, 'Updated during program edit'),
+	(21, 21, 5, 'editor', '2025-07-14 07:46:45', 5, '2025-07-14 07:46:45', 1, NULL),
+	(22, 21, 7, 'editor', '2025-07-14 07:46:45', 5, '2025-07-14 07:46:45', 1, 'Assigned during program creation');
 
 -- Dumping structure for table pcds2030_db.reporting_periods
 CREATE TABLE IF NOT EXISTS `reporting_periods` (

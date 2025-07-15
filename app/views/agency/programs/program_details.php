@@ -20,7 +20,7 @@ require_once ROOT_PATH . 'app/lib/agencies/index.php';
 require_once ROOT_PATH . 'app/lib/agencies/programs.php';
 require_once ROOT_PATH . 'app/lib/rating_helpers.php';
 require_once ROOT_PATH . 'app/lib/agencies/program_attachments.php';
-require_once ROOT_PATH . 'app/lib/agencies/program_agency_assignments.php';
+require_once ROOT_PATH . 'app/lib/agencies/program_permissions.php';
 require_once ROOT_PATH . 'app/lib/agencies/program-details/data-processor.php';
 require_once ROOT_PATH . 'app/lib/agencies/program-details/error-handler.php';
 
