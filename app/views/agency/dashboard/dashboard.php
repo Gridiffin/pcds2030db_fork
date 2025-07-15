@@ -328,7 +328,7 @@ require_once PROJECT_ROOT_PATH . 'app/views/layouts/page_header.php';
                                 <div class="card bg-success text-white h-100">
                                     <div class="card-body text-center">
                                         <i class="fas fa-check-square fa-3x mb-3"></i>
-                                        <h4><?php echo $outcomes_stats['submitted_outcomes']; ?></h4>
+                                        <h4><?php echo isset($outcomes_stats['submitted_outcomes']) ? $outcomes_stats['submitted_outcomes'] : 0; ?></h4>
                                         <p class="mb-0">Submitted</p>
                                     </div>
                                 </div>
@@ -338,7 +338,7 @@ require_once PROJECT_ROOT_PATH . 'app/views/layouts/page_header.php';
                                 <div class="card bg-warning text-white h-100">
                                     <div class="card-body text-center">
                                         <i class="fas fa-file-alt fa-3x mb-3"></i>
-                                        <h4><?php echo $outcomes_stats['draft_outcomes']; ?></h4>
+                                        <h4><?php echo isset($outcomes_stats['draft_outcomes']) ? $outcomes_stats['draft_outcomes'] : 0; ?></h4>
                                         <p class="mb-0">Drafts</p>
                                     </div>
                                 </div>

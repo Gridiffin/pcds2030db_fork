@@ -126,12 +126,18 @@ function get_agency_outcomes_statistics($sector_id, $period_id = null) {
             $outcomes_by_type[$row['type']] = $row['count'];
         }
     }
-    
+
+    // The outcomes table does not have draft/submitted status. Set to 0 for compatibility.
+    $submitted_outcomes = 0;
+    $draft_outcomes = 0;
+
     return [
         'total_outcomes' => $total_outcomes,
         'outcomes_by_type' => $outcomes_by_type,
         'chart_outcomes' => $outcomes_by_type['chart'] ?? 0,
-        'kpi_outcomes' => $outcomes_by_type['kpi'] ?? 0
+        'kpi_outcomes' => $outcomes_by_type['kpi'] ?? 0,
+        'submitted_outcomes' => $submitted_outcomes,
+        'draft_outcomes' => $draft_outcomes
     ];
 }
 ?>

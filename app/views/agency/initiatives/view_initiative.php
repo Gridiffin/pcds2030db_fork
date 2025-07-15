@@ -56,12 +56,12 @@ $latest_ratings_sql = "
         p.program_id,
         p.program_name,
         p.program_number,
-        p.owner_agency_id,
-        u.agency_name,
+        p.agency_id,
+        a.agency_name,
         p.rating,
         p.updated_at
     FROM programs p
-    LEFT JOIN users u ON p.owner_agency_id = u.user_id
+    LEFT JOIN agency a ON p.agency_id = a.agency_id
     WHERE p.initiative_id = ?
     ORDER BY p.program_id
 ";
@@ -528,6 +528,14 @@ require_once '../../layouts/page_header.php';
             <div class="card-body">
                 <?php if (!empty($programs)): ?>
                     <div class="programs-list" style="max-height: 500px; overflow-y: auto;">
+                        <?php
+                        // Set ownership flag for each program
+                        $current_agency_id = $_SESSION['agency_id'] ?? null;
+                        foreach ($programs as &$program) {
+                            $program['is_owned_by_agency'] = ($program['agency_id'] == $current_agency_id);
+                        }
+                        unset($program); // break reference
+                        ?>
                         <?php foreach ($programs as $program): ?>
                             <div class="program-item mb-3 <?php echo $program['is_owned_by_agency'] ? 'owned' : 'other-agency'; ?>">
                                 <div class="d-flex justify-content-between align-items-start">
@@ -552,20 +560,9 @@ require_once '../../layouts/page_header.php';
                                     </div>
                                     <div class="ms-2">
                                         <?php
-                                        $status = convert_legacy_rating($program['rating'] ?? 'not_started');
-                                        $status_colors = [
-                                            'target-achieved' => 'success',
-                                            'on-track' => 'warning',
-                                            'on-track-yearly' => 'warning',
-                                            'delayed' => 'danger',
-                                            'severe-delay' => 'danger',
-                                            'not-started' => 'secondary'
-                                        ];
-                                        $color_class = $status_colors[$status] ?? 'secondary';
+                                        // Use the rating helper to render the status badge
+                                        echo get_rating_badge($program['rating'] ?? 'not_started');
                                         ?>
-                                        <span class="badge bg-<?php echo $color_class; ?>" style="font-size: 0.7em;">
-                                            <?php echo ucfirst(str_replace('-', ' ', $status)); ?>
-                                        </span>
                                     </div>
                                 </div>
                                 <?php if ($program['is_owned_by_agency']): ?>
@@ -608,22 +605,23 @@ require_once '../../layouts/page_header.php';
                 
                 // Query for recent program-related activities for this initiative
                 $activity_sql = "SELECT 
-                    al.action,
-                    al.details,
-                    al.created_at,
-                    al.user_id,
-                    u.agency_name,
-                    u.username
-                FROM audit_logs al
-                JOIN users u ON al.user_id = u.user_id
-                WHERE al.action IN (
-                    'program_submitted', 'program_draft_saved', 'update_program', 
-                    'outcome_updated', 'outcome_submitted', 'admin_program_edited',
-                    'program_finalized', 'resubmit_program'
-                )
-                AND al.details REGEXP 'Program (ID|Name):'
-                ORDER BY al.created_at DESC
-                LIMIT 15";
+    al.action,
+    al.details,
+    al.created_at,
+    al.user_id,
+    a.agency_name,
+    u.username
+FROM audit_logs al
+JOIN users u ON al.user_id = u.user_id
+LEFT JOIN agency a ON u.agency_id = a.agency_id
+WHERE al.action IN (
+    'program_submitted', 'program_draft_saved', 'update_program', 
+    'outcome_updated', 'outcome_submitted', 'admin_program_edited',
+    'program_finalized', 'resubmit_program'
+)
+AND al.details REGEXP 'Program (ID|Name):'
+ORDER BY al.created_at DESC
+LIMIT 15";
                 
                 $stmt = $conn->prepare($activity_sql);
                 $stmt->execute();

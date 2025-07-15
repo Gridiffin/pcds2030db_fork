@@ -121,7 +121,7 @@ require_once '../../layouts/page_header.php';
                 <button type="submit" class="btn btn-primary me-2">
                     <i class="fas fa-search me-1"></i> Search
                 </button>
-                <a href="view_initiatives.php" class="btn btn-outline-secondary">
+                <a href="initiatives.php" class="btn btn-outline-secondary">
                     <i class="fas fa-undo me-1"></i> Reset
                 </a>
             </div>
@@ -156,12 +156,18 @@ require_once '../../layouts/page_header.php';
                     <?php endif; ?>
                 </p>
                 <?php if (!empty($search) || $status_filter !== ''): ?>
-                    <a href="view_initiatives.php" class="btn btn-outline-primary">
+                    <a href="initiatives.php" class="btn btn-outline-primary">
                         <i class="fas fa-undo me-1"></i>Clear Filters
                     </a>
                 <?php endif; ?>
             </div>
         <?php else: ?>
+            <?php if ((isset($_GET['debug']) && $_GET['debug'] == '1') || (isset($_SESSION['role']) && $_SESSION['role'] === 'admin')): ?>
+                <pre style="background:#f8f9fa; color:#333; border:1px solid #ccc; padding:1em; margin-bottom:1em;">
+                    initiative_name_col: <?php var_dump($initiative_name_col); ?>
+                    initiative keys: <?php if (!empty($initiatives)) var_dump(array_keys($initiatives[0])); else echo 'No initiatives.'; ?>
+                </pre>
+            <?php endif; ?>
             <!-- Table View Only -->
             <div class="table-responsive">
                 <table class="table table-hover mb-0">
@@ -177,22 +183,22 @@ require_once '../../layouts/page_header.php';
                     </thead>
                     <tbody>
                         <?php foreach ($initiatives as $initiative): ?>
-                            <tr data-initiative-id="<?php echo $initiative[$initiative_id_col]; ?>">
+                            <tr data-initiative-id="<?php echo isset($initiative[$initiative_id_col]) ? htmlspecialchars($initiative[$initiative_id_col]) : ''; ?>">
                                 <td>
                                     <div class="d-flex align-items-start">
                                         <div class="flex-grow-1">
                                             <div class="fw-semibold mb-1">
                                                 <?php if (!empty($initiative[$initiative_number_col])): ?>
                                                     <span class="badge bg-primary me-2">
-                                                        <?php echo htmlspecialchars($initiative[$initiative_number_col]); ?>
+                                                        <?php echo htmlspecialchars($initiative[$initiative_number_col] ?? ''); ?>
                                                     </span>
                                                 <?php endif; ?>
-                                                <?php echo htmlspecialchars($initiative[$initiative_name_col]); ?>
+                                                <?php echo htmlspecialchars($initiative[$initiative_name_col] ?? ''); ?>
                                             </div>
                                             <?php if (!empty($initiative[$initiative_description_col])): ?>
                                                 <div class="text-muted small" style="line-height: 1.4;">
                                                     <?php 
-                                                    $description = htmlspecialchars($initiative[$initiative_description_col]);
+                                                    $description = htmlspecialchars($initiative[$initiative_description_col] ?? '');
                                                     echo strlen($description) > 120 ? substr($description, 0, 120) . '...' : $description;
                                                     ?>
                                                 </div>
@@ -202,12 +208,12 @@ require_once '../../layouts/page_header.php';
                                 </td>
                                 <td class="text-center">
                                     <span class="badge bg-info">
-                                        <?php echo $initiative['agency_program_count']; ?> programs
+                                        <?php echo isset($initiative['agency_program_count']) ? $initiative['agency_program_count'] : 0; ?> programs
                                     </span>
                                 </td>
                                 <td class="text-center">
                                     <span class="badge bg-secondary">
-                                        <?php echo $initiative['total_program_count']; ?> total
+                                        <?php echo isset($initiative['total_program_count']) ? $initiative['total_program_count'] : 0; ?> total
                                     </span>
                                 </td>
                                 <td>
@@ -215,14 +221,14 @@ require_once '../../layouts/page_header.php';
                                         <div class="small">
                                             <?php if (!empty($initiative[$start_date_col]) && !empty($initiative[$end_date_col])): ?>
                                                 <i class="fas fa-calendar-alt me-1 text-muted"></i>
-                                                <?php echo date('M j, Y', strtotime($initiative[$start_date_col])); ?> - 
-                                                <?php echo date('M j, Y', strtotime($initiative[$end_date_col])); ?>
+                                                <?php echo date('M j, Y', strtotime($initiative[$start_date_col] ?? '')); ?> - 
+                                                <?php echo date('M j, Y', strtotime($initiative[$end_date_col] ?? '')); ?>
                                             <?php elseif (!empty($initiative[$start_date_col])): ?>
                                                 <i class="fas fa-play me-1 text-success"></i>
-                                                Started: <?php echo date('M j, Y', strtotime($initiative[$start_date_col])); ?>
+                                                Started: <?php echo date('M j, Y', strtotime($initiative[$start_date_col] ?? '')); ?>
                                             <?php elseif (!empty($initiative[$end_date_col])): ?>
                                                 <i class="fas fa-flag-checkered me-1 text-warning"></i>
-                                                Due: <?php echo date('M j, Y', strtotime($initiative[$end_date_col])); ?>
+                                                Due: <?php echo date('M j, Y', strtotime($initiative[$end_date_col] ?? '')); ?>
                                             <?php endif; ?>
                                         </div>
                                     <?php else: ?>
@@ -233,14 +239,14 @@ require_once '../../layouts/page_header.php';
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <?php if ($initiative[$is_active_col]): ?>
+                                    <?php if (!empty($initiative[$is_active_col])): ?>
                                         <span class="badge bg-success">Active</span>
                                     <?php else: ?>
                                         <span class="badge bg-secondary">Inactive</span>
                                     <?php endif; ?>
                                 </td>
                                 <td class="text-center">
-                                    <a href="view_initiative.php?id=<?php echo $initiative[$initiative_id_col]; ?>" 
+                                    <a href="view_initiative.php?id=<?php echo isset($initiative[$initiative_id_col]) ? htmlspecialchars($initiative[$initiative_id_col]) : ''; ?>" 
                                        class="btn btn-outline-primary btn-sm"
                                        title="View Initiative Details">
                                         <i class="fas fa-eye me-1"></i>View Details
