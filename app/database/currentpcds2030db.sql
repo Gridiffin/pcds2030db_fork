@@ -1012,9 +1012,9 @@ CREATE TABLE IF NOT EXISTS `audit_logs` (
   KEY `created_at` (`created_at`),
   KEY `user_id` (`user_id`),
   KEY `idx_entity_operation` (`action`,`created_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=368 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=397 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table pcds2030_db.audit_logs: ~281 rows (approximately)
+-- Dumping data for table pcds2030_db.audit_logs: ~373 rows (approximately)
 INSERT INTO `audit_logs` (`id`, `user_id`, `action`, `details`, `ip_address`, `status`, `created_at`) VALUES
 	(1, 12, 'create_program_failed', 'Program Name: adasdas | Error: Unknown column \'start_date\' in \'field list\'', '127.0.0.1', 'failure', '2025-07-05 13:02:34'),
 	(2, 12, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-05 13:04:08'),
@@ -1376,7 +1376,36 @@ INSERT INTO `audit_logs` (`id`, `user_id`, `action`, `details`, `ip_address`, `s
 	(364, 7, 'login_success', 'Username: sfc3', '127.0.0.1', 'success', '2025-07-14 22:25:05'),
 	(365, 12, 'login_success', 'Username: user', '127.0.0.1', 'success', '2025-07-15 08:10:20'),
 	(366, 12, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-15 08:10:39'),
-	(367, 7, 'login_success', 'Username: sfc3', '127.0.0.1', 'success', '2025-07-15 08:10:48');
+	(367, 7, 'login_success', 'Username: sfc3', '127.0.0.1', 'success', '2025-07-15 08:10:48'),
+	(368, 7, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-15 08:45:36'),
+	(369, 12, 'login_success', 'Username: user', '127.0.0.1', 'success', '2025-07-15 08:45:47'),
+	(370, 12, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-15 08:45:56'),
+	(371, 6, 'login_success', 'Username: sfc2', '127.0.0.1', 'success', '2025-07-15 08:46:02'),
+	(372, 6, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-15 08:47:08'),
+	(373, 5, 'login_success', 'Username: sfc1', '127.0.0.1', 'success', '2025-07-15 08:47:13'),
+	(374, 5, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-15 09:16:00'),
+	(375, 6, 'login_success', 'Username: sfc2', '127.0.0.1', 'success', '2025-07-15 09:16:06'),
+	(376, 6, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-15 09:17:01'),
+	(377, 7, 'login_success', 'Username: sfc3', '127.0.0.1', 'success', '2025-07-15 09:17:07'),
+	(378, 7, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-15 09:20:08'),
+	(379, 6, 'login_success', 'Username: sfc2', '127.0.0.1', 'success', '2025-07-15 09:20:15'),
+	(380, 6, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-15 09:24:19'),
+	(381, 1, 'login_success', 'Username: admin', '127.0.0.1', 'success', '2025-07-15 09:24:24'),
+	(382, 1, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-15 09:26:32'),
+	(383, 12, 'login_success', 'Username: user', '127.0.0.1', 'success', '2025-07-15 09:31:38'),
+	(384, 12, 'login_success', 'Username: user', '127.0.0.1', 'success', '2025-07-15 09:48:06'),
+	(385, 12, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-15 11:33:33'),
+	(386, 6, 'login_success', 'Username: sfc2', '127.0.0.1', 'success', '2025-07-15 11:33:39'),
+	(387, 6, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-15 11:34:00'),
+	(388, 7, 'login_success', 'Username: sfc3', '127.0.0.1', 'success', '2025-07-15 11:34:05'),
+	(389, 7, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-15 11:34:49'),
+	(390, 7, 'login_success', 'Username: sfc3', '127.0.0.1', 'success', '2025-07-15 11:34:58'),
+	(391, 7, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-15 11:35:57'),
+	(392, 12, 'login_success', 'Username: user', '127.0.0.1', 'success', '2025-07-15 11:36:03'),
+	(393, 12, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-15 14:27:15'),
+	(394, 6, 'login_success', 'Username: sfc2', '127.0.0.1', 'success', '2025-07-15 14:27:24'),
+	(395, 6, 'logout', 'User logged out', '127.0.0.1', 'success', '2025-07-15 14:27:35'),
+	(396, 12, 'login_success', 'Username: user', '127.0.0.1', 'success', '2025-07-15 14:58:17');
 
 -- Dumping structure for view pcds2030_db.audit_logs_with_changes
 -- Creating temporary table to overcome VIEW dependency errors
@@ -1462,6 +1491,7 @@ CREATE TABLE IF NOT EXISTS `programs` (
   `program_id` int NOT NULL AUTO_INCREMENT,
   `initiative_id` int DEFAULT NULL,
   `program_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `status` enum('active','on_hold','completed','delayed','cancelled') COLLATE utf8mb4_general_ci DEFAULT 'active',
   `program_number` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `rating` enum('monthly_target_achieved','on_track_for_year','severe_delay','not_started') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT 'not_started',
   `program_description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
@@ -1484,17 +1514,17 @@ CREATE TABLE IF NOT EXISTS `programs` (
   CONSTRAINT `programs_ibfk_3` FOREIGN KEY (`created_by`) REFERENCES `users` (`user_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table pcds2030_db.programs: ~7 rows (approximately)
-INSERT INTO `programs` (`program_id`, `initiative_id`, `program_name`, `program_number`, `rating`, `program_description`, `start_date`, `end_date`, `agency_id`, `is_deleted`, `created_by`, `created_at`, `updated_at`, `restrict_editors`) VALUES
-	(1, 1, 'Test Program - New Schema', NULL, 'severe_delay', 'Test description for new schema', NULL, NULL, 5, 0, 2, '2025-07-09 00:30:11', '2025-07-12 03:25:13', 0),
-	(2, 1, 'Test Program - New Schema', NULL, 'not_started', 'Test description for new schema', NULL, NULL, 5, 0, 2, '2025-07-09 00:30:28', '2025-07-09 06:52:51', 0),
-	(3, 1, 'Test Program - New Schema', NULL, 'not_started', 'Test description for new schema', NULL, NULL, 5, 0, 2, '2025-07-09 00:30:52', '2025-07-09 06:52:53', 0),
-	(14, 3, 'program test 1', '31.1', 'on_track_for_year', 'summary', '2025-07-04', '2025-07-11', 5, 0, 12, '2025-07-11 01:36:32', '2025-07-14 01:41:48', 0),
-	(15, 3, 'program testing 2', '31.2', 'on_track_for_year', 'brieffffff', '2025-07-04', '2025-07-11', 5, 0, 12, '2025-07-11 02:11:37', '2025-07-12 03:44:24', 0),
-	(16, 3, 'a real program', '31.A', 'not_started', 'descicicic', '2025-07-12', '2025-07-20', 5, 0, 12, '2025-07-13 02:32:44', '2025-07-13 02:32:44', 0),
-	(19, 3, 'sfc program 1', '31.C', 'not_started', 'sumsmams', '2025-07-08', '2025-07-14', 2, 0, 5, '2025-07-14 07:36:39', '2025-07-14 07:46:28', 1),
-	(20, NULL, 'aaaaaaa', NULL, 'not_started', '', NULL, NULL, 5, 0, 12, '2025-07-14 07:38:01', '2025-07-14 07:38:01', 0),
-	(21, NULL, 'asffsfsdfds', NULL, 'not_started', '', NULL, NULL, 2, 0, 5, '2025-07-14 07:46:45', '2025-07-14 07:46:45', 1);
+-- Dumping data for table pcds2030_db.programs: ~9 rows (approximately)
+INSERT INTO `programs` (`program_id`, `initiative_id`, `program_name`, `status`, `program_number`, `rating`, `program_description`, `start_date`, `end_date`, `agency_id`, `is_deleted`, `created_by`, `created_at`, `updated_at`, `restrict_editors`) VALUES
+	(1, 1, 'Test Program - New Schema', 'active', NULL, 'severe_delay', 'Test description for new schema', NULL, NULL, 5, 0, 2, '2025-07-09 00:30:11', '2025-07-12 03:25:13', 0),
+	(2, 1, 'Test Program - New Schema', 'active', NULL, 'not_started', 'Test description for new schema', NULL, NULL, 5, 0, 2, '2025-07-09 00:30:28', '2025-07-09 06:52:51', 0),
+	(3, 1, 'Test Program - New Schema', 'active', NULL, 'not_started', 'Test description for new schema', NULL, NULL, 5, 0, 2, '2025-07-09 00:30:52', '2025-07-09 06:52:53', 0),
+	(14, 3, 'program test 1', 'active', '31.1', 'on_track_for_year', 'summary', '2025-07-04', '2025-07-11', 5, 0, 12, '2025-07-11 01:36:32', '2025-07-14 01:41:48', 0),
+	(15, 3, 'program testing 2', 'active', '31.2', 'on_track_for_year', 'brieffffff', '2025-07-04', '2025-07-11', 5, 0, 12, '2025-07-11 02:11:37', '2025-07-12 03:44:24', 0),
+	(16, 3, 'a real program', 'active', '31.A', 'not_started', 'descicicic', '2025-07-12', '2025-07-20', 5, 0, 12, '2025-07-13 02:32:44', '2025-07-15 08:00:21', 0),
+	(19, 3, 'only sfc2', 'active', '31.C', 'not_started', 'sumsmams', '2025-07-08', '2025-07-14', 2, 0, 5, '2025-07-14 07:36:39', '2025-07-15 01:15:52', 1),
+	(20, NULL, 'aaaaaaa', 'active', NULL, 'not_started', '', NULL, NULL, 5, 0, 12, '2025-07-14 07:38:01', '2025-07-14 07:38:01', 0),
+	(21, NULL, 'only sfc3', 'active', NULL, 'not_started', '', NULL, NULL, 2, 0, 5, '2025-07-14 07:46:45', '2025-07-15 01:15:39', 1);
 
 -- Dumping structure for table pcds2030_db.program_attachments
 CREATE TABLE IF NOT EXISTS `program_attachments` (
@@ -1517,6 +1547,45 @@ CREATE TABLE IF NOT EXISTS `program_attachments` (
 -- Dumping data for table pcds2030_db.program_attachments: ~0 rows (approximately)
 INSERT INTO `program_attachments` (`attachment_id`, `submission_id`, `file_name`, `file_path`, `file_size`, `file_type`, `uploaded_by`, `uploaded_at`, `is_deleted`) VALUES
 	(10, 7, 'Forestry_Q5-2025_20250709030726.pptx', '../../uploads/programs/attachments/7/1752202597_68707d65532d0.pptx', 149101, 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 12, '2025-07-11 02:56:37', 0);
+
+-- Dumping structure for table pcds2030_db.program_hold_points
+CREATE TABLE IF NOT EXISTS `program_hold_points` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `program_id` int NOT NULL,
+  `reason` text COLLATE utf8mb4_general_ci NOT NULL,
+  `remarks` text COLLATE utf8mb4_general_ci,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `ended_at` timestamp NULL DEFAULT NULL,
+  `created_by` int NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `program_id` (`program_id`),
+  KEY `created_by` (`created_by`),
+  CONSTRAINT `program_hold_points_ibfk_1` FOREIGN KEY (`program_id`) REFERENCES `programs` (`program_id`),
+  CONSTRAINT `program_hold_points_ibfk_2` FOREIGN KEY (`created_by`) REFERENCES `users` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Dumping data for table pcds2030_db.program_hold_points: ~0 rows (approximately)
+
+-- Dumping structure for table pcds2030_db.program_status_history
+CREATE TABLE IF NOT EXISTS `program_status_history` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `program_id` int NOT NULL,
+  `status` enum('active','on_hold','completed','delayed','cancelled') COLLATE utf8mb4_general_ci NOT NULL,
+  `changed_by` int NOT NULL,
+  `changed_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `remarks` text COLLATE utf8mb4_general_ci,
+  PRIMARY KEY (`id`),
+  KEY `program_id` (`program_id`),
+  KEY `changed_by` (`changed_by`),
+  CONSTRAINT `program_status_history_ibfk_1` FOREIGN KEY (`program_id`) REFERENCES `programs` (`program_id`),
+  CONSTRAINT `program_status_history_ibfk_2` FOREIGN KEY (`changed_by`) REFERENCES `users` (`user_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Dumping data for table pcds2030_db.program_status_history: ~0 rows (approximately)
+INSERT INTO `program_status_history` (`id`, `program_id`, `status`, `changed_by`, `changed_at`, `remarks`) VALUES
+	(1, 16, 'completed', 12, '2025-07-15 08:00:11', ''),
+	(2, 16, 'cancelled', 12, '2025-07-15 08:00:15', ''),
+	(3, 16, 'active', 12, '2025-07-15 08:00:21', '');
 
 -- Dumping structure for table pcds2030_db.program_submissions
 CREATE TABLE IF NOT EXISTS `program_submissions` (
@@ -1565,7 +1634,7 @@ CREATE TABLE IF NOT EXISTS `program_targets` (
   CONSTRAINT `program_targets_ibfk_1` FOREIGN KEY (`submission_id`) REFERENCES `program_submissions` (`submission_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=127 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table pcds2030_db.program_targets: ~8 rows (approximately)
+-- Dumping data for table pcds2030_db.program_targets: ~7 rows (approximately)
 INSERT INTO `program_targets` (`target_id`, `target_number`, `submission_id`, `target_description`, `status_indicator`, `status_description`, `remarks`, `start_date`, `end_date`, `is_deleted`) VALUES
 	(118, '', 7, 'target 112', 'in_progress', 'status 1', '', NULL, NULL, 0),
 	(119, '', 7, 'target 222', 'in_progress', '', '', NULL, NULL, 0),
@@ -1594,9 +1663,9 @@ CREATE TABLE IF NOT EXISTS `program_user_assignments` (
   CONSTRAINT `fk_user_assigned_by` FOREIGN KEY (`assigned_by`) REFERENCES `users` (`user_id`),
   CONSTRAINT `program_user_assignments_ibfk_1` FOREIGN KEY (`program_id`) REFERENCES `programs` (`program_id`) ON DELETE CASCADE,
   CONSTRAINT `program_user_assignments_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table pcds2030_db.program_user_assignments: ~7 rows (approximately)
+-- Dumping data for table pcds2030_db.program_user_assignments: ~13 rows (approximately)
 INSERT INTO `program_user_assignments` (`assignment_id`, `program_id`, `user_id`, `role`, `assigned_at`, `assigned_by`, `updated_at`, `is_active`, `notes`) VALUES
 	(1, 1, 2, 'editor', '2025-07-09 00:30:11', 1, '2025-07-14 06:39:07', 1, NULL),
 	(2, 2, 2, 'editor', '2025-07-09 00:30:28', 1, '2025-07-14 06:39:07', 1, NULL),
@@ -1606,9 +1675,11 @@ INSERT INTO `program_user_assignments` (`assignment_id`, `program_id`, `user_id`
 	(16, 16, 12, 'editor', '2025-07-13 02:32:44', 1, '2025-07-14 06:39:07', 1, NULL),
 	(18, 19, 5, 'editor', '2025-07-14 07:36:39', 5, '2025-07-14 07:46:28', 0, NULL),
 	(19, 20, 12, 'editor', '2025-07-14 07:38:01', 12, '2025-07-14 07:38:01', 1, NULL),
-	(20, 19, 6, 'editor', '2025-07-14 07:46:28', 5, '2025-07-14 07:46:28', 1, 'Updated during program edit'),
-	(21, 21, 5, 'editor', '2025-07-14 07:46:45', 5, '2025-07-14 07:46:45', 1, NULL),
-	(22, 21, 7, 'editor', '2025-07-14 07:46:45', 5, '2025-07-14 07:46:45', 1, 'Assigned during program creation');
+	(20, 19, 6, 'editor', '2025-07-14 07:46:28', 5, '2025-07-15 01:15:52', 1, 'Updated during program edit'),
+	(21, 21, 5, 'editor', '2025-07-14 07:46:45', 5, '2025-07-15 01:11:26', 0, NULL),
+	(22, 21, 7, 'editor', '2025-07-14 07:46:45', 5, '2025-07-15 01:15:39', 1, 'Updated during program edit'),
+	(23, 21, 6, 'viewer', '2025-07-15 01:15:39', 5, '2025-07-15 01:15:39', 1, 'Updated during program edit'),
+	(24, 19, 7, 'viewer', '2025-07-15 01:15:52', 5, '2025-07-15 01:15:52', 1, 'Updated during program edit');
 
 -- Dumping structure for table pcds2030_db.reporting_periods
 CREATE TABLE IF NOT EXISTS `reporting_periods` (
