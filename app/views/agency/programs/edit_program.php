@@ -22,6 +22,7 @@ require_once PROJECT_ROOT_PATH . 'lib/agencies/program_permissions.php';
 require_once PROJECT_ROOT_PATH . 'lib/initiative_functions.php';
 require_once PROJECT_ROOT_PATH . 'lib/numbering_helpers.php';
 require_once PROJECT_ROOT_PATH . 'lib/rating_helpers.php';
+require_once PROJECT_ROOT_PATH . 'lib/program_status_helpers.php';
 
 // Verify user is an agency
 if (!is_agency()) {
@@ -184,7 +185,14 @@ require_once '../../layouts/page_header.php';
                             <i class="fas fa-edit me-2"></i>
                             Edit Program Information
                         </h5>
-                        <span id="program-status-badge" class="status-badge"></span>
+                        <?php 
+                        $status = isset($program['status']) ? $program['status'] : 'active';
+                        $status_info = get_program_status_info($status);
+                        ?>
+                        <span id="program-status-badge" class="badge status-badge bg-<?php echo $status_info['class']; ?> py-2 px-3">
+                            <i class="<?php echo $status_info['icon']; ?> me-1"></i>
+                            <?php echo $status_info['label']; ?>
+                        </span>
                     </div>
                     <div>
                         <button class="btn btn-outline-primary btn-sm me-2" id="edit-status-btn">Change Status</button>

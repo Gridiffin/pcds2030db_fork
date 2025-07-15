@@ -26,9 +26,17 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderStatus(data) {
         if (!statusBadge) return;
         let status = data.status || 'active';
-        let label = status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
-        statusBadge.textContent = label;
-        statusBadge.className = 'status-badge status-' + status;
+        // Map status to label, class, and icon (should match PHP helper)
+        const statusMap = {
+            'active':    { label: 'Active',    class: 'success',    icon: 'fas fa-play-circle' },
+            'on_hold':   { label: 'On Hold',   class: 'warning',    icon: 'fas fa-pause-circle' },
+            'completed': { label: 'Completed', class: 'primary',    icon: 'fas fa-check-circle' },
+            'delayed':   { label: 'Delayed',   class: 'danger',     icon: 'fas fa-exclamation-triangle' },
+            'cancelled': { label: 'Cancelled', class: 'secondary',  icon: 'fas fa-times-circle' }
+        };
+        const info = statusMap[status] || { label: status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' '), class: 'secondary', icon: 'fas fa-question-circle' };
+        statusBadge.innerHTML = `<i class='${info.icon} me-1'></i>${info.label}`;
+        statusBadge.className = `badge status-badge bg-${info.class} py-2 px-3`;
     }
 
     // Open status edit modal
@@ -64,39 +72,70 @@ document.addEventListener('DOMContentLoaded', function() {
                 <label for='status-remarks' class='form-label'>Remarks (optional)</label>
                 <textarea class='form-control' id='status-remarks' name='remarks' rows='2'></textarea>
             </div>`;
-        // Only show hold fields if status is 'on_hold'
+        // Hold fields (initially rendered if status is 'on_hold')
+        let holdFields = `<div id='hold-point-fields'>
+            <div class='mb-3'>
+                <label for='hold-reason' class='form-label'>Hold Reason</label>
+                <input type='text' class='form-control' id='hold-reason' name='reason' value='${hold.reason || ''}' required />
+            </div>
+            <div class='mb-3'>
+                <label for='hold-remarks' class='form-label'>Hold Remarks (optional)</label>
+                <textarea class='form-control' id='hold-remarks' name='hold_remarks' rows='2'>${hold.remarks || ''}</textarea>
+            </div>
+        </div>`;
         if (status === 'on_hold') {
-            html += `<div id='hold-point-fields'>
-                <div class='mb-3'>
-                    <label for='hold-reason' class='form-label'>Hold Reason</label>
-                    <input type='text' class='form-control' id='hold-reason' name='reason' value='${hold.reason || ''}' required />
-                </div>
-                <div class='mb-3'>
-                    <label for='hold-remarks' class='form-label'>Hold Remarks (optional)</label>
-                    <textarea class='form-control' id='hold-remarks' name='hold_remarks' rows='2'>${hold.remarks || ''}</textarea>
-                </div>
-            </div>`;
+            html += holdFields;
         }
-        html += `<button type='submit' class='btn btn-primary'>Save</button>
+        html += `<button type='submit' class='btn btn-primary mt-2'>Save</button>
         </form>`;
         editModalBody.innerHTML = html;
+
+        // Move hold fields above the Save button dynamically
+        function showHoldFields() {
+            let form = document.getElementById('edit-status-form');
+            let saveBtn = form.querySelector("button[type='submit']");
+            let holdDiv = document.getElementById('hold-point-fields');
+            if (!holdDiv) {
+                // Insert holdFields above the Save button
+                saveBtn.insertAdjacentHTML('beforebegin', holdFields);
+                holdDiv = document.getElementById('hold-point-fields');
+            } else {
+                holdDiv.style.display = '';
+            }
+            // Enable and require the hold reason input
+            let reasonInput = document.getElementById('hold-reason');
+            if (reasonInput) {
+                reasonInput.disabled = false;
+                reasonInput.required = true;
+            }
+        }
+        function hideHoldFields() {
+            let holdDiv = document.getElementById('hold-point-fields');
+            if (holdDiv) {
+                holdDiv.style.display = 'none';
+                // Disable and unrequire the hold reason input
+                let reasonInput = document.getElementById('hold-reason');
+                if (reasonInput) {
+                    reasonInput.disabled = true;
+                    reasonInput.required = false;
+                }
+            }
+        }
         // Show/hide hold fields on status change
         const statusSelect = document.getElementById('status-select');
         statusSelect.addEventListener('change', (e) => {
-            const holdFields = document.getElementById('hold-point-fields');
             if (e.target.value === 'on_hold') {
-                if (!holdFields) {
-                    const div = document.createElement('div');
-                    div.id = 'hold-point-fields';
-                    div.innerHTML = `<div class='mb-3'><label for='hold-reason' class='form-label'>Hold Reason</label><input type='text' class='form-control' id='hold-reason' name='reason' required /></div><div class='mb-3'><label for='hold-remarks' class='form-label'>Hold Remarks (optional)</label><textarea class='form-control' id='hold-remarks' name='hold_remarks' rows='2'></textarea></div>`;
-                    statusSelect.parentNode.parentNode.appendChild(div);
-                } else {
-                    holdFields.style.display = '';
-                }
-            } else if (holdFields) {
-                holdFields.style.display = 'none';
+                showHoldFields();
+            } else {
+                hideHoldFields();
             }
         });
+        // Initial state
+        if (status === 'on_hold') {
+            showHoldFields();
+        } else {
+            hideHoldFields();
+        }
         // Submit handler
         document.getElementById('edit-status-form').addEventListener('submit', function(e) {
             e.preventDefault();

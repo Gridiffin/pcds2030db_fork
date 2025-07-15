@@ -23,6 +23,7 @@ require_once ROOT_PATH . 'app/lib/agencies/program_attachments.php';
 require_once ROOT_PATH . 'app/lib/agencies/program_permissions.php';
 require_once ROOT_PATH . 'app/lib/agencies/program-details/data-processor.php';
 require_once ROOT_PATH . 'app/lib/agencies/program-details/error-handler.php';
+require_once ROOT_PATH . 'app/lib/program_status_helpers.php';
 
 // Verify user is an agency
 if (!is_agency()) {
@@ -211,23 +212,9 @@ $header_config = [
 // Include modern page header
 require_once '../../layouts/page_header.php';
 
-// Define status mapping for display using new rating system
-$status_map = [
-    'not_started' => ['label' => 'Not Started', 'class' => 'secondary', 'icon' => 'fas fa-hourglass-start'],
-    'on_track_for_year' => ['label' => 'On Track for Year', 'class' => 'warning', 'icon' => 'fas fa-calendar-check'],
-    'monthly_target_achieved' => ['label' => 'Monthly Target Achieved', 'class' => 'success', 'icon' => 'fas fa-check-circle'],
-    'severe_delay' => ['label' => 'Severe Delays', 'class' => 'danger', 'icon' => 'fas fa-exclamation-triangle']
-];
-
-// Convert status for display using new rating system
-if ($has_submissions) {
-    $status = $rating;
-    if (!isset($status_map[$status])) {
-        $status = 'not_started';
-    }
-} else {
-    $status = 'not_started';
-}
+// Use the status from the programs table
+$status = isset($program['status']) ? $program['status'] : 'active';
+$status_info = get_program_status_info($status);
 
 // Initialize alert flags
 $showDraftAlert = $is_draft && $is_owner;
@@ -258,11 +245,6 @@ if (!empty($targets)) {
 $showNoTargetsAlert = $has_submissions && !$has_targets && $is_owner;
 $showNoSubmissionsAlert = !$has_submissions; // Show for all users, but action link only for editors
 ?>
-<div class="program-status-indicator mb-3">
-  <span id="program-status-badge" class="status-badge"></span>
-  <span id="hold-point-info" class="ms-3"></span>
-  <button class="btn btn-outline-secondary btn-sm ms-2" id="view-status-history-btn"><i class="fas fa-history"></i> Status History</button>
-</div>
 
 <!-- Status History Modal -->
 <div class="modal fade" id="statusHistoryModal" tabindex="-1" aria-labelledby="statusHistoryModalLabel" aria-hidden="true">
@@ -330,9 +312,9 @@ $showNoSubmissionsAlert = !$has_submissions; // Show for all users, but action l
                         <i class="fas fa-clipboard-list me-2"></i>Program Information
                     </h5>
                     <div class="status-indicators">
-                        <span class="badge status-badge bg-<?php echo $status_map[$status]['class']; ?> py-2 px-3">
-                            <i class="<?php echo $status_map[$status]['icon']; ?> me-1"></i> 
-                            <?php echo $status_map[$status]['label']; ?>
+                        <span class="badge status-badge bg-<?php echo $status_info['class']; ?> py-2 px-3">
+                            <i class="<?php echo $status_info['icon']; ?> me-1"></i> 
+                            <?php echo $status_info['label']; ?>
                         </span>
                         <?php if ($is_draft): ?>
                         <span class="badge bg-warning text-dark ms-2" title="Latest submission is in draft status">
@@ -367,6 +349,22 @@ $showNoSubmissionsAlert = !$has_submissions; // Show for all users, but action l
                                         <?php else: ?>
                                             <span class="text-muted">Not specified</span>
                                         <?php endif; ?>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="info-item">
+                                <div class="info-icon">
+                                    <i class="fas fa-circle-notch text-primary"></i>
+                                </div>
+                                <div class="info-content">
+                                    <div class="info-label">Status</div>
+                                    <div class="info-value">
+                                        <span class="badge status-badge bg-<?php echo $status_info['class']; ?> py-2 px-3">
+                                            <i class="<?php echo $status_info['icon']; ?> me-1"></i>
+                                            <?php echo $status_info['label']; ?>
+                                        </span>
                                     </div>
                                 </div>
                             </div>

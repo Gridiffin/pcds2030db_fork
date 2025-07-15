@@ -172,6 +172,11 @@ This file documents the plan, progress, and TODOs for upcoming changes to the pr
 - [x] Agency program details view: status indicator, hold point, modals
 - [x] JS logic for AJAX, UI, and modals
 - [x] CSS for badges, hold info, and modals
+- [x] Correct status indicator to use the 'status' field from the programs table (not 'rating')
+    - Updated `app/views/agency/programs/program_details.php` to use `$program['status']` and mapped to the correct ENUM values for display.
+    - Adjusted status mapping to match ENUM: active, on_hold, completed, delayed, cancelled.
+    - Ensured badge and all status displays use this field.
+- [x] Update `edit_program.php` to use `program_status_helpers.php` for status badge rendering. Status badge is now consistent and uses the centralized helper.
 
 ### Next Steps: Testing & Documentation
 - [ ] Test all status/hold point workflows (change, hold, resume, complete, cancel, delayed)
@@ -213,3 +218,16 @@ All core features for the agency-side program status indicator and hold point ma
 - [ ] Ensure Bootstrap JS and CSS are loaded
 - [ ] Test all workflows and UI/UX
 - [ ] Update documentation and mark tasks as complete 
+
+---
+
+## Refactor Status Helpers for New Program Status Schema
+
+- [x] Refactor `app/lib/status_helpers.php` to:
+    - Map both legacy and new status values (active, on_hold, completed, delayed, cancelled) to display label, class, and icon.
+    - Provide a new function `get_program_status_info($status)` returning an array: label, class, icon.
+    - Ensure backward compatibility for `get_status_display_name` and `get_status_label`.
+- [x] Update all status badge logic in program views to use the new helper.
+    - Updated `program_details.php` to use `get_program_status_info`.
+    - All status badge logic is now centralized and reusable for other files. 
+- [x] Rename `status_helpers.php` to `program_status_helpers.php` for clarity and update all references in the codebase.
