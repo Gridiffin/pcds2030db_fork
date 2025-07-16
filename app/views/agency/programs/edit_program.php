@@ -22,6 +22,7 @@ require_once PROJECT_ROOT_PATH . 'lib/agencies/program_permissions.php';
 require_once PROJECT_ROOT_PATH . 'lib/initiative_functions.php';
 require_once PROJECT_ROOT_PATH . 'lib/numbering_helpers.php';
 require_once PROJECT_ROOT_PATH . 'lib/rating_helpers.php';
+require_once PROJECT_ROOT_PATH . 'lib/program_status_helpers.php';
 
 // Verify user is an agency
 if (!is_agency()) {
@@ -178,11 +179,25 @@ require_once '../../layouts/page_header.php';
 
             <!-- Simple Program Editing Form -->
             <div class="card shadow-sm mb-4 w-100">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-edit me-2"></i>
-                        Edit Program Information
-                    </h5>
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <h5 class="card-title mb-0 me-3">
+                            <i class="fas fa-edit me-2"></i>
+                            Edit Program Information
+                        </h5>
+                        <?php 
+                        $status = isset($program['status']) ? $program['status'] : 'active';
+                        $status_info = get_program_status_info($status);
+                        ?>
+                        <span id="program-status-badge" class="badge status-badge bg-<?php echo $status_info['class']; ?> py-2 px-3">
+                            <i class="<?php echo $status_info['icon']; ?> me-1"></i>
+                            <?php echo $status_info['label']; ?>
+                        </span>
+                    </div>
+                    <div>
+                        <button class="btn btn-outline-primary btn-sm me-2" id="edit-status-btn">Change Status</button>
+                        <button class="btn btn-outline-secondary btn-sm" id="view-status-history-btn">Status History</button>
+                    </div>
                 </div>
                 <div class="card-body">
                     <form method="post" id="editProgramForm">
@@ -343,6 +358,33 @@ require_once '../../layouts/page_header.php';
                                     </div>
                                 </div>
 
+                                <!-- Hold Point Management Section -->
+                                <div class="card shadow-sm mt-3" id="holdPointManagementSection" style="<?php echo ($program['status'] ?? '') === 'on_hold' ? '' : 'display:none;'; ?>">
+                                    <div class="card-header bg-warning text-dark">
+                                        <h6 class="card-title mb-0">
+                                            <i class="fas fa-pause-circle me-2"></i>
+                                            Hold Point Management
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="holdPointForm">
+                                            <input type="hidden" id="holdPointId" name="hold_point_id">
+                                            <div class="mb-3">
+                                                <label for="hold_reason" class="form-label">Reason for Hold</label>
+                                                <input type="text" class="form-control" id="hold_reason" name="reason" placeholder="Enter the reason for the hold">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="hold_remarks" class="form-label">Remarks</label>
+                                                <textarea class="form-control" id="hold_remarks" name="hold_remarks" rows="2" placeholder="Additional remarks (optional)"></textarea>
+                                            </div>
+                                            <div class="d-flex justify-content-end">
+                                                <button type="button" class="btn btn-primary btn-sm me-2" id="updateHoldPointBtn">Update Hold Point</button>
+                                                <button type="button" class="btn btn-danger btn-sm" id="endHoldPointBtn">End Hold Point</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+
                                 <!-- User Permissions Section - Only shown to program owners, focal users, and admins -->
                                 <?php
                                 // Check if current user can modify user permissions (must be program owner or focal)
@@ -477,6 +519,44 @@ require_once '../../layouts/page_header.php';
         </div>
     </div>
 </div>
+
+<!-- Minimal Status History Modal -->
+<div class="modal fade" id="statusHistoryModal" tabindex="-1" aria-labelledby="statusHistoryModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="statusHistoryModalLabel">Program Status History</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="status-history-modal-body">
+        <!-- Status history will be loaded here by JS -->
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Minimal Status Edit Modal -->
+<div class="modal fade" id="editStatusModal" tabindex="-1" aria-labelledby="editStatusModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editStatusModalLabel">Change Program Status</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="edit-status-modal-body">
+        <!-- Status edit form will be loaded here by JS -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Status/Hold Point CSS and JS for Edit Program Page -->
+<link rel="stylesheet" href="<?php echo APP_URL; ?>/assets/css/components/program-details.css">
+<!-- Ensure Bootstrap JS is loaded (assume it's included in footer or layout) -->
+<script>
+    window.programId = <?php echo json_encode($program_id); ?>;
+    window.APP_URL = '<?php echo APP_URL; ?>';
+</script>
+<script src="<?php echo APP_URL; ?>/assets/js/agency/edit_program_status.js"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

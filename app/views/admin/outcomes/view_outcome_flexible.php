@@ -13,7 +13,7 @@ require_once ROOT_PATH . 'app/lib/functions.php';
 require_once ROOT_PATH . 'app/lib/admins/outcomes.php';
 require_once ROOT_PATH . 'app/lib/admins/index.php';
 require_once ROOT_PATH . 'app/lib/admins/users.php';
-require_once ROOT_PATH . 'app/lib/status_helpers.php';
+require_once ROOT_PATH . 'app/lib/program_status_helpers.php';
 require_once ROOT_PATH . 'app/lib/rating_helpers.php';
 
 // Verify user is an admin

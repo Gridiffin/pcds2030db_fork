@@ -23,6 +23,7 @@ require_once ROOT_PATH . 'app/lib/agencies/program_attachments.php';
 require_once ROOT_PATH . 'app/lib/agencies/program_permissions.php';
 require_once ROOT_PATH . 'app/lib/agencies/program-details/data-processor.php';
 require_once ROOT_PATH . 'app/lib/agencies/program-details/error-handler.php';
+require_once ROOT_PATH . 'app/lib/program_status_helpers.php';
 
 // Verify user is an agency
 if (!is_agency()) {
@@ -47,17 +48,25 @@ if (!$program_id) {
 $program = get_program_details($program_id, true);
 
 // Check permissions using new system
-$allow_view = can_view_program($program_id);
-$can_edit = can_edit_program($program_id);
-$is_owner = is_program_owner($program_id);
-
-if (!$allow_view) {
-    $_SESSION['message'] = 'You do not have permission to view this program.';
-    $_SESSION['message_type'] = 'danger';
-    header('Location: view_programs.php');
-    exit;
-}
-
+// $allow_view = can_view_program($program_id);
+// $can_edit = can_edit_program($program_id);
+// $is_owner = is_program_owner($program_id);
+//
+// if (!$allow_view) {
+//     $_SESSION['message'] = 'You do not have permission to view this program.';
+//     $_SESSION['message_type'] = 'danger';
+//     header('Location: view_programs.php');
+//     exit;
+// }
+//
+// if (!$program) {
+//     $_SESSION['message'] = 'Program not found.';
+//     $_SESSION['message_type'] = 'danger';
+//     header('Location: view_programs.php');
+//     exit;
+// }
+//
+// Instead, just check if the program exists:
 if (!$program) {
     $_SESSION['message'] = 'Program not found.';
     $_SESSION['message_type'] = 'danger';
@@ -72,9 +81,9 @@ $program_attachments = get_program_attachments($program_id);
 $related_programs = [];
 if (!empty($program['initiative_id'])) {
     $related_programs = get_related_programs_by_initiative(
-        $program['initiative_id'], 
-        $program_id, 
-        $source === 'all_sectors'
+        $program['initiative_id'],
+        $program_id,
+        true // Always allow cross-agency viewing
     );
 }
 
@@ -151,6 +160,10 @@ $latest_by_period = $program['latest_submissions_by_period'] ?? [];
 // Get submission history for timeline
 $submission_history = get_program_edit_history($program_id);
 
+// Define edit/owner variables for use in the view
+$can_edit = can_edit_program($program_id);
+$is_owner = is_program_owner($program_id);
+
 // Set page title
 $pageTitle = 'Enhanced Program Details';
 
@@ -199,23 +212,9 @@ $header_config = [
 // Include modern page header
 require_once '../../layouts/page_header.php';
 
-// Define status mapping for display using new rating system
-$status_map = [
-    'not_started' => ['label' => 'Not Started', 'class' => 'secondary', 'icon' => 'fas fa-hourglass-start'],
-    'on_track_for_year' => ['label' => 'On Track for Year', 'class' => 'warning', 'icon' => 'fas fa-calendar-check'],
-    'monthly_target_achieved' => ['label' => 'Monthly Target Achieved', 'class' => 'success', 'icon' => 'fas fa-check-circle'],
-    'severe_delay' => ['label' => 'Severe Delays', 'class' => 'danger', 'icon' => 'fas fa-exclamation-triangle']
-];
-
-// Convert status for display using new rating system
-if ($has_submissions) {
-    $status = $rating;
-    if (!isset($status_map[$status])) {
-        $status = 'not_started';
-    }
-} else {
-    $status = 'not_started';
-}
+// Use the status from the programs table
+$status = isset($program['status']) ? $program['status'] : 'active';
+$status_info = get_program_status_info($status);
 
 // Initialize alert flags
 $showDraftAlert = $is_draft && $is_owner;
@@ -247,6 +246,36 @@ $showNoTargetsAlert = $has_submissions && !$has_targets && $is_owner;
 $showNoSubmissionsAlert = !$has_submissions; // Show for all users, but action link only for editors
 ?>
 
+<!-- Status History Modal -->
+<div class="modal fade" id="statusHistoryModal" tabindex="-1" aria-labelledby="statusHistoryModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="statusHistoryModalLabel">Program Status History</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="status-history-modal-body">
+        <!-- Status history will be loaded here by JS -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Status Edit Modal (for owner/focal) -->
+<div class="modal fade" id="editStatusModal" tabindex="-1" aria-labelledby="editStatusModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editStatusModalLabel">Change Program Status</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="edit-status-modal-body">
+        <!-- Status edit form will be loaded here by JS -->
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Toast Notifications -->
 <?php if ($showDraftAlert): ?>
 <script>
@@ -263,32 +292,10 @@ $showNoSubmissionsAlert = !$has_submissions; // Show for all users, but action l
 </script>
 <?php endif; ?>
 
-<?php if ($showNoTargetsAlert): ?>
+<?php if ($has_submissions && !$is_draft): ?>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        <?php if ($can_edit): ?>
-        showToastWithAction('No Targets', 'No targets have been added for this program.', 'info', 10000, {
-            text: 'Add Targets',
-            url: '<?= APP_URL ?>/app/views/agency/programs/edit_program.php?id=<?= $program_id ?>'
-        });
-        <?php else: ?>
-        showToast('No Targets', 'This program does not have any targets defined yet.', 'info', 8000);
-        <?php endif; ?>
-    });
-</script>
-<?php endif; ?>
-
-<?php if ($showNoSubmissionsAlert): ?>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        <?php if ($can_edit): ?>
-        showToastWithAction('Program Template', 'This program is a template.', 'info', 10000, {
-            text: 'Add Progress Report',
-            url: '<?= APP_URL ?>/app/views/agency/programs/add_submission.php?program_id=<?= $program_id ?>'
-        });
-        <?php else: ?>
-        showToast('Program Template', 'This program is a template. No progress reports have been added yet.', 'info', 8000);
-        <?php endif; ?>
+        showToast('Finalized', 'This program\'s latest progress report is finalized.', 'success', 8000);
     });
 </script>
 <?php endif; ?>
@@ -305,9 +312,9 @@ $showNoSubmissionsAlert = !$has_submissions; // Show for all users, but action l
                         <i class="fas fa-clipboard-list me-2"></i>Program Information
                     </h5>
                     <div class="status-indicators">
-                        <span class="badge status-badge bg-<?php echo $status_map[$status]['class']; ?> py-2 px-3">
-                            <i class="<?php echo $status_map[$status]['icon']; ?> me-1"></i> 
-                            <?php echo $status_map[$status]['label']; ?>
+                        <span class="badge status-badge bg-<?php echo $status_info['class']; ?> py-2 px-3">
+                            <i class="<?php echo $status_info['icon']; ?> me-1"></i> 
+                            <?php echo $status_info['label']; ?>
                         </span>
                         <?php if ($is_draft): ?>
                         <span class="badge bg-warning text-dark ms-2" title="Latest submission is in draft status">
@@ -342,6 +349,22 @@ $showNoSubmissionsAlert = !$has_submissions; // Show for all users, but action l
                                         <?php else: ?>
                                             <span class="text-muted">Not specified</span>
                                         <?php endif; ?>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="info-item">
+                                <div class="info-icon">
+                                    <i class="fas fa-circle-notch text-primary"></i>
+                                </div>
+                                <div class="info-content">
+                                    <div class="info-label">Status</div>
+                                    <div class="info-value">
+                                        <span class="badge status-badge bg-<?php echo $status_info['class']; ?> py-2 px-3">
+                                            <i class="<?php echo $status_info['icon']; ?> me-1"></i>
+                                            <?php echo $status_info['label']; ?>
+                                        </span>
                                     </div>
                                 </div>
                             </div>
@@ -443,6 +466,72 @@ $showNoSubmissionsAlert = !$has_submissions; // Show for all users, but action l
                 </div>
             </div>
 
+            <!-- Hold Point Management Table (Read-only) -->
+            <?php
+            // Fetch all hold points for this program (read-only, same as API logic)
+            $hold_points = [];
+            if (isset($program_id) && $program_id) {
+                $stmt = $conn->prepare('SELECT id, reason, remarks, created_at, ended_at, created_by FROM program_hold_points WHERE program_id = ? ORDER BY created_at ASC');
+                $stmt->bind_param('i', $program_id);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                while ($row = $result->fetch_assoc()) $hold_points[] = $row;
+                $stmt->close();
+            }
+            ?>
+            <div class="card shadow-sm my-4" id="holdPointHistorySection">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-pause-circle me-2"></i>Hold Point History
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <?php if (!empty($hold_points)): ?>
+                        <div class="table-responsive">
+                            <table class="table table-striped mb-0 align-middle small">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Reason</th>
+                                        <th>Remarks</th>
+                                        <th>Start Date</th>
+                                        <th>End Date</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($hold_points as $hp): ?>
+                                        <tr>
+                                            <td><?php echo htmlspecialchars($hp['reason'] ?? ''); ?></td>
+                                            <td><?php echo htmlspecialchars($hp['remarks'] ?? ''); ?></td>
+                                            <td><span class="text-nowrap"><?php echo date('M j, Y H:i', strtotime($hp['created_at'])); ?></span></td>
+                                            <td>
+                                                <?php if ($hp['ended_at']): ?>
+                                                    <span class="text-nowrap"><?php echo date('M j, Y H:i', strtotime($hp['ended_at'])); ?></span>
+                                                <?php else: ?>
+                                                    <span class="text-muted">--</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td>
+                                                <?php if (!$hp['ended_at']): ?>
+                                                    <span class="badge bg-warning text-dark">Active</span>
+                                                <?php else: ?>
+                                                    <span class="badge bg-secondary">Ended</span>
+                                                <?php endif; ?>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php else: ?>
+                        <div class="text-center text-muted p-4">
+                            <i class="fas fa-folder-open fa-2x mb-2"></i>
+                            <div>No hold points recorded for this program.</div>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+
             <!-- Quick Actions Section -->
             <?php if ($can_edit): ?>
             <div class="card quick-actions-card shadow-sm mb-4">
@@ -469,7 +558,7 @@ $showNoSubmissionsAlert = !$has_submissions; // Show for all users, but action l
                     <?php if ($has_submissions): ?>
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <?php if ($allow_view): ?>
+                            <?php if ($can_edit): ?>
                                 <?php if ($has_submissions && isset($latest_submission['period_id'])): ?>
                                     <button type="button" class="btn btn-outline-success w-100" data-bs-toggle="modal" data-bs-target="#viewSubmissionModal">
                                         <i class="fas fa-eye me-2"></i>View Submission
@@ -626,18 +715,20 @@ $showNoSubmissionsAlert = !$has_submissions; // Show for all users, but action l
                     </h6>
                 </div>
                 <div class="card-body">
-                    <?php foreach ($related_programs as $related): ?>
-                        <div class="related-program-item mb-2 d-flex align-items-center justify-content-between">
+                    <?php foreach ($related_programs as $rel_prog): ?>
+                        <div class="mb-2 p-2 border rounded bg-light d-flex align-items-center justify-content-between">
                             <div>
-                                <div class="related-program-name small fw-medium"><?php echo htmlspecialchars($related['program_name']); ?></div>
-                                <div class="related-program-meta text-muted small">
-                                    <?php if (!empty($related['program_number'])): ?>
-                                        <?php echo htmlspecialchars($related['program_number']); ?> •
+                                <span class="fw-semibold"><?php echo htmlspecialchars($rel_prog['program_name']); ?></span>
+                                <div class="text-muted small mt-1">
+                                    <?php echo htmlspecialchars($rel_prog['program_number']); ?>
+                                    &bull;
+                                    <?php echo htmlspecialchars($rel_prog['agency_name']); ?>
+                                    <?php if ($rel_prog['agency_id'] == ($_SESSION['agency_id'] ?? null)): ?>
+                                        <span class="badge bg-success ms-2"><i class="fas fa-star me-1"></i>Your Program</span>
                                     <?php endif; ?>
-                                    <?php echo htmlspecialchars($related['agency_name']); ?>
                                 </div>
                             </div>
-                            <a href="<?php echo APP_URL; ?>/app/views/agency/programs/program_details.php?id=<?php echo $related['program_id']; ?>" class="btn btn-sm btn-outline-primary ms-2" title="View Details">
+                            <a href="program_details.php?id=<?php echo (int)$rel_prog['program_id']; ?>" class="btn btn-outline-primary btn-sm ms-2">
                                 <i class="fas fa-eye"></i> View Details
                             </a>
                         </div>

@@ -56,12 +56,13 @@ $latest_ratings_sql = "
         p.program_id,
         p.program_name,
         p.program_number,
-        p.owner_agency_id,
-        u.agency_name,
+        p.agency_id,
+        a.agency_name,
         p.rating,
-        p.updated_at
+        p.updated_at,
+        p.status
     FROM programs p
-    LEFT JOIN users u ON p.owner_agency_id = u.user_id
+    LEFT JOIN agency a ON p.agency_id = a.agency_id
     WHERE p.initiative_id = ?
     ORDER BY p.program_id
 ";
@@ -75,7 +76,7 @@ while ($row = $result->fetch_assoc()) {
     $programs[] = $row;
 }
 
-// Calculate initiative health score based on program performance
+// Calculate initiative health score based on program status (not rating)
 $health_score = 50; // Default neutral score
 $health_description = 'No Data';
 $health_color = '#6c757d';
@@ -85,25 +86,43 @@ if (!empty($programs)) {
     $score_sum = 0;
     
     foreach ($programs as $program) {
-        $status = convert_legacy_rating($program['rating'] ?? 'not_started');
-        
+        $status = $program['status'] ?? 'active';
+        // Normalize status using helper
+        require_once PROJECT_ROOT_PATH . 'lib/program_status_helpers.php';
+        $normalized = [
+            'not-started' => 'active',
+            'not_started' => 'active',
+            'on-track' => 'active',
+            'on-track-yearly' => 'active',
+            'target-achieved' => 'completed',
+            'monthly_target_achieved' => 'completed',
+            'severe-delay' => 'delayed',
+            'severe_delay' => 'delayed',
+            'delayed' => 'delayed',
+            'completed' => 'completed',
+            'cancelled' => 'cancelled',
+            'on_hold' => 'on_hold',
+            'active' => 'active',
+        ];
+        $status = $normalized[$status] ?? $status;
         // Assign scores based on status
         switch ($status) {
-            case 'target-achieved':
             case 'completed':
                 $score_sum += 100;
                 break;
-            case 'on-track':
-            case 'on-track-yearly':
+            case 'active':
                 $score_sum += 75;
                 break;
-            case 'delayed':
+            case 'on_hold':
                 $score_sum += 50;
                 break;
-            case 'severe-delay':
+            case 'delayed':
                 $score_sum += 25;
                 break;
-            default: // not-started
+            case 'cancelled':
+                $score_sum += 10;
+                break;
+            default:
                 $score_sum += 10;
                 break;
         }
@@ -116,10 +135,10 @@ if (!empty($programs)) {
         $health_description = 'Excellent - Programs performing well';
         $health_color = '#28a745';
     } elseif ($health_score >= 60) {
-        $health_description = 'Good - Based on program performance';
+        $health_description = 'Good - Most programs are active';
         $health_color = '#28a745';
     } elseif ($health_score >= 40) {
-        $health_description = 'Fair - Some programs need attention';
+        $health_description = 'Fair - Some programs on hold or delayed';
         $health_color = '#ffc107';
     } else {
         $health_description = 'Poor - Programs need improvement';
@@ -306,7 +325,12 @@ require_once '../../layouts/page_header.php';
                         <div class="health-score-label">Health</div>
                     </div>
                 </div>
-                <div class="metric-label">Overall Initiative Health</div>
+                <div class="metric-label d-flex align-items-center justify-content-center">
+                    Overall Initiative Health
+                    <span class="ms-2" tabindex="0" data-bs-toggle="popover" data-bs-trigger="focus hover" data-bs-placement="top" data-bs-html="true" title="How is Health Calculated?" data-bs-content="The health score is an average of all program statuses under this initiative.<br><br><strong>Scoring:</strong><br>- <strong>Completed:</strong> 100<br>- <strong>Active:</strong> 75<br>- <strong>On Hold:</strong> 50<br>- <strong>Delayed:</strong> 25<br>- <strong>Cancelled:</strong> 10<br><br>Higher scores mean better overall program performance.">
+                        <i class="fas fa-info-circle text-secondary" style="cursor:pointer;"></i>
+                    </span>
+                </div>
                 <div class="health-description" style="color: <?php echo $health_color; ?>;">
                     <i class="fas fa-check-circle"></i>
                     <?php echo $health_description; ?>
@@ -320,7 +344,7 @@ require_once '../../layouts/page_header.php';
                 <div class="metric-label">Current Status</div>
                 <div class="status-programs">
                     <i class="fas fa-star"></i>
-                    <?php echo $initiative['agency_program_count']; ?> programs running
+                    <?php echo $initiative['agency_program_count']; ?> programs included
                 </div>
             </div>
         </div>
@@ -528,6 +552,14 @@ require_once '../../layouts/page_header.php';
             <div class="card-body">
                 <?php if (!empty($programs)): ?>
                     <div class="programs-list" style="max-height: 500px; overflow-y: auto;">
+                        <?php
+                        // Set ownership flag for each program
+                        $current_agency_id = $_SESSION['agency_id'] ?? null;
+                        foreach ($programs as &$program) {
+                            $program['is_owned_by_agency'] = ($program['agency_id'] == $current_agency_id);
+                        }
+                        unset($program); // break reference
+                        ?>
                         <?php foreach ($programs as $program): ?>
                             <div class="program-item mb-3 <?php echo $program['is_owned_by_agency'] ? 'owned' : 'other-agency'; ?>">
                                 <div class="d-flex justify-content-between align-items-start">
@@ -552,36 +584,19 @@ require_once '../../layouts/page_header.php';
                                     </div>
                                     <div class="ms-2">
                                         <?php
-                                        $status = convert_legacy_rating($program['rating'] ?? 'not_started');
-                                        $status_colors = [
-                                            'target-achieved' => 'success',
-                                            'on-track' => 'warning',
-                                            'on-track-yearly' => 'warning',
-                                            'delayed' => 'danger',
-                                            'severe-delay' => 'danger',
-                                            'not-started' => 'secondary'
-                                        ];
-                                        $color_class = $status_colors[$status] ?? 'secondary';
+                                        // Use the rating helper to render the status badge
+                                        echo get_rating_badge($program['rating'] ?? 'not_started');
                                         ?>
-                                        <span class="badge bg-<?php echo $color_class; ?>" style="font-size: 0.7em;">
-                                            <?php echo ucfirst(str_replace('-', ' ', $status)); ?>
-                                        </span>
                                     </div>
                                 </div>
-                                <?php if ($program['is_owned_by_agency']): ?>
-                                    <div class="mt-2">
-                                        <a href="../programs/program_details.php?id=<?php echo $program['program_id']; ?>" 
-                                           class="btn btn-outline-primary btn-sm">
-                                            <i class="fas fa-eye me-1"></i>View Details
-                                        </a>
-                                    </div>
-                                <?php else: ?>
-                                    <div class="mt-2">
-                                        <span class="text-muted small">
-                                            <i class="fas fa-lock me-1"></i>View-only (other agency)
-                                        </span>
-                                    </div>
-                                <?php endif; ?>
+                                <div class="d-flex align-items-center mt-2">
+                                    <?php if (!$program['is_owned_by_agency']): ?>
+                                        <span class="text-muted small me-2"><i class="fas fa-lock"></i> View-only (other agency)</span>
+                                    <?php endif; ?>
+                                    <a href="../programs/program_details.php?id=<?php echo (int)$program['program_id']; ?>" class="btn btn-outline-primary btn-sm ms-auto">
+                                        <i class="fas fa-eye me-1"></i> View Details
+                                    </a>
+                                </div>
                             </div>
                         <?php endforeach; ?>
                     </div>
@@ -608,22 +623,23 @@ require_once '../../layouts/page_header.php';
                 
                 // Query for recent program-related activities for this initiative
                 $activity_sql = "SELECT 
-                    al.action,
-                    al.details,
-                    al.created_at,
-                    al.user_id,
-                    u.agency_name,
-                    u.username
-                FROM audit_logs al
-                JOIN users u ON al.user_id = u.user_id
-                WHERE al.action IN (
-                    'program_submitted', 'program_draft_saved', 'update_program', 
-                    'outcome_updated', 'outcome_submitted', 'admin_program_edited',
-                    'program_finalized', 'resubmit_program'
-                )
-                AND al.details REGEXP 'Program (ID|Name):'
-                ORDER BY al.created_at DESC
-                LIMIT 15";
+    al.action,
+    al.details,
+    al.created_at,
+    al.user_id,
+    a.agency_name,
+    u.username
+FROM audit_logs al
+JOIN users u ON al.user_id = u.user_id
+LEFT JOIN agency a ON u.agency_id = a.agency_id
+WHERE al.action IN (
+    'program_submitted', 'program_draft_saved', 'update_program', 
+    'outcome_updated', 'outcome_submitted', 'admin_program_edited',
+    'program_finalized', 'resubmit_program'
+)
+AND al.details REGEXP 'Program (ID|Name):'
+ORDER BY al.created_at DESC
+LIMIT 15";
                 
                 $stmt = $conn->prepare($activity_sql);
                 $stmt->execute();
@@ -878,7 +894,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+    popoverTriggerList.forEach(function (popoverTriggerEl) {
+        new bootstrap.Popover(popoverTriggerEl);
+    });
+});
+</script>
 
 
 <?php

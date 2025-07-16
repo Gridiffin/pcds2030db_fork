@@ -52,55 +52,52 @@ function get_agency_initiatives($agency_id = null, $filters = []) {
     global $initiativeIdCol, $initiativeNameCol, $initiativeNumberCol, $initiativeDescriptionCol, $initiativeIsActiveCol;
     global $programIdCol, $programInitiativeIdCol, $programAgencyIdCol;
     
-    // Use current session agency if no agency_id provided
     if ($agency_id === null) {
         $agency_id = $_SESSION['agency_id'];
     }
-    
-    $where_conditions = ["p.{$programAgencyIdCol} = ?"];
+
+    $where = ["p.{$programAgencyIdCol} = ?"];
     $params = [$agency_id];
-    $param_types = 'i';
-    
-    // Add filter conditions
+    $types = 'i';
+
     if (isset($filters['is_active'])) {
-        $where_conditions[] = "i.{$initiativeIsActiveCol} = ?";
+        $where[] = "i.{$initiativeIsActiveCol} = ?";
         $params[] = $filters['is_active'];
-        $param_types .= 'i';
+        $types .= 'i';
     }
-    
-    if (isset($filters['search']) && !empty($filters['search'])) {
-        $where_conditions[] = "(i.{$initiativeNameCol} LIKE ? OR i.{$initiativeNumberCol} LIKE ? OR i.{$initiativeDescriptionCol} LIKE ?)";
-        $search_term = '%' . $filters['search'] . '%';
-        $params[] = $search_term;
-        $params[] = $search_term;
-        $params[] = $search_term;
-        $param_types .= 'sss';
+    if (isset($filters['search']) && $filters['search'] !== '') {
+        $where[] = "(i.{$initiativeNameCol} LIKE ? OR i.{$initiativeNumberCol} LIKE ? OR i.{$initiativeDescriptionCol} LIKE ?)";
+        $search = '%' . $filters['search'] . '%';
+        $params[] = $search;
+        $params[] = $search;
+        $params[] = $search;
+        $types .= 'sss';
     }
-    
-    // Build query to get initiatives where agency has programs
-    $sql = "SELECT DISTINCT i.*, 
+    $where_sql = $where ? ('WHERE ' . implode(' AND ', $where)) : '';
+
+    $sql = "SELECT i.{$initiativeIdCol}, i.{$initiativeNameCol}, i.{$initiativeNumberCol}, i.{$initiativeDescriptionCol}, i.start_date, i.end_date, i.{$initiativeIsActiveCol},
                    COUNT(DISTINCT p.{$programIdCol}) as agency_program_count,
-                   COUNT(DISTINCT all_p.{$programIdCol}) as total_program_count
+                   (
+                       SELECT COUNT(DISTINCT all_p.{$programIdCol})
+                       FROM {$programsTable} all_p
+                       WHERE all_p.{$programInitiativeIdCol} = i.{$initiativeIdCol}
+                   ) as total_program_count
             FROM {$initiativesTable} i
-            INNER JOIN {$programsTable} p ON i.{$initiativeIdCol} = p.{$programInitiativeIdCol}
-            LEFT JOIN {$programsTable} all_p ON i.{$initiativeIdCol} = all_p.{$programInitiativeIdCol}
-            WHERE " . implode(' AND ', $where_conditions) . "
+            JOIN {$programsTable} p ON i.{$initiativeIdCol} = p.{$programInitiativeIdCol}
+            $where_sql
             GROUP BY i.{$initiativeIdCol}
-            ORDER BY i.{$initiativeNameCol} ASC";
-    
+            ORDER BY i.{$initiativeNumberCol} ASC";
+
     $stmt = $conn->prepare($sql);
     if (!empty($params)) {
-        $stmt->bind_param($param_types, ...$params);
+        $stmt->bind_param($types, ...$params);
     }
-    
     $stmt->execute();
     $result = $stmt->get_result();
-    
     $initiatives = [];
     while ($row = $result->fetch_assoc()) {
         $initiatives[] = $row;
     }
-    
     return $initiatives;
 }
 

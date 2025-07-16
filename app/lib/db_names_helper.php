@@ -13,55 +13,14 @@ function load_db_config() {
     static $db_names = null;
     
     if ($db_names === null) {
-        // Handle case where ROOT_PATH might not be defined yet
-        if (!defined('ROOT_PATH')) {
-            // Try to determine the path relative to this file
-            $config_path = dirname(__DIR__) . '/config/db_names.php';
-        } else {
-            $config_path = ROOT_PATH . 'app/config/db_names.php';
-        }
-        
-        error_log("DEBUG: Loading db_names from: " . $config_path);
-        error_log("DEBUG: ROOT_PATH defined: " . (defined('ROOT_PATH') ? 'Yes' : 'No'));
-        error_log("DEBUG: File exists: " . (file_exists($config_path) ? 'Yes' : 'No'));
-        
+        // Always use absolute path relative to this file
+        $config_path = __DIR__ . '/../config/db_names.php';
         if (file_exists($config_path)) {
-            $db_names = require_once $config_path;
-            error_log("DEBUG: Loaded db_names successfully");
+            $db_names = require $config_path;
+            error_log("[db_names_helper] Loaded db_names from: $config_path");
         } else {
-            // Fallback to hardcoded values if config file not found
-            error_log("DEBUG: Using fallback db_names configuration");
-            $db_names = [
-                'tables' => [
-                    'reporting_periods' => 'reporting_periods',
-                    'program_submissions' => 'program_submissions',
-                    'sectors' => 'sectors',
-                    'users' => 'users'
-                ],
-                'columns' => [
-                    'reporting_periods' => [
-                        'id' => 'period_id',
-                        'year' => 'year',
-                        'period_type' => 'period_type',
-                        'period_number' => 'period_number',
-                        'start_date' => 'start_date',
-                        'end_date' => 'end_date',
-                        'status' => 'status',
-                        'created_at' => 'created_at',
-                        'updated_at' => 'updated_at',
-                    ],
-                    'program_submissions' => [
-                        'period_id' => 'period_id'
-                    ],
-                    'sectors' => [
-                        'id' => 'sector_id'
-                    ],
-                    'users' => [
-                        'id' => 'user_id',
-                        'agency_name' => 'agency_name'
-                    ]
-                ]
-            ];
+            error_log("[db_names_helper] ERROR: db_names.php not found at $config_path");
+            $db_names = [];
         }
     }
     
@@ -86,7 +45,12 @@ function get_table_name($table_key) {
  */
 function get_column_name($table_key, $column_key) {
     $db_names = load_db_config();
-    return $db_names['columns'][$table_key][$column_key] ?? $column_key;
+    if (isset($db_names['columns'][$table_key][$column_key])) {
+        return $db_names['columns'][$table_key][$column_key];
+    } else {
+        error_log("[db_names_helper] Missing mapping for $table_key.$column_key, returning column_key as fallback");
+        return $column_key;
+    }
 }
 
 /**

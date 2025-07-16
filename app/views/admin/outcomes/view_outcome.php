@@ -13,7 +13,7 @@ require_once ROOT_PATH . 'app/lib/functions.php'; // Contains legacy functions
 require_once ROOT_PATH . 'app/lib/admins/outcomes.php'; // Contains updated outcome functions
 require_once ROOT_PATH . 'app/lib/admins/index.php'; // Contains is_admin
 require_once ROOT_PATH . 'app/lib/admins/users.php'; // Contains user information functions
-require_once ROOT_PATH . 'app/lib/status_helpers.php'; // For display_submission_status_badge
+require_once ROOT_PATH . 'app/lib/program_status_helpers.php'; // For display_submission_status_badge
 require_once ROOT_PATH . 'app/lib/rating_helpers.php'; // For display_overall_rating_badge
 
 // Verify user is an admin

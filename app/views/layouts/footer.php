@@ -13,6 +13,7 @@
             </div>
         </footer>
     </div> <!-- Close content-wrapper -->
+    <?php include_once __DIR__ . '/main_toast.php'; ?>
     
 <!-- JavaScript dependencies -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
