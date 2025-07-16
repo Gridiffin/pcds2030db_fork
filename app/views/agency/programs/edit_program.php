@@ -367,7 +367,7 @@ require_once '../../layouts/page_header.php';
                                         </h6>
                                     </div>
                                     <div class="card-body">
-                                        <form id="holdPointForm">
+                                        <div id="holdPointForm">
                                             <input type="hidden" id="holdPointId" name="hold_point_id">
                                             <div class="mb-3">
                                                 <label for="hold_reason" class="form-label">Reason for Hold</label>
@@ -381,7 +381,7 @@ require_once '../../layouts/page_header.php';
                                                 <button type="button" class="btn btn-primary btn-sm me-2" id="updateHoldPointBtn">Update Hold Point</button>
                                                 <button type="button" class="btn btn-danger btn-sm" id="endHoldPointBtn">End Hold Point</button>
                                             </div>
-                                        </form>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -647,7 +647,6 @@ document.addEventListener('DOMContentLoaded', function() {
             userSection.style.display = 'none';
         }
     });
-
 });
 </script>
 
