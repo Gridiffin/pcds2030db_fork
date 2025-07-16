@@ -962,7 +962,12 @@ function handleFormSubmission(form, submitter) {
             showToast('Success', data.message, 'success');
             refreshReportingPeriodsDropdown();
             if (submitter && submitter.name === 'save_and_exit') {
-                window.location.href = window.APP_URL + '/app/views/agency/programs/view_programs.php';
+                // Redirect based on user role
+                if (window.currentUserRole === 'admin') {
+                    window.location.href = window.APP_URL + '/app/views/admin/programs/programs.php';
+                } else {
+                    window.location.href = window.APP_URL + '/app/views/admin/programs/programs.php';
+                }
                 return;
             }
             // Show loading spinner and refresh all submission data (including attachments)

@@ -1,8 +1,8 @@
 <?php
 /**
- * Edit Program - Simplified
+ * Admin Edit Program
  * 
- * Simple interface for agency users to edit program basic information only.
+ * Admin interface for editing program basic information with cross-agency access.
  * Submissions are managed separately.
  */
 
@@ -17,14 +17,15 @@ require_once PROJECT_ROOT_PATH . 'lib/db_connect.php';
 require_once PROJECT_ROOT_PATH . 'lib/session.php';
 require_once PROJECT_ROOT_PATH . 'lib/functions.php';
 require_once PROJECT_ROOT_PATH . 'lib/agencies/programs.php';
-require_once PROJECT_ROOT_PATH . 'lib/agencies/program_agency_assignments.php';
-require_once PROJECT_ROOT_PATH . 'lib/agencies/program_user_assignments.php';
+require_once PROJECT_ROOT_PATH . 'lib/agencies/program_permissions.php';
+require_once PROJECT_ROOT_PATH . 'lib/admins/index.php';
+require_once PROJECT_ROOT_PATH . 'lib/admins/program_management.php';
 require_once PROJECT_ROOT_PATH . 'lib/initiative_functions.php';
 require_once PROJECT_ROOT_PATH . 'lib/numbering_helpers.php';
 require_once PROJECT_ROOT_PATH . 'lib/rating_helpers.php';
 
-// Verify user is an agency
-if (!is_agency()) {
+// Verify user is admin
+if (!is_admin()) {
     header('Location: ' . APP_URL . '/login.php');
     exit;
 }
@@ -35,42 +36,90 @@ $program_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 if (!$program_id) {
     $_SESSION['message'] = 'Invalid program ID.';
     $_SESSION['message_type'] = 'danger';
-    header('Location: view_programs.php');
+    header('Location: programs.php');
     exit;
 }
 
-// Get program details
-$program = get_program_details($program_id);
+// Get program details using admin function
+$program = get_admin_program_details($program_id);
 
 if (!$program) {
     $_SESSION['message'] = 'Program not found.';
     $_SESSION['message_type'] = 'danger';
-    header('Location: view_programs.php');
+    header('Location: programs.php');
     exit;
 }
 
-// Check if user can edit this program using new permission system
-if (!can_edit_program($program_id)) {
-    $_SESSION['message'] = 'You do not have permission to edit this program.';
-    $_SESSION['message_type'] = 'danger';
-    header('Location: view_programs.php');
-    exit;
-}
+// Admin users can edit any program - no permission check needed
 
 // For legacy compatibility
-$is_owner = is_program_owner($program_id);
+$is_owner = true; // Admin can edit any program
 
 // Get active initiatives for dropdown
 $active_initiatives = get_initiatives_for_select(true);
 
-// Get users in assigned agencies for user assignment
-$assignable_users = get_assignable_users_for_program($program_id);
+// Get users from all agencies for admin user assignment
+$assignable_users = get_all_assignable_users_for_program($program_id);
 
 // Get current user assignments for this program
 $current_user_assignments = get_program_assigned_users($program_id);
 
 // Check if program has editor restrictions
 $restrict_editors = program_has_editor_restrictions($program_id);
+
+// Get agency information for display
+$program_agency_info = get_agency_info($program['agency_id'] ?? null);
+
+// If agency info is not available, try to get from program data
+if (!$program_agency_info && !empty($program['agency_name'])) {
+    $program_agency_info = [
+        'agency_id' => $program['agency_id'] ?? null,
+        'agency_name' => $program['agency_name']
+    ];
+}
+
+// Handle AJAX requests
+if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
+    // Return program data as JSON for modal loading
+    header('Content-Type: application/json');
+    echo json_encode([
+        'success' => true,
+        'program' => $program
+    ]);
+    exit;
+}
+
+if (isset($_POST['ajax']) && $_POST['ajax'] == '1') {
+    // Handle AJAX form submission
+    header('Content-Type: application/json');
+    
+    $program_data = [
+        'program_id' => $program_id,
+        'program_name' => $_POST['program_name'] ?? '',
+        'program_number' => $_POST['program_number'] ?? '',
+        'brief_description' => $_POST['brief_description'] ?? '',
+        'start_date' => $_POST['start_date'] ?? '',
+        'end_date' => $_POST['end_date'] ?? '',
+        'initiative_id' => !empty($_POST['initiative_id']) ? intval($_POST['initiative_id']) : null,
+        'rating' => $_POST['rating'] ?? 'not_started'
+    ];
+    
+    // Update program using admin function
+    $result = update_admin_program($program_data);
+    
+    if (isset($result['success']) && $result['success']) {
+        echo json_encode([
+            'success' => true,
+            'message' => $result['message']
+        ]);
+    } else {
+        echo json_encode([
+            'success' => false,
+            'error' => $result['error'] ?? 'An error occurred while updating the program.'
+        ]);
+    }
+    exit;
+}
 
 // Process form submission
 $message = '';
@@ -88,8 +137,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'rating' => $_POST['rating'] ?? 'not_started'
     ];
     
-    // Update program using simplified function
-    $result = update_simple_program($program_data);
+    // Update program using admin function
+    $result = update_admin_program($program_data);
     
     if (isset($result['success']) && $result['success']) {
         // Handle user assignment settings
@@ -122,8 +171,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['message'] = $result['message'];
         $_SESSION['message_type'] = 'success';
         
-        // Redirect to program list
-        header('Location: view_programs.php');
+        // Redirect to admin program list
+        header('Location: programs.php');
         exit;
     } else {
         $message = $result['error'] ?? 'An error occurred while updating the program.';
@@ -137,22 +186,33 @@ $pageTitle = 'Edit Program';
 // Include header
 require_once '../../layouts/header.php';
 
-// Configure modern page header
+// Configure modern page header with admin context
 $program_display_name = '';
 if (!empty($program['program_number'])) {
     $program_display_name = '<span class="badge bg-info me-2" title="Program Number">' . htmlspecialchars($program['program_number']) . '</span>';
 }
 $program_display_name .= htmlspecialchars($program['program_name']);
 
+// Add agency information for admin context
+if (!empty($program_agency_info)) {
+    $program_display_name .= '<br><small class="text-muted">Agency: ' . htmlspecialchars($program_agency_info['agency_name']) . '</small>';
+}
+
 $header_config = [
-    'title' => 'Edit Program',
+    'title' => 'Edit Program (Admin)',
     'subtitle' => $program_display_name,
     'subtitle_html' => true,
     'variant' => 'white',
     'actions' => [
         [
-            'url' => 'view_programs.php',
-            'text' => 'Back to Program',
+            'url' => 'view_program.php?id=' . $program_id,
+            'text' => 'View Program',
+            'icon' => 'fas fa-eye',
+            'class' => 'btn-outline-primary'
+        ],
+        [
+            'url' => 'programs.php',
+            'text' => 'Back to Programs',
             'icon' => 'fas fa-arrow-left',
             'class' => 'btn-outline-secondary'
         ]
@@ -181,6 +241,11 @@ require_once '../../layouts/page_header.php';
                     <h5 class="card-title mb-0">
                         <i class="fas fa-edit me-2"></i>
                         Edit Program Information
+                        <?php if (!empty($program_agency_info)): ?>
+                            <span class="badge bg-secondary ms-2">
+                                <?php echo htmlspecialchars($program_agency_info['agency_name']); ?>
+                            </span>
+                        <?php endif; ?>
                     </h5>
                 </div>
                 <div class="card-body">
@@ -269,8 +334,7 @@ require_once '../../layouts/page_header.php';
                                     </div>
                                 </div>
 
-                                <!-- Program Rating - Only visible to focal users -->
-                                <?php if (is_focal_user()): ?>
+                                <!-- Program Rating - Always visible for admin users -->
                                 <div class="mb-4">
                                     <label for="rating" class="form-label">
                                         Program Rating <span class="text-danger">*</span>
@@ -289,13 +353,9 @@ require_once '../../layouts/page_header.php';
                                     </select>
                                     <div class="form-text">
                                         <i class="fas fa-chart-line me-1"></i>
-                                        Summarized rating of this program
+                                        Admin can set the overall rating for this program
                                     </div>
                                 </div>
-                                <?php else: ?>
-                                <!-- Hidden rating field for non-focal users -->
-                                <input type="hidden" name="rating" value="<?php echo htmlspecialchars($program['rating'] ?? RATING_NOT_STARTED); ?>">
-                                <?php endif; ?>
                             </div>
 
                             <div class="col-md-4">
@@ -393,23 +453,27 @@ require_once '../../layouts/page_header.php';
                                                         return $assignment['role'] === 'editor';
                                                     }), 'user_id');
                                                     ?>
-                                                    
-                                                    <?php foreach ($assignable_users as $user): ?>
-                                                        <div class="form-check">
-                                                            <input class="form-check-input" type="checkbox" 
-                                                                   name="assigned_editors[]" 
-                                                                   value="<?php echo $user['user_id']; ?>"
-                                                                   id="user_<?php echo $user['user_id']; ?>"
-                                                                   <?php echo in_array($user['user_id'], $assigned_editor_ids) ? 'checked' : ''; ?>>
-                                                            <label class="form-check-label" for="user_<?php echo $user['user_id']; ?>">
-                                                                <strong><?php echo htmlspecialchars($user['fullname'] ?: $user['username']); ?></strong>
-                                                                <br><small class="text-muted"><?php echo htmlspecialchars($user['username']); ?></small>
-                                                                <?php if ($user['current_role']): ?>
-                                                                    <span class="badge bg-info ms-2"><?php echo ucfirst($user['current_role']); ?></span>
-                                                                <?php endif; ?>
-                                                            </label>
-                                                        </div>
-                                                    <?php endforeach; ?>
+                                                                      <?php foreach ($assignable_users as $user): ?>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" 
+                                                   name="assigned_editors[]" 
+                                                   value="<?php echo $user['user_id']; ?>"
+                                                   id="user_<?php echo $user['user_id']; ?>"
+                                                   <?php echo in_array($user['user_id'], $assigned_editor_ids) ? 'checked' : ''; ?>>
+                                            <label class="form-check-label" for="user_<?php echo $user['user_id']; ?>">
+                                                <strong><?php echo htmlspecialchars($user['fullname'] ?: $user['username']); ?></strong>
+                                                <br><small class="text-muted">
+                                                    <?php echo htmlspecialchars($user['username']); ?>
+                                                    <?php if ($user['agency_name']): ?>
+                                                        - <?php echo htmlspecialchars($user['agency_name']); ?>
+                                                    <?php endif; ?>
+                                                </small>
+                                                <?php if ($user['current_role']): ?>
+                                                    <span class="badge bg-info ms-2"><?php echo ucfirst($user['current_role']); ?></span>
+                                                <?php endif; ?>
+                                            </label>
+                                        </div>
+                                    <?php endforeach; ?>
                                                 </div>
                                                 
                                                 <!-- Select All / None buttons -->
@@ -436,31 +500,31 @@ require_once '../../layouts/page_header.php';
                                     <div class="card-body">
                                         <h6 class="card-title">
                                             <i class="fas fa-info-circle me-2"></i>
-                                            What You Can Edit
+                                            Admin Capabilities
                                         </h6>
                                         <ul class="list-unstyled mb-0">
                                             <li class="mb-2">
                                                 <i class="fas fa-check-circle text-success me-2"></i>
-                                                Program name and description
+                                                Edit any program across all agencies
                                             </li>
                                             <li class="mb-2">
-                                                <i class="fas fa-link text-primary me-2"></i>
-                                                Initiative linkage
+                                                <i class="fas fa-users text-primary me-2"></i>
+                                                Assign users from any agency
                                             </li>
                                             <li class="mb-2">
-                                                <i class="fas fa-hashtag text-info me-2"></i>
-                                                Program number
+                                                <i class="fas fa-chart-line text-info me-2"></i>
+                                                Set program ratings
                                             </li>
                                             <li>
-                                                <i class="fas fa-calendar text-warning me-2"></i>
-                                                Timeline dates
+                                                <i class="fas fa-cog text-warning me-2"></i>
+                                                Configure editor restrictions
                                             </li>
                                         </ul>
                                         <hr>
                                         <div class="alert alert-info mb-0">
                                             <small>
-                                                <i class="fas fa-info-circle me-1"></i>
-                                                <strong>Note:</strong> Submissions are managed separately. Use the "Add Submission" button on the program details page to add or edit submissions.
+                                                <i class="fas fa-shield-alt me-1"></i>
+                                                <strong>Admin Access:</strong> You have full administrative privileges to edit this program regardless of agency ownership.
                                             </small>
                                         </div>
                                     </div>
@@ -470,7 +534,7 @@ require_once '../../layouts/page_header.php';
 
                         <!-- Form Actions -->
                         <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
-                            <a href="program_details.php?id=<?php echo $program_id; ?>" class="btn btn-outline-secondary">
+                            <a href="view_program.php?id=<?php echo $program_id; ?>" class="btn btn-outline-secondary">
                                 <i class="fas fa-times me-2"></i>
                                 Cancel
                             </a>

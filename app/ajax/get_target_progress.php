@@ -14,12 +14,14 @@ require_once ROOT_PATH . 'app/lib/db_connect.php';
 require_once ROOT_PATH . 'app/lib/session.php';
 require_once ROOT_PATH . 'app/lib/functions.php';
 require_once ROOT_PATH . 'app/lib/agencies/programs.php';
+require_once ROOT_PATH . 'app/lib/admins/core.php';
+require_once ROOT_PATH . 'app/lib/admins/statistics.php';
 
 // Set JSON header
 header('Content-Type: application/json');
 
-// Check if user is logged in and is an agency
-if (!is_agency()) {
+// Check if user is logged in and is an agency or admin
+if (!is_agency() && !is_admin()) {
     echo json_encode(['error' => 'Permission denied']);
     exit;
 }

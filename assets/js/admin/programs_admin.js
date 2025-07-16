@@ -1,13 +1,148 @@
 /**
  * Admin Programs Functionality
- * Handles filtering and interactions on the admin programs page with separate sections
+ * Handles filtering and interactions on the admin programs page
  */
+
+/**
+ * Filter programs based on the section (draft, finalized, or empty)
+ */
+function filterPrograms(section) {
+    let tableId, searchId, ratingId, typeId, agencyId, initiativeId, badgeContainerId, countId;
+    
+    if (section === 'draft') {
+        tableId = 'draftProgramsTable';
+        searchId = 'draftProgramSearch';
+        ratingId = 'draftRatingFilter';
+        typeId = 'draftTypeFilter';
+        agencyId = 'draftAgencyFilter';
+        initiativeId = 'draftInitiativeFilter';
+        badgeContainerId = 'draftFilterBadges';
+        countId = 'draft-count';
+    } else if (section === 'finalized') {
+        tableId = 'finalizedProgramsTable';
+        searchId = 'finalizedProgramSearch';
+        ratingId = 'finalizedRatingFilter';
+        typeId = 'finalizedTypeFilter';
+        agencyId = 'finalizedAgencyFilter';
+        initiativeId = 'finalizedInitiativeFilter';
+        badgeContainerId = 'finalizedFilterBadges';
+        countId = 'finalized-count';
+    } else if (section === 'empty') {
+        tableId = 'emptyProgramsTable';
+        searchId = 'emptyProgramSearch';
+        ratingId = null; // Empty programs don't have rating filter
+        typeId = 'emptyTypeFilter';
+        agencyId = 'emptyAgencyFilter';
+        initiativeId = 'emptyInitiativeFilter';
+        badgeContainerId = 'emptyFilterBadges';
+        countId = 'empty-count';
+    }
+    
+    const table = document.getElementById(tableId);
+    if (!table) return;
+    
+    // Get filter values
+    const searchValue = document.getElementById(searchId)?.value.toLowerCase() || '';
+    const ratingValue = ratingId ? document.getElementById(ratingId)?.value || '' : '';
+    const typeValue = document.getElementById(typeId)?.value || '';
+    const agencyValue = document.getElementById(agencyId)?.value || '';
+    const initiativeValue = document.getElementById(initiativeId)?.value || '';
+    
+    // Get all rows in the table body
+    const rows = table.querySelectorAll('tbody tr');
+    let visibleCount = 0;
+    
+    rows.forEach(row => {
+        // Skip if this is the "no results" row
+        if (row.children.length === 1 && row.children[0].getAttribute('colspan')) {
+            row.style.display = 'none';
+            return;
+        }
+        
+        let showRow = true;
+        
+        // Search filter - check program name and number
+        if (searchValue) {
+            const programNameElement = row.querySelector('.program-name');
+            const programName = programNameElement ? programNameElement.textContent.toLowerCase() : '';
+            if (!programName.includes(searchValue)) {
+                showRow = false;
+            }
+        }
+        
+        // Rating filter (only for draft and finalized sections)
+        if (ratingValue && ratingId) {
+            const ratingData = row.getAttribute('data-rating');
+            const ratingMap = {
+                'target-achieved': 'monthly_target_achieved',
+                'on-track-yearly': 'on_track_for_year', 
+                'severe-delay': 'severe_delay',
+                'not-started': 'not_started'
+            };
+            if (ratingMap[ratingValue] && ratingData !== ratingMap[ratingValue]) {
+                showRow = false;
+            }
+        }
+        
+        // Type filter
+        if (typeValue) {
+            const programType = row.getAttribute('data-program-type');
+            if (programType !== typeValue) {
+                showRow = false;
+            }
+        }
+        
+        // Agency filter
+        if (agencyValue) {
+            const agencyData = row.getAttribute('data-agency-id');
+            if (agencyData !== agencyValue) {
+                showRow = false;
+            }
+        }
+        
+        // Initiative filter
+        if (initiativeValue) {
+            const initiativeData = row.getAttribute('data-initiative-id') || '0';
+            if (initiativeValue === 'no-initiative') {
+                if (initiativeData !== '0' && initiativeData !== '') {
+                    showRow = false;
+                }
+            } else {
+                if (initiativeData !== initiativeValue) {
+                    showRow = false;
+                }
+            }
+        }
+        
+        // Show/hide row
+        row.style.display = showRow ? '' : 'none';
+        if (showRow) visibleCount++;
+    });
+    
+    // Update count badge
+    const countElement = document.getElementById(countId);
+    if (countElement) {
+        countElement.textContent = visibleCount;
+    }
+    
+    // Show "no results" message if needed
+    if (visibleCount === 0) {
+        const tbody = table.querySelector('tbody');
+        const colspan = section === 'empty' ? 5 : 6; // Empty section has fewer columns
+        const noResultsRow = document.createElement('tr');
+        noResultsRow.innerHTML = `<td colspan="${colspan}" class="text-center py-4">No programs found matching the current filters.</td>`;
+        tbody.appendChild(noResultsRow);
+    }
+}
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize delete functionality
     initDeleteButtons();
     
-    // Initialize table sorting for both tables
-    const tables = ['unsubmittedProgramsTable', 'submittedProgramsTable'];
+    // Initialize more actions modal functionality
+    initMoreActionsModal();
+    
+    // Initialize table sorting for all tables
+    const tables = ['draftProgramsTable', 'finalizedProgramsTable', 'emptyProgramsTable'];
     tables.forEach(tableId => {
         const table = document.getElementById(tableId);
         if (!table) return;
@@ -48,113 +183,200 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 /**
- * Initialize filtering functionality for both program sections
+ * Initialize filtering functionality for all program sections
  */
-function initializeFiltering() {    // Unsubmitted programs filters
-    const unsubmittedSearch = document.getElementById('unsubmittedProgramSearch');
-    const unsubmittedRating = document.getElementById('unsubmittedRatingFilter');
-    const unsubmittedType = document.getElementById('unsubmittedTypeFilter');
-    const unsubmittedAgency = document.getElementById('unsubmittedAgencyFilter');
-    const unsubmittedInitiative = document.getElementById('unsubmittedInitiativeFilter');
-    const resetUnsubmittedBtn = document.getElementById('resetUnsubmittedFilters');
+function initializeFiltering() {
+    // Draft programs filters
+    const draftSearch = document.getElementById('draftProgramSearch');
+    const draftRating = document.getElementById('draftRatingFilter');
+    const draftType = document.getElementById('draftTypeFilter');
+    const draftAgency = document.getElementById('draftAgencyFilter');
+    const draftInitiative = document.getElementById('draftInitiativeFilter');
+    const resetDraftBtn = document.getElementById('resetDraftFilters');
     
-    // Submitted programs filters
-    const submittedSearch = document.getElementById('submittedProgramSearch');
-    const submittedRating = document.getElementById('submittedRatingFilter');
-    const submittedType = document.getElementById('submittedTypeFilter');
-    const submittedAgency = document.getElementById('submittedAgencyFilter');
-    const submittedInitiative = document.getElementById('submittedInitiativeFilter');
-    const resetSubmittedBtn = document.getElementById('resetSubmittedFilters');
-      // Add event listeners for unsubmitted programs
-    [unsubmittedSearch, unsubmittedRating, unsubmittedType, unsubmittedAgency, unsubmittedInitiative].forEach(element => {
+    // Finalized programs filters
+    const finalizedSearch = document.getElementById('finalizedProgramSearch');
+    const finalizedRating = document.getElementById('finalizedRatingFilter');
+    const finalizedType = document.getElementById('finalizedTypeFilter');
+    const finalizedAgency = document.getElementById('finalizedAgencyFilter');
+    const finalizedInitiative = document.getElementById('finalizedInitiativeFilter');
+    const resetFinalizedBtn = document.getElementById('resetFinalizedFilters');
+    
+    // Empty programs filters
+    const emptySearch = document.getElementById('emptyProgramSearch');
+    const emptyType = document.getElementById('emptyTypeFilter');
+    const emptyAgency = document.getElementById('emptyAgencyFilter');
+    const emptyInitiative = document.getElementById('emptyInitiativeFilter');
+    const resetEmptyBtn = document.getElementById('resetEmptyFilters');
+    
+    // Add event listeners for draft programs
+    [draftSearch, draftRating, draftType, draftAgency, draftInitiative].forEach(element => {
         if (element) {
             const eventType = element.type === 'text' ? 'input' : 'change';
-            element.addEventListener(eventType, () => filterPrograms('unsubmitted'));
+            element.addEventListener(eventType, () => filterPrograms('draft'));
         }
     });
     
-    // Add event listeners for submitted programs
-    [submittedSearch, submittedRating, submittedType, submittedAgency, submittedInitiative].forEach(element => {
+    // Add event listeners for finalized programs
+    [finalizedSearch, finalizedRating, finalizedType, finalizedAgency, finalizedInitiative].forEach(element => {
         if (element) {
             const eventType = element.type === 'text' ? 'input' : 'change';
-            element.addEventListener(eventType, () => filterPrograms('submitted'));
+            element.addEventListener(eventType, () => filterPrograms('finalized'));
+        }
+    });
+    
+    // Add event listeners for empty programs  
+    [emptySearch, emptyType, emptyAgency, emptyInitiative].forEach(element => {
+        if (element) {
+            const eventType = element.type === 'text' ? 'input' : 'change';
+            element.addEventListener(eventType, () => filterPrograms('empty'));
         }
     });
     
     // Reset button event listeners
-    if (resetUnsubmittedBtn) {
-        resetUnsubmittedBtn.addEventListener('click', () => resetFilters('unsubmitted'));
+    if (resetDraftBtn) {
+        resetDraftBtn.addEventListener('click', () => resetFilters('draft'));
     }
     
-    if (resetSubmittedBtn) {
-        resetSubmittedBtn.addEventListener('click', () => resetFilters('submitted'));
+    if (resetFinalizedBtn) {
+        resetFinalizedBtn.addEventListener('click', () => resetFilters('finalized'));
+    }
+    
+    if (resetEmptyBtn) {
+        resetEmptyBtn.addEventListener('click', () => resetFilters('empty'));
     }
 }
 
 /**
- * Filter programs based on the section (unsubmitted or submitted)
+ * Filter programs based on the section (draft, finalized, or empty)
  */
 function filterPrograms(section) {
-    const programs = section === 'unsubmitted' ? unsubmittedPrograms : submittedPrograms;
-    const tableId = section === 'unsubmitted' ? 'unsubmittedProgramsTable' : 'submittedProgramsTable';
-    const prefix = section === 'unsubmitted' ? 'unsubmitted' : 'submitted';    // Get filter values
-    const searchValue = document.getElementById(prefix + 'ProgramSearch')?.value.toLowerCase() || '';
-    const ratingValue = document.getElementById(prefix + 'RatingFilter')?.value || '';
-    const typeValue = document.getElementById(prefix + 'TypeFilter')?.value || '';
-    const agencyValue = document.getElementById(prefix + 'AgencyFilter')?.value || '';
-    const initiativeValue = document.getElementById(prefix + 'InitiativeFilter')?.value || '';
-      // Filter programs
-    const filteredPrograms = programs.filter(program => {
-        // Search filter - search in both program name and program number
-        if (searchValue && 
-            !program.program_name.toLowerCase().includes(searchValue) && 
-            !(program.program_number && program.program_number.toLowerCase().includes(searchValue))) {
-            return false;
+    let tableId, searchId, ratingId, typeId, agencyId, initiativeId, badgeContainerId, countId;
+    
+    if (section === 'draft') {
+        tableId = 'draftProgramsTable';
+        searchId = 'draftProgramSearch';
+        ratingId = 'draftRatingFilter';
+        typeId = 'draftTypeFilter';
+        agencyId = 'draftAgencyFilter';
+        initiativeId = 'draftInitiativeFilter';
+        badgeContainerId = 'draftFilterBadges';
+        countId = 'draft-count';
+    } else if (section === 'finalized') {
+        tableId = 'finalizedProgramsTable';
+        searchId = 'finalizedProgramSearch';
+        ratingId = 'finalizedRatingFilter';
+        typeId = 'finalizedTypeFilter';
+        agencyId = 'finalizedAgencyFilter';
+        initiativeId = 'finalizedInitiativeFilter';
+        badgeContainerId = 'finalizedFilterBadges';
+        countId = 'finalized-count';
+    } else if (section === 'empty') {
+        tableId = 'emptyProgramsTable';
+        searchId = 'emptyProgramSearch';
+        ratingId = null; // Empty programs don't have rating filter
+        typeId = 'emptyTypeFilter';
+        agencyId = 'emptyAgencyFilter';
+        initiativeId = 'emptyInitiativeFilter';
+        badgeContainerId = 'emptyFilterBadges';
+        countId = 'empty-count';
+    }
+    
+    const table = document.getElementById(tableId);
+    if (!table) return;
+    
+    // Get filter values
+    const searchValue = document.getElementById(searchId)?.value.toLowerCase() || '';
+    const ratingValue = ratingId ? document.getElementById(ratingId)?.value || '' : '';
+    const typeValue = document.getElementById(typeId)?.value || '';
+    const agencyValue = document.getElementById(agencyId)?.value || '';
+    const initiativeValue = document.getElementById(initiativeId)?.value || '';
+    
+    // Get all rows in the table body
+    const rows = table.querySelectorAll('tbody tr');
+    let visibleCount = 0;
+    
+    rows.forEach(row => {
+        // Skip if this is the "no results" row
+        if (row.children.length === 1 && row.children[0].getAttribute('colspan')) {
+            row.style.display = 'none';
+            return;
         }
         
-        // Rating filter
-        if (ratingValue && program.rating !== ratingValue) {
-            return false;
+        let showRow = true;
+        
+        // Search filter - check program name and number
+        if (searchValue) {
+            const programNameElement = row.querySelector('.program-name');
+            const programName = programNameElement ? programNameElement.textContent.toLowerCase() : '';
+            if (!programName.includes(searchValue)) {
+                showRow = false;
+            }
         }
-          // Type filter
+        
+        // Rating filter (only for draft and finalized sections)
+        if (ratingValue && ratingId) {
+            const ratingData = row.getAttribute('data-rating');
+            const ratingMap = {
+                'target-achieved': 'monthly_target_achieved',
+                'on-track-yearly': 'on_track_for_year', 
+                'severe-delay': 'severe_delay',
+                'not-started': 'not_started'
+            };
+            if (ratingMap[ratingValue] && ratingData !== ratingMap[ratingValue]) {
+                showRow = false;
+            }
+        }
+        
+        // Type filter
         if (typeValue) {
-            const isAssigned = program.is_assigned == 1;
-            if (typeValue === 'assigned' && !isAssigned) return false;
-            if (typeValue === 'agency' && isAssigned) return false;
+            const programType = row.getAttribute('data-program-type');
+            if (programType !== typeValue) {
+                showRow = false;
+            }
         }
         
         // Agency filter
-        if (agencyValue && String(program.owner_agency_id) !== agencyValue) {
-            return false;
+        if (agencyValue) {
+            const agencyData = row.getAttribute('data-agency-id');
+            if (agencyData !== agencyValue) {
+                showRow = false;
+            }
         }
         
         // Initiative filter
         if (initiativeValue) {
+            const initiativeData = row.getAttribute('data-initiative-id') || '0';
             if (initiativeValue === 'no-initiative') {
-                // Show only programs without initiatives
-                if (program.initiative_id && program.initiative_id !== null) {
-                    return false;
+                if (initiativeData !== '0' && initiativeData !== '') {
+                    showRow = false;
                 }
             } else {
-                // Show only programs with the specific initiative
-                if (String(program.initiative_id) !== initiativeValue) {
-                    return false;
+                if (initiativeData !== initiativeValue) {
+                    showRow = false;
                 }
             }
         }
         
-        return true;
+        // Show/hide row
+        row.style.display = showRow ? '' : 'none';
+        if (showRow) visibleCount++;
     });
     
-    // Update the table
-    updateProgramTable(tableId, filteredPrograms, section);    // Update filter badges
-    updateFilterBadges(section, {
-        search: searchValue,
-        rating: ratingValue,
-        type: typeValue,
-        agency: agencyValue,
-        initiative: initiativeValue
-    });
+    // Update count badge
+    const countElement = document.getElementById(countId);
+    if (countElement) {
+        countElement.textContent = visibleCount;
+    }
+    
+    // Show "no results" message if needed
+    if (visibleCount === 0) {
+        const tbody = table.querySelector('tbody');
+        const colspan = section === 'empty' ? 5 : 6; // Empty section has fewer columns
+        const noResultsRow = document.createElement('tr');
+        noResultsRow.innerHTML = `<td colspan="${colspan}" class="text-center py-4">No programs found matching the current filters.</td>`;
+        tbody.appendChild(noResultsRow);
+    }
 }
 
 /**
@@ -319,13 +541,37 @@ function createProgramRow(program, section) {
  * Reset filters for a specific section
  */
 function resetFilters(section) {
-    const prefix = section === 'unsubmitted' ? 'unsubmitted' : 'submitted';
-      // Reset all filter inputs
-    const searchInput = document.getElementById(prefix + 'ProgramSearch');
-    const ratingSelect = document.getElementById(prefix + 'RatingFilter');
-    const typeSelect = document.getElementById(prefix + 'TypeFilter');
-    const agencySelect = document.getElementById(prefix + 'AgencyFilter');
-    const initiativeSelect = document.getElementById(prefix + 'InitiativeFilter');
+    let searchId, ratingId, typeId, agencyId, initiativeId, badgeContainerId;
+    
+    if (section === 'draft') {
+        searchId = 'draftProgramSearch';
+        ratingId = 'draftRatingFilter';
+        typeId = 'draftTypeFilter';
+        agencyId = 'draftAgencyFilter';
+        initiativeId = 'draftInitiativeFilter';
+        badgeContainerId = 'draftFilterBadges';
+    } else if (section === 'finalized') {
+        searchId = 'finalizedProgramSearch';
+        ratingId = 'finalizedRatingFilter';
+        typeId = 'finalizedTypeFilter';
+        agencyId = 'finalizedAgencyFilter';
+        initiativeId = 'finalizedInitiativeFilter';
+        badgeContainerId = 'finalizedFilterBadges';
+    } else if (section === 'empty') {
+        searchId = 'emptyProgramSearch';
+        ratingId = null; // Empty section doesn't have rating filter
+        typeId = 'emptyTypeFilter';
+        agencyId = 'emptyAgencyFilter';
+        initiativeId = 'emptyInitiativeFilter';
+        badgeContainerId = 'emptyFilterBadges';
+    }
+    
+    // Reset all filter inputs
+    const searchInput = document.getElementById(searchId);
+    const ratingSelect = ratingId ? document.getElementById(ratingId) : null;
+    const typeSelect = document.getElementById(typeId);
+    const agencySelect = document.getElementById(agencyId);
+    const initiativeSelect = document.getElementById(initiativeId);
     
     if (searchInput) searchInput.value = '';
     if (ratingSelect) ratingSelect.value = '';
@@ -334,7 +580,7 @@ function resetFilters(section) {
     if (initiativeSelect) initiativeSelect.value = '';
     
     // Clear filter badges
-    const badgesContainer = document.getElementById(prefix + 'FilterBadges');
+    const badgesContainer = document.getElementById(badgeContainerId);
     if (badgesContainer) {
         badgesContainer.innerHTML = '';
     }
@@ -462,8 +708,47 @@ function sortTable(tableId, sortBy, direction) {
  * Initialize delete buttons functionality
  */
 function initDeleteButtons() {
-    // This function can be expanded if needed for delete functionality
-    console.log('Delete buttons initialized');
+    // Get all delete buttons
+    const deleteButtons = document.querySelectorAll('.delete-program-btn');
+    
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const programId = this.getAttribute('data-id');
+            const programName = this.getAttribute('data-name');
+            
+            // Set the program details in the modal
+            const programNameDisplay = document.getElementById('program-name-display');
+            const programIdInput = document.getElementById('program-id-input');
+            
+            if (programNameDisplay && programIdInput) {
+                programNameDisplay.textContent = programName;
+                programIdInput.value = programId;
+                
+                // Show the delete modal
+                const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+                deleteModal.show();
+            } else {
+                // Fallback: show browser confirm dialog
+                if (confirm(`Are you sure you want to delete the program "${programName}"? This action cannot be undone.`)) {
+                    // Create and submit form programmatically
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = 'delete_program.php';
+                    
+                    const programIdField = document.createElement('input');
+                    programIdField.type = 'hidden';
+                    programIdField.name = 'program_id';
+                    programIdField.value = programId;
+                    form.appendChild(programIdField);
+                    
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            }
+        });
+    });
+    
+    console.log(`Delete buttons initialized for ${deleteButtons.length} buttons`);
 }
 
 /**
@@ -644,4 +929,148 @@ function hideLoadingOverlay() {
     if (overlay) {
         overlay.style.display = 'none';
     }
+}
+
+/**
+ * Initialize more actions modal functionality for table action buttons
+ */
+function initMoreActionsModal() {
+    // Find all "More Actions" buttons in table action columns
+    const moreActionsButtons = document.querySelectorAll('.more-actions-btn');
+    
+    moreActionsButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const programId = this.getAttribute('data-program-id');
+            const programName = this.getAttribute('data-program-name');
+            const programType = this.getAttribute('data-program-type');
+            
+            // Show the more actions modal
+            showMoreActionsModal(programId, programName, programType);
+        });
+    });
+}
+
+/**
+ * Show the more actions modal with program-specific actions
+ */
+function showMoreActionsModal(programId, programName, programType) {
+    // Create modal HTML if it doesn't exist
+    let modal = document.getElementById('moreActionsModal');
+    if (!modal) {
+        modal = createMoreActionsModal();
+        document.body.appendChild(modal);
+    }
+    
+    // Update modal content with program-specific actions
+    updateMoreActionsModalContent(modal, programId, programName, programType);
+    
+    // Show the modal
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+}
+
+/**
+ * Create the more actions modal HTML structure
+ */
+function createMoreActionsModal() {
+    const modal = document.createElement('div');
+    modal.className = 'modal fade';
+    modal.id = 'moreActionsModal';
+    modal.setAttribute('tabindex', '-1');
+    modal.setAttribute('aria-labelledby', 'moreActionsModalLabel');
+    modal.setAttribute('aria-hidden', 'true');
+    
+    modal.innerHTML = `
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="moreActionsModalLabel">
+                        <i class="fas fa-ellipsis-v me-2"></i>Program Actions
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="program-info mb-3">
+                        <h6 class="program-name-display"></h6>
+                        <small class="text-muted program-type-display"></small>
+                    </div>
+                    <div class="actions-list">
+                        <!-- Additional actions will be populated dynamically -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    return modal;
+}
+
+/**
+ * Update modal content with program-specific actions for admin users
+ */
+function updateMoreActionsModalContent(modal, programId, programName, programType) {
+    // Update program info
+    const nameDisplay = modal.querySelector('.program-name-display');
+    const typeDisplay = modal.querySelector('.program-type-display');
+    
+    nameDisplay.textContent = programName;
+    typeDisplay.textContent = programType === 'assigned' ? 'Assigned Program' : 'Agency-Created Program';
+    
+    // Create action buttons for admin users
+    const actionsList = modal.querySelector('.actions-list');
+    actionsList.innerHTML = '';
+    
+    const actions = [
+        {
+            icon: 'fas fa-list-alt',
+            text: 'View Submissions',
+            url: `list_program_submissions.php?program_id=${programId}`,
+            class: 'btn-outline-info',
+            tooltip: 'View all submissions for this program across reporting periods'
+        },
+        {
+            icon: 'fas fa-edit',
+            text: 'Edit Submissions',
+            url: `edit_submission.php?program_id=${programId}`,
+            class: 'btn-outline-success',
+            tooltip: 'Edit submissions for this program by selecting a reporting period'
+        },
+        {
+            icon: 'fas fa-plus-circle',
+            text: 'Add Submission',
+            url: `add_submission.php?program_id=${programId}`,
+            class: 'btn-outline-primary',
+            tooltip: 'Add a new submission for this program in a specific reporting period'
+        },
+        {
+            icon: 'fas fa-cog',
+            text: 'Edit Program Details',
+            url: `edit_program.php?id=${programId}`,
+            class: 'btn-outline-warning',
+            tooltip: 'Modify program details, targets, and basic information'
+        }
+    ];
+    
+    actions.forEach(action => {
+        const actionButton = document.createElement('a');
+        actionButton.className = `btn ${action.class} w-100 mb-2`;
+        actionButton.href = action.url;
+        actionButton.setAttribute('title', action.tooltip);
+        actionButton.setAttribute('data-bs-toggle', 'tooltip');
+        actionButton.setAttribute('data-bs-placement', 'left');
+        actionButton.innerHTML = `<i class="${action.icon} me-2"></i>${action.text}`;
+        actionsList.appendChild(actionButton);
+    });
+
+    // Initialize tooltips for the new buttons
+    const tooltipTriggerList = [].slice.call(actionsList.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
 }

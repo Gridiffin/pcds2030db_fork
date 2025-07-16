@@ -17,14 +17,16 @@ require_once '../lib/db_connect.php';
 require_once '../lib/session.php';
 require_once '../lib/functions.php';
 require_once '../lib/agencies/programs.php';
+require_once '../lib/admins/core.php';
+require_once '../lib/admins/statistics.php';
 
 // Set JSON header
 header('Content-Type: application/json');
 
-// Verify user is an agency
-if (!is_agency()) {
+// Verify user is an agency or admin
+if (!is_agency() && !is_admin()) {
     http_response_code(403);
-    echo json_encode(['error' => 'Access denied. Agency login required.']);
+    echo json_encode(['error' => 'Access denied. Agency or admin login required.']);
     exit;
 }
 
@@ -47,7 +49,14 @@ if (!$program_id || !$period_id) {
 
 try {
     // Verify program exists and user has access
-    $program = get_program_details($program_id);
+    if (is_admin()) {
+        // Admin users have access to all programs
+        $program = get_admin_program_details($program_id);
+    } else {
+        // Agency users have access only to their programs
+        $program = get_program_details($program_id);
+    }
+    
     if (!$program) {
         http_response_code(404);
         echo json_encode(['error' => 'Program not found or access denied.']);

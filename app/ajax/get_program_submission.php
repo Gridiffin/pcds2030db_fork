@@ -10,10 +10,12 @@ require_once '../lib/db_connect.php';
 require_once '../lib/session.php';
 require_once '../lib/functions.php';
 require_once '../lib/agencies/index.php';
+require_once '../lib/admins/core.php';
+require_once '../lib/admins/statistics.php';
 
 header('Content-Type: application/json');
 
-if (!is_agency()) {
+if (!is_agency() && !is_admin()) {
     echo json_encode(['success' => false, 'error' => 'Access denied.']);
     exit;
 }
@@ -26,7 +28,14 @@ if (!$program_id || !$period_id) {
     exit;
 }
 
-$program = get_program_details($program_id, is_focal_user());
+if (is_admin()) {
+    // Admin users have access to all programs
+    $program = get_admin_program_details($program_id);
+} else {
+    // Agency users have access based on their permissions
+    $program = get_program_details($program_id, is_focal_user());
+}
+
 if (!$program) {
     echo json_encode(['success' => false, 'error' => 'Program not found.']);
     exit;

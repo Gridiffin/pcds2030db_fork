@@ -5,10 +5,11 @@ require_once '../lib/db_connect.php';
 require_once '../lib/session.php';
 require_once '../lib/functions.php';
 require_once '../lib/agencies/programs.php';
+require_once '../lib/admins/core.php';
 
 header('Content-Type: application/json');
 
-if (!is_agency()) {
+if (!is_agency() && !is_admin()) {
     echo json_encode(['success' => false, 'error' => 'Access denied.']);
     exit;
 }

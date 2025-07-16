@@ -38,9 +38,9 @@ if ($program_id === 0) {
 }
 
 // Get program details
-$query = "SELECT p.*, u.agency_name 
+$query = "SELECT p.*, a.agency_name 
           FROM programs p 
-          LEFT JOIN users u ON p.owner_agency_id = u.user_id 
+          LEFT JOIN agency a ON p.agency_id = a.agency_id 
           WHERE p.program_id = ?";
 $stmt = $conn->prepare($query);
 $stmt->bind_param("i", $program_id);
