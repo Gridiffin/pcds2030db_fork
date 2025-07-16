@@ -1,4 +1,5 @@
 // Minimal JS for Edit Program Status Management
+
 // Assumes Bootstrap 5 is loaded
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -24,6 +25,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function renderStatus(data) {
+        // Update hold management section visibility
+        if (holdSection) {
+            if (data.status === 'on_hold' && data.hold_point) {
+                holdSection.style.display = '';
+                document.getElementById('hold_reason').value = data.hold_point.reason || '';
+                document.getElementById('hold_remarks').value = data.hold_point.remarks || '';
+            } else {
+                holdSection.style.display = 'none';
+            }
+        }
         if (!statusBadge) return;
         let status = data.status || 'active';
         // Map status to label, class, and icon (should match PHP helper)
@@ -76,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div class='mb-3'>
                 <label for='hold-remarks' class='form-label'>Hold Point Remarks</label>
-                <textarea class='form-control' id='hold-remarks' name='remarks' rows='2'></textarea>
+                <textarea class='form-control' id='hold-remarks' name='hold_remarks' rows='2'>${hold.remarks || ''}</textarea>
             </div>
         </div>`;
         if (status === 'on_hold') {
@@ -184,6 +195,106 @@ document.addEventListener('DOMContentLoaded', function() {
         historyModalBody.innerHTML = html;
     }
 
-    // Initial load
-    loadStatus();
-}); 
+    // Hold point management elements
+    const holdSection = document.getElementById('holdPointManagementSection');
+    const updateHoldBtn = document.getElementById('updateHoldPointBtn');
+    const endHoldBtn = document.getElementById('endHoldPointBtn');
+
+    // Update active hold point
+    if (updateHoldBtn) {
+        updateHoldBtn.addEventListener('click', function () {
+            const reason = document.getElementById('hold_reason').value;
+            const remarks = document.getElementById('hold_remarks').value;
+            
+            // Validate required fields
+            if (!reason.trim()) {
+                showToast('Validation Error', 'Hold reason is required.', 'warning');
+                return;
+            }
+            
+            // Show loading state
+            const originalText = this.textContent;
+            const originalClass = this.className;
+            this.textContent = 'Updating...';
+            this.className = 'btn btn-primary btn-sm me-2';
+            this.disabled = true;
+            
+            const fd = new FormData();
+            fd.append('action', 'hold_point');
+            fd.append('program_id', programId);
+            fd.append('reason', reason);
+            fd.append('hold_remarks', remarks);
+            
+            fetch(apiUrl, { method: 'POST', body: fd })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        loadStatus();
+                        showToast('Success', 'Hold point updated successfully!', 'success');
+                        
+                        // Add visual feedback to the form
+                        const form = document.getElementById('holdPointForm');
+                        if (form) {
+                            form.classList.add('was-validated');
+                            setTimeout(() => {
+                                form.classList.remove('was-validated');
+                            }, 2000);
+                        }
+                    } else {
+                        showToast('Error', data.error || 'Failed to update hold point.', 'danger');
+                    }
+                })
+                .catch(error => {
+                    showToast('Error', 'Network error occurred while updating hold point.', 'danger');
+                })
+                .finally(() => {
+                    // Restore button state
+                    this.textContent = originalText;
+                    this.className = originalClass;
+                    this.disabled = false;
+                });
+        });
+    }
+
+    // End current hold point
+    if (endHoldBtn) {
+        endHoldBtn.addEventListener('click', function () {
+            if (!confirm('End this hold point?')) return;
+            
+            // Show loading state
+            const originalText = this.textContent;
+            const originalClass = this.className;
+            this.textContent = 'Ending...';
+            this.className = 'btn btn-danger btn-sm';
+            this.disabled = true;
+            
+            const fd = new FormData();
+            fd.append('action', 'end_hold_point');
+            fd.append('program_id', programId);
+            
+            fetch(apiUrl, { method: 'POST', body: fd })
+                .then(res => res.json())
+                .then(data => {
+                    console.log('End hold point response:', data);
+                    if (data.success) {
+                        loadStatus();
+                        showToast('Success', 'Hold point ended successfully! Program status changed to Active.', 'success');
+                    } else {
+                        showToast('Error', data.error || 'Failed to end hold point.', 'danger');
+                    }
+                })
+                .catch(error => {
+                    showToast('Error', 'Network error occurred while ending hold point.', 'danger');
+                })
+                .finally(() => {
+                    // Restore button state
+                    this.textContent = originalText;
+                    this.className = originalClass;
+                    this.disabled = false;
+                });
+        });
+    }
+
+// Initial load
+loadStatus();
+});

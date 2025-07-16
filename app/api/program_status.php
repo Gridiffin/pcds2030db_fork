@@ -147,11 +147,25 @@ if ($method === 'GET') {
         $stmt->close();
         respond(['success' => true]);
     } elseif ($action === 'end_hold_point') {
-        // End the current hold point
+        // End the current hold point and update program status to active
         $stmt = $conn->prepare('UPDATE program_hold_points SET ended_at = NOW() WHERE program_id = ? AND ended_at IS NULL');
         $stmt->bind_param('i', $program_id);
         $stmt->execute();
         $stmt->close();
+        
+        // Update program status from "on_hold" to "active"
+        $stmt = $conn->prepare('UPDATE programs SET status = "active" WHERE program_id = ? AND status = "on_hold"');
+        $stmt->bind_param('i', $program_id);
+        $stmt->execute();
+        $stmt->close();
+        
+        // Log the status change in history
+        $remarks = 'Status automatically changed to active when hold point ended';
+        $stmt = $conn->prepare('INSERT INTO program_status_history (program_id, status, changed_by, remarks) VALUES (?, "active", ?, ?)');
+        $stmt->bind_param('iis', $program_id, $user_id, $remarks);
+        $stmt->execute();
+        $stmt->close();
+        
         respond(['success' => true]);
     } else {
         respond(['error' => 'Invalid action'], 400);

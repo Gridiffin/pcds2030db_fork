@@ -38,17 +38,35 @@ class EnhancedProgramDetails {
     renderStatus(data) {
         const badge = document.getElementById('program-status-badge');
         const holdInfo = document.getElementById('hold-point-info');
+        const holdSection = document.getElementById('holdPointManagementSection');
+
         if (!badge) return;
-        // Status badge
+
         let status = data.status || 'active';
-        let statusLabel = status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
+        let statusLabel = status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ');
         badge.textContent = statusLabel;
-        badge.className = 'status-badge status-' + status;
-        // Hold point info
+
+        // Dynamically build class list for the badge
+        const statusInfo = this.getStatusInfo(status);
+        badge.className = `badge status-badge ${statusInfo.class} py-2 px-3`;
+        badge.innerHTML = `<i class="${statusInfo.icon} me-1"></i> ${statusLabel}`;
+
         if (status === 'on_hold' && data.hold_point) {
-            holdInfo.innerHTML = `<i class='fas fa-pause-circle text-warning'></i> On Hold: <b>${data.hold_point.reason || ''}</b> <span class='text-muted'>(${this.formatDate(data.hold_point.created_at)})</span> <span>${data.hold_point.remarks ? ' - ' + data.hold_point.remarks : ''}</span>`;
+            if(holdInfo) {
+                holdInfo.innerHTML = `<i class='fas fa-pause-circle text-warning'></i> On Hold: <b>${data.hold_point.reason || ''}</b> <span class='text-muted'>(${this.formatDate(data.hold_point.created_at)})</span> <span>${data.hold_point.remarks ? ' - ' + data.hold_point.remarks : ''}</span>`;
+            }
+            if (holdSection) {
+                holdSection.style.display = 'block';
+                document.getElementById('hold_reason').value = data.hold_point.reason || '';
+                document.getElementById('hold_remarks').value = data.hold_point.remarks || '';
+            }
         } else {
-            holdInfo.innerHTML = '';
+            if(holdInfo) {
+                holdInfo.innerHTML = '';
+            }
+            if (holdSection) {
+                holdSection.style.display = 'none';
+            }
         }
     }
 
@@ -75,6 +93,16 @@ class EnhancedProgramDetails {
         }
         if (historyBtn) {
             historyBtn.addEventListener('click', () => this.openStatusHistoryModal());
+        }
+
+        const updateHoldBtn = document.getElementById('updateHoldPointBtn');
+        if (updateHoldBtn) {
+            updateHoldBtn.addEventListener('click', () => this.updateHoldPoint());
+        }
+
+        const endHoldBtn = document.getElementById('endHoldPointBtn');
+        if (endHoldBtn) {
+            endHoldBtn.addEventListener('click', () => this.endHoldPoint());
         }
     }
 

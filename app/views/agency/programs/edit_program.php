@@ -358,6 +358,33 @@ require_once '../../layouts/page_header.php';
                                     </div>
                                 </div>
 
+                                <!-- Hold Point Management Section -->
+                                <div class="card shadow-sm mt-3" id="holdPointManagementSection" style="<?php echo ($program['status'] ?? '') === 'on_hold' ? '' : 'display:none;'; ?>">
+                                    <div class="card-header bg-warning text-dark">
+                                        <h6 class="card-title mb-0">
+                                            <i class="fas fa-pause-circle me-2"></i>
+                                            Hold Point Management
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="holdPointForm">
+                                            <input type="hidden" id="holdPointId" name="hold_point_id">
+                                            <div class="mb-3">
+                                                <label for="hold_reason" class="form-label">Reason for Hold</label>
+                                                <input type="text" class="form-control" id="hold_reason" name="reason" placeholder="Enter the reason for the hold">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="hold_remarks" class="form-label">Remarks</label>
+                                                <textarea class="form-control" id="hold_remarks" name="hold_remarks" rows="2" placeholder="Additional remarks (optional)"></textarea>
+                                            </div>
+                                            <div class="d-flex justify-content-end">
+                                                <button type="button" class="btn btn-primary btn-sm me-2" id="updateHoldPointBtn">Update Hold Point</button>
+                                                <button type="button" class="btn btn-danger btn-sm" id="endHoldPointBtn">End Hold Point</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+
                                 <!-- User Permissions Section - Only shown to program owners, focal users, and admins -->
                                 <?php
                                 // Check if current user can modify user permissions (must be program owner or focal)
