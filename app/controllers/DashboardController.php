@@ -220,5 +220,42 @@ class DashboardController {
         }
         return $programs;
     }
+
+    /**
+     * Get all programs for the agency and selected period, including period-specific submission and targets
+     * Used for dashboard carousel
+     *
+     * @param int $agency_id
+     * @param int $period_id
+     * @return array
+     */
+    public function getProgramsForPeriod($agency_id, $period_id) {
+        global $programsTable, $programSubmissionsTable;
+        global $programIdCol, $programNameCol, $programNumberCol, $programAgencyIdCol, $programCreatedAtCol;
+        
+        $query = "SELECT p.$programIdCol, p.$programNameCol, p.$programNumberCol, p.$programAgencyIdCol, p.created_at, p.updated_at,
+                        ps.submission_id, ps.is_draft, ps.updated_at as submission_updated_at
+                  FROM $programsTable p
+                  LEFT JOIN $programSubmissionsTable ps ON p.$programIdCol = ps.program_id AND ps.period_id = ? AND ps.is_draft = 0
+                  WHERE p.$programAgencyIdCol = ? AND p.is_deleted = 0
+                  ORDER BY p.$programNameCol ASC";
+        $stmt = $this->db->prepare($query);
+        $stmt->bind_param('ii', $period_id, $agency_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $programs = [];
+        while ($row = $result->fetch_assoc()) {
+            // No content_json, so set submission fields to null/empty
+            $row['submission'] = [
+                'status_indicator' => null,
+                'is_submitted' => $row['is_draft'] == 0 && $row['submission_id'] ? true : false,
+                'updated_at' => $row['submission_updated_at'],
+                'targets' => []
+            ];
+            $programs[] = $row;
+        }
+        $stmt->close();
+        return $programs;
+    }
 }
 ?>

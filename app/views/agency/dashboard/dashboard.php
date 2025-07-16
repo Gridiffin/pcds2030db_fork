@@ -72,6 +72,12 @@ $header_config = [
     'variant' => 'green',
     'actions' => [
         [
+            'url' => 'dashboard_bento.php',
+            'text' => 'Bento Grid View',
+            'icon' => 'fas fa-th-large',
+            'class' => 'btn-success'
+        ],
+        [
             'url' => '#',
             'id' => 'refreshDashboard',
             'text' => 'Refresh Data',

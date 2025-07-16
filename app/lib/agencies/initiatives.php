@@ -174,7 +174,7 @@ function get_initiative_programs_for_agency($initiative_id, $agency_id = null) {
             ORDER BY p.{$programNameCol} ASC";
     
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param('ii', $initiative_id);
+    $stmt->bind_param('i', $initiative_id);
     $stmt->execute();
     $result = $stmt->get_result();
     
