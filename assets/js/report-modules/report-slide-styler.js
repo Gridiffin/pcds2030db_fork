@@ -1056,12 +1056,11 @@ if (typeof window.ReportStyler !== 'undefined') {
      */
     function addTotalDegradedAreaChart(slide, pptx, themeColors, defaultFont, chartApiData, position) {
         console.log("Adding Total Degraded Area chart with data:", chartApiData);
-        if (!chartApiData || !chartApiData.data || !chartApiData.data.columns || !chartApiData.data.rows) {
-            console.error('Total Degraded Area chart data from API is missing or malformed.', chartApiData);
-            createTextBox(slide, 'Total Degraded Area data unavailable.', { 
-                x: position.x, y: position.y, w: position.w, h: 0.5, 
-                fontFace: defaultFont, fontSize: 10, color: themeColors.redStatus || 'FF0000', 
-                align: 'center', valign: 'middle' 
+        if (!chartApiData || !chartApiData.data || !chartApiData.data.columns || !chartApiData.data.rows || chartApiData.data.columns.length === 0 || chartApiData.data.rows.length === 0) {
+            createTextBox(slide, 'No data available for Total Degraded Area.', {
+                x: position.x, y: position.y + 0.5, w: position.w, h: 0.5,
+                fontFace: defaultFont, fontSize: 12, color: themeColors.redStatus || 'FF0000',
+                align: 'center', valign: 'middle'
             });
             return;
         }
@@ -1586,17 +1585,27 @@ slide.addText(statusText, {
         const container = createChartContainer(slide, pptx, themeColors);
         createChartTitle(slide, 'Timber Export Value (RM)', container, themeColors, defaultFont);
         if (!data || !data.charts || !data.charts.main_chart || !data.charts.main_chart.data) {
+            createTextBox(slide, 'No data available for Timber Export Value.', {
+                x: container.x, y: container.y + 0.5, w: container.w, h: 0.5,
+                fontFace: defaultFont, fontSize: 12, color: themeColors.redStatus || 'FF0000',
+                align: 'center', valign: 'middle'
+            });
             return;
         }
         const timberData = data.charts.main_chart.data;
+        if (!timberData.columns || !timberData.rows || timberData.columns.length === 0 || timberData.rows.length === 0) {
+            createTextBox(slide, 'No data available for Timber Export Value.', {
+                x: container.x, y: container.y + 0.5, w: container.w, h: 0.5,
+                fontFace: defaultFont, fontSize: 12, color: themeColors.redStatus || 'FF0000',
+                align: 'center', valign: 'middle'
+            });
+            return;
+        }
         const columns = timberData.columns || [];
         const rows = timberData.rows || [];
         const labels = rows.map(row => row.month || row.label || '');
-        // Get current and previous year from quarter
-        const currentYear = parseInt(data.quarter?.split('-')[1]) || new Date().getFullYear();
-        const previousYear = currentYear - 1;
-        const yearsToShow = [currentYear.toString(), previousYear.toString()].filter(y => columns.includes(y));
-        
+        // Plot ALL years in columns, not just current/previous year
+        const yearsToShow = columns;
         // Calculate total values for each year
         const yearTotals = {};
         yearsToShow.forEach(year => {
@@ -1606,7 +1615,6 @@ slide.addText(statusText, {
             }).filter(v => v !== null && v !== undefined);
             yearTotals[year] = vals.length > 0 ? vals.reduce((a, b) => a + b, 0) : 0;
         });
-        
         // Format the totals with adaptive precision and add RM prefix
         const formatNumberWithSmartPrecision = (num) => {
             if (num >= 10000000) { // Over 10 million
@@ -1617,39 +1625,22 @@ slide.addText(statusText, {
                 return num.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}); // Two decimals
             }
         };
-        
-        // Format the totals with adaptive precision and add RM prefix
-        const formattedPreviousYearTotal = `RM ${formatNumberWithSmartPrecision(yearTotals[previousYear])}`;
-        const formattedCurrentYearTotal = `RM ${formatNumberWithSmartPrecision(yearTotals[currentYear])}`;
-        
-        // Format years as requested - abbreviated with apostrophe (e.g., '24 Total)
-        const currentYearAbbr = "'" + currentYear.toString().substring(2) + " Total";
-        const previousYearAbbr = "'" + previousYear.toString().substring(2) + " Total";
-        
-        // Add total boxes using the working implementation
-        createTotalValueBox(
-            slide, 
-            pptx, 
-            themeColors, 
-            currentYearAbbr, 
-            formattedCurrentYearTotal, 
-            container.x + 0.10, // Small margin from left edge
-            container.y + container.h - 0.38, // Positioned slightly higher to prevent overlap with container bottom
-            defaultFont
-        );
-        
-        createTotalValueBox(
-            slide, 
-            pptx, 
-            themeColors, 
-            previousYearAbbr, 
-            formattedPreviousYearTotal, 
-            container.x + 2.15, // Slightly more spacing between boxes for large numbers
-            container.y + container.h - 0.38, // Same vertical position as current year
-            defaultFont
-        );
-        
-        // Build chart data for only those two years, treating 0 as null
+        // Add total boxes for each year (up to 3, for layout)
+        yearsToShow.slice(0, 3).forEach((year, idx) => {
+            const abbr = "'" + year.toString().substring(2) + ' Total';
+            const formatted = `RM ${formatNumberWithSmartPrecision(yearTotals[year])}`;
+            createTotalValueBox(
+                slide,
+                pptx,
+                themeColors,
+                abbr,
+                formatted,
+                container.x + 0.10 + idx * 2.05, // space out horizontally
+                container.y + container.h - 0.38,
+                defaultFont
+            );
+        });
+        // Build chart data for all years
         const chartData = yearsToShow.map((year, idx) => ({
             name: year,
             labels: labels,

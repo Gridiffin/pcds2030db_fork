@@ -182,7 +182,7 @@ $header_config = [
     'actions' => [
         [
             'text' => 'Back to Initiatives',
-            'url' => 'view_initiatives.php',
+            'url' => 'initiatives.php',
             'class' => 'btn-outline-light-active',
             'icon' => 'fas fa-arrow-left'
         ]

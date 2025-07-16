@@ -28,7 +28,7 @@ $message_type = '';
 // Get outcome ID from URL
 $outcome_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 if ($outcome_id === 0) {
-    $_SESSION['error_message'] = 'Invalid outcome ID.';
+    $_SESSION['error_message'] = 'Outcome not found or already deleted.';
     header('Location: manage_outcomes.php');
     exit;
 }
@@ -36,14 +36,21 @@ if ($outcome_id === 0) {
 // Fetch outcome from new outcomes table
 $outcome = get_outcome_by_id($outcome_id);
 if (!$outcome) {
-    $_SESSION['error_message'] = 'Outcome not found.';
+    $_SESSION['error_message'] = 'Outcome not found or already deleted.';
     header('Location: manage_outcomes.php');
     exit;
 }
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $post_data = $_POST['data'] ?? [];
+    $post_data = [];
+    if (isset($_POST['data'])) {
+        // Decode the JSON string from the hidden input
+        $decoded = json_decode($_POST['data'], true);
+        if (is_array($decoded)) {
+            $post_data = $decoded;
+        }
+    }
     if (update_outcome_data_by_code($outcome['code'], $post_data)) {
         header('Location: view_outcome.php?id=' . $outcome_id . '&saved=1');
         exit;
@@ -65,9 +72,10 @@ $additionalScripts = [
 require_once '../../layouts/header.php';
 
 // Configure modern page header
+$is_draft = isset($outcome['is_draft']) ? $outcome['is_draft'] : 0;
 $header_config = [
     'title' => 'Edit Outcome',
-    'subtitle' => 'Edit existing outcome with dynamic table structure' . ($outcome['is_draft'] ? ' (Draft)' : ' (Submitted)'),
+    'subtitle' => 'Edit existing outcome with dynamic table structure' . ($is_draft ? ' (Draft)' : ' (Submitted)'),
     'variant' => 'white',
     'actions' => [
         [
@@ -83,7 +91,7 @@ $header_config = [
             'class' => 'btn-outline-info'
         ],
         [
-            'html' => '<span class="badge ' . ($outcome['is_draft'] ? 'bg-warning text-dark' : 'bg-success') . '"><i class="fas ' . ($outcome['is_draft'] ? 'fa-edit' : 'fa-check') . ' me-1"></i>' . ($outcome['is_draft'] ? 'Draft' : 'Submitted') . '</span>'
+            'html' => '<span class="badge ' . ($is_draft ? 'bg-warning text-dark' : 'bg-success') . '"><i class="fas ' . ($is_draft ? 'fa-edit' : 'fa-check') . ' me-1"></i>' . ($is_draft ? 'Draft' : 'Submitted') . '</span>'
         ]
     ]
 ];
@@ -143,36 +151,70 @@ require_once '../../layouts/page_header.php';
                         </thead>
                         <tbody>
                             <?php
-                            // Get row labels from existing data or use default if no data exists
-                            $row_labels = [];
-                            if (!empty($outcome['data']) && is_array($outcome['data'])) {
-                                $row_labels = array_keys($outcome['data']);
-                            }
+                            // Extract columns and rows from outcome data
+                            $columns = isset($outcome['data']['columns']) && is_array($outcome['data']['columns']) ? $outcome['data']['columns'] : [];
+                            $rows = isset($outcome['data']['rows']) && is_array($outcome['data']['rows']) ? $outcome['data']['rows'] : [];
                             
                             // If no existing data, provide a default structure that can be modified
-                            if (empty($row_labels)) {
-                                $row_labels = ['Row 1', 'Row 2', 'Row 3']; // Default starting rows
+                            if (empty($rows)) {
+                                $rows = [
+                                    ['label' => 'Row 1', 'month' => ''],
+                                    ['label' => 'Row 2', 'month' => ''],
+                                    ['label' => 'Row 3', 'month' => '']
+                                ]; // Default starting rows
                             }
                             
-                            foreach ($row_labels as $row_label): ?>
-                                <tr>
-                                    <td>
-                                        <div class="d-flex align-items-center justify-content-between">
-                                            <span class="row-badge editable-hint" contenteditable="true" data-row="<?= htmlspecialchars($row_label) ?>"><?= htmlspecialchars($row_label) ?></span>
-                                            <button type="button" class="btn btn-sm btn-outline-danger delete-row-btn ms-2" data-row="<?= htmlspecialchars($row_label) ?>" title="Delete row">
-                                                <i class="fas fa-trash-alt"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                    <!-- Dynamic cells will be added here -->
-                                </tr>
-                            <?php endforeach; ?>
+                            if (empty($columns)) {
+                                $columns = ['Column A', 'Column B', 'Column C']; // Default starting columns
+                            }
+                            
+                            ?>
+                            <?php if (!empty($rows)): ?>
+                                <?php foreach ($rows as $row): ?>
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <span class="row-badge editable-hint" contenteditable="true" data-row="<?= htmlspecialchars($row['label'] ?? $row['month'] ?? '') ?>"><?= htmlspecialchars($row['label'] ?? $row['month'] ?? '') ?></span>
+                                                <button type="button" class="btn btn-sm btn-outline-danger delete-row-btn ms-2" data-row="<?= htmlspecialchars($row['label'] ?? $row['month'] ?? '') ?>" title="Delete row">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                        <?php foreach ($columns as $col): ?>
+                                            <td>
+                                                <div class="metric-cell editable-hint" contenteditable="true" data-row="<?= htmlspecialchars($row['label'] ?? $row['month'] ?? '') ?>" data-column="<?= htmlspecialchars($col) ?>">
+                                                    <?= isset($row[$col]) ? htmlspecialchars($row[$col]) : '' ?>
+                                                </div>
+                                            </td>
+                                        <?php endforeach; ?>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <!-- Default starting rows if no data -->
+                                <?php for ($i = 1; $i <= 3; $i++): ?>
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <span class="row-badge editable-hint" contenteditable="true" data-row="Row <?= $i ?>">Row <?= $i ?></span>
+                                                <button type="button" class="btn btn-sm btn-outline-danger delete-row-btn ms-2" data-row="Row <?= $i ?>" title="Delete row">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                        <?php foreach ($columns as $col): ?>
+                                            <td>
+                                                <div class="metric-cell editable-hint" contenteditable="true" data-row="Row <?= $i ?>" data-column="<?= htmlspecialchars($col) ?>"></div>
+                                            </td>
+                                        <?php endforeach; ?>
+                                    </tr>
+                                <?php endfor; ?>
+                            <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
 
                 <input type="hidden" name="data" id="dataJsonInput" />
-                <input type="hidden" name="is_draft" id="isDraftInput" value="<?= $outcome['is_draft'] ?>" />
+                <input type="hidden" name="is_draft" id="isDraftInput" value="<?= $is_draft ?>" />
 
                 <div class="d-flex justify-content-end gap-2">
                     <a href="view_outcome.php?id=<?= $outcome_id ?>" class="btn btn-outline-secondary">
@@ -193,8 +235,16 @@ document.addEventListener('DOMContentLoaded', function() {
     window.editOutcomeJsDisabled = true;
 
     // Initialize data from PHP
-    let columns = <?= json_encode($outcome['columns'] ?? []) ?>;
-    let data = <?= json_encode($outcome['data'] ?? []) ?>;
+    let columns = <?= json_encode($columns) ?>;
+    let rows = <?= json_encode($rows) ?>;
+    let data = {};
+    rows.forEach(function(row) {
+        let rowLabel = row['label'] || row['month'] || '';
+        data[rowLabel] = {};
+        columns.forEach(function(col) {
+            data[rowLabel][col] = row[col] !== undefined ? row[col] : 0;
+        });
+    });
 
     // Set up save button to work with the main form
     const saveBtn = document.getElementById('submitBtn');
@@ -555,10 +605,19 @@ document.addEventListener('DOMContentLoaded', function() {
         // Collect any final changes from DOM before submission
         collectCurrentData();
         
+        // Convert data object to rows array for DB
+        const rowsArray = Object.keys(data).map(rowLabel => {
+            const rowObj = { month: rowLabel };
+            columns.forEach(col => {
+                rowObj[col] = data[rowLabel][col];
+            });
+            return rowObj;
+        });
+        
         // Use the maintained data object
         const collectedData = {
             columns: columns,
-            data: data
+            rows: rowsArray
         };
         
         // Data collected for submission
