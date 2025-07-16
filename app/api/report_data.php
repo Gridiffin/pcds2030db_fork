@@ -372,6 +372,22 @@ if (!is_array($main_chart_data) || !isset($main_chart_data['columns']) || !isset
         'rows' => []
     ];
 }
+// Filter columns and rows for current and previous year only
+if (isset($main_chart_data['columns']) && isset($main_chart_data['rows'])) {
+    $years_to_keep = [$previous_year, $current_year];
+    $years_to_keep_str = array_map('strval', $years_to_keep);
+    // Filter columns
+    $main_chart_data['columns'] = array_values(array_filter($main_chart_data['columns'], function($col) use ($years_to_keep_str) {
+        return in_array($col, $years_to_keep_str);
+    }));
+    // Filter each row's values to only keep the selected years
+    foreach ($main_chart_data['rows'] as &$row) {
+        if (isset($row['values']) && is_array($row['values'])) {
+            $row['values'] = array_intersect_key($row['values'], array_flip($main_chart_data['columns']));
+        }
+    }
+    unset($row);
+}
 // Use actual outcome data for degraded area chart
 $degraded_area_chart_data_prepared = $outcomes_by_code['degraded_area']['data'] ?? [];
 if (!is_array($degraded_area_chart_data_prepared) || !isset($degraded_area_chart_data_prepared['columns']) || !isset($degraded_area_chart_data_prepared['rows'])) {
@@ -379,6 +395,22 @@ if (!is_array($degraded_area_chart_data_prepared) || !isset($degraded_area_chart
         'columns' => [],
         'rows' => []
     ];
+}
+// Filter columns and rows for current and previous year only
+if (isset($degraded_area_chart_data_prepared['columns']) && isset($degraded_area_chart_data_prepared['rows'])) {
+    $years_to_keep = [$previous_year, $current_year];
+    $years_to_keep_str = array_map('strval', $years_to_keep);
+    // Filter columns
+    $degraded_area_chart_data_prepared['columns'] = array_values(array_filter($degraded_area_chart_data_prepared['columns'], function($col) use ($years_to_keep_str) {
+        return in_array($col, $years_to_keep_str);
+    }));
+    // Filter each row's values to only keep the selected years
+    foreach ($degraded_area_chart_data_prepared['rows'] as &$row) {
+        if (isset($row['values']) && is_array($row['values'])) {
+            $row['values'] = array_intersect_key($row['values'], array_flip($degraded_area_chart_data_prepared['columns']));
+        }
+    }
+    unset($row);
 }
 
 // Set the chart titles and values based on the sector
