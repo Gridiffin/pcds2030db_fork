@@ -37,82 +37,38 @@ if (!$outcome) {
     header('Location: manage_outcomes.php');
     exit;
 }
+// Set $title to fallback only if truly empty
+$title = (!empty($outcome['title'])) ? $outcome['title'] : 'Untitled Outcome';
+$code = $outcome['code'] ?? '';
+$type = $outcome['type'] ?? '';
+$description = $outcome['description'] ?? '';
+$data_array = $outcome['data'] ?? ['columns' => [], 'rows' => []];
+$updated_at = new DateTime($outcome['updated_at'] ?? 'now');
 
-// Extract fields
-$title = $outcome['title'];
-$code = $outcome['code'];
-$type = $outcome['type'];
-$description = $outcome['description'];
-$data = $outcome['data'];
-$updated_at = new DateTime($outcome['updated_at']);
-
-// Get flexible structure configuration (updated to match agency side format)
-// All outcomes now use flexible format
-
-// Parse the outcome data (new flexible format)
-$outcome_data = json_decode($outcome['data_json'] ?? '{}', true) ?? [];
-
-// Check if data is in new flexible format
-$is_flexible = isset($outcome_data['columns']) && isset($outcome_data['data']);
-
-if ($is_flexible) {
-    // New flexible structure (same as agency side)
-    $columns = $outcome_data['columns'] ?? [];
-    $data = $outcome_data['data'] ?? [];
-    
-    // Get row labels from the data
-    $row_labels = [];
-    if (!empty($data) && is_array($data)) {
-        $row_labels = array_keys($data);
-    }
-    
-    // Convert to admin display format for compatibility
-    $rows = array_map(function($row_label) {
-        return ['id' => $row_label, 'label' => $row_label, 'type' => 'data'];
-    }, $row_labels);
-    
-    $columns_formatted = array_map(function($col) {
-        return ['id' => $col, 'label' => $col, 'type' => 'number', 'unit' => ''];
-    }, $columns);
-    
-    // Organize data for display (compatible with existing admin template)
-    $table_data = [];
-    foreach ($row_labels as $row_label) {
-        $row_data = ['row' => ['id' => $row_label, 'label' => $row_label, 'type' => 'data'], 'metrics' => []];
-        
-        // Add data for each column in this row
-        if (isset($data[$row_label])) {
-            $row_data['metrics'] = $data[$row_label];
-        }
-        
-        $table_data[] = $row_data;
-    }
-} else {
-    // Legacy fallback - shouldn't happen after migration
-    $outcome_metrics_data = $outcome['parsed_data'] ?? [];
-    if (empty($outcome_metrics_data) && !empty($outcome['data_json'])) {
-        $outcome_metrics_data = json_decode($outcome['data_json'], true) ?? [];
-    }
-    
-    $metric_names = $outcome_metrics_data['columns'] ?? [];
-    
-    // Create default monthly rows
-    $month_names = ['January', 'February', 'March', 'April', 'May', 'June', 
-                    'July', 'August', 'September', 'October', 'November', 'December'];
-    $rows = array_map(function($month) {
-        return ['id' => $month, 'label' => $month, 'type' => 'data'];
-    }, $month_names);
-    
-    $columns_formatted = array_map(function($col) {
-        return ['id' => $col, 'label' => $col, 'type' => 'number', 'unit' => ''];
-    }, $metric_names);
-    
-    $table_data = [];
-    // Legacy data organization would go here
+// Ensure we have the correct structure
+if (!isset($data_array['columns']) || !isset($data_array['rows'])) {
+    $data_array = ['columns' => [], 'rows' => []];
 }
 
-// For backward compatibility with existing admin template
-$columns = $columns_formatted ?? [];
+$columns = $data_array['columns'] ?? [];
+$rows = $data_array['rows'] ?? [];
+
+// Ensure $columns and $data_array['rows'] are always arrays
+if (!isset($columns) || !is_array($columns)) {
+    $columns = [];
+}
+if (!isset($data_array['rows']) || !is_array($data_array['rows'])) {
+    $data_array['rows'] = [];
+}
+
+// Get row labels from the rows array
+$row_labels = [];
+foreach ($rows as $row) {
+    $row_labels[] = $row['month'] ?? $row['label'] ?? '';
+}
+
+// If no data exists, show empty state
+$has_data = !empty($columns) && !empty($rows);
 
 // Add CSS references (if any specific to outcome viewing)
 $additionalStyles = [
@@ -124,7 +80,7 @@ require_once ROOT_PATH . 'app/views/layouts/header.php';
 
 // Configure modern page header
 $header_config = [
-    'title' => 'View Outcome Details',
+    'title' => $title,
     'subtitle' => 'Review outcome data and metrics',
     'variant' => 'white',
     'actions' => [
@@ -135,13 +91,7 @@ $header_config = [
             'class' => 'btn-outline-primary'
         ],
         [
-            'url' => 'outcome_history.php?metric_id=' . $outcome_id,
-            'text' => 'View History',
-            'icon' => 'fas fa-history',
-            'class' => 'btn-outline-info'
-        ],
-        [
-            'url' => 'edit_outcome.php?metric_id=' . $outcome_id,
+            'url' => 'edit_outcome.php?id=' . $outcome_id,
             'text' => 'Edit Outcome',
             'icon' => 'fas fa-edit',
             'class' => 'btn-primary'
@@ -151,13 +101,15 @@ $header_config = [
 
 // Include modern page header
 require_once '../../layouts/page_header.php';
+// Re-assign $title after page_header.php unsets it
+$title = (!empty($outcome['title'])) ? $outcome['title'] : 'Untitled Outcome';
 ?>
 
 <div class="container-fluid px-4 py-4">
     <div class="card mb-4 admin-card">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h5 class="card-title m-0">
-                <i class="fas fa-bullseye me-2"></i><?= htmlspecialchars($title) ?>
+                <i class="fas fa-bullseye me-2"></i><?= htmlspecialchars($title ?? 'Untitled Outcome') ?>
             </h5>
         </div>        <!-- Tab Navigation -->
         <ul class="nav nav-tabs" id="outcomeDetailTabs" role="tablist">
@@ -195,7 +147,7 @@ require_once '../../layouts/page_header.php';
                         </div>
                     </div>
 
-                    <?php if (!empty($columns) && $is_flexible): ?>
+                    <?php if (!empty($columns) && $has_data): ?>
                     <div class="table-responsive">
                         <table class="table table-bordered table-hover data-table">
                             <thead class="table-light">
@@ -203,25 +155,22 @@ require_once '../../layouts/page_header.php';
                                     <th style="width: 150px;">Row</th>
                                     <?php foreach ($columns as $column): ?>
                                         <th class="text-center">
-                                            <?= htmlspecialchars($column['label']) ?>
-                                            <?php if (!empty($column['unit'])): ?>
-                                                <span class="text-muted small">(<?= htmlspecialchars($column['unit']) ?>)</span>
-                                            <?php endif; ?>
+                                            <?= htmlspecialchars($column) ?>
                                         </th>
                                     <?php endforeach; ?>
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($row_labels as $row_label): ?>
+                                <?php foreach ($data_array['rows'] as $row): ?>
                                     <tr>
                                         <td>
-                                            <span class="month-badge"><?= htmlspecialchars($row_label) ?></span>
+                                            <span class="month-badge"><?= htmlspecialchars($row['month'] ?? '') ?></span>
                                         </td>
-                                        <?php foreach ($columns as $column): ?>
+                                        <?php foreach ($columns as $col_id): 
+                                            $value = $row[$col_id] ?? 0;
+                                        ?>
                                             <td class="text-end">
-                                                <?php 
-                                                $value = $data[$row_label][$column['id']] ?? 0;
-                                                // Handle empty strings and non-numeric values safely
+                                                <?php
                                                 if (is_numeric($value) && $value !== '') {
                                                     echo number_format((float)$value, 2);
                                                 } else {
@@ -232,24 +181,19 @@ require_once '../../layouts/page_header.php';
                                         <?php endforeach; ?>
                                     </tr>
                                 <?php endforeach; ?>
-                                
                                 <!-- Total Row -->
                                 <tr class="table-light fw-bold">
                                     <td><span class="total-badge">TOTAL</span></td>
-                                    <?php foreach ($columns as $column): ?>
-                                        <td class="text-end">
-                                            <?php
-                                            $total = 0;
-                                            foreach ($row_labels as $row_label) {
-                                                $cell_value = $data[$row_label][$column['id']] ?? 0;
-                                                // Only add numeric values to total
-                                                if (is_numeric($cell_value) && $cell_value !== '') {
-                                                    $total += (float)$cell_value;
-                                                }
+                                    <?php foreach ($columns as $col_id): 
+                                        $total = 0;
+                                        foreach ($data_array['rows'] as $row) {
+                                            $cell_value = $row[$col_id] ?? 0;
+                                            if (is_numeric($cell_value) && $cell_value !== '') {
+                                                $total += (float)$cell_value;
                                             }
-                                            echo number_format($total, 2);
-                                            ?>
-                                        </td>
+                                        }
+                                    ?>
+                                        <td class="text-end"><?= number_format($total, 2) ?></td>
                                     <?php endforeach; ?>
                                 </tr>
                             </tbody>
@@ -264,7 +208,7 @@ require_once '../../layouts/page_header.php';
                                     <th style="width: 150px;">Month</th>
                                     <?php foreach ($columns as $column): ?>
                                         <th>
-                                            <?= htmlspecialchars($column['label']) ?>
+                                            <?= htmlspecialchars($column['label'] ?? '') ?>
                                             <?php if (!empty($column['unit'])): ?>
                                                 <span class="text-muted small">(<?= htmlspecialchars($column['unit']) ?>)</span>
                                             <?php endif; ?>
@@ -273,10 +217,10 @@ require_once '../../layouts/page_header.php';
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($table_data as $row_data): ?>
+                                <?php foreach ($rows as $row_data): ?>
                                     <tr>
                                         <td>
-                                            <span class="month-badge"><?= htmlspecialchars($row_data['row']['label']) ?></span>
+                                            <span class="month-badge"><?= htmlspecialchars($row_data['label'] ?? $row_data['month'] ?? '') ?></span>
                                         </td>
                                         <?php foreach ($columns as $col_idx => $column): ?>
                                             <td class="text-end">
@@ -291,7 +235,7 @@ require_once '../../layouts/page_header.php';
                                     <td><span class="total-badge">TOTAL</span></td>
                                     <?php foreach ($columns as $col_idx => $column): 
                                         $total = 0;
-                                        foreach ($table_data as $row_data) {
+                                        foreach ($rows as $row_data) {
                                             if (isset($row_data['metrics'][$col_idx]) && is_numeric($row_data['metrics'][$col_idx])) {
                                                 $total += (float)$row_data['metrics'][$col_idx];
                                             }
@@ -328,9 +272,9 @@ require_once '../../layouts/page_header.php';
                                     <tbody>
                                         <?php foreach ($rows as $row): ?>
                                         <tr>
-                                            <td><?= htmlspecialchars($row['label']) ?></td>
+                                            <td><?= htmlspecialchars($row['label'] ?? $row['month'] ?? '') ?></td>
                                             <td>
-                                                <span class="badge bg-secondary"><?= ucfirst($row['type']) ?></span>
+                                                <span class="badge bg-secondary"><?= ucfirst($row['type'] ?? 'data') ?></span>
                                             </td>
                                         </tr>
                                         <?php endforeach; ?>
@@ -354,9 +298,9 @@ require_once '../../layouts/page_header.php';
                                     <tbody>
                                         <?php foreach ($columns as $column): ?>
                                         <tr>
-                                            <td><?= htmlspecialchars($column['label']) ?></td>
+                                            <td><?= htmlspecialchars($column['label'] ?? '') ?></td>
                                             <td>
-                                                <span class="badge bg-info"><?= ucfirst($column['type']) ?></span>
+                                                <span class="badge bg-info"><?= ucfirst($column['type'] ?? 'number') ?></span>
                                             </td>
                                             <td><?= htmlspecialchars($column['unit'] ?? '') ?></td>
                                         </tr>
@@ -388,9 +332,9 @@ require_once '../../layouts/page_header.php';
                             <div class="form-group">
                                 <label for="chartColumnSelect" class="form-label">Select Data Series</label>
                                 <select class="form-select" id="chartColumnSelect" multiple>
-                                    <?php foreach ($columns as $column): ?>
-                                        <option value="<?= htmlspecialchars($column['id']) ?>" selected>
-                                            <?= htmlspecialchars($column['label']) ?>
+                                    <?php foreach ($columns as $col): ?>
+                                        <option value="<?= htmlspecialchars($col) ?>" selected>
+                                            <?= htmlspecialchars($col) ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
@@ -431,15 +375,30 @@ require_once '../../layouts/page_header.php';
 <!-- Pass data to JavaScript (same format as agency side) -->
 <script>
 // Prepare data for chart in a simple, compatible format
-window.tableData = <?= json_encode($data ?? []) ?>;
-window.tableColumns = <?= json_encode(array_column($columns, 'id')) ?>;
-window.tableRows = <?= json_encode($row_labels ?? []) ?>;
+window.tableData = {};
+window.tableColumns = <?= json_encode($columns) ?>;
+window.tableRows = <?= json_encode(array_map(function($row) { return $row['month'] ?? ''; }, $data_array['rows'])) ?>;
+<?php if ($has_data && !empty($columns) && !empty($data_array['rows'])): ?>
+<?php foreach ($data_array['rows'] as $row): ?>
+window.tableData[<?= json_encode($row['month'] ?? '') ?>] = {};
+<?php foreach ($columns as $col_id): ?>
+window.tableData[<?= json_encode($row['month'] ?? '') ?>][<?= json_encode($col_id) ?>] = <?= json_encode($row[$col_id] ?? 0) ?>;
+<?php endforeach; ?>
+<?php endforeach; ?>
+// Debug output to verify data structure
+console.log('Chart Debug: tableData', window.tableData);
+console.log('Chart Debug: tableColumns', window.tableColumns);
+console.log('Chart Debug: tableRows', window.tableRows);
+<?php else: ?>
+// Chart Debug: No data available for chart
+console.log('Chart Debug: No data available for chart');
+<?php endif; ?>
 
 // Additional data for context
 const outcomeInfo = {
     id: <?= $outcome_id ?>,
-    title: <?= json_encode($title) ?>,
-    hasData: <?= json_encode($is_flexible && !empty($columns) && !empty($row_labels)) ?>
+    title: <?= isset($title) ? json_encode($title) : json_encode('Untitled Outcome') ?>,
+    hasData: <?= json_encode($has_data) ?>
 };
 
 // Initialize chart functionality if Chart.js is available (same as agency side)
@@ -447,30 +406,31 @@ function initializeChart() {
     if (typeof Chart !== 'undefined' && window.tableData && window.tableColumns && window.tableRows) {
         // Get the canvas element
         const canvas = document.getElementById('metricChart');
-        
         if (canvas && Object.keys(window.tableData).length > 0) {
             // Clear any previous chart
             if (window.currentChart) {
                 window.currentChart.destroy();
             }
-            
             // Get chart settings from form inputs
             const chartType = document.getElementById('chartTypeSelect') ? document.getElementById('chartTypeSelect').value : 'bar';
             const cumulativeView = document.getElementById('cumulativeView') ? document.getElementById('cumulativeView').checked : false;
-            
+            // Get selected columns from dropdown
+            const chartColumnSelect = document.getElementById('chartColumnSelect');
+            let selectedColumns = window.tableColumns;
+            if (chartColumnSelect) {
+                selectedColumns = Array.from(chartColumnSelect.selectedOptions).map(opt => opt.value);
+            }
             // Create chart data - ensure all values are numeric
             const labels = window.tableRows;
-            const datasets = window.tableColumns.map((column, index) => {
+            const datasets = selectedColumns.map((column, index) => {
                 let data = labels.map(row => {
                     const cellValue = window.tableData[row] ? window.tableData[row][column] : null;
-                    // Convert to number, handle empty strings and null values
                     let numericValue = 0;
                     if (cellValue !== null && cellValue !== '' && cellValue !== undefined) {
                         numericValue = parseFloat(cellValue) || 0;
                     }
                     return numericValue;
                 });
-                
                 // Apply cumulative calculation if enabled
                 if (cumulativeView) {
                     const cumulativeData = [];
@@ -481,7 +441,6 @@ function initializeChart() {
                     }
                     data = cumulativeData;
                 }
-                
                 const colors = [
                     'rgba(54, 162, 235, 0.8)',
                     'rgba(255, 99, 132, 0.8)',
@@ -490,7 +449,6 @@ function initializeChart() {
                     'rgba(153, 102, 255, 0.8)',
                     'rgba(255, 159, 64, 0.8)'
                 ];
-                
                 return {
                     label: column + (cumulativeView ? ' (Cumulative)' : ''),
                     data: data,
@@ -500,8 +458,6 @@ function initializeChart() {
                     fill: chartType === 'area'
                 };
             });
-            
-            // Create chart with basic configuration
             window.currentChart = new Chart(canvas, {
                 type: chartType === 'area' ? 'line' : chartType,
                 data: {
@@ -520,7 +476,6 @@ function initializeChart() {
                                     size: 14,
                                     weight: '600'
                                 },
-                                // Format large numbers (e.g., financial data)
                                 callback: function(value) {
                                     if (value >= 1000000000) {
                                         return 'RM ' + (value / 1000000000).toFixed(1) + 'B';
@@ -658,6 +613,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 link.click();
                 window.URL.revokeObjectURL(url);
             }
+        });
+    }
+
+    // Add event listener for chartColumnSelect to make it toggleable
+    const chartColumnSelect = document.getElementById('chartColumnSelect');
+    if (chartColumnSelect) {
+        // Toggle selection on click (mousedown)
+        Array.from(chartColumnSelect.options).forEach(option => {
+            option.addEventListener('mousedown', function(e) {
+                e.preventDefault();
+                option.selected = !option.selected;
+                // Trigger change event to update chart
+                chartColumnSelect.dispatchEvent(new Event('change'));
+            });
+        });
+        // Update chart on change
+        chartColumnSelect.addEventListener('change', function() {
+            initializeChart();
         });
     }
 

@@ -366,9 +366,20 @@ $timber_export_data = [
 
 // Use actual outcome data for timber export chart
 $main_chart_data = $outcomes_by_code['timber_export']['data'] ?? [];
-
+if (!is_array($main_chart_data) || !isset($main_chart_data['columns']) || !isset($main_chart_data['rows'])) {
+    $main_chart_data = [
+        'columns' => [],
+        'rows' => []
+    ];
+}
 // Use actual outcome data for degraded area chart
 $degraded_area_chart_data_prepared = $outcomes_by_code['degraded_area']['data'] ?? [];
+if (!is_array($degraded_area_chart_data_prepared) || !isset($degraded_area_chart_data_prepared['columns']) || !isset($degraded_area_chart_data_prepared['rows'])) {
+    $degraded_area_chart_data_prepared = [
+        'columns' => [],
+        'rows' => []
+    ];
+}
 
 // Set the chart titles and values based on the sector
 switch ($sector_id) {

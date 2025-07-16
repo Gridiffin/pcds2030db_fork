@@ -1,327 +1,270 @@
 <?php
 /**
- * Manage Initiatives Page
+ * Agency Initiatives View
  * 
- * Admin interface for managing initiatives.
+ * Read-only view of initiatives that have programs assigned to the current agency.
  */
 
-// Include necessary files
-require_once '../../../config/config.php';
-require_once ROOT_PATH . 'app/lib/db_connect.php';
-require_once ROOT_PATH . 'app/lib/session.php';
-require_once ROOT_PATH . 'app/lib/functions.php';
-require_once ROOT_PATH . 'app/lib/admins/index.php';
-require_once ROOT_PATH . 'app/lib/initiative_functions.php';
-require_once ROOT_PATH . 'app/lib/db_names_helper.php';
+// Define project root path for consistent file references
+if (!defined('PROJECT_ROOT_PATH')) {
+    define('PROJECT_ROOT_PATH', rtrim(dirname(dirname(dirname(__DIR__))), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
+}
 
-// Verify user is admin
+// Include necessary files
+require_once PROJECT_ROOT_PATH . 'config/config.php';
+require_once PROJECT_ROOT_PATH . 'lib/db_connect.php';
+require_once PROJECT_ROOT_PATH . 'lib/session.php';
+require_once PROJECT_ROOT_PATH . 'lib/functions.php';
+require_once PROJECT_ROOT_PATH . 'lib/agencies/index.php';
+require_once PROJECT_ROOT_PATH . 'lib/agencies/initiatives.php';
+require_once PROJECT_ROOT_PATH . 'lib/initiative_functions.php';
+require_once PROJECT_ROOT_PATH . 'lib/rating_helpers.php';
+require_once PROJECT_ROOT_PATH . 'lib/db_names_helper.php';
+
+// Verify user is an admin
 if (!is_admin()) {
     header('Location: ' . APP_URL . '/login.php');
     exit;
 }
 
-// Set page title
-$pageTitle = 'Manage Initiatives';
+// Get message from session if available
+$message = $_SESSION['message'] ?? '';
+$messageType = $_SESSION['message_type'] ?? 'info';
 
-// Handle AJAX table request
-if (isset($_GET['ajax_table']) && $_GET['ajax_table'] == '1') {
-    $search = isset($_GET['search']) ? $_GET['search'] : '';
-    $is_active = isset($_GET['is_active']) && $_GET['is_active'] !== '' ? intval($_GET['is_active']) : null;
-    
-    $filters = [];
-    if (!empty($search)) {
-        $filters['search'] = $search;
-    }
-    if ($is_active !== null) {
-        $filters['is_active'] = $is_active;
-    }
-    
-    $initiatives = get_all_initiatives($filters);
-    
-    // Load config and extract column names
-    $config = include __DIR__ . '/../../../config/db_names.php';
-    $initiative_id_col = $config['columns']['initiatives']['id'];
-    $initiative_name_col = $config['columns']['initiatives']['name'];
-    $initiative_description_col = $config['columns']['initiatives']['description'];
-    $initiative_number_col = $config['columns']['initiatives']['number'];
-    $is_active_col = $config['columns']['initiatives']['is_active'];
-    $created_at_col = $config['columns']['initiatives']['created_at'];
-    
-    ?>    <div class="card shadow-sm h-100 d-flex flex-column">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="card-title m-0">
-                <i class="fas fa-lightbulb me-2"></i>Initiatives
-                <span class="badge bg-primary ms-2"><?php echo count($initiatives); ?></span>
-            </h5>
-            <a href="create.php" class="btn btn-primary btn-sm">
-                <i class="fas fa-plus me-1"></i>Add Initiative
-            </a>
-        </div>        <div class="card-body p-0 flex-fill d-flex flex-column"><?php if (empty($initiatives)): ?>
-                <div class="text-center py-5 flex-fill d-flex flex-column justify-content-center" style="min-height: 60vh;">
-                    <i class="fas fa-lightbulb fa-3x text-muted mb-3"></i>
-                    <h5 class="text-muted">No initiatives found</h5>
-                    <p class="text-muted">Get started by creating your first initiative.</p>
-                    <a href="create.php" class="btn btn-primary">
-                        <i class="fas fa-plus me-1"></i>Add Initiative
-                    </a>
-                </div>
-            <?php else: ?>
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Initiative Name</th>
-                                <th>Number</th>
-                                <th>Programs</th>
-                                <th>Status</th>
-                                <th>Created By</th>
-                                <th>Created Date</th>
-                                <th class="text-center" style="width: 120px;">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php 
-                            foreach ($initiatives as $initiative): ?>
-                                <tr data-initiative-id="<?php echo $initiative[$initiative_id_col]; ?>">
-                                    <td>
-                                        <div class="fw-semibold"><?php echo htmlspecialchars($initiative[$initiative_name_col] ?? ''); ?></div>
-                                        <?php if (!empty($initiative[$initiative_description_col])): ?>
-                                            <small class="text-muted"><?php echo htmlspecialchars(substr($initiative[$initiative_description_col], 0, 80)) . (strlen($initiative[$initiative_description_col]) > 80 ? '...' : ''); ?></small>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td>
-                                        <?php echo !empty($initiative[$initiative_number_col]) ? htmlspecialchars($initiative[$initiative_number_col]) : '<span class="text-muted">—</span>'; ?>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-info"><?php echo $initiative['program_count']; ?> programs</span>
-                                    </td>
-                                    <td>
-                                        <?php if (!empty($initiative[$is_active_col])): ?>
-                                            <span class="badge bg-success">Active</span>
-                                        <?php else: ?>
-                                            <span class="badge bg-secondary">Inactive</span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td><?php echo htmlspecialchars($initiative['created_by_username'] ?? 'Unknown'); ?></td>
-                                    <td>
-                                        <small class="text-muted">
-                                            <?php echo !empty($initiative[$created_at_col]) ? date('M j, Y', strtotime($initiative[$created_at_col])) : ''; ?>
-                                        </small>
-                                    </td>
-                                    <td class="text-center">
-                                        <div class="btn-group btn-group-sm" role="group">
-                                            <a href="view_initiative.php?id=<?php echo $initiative[$initiative_id_col]; ?>" 
-                                               class="btn btn-outline-info" title="View">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                            <a href="edit.php?id=<?php echo $initiative[$initiative_id_col]; ?>" 
-                                               class="btn btn-outline-primary" title="Edit">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <button type="button" 
-                                                    class="btn btn-outline-<?php echo !empty($initiative[$is_active_col]) ? 'warning' : 'success'; ?> btn-toggle-status" 
-                                                    data-initiative-id="<?php echo $initiative[$initiative_id_col]; ?>"
-                                                    data-current-status="<?php echo $initiative[$is_active_col]; ?>"
-                                                    title="<?php echo !empty($initiative[$is_active_col]) ? 'Deactivate' : 'Activate'; ?>">
-                                                <i class="fas fa-<?php echo !empty($initiative[$is_active_col]) ? 'pause' : 'play'; ?>"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            <?php endif; ?>
-        </div>
-    </div>
-    <?php
-    exit;
+// Clear message from session
+if (isset($_SESSION['message'])) {
+    unset($_SESSION['message']);
+    unset($_SESSION['message_type']);
 }
+
+// Set page title
+$pageTitle = 'Initiatives';
+
+// Get filter parameters
+$search = isset($_GET['search']) ? trim($_GET['search']) : '';
+$status_filter = isset($_GET['status']) ? $_GET['status'] : '';
+
+// Build filters array
+$filters = [];
+if (!empty($search)) {
+    $filters['search'] = $search;
+}
+if ($status_filter !== '') {
+    $filters['is_active'] = $status_filter === 'active' ? 1 : 0;
+}
+
+// Get column names using db_names helper
+$initiative_id_col = get_column_name('initiatives', 'id');
+$initiative_name_col = get_column_name('initiatives', 'name');
+$initiative_number_col = get_column_name('initiatives', 'number');
+$initiative_description_col = get_column_name('initiatives', 'description');
+$start_date_col = get_column_name('initiatives', 'start_date');
+$end_date_col = get_column_name('initiatives', 'end_date');
+$is_active_col = get_column_name('initiatives', 'is_active');
+
+// Get initiatives for admin (all initiatives)
+$initiatives = get_all_initiatives($filters);
+
+// Additional scripts
+$additionalScripts = [];
+
+// Additional styles  
+$additionalStyles = [];
 
 // Include header
 require_once '../../layouts/header.php';
 
 // Configure the modern page header
 $header_config = [
-    'title' => 'Manage Initiatives',
-    'subtitle' => 'Create and manage strategic initiatives',
-    'variant' => 'green'
+    'title' => 'Initiatives',
+    'subtitle' => 'View initiatives where your agency has assigned programs',
+    'variant' => 'blue',
+    'actions' => []
 ];
 
 // Include the modern page header
 require_once '../../layouts/page_header.php';
-?>            <main class="flex-fill d-flex flex-column" style="min-height: calc(100vh - 200px);">
-                <!-- Filters -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-body">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label for="search" class="form-label">Search Initiatives</label>
-                                <input type="text" class="form-control" id="search" placeholder="Search by name, number, or description...">
-                            </div>
-                            <div class="col-md-3">
-                                <label for="statusFilter" class="form-label">Status</label>
-                                <select class="form-select" id="statusFilter">
-                                    <option value="">All Status</option>
-                                    <option value="1">Active</option>
-                                    <option value="0">Inactive</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">&nbsp;</label>
-                                <div class="d-grid">
-                                    <button type="button" class="btn btn-outline-secondary" id="clearFilters">
-                                        <i class="fas fa-times me-1"></i>Clear Filters
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>                <!-- Initiatives Table Container -->
-                <div id="initiativesTableContainer" class="flex-fill" style="min-height: 400px;">
-                    <!-- Content loaded via AJAX -->
-                    <div class="text-center py-5">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                    </div>
-                </div>
-            </main>
+?>
 
-<!-- Success/Error Messages -->
-<?php if (isset($_SESSION['message'])): ?>
-    <div class="toast-container position-fixed top-0 end-0 p-3">
-        <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="toast-header">
-                <strong class="me-auto">
-                    <i class="fas fa-<?php echo $_SESSION['message_type'] === 'success' ? 'check-circle text-success' : 'exclamation-triangle text-danger'; ?> me-1"></i>
-                    <?php echo ucfirst($_SESSION['message_type'] ?? 'info'); ?>
-                </strong>
-                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+<main class="flex-fill">
+
+<?php if ($message): ?>
+<div class="alert alert-<?php echo $messageType; ?> alert-dismissible fade show" role="alert">
+    <?php echo htmlspecialchars($message); ?>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+<?php endif; ?>
+
+<!-- Search and Filter Section -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="GET" action="" class="row g-3">
+            <div class="col-md-6 col-sm-12">
+                <label for="search" class="form-label">Search Initiatives</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="text" class="form-control" id="search" name="search" 
+                           placeholder="Search by name, number, or description" 
+                           value="<?php echo htmlspecialchars($search); ?>">
+                </div>
             </div>
-            <div class="toast-body">
-                <?php echo htmlspecialchars($_SESSION['message']); ?>
+            <div class="col-md-3 col-sm-6">
+                <label for="status" class="form-label">Status</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">All Status</option>
+                    <option value="active" <?php echo $status_filter === 'active' ? 'selected' : ''; ?>>Active</option>
+                    <option value="inactive" <?php echo $status_filter === 'inactive' ? 'selected' : ''; ?>>Inactive</option>
+                </select>
+            </div>
+            <div class="col-md-3 col-sm-6 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="fas fa-search me-1"></i> Search
+                </button>
+                <a href="initiatives.php" class="btn btn-outline-secondary">
+                    <i class="fas fa-undo me-1"></i> Reset
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Initiatives List -->
+<div class="card shadow-sm">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title m-0">
+            <i class="fas fa-lightbulb me-2"></i>Your Initiatives
+            <span class="badge bg-primary ms-2"><?php echo count($initiatives); ?></span>
+        </h5>
+        <div class="d-flex align-items-center">
+            <div class="text-muted small">
+                <i class="fas fa-info-circle me-1"></i>
+                Showing initiatives where your agency has programs
             </div>
         </div>
     </div>
-    <?php 
-    unset($_SESSION['message']);
-    unset($_SESSION['message_type']);
-    ?>
-<?php endif; ?>
+    <div class="card-body p-0">
+        <?php if (empty($initiatives)): ?>
+            <div class="text-center py-5">
+                <i class="fas fa-lightbulb fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No initiatives found</h5>
+                <p class="text-muted">
+                    <?php if (!empty($search) || $status_filter !== ''): ?>
+                        No initiatives match your search criteria.
+                    <?php else: ?>
+                        Your agency doesn't have any programs assigned to initiatives yet.
+                    <?php endif; ?>
+                </p>
+                <?php if (!empty($search) || $status_filter !== ''): ?>
+                    <a href="initiatives.php" class="btn btn-outline-primary">
+                        <i class="fas fa-undo me-1"></i>Clear Filters
+                    </a>
+                <?php endif; ?>
+            </div>
+        <?php else: ?>
+            <!-- Table View Only -->
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Initiative</th>
+                            <th class="text-center">Total Programs</th>
+                            <th>Timeline</th>
+                            <th>Status</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($initiatives as $initiative): ?>
+                            <tr data-initiative-id="<?php echo isset($initiative[$initiative_id_col]) ? htmlspecialchars($initiative[$initiative_id_col]) : ''; ?>">
+                                <td>
+                                    <div class="d-flex align-items-start">
+                                        <div class="flex-grow-1">
+                                            <div class="fw-semibold mb-1">
+                                                <?php if (!empty($initiative[$initiative_number_col])): ?>
+                                                    <span class="badge bg-primary me-2">
+                                                        <?php echo htmlspecialchars($initiative[$initiative_number_col] ?? ''); ?>
+                                                    </span>
+                                                <?php endif; ?>
+                                                <?php echo htmlspecialchars($initiative[$initiative_name_col] ?? ''); ?>
+                                            </div>
+                                            <?php if (!empty($initiative[$initiative_description_col])): ?>
+                                                <div class="text-muted small" style="line-height: 1.4;">
+                                                    <?php 
+                                                    $description = htmlspecialchars($initiative[$initiative_description_col] ?? '');
+                                                    echo strlen($description) > 120 ? substr($description, 0, 120) . '...' : $description;
+                                                    ?>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-secondary">
+                                        <?php echo isset($initiative['program_count']) ? $initiative['program_count'] : 0; ?> total
+                                    </span>
+                                </td>
+                                <td>
+                                    <?php if (!empty($initiative[$start_date_col]) || !empty($initiative[$end_date_col])): ?>
+                                        <div class="small">
+                                            <?php if (!empty($initiative[$start_date_col]) && !empty($initiative[$end_date_col])): ?>
+                                                <i class="fas fa-calendar-alt me-1 text-muted"></i>
+                                                <?php echo date('M j, Y', strtotime($initiative[$start_date_col] ?? '')); ?> - 
+                                                <?php echo date('M j, Y', strtotime($initiative[$end_date_col] ?? '')); ?>
+                                            <?php elseif (!empty($initiative[$start_date_col])): ?>
+                                                <i class="fas fa-play me-1 text-success"></i>
+                                                Started: <?php echo date('M j, Y', strtotime($initiative[$start_date_col] ?? '')); ?>
+                                            <?php elseif (!empty($initiative[$end_date_col])): ?>
+                                                <i class="fas fa-flag-checkered me-1 text-warning"></i>
+                                                Due: <?php echo date('M j, Y', strtotime($initiative[$end_date_col] ?? '')); ?>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php else: ?>
+                                        <span class="text-muted small">
+                                            <i class="fas fa-calendar-times me-1"></i>
+                                            No timeline
+                                        </span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php if (!empty($initiative[$is_active_col])): ?>
+                                        <span class="badge bg-success">Active</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-secondary">Inactive</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="text-center">
+                                    <a href="view_initiative.php?id=<?php echo isset($initiative[$initiative_id_col]) ? htmlspecialchars($initiative[$initiative_id_col]) : ''; ?>" 
+                                       class="btn btn-outline-primary btn-sm"
+                                       title="View Initiative Details">
+                                        <i class="fas fa-eye me-1"></i>View Details
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
+    </div>
+</div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Load initial table
-    loadInitiativesTable();
-    
-    // Search functionality
-    let searchTimeout;
-    document.getElementById('search').addEventListener('input', function() {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(loadInitiativesTable, 300);
-    });
-    
-    // Status filter
-    document.getElementById('statusFilter').addEventListener('change', loadInitiativesTable);
-    
-    // Clear filters
-    document.getElementById('clearFilters').addEventListener('click', function() {
-        document.getElementById('search').value = '';
-        document.getElementById('statusFilter').value = '';
-        loadInitiativesTable();
-    });
-    
-    // Load initiatives table via AJAX
-    function loadInitiativesTable() {
-        const search = document.getElementById('search').value;
-        const status = document.getElementById('statusFilter').value;
-        
-        const params = new URLSearchParams({
-            ajax_table: '1',
-            search: search,
-            is_active: status
-        });
-        
-        fetch('manage_initiatives.php?' + params.toString())
-            .then(response => response.text())
-            .then(html => {
-                document.getElementById('initiativesTableContainer').innerHTML = html;
-                attachEventListeners();
-            })
-            .catch(error => {
-                console.error('Error loading table:', error);
-                document.getElementById('initiativesTableContainer').innerHTML = 
-                    '<div class="alert alert-danger">Error loading initiatives. Please refresh the page.</div>';
-            });
+</main>
+
+<style>
+@media (max-width: 768px) {
+    .table-responsive table {
+        font-size: 0.9em;
     }
     
-    // Attach event listeners to dynamic content
-    function attachEventListeners() {
-        // Toggle status buttons
-        document.querySelectorAll('.btn-toggle-status').forEach(button => {
-            button.addEventListener('click', function() {
-                const initiativeId = this.dataset.initiativeId;
-                const currentStatus = this.dataset.currentStatus;
-                
-                if (confirm(`Are you sure you want to ${currentStatus === '1' ? 'deactivate' : 'activate'} this initiative?`)) {
-                    toggleInitiativeStatus(initiativeId);
-                }
-            });
-        });
+    .badge {
+        font-size: 0.7em;
     }
-    
-    // Toggle initiative status
-    function toggleInitiativeStatus(initiativeId) {
-        fetch('<?php echo APP_URL; ?>/app/api/initiatives.php', {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                action: 'toggle_status',
-                initiative_id: initiativeId
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                loadInitiativesTable(); // Reload table
-                showToast('Initiative status updated successfully', 'success');
-            } else {
-                showToast(data.error || 'Failed to update initiative status', 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showToast('An error occurred while updating the initiative status', 'error');
-        });
-    }
-    
-    // Show toast notification
-    function showToast(message, type) {
-        // Simple toast implementation
-        const toast = document.createElement('div');
-        toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
-        toast.style.top = '20px';
-        toast.style.right = '20px';
-        toast.style.zIndex = '9999';
-        toast.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        `;
-        document.body.appendChild(toast);
-        
-        // Auto-hide after 5 seconds
-        setTimeout(() => {
-            if (toast.parentNode) {
-                toast.remove();
-            }
-        }, 5000);
-    }
-});
-</script>
+}
+
+.view-container {
+    transition: opacity 0.3s ease;
+}
+</style>
 
 <?php
 // Include footer

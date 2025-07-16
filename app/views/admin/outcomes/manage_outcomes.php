@@ -83,6 +83,12 @@ require_once '../../layouts/page_header.php';
 ?>
 
 <div class="container-fluid px-4 py-4">
+    <?php if (!empty($_SESSION['error_message'])): ?>
+    <div class="alert alert-danger">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>Error:</strong> <?= htmlspecialchars($_SESSION['error_message']) ?>
+    </div>
+    <?php unset($_SESSION['error_message']); endif; ?>
     <?php if (!$allow_outcome_creation): ?>
     <!-- Outcome Creation Notice -->
     <div class="alert alert-info">
