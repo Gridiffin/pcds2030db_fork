@@ -161,22 +161,6 @@ tr.inactive-user:hover {
   margin-bottom: 1rem;
 }
 
-/* Period Controls */
-.period-selector {
-  background-color: white;
-  border: 1px solid rgba(var(--forest-deep-rgb), 0.1);
-  border-radius: var(--radius-md);
-  padding: 1rem;
-}
-
-.period-badge .badge {
-  font-weight: normal;
-  padding: 0.4em 0.8em;
-  background-color: rgba(var(--forest-light-rgb), 0.1);
-  color: var(--forest-deep);
-  border: 1px solid rgba(var(--forest-deep-rgb), 0.2);
-}
-
 /* Improved Badge Styling */
 .badge.rounded-pill {
   font-weight: normal;

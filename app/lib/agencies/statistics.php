@@ -314,4 +314,73 @@ function get_agency_submission_status($agency_id, $period_id = null) {
         throw new Exception("Failed to retrieve submission status: " . $e->getMessage());
     }
 }
+
+/**
+ * Get program status for an agency using programs table status column
+ * 
+ * Retrieves and calculates program statistics for agency programs using the status column
+ * Only counts programs that have submitted data (not drafts) for the current period
+ * 
+ * @param int $agency_id The agency ID
+ * @param int|null $period_id Current period ID (required to filter by submitted data)
+ * @return array Array containing program statistics and status counts
+ */
+function get_agency_program_status($agency_id, $period_id = null) {
+    global $conn;
+    
+    try {
+        // Initialize return structure
+        $stats = [
+            'total_programs' => 0,
+            'programs_submitted' => 0,
+            'draft_count' => 0,
+            'not_submitted' => 0,
+            'program_status' => [
+                'on-track' => 0,
+                'delayed' => 0,
+                'completed' => 0,
+                'not-started' => 0
+            ]
+        ];
+        
+        // Only count programs that have submitted data (not drafts) for the current period
+        $query = "SELECT 
+                    COUNT(*) as total,
+                    SUM(CASE WHEN p.status = 'active' THEN 1 ELSE 0 END) as active_count,
+                    SUM(CASE WHEN p.status = 'delayed' THEN 1 ELSE0) as delayed_count,
+                    SUM(CASE WHEN p.status = 'completed' THEN 1 ELSE 0 END) as completed_count,
+                    SUM(CASE WHEN p.status IN ('on_hold', 'cancelled') THEN 1 ELSE 0 END) as other_count
+                  FROM programs p
+                  INNER JOIN (
+                    SELECT DISTINCT program_id
+                    FROM program_submissions
+                    WHERE period_id = ? AND is_draft = 0
+                  ) ps ON p.program_id = ps.program_id
+                  WHERE p.agency_id = ? AND p.is_deleted = 0";
+        
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("ii", $period_id, $agency_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        
+        if ($row) {
+            $stats['total_programs'] = $row['total'];
+            $stats['program_status']['on-track'] = $row['active_count'];
+            $stats['program_status']['delayed'] = $row['delayed_count'];
+            $stats['program_status']['completed'] = $row['completed_count'];
+            $stats['program_status']['not-started'] = $row['other_count'];
+            
+            // For compatibility, set programs_submitted to total (since we're only counting submitted programs)
+            $stats['programs_submitted'] = $row['total'];
+            $stats['draft_count'] = 0;
+            $stats['not_submitted'] = 0;       }
+        
+        return $stats;
+        
+    } catch (Exception $e) {
+        error_log("Error in get_agency_program_status: " . $e->getMessage());
+        return ['error' => 'Database error: ' . $e->getMessage()];
+    }
+}
 ?>

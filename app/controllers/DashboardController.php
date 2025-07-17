@@ -49,22 +49,22 @@ class DashboardController {
      * Get dashboard data with filter options
      * 
      * @param int $agency_id Current agency ID
-     * @param array|int $period_ids Array of reporting period IDs (or single ID for backward compatibility)
+     * @param int|null $period_id Reporting period ID (now always current period)
      * @param bool $include_assigned Whether to include assigned programs
      * @param int|null $initiative_id Optional initiative filter
      * @return array Dashboard data
      */
-    public function getDashboardData($agency_id, $period_ids, $include_assigned = true, $initiative_id = null) {
-        // Support both single and multiple period IDs
-        if (!is_array($period_ids)) {
-            $period_ids = [$period_ids];
+    public function getDashboardData($agency_id, $period_id = null, $include_assigned = true, $initiative_id = null) {
+        // Always use the current period if not provided
+        if (!$period_id) {
+            $current_period = get_current_reporting_period();
+            $period_id = $current_period['period_id'] ?? null;
         }
         $data = [
-            'stats' => $this->getStatsData($agency_id, $period_ids, $include_assigned, $initiative_id),
-            'chart_data' => $this->getChartData($agency_id, $period_ids, $include_assigned, $initiative_id),
-            'recent_updates' => $this->getRecentUpdates($agency_id, $period_ids, $initiative_id)
+            'stats' => $this->getStatsData($agency_id, $period_id, $include_assigned, $initiative_id),
+            'chart_data' => $this->getChartData($agency_id, $period_id, $include_assigned, $initiative_id),
+            'recent_updates' => $this->getRecentUpdates($agency_id, $period_id, $initiative_id)
         ];
-        
         return $data;
     }
     
@@ -72,51 +72,47 @@ class DashboardController {
      * Get stats card data (filtered)
      * 
      * @param int $agency_id Current agency ID
-     * @param array $period_ids Array of reporting period IDs
+     * @param int $period_id Reporting period ID
      * @param bool $include_assigned Whether to include assigned programs
      * @param int|null $initiative_id Optional initiative filter
      * @return array Stats data
      */
-    private function getStatsData($agency_id, $period_ids, $include_assigned, $initiative_id = null) {
+    private function getStatsData($agency_id, $period_id, $include_assigned, $initiative_id = null) {
         global $programsTable, $programSubmissionsTable;
         global $programIdCol, $programNameCol, $programAgencyIdCol, $programCreatedAtCol;
         global $submissionIdCol, $submissionProgramIdCol, $submissionPeriodIdCol, $submissionIsDraftCol;
 
-        $in_clause = implode(',', array_fill(0, count($period_ids), '?'));
+        // Only count programs that have submitted data (not drafts) for the current period
         $query = "SELECT 
                     p.{$programIdCol},
                     p.{$programNameCol},
                     p.{$programCreatedAtCol},
-                    p.rating,
-                    CASE 
-                        WHEN ps.{$submissionIdCol} IS NULL THEN 1
-                        ELSE ps.{$submissionIsDraftCol} 
-                    END as is_draft
+                    p.status,
+                    p.rating
                   FROM {$programsTable} p
-                  LEFT JOIN (
-                    SELECT ps1.*
-                    FROM {$programSubmissionsTable} ps1
-                    INNER JOIN (
-                        SELECT {$submissionProgramIdCol}, MAX({$submissionIdCol}) as max_id
-                        FROM {$programSubmissionsTable}
-                        WHERE {$submissionPeriodIdCol} IN ($in_clause)
-                        GROUP BY {$submissionProgramIdCol}
-                    ) ps2 ON ps1.{$submissionProgramIdCol} = ps2.{$submissionProgramIdCol} AND ps1.{$submissionIdCol} = ps2.max_id
+                  INNER JOIN (
+                    SELECT DISTINCT {$submissionProgramIdCol}
+                    FROM {$programSubmissionsTable}
+                    WHERE {$submissionPeriodIdCol} = ? AND {$submissionIsDraftCol} = 0
                   ) ps ON p.{$programIdCol} = ps.{$submissionProgramIdCol}
                   WHERE (p.{$programAgencyIdCol} = ? OR 
-                    EXISTS (SELECT 1 FROM program_user_assignments pua WHERE pua.program_id = p.{$programIdCol} AND pua.user_id = ?))";
-        $params = array_merge($period_ids, [$agency_id, $agency_id]);
-        $types = str_repeat('i', count($period_ids)) . 'ii';
+                    EXISTS (SELECT 1 FROM program_user_assignments pua WHERE pua.program_id = p.{$programIdCol} AND pua.user_id = ?))
+                  AND p.is_deleted = 0";
+        
+        $params = [$period_id, $agency_id, $agency_id];
+        $types = "iii";
+        
         if ($initiative_id !== null) {
             $query .= " AND p.initiative_id = ?";
             $params[] = $initiative_id;
             $types .= "i";
         }
-        $query .= " AND (ps.{$submissionIsDraftCol} = 0 OR ps.{$submissionIdCol} IS NULL)";
+        
         $stmt = $this->db->prepare($query);
         $stmt->bind_param($types, ...$params);
         $stmt->execute();
         $result = $stmt->get_result();
+        
         $stats = [
             'total' => 0,
             'on-track' => 0,
@@ -124,20 +120,31 @@ class DashboardController {
             'completed' => 0,
             'not-started' => 0
         ];
+        
         while ($program = $result->fetch_assoc()) {
-            if ($program['is_draft'] == 1) continue;
             $stats['total']++;
-            $rating = $program['rating'] ?? 'not-started';
-            if (in_array($rating, ['on-track', 'on-track-yearly'])) {
-                $stats['on-track']++;
-            } elseif (in_array($rating, ['delayed', 'severe-delay'])) {
-                $stats['delayed']++;
-            } elseif (in_array($rating, ['completed', 'target-achieved'])) {
-                $stats['completed']++;
-            } else {
-                $stats['not-started']++;
+            
+            // Map status values from programs table
+            $status = $program['status'] ?? 'active';
+            
+            switch ($status) {
+                case 'active':
+                    $stats['on-track']++;
+                    break;
+                case 'delayed':
+                    $stats['delayed']++;
+                    break;
+                case 'completed':
+                    $stats['completed']++;
+                    break;
+                case 'on_hold':
+                case 'cancelled':
+                default:
+                    $stats['not-started']++;
+                    break;
             }
         }
+        
         return $stats;
     }
     
@@ -145,14 +152,14 @@ class DashboardController {
      * Get chart data (filtered)
      *
      * @param int $agency_id Current agency ID
-     * @param array $period_ids Array of reporting period IDs
+     * @param int $period_id Reporting period ID
      * @param bool $include_assigned Whether to include assigned programs
      * @param int|null $initiative_id Optional initiative filter
      * @return array Chart data formatted for Chart.js
      */
-    private function getChartData($agency_id, $period_ids, $include_assigned, $initiative_id = null) {
+    private function getChartData($agency_id, $period_id, $include_assigned, $initiative_id = null) {
         // Reuse stats data for chart
-        $stats = $this->getStatsData($agency_id, $period_ids, $include_assigned, $initiative_id);
+        $stats = $this->getStatsData($agency_id, $period_id, $include_assigned, $initiative_id);
         
         // Format data for Chart.js
         return [
@@ -172,15 +179,15 @@ class DashboardController {
      * Show draft and newly assigned programs in Recent Updates section
      *
      * @param int $agency_id Current agency ID
-     * @param array $period_ids Array of reporting period IDs
+     * @param int $period_id Reporting period ID
      * @param int|null $initiative_id Optional initiative filter
      * @return array Recent program updates
      */
-    private function getRecentUpdates($agency_id, $period_ids, $initiative_id = null) {
+    private function getRecentUpdates($agency_id, $period_id, $initiative_id = null) {
         global $programsTable, $programSubmissionsTable;
         global $programIdCol, $programNameCol, $programAgencyIdCol, $programCreatedAtCol;
         global $submissionIdCol, $submissionProgramIdCol, $submissionPeriodIdCol, $submissionIsDraftCol;
-        $in_clause = implode(',', array_fill(0, count($period_ids), '?'));
+        $in_clause = '?';
         $query = "SELECT 
                     p.{$programIdCol}, 
                     p.{$programNameCol},
@@ -196,13 +203,13 @@ class DashboardController {
                     INNER JOIN (
                         SELECT {$submissionProgramIdCol}, MAX({$submissionIdCol}) as max_id
                         FROM {$programSubmissionsTable}
-                        WHERE {$submissionPeriodIdCol} IN ($in_clause)
+                        WHERE {$submissionPeriodIdCol} = $in_clause
                         GROUP BY {$submissionProgramIdCol}
                     ) ps2 ON ps1.{$submissionProgramIdCol} = ps2.{$submissionProgramIdCol} AND ps1.{$submissionIdCol} = ps2.max_id
                   ) ps ON p.{$programIdCol} = ps.{$submissionProgramIdCol}
                   WHERE (p.{$programAgencyIdCol} = ? OR EXISTS (SELECT 1 FROM program_user_assignments pua WHERE pua.program_id = p.{$programIdCol} AND pua.user_id = ?))";
-        $params = array_merge($period_ids, [$agency_id, $agency_id]);
-        $types = str_repeat('i', count($period_ids)) . 'ii';
+        $params = [$period_id, $agency_id, $agency_id];
+        $types = 'iii';
         if ($initiative_id !== null) {
             $query .= " AND p.initiative_id = ?";
             $params[] = $initiative_id;

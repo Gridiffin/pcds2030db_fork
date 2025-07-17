@@ -32,9 +32,12 @@ $pageTitle = 'Agency Dashboard';
 // Get current reporting period
 $current_period = get_current_reporting_period();
 
-// Add period_id handling for historical views
-$period_id = isset($_GET['period_id']) ? intval($_GET['period_id']) : ($current_period['period_id'] ?? null);
-$viewing_period = $period_id ? get_reporting_period($period_id) : $current_period;
+// Remove all period_id handling from user input or URL
+// $period_id = isset($_GET['period_id']) ? intval($_GET['period_id']) : ($current_period['period_id'] ?? null);
+// $viewing_period = $period_id ? get_reporting_period($period_id) : $current_period;
+// Use only current period
+$viewing_period = $current_period;
+$period_id = $current_period['period_id'] ?? null;
 
 // Initialize dashboard controller for initial rendering
 $dashboardController = new DashboardController($conn);
@@ -54,7 +57,6 @@ $outcomes_stats = get_agency_outcomes_statistics(null, $period_id);
 
 // Additional scripts needed for dashboard
 $additionalScripts = [
-    asset_url('js', 'period_selector.js'),
     asset_url('js/agency', 'dashboard.js'),
     asset_url('js/agency', 'dashboard_chart.js'),
     asset_url('js/agency', 'dashboard_charts.js'),
@@ -83,9 +85,6 @@ $header_config = [
 // Include modern page header
 require_once PROJECT_ROOT_PATH . 'app/views/layouts/page_header.php';
 ?>
-
-<!-- Period Selector Component -->
-<?php require_once PROJECT_ROOT_PATH . 'app/lib/period_selector_dashboard.php'; ?>
 
 <!-- Initiative Carousel Card (after filter) -->
 <div class="bento-card carousel-card mb-4" id="programCarouselCard">

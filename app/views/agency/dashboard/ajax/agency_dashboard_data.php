@@ -2,7 +2,7 @@
 /**
  * Agency Dashboard Data AJAX Endpoint
  * 
- * Provides dashboard data based on selected period_id
+ * Provides dashboard data for the current period only (period selector removed)
  * @version 2.0.0
  */
 
@@ -11,6 +11,7 @@ require_once __DIR__ . '/../../../../config/config.php';
 require_once __DIR__ . '/../../../../lib/db_connect.php';
 require_once __DIR__ . '/../../../../lib/session.php';
 require_once __DIR__ . '/../../../../lib/agencies/statistics.php';
+require_once __DIR__ . '/../../../../lib/functions.php';
 
 // Set JSON header
 header('Content-Type: application/json');
@@ -26,12 +27,12 @@ try {
         throw new Exception("Invalid request method", 400);
     }
 
-    // Get and validate parameters
-    $period_id = filter_input(INPUT_GET, 'period_id', FILTER_VALIDATE_INT) ?? 
-                filter_input(INPUT_POST, 'period_id', FILTER_VALIDATE_INT);
-                
-    // Get submission status
-    $submission_status = get_agency_submission_status($_SESSION['user_id'], $period_id);
+    // Always use the current reporting period
+    $current_period = get_current_reporting_period();
+    $period_id = $current_period['period_id'] ?? null;
+
+    // Get submission status - update to use program status instead of submission status
+    $submission_status = get_agency_program_status($_SESSION['user_id'], $period_id);
     
     if (isset($submission_status['error'])) {
         throw new Exception($submission_status['error']);
@@ -61,21 +62,14 @@ try {
             'programs_submitted' => $submission_status['programs_submitted'],
             'draft_count' => $submission_status['draft_count'],
             'not_submitted' => $submission_status['not_submitted']
+        ],
+        'period' => [
+            'id' => $period_id,
+            'quarter' => $current_period['quarter'] ?? null,
+            'year' => $current_period['year'] ?? null,
+            'status' => $current_period['status'] ?? null
         ]
     ];
-
-    // Add current period info if available
-    if ($period_id) {
-        $period_info = get_reporting_period($period_id);
-        if ($period_info) {
-            $response['period'] = [
-                'id' => $period_info['period_id'],
-                'quarter' => $period_info['quarter'],
-                'year' => $period_info['year'],
-                'status' => $period_info['status']
-            ];
-        }
-    }
 
     echo json_encode($response);
 
