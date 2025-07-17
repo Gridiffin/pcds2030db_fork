@@ -205,3 +205,42 @@
     font-size: 0.95rem;
   }
 }
+
+/* === Outcomes Section (Dashboard) === */
+.outcomes-section {
+  border: 2px solid #e0e7ef;
+  border-radius: 1rem;
+  background: linear-gradient(90deg, #f8fafc 60%, #f3e9f7 100%);
+  box-shadow: 0 2px 12px rgba(153, 17, 142, 0.06);
+  padding: 2rem 1.5rem 1.5rem 1.5rem;
+  margin-bottom: 2.5rem;
+}
+.outcomes-section .section-header {
+  border-bottom: 1.5px solid #e1b2df;
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.outcomes-section .section-header .fa-bullseye {
+  color: #f093fb;
+  font-size: 1.5rem;
+}
+.outcomes-section .h4.fw-bold {
+  color: #11998e;
+  letter-spacing: 0.01em;
+}
+.outcomes-section .outcomes-description {
+  font-size: 1rem;
+  color: #4a4a4a;
+  opacity: 0.85;
+}
+@media (max-width: 600px) {
+  .outcomes-section {
+    padding: 1.2rem 0.5rem 1rem 0.5rem;
+  }
+  .outcomes-section .h4.fw-bold {
+    font-size: 1.1rem;
+  }
+  .outcomes-section .outcomes-description {
+    font-size: 0.95rem;
+  }
+}

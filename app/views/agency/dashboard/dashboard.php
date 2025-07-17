@@ -460,7 +460,23 @@ require_once PROJECT_ROOT_PATH . 'app/views/layouts/page_header.php';
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </section>
+</section>
 
+<!-- Outcomes Section Wrapper -->
+<section class="outcomes-section mb-4">
+    <div class="section-header d-flex align-items-center mb-2">
+        <i class="fas fa-bullseye me-2 text-primary"></i>
+        <h2 class="h4 fw-bold mb-0">Outcomes</h2>
+    </div>
+    <div class="outcomes-description mb-3 text-muted">
+        Review your agency's outcomes, submissions, and recent activity. Use the cards below to explore outcome status and actions.
+    </div>
+    <section class="section">
+        <div class="container-fluid">
+            <div class="bento-grid">
                 <!-- Outcomes Overview -->
                 <div class="bento-card size-6x2">
                     <div class="bento-card-header">
@@ -495,7 +511,6 @@ require_once PROJECT_ROOT_PATH . 'app/views/layouts/page_header.php';
                                 </div>
                             </div>
                         </div>
-                        
                         <div class="bento-card-footer">
                             <div class="bento-card-actions">
                                 <a href="../outcomes/submit_outcomes.php" class="btn btn-success">
@@ -508,7 +523,6 @@ require_once PROJECT_ROOT_PATH . 'app/views/layouts/page_header.php';
                         </div>
                     </div>
                 </div>
-
                 <!-- Recent Outcomes Activity -->
                 <div class="bento-card size-3x2">
                     <div class="bento-card-header">
