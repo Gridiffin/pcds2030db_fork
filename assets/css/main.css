@@ -127,3 +127,81 @@
     color: #fff;
     border-color: #218838;
 }
+
+/* === Initiatives Section (Dashboard) === */
+.initiatives-section {
+  border: 2px solid #e0e7ef;
+  border-radius: 1rem;
+  background: linear-gradient(90deg, #f8fafc 60%, #e9f7f6 100%);
+  box-shadow: 0 2px 12px rgba(17, 153, 142, 0.06);
+  padding: 2rem 1.5rem 1.5rem 1.5rem;
+  margin-bottom: 2.5rem;
+}
+.initiatives-section .section-header {
+  border-bottom: 1.5px solid #b2dfdb;
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.initiatives-section .section-header .fa-lightbulb {
+  color: #11998e;
+  font-size: 1.5rem;
+}
+.initiatives-section .h4.fw-bold {
+  color: #11998e;
+  letter-spacing: 0.01em;
+}
+.initiatives-section .initiatives-description {
+  font-size: 1rem;
+  color: #4a4a4a;
+  opacity: 0.85;
+}
+@media (max-width: 600px) {
+  .initiatives-section {
+    padding: 1.2rem 0.5rem 1rem 0.5rem;
+  }
+  .initiatives-section .h4.fw-bold {
+    font-size: 1.1rem;
+  }
+  .initiatives-section .initiatives-description {
+    font-size: 0.95rem;
+  }
+}
+
+/* === Programs Section (Dashboard) === */
+.programs-section {
+  border: 2px solid #e0e7ef;
+  border-radius: 1rem;
+  background: linear-gradient(90deg, #f8fafc 60%, #e9f7f6 100%);
+  box-shadow: 0 2px 12px rgba(17, 153, 142, 0.06);
+  padding: 2rem 1.5rem 1.5rem 1.5rem;
+  margin-bottom: 2.5rem;
+}
+.programs-section .section-header {
+  border-bottom: 1.5px solid #b2dfdb;
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.programs-section .section-header .fa-clipboard-list {
+  color: #4facfe;
+  font-size: 1.5rem;
+}
+.programs-section .h4.fw-bold {
+  color: #11998e;
+  letter-spacing: 0.01em;
+}
+.programs-section .programs-description {
+  font-size: 1rem;
+  color: #4a4a4a;
+  opacity: 0.85;
+}
+@media (max-width: 600px) {
+  .programs-section {
+    padding: 1.2rem 0.5rem 1rem 0.5rem;
+  }
+  .programs-section .h4.fw-bold {
+    font-size: 1.1rem;
+  }
+  .programs-section .programs-description {
+    font-size: 0.95rem;
+  }
+}
