@@ -311,17 +311,11 @@ $showNoSubmissionsAlert = !$has_submissions; // Show for all users, but action l
                     <h5 class="card-title mb-0">
                         <i class="fas fa-clipboard-list me-2"></i>Program Information
                     </h5>
-                    <div class="status-indicators">
-                        <span class="badge status-badge bg-<?php echo $status_info['class']; ?> py-2 px-3">
-                            <i class="<?php echo $status_info['icon']; ?> me-1"></i> 
-                            <?php echo $status_info['label']; ?>
-                        </span>
-                        <?php if ($is_draft): ?>
-                        <span class="badge bg-warning text-dark ms-2" title="Latest submission is in draft status">
-                            <i class="fas fa-pencil-alt me-1"></i> Draft Submission
-                        </span>
-                        <?php endif; ?>
-                    </div>
+                    <?php if ($is_draft): ?>
+                    <span class="badge bg-warning text-dark ms-2" title="Latest submission is in draft status">
+                        <i class="fas fa-pencil-alt me-1"></i> Draft Submission
+                    </span>
+                    <?php endif; ?>
                 </div>
                 <div class="card-body">
                     <div class="row">
@@ -365,23 +359,6 @@ $showNoSubmissionsAlert = !$has_submissions; // Show for all users, but action l
                                             <i class="<?php echo $status_info['icon']; ?> me-1"></i>
                                             <?php echo $status_info['label']; ?>
                                         </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <div class="info-item">
-                                <div class="info-icon">
-                                    <i class="fas fa-layer-group text-success"></i>
-                                </div>
-                                <div class="info-content">
-                                    <div class="info-label">Program Type</div>
-                                    <div class="info-value">
-                                        <?php if (isset($program['is_assigned']) && $program['is_assigned']): ?>
-                                            <span class="badge bg-info">Assigned Program</span>
-                                        <?php else: ?>
-                                            <span class="badge bg-success">Agency-Created</span>
-                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </div>
@@ -554,26 +531,19 @@ $showNoSubmissionsAlert = !$has_submissions; // Show for all users, but action l
                             </a>
                             <small class="text-muted d-block mt-1">Modify program information and settings</small>
                         </div>
-                    </div>
-                    <?php if ($has_submissions): ?>
-                    <div class="row">
                         <div class="col-md-6 mb-3">
-                            <?php if ($can_edit): ?>
-                                <?php if ($has_submissions && isset($latest_submission['period_id'])): ?>
-                                    <button type="button" class="btn btn-outline-success w-100" data-bs-toggle="modal" data-bs-target="#viewSubmissionModal">
-                                        <i class="fas fa-eye me-2"></i>View Submission
-                                    </button>
-                                    <small class="text-muted d-block mt-1">View the latest progress report for this program</small>
-                                <?php else: ?>
-                                    <button class="btn btn-outline-success w-100" type="button" disabled title="No submissions available yet">
-                                        <i class="fas fa-eye me-2"></i>View Submission
-                                    </button>
-                                    <small class="text-muted d-block mt-1">No submissions available yet</small>
-                                <?php endif; ?>
-                            <?php endif; ?>
+                            <button type="button" class="btn btn-outline-success w-100" data-bs-toggle="modal" data-bs-target="#viewSubmissionModal">
+                                <i class="fas fa-eye me-2"></i>View Submission
+                            </button>
+                            <small class="text-muted d-block mt-1">View the latest progress report for this program</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <button type="button" class="btn btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#viewSubmissionModal">
+                                <i class="fas fa-paper-plane me-2"></i>Submit Submission
+                            </button>
+                            <small class="text-muted d-block mt-1">Submit the latest progress report for this program</small>
                         </div>
                     </div>
-                    <?php endif; ?>
                 </div>
             </div>
             <?php endif; ?>
@@ -717,7 +687,7 @@ $showNoSubmissionsAlert = !$has_submissions; // Show for all users, but action l
                 <div class="card-body">
                     <?php foreach ($related_programs as $rel_prog): ?>
                         <div class="mb-2 p-2 border rounded bg-light d-flex align-items-center justify-content-between">
-                            <div>
+                            <div class="flex-grow-1">
                                 <span class="fw-semibold"><?php echo htmlspecialchars($rel_prog['program_name']); ?></span>
                                 <div class="text-muted small mt-1">
                                     <?php echo htmlspecialchars($rel_prog['program_number']); ?>
@@ -728,8 +698,8 @@ $showNoSubmissionsAlert = !$has_submissions; // Show for all users, but action l
                                     <?php endif; ?>
                                 </div>
                             </div>
-                            <a href="program_details.php?id=<?php echo (int)$rel_prog['program_id']; ?>" class="btn btn-outline-primary btn-sm ms-2">
-                                <i class="fas fa-eye"></i> View Details
+                            <a href="program_details.php?id=<?php echo (int)$rel_prog['program_id']; ?>" class="btn btn-outline-primary btn-sm btn-icon ms-2" title="View Details">
+                                <i class="fas fa-eye"></i>
                             </a>
                         </div>
                     <?php endforeach; ?>
@@ -792,13 +762,13 @@ $showNoSubmissionsAlert = !$has_submissions; // Show for all users, but action l
   </div>
 </div>
 
-<!-- View Submission Modal -->
+<!-- View Submission Modal (renamed to Submit Submission) -->
 <?php if ($has_submissions && !empty($submission_history['submissions'])): ?>
 <div class="modal fade" id="viewSubmissionModal" tabindex="-1" aria-labelledby="viewSubmissionModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="viewSubmissionModalLabel"><i class="fas fa-eye me-2"></i>Select Submission to View</h5>
+        <h5 class="modal-title" id="viewSubmissionModalLabel"><i class="fas fa-paper-plane me-2"></i>Select Submission to Submit</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
@@ -818,7 +788,7 @@ $showNoSubmissionsAlert = !$has_submissions; // Show for all users, but action l
                 </small>
               </div>
               <a href="<?php echo APP_URL; ?>/app/views/agency/programs/view_submissions.php?program_id=<?php echo $program_id; ?>&period_id=<?php echo $submission['period_id']; ?>" class="btn btn-outline-success">
-                <i class="fas fa-eye"></i> View
+                <i class="fas fa-paper-plane"></i> Submit
               </a>
             </div>
           <?php endforeach; ?>
@@ -831,6 +801,62 @@ $showNoSubmissionsAlert = !$has_submissions; // Show for all users, but action l
   </div>
 </div>
 <?php endif; ?>
+
+<!-- Submit Submission Modal -->
+<?php
+// Gather draft submissions for this program
+$draft_submissions = [];
+if (!empty($submission_history['submissions'])) {
+    foreach ($submission_history['submissions'] as $submission) {
+        if (!empty($submission['is_draft'])) {
+            $draft_submissions[] = $submission;
+        }
+    }
+}
+?>
+<div class="modal fade" id="submitSubmissionModal" tabindex="-1" aria-labelledby="submitSubmissionModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="submitSubmissionModalLabel"><i class="fas fa-paper-plane me-2"></i>Select Draft Submission to Submit</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <?php if (!empty($draft_submissions)): ?>
+          <div class="list-group">
+            <?php foreach ($draft_submissions as $submission): ?>
+              <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                  <strong><?php echo htmlspecialchars($submission['period_display']); ?></strong>
+                  <span class="badge bg-warning ms-2">
+                    <?php echo $submission['is_draft_label']; ?>
+                  </span>
+                  <br>
+                  <small class="text-muted">
+                    Saved by: <?php echo htmlspecialchars($submission['submitted_by_name'] ?? 'Unknown'); ?>
+                    &nbsp;|&nbsp;
+                    <?php echo htmlspecialchars($submission['formatted_date']); ?>
+                  </small>
+                </div>
+                <button class="btn btn-success submit-draft-btn" data-submission-id="<?php echo $submission['submission_id']; ?>">
+                  <i class="fas fa-paper-plane"></i> Submit
+                </button>
+              </div>
+            <?php endforeach; ?>
+          </div>
+        <?php else: ?>
+          <div class="text-center text-muted py-4">
+            <i class="fas fa-folder-open fa-2x mb-2"></i>
+            <div>No draft submissions available for this program.</div>
+          </div>
+        <?php endif; ?>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- JavaScript Configuration -->
 <script>
