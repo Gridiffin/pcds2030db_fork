@@ -203,7 +203,10 @@ function get_outcomes_statistics($period_id = null) {
         'total_outcomes' => $total_outcomes,
         'outcomes_by_type' => $outcomes_by_type,
         'chart_outcomes' => $outcomes_by_type['chart'] ?? 0,
-        'kpi_outcomes' => $outcomes_by_type['kpi'] ?? 0
+        'kpi_outcomes' => $outcomes_by_type['kpi'] ?? 0,
+        'submitted_outcomes' => 0, // For compatibility, as in agency version
+        'draft_outcomes' => 0,     // For compatibility, as in agency version
+        'sectors_with_outcomes' => 0 // For compatibility, as in agency version
     ];
 }
 ?>

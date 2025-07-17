@@ -96,7 +96,6 @@ const hasActivePeriod = <?php echo $hasActivePeriod ? 'true' : 'false'; ?>;
     <section class="section">
         <div class="container-fluid">
             <!-- Period Selector Component -->
-            <?php require_once ROOT_PATH . 'app/lib/period_selector_dashboard.php'; ?>
 
         <!-- Quick Actions Section - Optimized for high-value admin actions -->
         <div class="row mb-4">
@@ -391,7 +390,7 @@ const hasActivePeriod = <?php echo $hasActivePeriod ? 'true' : 'false'; ?>;
                                 <div class="card bg-warning text-white h-100">
                                     <div class="card-body text-center">
                                         <i class="fas fa-file-alt fa-3x mb-3"></i>
-                                        <h4><?php echo $outcomes_stats['draft_outcomes']; ?></h4>
+                                        <h4><?php echo $outcomes_stats['draft_outcomes'] ?? 0; ?></h4>
                                         <p class="mb-0">Drafts</p>
                                     </div>
                                 </div>
@@ -401,7 +400,7 @@ const hasActivePeriod = <?php echo $hasActivePeriod ? 'true' : 'false'; ?>;
                                 <div class="card bg-info text-white h-100">
                                     <div class="card-body text-center">
                                         <i class="fas fa-building fa-3x mb-3"></i>
-                                        <h4><?php echo $outcomes_stats['sectors_with_outcomes']; ?></h4>
+                                        <h4><?php echo $outcomes_stats['sectors_with_outcomes'] ?? 0; ?></h4>
                                         <p class="mb-0">Sectors</p>
                                     </div>
                                 </div>
@@ -492,7 +491,16 @@ const hasActivePeriod = <?php echo $hasActivePeriod ? 'true' : 'false'; ?>;
                                         <tr>
                                             <td><?php echo $submission['agency_name']; ?></td>
                                             <td><?php echo $submission['program_name']; ?></td>
-                                            <td><?php echo date('M j, g:i a', strtotime($submission['submission_date'])); ?></td>
+                                            <td>
+                                                <?php 
+                                                    $date = $submission['submission_date'] ?? '';
+                                                    if (!empty($date)) {
+                                                        echo date('M j, g:i a', strtotime($date));
+                                                    } else {
+                                                        echo 'N/A';
+                                                    }
+                                                ?>
+                                            </td>
                                         </tr>
                                     <?php endforeach; ?>
                                 <?php endif; ?>
