@@ -125,11 +125,6 @@ require_once '../../layouts/page_header.php';
                                                title="View Details">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <a href="edit_outcome.php?id=<?= $outcome['id'] ?>" 
-                                               class="btn btn-sm btn-outline-warning" 
-                                               title="Edit Outcome">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
                                         </div>
                                     </td>
                                 </tr>

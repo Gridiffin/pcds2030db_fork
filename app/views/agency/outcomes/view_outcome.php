@@ -90,12 +90,7 @@ $header_config = [
     'subtitle' => htmlspecialchars($outcome['title']),
     'variant' => 'white',
     'actions' => [
-        [
-            'url' => 'edit_outcome.php?id=' . $outcome_id,
-            'text' => 'Edit Outcome',
-            'icon' => 'fas fa-edit',
-            'class' => 'btn-outline-primary'
-        ],
+        // Removed 'Edit Outcome' button
         [
             'url' => 'submit_outcomes.php',
             'text' => 'Back to Outcomes',
@@ -370,9 +365,7 @@ require_once '../../layouts/page_header.php';
                     <i class="fas fa-info-circle me-1"></i> This outcome supports flexible table structures with custom rows and columns
                 </small>
                 <div>
-                    <a href="create_outcome_flexible.php" class="btn btn-success btn-sm">
-                        <i class="fas fa-plus me-1"></i> Create New Outcome
-                    </a>
+                    <!-- Removed 'Create New Outcome' button -->
                 </div>
             </div>
         </div>
