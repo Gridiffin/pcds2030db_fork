@@ -386,156 +386,235 @@ function showEditSubmissionForm(data) {
  * Show no submission message with option to add new
  */
 function showNoSubmissionMessage(data) {
-    const dynamicContent = document.getElementById('dynamic-content');
-    const template = document.getElementById('no-submission-template');
-    dynamicContent.innerHTML = template.innerHTML;
+    // Fetch incomplete targets first, then decide what to show
+    fetchIncompleteTargets(data.period_info.period_id).then((targets) => {
+        if (targets.length > 0) {
+            // If we have incomplete targets, automatically show the form with auto-filled targets
+            showAddSubmissionForm();
+        } else {
+            // If no incomplete targets, show the normal "no submission" message
+            const dynamicContent = document.getElementById('dynamic-content');
+            const template = document.getElementById('no-submission-template');
+            dynamicContent.innerHTML = template.innerHTML;
+            // Update the button to include period info
+            const addButton = document.getElementById('add-new-submission-btn');
+            if (addButton) {
+                addButton.setAttribute('data-period-id', data.period_info.period_id);
+            }
+        }
+    });
+}
+
+// Global variable to store incomplete targets
+let incompleteTargets = [];
+
+/**
+ * Fetch incomplete targets for the selected period
+ * @returns {Promise} Promise that resolves when targets are fetched
+ */
+function fetchIncompleteTargets(periodId) {
+    const formData = new FormData();
+    formData.append('program_id', window.programId);
+    formData.append('period_id', periodId);
     
-    // Update the button to include period info
-    const addButton = document.getElementById('add-new-submission-btn');
-    if (addButton) {
-        addButton.setAttribute('data-period-id', data.period_info.period_id);
-    }
+    return fetch(`${window.APP_URL}/app/ajax/get_incomplete_targets.php`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            incompleteTargets = data.incomplete_targets || [];
+            console.log(`Found ${incompleteTargets.length} incomplete targets to auto-fill`);
+        } else {
+            console.warn('Failed to fetch incomplete targets:', data.error);
+            incompleteTargets = [];
+        }
+        return incompleteTargets;
+    })
+    .catch(error => {
+        console.error('Error fetching incomplete targets:', error);
+        incompleteTargets = [];
+        return incompleteTargets;
+    });
 }
 
 /**
  * Show add submission form for new submission
+ * Always fetch incomplete targets before rendering the form
  */
 function showAddSubmissionForm() {
     const periodId = document.getElementById('period_selector').value;
-    const periodSelector = document.getElementById('period_selector');
-    const selectedOption = periodSelector.querySelector(`option[value="${periodId}"]`);
-    const periodName = selectedOption ? selectedOption.textContent.split(' - ')[0] : 'Selected Period';
-    
-    const formHtml = `
-        <div class="card shadow-sm">
-            <div class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-plus-circle me-2"></i>
-                    Add New Submission - ${periodName}
-                </h5>
-            </div>
-            <div class="card-body">
-                <form id="submission-form" enctype="multipart/form-data">
-                    <input type="hidden" name="program_id" value="${window.programId}">
-                    <input type="hidden" name="period_id" value="${periodId}">
-                    
-                    <div class="row">
-                        <div class="col-md-8">
-                            <!-- Description -->
-                            <div class="mb-4">
-                                <label for="description" class="form-label">Description</label>
-                                <textarea class="form-control" id="description" name="description" rows="3"
-                                          placeholder="Describe the submission for this period"></textarea>
-                            </div>
-
-                            <!-- Targets Section -->
-                            <div class="card shadow-sm">
-                                <div class="card-header">
-                                    <h6 class="card-title mb-0">
-                                        <i class="fas fa-bullseye me-2"></i>
-                                        Targets
-                                    </h6>
+    fetchIncompleteTargets(periodId).then(() => {
+        const periodSelector = document.getElementById('period_selector');
+        const selectedOption = periodSelector.querySelector(`option[value="${periodId}"]`);
+        const periodName = selectedOption ? selectedOption.textContent.split(' - ')[0] : 'Selected Period';
+        const formHtml = `
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-plus-circle me-2"></i>
+                        Add New Submission - ${periodName}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="submission-form" enctype="multipart/form-data">
+                        <input type="hidden" name="program_id" value="${window.programId}">
+                        <input type="hidden" name="period_id" value="${periodId}">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <!-- Description -->
+                                <div class="mb-4">
+                                    <label for="description" class="form-label">Description</label>
+                                    <textarea class="form-control" id="description" name="description" rows="3"
+                                              placeholder="Describe the submission for this period"></textarea>
                                 </div>
-                                <div class="card-body">
-                                    <div id="targets-container">
-                                        <!-- Targets will be added here -->
+                                <!-- Targets Section -->
+                                <div class="card shadow-sm">
+                                    <div class="card-header">
+                                        <h6 class="card-title mb-0">
+                                            <i class="fas fa-bullseye me-2"></i>
+                                            Targets
+                                            ${incompleteTargets.length > 0 ? `<span class="badge bg-info ms-2">${incompleteTargets.length} auto-filled</span>` : ''}
+                                        </h6>
                                     </div>
-                                    <button type="button" id="add-target-btn" class="btn btn-outline-secondary btn-sm w-100">
-                                        <i class="fas fa-plus-circle me-1"></i> Add Target
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Rating and Remarks -->
-                            <div class="row mt-4">
-                                <div class="col-md-6">
-                                    <label for="rating" class="form-label">Progress Rating</label>
-                                    <select class="form-select" id="rating" name="rating">
-                                        <option value="not-started">Not Started</option>
-                                        <option value="on-track">On Track</option>
-                                        <option value="on-track-yearly">On Track for Year</option>
-                                        <option value="target-achieved">Target Achieved</option>
-                                        <option value="delayed">Delayed</option>
-                                        <option value="severe-delay">Severe Delays</option>
-                                        <option value="completed">Completed</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="remarks" class="form-label">Remarks</label>
-                                    <textarea class="form-control" id="remarks" name="remarks" rows="3"
-                                              placeholder="Additional remarks"></textarea>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-4">
-                            <!-- Submission Info -->
-                            <div class="card shadow-sm mb-3">
-                                <div class="card-body">
-                                    <h6 class="card-title">
-                                        <i class="fas fa-info-circle me-2"></i>
-                                        Submission Info
-                                    </h6>
-                                    <ul class="list-unstyled mb-0 small">
-                                        <li class="mb-2">
-                                            <i class="fas fa-calendar-plus text-primary me-2"></i>
-                                            Creates a new submission for ${periodName}
-                                        </li>
-                                        <li class="mb-2">
-                                            <i class="fas fa-edit text-info me-2"></i>
-                                            You can edit this submission later
-                                        </li>
-                                        <li class="mb-2">
-                                            <i class="fas fa-paperclip text-warning me-2"></i>
-                                            Add attachments after creating
-                                        </li>
-                                        <li>
-                                            <i class="fas fa-save text-success me-2"></i>
-                                            Save as draft or finalize when ready
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-
-                            <!-- Attachments Section -->
-                            <div class="card shadow-sm">
-                                <div class="card-body">
-                                    <h6 class="card-title mb-2">
-                                        <i class="fas fa-paperclip me-2"></i>
-                                        Attachments
-                                    </h6>
-                                    <button type="button" id="add-attachment-btn" class="btn btn-outline-secondary btn-sm mb-2">
-                                        <i class="fas fa-plus me-1"></i> Add File(s)
-                                    </button>
-                                    <input type="file" class="form-control d-none" name="attachments[]" id="attachments" multiple>
-                                    <div class="form-text mt-1">
-                                        You can add files one by one or in batches.
+                                    <div class="card-body">
+                                        <div id="targets-container">
+                                            <!-- Targets will be added here -->
+                                        </div>
+                                        <button type="button" id="add-target-btn" class="btn btn-outline-secondary btn-sm w-100">
+                                            <i class="fas fa-plus-circle me-1"></i> Add Target
+                                        </button>
                                     </div>
-                                    <ul id="attachments-list" class="list-unstyled small mt-2"></ul>
+                                </div>
+                                <!-- Rating and Remarks -->
+                                <div class="row mt-4">
+                                    <div class="col-md-6">
+                                        <label for="rating" class="form-label">Progress Rating</label>
+                                        <select class="form-select" id="rating" name="rating">
+                                            <option value="not-started">Not Started</option>
+                                            <option value="on-track">On Track</option>
+                                            <option value="on-track-yearly">On Track for Year</option>
+                                            <option value="target-achieved">Target Achieved</option>
+                                            <option value="delayed">Delayed</option>
+                                            <option value="severe-delay">Severe Delays</option>
+                                            <option value="completed">Completed</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="remarks" class="form-label">Remarks</label>
+                                        <textarea class="form-control" id="remarks" name="remarks" rows="3"
+                                                  placeholder="Additional remarks"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <!-- Submission Info -->
+                                <div class="card shadow-sm mb-3">
+                                    <div class="card-body">
+                                        <h6 class="card-title">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            Submission Info
+                                        </h6>
+                                        <ul class="list-unstyled mb-0 small">
+                                            <li class="mb-2">
+                                                <i class="fas fa-calendar-plus text-primary me-2"></i>
+                                                Creates a new submission for ${periodName}
+                                            </li>
+                                            <li class="mb-2">
+                                                <i class="fas fa-edit text-info me-2"></i>
+                                                You can edit this submission later
+                                            </li>
+                                            <li class="mb-2">
+                                                <i class="fas fa-paperclip text-warning me-2"></i>
+                                                Add attachments after creating
+                                            </li>
+                                            <li>
+                                                <i class="fas fa-save text-success me-2"></i>
+                                                Save as draft or finalize when ready
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <!-- Attachments Section -->
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <h6 class="card-title mb-2">
+                                            <i class="fas fa-paperclip me-2"></i>
+                                            Attachments
+                                        </h6>
+                                        <button type="button" id="add-attachment-btn" class="btn btn-outline-secondary btn-sm mb-2">
+                                            <i class="fas fa-plus me-1"></i> Add File(s)
+                                        </button>
+                                        <input type="file" class="form-control d-none" name="attachments[]" id="attachments" multiple>
+                                        <div class="form-text mt-1">
+                                            You can add files one by one or in batches.
+                                        </div>
+                                        <ul id="attachments-list" class="list-unstyled small mt-2"></ul>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Form Actions -->
-                    <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
-                        <a href="view_programs.php" class="btn btn-outline-secondary">
-                            <i class="fas fa-times me-2"></i>
-                            Cancel
-                        </a>
-                        <div>
-                            <button type="submit" name="save_as_draft" value="1" class="btn btn-outline-primary">
-                                <i class="fas fa-save me-2"></i>
-                                Save as Draft
-                            </button>
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                            <a href="view_programs.php" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>
+                                Cancel
+                            </a>
+                            <div>
+                                <button type="submit" name="save_as_draft" value="1" class="btn btn-outline-primary">
+                                    <i class="fas fa-save me-2"></i>
+                                    Save as Draft
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                </form>
+                    </form>
+                </div>
             </div>
-        </div>
-    `;
+        `;
+        document.getElementById('dynamic-content').innerHTML = formHtml;
+        console.log('Form rendered, calling autoFillIncompleteTargets');
+        console.log('incompleteTargets at this point:', incompleteTargets);
+        // Always auto-fill targets if we have any
+        autoFillIncompleteTargets();
+    });
+}
+
+/**
+ * Auto-fill the targets container with incomplete targets from previous periods
+ */
+function autoFillIncompleteTargets() {
+    console.log('autoFillIncompleteTargets called');
+    console.log('incompleteTargets:', incompleteTargets);
+    console.log('incompleteTargets.length:', incompleteTargets.length);
     
-    document.getElementById('dynamic-content').innerHTML = formHtml;
+    const targetsContainer = document.getElementById('targets-container');
+    console.log('targetsContainer found:', !!targetsContainer);
+    
+    if (!targetsContainer) {
+        console.log('No targets container found');
+        return;
+    }
+    
+    if (incompleteTargets.length === 0) {
+        console.log('No incomplete targets to fill');
+        return;
+    }
+    
+    // Clear any existing targets
+    targetsContainer.innerHTML = '';
+    console.log('Cleared targets container');
+    
+    // Add each incomplete target
+    incompleteTargets.forEach((target, index) => {
+        console.log(`Adding target ${index + 1}:`, target);
+        addTargetRow(target);
+    });
+    
+    // Show a notification to the user
+    if (incompleteTargets.length > 0) {
+        showToast('Info', `${incompleteTargets.length} incomplete targets from previous periods have been auto-filled. You can edit or remove them as needed.`, 'info');
+    }
 }
 
 /**
@@ -740,8 +819,9 @@ document.addEventListener('click', function(e) {
 
 /**
  * Add a new target row
+ * @param {Object} targetData - Optional target data to pre-fill the row
  */
-function addTargetRow() {
+function addTargetRow(targetData = null) {
     const container = document.getElementById('targets-container');
     if (!container) {
         console.error('Targets container not found');
@@ -751,6 +831,16 @@ function addTargetRow() {
     const existingTargets = container.querySelectorAll('.target-container');
     const targetNumber = existingTargets.length + 1;
     
+    // Extract target number counter from target_number if available
+    let targetCounter = '';
+    let targetNumberValue = '';
+    if (targetData && targetData.target_number) {
+        targetNumberValue = targetData.target_number;
+        // Extract the counter part (e.g., "30.1A.1" -> "1")
+        const match = targetData.target_number.match(/\.([^.]+)$/);
+        targetCounter = match ? match[1] : '';
+    }
+    
     const targetRow = document.createElement('div');
     targetRow.className = 'target-container card shadow-sm mb-4';
     targetRow.innerHTML = `
@@ -758,6 +848,7 @@ function addTargetRow() {
             <h6 class="card-title mb-0">
                 <i class="fas fa-bullseye me-2"></i>
                 Target #${targetNumber}
+                ${targetData ? '<span class="badge bg-info ms-2">Auto-filled</span>' : ''}
             </h6>
         </div>
         <div class="card-body">
@@ -768,49 +859,49 @@ function addTargetRow() {
                     <div class="input-group">
                         <span class="input-group-text">${programNumber}.</span>
                         <input type="number" min="1" class="form-control form-control-sm target-counter-input" 
-                               name="target_counter[]" placeholder="Counter (e.g., 1)">
+                               name="target_counter[]" placeholder="Counter (e.g., 1)" value="${targetCounter}">
                     </div>
-                    <input type="hidden" name="target_number[]" value="">
+                    <input type="hidden" name="target_number[]" value="${targetNumberValue}">
                 </div>
                 <div class="col-md-6">
                     <label class="form-label small">Target Description</label>
                     <textarea class="form-control" name="target_text[]" rows="2" required
-                              placeholder="Describe the target"></textarea>
+                              placeholder="Describe the target">${targetData ? escapeHtml(targetData.target_text || '') : ''}</textarea>
                 </div>
             </div>
             <div class="row mt-3">
                 <div class="col-md-6">
                     <label class="form-label small">Status Indicator</label>
                     <select class="form-select form-select-sm" name="target_status[]">
-                        <option value="not_started" selected>Not Started</option>
-                        <option value="in_progress">In Progress</option>
-                        <option value="completed">Completed</option>
-                        <option value="delayed">Delayed</option>
+                        <option value="not_started" ${targetData && targetData.target_status === 'not_started' ? 'selected' : ''}>Not Started</option>
+                        <option value="in_progress" ${targetData && targetData.target_status === 'in_progress' ? 'selected' : ''}>In Progress</option>
+                        <option value="completed" ${targetData && targetData.target_status === 'completed' ? 'selected' : ''}>Completed</option>
+                        <option value="delayed" ${targetData && targetData.target_status === 'delayed' ? 'selected' : ''}>Delayed</option>
                     </select>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label small">Remarks</label>
                     <textarea class="form-control form-control-sm" name="target_remarks[]" rows="2"
-                              placeholder="Additional remarks for this target"></textarea>
+                              placeholder="Additional remarks for this target">${targetData ? escapeHtml(targetData.remarks || '') : ''}</textarea>
                 </div>
             </div>
             <div class="row mt-3">
                 <div class="col-md-12">
                     <label class="form-label small">Achievements/Status</label>
                     <textarea class="form-control form-control-sm" name="target_status_description[]" rows="2"
-                              placeholder="Provide details about achievements and current status"></textarea>
+                              placeholder="Provide details about achievements and current status">${targetData ? escapeHtml(targetData.status_description || '') : ''}</textarea>
                 </div>
             </div>
             <div class="row mt-3">
                 <div class="col-md-6">
                     <label class="form-label small">Start Date</label>
                     <input type="date" class="form-control form-control-sm" name="target_start_date[]"
-                           placeholder="Select start date">
+                           placeholder="Select start date" value="${targetData ? (targetData.start_date || '') : ''}">
                 </div>
                 <div class="col-md-6">
                     <label class="form-label small">End Date</label>
                     <input type="date" class="form-control form-control-sm" name="target_end_date[]"
-                           placeholder="Select end date">
+                           placeholder="Select end date" value="${targetData ? (targetData.end_date || '') : ''}">
                 </div>
             </div>
         </div>
