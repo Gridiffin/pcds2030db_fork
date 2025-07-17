@@ -1,0 +1,28 @@
+{
+  "name": "pcds2030_dashboard_fork",
+  "version": "1.0.0",
+  "description": "A comprehensive web-based dashboard system for managing forestry sector programs and outcomes under the Sarawak Ministry of Natural Resources and Urban Development. This system replaces traditional Excel-based reporting with a streamlined, modern web solution.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Gridiffin/pcds2030db_fork.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Gridiffin/pcds2030db_fork/issues"
+  },
+  "homepage": "https://github.com/Gridiffin/pcds2030db_fork#readme",
+  "devDependencies": {
+    "jest": "^30.0.4",
+    "vite": "^7.0.5"
+  }
+}

@@ -47,7 +47,12 @@ alwaysApply: true
 
 - all css and js shouldnt be written inline. 
 - put all css and js into their own folder in the assets/js or assets/css directory
-- MODULE the files so that they have minimal lines of codes.
+- if the css and js are too long, modulate them into separate files.
+- all files should have <300 lines of codes. 500 is the max and 800 is the ceiling that i accept (only for complex files). 
+- if the page has too many elements, making the page partial might be a great way.
+- **AJAX** if multiple pages share AJAX logic (like notifications, search, etc.), put that logic in a shared JS file and import it where needed.
+
+
 
 ## System Context
 

@@ -31,3 +31,8 @@ alwaysApply: true
 3. REASON is it a good practice.
 4. SUGGEST a better way if there is any.
 5. Approval and ACT.
+
+## Best Practices (special case)
+1. always use best practice.
+2. example is in  docs\project_structure_best_practices.md and docs\example_login_feature_workflow.md
+3. follow how everything is designed in both of these files, the orders of file creation and imports.
