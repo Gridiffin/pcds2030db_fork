@@ -1,11 +1,10 @@
 <?php
 /**
  * Admin Audit Log
- * 
  * Displays system audit logs for administrators.
  */
 
-// Include necessary files
+// --- Dependencies & Access Control ---
 require_once '../../../config/config.php';
 require_once ROOT_PATH . 'app/lib/db_connect.php';
 require_once ROOT_PATH . 'app/lib/session.php';
@@ -13,48 +12,41 @@ require_once ROOT_PATH . 'app/lib/functions.php';
 require_once ROOT_PATH . 'app/lib/admins/index.php';
 require_once ROOT_PATH . 'app/lib/audit_log.php';
 
-// Verify user is admin
+// Only allow admin users
 if (!is_admin()) {
     header('Location: ' . APP_URL . '/login.php');
     exit;
 }
 
-// Page configuration
+// --- Page Configuration ---
 $pageTitle = 'System Audit Log';
 $currentPage = 'audit';
 
-// Additional CSS/JS for this page
+// --- Asset Loading ---
 $additionalStyles = [
-    // audit.css removed - using standard Bootstrap classes
+    asset_url('css/custom', 'audit_log.css'), // Custom audit log styles
 ];
-
 $additionalScripts = [
-    asset_url('js', 'admin/audit-log.js')
+    asset_url('js/admin', 'audit-log.js'), // Modular JS for audit log
 ];
 
-// Include header
+// --- Layout Includes ---
 require_once '../../layouts/header.php';
 
-// Include admin navigation
-// Set up the dashboard header variables
-$title = "System Audit Log";
-// Configure modern page header
+// Modern page header config
 $header_config = [
     'title' => 'Audit Log',
     'subtitle' => 'View system activity and security logs',
     'variant' => 'white',
     'actions' => []
 ];
-
-// Include modern page header
 require_once '../../layouts/page_header.php';
 ?>
 
 <div class="row mb-4">
     <div class="col-lg-12">
-        <!-- Error alert container -->
+        <!-- Error alert container for JS-injected alerts -->
         <div id="auditLogAlertContainer"></div>
-        
         <div class="card shadow-sm">
             <div class="card-header">
                 <h6 class="card-title m-0">
@@ -102,16 +94,13 @@ require_once '../../layouts/page_header.php';
     </div>
 </div>
 
-<!-- Error alert for displaying errors -->
-<div class="row mb-4 d-none" id="errorAlert">
-    <div class="col-12">
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="fas fa-exclamation-triangle me-2"></i>
-            <span id="errorMessage">Error loading audit logs</span>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    </div>
-</div>
+<?php
+// --- Error Alert Partial (hidden by default, shown via JS) ---
+$errorMessage = 'Error loading audit logs';
+$errorVisible = false;
+$errorId = 'errorAlert';
+include __DIR__ . '/../partials/error_alert.php';
+?>
 
 <div class="row">
     <div class="col-lg-12">
@@ -120,7 +109,7 @@ require_once '../../layouts/page_header.php';
                 <h5 class="card-title m-0">Audit Log Entries</h5>
             </div>
             <div class="card-body">
-                <!-- Audit log table will be loaded here -->
+                <!-- Audit log table will be loaded here via JS -->
                 <div id="auditLogTable">
                     <div class="text-center py-4">
                         <i class="fas fa-spinner fa-spin fa-2x text-muted"></i>
@@ -134,41 +123,7 @@ require_once '../../layouts/page_header.php';
     </div>
 </div>
 
-<script>
-// Initialize APP_URL for JavaScript
-const APP_URL = '<?php echo APP_URL; ?>';
-
-// Helper function to show error alerts
-function showErrorAlert(message) {
-    const errorAlert = document.getElementById('errorAlert');
-    const errorMessage = document.getElementById('errorMessage');
-    
-    if (errorAlert && errorMessage) {
-        errorMessage.textContent = message;
-        errorAlert.classList.remove('d-none');
-    }
-}
-
-// Function to close error alerts
-function closeErrorAlert() {
-    const errorAlert = document.getElementById('errorAlert');
-    if (errorAlert) {
-        errorAlert.classList.add('d-none');
-    }
-}
-
-// Add event listener to refresh button
-document.getElementById('refreshLogs')?.addEventListener('click', function() {
-    // This will be picked up by the audit-log.js loadAuditLogs function
-    if (typeof loadAuditLogs === 'function') {
-        loadAuditLogs();
-    } else {
-        location.reload();
-    }
-});
-</script>
-
 <?php
-// Include footer
+// --- Footer Include ---
 require_once '../../layouts/footer.php';
 ?>

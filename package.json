@@ -25,6 +25,7 @@
   "homepage": "https://github.com/Gridiffin/pcds2030db_fork#readme",
   "devDependencies": {
     "jest": "^30.0.4",
+    "jsdom": "^26.1.0",
     "vite": "^7.0.5"
   }
 }

@@ -416,14 +416,14 @@ function delete_user($user_id) {
     
     $user = $result->fetch_assoc();
     
-    // Check if user has any programs
-    $program_check = "SELECT COUNT(*) as count FROM programs WHERE users_assigned = ?";
+    // Check if user has any programs (use created_by instead of users_assigned)
+    $program_check = "SELECT COUNT(*) as count FROM programs WHERE created_by = ?";
     $stmt = $conn->prepare($program_check);
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
     $program_result = $stmt->get_result();
     $program_count = $program_result->fetch_assoc()['count'];
-      if ($program_count > 0) {
+    if ($program_count > 0) {
         // Log failed deletion attempt - user has associated programs
         $error_msg = "Cannot delete user '{$user['username']}' because they own $program_count program(s). Reassign these programs first.";
         log_user_deletion_failed($user_id, $error_msg, $_SESSION['user_id'] ?? 0);
