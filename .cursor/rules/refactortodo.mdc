@@ -1,8 +1,6 @@
 ---
-description: this rule is applied when refactoring a module/file/section of the system with the best practice.
-alwaysApply: false
+alwaysApply: true
 ---
-
 # 🚀 Refactor Module Best Practices: To-Do Checklist
 
 > **This file is the standard template/checklist for refactoring any module in this project. Whenever you see the instruction "refactor this module with best practices", use this as your context and workflow.**
@@ -10,6 +8,7 @@ alwaysApply: false
 ---
 
 ## 📝 To-Do Checklist: Refactor a Module (Detailed, with Vite & Unit Testing)
+[Important Notes: DO NOT REMOVE ANY FUNCTIONS/SECTIONS WHILE REFACTORING OR MODULARIZING A LONG FILE]
 
 ### 1. **Preparation & Analysis**
 - [ ] Identify all files related to the module (views, partials, CSS, JS, PHP logic, AJAX/API, tests).
@@ -36,6 +35,7 @@ alwaysApply: false
 - [ ] Move and modularize CSS:
   - Main CSS imports subfiles using `@import`.
   - Example: `@import 'login/form.css';`
+  Note: compare all the css classes and the html classes, do not remove the css styles but modularize them accordingly.
 - [ ] Move and modularize JS:
   - Separate pure logic (validation, helpers) from DOM/event/AJAX code.
   - Import logic JS before DOM JS in the view.
@@ -45,8 +45,6 @@ alwaysApply: false
 ---
 
 ### 4. **Implement Vite for Asset Bundling**
-- [ ] Install Vite:  
-  `npm install --save-dev vite`
 - [ ] Create or update `vite.config.js`:
   - Define entry points for each module/page.
   - Example:

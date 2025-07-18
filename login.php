@@ -70,7 +70,8 @@ if (isset($_GET['error']) && $_GET['error'] === 'invalid_session') {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">    
     <link rel="stylesheet" href="<?php echo APP_URL; ?>/assets/css/main.css">
-    <link rel="stylesheet" href="<?php echo APP_URL; ?>/assets/css/pages/login.css">
+    <link rel="stylesheet" href="<?php echo APP_URL; ?>/dist/css/login.bundle.css">
+    <!-- Remove old login.css reference, now handled by Vite bundle or shared login.css -->
 </head>
 <body>
     <div class="container">
@@ -105,8 +106,9 @@ if (isset($_GET['error']) && $_GET['error'] === 'invalid_session') {
                         
                         <!-- Login Section (Right side of card) -->
                         <div class="col-md-6 login-section">
-                            <div class="login-content">                                <div class="logo-container">
-                                    <img src="<?php echo APP_URL; ?>/assets/images/sarawak_crest.png" alt="Sarawak Crest" class="logo-image">
+                            <div class="login-content login-container"> <!-- Added login-container -->
+                                <div class="logo-container">
+                                    <img src="http://localhost/pcds2030_dashboard_fork/assets/images/sarawak_crest.png" alt="Sarawak Crest" class="logo-image">
                                 </div>
                                 
                                 <h3 class="login-title">Sign In</h3>
@@ -119,13 +121,12 @@ if (isset($_GET['error']) && $_GET['error'] === 'invalid_session') {
                                     </div>
                                 <?php endif; ?>
                                 
-                                <form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" id="loginForm">
+                                <form method="post" action="/pcds2030_dashboard_fork/login.php" id="loginForm" class="login-form"> <!-- Added login-form -->
                                     <div class="form-group mb-3">
                                         <label for="username">Username</label>
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="fas fa-user"></i></span>
-                                            <input type="text" class="form-control" id="username" name="username" 
-                                                   value="<?php echo $username; ?>" required>
+                                            <input type="text" class="form-control login-form__input" id="username" name="username" value="" required> <!-- Added login-form__input -->
                                         </div>
                                     </div>
                                     
@@ -133,7 +134,7 @@ if (isset($_GET['error']) && $_GET['error'] === 'invalid_session') {
                                         <label for="password">Password</label>
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                                            <input type="password" class="form-control" id="password" name="password" required autocomplete="current-password">
+                                            <input type="password" class="form-control login-form__input" id="password" name="password" required autocomplete="current-password"> <!-- Added login-form__input -->
                                             <span class="input-group-text toggle-password" tabindex="-1" aria-label="Toggle password visibility">
                                                 <i class="far fa-eye"></i>
                                             </span>
@@ -156,37 +157,6 @@ if (isset($_GET['error']) && $_GET['error'] === 'invalid_session') {
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Handle password visibility toggle
-        const togglePassword = document.querySelector('.toggle-password');
-        if (togglePassword) {
-            togglePassword.addEventListener('click', function() {
-                const passwordInput = document.getElementById('password');
-                if (passwordInput.type === 'password') {
-                    passwordInput.type = 'text';
-                    this.querySelector('i').className = 'far fa-eye-slash';
-                } else {
-                    passwordInput.type = 'password';
-                    this.querySelector('i').className = 'far fa-eye';
-                }
-            });
-        }
-        
-        // Handle form submission
-        const loginForm = document.getElementById('loginForm');
-        const loginButton = document.getElementById('loginBtn');
-        const loginSpinner = document.getElementById('loginSpinner');
-        
-        if (loginForm) {
-            loginForm.addEventListener('submit', function() {
-                // Show spinner and add loading class
-                loginButton.classList.add('loading');
-                loginSpinner.classList.remove('d-none');
-                loginButton.disabled = true;
-            });
-        }
-    });
-    </script>
+    <script type="module" src="<?php echo APP_URL; ?>/dist/js/login.bundle.js"></script>
 </body>
 </html>

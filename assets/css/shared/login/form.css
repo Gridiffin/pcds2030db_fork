@@ -1,0 +1,78 @@
+/* Login form styles (shared) */
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+.login-form__input {
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+.form-group {
+  margin-bottom: 1.5rem;
+}
+.form-group label {
+  font-family: var(--font-family);
+  font-weight: 500;
+  color: var(--forest-deep);
+  margin-bottom: 0.5rem;
+  display: block;
+}
+.input-group {
+  position: relative;
+  box-shadow: 0 2px 8px rgba(83, 125, 93, 0.08);
+  border-radius: var(--border-radius-sm);
+  transition: all var(--transition-speed) var(--transition-timing);
+  overflow: hidden;
+}
+.input-group:focus-within {
+  box-shadow: 0 0 0 3px rgba(83, 125, 93, 0.15);
+  transform: translateY(-1px);
+}
+.form-control {
+  border: 2px solid #e8f0ee;
+  padding: 0.75rem 1rem;
+  font-family: var(--font-family);
+  font-size: 1rem;
+  background: white;
+  transition: all var(--transition-speed) var(--transition-timing);
+}
+.form-control:focus {
+  border-color: var(--forest-light);
+  box-shadow: none;
+  background: #fafbfb;
+}
+.input-group-text {
+  background: #f8faf9;
+  border: 2px solid #e8f0ee;
+  border-right: none;
+  color: var(--forest-medium);
+  padding: 0.75rem 1rem;
+}
+.toggle-password {
+  cursor: pointer;
+  transition: all var(--transition-speed) var(--transition-timing);
+  user-select: none;
+}
+.toggle-password:hover {
+  background: #e8f0ee;
+  color: var(--forest-deep);
+}
+.alert {
+  border-radius: var(--border-radius-sm);
+  border: none;
+  font-family: var(--font-family);
+  font-weight: 500;
+  margin-bottom: 1.5rem;
+}
+.alert-danger {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  color: var(--status-error);
+  box-shadow: 0 2px 8px rgba(211, 47, 47, 0.15);
+}
+.alert-success {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  color: var(--status-success);
+  box-shadow: 0 2px 8px rgba(46, 125, 50, 0.15);
+} 

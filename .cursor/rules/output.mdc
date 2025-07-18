@@ -11,6 +11,8 @@ alwaysApply: true
 
 - please complete requests by the best possible solution that you can find. you dont need to wait for user's approval everytime.
 
+- do NOT use /* ... (rest of your code as provided above) ... */ . you need to include the whole thing.
+
 - follow up questions always use the previous files that we updated in the same context, unless i explicitly say "we move on to other file" that means we are still working on the same files.
 
 - do not ask user to do scanning tasks, scan the file yourself and then you suggest the improvements
