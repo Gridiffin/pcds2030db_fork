@@ -128,7 +128,7 @@ function UserTableManager(formManagerParam) {
             </div>
         `;
 
-        fetch(window.APP_URL + '/app/views/admin/users/manage_users.php?ajax_table=1')
+        fetch(window.APP_URL + '/app/ajax/admin_user_tables.php')
             .then(response => {
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}, statusText: ${response.statusText}`);
