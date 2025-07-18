@@ -82,3 +82,14 @@
   - Updated the code to use 'created_by' instead of 'users_assigned' in the SQL query.
   - No database changes required.
 - **Status:** Fixed in code, 2024-07-15.
+
+## [2024-07-19] Outcome Edit Not Saving Latest Edits (Admin Outcome Edit)
+
+- **File:** app/views/admin/outcomes/edit_outcome.php
+- **Error:**
+  - When editing the outcome table (cells, row/column names) and clicking "Save Changes" while still editing a contenteditable field, the latest changes were not saved.
+- **Cause:**
+  - The JavaScript collected data from the DOM on form submit, but if a contenteditable cell was still focused, its latest value was not committed to the DOM and thus not included in the data sent to the backend.
+- **Fix:**
+  - On form submission, all `.editable-hint` elements are programmatically blurred before collecting data, ensuring the latest edits are committed and saved.
+- **Status:** Fixed in code, 2024-07-19.

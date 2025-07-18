@@ -43,15 +43,26 @@ if (!$outcome) {
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Debug: log the full POST data
+    file_put_contents(__DIR__ . '/debug_post_data.log', "\n==== " . date('Y-m-d H:i:s') . " FULL POST ====\n" . print_r($_POST, true), FILE_APPEND);
+    $code = isset($_POST['code']) ? trim($_POST['code']) : '';
+    $type = isset($_POST['type']) ? trim($_POST['type']) : '';
+    $title = isset($_POST['title']) ? trim($_POST['title']) : '';
+    $description = isset($_POST['description']) ? trim($_POST['description']) : '';
     $post_data = [];
     if (isset($_POST['data'])) {
-        // Decode the JSON string from the hidden input
         $decoded = json_decode($_POST['data'], true);
         if (is_array($decoded)) {
             $post_data = $decoded;
         }
     }
-    if (update_outcome_data_by_code($outcome['code'], $post_data)) {
+    // Debug: log the decoded data
+    file_put_contents(__DIR__ . '/debug_post_data.log', "Decoded: " . print_r($post_data, true), FILE_APPEND);
+    require_once ROOT_PATH . 'app/lib/admins/outcomes.php';
+    $update_result = update_outcome_full($outcome_id, $code, $type, $title, $description, $post_data);
+    // Debug: log the result of the update
+    file_put_contents(__DIR__ . '/debug_post_data.log', "Update result: " . print_r($update_result, true), FILE_APPEND);
+    if ($update_result) {
         header('Location: view_outcome.php?id=' . $outcome_id . '&saved=1');
         exit;
     } else {
@@ -602,6 +613,11 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('editOutcomeForm').addEventListener('submit', function(e) {
         // Form submission started
         
+        // Blur all contenteditable elements to ensure latest edits are committed
+        document.querySelectorAll('.editable-hint').forEach(function(el) {
+            el.blur();
+        });
+        
         // Collect any final changes from DOM before submission
         collectCurrentData();
         
@@ -623,26 +639,45 @@ document.addEventListener('DOMContentLoaded', function() {
         // Data collected for submission
         document.getElementById('dataJsonInput').value = JSON.stringify(collectedData);
         
+        // Debug: log the data being submitted
+        console.log('Submitting outcome data:', collectedData);
+        console.log('Hidden input value:', document.getElementById('dataJsonInput').value);
+        
         // Basic validation
         const outcomeCode = document.getElementById('outcomeCodeInput').value.trim();
+        const outcomeType = document.getElementById('outcomeTypeInput').value.trim();
+        const outcomeTitle = document.getElementById('outcomeTitleInput').value.trim();
+        const outcomeDescription = document.getElementById('outcomeDescriptionInput').value.trim();
         if (!outcomeCode) {
             e.preventDefault();
             alert('Please enter an outcome code.');
             return false;
         }
-        
+        if (!outcomeType) {
+            e.preventDefault();
+            alert('Please enter an outcome type.');
+            return false;
+        }
+        if (!outcomeTitle) {
+            e.preventDefault();
+            alert('Please enter an outcome title.');
+            return false;
+        }
+        if (!outcomeDescription) {
+            e.preventDefault();
+            alert('Please enter an outcome description.');
+            return false;
+        }
         if (columns.length === 0) {
             e.preventDefault();
             alert('Please add at least one column.');
             return false;
         }
-        
         if (Object.keys(data).length === 0) {
             e.preventDefault();
             alert('Please add at least one row.');
             return false;
         }
-        
         // Form validation passed, submitting
     });
 
