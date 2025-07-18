@@ -110,7 +110,7 @@ function UserTableManager(formManagerParam) {
     }
     
     // Refresh the users table without reloading the page
-    function refreshTable() {
+    function refreshTable(page = 1, perPage = 20) {
         const tableWrapper = document.getElementById('userTablesWrapper');
         if (!tableWrapper) {
             console.error('User tables wrapper (#userTablesWrapper) not found. Reloading page.');
@@ -128,7 +128,7 @@ function UserTableManager(formManagerParam) {
             </div>
         `;
 
-        fetch(window.APP_URL + '/app/ajax/admin_user_tables.php')
+        fetch(window.APP_URL + `/app/ajax/admin_user_tables.php?page=${page}&per_page=${perPage}`)
             .then(response => {
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}, statusText: ${response.statusText}`);
@@ -138,24 +138,16 @@ function UserTableManager(formManagerParam) {
             .then(html => {
                 if (html.trim() === '') {
                     console.warn('Empty response from server for table refresh. This might indicate an issue if tables were expected.');
-                    // Potentially display a 'No users found' message or handle as appropriate
-                    // For now, we'll still replace the content, which might clear the tables if the response is truly empty.
                 }
                 tableWrapper.innerHTML = html;
-                
                 listenersAttached = false; // Reset flag to allow re-attachment
                 attachEventListeners(); 
-                
-                // highlightTableRows(); // Optional: uncomment if you want this visual effect
             })
             .catch(error => {
                 console.error('Table refresh error:', error);
                 tableWrapper.innerHTML = originalContent; // Restore original content on error
-                
-                // Re-attach listeners to the restored content
                 listenersAttached = false; 
                 attachEventListeners();
-
                 if (typeof window.showToast === 'function') {
                     window.showToast('Error', `Failed to refresh user list: ${error.message}. Please try again.`, 'danger');
                 } else {
@@ -163,6 +155,17 @@ function UserTableManager(formManagerParam) {
                 }
             });
     }
+
+    // Event delegation for pagination controls
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('user-table-page-link')) {
+            e.preventDefault();
+            const page = parseInt(e.target.getAttribute('data-page'));
+            if (!isNaN(page) && page > 0) {
+                refreshTable(page);
+            }
+        }
+    });
     
     // Visual effect for newly loaded content
     function highlightTableRows() {

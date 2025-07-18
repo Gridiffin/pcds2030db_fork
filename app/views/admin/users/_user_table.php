@@ -4,7 +4,7 @@
  *
  * Usage:
  *   include '_user_table.php';
- *   Pass $users (array), $tableTitle (string), $roleType ('admin'|'agency')
+ *   Pass $users (array), $tableTitle (string), $roleType ('admin'|'agency'), $pagination (optional)
  */
 if (!isset($users) || !is_array($users)) {
     echo '<div class="alert alert-danger">No users data provided.</div>';
@@ -102,5 +102,29 @@ if (!isset($roleType)) $roleType = 'agency';
                 </tbody>
             </table>
         </div>
+        <?php if (isset($pagination) && is_array($pagination) && $pagination['total_pages'] > 1): ?>
+        <nav aria-label="User table pagination" class="mt-3">
+            <ul class="pagination justify-content-center mb-0">
+                <li class="page-item<?php echo $pagination['page'] <= 1 ? ' disabled' : ''; ?>">
+                    <a class="page-link user-table-page-link" href="#" data-page="<?php echo $pagination['page'] - 1; ?>">&laquo; Prev</a>
+                </li>
+                <?php
+                $maxPagesToShow = 5;
+                $start = max(1, $pagination['page'] - floor($maxPagesToShow/2));
+                $end = min($pagination['total_pages'], $start + $maxPagesToShow - 1);
+                if ($end - $start < $maxPagesToShow - 1) {
+                    $start = max(1, $end - $maxPagesToShow + 1);
+                }
+                for ($i = $start; $i <= $end; $i++): ?>
+                    <li class="page-item<?php echo $i == $pagination['page'] ? ' active' : ''; ?>">
+                        <a class="page-link user-table-page-link" href="#" data-page="<?php echo $i; ?>"><?php echo $i; ?></a>
+                    </li>
+                <?php endfor; ?>
+                <li class="page-item<?php echo $pagination['page'] >= $pagination['total_pages'] ? ' disabled' : ''; ?>">
+                    <a class="page-link user-table-page-link" href="#" data-page="<?php echo $pagination['page'] + 1; ?>">Next &raquo;</a>
+                </li>
+            </ul>
+        </nav>
+        <?php endif; ?>
     </div>
 </div> 

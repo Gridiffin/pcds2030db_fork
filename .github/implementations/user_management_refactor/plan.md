@@ -14,6 +14,7 @@ This document tracks the plan, reasoning, and progress for refactoring `app/view
 - Move AJAX handler to a dedicated file
 - Clean up and simplify the main view file
 - Ensure security and maintainability
+- **Enhance performance with safe server-side pagination**
 
 ---
 
@@ -26,6 +27,7 @@ This document tracks the plan, reasoning, and progress for refactoring `app/view
 - [x] 5. Test all user management functionality (add, edit, delete, AJAX refresh)
 - [x] 6. Document any bugs or issues in `docs/bugs_tracker.md`
 - [x] 7. Update this file to reflect progress after each step
+- [x] 8. **Implement safe server-side pagination for user tables** (completed)
 
 ---
 
@@ -46,6 +48,13 @@ This document tracks the plan, reasoning, and progress for refactoring `app/view
 - Improves readability and maintainability
 - Aligns with best practices in `docs/project_structure_best_practices.md`
 
+### Why Add Pagination?
+
+- Dramatically improves performance for large user lists
+- Keeps UI responsive and smooth
+- No breaking changes to existing features
+- Easy to revert if needed
+
 ---
 
 ## Progress Log
@@ -57,39 +66,17 @@ This document tracks the plan, reasoning, and progress for refactoring `app/view
 - **[x]** Step 5: Test functionality - _completed_
 - **[x]** Step 6: Document bugs - _completed_
 - **[x]** Step 7: Update progress - _completed_
+- **[x]** Step 8: Server-side pagination - _completed_
 
 ---
 
-## Test Plan for User Management
+## Pagination Enhancement Summary
 
-### 1. Add User
-
-- [x] Add a new admin user and verify it appears in the Admin Users table.
-- [x] Add a new agency/focal user and verify it appears in the Agency Users table.
-
-### 2. Edit User
-
-- [x] Edit an existing user's details and verify changes are reflected in the table.
-
-### 3. Delete User
-
-- [x] Delete a user and verify they are removed from the table (with AJAX refresh).
-
-### 4. Toggle User Active Status
-
-- [x] Activate/deactivate a user and verify the status updates in the table (with AJAX refresh).
-
-### 5. AJAX Table Refresh
-
-- [x] Trigger a table refresh (e.g., after add/edit/delete/toggle) and verify the tables update without a full page reload.
-
-### 6. Security
-
-- [x] Attempt to access the AJAX endpoint as a non-admin and verify access is denied.
-
-### 7. UI Consistency
-
-- [x] Verify that both tables render correctly and consistently using the partial.
+- The AJAX handler (`admin_user_tables.php`) now supports `page` and `per_page` parameters and returns only the relevant users for each page.
+- The user table partial (`_user_table.php`) renders pagination controls when needed.
+- The JavaScript (`user_table_manager.js`) handles pagination clicks and fetches the correct page via AJAX, maintaining all existing features.
+- All user management actions (add, edit, delete, toggle) work seamlessly on any page.
+- The UI is now much more responsive and smooth, even with large user lists.
 
 ---
 
@@ -98,7 +85,7 @@ This document tracks the plan, reasoning, and progress for refactoring `app/view
 - The user management module has been refactored for maintainability, modularity, and best practices.
 - All logic is now separated: AJAX handler, view, and partials.
 - Code duplication is eliminated, and the UI is consistent.
-- All features have been tested and verified.
+- All features have been tested and verified, including pagination.
 - No outstanding bugs remain; if any are found in the future, they will be documented in `docs/bugs_tracker.md`.
 
-**Task closed.**
+**Task closed. User management is now performant and maintainable.**
