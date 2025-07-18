@@ -184,6 +184,3 @@ require_once '../../layouts/page_header.php';
 // Include footer
 require_once '../../layouts/footer.php';
 ?>
-
-
-
