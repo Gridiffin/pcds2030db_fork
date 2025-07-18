@@ -222,7 +222,7 @@ require_once '../../layouts/page_header.php';
       <div class="modal-body">
         <form id="editOutcomeDetailForm">
           <div id="editItemsContainer"></div>
-          <button type="button" class="btn btn-outline-secondary mt-2" id="addItemBtn">Add Item</button>
+          <!-- Removed Add Item button as it is unused -->
         </form>
       </div>
       <div class="modal-footer">
@@ -233,17 +233,14 @@ require_once '../../layouts/page_header.php';
   </div>
 </div>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const refreshBtn = document.getElementById('refreshPage');
-        if (refreshBtn) {
-            refreshBtn.addEventListener('click', () => window.location.reload());
-        }
+<?php
+// Inject bundled assets for manage_outcomes
+?>
+<link rel="stylesheet" href="/dist/js/manage_outcomes.bundle.css">
+<script src="/dist/js/manage_outcomes.bundle.js"></script>
 
-        // Important Outcomes editing functionality (from agency side)
-        // This section is no longer relevant as outcomes are managed directly
-        // and the modal is removed.
-    });
+<script>
+    // Moved to assets/js/admin/manage_outcomes.js
 </script>
 
 <?php require_once dirname(__DIR__, 2) . '/layouts/footer.php'; ?>

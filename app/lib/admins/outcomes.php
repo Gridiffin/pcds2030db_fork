@@ -156,6 +156,30 @@ function update_outcome_data_by_code($code, $data) {
 }
 
 /**
+ * Update outcome title and description by ID in the new outcomes table
+ * @param int $id
+ * @param string $title
+ * @param string $description
+ * @return bool
+ */
+function update_outcome($id, $title, $description) {
+    global $conn;
+    $query = "UPDATE outcomes SET title = ?, description = ?, updated_at = NOW() WHERE id = ?";
+    $stmt = $conn->prepare($query);
+    if (!$stmt) {
+        error_log("Error preparing update_outcome: " . $conn->error);
+        return false;
+    }
+    $stmt->bind_param("ssi", $title, $description, $id);
+    $success = $stmt->execute();
+    if (!$success) {
+        error_log("Error executing update_outcome: " . $stmt->error);
+    }
+    $stmt->close();
+    return $success;
+}
+
+/**
  * Parse outcome JSON data
  * @param string $json_data
  * @return array|null

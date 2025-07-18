@@ -6,6 +6,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         login: path.resolve(__dirname, 'assets/js/shared/login.js'),
+        manage_outcomes: 'assets/js/admin/manage_outcomes.js',
       },
       output: {
         entryFileNames: 'js/[name].bundle.js',
