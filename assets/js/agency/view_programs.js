@@ -605,6 +605,13 @@ function updateMoreActionsModalContent(modal, programId, programName, programTyp
             tooltip: 'Edit submissions for this program by selecting a reporting period'
         },
         {
+            icon: 'fas fa-paper-plane',
+            text: 'Submit Submission',
+            action: 'submit_submission',
+            class: 'btn-outline-info',
+            tooltip: 'Select and submit an existing draft submission'
+        },
+        {
             icon: 'fas fa-edit',
             text: 'Edit Program',
             url: `edit_program.php?id=${programId}`,
@@ -614,14 +621,44 @@ function updateMoreActionsModalContent(modal, programId, programName, programTyp
     ];
     
     actions.forEach(action => {
-        const actionButton = document.createElement('a');
-        actionButton.className = `btn ${action.class} w-100 mb-2`;
-        actionButton.href = action.url;
-        actionButton.setAttribute('title', action.tooltip);
-        actionButton.setAttribute('data-bs-toggle', 'tooltip');
-        actionButton.setAttribute('data-bs-placement', 'left');
-        actionButton.innerHTML = `<i class=\"${action.icon} me-2\"></i>${action.text}`;
-        actionsList.appendChild(actionButton);
+        if (action.url) {
+            // Create link button
+            const actionButton = document.createElement('a');
+            actionButton.className = `btn ${action.class} w-100 mb-2`;
+            actionButton.href = action.url;
+            actionButton.setAttribute('title', action.tooltip);
+            actionButton.setAttribute('data-bs-toggle', 'tooltip');
+            actionButton.setAttribute('data-bs-placement', 'left');
+            actionButton.innerHTML = `<i class="${action.icon} me-2"></i>${action.text}`;
+            actionsList.appendChild(actionButton);
+        } else if (action.action === 'submit_submission') {
+            // Create submit submission button with click handler
+            const actionButton = document.createElement('button');
+            actionButton.className = `btn ${action.class} w-100 mb-2 submit-submission-btn`;
+            actionButton.setAttribute('data-program-id', programId);
+            actionButton.setAttribute('data-program-name', programName);
+            actionButton.setAttribute('title', action.tooltip);
+            actionButton.setAttribute('data-bs-toggle', 'tooltip');
+            actionButton.setAttribute('data-bs-placement', 'left');
+            actionButton.innerHTML = `<i class="${action.icon} me-2"></i>${action.text}`;
+            
+            // Add click handler for submit submission functionality
+            actionButton.addEventListener('click', function() {
+                const programId = this.getAttribute('data-program-id');
+                const programName = this.getAttribute('data-program-name');
+                
+                // Close the current modal first
+                const currentModal = bootstrap.Modal.getInstance(document.getElementById('moreActionsModal'));
+                if (currentModal) {
+                    currentModal.hide();
+                }
+                
+                // Show submission selection modal
+                showSubmissionSelectionModal(programId, programName);
+            });
+            
+            actionsList.appendChild(actionButton);
+        }
     });
 
     // Remove focal-only finalize/revert controls from modal
@@ -632,4 +669,211 @@ function updateMoreActionsModalContent(modal, programId, programName, programTyp
     tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);
     });
+}
+
+/**
+ * Show submission selection modal
+ */
+function showSubmissionSelectionModal(programId, programName) {
+    // Create modal HTML if it doesn't exist
+    let modal = document.getElementById('submissionSelectionModal');
+    if (!modal) {
+        modal = createSubmissionSelectionModal();
+        document.body.appendChild(modal);
+    }
+    
+    // Update modal content
+    updateSubmissionSelectionModalContent(modal, programId, programName);
+    
+    // Show the modal
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+}
+
+/**
+ * Create the submission selection modal HTML structure
+ */
+function createSubmissionSelectionModal() {
+    const modal = document.createElement('div');
+    modal.className = 'modal fade';
+    modal.id = 'submissionSelectionModal';
+    modal.setAttribute('tabindex', '-1');
+    modal.setAttribute('aria-labelledby', 'submissionSelectionModalLabel');
+    modal.setAttribute('aria-hidden', 'true');
+    
+    modal.innerHTML = `
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="submissionSelectionModalLabel">
+                        <i class="fas fa-paper-plane me-2"></i>Select Submission to Submit
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="program-info mb-3">
+                        <h6 class="program-name-display"></h6>
+                        <small class="text-muted">Select a draft submission to submit and finalize</small>
+                    </div>
+                    <div id="submissionsList">
+                        <!-- Submissions will be loaded here -->
+                    </div>
+                    <div id="loadingSubmissions" class="text-center py-4" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Loading submissions...</p>
+                    </div>
+                    <div id="noSubmissions" class="text-center py-4" style="display: none;">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <h6 class="text-muted">No Draft Submissions Found</h6>
+                        <p class="text-muted">This program has no draft submissions available for submission.</p>
+                        <a href="edit_submission.php?program_id=" class="btn btn-outline-primary">
+                            <i class="fas fa-plus me-2"></i>Create New Submission
+                        </a>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    return modal;
+}
+
+/**
+ * Update submission selection modal content
+ */
+function updateSubmissionSelectionModalContent(modal, programId, programName) {
+    // Update program info
+    const nameDisplay = modal.querySelector('.program-name-display');
+    const submissionsList = modal.querySelector('#submissionsList');
+    const loadingDiv = modal.querySelector('#loadingSubmissions');
+    const noSubmissionsDiv = modal.querySelector('#noSubmissions');
+    const createNewLink = modal.querySelector('#noSubmissions a');
+    
+    nameDisplay.textContent = programName;
+    createNewLink.href = `edit_submission.php?program_id=${programId}`;
+    
+    // Show loading state
+    submissionsList.style.display = 'none';
+    noSubmissionsDiv.style.display = 'none';
+    loadingDiv.style.display = 'block';
+    
+    // Load submissions
+    loadProgramSubmissions(programId, modal);
+}
+
+/**
+ * Load program submissions via AJAX
+ */
+function loadProgramSubmissions(programId, modal) {
+    const submissionsList = modal.querySelector('#submissionsList');
+    const loadingDiv = modal.querySelector('#loadingSubmissions');
+    const noSubmissionsDiv = modal.querySelector('#noSubmissions');
+    
+    fetch(`../ajax/get_program_submissions_list.php?program_id=${programId}`)
+        .then(response => response.json())
+        .then(data => {
+            // Hide loading
+            loadingDiv.style.display = 'none';
+            
+            if (data.success && data.submissions && data.submissions.length > 0) {
+                // Show submissions
+                submissionsList.innerHTML = '';
+                data.submissions.forEach(submission => {
+                    const submissionCard = createSubmissionCard(submission, programId);
+                    submissionsList.appendChild(submissionCard);
+                });
+                submissionsList.style.display = 'block';
+            } else {
+                // Show no submissions message
+                noSubmissionsDiv.style.display = 'block';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading submissions:', error);
+            loadingDiv.style.display = 'none';
+            noSubmissionsDiv.style.display = 'block';
+            
+            // Update error message
+            const errorMessage = noSubmissionsDiv.querySelector('h6');
+            errorMessage.textContent = 'Error Loading Submissions';
+            const errorDesc = noSubmissionsDiv.querySelector('p');
+            errorDesc.textContent = 'An error occurred while loading submissions. Please try again.';
+        });
+}
+
+/**
+ * Create submission card element
+ */
+function createSubmissionCard(submission, programId) {
+    const card = document.createElement('div');
+    card.className = 'card mb-3 submission-card';
+    card.style.cursor = 'pointer';
+    card.setAttribute('data-submission-id', submission.submission_id);
+    card.setAttribute('data-period-id', submission.period_id);
+    
+    // Add hover effect
+    card.addEventListener('mouseenter', function() {
+        this.style.transform = 'translateY(-2px)';
+        this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+    });
+    
+    card.addEventListener('mouseleave', function() {
+        this.style.transform = 'translateY(0)';
+        this.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+    });
+    
+    // Add click handler
+    card.addEventListener('click', function() {
+        selectSubmission(submission.submission_id, submission.period_id, programId);
+    });
+    
+    const statusBadge = submission.period_status === 'open' ? 
+        '<span class="badge bg-success me-2">Open</span>' : 
+        '<span class="badge bg-secondary me-2">Closed</span>';
+    
+    card.innerHTML = `
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="flex-grow-1">
+                    <h6 class="card-title mb-2">
+                        <i class="fas fa-calendar-alt me-2 text-primary"></i>
+                        ${submission.period_display}
+                        ${statusBadge}
+                    </h6>
+                    <p class="card-text text-muted mb-2">
+                        <i class="fas fa-file-alt me-1"></i>
+                        ${submission.description}
+                    </p>
+                    <small class="text-muted">
+                        <i class="fas fa-clock me-1"></i>
+                        Last updated: ${submission.submitted_at || 'Not specified'}
+                    </small>
+                </div>
+                <div class="text-end">
+                    <i class="fas fa-chevron-right text-muted"></i>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    return card;
+}
+
+/**
+ * Handle submission selection and redirect
+ */
+function selectSubmission(submissionId, periodId, programId) {
+    // Close the modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('submissionSelectionModal'));
+    if (modal) {
+        modal.hide();
+    }
+    
+    // Redirect to edit_submission.php with the selected submission
+    window.location.href = `edit_submission.php?program_id=${programId}&period_id=${periodId}`;
 }

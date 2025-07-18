@@ -610,3 +610,121 @@
 .modal-header.bg-danger, .modal-header.bg-danger * {
   color: #fff !important;
 }
+
+/* Submission Selection Modal Styling */
+#submissionSelectionModal .modal-content {
+  border-radius: 1rem;
+  border: none;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+#submissionSelectionModal .modal-header {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-bottom: 2px solid #dee2e6;
+  border-radius: 1rem 1rem 0 0;
+}
+
+#submissionSelectionModal .modal-title {
+  color: #495057;
+  font-weight: 600;
+}
+
+#submissionSelectionModal .program-info {
+  background-color: #f8f9fa;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  border-left: 4px solid #17a2b8;
+}
+
+#submissionSelectionModal .program-name-display {
+  color: #495057;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Submission Card Styling */
+.submission-card {
+  border: 1px solid #dee2e6;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+  background-color: #fff;
+}
+
+.submission-card:hover {
+  border-color: #17a2b8;
+  box-shadow: 0 4px 8px rgba(23, 162, 184, 0.15);
+}
+
+.submission-card .card-body {
+  padding: 1rem;
+}
+
+.submission-card .card-title {
+  color: #495057;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.submission-card .card-text {
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.submission-card .badge {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.submission-card .badge.bg-success {
+  background-color: #28a745 !important;
+}
+
+.submission-card .badge.bg-secondary {
+  background-color: #6c757d !important;
+}
+
+/* Loading and No Submissions States */
+#loadingSubmissions .spinner-border {
+  width: 2rem;
+  height: 2rem;
+}
+
+#noSubmissions .fa-inbox {
+  color: #6c757d;
+  opacity: 0.5;
+}
+
+#noSubmissions h6 {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+#noSubmissions p {
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Ensure modal has highest z-index */
+#submissionSelectionModal {
+  z-index: 9999 !important;
+}
+
+/* Mobile responsive submission modal */
+@media (max-width: 768px) {
+  #submissionSelectionModal .modal-dialog {
+    margin: 1rem;
+    max-width: calc(100vw - 2rem);
+  }
+  
+  .submission-card .card-body {
+    padding: 0.75rem;
+  }
+  
+  .submission-card .card-title {
+    font-size: 0.9rem;
+  }
+  
+  .submission-card .card-text {
+    font-size: 0.8rem;
+  }
+}

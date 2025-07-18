@@ -604,7 +604,7 @@ function get_program_submission($program_id, $period_id) {
     $period_id = intval($period_id);
     
     $sql = "SELECT * FROM program_submissions 
-            WHERE program_id = ? AND period_id = ? 
+            WHERE program_id = ? AND period_id = ? AND is_deleted = 0
             ORDER BY submission_id DESC LIMIT 1";
             
     $stmt = $conn->prepare($sql);
@@ -648,7 +648,7 @@ function unsubmit_program($program_id, $period_id) {
     $period_id = intval($period_id);
 
     // Fetch the current content_json
-    $sql_select = "SELECT submission_id, content_json FROM program_submissions WHERE program_id = ? AND period_id = ? ORDER BY submission_id DESC LIMIT 1";
+    $sql_select = "SELECT submission_id, content_json FROM program_submissions WHERE program_id = ? AND period_id = ? AND is_deleted = 0 ORDER BY submission_id DESC LIMIT 1";
     $stmt = $conn->prepare($sql_select);
     if (!$stmt) {
         error_log("Database error in unsubmit_program (select): " . $conn->error);
@@ -714,7 +714,7 @@ function enhanced_unsubmit_program($program_id, $period_id, $cascade_revert = fa
     try {
         // First, get the submission for the specified period
         $sql_select = "SELECT submission_id, content_json, is_draft FROM program_submissions 
-                      WHERE program_id = ? AND period_id = ? 
+                      WHERE program_id = ? AND period_id = ? AND is_deleted = 0
                       ORDER BY submission_id DESC LIMIT 1";
         $stmt = $conn->prepare($sql_select);
         if (!$stmt) {

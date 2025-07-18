@@ -104,6 +104,48 @@ class EnhancedProgramDetails {
         if (endHoldBtn) {
             endHoldBtn.addEventListener('click', () => this.endHoldPoint());
         }
+
+        // Add delete submission button handler (robust for modal content)
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('.delete-submission-btn');
+            if (btn) {
+                const submissionId = btn.getAttribute('data-submission-id');
+                this.handleDeleteSubmission(submissionId, btn);
+            }
+        });
+    }
+
+    handleDeleteSubmission(submissionId, btn) {
+        if (!submissionId) return;
+        if (!confirm('Are you sure you want to delete this submission? This action cannot be undone.')) return;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+        fetch(`${this.APP_URL}/app/api/program_submissions.php`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ submission_id: submissionId })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                this.showToast('Deleted', 'Submission deleted successfully.', 'success');
+                // Close the modal if inside one
+                const modal = btn.closest('.modal');
+                if (modal && typeof bootstrap !== 'undefined' && bootstrap.Modal.getInstance(modal)) {
+                    bootstrap.Modal.getInstance(modal).hide();
+                }
+                setTimeout(() => window.location.reload(), 1200);
+            } else {
+                this.showToast('Error', data.error || 'Failed to delete submission.', 'danger');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-trash"></i> Delete Submission';
+            }
+        })
+        .catch(() => {
+            this.showToast('Error', 'Failed to delete submission.', 'danger');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-trash"></i> Delete Submission';
+        });
     }
 
     initializeComponents() {

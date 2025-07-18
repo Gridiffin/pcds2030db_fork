@@ -374,19 +374,6 @@ require_once '../../layouts/page_header.php';
                                             <i class="fas fa-eye"></i>
                                         </a>
                                         <?php 
-                                        // Check if user can delete this program (only creators and focal users)
-                                        $can_delete = is_focal_user() || is_program_creator($program['program_id']);
-                                        if ($can_delete): ?>
-                                            <button type="button" class="btn btn-outline-danger flex-fill delete-program-btn" 
-                                                    data-id="<?php echo $program['program_id']; ?>" 
-                                                    data-name="<?php echo htmlspecialchars($program['program_name']); ?>" 
-                                                    title="Permanently delete this program and all its data"
-                                                    data-bs-toggle="tooltip" 
-                                                    data-bs-placement="top">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        <?php endif; ?>
-                                        <?php 
                                         // Check if user can edit this program (same logic as program templates)
                                         $can_edit = can_edit_program($program['program_id']);
                                         $is_creator = isset($program['created_by']) && $program['created_by'] == $_SESSION['user_id'];
@@ -401,6 +388,19 @@ require_once '../../layouts/page_header.php';
                                                 data-bs-toggle="tooltip" 
                                                 data-bs-placement="top">
                                             <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <?php endif; ?>
+                                        <?php 
+                                        $can_delete = is_focal_user() || is_program_creator($program['program_id']);
+                                        ?>
+                                        <?php if ($can_delete): ?>
+                                        <button type="button" class="btn btn-outline-danger flex-fill trigger-delete-modal" 
+                                                data-id="<?php echo $program['program_id']; ?>" 
+                                                data-name="<?php echo htmlspecialchars($program['program_name']); ?>" 
+                                                data-bs-toggle="tooltip" 
+                                                data-bs-placement="top"
+                                                title="Delete this program and all its submissions">
+                                            <i class="fas fa-trash"></i>
                                         </button>
                                         <?php endif; ?>
                                     </div>
@@ -622,11 +622,14 @@ require_once '../../layouts/page_header.php';
                                         <?php 
                                         // Check if user can delete this program (only creators and focal users)
                                         $can_delete = is_focal_user() || is_program_creator($program['program_id']);
-                                        if ($can_delete): ?>
-                                            <button type="button" class="btn btn-outline-danger flex-fill delete-program-btn" 
+                                        // Remove the delete button and trigger from here. No delete button should be visible in the table row.
+                                        ?>
+                                        <!-- Delete trigger button (opens modal, but does not delete directly) -->
+                                        <?php if ($can_delete): ?>
+                                            <button type="button" class="btn btn-outline-danger flex-fill trigger-delete-modal" 
                                                     data-id="<?php echo $program['program_id']; ?>" 
                                                     data-name="<?php echo htmlspecialchars($program['program_name']); ?>" 
-                                                    title="Permanently delete this program and all its data"
+                                                    title="Delete this program"
                                                     data-bs-toggle="tooltip" 
                                                     data-bs-placement="top">
                                                 <i class="fas fa-trash"></i>
@@ -834,16 +837,8 @@ require_once '../../layouts/page_header.php';
                                         <?php 
                                         // Check if user can delete this program (only creators and focal users)
                                         $can_delete = is_focal_user() || is_program_creator($program['program_id']);
-                                        if ($can_delete): ?>
-                                            <button type="button" class="btn btn-outline-danger flex-fill delete-program-btn" 
-                                                    data-id="<?php echo $program['program_id']; ?>"
-                                                    data-name="<?php echo htmlspecialchars($program['program_name']); ?>"
-                                                    title="Permanently delete this program and all its data"
-                                                    data-bs-toggle="tooltip" 
-                                                    data-bs-placement="top">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        <?php endif; ?>
+                                        // Remove the delete button and trigger from here. No delete button should be visible in the table row.
+                                        ?>
                                         <?php endif; ?>
                                     </div>
                                 </td>
@@ -914,7 +909,7 @@ require_once '../../layouts/page_header.php';
     }
 </script>
 
-<!-- Delete Confirmation Modal -->
+<!-- Enhanced Delete Confirmation Modal (Double Confirmation) -->
 <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -923,14 +918,22 @@ require_once '../../layouts/page_header.php';
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p>Are you sure you want to delete the program: <strong id="program-name-display"></strong>?</p>
-                <p class="text-danger">This action cannot be undone.</p>
+                <div id="deleteStep1">
+                    <p>Are you sure you want to delete the program: <strong id="program-name-display"></strong>?</p>
+                    <p class="text-danger mb-0"><i class="fas fa-exclamation-triangle me-1"></i> This action cannot be undone.</p>
+                </div>
+                <div id="deleteStep2" style="display:none;">
+                    <p class="fw-bold text-danger"><i class="fas fa-exclamation-circle me-2"></i>Warning!</p>
+                    <p>Deleting this program will <strong>also delete all its submissions</strong> and related data. <span class="text-danger">This action is irreversible.</span></p>
+                    <p>Are you absolutely sure you want to proceed?</p>
+                </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <form action="<?php echo view_url('agency/programs', 'delete_program.php'); ?>" method="post" id="delete-program-form">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="delete-cancel-btn">Cancel</button>
+                <button type="button" class="btn btn-danger" id="delete-confirm-btn" style="display:none;">Delete Program</button>
+                <button type="button" class="btn btn-warning" id="delete-continue-btn">Continue</button>
+                <form action="<?php echo view_url('agency/programs', 'delete_program.php'); ?>" method="post" id="delete-program-form" style="display:none;">
                     <input type="hidden" name="program_id" id="program-id-input">
-                    <button type="submit" class="btn btn-danger">Delete Program</button>
                 </form>
             </div>
         </div>
@@ -943,6 +946,44 @@ require_once '../../layouts/footer.php';
 
 <script>
 window.currentUserRole = '<?php echo $_SESSION['role'] ?? ''; ?>';
+
+document.addEventListener('DOMContentLoaded', function() {
+    // ... existing code ...
+    // Attach event listeners to all delete trigger buttons
+    document.querySelectorAll('.trigger-delete-modal').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var programId = btn.getAttribute('data-id');
+            var programName = btn.getAttribute('data-name');
+            // Set values in modal
+            document.getElementById('program-id-input').value = programId;
+            document.getElementById('program-name-display').textContent = programName;
+            // Show only step 1
+            document.getElementById('deleteStep1').style.display = '';
+            document.getElementById('deleteStep2').style.display = 'none';
+            document.getElementById('delete-continue-btn').style.display = '';
+            document.getElementById('delete-confirm-btn').style.display = 'none';
+            // Show modal (Bootstrap 5)
+            var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            deleteModal.show();
+            // Focus cancel button for accessibility
+            setTimeout(function() {
+                var cancelBtn = document.querySelector('#deleteModal .btn-secondary');
+                if (cancelBtn) cancelBtn.focus();
+            }, 200);
+        });
+    });
+    // Double confirmation logic
+    document.getElementById('delete-continue-btn').addEventListener('click', function() {
+        document.getElementById('deleteStep1').style.display = 'none';
+        document.getElementById('deleteStep2').style.display = '';
+        document.getElementById('delete-continue-btn').style.display = 'none';
+        document.getElementById('delete-confirm-btn').style.display = '';
+        document.getElementById('delete-confirm-btn').focus();
+    });
+    document.getElementById('delete-confirm-btn').addEventListener('click', function() {
+        document.getElementById('delete-program-form').submit();
+    });
+});
 </script>
 
 

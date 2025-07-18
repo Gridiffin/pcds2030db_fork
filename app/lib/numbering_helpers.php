@@ -548,7 +548,7 @@ function generate_next_target_number($program_id, $program_number) {
     
     // Find the highest target number for this program from content_json
     $query = "SELECT content_json FROM program_submissions 
-              WHERE program_id = ? AND content_json IS NOT NULL 
+              WHERE program_id = ? AND content_json IS NOT NULL AND is_deleted = 0
               ORDER BY submission_id DESC";
     
     $stmt = $conn->prepare($query);
@@ -593,7 +593,7 @@ function is_target_number_available($target_number, $program_id, $exclude_submis
         return true; // Empty numbers are always available
     }
     // Check for duplicates in the same program, excluding the current submission
-    $query = "SELECT submission_id, period_id, content_json FROM program_submissions WHERE program_id = ? AND content_json IS NOT NULL";
+    $query = "SELECT submission_id, period_id, content_json FROM program_submissions WHERE program_id = ? AND content_json IS NOT NULL AND is_deleted = 0";
     $params = [$program_id];
     $types = "i";
     if ($exclude_submission_id) {

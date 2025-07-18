@@ -91,6 +91,36 @@
   box-shadow: 0 2px 5px rgba(0,0,0,0.08);
   vertical-align: middle;
 }
+
+/* Delete Submission Button Styles */
+.delete-submission-btn {
+  background-color: #dc3545 !important;
+  border-color: #dc3545 !important;
+  color: white !important;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.delete-submission-btn:hover {
+  background-color: #c82333 !important;
+  border-color: #bd2130 !important;
+  color: white !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+}
+
+.delete-submission-btn:focus {
+  background-color: #c82333 !important;
+  border-color: #bd2130 !important;
+  color: white !important;
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+.delete-submission-btn:active {
+  background-color: #bd2130 !important;
+  border-color: #b21f2d !important;
+  color: white !important;
+}
 .status-active { background: #28a745; }
 .status-on_hold { background: #ffc107; color: #333; }
 .status-completed { background: #007bff; }

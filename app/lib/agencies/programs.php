@@ -520,7 +520,7 @@ function update_program_draft_only($program_id, $data) {
         
         // Handle submission update for auto-save
         if (!empty($targets) || !empty($brief_description)) {
-            $check_stmt = $conn->prepare("SELECT submission_id FROM program_submissions WHERE program_id = ? ORDER BY submission_id DESC LIMIT 1");
+            $check_stmt = $conn->prepare("SELECT submission_id FROM program_submissions WHERE program_id = ? AND is_deleted = 0 ORDER BY submission_id DESC LIMIT 1");
             $check_stmt->bind_param("i", $program_id);
             $check_stmt->execute();
             $submission_result = $check_stmt->get_result();
@@ -673,7 +673,7 @@ function update_wizard_program_draft($program_id, $data) {
         $stmt->bind_param("ssiii", $program_name, $brief_description, $initiative_id, $program_id, $user_id);
         if (!$stmt->execute()) throw new Exception('Failed to update program: ' . $stmt->error);
         if (!empty($targets) || !empty($brief_description)) {
-            $check_stmt = $conn->prepare("SELECT submission_id FROM program_submissions WHERE program_id = ?");
+            $check_stmt = $conn->prepare("SELECT submission_id FROM program_submissions WHERE program_id = ? AND is_deleted = 0");
             $check_stmt->bind_param("i", $program_id);
             $check_stmt->execute();
             $submission_result = $check_stmt->get_result();
@@ -860,7 +860,7 @@ function get_program_edit_history($program_id) {
         FROM program_submissions ps 
         LEFT JOIN reporting_periods rp ON ps.period_id = rp.period_id
         LEFT JOIN users u ON ps.submitted_by = u.user_id
-        WHERE ps.program_id = ? 
+        WHERE ps.program_id = ? AND ps.is_deleted = 0
         ORDER BY ps.submission_id DESC, ps.submitted_at DESC
     ");
     
@@ -935,7 +935,7 @@ function get_program_edit_history_paginated($program_id, $page = 1, $per_page = 
     $offset = ($page - 1) * $per_page;
     
     // Get total count
-    $count_stmt = $conn->prepare("SELECT COUNT(*) as total FROM program_submissions WHERE program_id = ?");
+    $count_stmt = $conn->prepare("SELECT COUNT(*) as total FROM program_submissions WHERE program_id = ? AND is_deleted = 0");
     if (!$count_stmt) {
         error_log("Database error in get_program_edit_history_paginated count: " . $conn->error);
         return ['submissions' => [], 'pagination' => ['total' => 0, 'pages' => 0, 'current_page' => 1]];
@@ -967,7 +967,7 @@ function get_program_edit_history_paginated($program_id, $page = 1, $per_page = 
         LEFT JOIN reporting_periods rp ON ps.period_id = rp.period_id
         LEFT JOIN users u ON ps.submitted_by = u.user_id
         LEFT JOIN agency a ON u.agency_id = a.agency_id
-        WHERE ps.program_id = ? 
+        WHERE ps.program_id = ? AND ps.is_deleted = 0
         ORDER BY ps.submission_id DESC, ps.submitted_at DESC
         LIMIT ? OFFSET ?
     ");

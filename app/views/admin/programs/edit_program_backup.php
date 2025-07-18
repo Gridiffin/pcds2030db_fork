@@ -281,7 +281,7 @@ $program_history = get_program_edit_history($program_id);
 
 // Get program submission content
 $submission_query = "SELECT content_json, submission_id FROM program_submissions 
-                WHERE program_id = ? 
+                WHERE program_id = ? AND is_deleted = 0
                 ORDER BY submission_date DESC LIMIT 1";
 $submission_stmt = $conn->prepare($submission_query);
 $submission_stmt->bind_param('i', $program_id);

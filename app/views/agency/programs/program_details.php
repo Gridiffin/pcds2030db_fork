@@ -538,10 +538,10 @@ $showNoSubmissionsAlert = !$has_submissions; // Show for all users, but action l
                             <small class="text-muted d-block mt-1">View the latest progress report for this program</small>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <button type="button" class="btn btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#viewSubmissionModal">
-                                <i class="fas fa-paper-plane me-2"></i>Submit Submission
+                            <button type="button" class="btn btn-danger w-100" data-bs-toggle="modal" data-bs-target="#submitSubmissionModal">
+                                <i class="fas fa-trash me-2"></i>Delete Submission
                             </button>
-                            <small class="text-muted d-block mt-1">Submit the latest progress report for this program</small>
+                            <small class="text-muted d-block mt-1">Delete a draft or latest progress report for this program</small>
                         </div>
                     </div>
                 </div>
@@ -762,13 +762,13 @@ $showNoSubmissionsAlert = !$has_submissions; // Show for all users, but action l
   </div>
 </div>
 
-<!-- View Submission Modal (renamed to Submit Submission) -->
+<!-- View Submission Modal -->
 <?php if ($has_submissions && !empty($submission_history['submissions'])): ?>
 <div class="modal fade" id="viewSubmissionModal" tabindex="-1" aria-labelledby="viewSubmissionModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="viewSubmissionModalLabel"><i class="fas fa-paper-plane me-2"></i>Select Submission to Submit</h5>
+        <h5 class="modal-title" id="viewSubmissionModalLabel"><i class="fas fa-eye me-2"></i>Select Submission to View</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
@@ -787,8 +787,8 @@ $showNoSubmissionsAlert = !$has_submissions; // Show for all users, but action l
                   <?php echo htmlspecialchars($submission['formatted_date']); ?>
                 </small>
               </div>
-              <a href="<?php echo APP_URL; ?>/app/views/agency/programs/view_submissions.php?program_id=<?php echo $program_id; ?>&period_id=<?php echo $submission['period_id']; ?>" class="btn btn-outline-success">
-                <i class="fas fa-paper-plane"></i> Submit
+              <a href="<?php echo APP_URL; ?>/app/views/agency/programs/view_submissions.php?program_id=<?php echo $program_id; ?>&period_id=<?php echo $submission['period_id']; ?>" class="btn btn-outline-primary" title="View Submission">
+                <i class="fas fa-eye"></i> View Submission
               </a>
             </div>
           <?php endforeach; ?>
@@ -818,7 +818,7 @@ if (!empty($submission_history['submissions'])) {
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="submitSubmissionModalLabel"><i class="fas fa-paper-plane me-2"></i>Select Draft Submission to Submit</h5>
+        <h5 class="modal-title" id="submitSubmissionModalLabel"><i class="fas fa-trash me-2"></i>Select Draft Submission to Delete</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
@@ -838,8 +838,8 @@ if (!empty($submission_history['submissions'])) {
                     <?php echo htmlspecialchars($submission['formatted_date']); ?>
                   </small>
                 </div>
-                <button class="btn btn-success submit-draft-btn" data-submission-id="<?php echo $submission['submission_id']; ?>">
-                  <i class="fas fa-paper-plane"></i> Submit
+                <button class="btn btn-danger delete-submission-btn" data-submission-id="<?php echo $submission['submission_id']; ?>">
+                  <i class="fas fa-trash"></i> Delete Submission
                 </button>
               </div>
             <?php endforeach; ?>

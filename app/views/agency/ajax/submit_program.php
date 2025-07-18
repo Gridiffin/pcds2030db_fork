@@ -60,7 +60,7 @@ try {
     // First, validate that the program has content to submit
     // Try to find a submission for the current period first
     $validation_query = "SELECT content_json FROM program_submissions 
-                        WHERE program_id = ? AND period_id = ? 
+                        WHERE program_id = ? AND period_id = ? AND is_deleted = 0
                         ORDER BY submission_date DESC, submission_id DESC 
                         LIMIT 1";
     $validation_stmt = $conn->prepare($validation_query);
@@ -78,7 +78,7 @@ try {
     } else {
         // No submission for current period, check if program has any submissions from other periods
         $any_submission_query = "SELECT content_json FROM program_submissions 
-                               WHERE program_id = ? 
+                               WHERE program_id = ? AND is_deleted = 0
                                ORDER BY submission_date DESC, submission_id DESC 
                                LIMIT 1";
         $any_submission_stmt = $conn->prepare($any_submission_query);
@@ -175,7 +175,7 @@ try {
     $stmt->execute();      if ($stmt->affected_rows > 0) {
         // Get the submitted content to check status
         $submitted_content_query = "SELECT content_json FROM program_submissions 
-                                   WHERE program_id = ? AND period_id = ? AND is_draft = 0 
+                                   WHERE program_id = ? AND period_id = ? AND is_draft = 0 AND is_deleted = 0
                                    ORDER BY submission_date DESC LIMIT 1";
         $content_stmt = $conn->prepare($submitted_content_query);
         $content_stmt->bind_param("ii", $program_id, $period_id);
@@ -201,7 +201,7 @@ try {
         echo json_encode(['status' => 'success', 'message' => 'Program submitted successfully']);
     }else {
         // Check if submission exists
-        $check_query = "SELECT submission_id FROM program_submissions WHERE program_id = ? AND period_id = ?";
+        $check_query = "SELECT submission_id FROM program_submissions WHERE program_id = ? AND period_id = ? AND is_deleted = 0";
         $check_stmt = $conn->prepare($check_query);
         $check_stmt->bind_param("ii", $program_id, $period_id);
         $check_stmt->execute();
@@ -212,7 +212,7 @@ try {
             $submitted_by = $_SESSION['user_id'];
               // First, get the content_json from the most recent submission/draft for this program
             $content_query = "SELECT content_json FROM program_submissions 
-                             WHERE program_id = ? 
+                             WHERE program_id = ? AND is_deleted = 0
                              ORDER BY submission_date DESC, submission_id DESC 
                              LIMIT 1";
             $content_stmt = $conn->prepare($content_query);

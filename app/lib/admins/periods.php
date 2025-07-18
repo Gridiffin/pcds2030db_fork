@@ -260,7 +260,7 @@ function delete_reporting_period($period_id) {
     $period_name = "{$period['period_type']} {$period['period_number']} {$period['year']}";
     
     // Check if this period has any associated submissions
-    $submission_check = "SELECT COUNT(*) as count FROM program_submissions WHERE period_id = ?";
+    $submission_check = "SELECT COUNT(*) as count FROM program_submissions WHERE period_id = ? AND is_deleted = 0";
     $stmt = $conn->prepare($submission_check);
     $stmt->bind_param("i", $period_id);
     $stmt->execute();

@@ -135,7 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($finalize_draft && $submission_id) {
         // Handle finalize draft (admin specific)
         if ($selected_period) {
-            $content_check = $conn->prepare("SELECT content_json FROM program_submissions WHERE submission_id = ? AND program_id = ? AND period_id = ?");
+            $content_check = $conn->prepare("SELECT content_json FROM program_submissions WHERE submission_id = ? AND program_id = ? AND period_id = ? AND is_deleted = 0");
             $content_check->bind_param("iii", $submission_id, $program_id, $selected_period['period_id']);
             $content_check->execute();
             $content_result = $content_check->get_result();
