@@ -585,5 +585,3 @@ $jsConfig = [
 // Include footer
 require_once PROJECT_ROOT_PATH . 'app/views/layouts/footer.php';
 ?>
-
-
