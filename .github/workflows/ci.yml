@@ -1,8 +1,7 @@
 name: PCDS2030 Dashboard CI
 
 on:
-  push:
-    branches: [ main, develop ]
+  push:  # Run on all branch pushes
   pull_request:
     branches: [ main, develop ]
 
