@@ -6,6 +6,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         login: path.resolve(__dirname, 'assets/js/shared/login.js'),
+        initiatives: path.resolve(__dirname, 'assets/js/agency/initiatives.js'),
       },
       output: {
         entryFileNames: 'js/[name].bundle.js',

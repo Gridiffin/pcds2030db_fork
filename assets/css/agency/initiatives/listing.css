@@ -1,0 +1,149 @@
+/**
+ * Initiatives Listing Styles
+ * Styles for the initiatives table and search components
+ */
+
+/* Search and Filter Section */
+.initiatives-search {
+    background: var(--high-contrast-light);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.initiatives-search .input-group-text {
+    background-color: var(--bs-primary);
+    color: white;
+    border: none;
+}
+
+.initiatives-search .form-control:focus {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+/* Initiatives Table */
+.initiatives-table-container {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.initiatives-table-header {
+    background: linear-gradient(135deg, var(--forest-deep), var(--forest-medium));
+    color: white;
+}
+
+.initiatives-table thead th {
+    background-color: var(--high-contrast-light);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.875rem;
+    letter-spacing: 0.05em;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.initiatives-table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.initiatives-table tbody tr:hover {
+    background-color: rgba(13, 110, 253, 0.05);
+}
+
+/* Initiative Row Content */
+.initiative-title {
+    font-weight: 600;
+    color: var(--high-contrast-dark);
+    margin-bottom: 0.25rem;
+}
+
+.initiative-description {
+    color: #6c757d;
+    line-height: 1.4;
+    font-size: 0.875rem;
+}
+
+.initiative-number-badge {
+    background-color: var(--bs-primary) !important;
+    font-size: 0.75em;
+    font-weight: 500;
+}
+
+/* Program Count Badges */
+.program-count-badge {
+    font-size: 0.8em;
+    font-weight: 500;
+}
+
+.program-count-badge.your-programs {
+    background-color: #17a2b8 !important;
+}
+
+.program-count-badge.total-programs {
+    background-color: #6c757d !important;
+}
+
+/* Timeline Styles */
+.timeline-info {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.timeline-info i {
+    width: 14px;
+    text-align: center;
+}
+
+/* Status Badges */
+.status-badge.active {
+    background-color: #28a745 !important;
+}
+
+.status-badge.inactive {
+    background-color: #6c757d !important;
+}
+
+/* Action Buttons */
+.action-btn {
+    font-size: 0.875rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Empty State */
+.empty-state {
+    padding: 3rem 1rem;
+    text-align: center;
+}
+
+.empty-state i {
+    color: #6c757d;
+    margin-bottom: 1rem;
+}
+
+.empty-state h5 {
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+    color: #6c757d;
+    margin-bottom: 1.5rem;
+}
+
+/* Debug Info */
+.debug-info {
+    background: #f8f9fa;
+    color: #333;
+    border: 1px solid #ccc;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.875rem;
+}

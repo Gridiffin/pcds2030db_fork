@@ -8,19 +8,19 @@
 
 // Define project root path for consistent file references
 if (!defined('PROJECT_ROOT_PATH')) {
-    define('PROJECT_ROOT_PATH', rtrim(dirname(dirname(dirname(dirname(__DIR__)))), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
+    define('PROJECT_ROOT_PATH', rtrim(dirname(dirname(dirname(__DIR__))), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
 }
 
 // Include necessary files
-require_once PROJECT_ROOT_PATH . 'app/config/config.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/agencies/index.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/agencies/initiatives.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/initiative_functions.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/rating_helpers.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/db_names_helper.php';
+require_once PROJECT_ROOT_PATH . 'config/config.php';
+require_once PROJECT_ROOT_PATH . 'lib/db_connect.php';
+require_once PROJECT_ROOT_PATH . 'lib/session.php';
+require_once PROJECT_ROOT_PATH . 'lib/functions.php';
+require_once PROJECT_ROOT_PATH . 'lib/agencies/index.php';
+require_once PROJECT_ROOT_PATH . 'lib/agencies/initiatives.php';
+require_once PROJECT_ROOT_PATH . 'lib/initiative_functions.php';
+require_once PROJECT_ROOT_PATH . 'lib/rating_helpers.php';
+require_once PROJECT_ROOT_PATH . 'lib/db_names_helper.php';
 
 // Verify user is an agency
 if (!is_agency()) {
@@ -77,8 +77,26 @@ $header_config = [
     'actions' => []
 ];
 
-// Set content file for base layout to include
-$contentFile = __DIR__ . '/partials/initiatives_content.php';
-
 // Include base layout
 require_once PROJECT_ROOT_PATH . 'app/views/layouts/base.php';
+?>
+
+<main class="flex-fill">
+
+<?php
+// Include page header after base layout starts
+if (isset($header_config) && file_exists(PROJECT_ROOT_PATH . 'app/views/layouts/page_header.php')) {
+    require_once PROJECT_ROOT_PATH . 'app/views/layouts/page_header.php';
+}
+
+// Include messages partial
+require_once __DIR__ . '/partials/messages.php';
+
+// Include search and filter partial
+require_once __DIR__ . '/partials/search_filter.php';
+
+// Include initiatives table partial
+require_once __DIR__ . '/partials/initiatives_table.php';
+?>
+
+</main>
