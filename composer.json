@@ -1,0 +1,9 @@
+{
+    "name": "pcds2030/dashboard",
+    "description": "PCDS2030 Dashboard Testing",
+    "type": "project",
+    "require-dev": {
+        "phpunit/phpunit": "10.0"
+    },
+    "require": {}
+}

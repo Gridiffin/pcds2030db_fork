@@ -11,7 +11,8 @@ if (session_status() == PHP_SESSION_NONE) {
 }
 
 // Call auto-manage reporting periods - ensure this comes after db_connect.php is included
-if (function_exists('auto_manage_reporting_periods')) {
+// Skip database operations during testing
+if (function_exists('auto_manage_reporting_periods') && !defined('PHPUNIT_COMPOSER_INSTALL')) {
     auto_manage_reporting_periods();
 }
 
