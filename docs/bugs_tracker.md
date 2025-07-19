@@ -139,13 +139,19 @@
 
 - **Problem:** `require_once(C:\laragon\www\pcds2030_dashboard_fork\config/config.php): Failed to open stream: No such file or directory`
 - **Cause:** Include paths were missing the `app/` prefix. Files like `config.php`, `lib/` directory are located within the `app/` directory, not in project root.
-- **Solution:** Updated all include paths in `initiatives.php`, `view_initiative.php`, and `base.php` to use `PROJECT_ROOT_PATH . 'app/config/config.php'` and `PROJECT_ROOT_PATH . 'app/lib/...'` instead of missing the `app/` directory prefix. Fixed multiple instances including `initiative_functions.php`, `rating_helpers.php`, `db_names_helper.php`, and `program_status_helpers.php`.
+- **Solution:** Updated all include paths in `initiatives.php`, `view_initiative.php`, `base.php`, and `partials/activity_feed.php` to use `PROJECT_ROOT_PATH . 'app/config/config.php'` and `PROJECT_ROOT_PATH . 'app/lib/...'` instead of missing the `app/` directory prefix. Fixed multiple instances including `initiative_functions.php`, `rating_helpers.php`, `db_names_helper.php`, `program_status_helpers.php`, and `activity_helpers.php`.
 
 ### 12. Incorrect Layout Element Ordering
 
 - **Problem:** Page header was appearing twice and layout elements (header, content, footer) were not in the correct order. Content was rendering after the base layout finished instead of being properly integrated.
 - **Cause:** Initiatives pages were including `page_header.php` both inside `base.php` (line 89) and again after the base layout include. Content was being rendered outside the base layout structure.
 - **Solution:** Refactored to use proper content file pattern - created `initiatives_content.php` and `view_initiative_content.php` partials and set `$contentFile` variable before including `base.php`. This ensures proper order: navigation → header → content → footer.
+
+### 13. Fixed Navbar Overlapping Page Header
+
+- **Problem:** Navigation bar was covering parts of the page header content, causing text and elements to be hidden behind the fixed navbar.
+- **Cause:** Fixed navbar with `position: fixed` requires body padding to offset its height, but modular CSS wasn't including the necessary `body { padding-top: 70px; }` rule.
+- **Solution:** Added proper body padding rules to `assets/css/agency/initiatives/base.css` with responsive adjustments. Navbar height is 70px, so body gets 70px top padding (85px on mobile for multi-line navbar).
 
 ---
 

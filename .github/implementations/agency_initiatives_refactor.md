@@ -97,8 +97,9 @@
 
 ## Bugs Found During Analysis
 - [x] **Path Duplication Bug**: PROJECT_ROOT_PATH definition was incorrect, causing base.php include path to resolve to `/app/app/views/` instead of `/app/views/`. Fixed by adding one more `dirname()` level.
-- [x] **Incorrect File Path References**: Include paths were missing the `app/` prefix for config.php and lib/ files. Fixed by adding `app/` prefix to all include statements across multiple files including initiative_functions.php, rating_helpers.php, db_names_helper.php, and program_status_helpers.php.
+- [x] **Incorrect File Path References**: Include paths were missing the `app/` prefix for config.php and lib/ files. Fixed by adding `app/` prefix to all include statements across multiple files including initiative_functions.php, rating_helpers.php, db_names_helper.php, program_status_helpers.php, and activity_helpers.php in partials.
 - [x] **Incorrect Layout Element Ordering**: Page header was appearing twice and layout elements were not in correct order (header → content → footer). Fixed by using proper content file pattern with base.php layout system.
+- [x] **Fixed Navbar Overlapping Page Header**: Navigation bar was covering page header content. Fixed by adding proper body padding-top rules to offset fixed navbar height.
 
 ## Progress Notes
 - Started analysis on 2025-07-19
@@ -107,8 +108,10 @@
 - **FIXED**: Path duplication bug in PROJECT_ROOT_PATH definition
 - **FIXED**: Incorrect file path references missing app/ prefix
 - **FIXED**: Incorrect layout element ordering (header → content → footer)
+- **FIXED**: Fixed navbar overlapping page header content
 - **VERIFIED**: All PHP files pass syntax validation
 - **TESTED**: File includes work correctly without path errors
+- **REBUILT**: Vite assets updated with navbar overlap fix (7.77kB CSS)
 
 ## 🎉 **REFACTOR COMPLETED - 2025-01-21**
 
@@ -131,7 +134,7 @@
 - `assets/css/agency/initiatives.css` + modular CSS structure
 - `assets/js/agency/initiatives.js` + modular JS structure
 - `lib/activity_helpers.php` (extracted helper functions)
-- `docs/bugs_tracker.md` (documented 12 bugs found and resolved)
+- `docs/bugs_tracker.md` (documented 13 bugs found and resolved)
 - `vite.config.js` (updated with initiatives entry point)
 
 **Status: ✅ COMPLETE - Ready for production**

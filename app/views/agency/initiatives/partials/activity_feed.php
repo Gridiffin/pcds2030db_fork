@@ -5,7 +5,7 @@
  */
 
 // Include activity helper functions
-require_once PROJECT_ROOT_PATH . 'lib/activity_helpers.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/activity_helpers.php';
 
 // Get recent activities for this initiative using audit logs
 $recent_activities = [];

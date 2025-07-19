@@ -15,6 +15,18 @@
     --border-color: #ced4da;
 }
 
+/* Fix for fixed navbar overlap - ensure proper body padding */
+body {
+    padding-top: 70px; /* Match navbar min-height to prevent overlap */
+}
+
+/* Adjust padding for multi-line navbar when needed */
+@media (max-width: 480px) {
+    body {
+        padding-top: 85px;
+    }
+}
+
 /* Base Initiative Styles */
 .initiative-container {
     transition: opacity 0.3s ease;
