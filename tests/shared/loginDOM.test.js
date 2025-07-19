@@ -58,7 +58,7 @@ describe('Login DOM Interactions', () => {
         loginBtn = document.getElementById('loginBtn');
         loginSpinner = document.getElementById('loginSpinner');
         loginError = document.getElementById('loginError');
-        togglePassword = document.querySelector('.toggle-password');
+        togglePassword = document.getElementById('togglePassword');
 
         // Reset fetch mock
         fetch.mockClear();
@@ -75,7 +75,7 @@ describe('Login DOM Interactions', () => {
         usernameField.value = '';
         
         // Simulate DOMContentLoaded
-        const event = new dom.window.Event('DOMContentLoaded');
+        const event = new Event('DOMContentLoaded');
         document.dispatchEvent(event);
         
         expect(focusSpy).toHaveBeenCalled();
@@ -86,13 +86,16 @@ describe('Login DOM Interactions', () => {
         usernameField.value = 'existinguser';
         
         // Simulate DOMContentLoaded
-        const event = new dom.window.Event('DOMContentLoaded');
+        const event = new Event('DOMContentLoaded');
         document.dispatchEvent(event);
         
         expect(focusSpy).not.toHaveBeenCalled();
     });
 
     test('should toggle password visibility', () => {
+        // Ensure toggle button exists
+        expect(togglePassword).not.toBeNull();
+        
         // Initially password field
         expect(passwordField.type).toBe('password');
         

@@ -1,7 +1,8 @@
 name: PCDS2030 Dashboard CI
 
 on:
-  push:  # Run on all branch pushes
+  push:
+    branches: [ main, develop ]  # Only run on main and develop branch pushes
   pull_request:
     branches: [ main, develop ]
 
@@ -117,7 +118,21 @@ jobs:
       - name: Check PHP syntax
         run: |
           echo "Checking PHP syntax..."
-          find app/ -name "*.php" -exec php -l {} \; | grep -v "No syntax errors"
+          ERROR_COUNT=0
+          for file in $(find app/ -name "*.php"); do
+            if ! php -l "$file" > /dev/null 2>&1; then
+              echo "❌ Syntax error in: $file"
+              php -l "$file"
+              ERROR_COUNT=$((ERROR_COUNT + 1))
+            fi
+          done
+          
+          if [ $ERROR_COUNT -eq 0 ]; then
+            echo "✅ All PHP files have valid syntax"
+          else
+            echo "❌ Found $ERROR_COUNT PHP syntax errors"
+            exit 1
+          fi
 
       # Check JavaScript/TypeScript syntax with ESLint (if configured)
       - name: Check JavaScript syntax

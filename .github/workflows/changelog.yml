@@ -44,40 +44,47 @@ jobs:
           # Get current date and time
           CURRENT_DATE=$(date '+%Y-%m-%d %H:%M:%S UTC')
           
-          # Get commit information
+          # Get commit information with proper escaping
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             # For merged pull requests
             COMMIT_HASH="${{ github.event.pull_request.merge_commit_sha }}"
-            COMMIT_MESSAGE="${{ github.event.pull_request.title }}"
+            # Escape special characters in commit message and author
+            COMMIT_MESSAGE=$(echo "${{ github.event.pull_request.title }}" | sed 's/["\]/\\&/g')
             PR_NUMBER="${{ github.event.pull_request.number }}"
-            AUTHOR="${{ github.event.pull_request.user.login }}"
+            AUTHOR=$(echo "${{ github.event.pull_request.user.login }}" | sed 's/["\]/\\&/g')
             ENTRY="- **PR #${PR_NUMBER}**: ${COMMIT_MESSAGE} (by @${AUTHOR})"
           else
             # For direct pushes
             COMMIT_HASH="${{ github.sha }}"
-            COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s" $COMMIT_HASH)
-            AUTHOR=$(git log -1 --pretty=format:"%an" $COMMIT_HASH)
-            SHORT_HASH=$(git rev-parse --short $COMMIT_HASH)
+            # Use safer method to get commit info
+            COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s" "$COMMIT_HASH" | sed 's/["\]/\\&/g')
+            AUTHOR=$(git log -1 --pretty=format:"%an" "$COMMIT_HASH" | sed 's/["\]/\\&/g')
+            SHORT_HASH=$(git rev-parse --short "$COMMIT_HASH")
             ENTRY="- **${SHORT_HASH}**: ${COMMIT_MESSAGE} (by ${AUTHOR})"
           fi
           
-          # Prepare the new entry
-          NEW_ENTRY="## ${CURRENT_DATE}"$'\n'"${ENTRY}"$'\n'
+          echo "Entry to add: ${ENTRY}"
           
           # Check if this entry already exists to avoid duplicates
-          if ! grep -q "${ENTRY}" CHANGELOG.md; then
-            # Insert new entry after the header
+          if ! grep -Fq "${ENTRY}" CHANGELOG.md 2>/dev/null; then
+            # Create a temporary file for the new changelog
+            echo "## ${CURRENT_DATE}" > temp_changelog.md
+            echo "${ENTRY}" >> temp_changelog.md
+            echo "" >> temp_changelog.md
+            
+            # Check if there are existing entries
             if grep -q "^## " CHANGELOG.md; then
-              # Insert before the first existing entry
-              sed -i "/^## /i\\${NEW_ENTRY}" CHANGELOG.md
+              # Find the first existing entry and insert before it
+              awk '/^## / && !found {print "## '"${CURRENT_DATE}"'"; print "'"${ENTRY}"'"; print ""; found=1} {print}' CHANGELOG.md > temp_full_changelog.md
+              mv temp_full_changelog.md CHANGELOG.md
             else
               # Append to the end of the file
               echo "" >> CHANGELOG.md
-              echo "${NEW_ENTRY}" >> CHANGELOG.md
+              cat temp_changelog.md >> CHANGELOG.md
             fi
             
-            echo "Changelog updated with new entry:"
-            echo "${NEW_ENTRY}"
+            rm -f temp_changelog.md
+            echo "Changelog updated with new entry"
           else
             echo "Entry already exists in changelog, skipping..."
           fi
