@@ -55,6 +55,9 @@ jobs:
       - name: Install NPM dependencies
         run: npm ci
 
+      - name: Fix phpunit permissions
+        run: chmod +x vendor/bin/phpunit
+
       # Run PHPUnit tests
       - name: Run PHPUnit tests
         run: |
