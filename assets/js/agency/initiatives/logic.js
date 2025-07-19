@@ -177,3 +177,160 @@ export function generateErrorHTML(type, message = '') {
     
     return templates[type] || templates['chart-error'];
 }
+
+/**
+ * Calculate health score based on program statuses
+ * @param {Array} programs - Array of program objects with status property
+ * @returns {number} Health score percentage (0-100)
+ */
+export function calculateHealthScore(programs) {
+    if (!programs || !Array.isArray(programs) || programs.length === 0) {
+        return 50; // Default neutral score
+    }
+    
+    const statusScores = {
+        'completed': 100,
+        'active': 75,
+        'on_hold': 50,
+        'delayed': 25,
+        'cancelled': 10
+    };
+    
+    // Status normalization mapping
+    const statusNormalization = {
+        'not-started': 'active',
+        'not_started': 'active',
+        'on-hold': 'on_hold',
+        'canceled': 'cancelled'
+    };
+    
+    let totalScore = 0;
+    
+    programs.forEach(program => {
+        let status = program.status ? String(program.status).toLowerCase() : 'active';
+        
+        // Normalize status
+        if (statusNormalization[status]) {
+            status = statusNormalization[status];
+        }
+        
+        // Get score for status (default to 50 for unknown)
+        const score = statusScores[status] || 50;
+        totalScore += score;
+    });
+    
+    return Math.round(totalScore / programs.length);
+}
+
+/**
+ * Format timeline text from start and end dates
+ * @param {string} startDate - Start date string
+ * @param {string} endDate - End date string
+ * @returns {string} Formatted timeline text
+ */
+export function formatTimelineText(startDate, endDate) {
+    if (!startDate || !endDate) {
+        return 'No timeline data available';
+    }
+    
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        return 'Invalid dates provided';
+    }
+    
+    // Calculate the difference in milliseconds and convert to years
+    const timeDiff = end.getTime() - start.getTime();
+    const yearsDiff = Math.round(timeDiff / (1000 * 60 * 60 * 24 * 365.25)); // Account for leap years
+    
+    let yearText;
+    if (yearsDiff <= 0) {
+        yearText = '0 years';
+    } else if (yearsDiff === 1) {
+        yearText = '1 year';
+    } else {
+        yearText = `${yearsDiff} years`;
+    }
+    
+    return `${startDate} to ${endDate} (${yearText})`;
+}
+
+/**
+ * Validate initiative data structure
+ * @param {Object} initiative - Initiative object to validate
+ * @returns {boolean} True if valid, false otherwise
+ */
+export function validateInitiativeData(initiative) {
+    if (!initiative || typeof initiative !== 'object') {
+        return false;
+    }
+    
+    // Required fields
+    const requiredFields = ['initiative_id', 'initiative_name', 'start_date', 'end_date'];
+    
+    for (const field of requiredFields) {
+        if (!initiative[field]) {
+            return false;
+        }
+    }
+    
+    // Validate dates
+    const startDate = new Date(initiative.start_date);
+    const endDate = new Date(initiative.end_date);
+    
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        return false;
+    }
+    
+    // End date should be after start date
+    if (endDate <= startDate) {
+        return false;
+    }
+    
+    return true;
+}
+
+/**
+ * Get color for a given status
+ * @param {string} status - Program status
+ * @returns {string} Hex color code
+ */
+export function getStatusColor(status) {
+    if (!status) return '#6c757d';
+    
+    const statusColors = {
+        'completed': '#28a745',
+        'active': '#17a2b8',
+        'on_hold': '#ffc107',
+        'delayed': '#fd7e14',
+        'cancelled': '#dc3545'
+    };
+    
+    // Status normalization
+    const normalizedStatus = status.toLowerCase().replace('-', '_');
+    const statusNormalization = {
+        'not_started': 'active',
+        'on_hold': 'on_hold',
+        'canceled': 'cancelled'
+    };
+    
+    const finalStatus = statusNormalization[normalizedStatus] || normalizedStatus;
+    
+    return statusColors[finalStatus] || '#6c757d';
+}
+
+/**
+ * Format program count with proper pluralization
+ * @param {number} count - Number of programs
+ * @returns {string} Formatted count text
+ */
+export function formatProgramCount(count) {
+    const num = parseInt(count);
+    
+    if (isNaN(num) || num < 0) {
+        return '0 programs';
+    }
+    
+    return num === 1 ? '1 program' : `${num} programs`;
+}
