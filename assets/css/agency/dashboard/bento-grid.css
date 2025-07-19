@@ -1,0 +1,86 @@
+/**
+ * Agency Dashboard - Bento Grid Styles
+ * 
+ * Import and customize the existing bento-grid component for dashboard use
+ */
+
+/* Import the existing bento-grid component */
+@import '../../components/bento-grid.css';
+
+/* Dashboard-specific bento grid customizations */
+.programs-section .bento-grid,
+.outcomes-section .bento-grid {
+    padding: 0; /* Remove default padding for sections */
+    margin: 0;
+    max-width: none; /* Allow full width in dashboard */
+}
+
+/* Customize card colors for dashboard themes */
+.bento-card.primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.bento-card.success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+}
+
+.bento-card.warning {
+    background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+    color: white;
+}
+
+.bento-card.info {
+    background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%);
+    color: white;
+}
+
+/* Dashboard card content adjustments */
+.bento-card .display-4 {
+    font-size: 2.5rem;
+    font-weight: 700;
+}
+
+.bento-card .opacity-75 {
+    opacity: 0.75;
+}
+
+/* Chart container within bento cards */
+.bento-card .chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+
+/* Table styling within bento cards */
+.bento-card .table-responsive {
+    margin: -0.5rem -1rem; /* Extend table to card edges */
+}
+
+.bento-card .table {
+    margin-bottom: 0;
+}
+
+.bento-card .table th {
+    border-top: none;
+    background-color: rgba(0, 0, 0, 0.02);
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.bento-card .table td {
+    font-size: 0.875rem;
+    vertical-align: middle;
+}
+
+/* Card actions styling */
+.bento-card-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.bento-card-actions .btn {
+    font-size: 0.875rem;
+}

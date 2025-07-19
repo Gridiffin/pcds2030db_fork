@@ -1,0 +1,146 @@
+/**
+ * Agency Dashboard - Outcomes Section Styles
+ */
+
+/* Outcomes section specific styling */
+.outcomes-section .bento-card {
+    min-height: 120px;
+}
+
+/* Outcomes overview cards */
+.outcomes-section .row.g-3 .col-4 > div {
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.outcomes-section .row.g-3 .col-4 > div:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.outcomes-section .row.g-3 .col-4 i {
+    opacity: 0.9;
+}
+
+.outcomes-section .row.g-3 .col-4 .h4 {
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.outcomes-section .row.g-3 .col-4 small {
+    font-size: 0.8rem;
+    opacity: 0.9;
+}
+
+/* Outcomes actions */
+.outcomes-section .bento-card-actions {
+    justify-content: flex-start;
+    margin-top: 1rem;
+}
+
+.outcomes-section .bento-card-actions .btn {
+    padding: 0.625rem 1.25rem;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.outcomes-section .bento-card-actions .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.outcomes-section .bento-card-actions .btn i {
+    margin-right: 0.5rem;
+}
+
+/* Recent activity list */
+.outcomes-section .list-group-item {
+    border: none;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.outcomes-section .list-group-item:last-child {
+    border-bottom: none;
+}
+
+.outcomes-section .list-group-item h6 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: #2c3e50;
+}
+
+.outcomes-section .list-group-item small {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.outcomes-section .list-group-item .badge {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.5rem;
+}
+
+/* Empty state styling */
+.outcomes-section .text-center.py-4 {
+    padding: 2rem 1rem !important;
+}
+
+.outcomes-section .text-center.py-4 i {
+    color: #6c757d;
+    margin-bottom: 1rem;
+}
+
+.outcomes-section .text-center.py-4 p {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-bottom: 0;
+}
+
+/* Responsive adjustments for outcomes section */
+@media (max-width: 1200px) {
+    .outcomes-section .bento-grid {
+        grid-template-columns: repeat(6, 1fr);
+    }
+    
+    .outcomes-section .bento-card.size-6x2 {
+        grid-column: span 6;
+    }
+    
+    .outcomes-section .bento-card.size-3x2 {
+        grid-column: span 6;
+        grid-row: span 1;
+    }
+}
+
+@media (max-width: 768px) {
+    .outcomes-section .bento-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .outcomes-section .bento-card {
+        grid-column: span 1 !important;
+        grid-row: span 1 !important;
+    }
+    
+    .outcomes-section .row.g-3 {
+        gap: 0.75rem !important;
+    }
+    
+    .outcomes-section .row.g-3 .col-4 {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .outcomes-section .bento-card-actions {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .outcomes-section .bento-card-actions .btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.8rem;
+    }
+}

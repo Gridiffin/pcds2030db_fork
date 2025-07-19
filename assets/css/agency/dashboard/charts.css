@@ -1,0 +1,119 @@
+/**
+ * Agency Dashboard - Charts Styles
+ */
+
+/* Chart containers */
+.chart-container {
+    position: relative;
+    width: 100%;
+    height: 300px;
+}
+
+.chart-container canvas {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+/* Chart.js specific adjustments */
+.chart-container .chart-legend {
+    margin-top: 1rem;
+    text-align: center;
+}
+
+.chart-container .chart-legend ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.chart-container .chart-legend li {
+    display: flex;
+    align-items: center;
+    font-size: 0.875rem;
+    color: #495057;
+}
+
+.chart-container .chart-legend li::before {
+    content: '';
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+}
+
+/* Loading state for charts */
+.chart-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 300px;
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.chart-loading i {
+    margin-right: 0.5rem;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Chart error state */
+.chart-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 300px;
+    color: #dc3545;
+    text-align: center;
+}
+
+.chart-error i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.7;
+}
+
+.chart-error p {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+/* Responsive chart adjustments */
+@media (max-width: 768px) {
+    .chart-container {
+        height: 250px;
+    }
+    
+    .chart-container .chart-legend {
+        margin-top: 0.75rem;
+    }
+    
+    .chart-container .chart-legend ul {
+        gap: 0.75rem;
+    }
+    
+    .chart-container .chart-legend li {
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .chart-container {
+        height: 200px;
+    }
+    
+    .chart-container .chart-legend ul {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
