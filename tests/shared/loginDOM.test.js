@@ -40,8 +40,17 @@ describe('Login DOM Interactions', () => {
     let usernameField, passwordField, loginBtn, loginSpinner, loginError, togglePassword;
 
     beforeEach(() => {
-        // Reset DOM state
-        document.getElementById('loginForm').reset();
+        // Setup complete login form DOM
+        document.body.innerHTML = `
+            <form id="loginForm">
+                <input type="text" id="username" name="username">
+                <input type="password" id="password" name="password">
+                <button type="button" id="togglePassword">👁️</button>
+                <button type="submit" id="loginBtn">Sign In</button>
+                <div id="loginError" style="display: none;"></div>
+                <div id="loginSpinner" style="display: none;">Loading...</div>
+            </form>
+        `;
         
         // Get elements
         usernameField = document.getElementById('username');
