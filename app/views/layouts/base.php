@@ -83,7 +83,7 @@ $additionalStyles = $additionalStyles ?? [];
     <!-- Chart.js (if needed) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="d-flex flex-column min-vh-100">
+<body class="d-flex flex-column min-vh-100<?php echo isset($bodyClass) ? ' ' . htmlspecialchars($bodyClass) : ''; ?><?php echo isset($pageClass) ? ' ' . htmlspecialchars($pageClass) : ''; ?>">
     <?php
     // Include appropriate navigation based on user role
     if (function_exists('is_admin') && is_admin()) {

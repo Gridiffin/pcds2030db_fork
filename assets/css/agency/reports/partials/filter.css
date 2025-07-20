@@ -1,0 +1,110 @@
+/* Reports Filter Component */
+
+.reports-filter {
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.reports-filter .card-header {
+    background: linear-gradient(135deg, var(--reports-primary), #20c997);
+    color: white;
+    border-radius: 8px 8px 0 0;
+    padding: 1rem 1.5rem;
+}
+
+.reports-filter .card-title {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.reports-filter .card-body {
+    padding: 1.5rem;
+}
+
+.filter-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: end;
+}
+
+.filter-form .form-group {
+    flex: 1;
+    min-width: 200px;
+}
+
+.filter-form .form-label {
+    font-weight: 500;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+.filter-form .form-select {
+    border-radius: 6px;
+    border: 1px solid #ced4da;
+    padding: 0.6rem 0.75rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.filter-form .form-select:focus {
+    border-color: var(--reports-primary);
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+
+.filter-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.filter-actions .btn {
+    border-radius: 6px;
+    padding: 0.6rem 1.2rem;
+    font-weight: 500;
+    transition: all 0.15s ease-in-out;
+}
+
+.filter-actions .btn-primary {
+    background: var(--reports-primary);
+    border-color: var(--reports-primary);
+}
+
+.filter-actions .btn-primary:hover {
+    background: #218838;
+    border-color: #1e7e34;
+}
+
+.filter-actions .btn-outline-secondary {
+    color: #6c757d;
+    border-color: #6c757d;
+}
+
+.filter-actions .btn-outline-secondary:hover {
+    background: #6c757d;
+    border-color: #6c757d;
+    color: white;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .filter-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .filter-form .form-group {
+        min-width: 100%;
+    }
+    
+    .filter-actions {
+        justify-content: center;
+    }
+    
+    .filter-actions .btn {
+        flex: 1;
+        min-width: 120px;
+    }
+}

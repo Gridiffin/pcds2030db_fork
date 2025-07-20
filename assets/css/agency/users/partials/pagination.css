@@ -1,0 +1,206 @@
+/* Notifications Pagination Component */
+
+.notifications-pagination {
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 1rem 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.notifications-pagination-nav {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0;
+}
+
+.notifications-pagination .pagination {
+    margin: 0;
+    gap: 0.25rem;
+}
+
+.notifications-pagination .page-item {
+    margin: 0;
+}
+
+.notifications-pagination .page-link {
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+    color: #495057;
+    font-weight: 500;
+    padding: 0.6rem 0.8rem;
+    transition: all 0.15s ease;
+    background: #fff;
+}
+
+.notifications-pagination .page-link:hover {
+    background: #f8f9fa;
+    border-color: var(--notifications-primary);
+    color: var(--notifications-primary);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
+}
+
+.notifications-pagination .page-item.active .page-link {
+    background: var(--notifications-primary);
+    border-color: var(--notifications-primary);
+    color: white;
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+}
+
+.notifications-pagination .page-item.disabled .page-link {
+    background: #fff;
+    border-color: #e9ecef;
+    color: #6c757d;
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.notifications-pagination .page-item.disabled .page-link:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+/* Pagination info */
+.notifications-pagination-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
+.notifications-pagination-summary {
+    font-weight: 500;
+}
+
+.notifications-pagination-jump {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.notifications-pagination-jump label {
+    margin: 0;
+    white-space: nowrap;
+}
+
+.notifications-pagination-jump select {
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    min-width: 80px;
+}
+
+.notifications-pagination-jump select:focus {
+    border-color: var(--notifications-primary);
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    outline: none;
+}
+
+/* Items per page control */
+.notifications-per-page {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+}
+
+.notifications-per-page label {
+    margin: 0;
+    white-space: nowrap;
+    font-size: 0.875rem;
+}
+
+.notifications-per-page select {
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    min-width: 70px;
+}
+
+/* Navigation buttons with icons */
+.notifications-pagination .page-link[aria-label="Previous"],
+.notifications-pagination .page-link[aria-label="Next"] {
+    padding: 0.6rem 1rem;
+}
+
+.notifications-pagination .page-link[aria-label="Previous"]:hover,
+.notifications-pagination .page-link[aria-label="Next"]:hover {
+    background: var(--notifications-primary);
+    color: white;
+    border-color: var(--notifications-primary);
+}
+
+/* Responsive pagination */
+@media (max-width: 768px) {
+    .notifications-pagination {
+        padding: 1rem;
+    }
+    
+    .notifications-pagination-info {
+        flex-direction: column;
+        gap: 0.75rem;
+        text-align: center;
+    }
+    
+    .notifications-pagination-jump,
+    .notifications-per-page {
+        margin: 0;
+    }
+    
+    .notifications-pagination .pagination {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.125rem;
+    }
+    
+    .notifications-pagination .page-link {
+        padding: 0.5rem 0.6rem;
+        font-size: 0.875rem;
+    }
+    
+    /* Hide middle page numbers on very small screens */
+    @media (max-width: 480px) {
+        .notifications-pagination .page-item:not(.active):not(:first-child):not(:last-child):not(:nth-child(2)):not(:nth-last-child(2)) {
+            display: none;
+        }
+    }
+}
+
+/* Loading state for pagination */
+.notifications-pagination.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.notifications-pagination.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid var(--notifications-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Smooth transitions for page changes */
+.notifications-page-transition {
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s ease;
+}
+
+.notifications-page-transition.loaded {
+    opacity: 1;
+    transform: translateY(0);
+}

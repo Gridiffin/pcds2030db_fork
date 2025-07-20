@@ -1,0 +1,64 @@
+/**
+ * Agency Reports CSS
+ * Main entry point for all reports-related styles
+ */
+
+/* Import component styles */
+@import 'partials/filter.css';
+@import 'partials/list.css';
+@import 'partials/info.css';
+
+/* Fixed navbar offset for reports page */
+body.reports-page {
+    padding-top: 70px; /* Offset for fixed navbar */
+}
+
+/* Responsive navbar offset */
+@media (max-width: 768px) {
+    body.reports-page {
+        padding-top: 85px; /* Larger offset for mobile multi-line navbar */
+    }
+}
+
+/* Reports specific variables */
+:root {
+    --reports-primary: #28a745;
+    --reports-secondary: #6c757d;
+    --reports-success: #28a745;
+    --reports-info: #17a2b8;
+    --reports-warning: #ffc107;
+    --reports-danger: #dc3545;
+}
+
+/* Main reports container */
+.reports-container {
+    padding: 1rem 0;
+}
+
+/* Reports header */
+.reports-header {
+    margin-bottom: 2rem;
+}
+
+.reports-title {
+    color: var(--reports-primary);
+    font-weight: 600;
+}
+
+/* Reports layout */
+.reports-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .reports-container {
+        padding: 0.5rem 0;
+    }
+    
+    .reports-content {
+        gap: 1rem;
+    }
+}
