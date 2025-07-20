@@ -1,6 +1,25 @@
 # Login Module Refactor - Problems & Solutions Log
 
-**Date:** 2025-07-18
+**Date:** 2025-07-18  
+**Last Updated:** 2025-07-20
+
+## Recent Bugs Fixed
+
+### 14. Outcomes Module - Undefined Array Key Warnings (2025-07-20)
+
+- **Problem:** PHP warnings about undefined array key "name" in submit_content.php:
+  ```
+  PHP Warning: Undefined array key "name" in submit_content.php on line 22
+  PHP Deprecated: htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated
+  ```
+- **Cause:** The `reporting_periods` table doesn't have a 'name' field; using `$current_period['name']` when it doesn't exist.
+- **Solution:** 
+  - Replaced `$current_period['name']` with `get_period_display_name($current_period)` function
+  - Added null coalescing operators (`??`) for all period field accesses
+  - Added proper null checks before displaying period information
+  - Added fallback displays when no active period exists
+- **Files Fixed:** `app/views/agency/outcomes/partials/submit_content.php`
+- **Prevention:** Always use the proper display functions and null checks when working with database fields
 
 ## Problems & Solutions During Login Refactor
 

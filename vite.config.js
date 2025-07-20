@@ -10,6 +10,7 @@ export default defineConfig({
         dashboard: path.resolve(__dirname, 'assets/js/agency/dashboard/dashboard.js'),
         'agency-reports': path.resolve(__dirname, 'assets/js/agency/reports/reports.js'),
         'notifications': path.resolve(__dirname, 'assets/js/agency/users/notifications.js'),
+        'outcomes': path.resolve(__dirname, 'assets/js/agency/outcomes/outcomes.js'),
       },
       output: {
         entryFileNames: 'js/[name].bundle.js',
