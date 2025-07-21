@@ -6,6 +6,12 @@
 @import 'agency/program-targets.css';
 @import 'admin/programs.css';
 @import 'table-structure-designer.css';
+@import url("components/ui/modal.css");
+@import url("components/ui/tabs.css");
+@import url("components/ui/tooltip.css");
+
+/* Import new admin styles */
+@import url("admin/programs/programs.css");
 
 /**
  * Base Styles
