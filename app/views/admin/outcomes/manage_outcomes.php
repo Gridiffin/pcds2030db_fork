@@ -143,11 +143,19 @@ require_once '../../layouts/page_header.php';
                                                title="View Details">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <a href="edit_outcome.php?id=<?= $outcome['id'] ?>" 
-                                               class="btn btn-sm btn-outline-warning" 
-                                               title="Edit Outcome">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
+                                            <?php if (isset($outcome['type']) && $outcome['type'] === 'kpi'): ?>
+                                                <a href="edit_kpi.php?id=<?= $outcome['id'] ?>" 
+                                                   class="btn btn-sm btn-outline-warning" 
+                                                   title="Edit KPI Outcome">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                            <?php else: ?>
+                                                <a href="edit_outcome.php?id=<?= $outcome['id'] ?>" 
+                                                   class="btn btn-sm btn-outline-warning" 
+                                                   title="Edit Outcome">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                            <?php endif; ?>
                                         </div>
                                     </td>
                                 </tr>
