@@ -90,12 +90,22 @@ $header_config = [
             'icon' => 'fas fa-arrow-left',
             'class' => 'btn-outline-primary'
         ],
-        [
-            'url' => 'edit_outcome.php?id=' . $outcome_id,
-            'text' => 'Edit Outcome',
-            'icon' => 'fas fa-edit',
-            'class' => 'btn-primary'
-        ]
+        // Replace Edit Outcome button with Edit KPI if type is kpi
+        (
+            $type === 'kpi'
+            ? [
+                'url' => 'edit_kpi.php?id=' . $outcome_id,
+                'text' => 'Edit KPI',
+                'icon' => 'fas fa-edit',
+                'class' => 'btn-primary'
+            ]
+            : [
+                'url' => 'edit_outcome.php?id=' . $outcome_id,
+                'text' => 'Edit Outcome',
+                'icon' => 'fas fa-edit',
+                'class' => 'btn-primary'
+            ]
+        )
     ]
 ];
 
@@ -147,7 +157,34 @@ $title = (!empty($outcome['title'])) ? $outcome['title'] : 'Untitled Outcome';
                         </div>
                     </div>
 
-                    <?php if (!empty($columns) && $has_data): ?>
+                    <?php if ($type === 'kpi'): ?>
+                        <?php if (!empty($outcome['data']) && is_array($outcome['data'])): ?>
+                            <div class="row">
+                                <?php foreach ($outcome['data'] as $item): ?>
+                                    <div class="col-md-6 mb-3">
+                                        <div class="card card-body shadow-sm h-100">
+                                            <div class="fw-bold mb-1"><?= htmlspecialchars($item['description'] ?? '') ?></div>
+                                            <div class="fs-2 fw-semibold text-primary">
+                                                <?= isset($item['value']) ? htmlspecialchars($item['value']) : '' ?>
+                                                <?php if (!empty($item['unit'])): ?>
+                                                    <span class="fs-5 text-muted ms-1"><?= htmlspecialchars($item['unit']) ?></span>
+                                                <?php endif; ?>
+                                            </div>
+                                            <?php if (!empty($item['extra'])): ?>
+                                                <div class="text-muted small mt-2">
+                                                    <?= htmlspecialchars($item['extra']) ?>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php else: ?>
+                            <div class="alert alert-warning text-center my-4">
+                                <i class="fas fa-exclamation-circle me-2"></i> No KPI data available for this outcome.
+                            </div>
+                        <?php endif; ?>
+                    <?php elseif (!empty($columns) && $has_data): ?>
                     <div class="table-responsive">
                         <table class="table table-bordered table-hover data-table">
                             <thead class="table-light">

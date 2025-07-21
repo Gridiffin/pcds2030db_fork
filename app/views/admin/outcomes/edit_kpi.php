@@ -72,6 +72,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $pageTitle = 'Edit KPI Outcome';
+$header_config = [
+    'title' => 'Edit KPI Outcome',
+    'subtitle' => 'Update KPI details and data',
+    'variant' => 'white',
+    'actions' => [
+        [
+            'url' => 'manage_outcomes.php',
+            'text' => 'Back to Manage Outcomes',
+            'icon' => 'fas fa-arrow-left',
+            'class' => 'btn-outline-primary'
+        ],
+        [
+            'url' => 'view_outcome.php?id=' . $outcome_id,
+            'text' => 'View KPI',
+            'icon' => 'fas fa-eye',
+            'class' => 'btn-secondary'
+        ]
+    ]
+];
 require_once '../../layouts/header.php';
 require_once '../../layouts/page_header.php';
 ?>
@@ -127,6 +146,7 @@ require_once '../../layouts/page_header.php';
                     </div>
                 <?php endif; ?>
                 <button type="submit" class="btn btn-success mt-3">Save Changes</button>
+                <a href="manage_outcomes.php" class="btn btn-secondary mt-3 ms-2">Done</a>
             </form>
         </div>
     </div>
