@@ -1,0 +1,168 @@
+name: Update Changelog
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+jobs:
+  update-changelog:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
+    
+    steps:
+      # Step 1: Check out the repository with full history
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Get full history for better commit analysis
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Step 2: Configure Git user
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      # Step 3: Generate changelog entry
+      - name: Generate Changelog Entry
+        run: |
+          echo "Generating changelog entry..."
+          
+          # Create CHANGELOG.md if it doesn't exist
+          if [ ! -f CHANGELOG.md ]; then
+            echo "# Changelog" > CHANGELOG.md
+            echo "" >> CHANGELOG.md
+            echo "All notable changes to this project will be documented in this file." >> CHANGELOG.md
+            echo "" >> CHANGELOG.md
+          fi
+          
+          # Get current date and time
+          CURRENT_DATE=$(date '+%Y-%m-%d %H:%M:%S UTC')
+          
+          # Get commit information with proper escaping
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            # For merged pull requests
+            COMMIT_HASH="${{ github.event.pull_request.merge_commit_sha }}"
+            # Escape special characters in commit message and author
+            COMMIT_MESSAGE=$(echo "${{ github.event.pull_request.title }}" | sed 's/["\]/\\&/g')
+            PR_NUMBER="${{ github.event.pull_request.number }}"
+            AUTHOR=$(echo "${{ github.event.pull_request.user.login }}" | sed 's/["\]/\\&/g')
+            ENTRY="- **PR #${PR_NUMBER}**: ${COMMIT_MESSAGE} (by @${AUTHOR})"
+          else
+            # For direct pushes
+            COMMIT_HASH="${{ github.sha }}"
+            # Use safer method to get commit info
+            COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s" "$COMMIT_HASH" | sed 's/["\]/\\&/g')
+            AUTHOR=$(git log -1 --pretty=format:"%an" "$COMMIT_HASH" | sed 's/["\]/\\&/g')
+            SHORT_HASH=$(git rev-parse --short "$COMMIT_HASH")
+            ENTRY="- **${SHORT_HASH}**: ${COMMIT_MESSAGE} (by ${AUTHOR})"
+          fi
+          
+          echo "Entry to add: ${ENTRY}"
+          
+          # Check if this entry already exists to avoid duplicates
+          if ! grep -Fq "${ENTRY}" CHANGELOG.md 2>/dev/null; then
+            # Create a temporary file for the new changelog
+            echo "## ${CURRENT_DATE}" > temp_changelog.md
+            echo "${ENTRY}" >> temp_changelog.md
+            echo "" >> temp_changelog.md
+            
+            # Check if there are existing entries
+            if grep -q "^## " CHANGELOG.md; then
+              # Find the first existing entry and insert before it
+              awk '/^## / && !found {print "## '"${CURRENT_DATE}"'"; print "'"${ENTRY}"'"; print ""; found=1} {print}' CHANGELOG.md > temp_full_changelog.md
+              mv temp_full_changelog.md CHANGELOG.md
+            else
+              # Append to the end of the file
+              echo "" >> CHANGELOG.md
+              cat temp_changelog.md >> CHANGELOG.md
+            fi
+            
+            rm -f temp_changelog.md
+            echo "Changelog updated with new entry"
+          else
+            echo "Entry already exists in changelog, skipping..."
+          fi
+
+      # Step 4: Check if changes were made
+      - name: Check for changes
+        id: check_changes
+        run: |
+          if git diff --quiet CHANGELOG.md; then
+            echo "No changes to commit"
+            echo "changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "Changes detected"
+            echo "changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      # Step 5: Commit and push changes
+      - name: Commit and push changelog
+        if: steps.check_changes.outputs.changes == 'true'
+        run: |
+          git add CHANGELOG.md
+          git commit -m "📝 Update changelog - $(date '+%Y-%m-%d')"
+          git push origin main
+
+      # Step 6: Create update summary artifact
+      - name: Create Update Summary
+        run: |
+          echo "# Update Summary - $(date '+%Y-%m-%d %H:%M:%S UTC')" > update_summary.md
+          echo "" >> update_summary.md
+          echo "## Latest Changes" >> update_summary.md
+          echo "" >> update_summary.md
+          
+          # Get the last 5 commits for context
+          git log --oneline -5 --pretty=format:"- %h: %s (by %an)" >> update_summary.md
+          
+          echo "" >> update_summary.md
+          echo "" >> update_summary.md
+          echo "## Files Changed in Latest Commit" >> update_summary.md
+          echo "" >> update_summary.md
+          
+          # Show files changed in the latest commit
+          git diff-tree --no-commit-id --name-only -r ${{ github.sha }} | while read file; do
+            echo "- \`$file\`" >> update_summary.md
+          done
+
+      # Step 7: Upload update summary as artifact
+      - name: Upload Update Summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: update-summary-${{ github.run_number }}
+          path: update_summary.md
+          retention-days: 30
+
+      # Step 8: Create a detailed change log
+      - name: Create Detailed Change Log
+        run: |
+          echo "# Detailed Change Log - $(date '+%Y-%m-%d %H:%M:%S UTC')" > detailed_changes.txt
+          echo "=========================================" >> detailed_changes.txt
+          echo "" >> detailed_changes.txt
+          
+          echo "Commit: ${{ github.sha }}" >> detailed_changes.txt
+          echo "Author: $(git log -1 --pretty=format:'%an <%ae>' ${{ github.sha }})" >> detailed_changes.txt
+          echo "Date: $(git log -1 --pretty=format:'%ad' ${{ github.sha }})" >> detailed_changes.txt
+          echo "Message: $(git log -1 --pretty=format:'%s' ${{ github.sha }})" >> detailed_changes.txt
+          echo "" >> detailed_changes.txt
+          echo "=========================================" >> detailed_changes.txt
+          echo "DIFF OUTPUT:" >> detailed_changes.txt
+          echo "=========================================" >> detailed_changes.txt
+          
+          # Show the actual changes (limited to avoid huge outputs)
+          git show --stat ${{ github.sha }} >> detailed_changes.txt
+          echo "" >> detailed_changes.txt
+          echo "=========================================" >> detailed_changes.txt
+
+      # Step 9: Upload detailed change log
+      - name: Upload Detailed Change Log
+        uses: actions/upload-artifact@v4
+        with:
+          name: detailed-changes-${{ github.run_number }}
+          path: detailed_changes.txt
+          retention-days: 30

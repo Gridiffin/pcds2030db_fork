@@ -1,5 +1,9 @@
 # PCDS2030 Dashboard - Forestry Sector Management System
 
+[![CI Workflow](https://github.com/Gridiffin/pcds2030db_fork/actions/workflows/ci.yml/badge.svg)](https://github.com/Gridiffin/pcds2030db_fork/actions/workflows/ci.yml)
+[![PHP Version](https://img.shields.io/badge/PHP-8.1%20%7C%208.2-blue.svg)](https://php.net)
+[![Node.js Version](https://img.shields.io/badge/Node.js-18%20%7C%2020-green.svg)](https://nodejs.org)
+
 A comprehensive web-based dashboard system for managing forestry sector programs and outcomes under the Sarawak Ministry of Natural Resources and Urban Development. This system replaces traditional Excel-based reporting with a streamlined, modern web solution.
 
 ## 🏛️ Project Overview
@@ -56,6 +60,41 @@ The system transforms quarterly reporting from manual Excel processes to an auto
 - **XAMPP/Laragon**: Local development environment
 - **cPanel**: Production hosting platform
 - **Git**: Version control system
+
+### Testing & CI/CD
+- **PHPUnit**: Backend PHP testing framework
+- **Jest**: Frontend JavaScript testing framework
+- **GitHub Actions**: Automated CI/CD pipeline
+- **Vite**: Asset bundling and build optimization
+
+## 🧪 Automated Testing
+
+The project includes comprehensive automated testing covering both frontend and backend:
+
+### Test Coverage
+- **Frontend Tests**: 17/17 Jest tests (100% pass rate)
+- **Backend Tests**: 15/15 PHPUnit tests (100% pass rate)
+- **Total Coverage**: 32 automated tests across the full stack
+
+### Continuous Integration
+GitHub Actions automatically runs on every push and pull request:
+- ✅ Multi-environment testing (PHP 8.1/8.2, Node.js 18/20)
+- ✅ Code quality checks and syntax validation
+- ✅ Security vulnerability scanning
+- ✅ Asset building and optimization
+- ✅ Documentation compliance verification
+
+### Running Tests Locally
+```bash
+# Frontend JavaScript tests
+npm test
+
+# Backend PHP tests  
+vendor/bin/phpunit
+
+# Build production assets
+npm run build
+```
 
 ## 📊 System Architecture
 

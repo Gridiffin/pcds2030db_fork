@@ -1,0 +1,60 @@
+/**
+ * Agency Dashboard - Base Styles
+ * 
+ * Common dashboard layout and typography styles
+ */
+
+/* Section wrapper styles */
+.initiatives-section,
+.programs-section,
+.outcomes-section {
+    margin-bottom: 2rem;
+}
+
+.section-header {
+    margin-bottom: 1rem;
+}
+
+.section-header h2 {
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.section-header i {
+    color: #667eea;
+}
+
+/* Section descriptions */
+.initiatives-description,
+.programs-description,
+.outcomes-description {
+    color: #6c757d;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin-bottom: 1.5rem;
+}
+
+/* Fixed navbar padding for dashboard content */
+body {
+    padding-top: 70px;
+}
+
+@media (max-width: 768px) {
+    body {
+        padding-top: 85px; /* Account for multi-line navbar on mobile */
+    }
+}
+
+/* Content wrapper for dashboard */
+.content-wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 70px);
+    padding-top: 0; /* Override default layout padding since we use body padding */
+}
+
+@media (max-width: 768px) {
+    .content-wrapper {
+        min-height: calc(100vh - 85px);
+    }
+}

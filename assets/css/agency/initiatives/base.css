@@ -1,0 +1,66 @@
+/**
+ * Initiatives Base Styles
+ * Common styles used across initiative components
+ */
+
+:root {
+    --forest-deep: #4A6A52;
+    --forest-medium: #67885F;
+    --bs-primary: #0d6efd;
+    --success-light: #d4edda;
+    --warning-light: #fff3cd;
+    --danger-light: #f8d7da;
+    --high-contrast-dark: #343a40;
+    --high-contrast-light: #f8f9fa;
+    --border-color: #ced4da;
+}
+
+/* Fix for fixed navbar overlap - ensure proper body padding */
+body {
+    padding-top: 70px; /* Match navbar min-height to prevent overlap */
+}
+
+/* Adjust padding for multi-line navbar when needed */
+@media (max-width: 480px) {
+    body {
+        padding-top: 85px;
+    }
+}
+
+/* Base Initiative Styles */
+.initiative-container {
+    transition: opacity 0.3s ease;
+}
+
+.initiative-card {
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    border: 1px solid var(--border-color);
+}
+
+.initiative-badge {
+    font-size: 0.75em;
+    padding: 0.375rem 0.75rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .table-responsive table {
+        font-size: 0.9em;
+    }
+    
+    .badge {
+        font-size: 0.7em;
+    }
+    
+    .initiative-container {
+        padding: 0.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .initiative-badge {
+        font-size: 0.65em;
+        padding: 0.25rem 0.5rem;
+    }
+}
