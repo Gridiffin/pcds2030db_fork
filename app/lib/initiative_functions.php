@@ -309,10 +309,12 @@ function get_initiative_programs($initiative_id) {
     global $conn, $programsTable, $usersTable, $agencyTable;
     global $programIdCol, $programNameCol, $programNumberCol, $programInitiativeIdCol;
     global $userIdCol, $userAgencyIdCol, $agencyIdCol, $agencyNameCol;
-
-    $sql = "SELECT p.{$programIdCol}, p.{$programNameCol}, p.{$programNumberCol}, a.{$agencyNameCol}
+    $programCreatedByCol = get_column_name('programs', 'created_by');
+    // Try to join sectors table for sector_name, fallback to default if not present
+    $sql = "SELECT p.{$programIdCol}, p.{$programNameCol}, p.{$programNumberCol}, a.{$agencyNameCol}, 
+            'Forestry Sector' AS sector_name
             FROM {$programsTable} p
-            LEFT JOIN {$usersTable} u ON p.{$programUsersAssignedCol} = u.{$userIdCol}
+            LEFT JOIN {$usersTable} u ON p.{$programCreatedByCol} = u.{$userIdCol}
             LEFT JOIN {$agencyTable} a ON u.{$userAgencyIdCol} = a.{$agencyIdCol}
             WHERE p.{$programInitiativeIdCol} = ?
             ORDER BY p.{$programNameCol}";

@@ -43,10 +43,15 @@
    BASE HEADER COMPONENT
    ================================= */
 
+.page-header, .page-header__container {
+    margin-top: 1.5rem;
+}
+
 .page-header {
     position: relative;
-    z-index: 100;
+    z-index: 100 !important;
     margin-bottom: 1.5rem;
+    margin-top: 70px !important;
 }
 
 .page-header__container {
