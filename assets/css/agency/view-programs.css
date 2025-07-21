@@ -1,0 +1,43 @@
+/**
+ * View Programs - Main CSS Entry Point
+ * Imports all modular styles for the view programs page
+ */
+
+/* Import core styles */
+@import './view-programs/cards.css';
+@import './view-programs/tables.css';
+@import './view-programs/filters.css';
+
+/* Fix for fixed navbar overlap - ensure proper body padding */
+body {
+    padding-top: 70px; /* Match navbar height to prevent overlap */
+}
+
+/* Adjust padding for multi-line navbar when needed */
+@media (max-width: 768px) {
+    body {
+        padding-top: 85px; /* Account for multi-line navbar on mobile */
+    }
+}
+
+/* Page-specific overrides */
+.content-wrapper {
+    padding: 1.5rem;
+}
+
+.page-content {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Responsive layout adjustments */
+@media (max-width: 768px) {
+    .content-wrapper {
+        padding: 1rem;
+    }
+    
+    .btn-group-sm .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+}

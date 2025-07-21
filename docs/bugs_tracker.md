@@ -5,6 +5,53 @@
 
 ## Recent Bugs Fixed
 
+### 17. Agency Programs Layout Issues - Navbar Overlap and Footer Positioning (2025-07-21)
+
+- **Problem:** Two layout issues in refactored view_programs.php:
+  1. Header content covered by fixed navbar
+  2. Footer appearing above content instead of at bottom
+- **Cause:** 
+  1. Missing `body { padding-top: 70px; }` CSS for navbar offset
+  2. Using inline content pattern instead of proper `$contentFile` pattern which disrupts base layout structure
+- **Root Issue:** This follows the same pattern as Bug #13 from initiatives refactor - recurring navbar overlap issue across modules.
+- **Solution:** 
+  1. Added navbar padding fix to `assets/css/agency/view-programs.css` with responsive adjustments (70px desktop, 85px mobile)
+  2. Created `view_programs_content.php` and updated main file to use `$contentFile` pattern for proper layout structure
+  3. Rebuilt Vite assets to include CSS fixes
+- **Files Fixed:** 
+  - `assets/css/agency/view-programs.css` (navbar padding)
+  - `app/views/agency/programs/view_programs.php` (content file pattern)
+  - `app/views/agency/programs/view_programs_content.php` (new content file)
+- **Prevention:** Always use proper content file pattern (`$contentFile`) for base layout integration and include navbar padding in module CSS.
+
+### 16. Agency Programs Partial - Missing app/ Directory in Path (2025-07-21)
+
+- **Problem:** Fatal error in program_row.php partial:
+  ```
+  require_once(C:\laragon\www\pcds2030_dashboard_fork\lib/rating_helpers.php): Failed to open stream: No such file or directory
+  ```
+- **Cause:** Include path in `program_row.php` was missing the `app/` directory prefix: `PROJECT_ROOT_PATH . 'lib/rating_helpers.php'` instead of `PROJECT_ROOT_PATH . 'app/lib/rating_helpers.php'`.
+- **Root Issue:** This is a continuation of Bug #15 pattern - inconsistent path handling during refactoring.
+- **Solution:** 
+  - Fixed include path to use `PROJECT_ROOT_PATH . 'app/lib/rating_helpers.php'`
+  - Verified all other includes in partials and main view are correct
+- **Files Fixed:** `app/views/agency/programs/partials/program_row.php`
+- **Prevention:** When creating partials during refactoring, always verify include paths follow the established pattern with `app/` prefix for lib files.
+
+### 15. Agency Programs View - Incorrect PROJECT_ROOT_PATH (2025-07-21)
+
+- **Problem:** Fatal error in refactored view_programs.php:
+  ```
+  require_once(C:\laragon\www\pcds2030_dashboard_fork\app\app/lib/db_connect.php): Failed to open stream: No such file or directory
+  ```
+- **Cause:** The `PROJECT_ROOT_PATH` definition was using only 3 `dirname()` calls instead of 4, causing the path to resolve incorrectly and creating a duplicate `app` directory in the path.
+- **Root Issue:** `dirname(dirname(dirname(__DIR__)))` from `app/views/agency/programs/` resolves to `app/` instead of project root.
+- **Solution:** 
+  - Fixed `PROJECT_ROOT_PATH` definition to use 4 `dirname()` calls: `dirname(dirname(dirname(dirname(__DIR__))))`
+  - This correctly resolves from `app/views/agency/programs/view_programs.php` to the project root
+- **Files Fixed:** `app/views/agency/programs/view_programs.php`
+- **Prevention:** Always verify `PROJECT_ROOT_PATH` definition matches the directory depth. For files in `app/views/agency/programs/`, need 4 `dirname()` calls to reach project root.
+
 ### 14. Outcomes Module - Undefined Array Key Warnings (2025-07-20)
 
 - **Problem:** PHP warnings about undefined array key "name" in submit_content.php:
