@@ -158,9 +158,8 @@ $rating_order = [
                     data-program-id="<?php echo $program['program_id']; ?>"
                     data-program-name="<?php echo htmlspecialchars($program['program_name']); ?>"
                     data-program-type="<?php echo $is_assigned ? 'assigned' : 'created'; ?>"
-                    title="Edit submission and program details"
-                    data-bs-toggle="tooltip" 
-                    data-bs-placement="top">
+                    onclick="toggleMoreActions(<?php echo $program['program_id']; ?>, '<?php echo htmlspecialchars($program['program_name'], ENT_QUOTES); ?>', this)"
+                    title="More actions">
                 <i class="fas fa-ellipsis-v"></i>
             </button>
             <?php endif; ?>

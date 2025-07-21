@@ -14,6 +14,8 @@ export default defineConfig({
         'outcomes': path.resolve(__dirname, 'assets/js/agency/outcomes/outcomes.js'),
         'view-programs': path.resolve(__dirname, 'assets/js/agency/view-programs/view-programs.js'),
         'admin-manage-initiatives': path.resolve(__dirname, 'assets/js/admin/initiatives/manageInitiatives.js'),
+        'program-details': path.resolve(__dirname, 'assets/js/agency/program-details/program-details.js'),
+        'view-submissions': path.resolve(__dirname, 'assets/js/agency/view-submissions/view-submissions.js'),
       },
       output: {
         entryFileNames: 'js/[name].bundle.js',

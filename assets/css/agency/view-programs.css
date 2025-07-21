@@ -41,3 +41,89 @@ body {
         font-size: 0.75rem;
     }
 }
+
+/* Simple More Actions Menu */
+.more-actions-menu {
+    position: fixed;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    min-width: 220px;
+    z-index: 9999;
+    overflow: hidden;
+}
+
+.menu-header {
+    background: var(--forest-deep, #537D5D);
+    color: white;
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.menu-divider {
+    height: 1px;
+    background: #e9ecef;
+    margin: 0;
+}
+
+.menu-item {
+    display: block;
+    padding: 0.75rem 1rem;
+    color: #495057;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+}
+
+.menu-item:hover {
+    background: var(--forest-light, #f0f7f0);
+    color: var(--forest-deep, #537D5D);
+    text-decoration: none;
+}
+
+.menu-item i {
+    width: 16px;
+    margin-right: 8px;
+    color: var(--forest-medium, #73946B);
+}
+
+.more-actions-btn {
+    position: relative;
+}
+
+/* Animation for menu show/hide */
+.more-actions-menu.show {
+    display: block !important;
+    animation: menuFadeIn 0.2s ease;
+}
+
+.more-actions-menu.hide {
+    animation: menuFadeOut 0.2s ease;
+}
+
+@keyframes menuFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes menuFadeOut {
+    from {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-10px) scale(0.95);
+    }
+}

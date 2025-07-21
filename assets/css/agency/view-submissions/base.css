@@ -1,0 +1,53 @@
+/**
+ * Base styles for view submissions page
+ * Includes navbar fixes and general layout
+ */
+
+/* Fix navbar overlap - Anti-pattern prevention (Bug #17) */
+body {
+    padding-top: 70px;
+}
+
+/* Responsive navbar adjustments */
+@media (max-width: 768px) {
+    body {
+        padding-top: 85px;
+    }
+}
+
+/* Content positioning is handled by base layout - no custom min-height needed */
+
+/* Force forest green background for card headers to match theme */
+.card-header.bg-success {
+    background-color: var(--forest-deep) !important;
+    color: white !important;
+}
+
+.card-header.bg-success .card-title {
+    color: white !important;
+}
+
+.card-header.bg-success i {
+    color: white !important;
+}
+
+.card-header.bg-success h5,
+.card-header.bg-success h6 {
+    color: white !important;
+}
+
+/* Page header spacing */
+.page-header {
+    margin-bottom: 2rem;
+}
+
+/* Card styling consistency */
+.submission-card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: box-shadow 0.15s ease-in-out;
+}
+
+.submission-card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}

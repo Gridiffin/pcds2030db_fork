@@ -15,12 +15,130 @@ export class ViewProgramsDOM {
         console.log('🎯 Initializing DOM handlers...');
         
         this.initDeleteModal();
-        this.initMoreActionsModal();
+        this.initSimpleMoreActions();
         this.initTooltips();
         this.initTableSorting();
         this.updateCounters();
         
         console.log('✅ DOM handlers initialized');
+    }
+    
+    /**
+     * Initialize simple more actions menu
+     */
+    initSimpleMoreActions() {
+        // Add click outside listener to close menus
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.more-actions-btn')) {
+                this.closeAllMenus();
+            }
+        });
+        
+        // Make toggleMoreActions available globally
+        window.toggleMoreActions = (programId, programName, buttonElement) => {
+            this.toggleMoreActions(programId, programName, buttonElement);
+        };
+    }
+    
+    toggleMoreActions(programId, programName, buttonElement) {
+        // Close all other menus first
+        this.closeAllMenus();
+        
+        // Create or get menu
+        let menu = document.getElementById(`global-menu-${programId}`);
+        if (!menu) {
+            menu = this.createMenuOutsideTable(programId, programName);
+        }
+        
+        // Position menu relative to button
+        this.positionMenu(menu, buttonElement);
+        
+        // Show menu
+        this.showMenu(menu);
+    }
+    
+    createMenuOutsideTable(programId, programName) {
+        const menu = document.createElement('div');
+        menu.className = 'more-actions-menu';
+        menu.id = `global-menu-${programId}`;
+        menu.style.position = 'fixed';
+        menu.style.display = 'none';
+        menu.style.zIndex = '9999';
+        
+        menu.innerHTML = `
+            <div class="menu-header">
+                <strong>${programName}</strong>
+            </div>
+            <div class="menu-divider"></div>
+            <a href="edit_program.php?id=${programId}" class="menu-item">
+                <i class="fas fa-edit"></i> Edit Program Details
+            </a>
+            <a href="edit_submission.php?program_id=${programId}" class="menu-item">
+                <i class="fas fa-file-edit"></i> Edit Latest Submission
+            </a>
+            <a href="add_submission.php?program_id=${programId}" class="menu-item">
+                <i class="fas fa-plus"></i> Add New Submission
+            </a>
+            <div class="menu-divider"></div>
+            <a href="program_details.php?id=${programId}" class="menu-item">
+                <i class="fas fa-eye"></i> View Full Details
+            </a>
+        `;
+        
+        // Append to body (outside any container)
+        document.body.appendChild(menu);
+        
+        return menu;
+    }
+    
+    positionMenu(menu, buttonElement) {
+        const buttonRect = buttonElement.getBoundingClientRect();
+        const menuWidth = 220; // min-width from CSS
+        const menuHeight = 200; // estimated height
+        
+        // Calculate position
+        let left = buttonRect.right - menuWidth; // Align right edge with button
+        let top = buttonRect.bottom + 5; // 5px below button
+        
+        // Adjust if menu would go off-screen
+        if (left < 10) {
+            left = buttonRect.left; // Align left edge with button instead
+        }
+        
+        if (left + menuWidth > window.innerWidth - 10) {
+            left = window.innerWidth - menuWidth - 10;
+        }
+        
+        if (top + menuHeight > window.innerHeight - 10) {
+            top = buttonRect.top - menuHeight - 5; // Show above button instead
+        }
+        
+        menu.style.left = `${left}px`;
+        menu.style.top = `${top}px`;
+    }
+    
+    showMenu(menu) {
+        menu.style.display = 'block';
+        menu.classList.add('show');
+        menu.classList.remove('hide');
+    }
+    
+    hideMenu(menu) {
+        menu.classList.add('hide');
+        menu.classList.remove('show');
+        
+        setTimeout(() => {
+            menu.style.display = 'none';
+            menu.classList.remove('hide');
+        }, 200);
+    }
+    
+    closeAllMenus() {
+        document.querySelectorAll('.more-actions-menu[id^="global-menu-"]').forEach(menu => {
+            if (menu.style.display !== 'none') {
+                this.hideMenu(menu);
+            }
+        });
     }
     
     /**
@@ -108,29 +226,6 @@ export class ViewProgramsDOM {
         if (form) {
             form.submit();
         }
-    }
-    
-    /**
-     * Initialize more actions modal
-     */
-    initMoreActionsModal() {
-        document.querySelectorAll('.more-actions-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                
-                const programId = btn.getAttribute('data-program-id');
-                const programName = btn.getAttribute('data-program-name');
-                const programType = btn.getAttribute('data-program-type');
-                
-                this.showMoreActionsModal(programId, programName, programType);
-            });
-        });
-    }
-    
-    showMoreActionsModal(programId, programName, programType) {
-        // Create a simple dropdown menu or modal for more actions
-        // This is a placeholder - implement based on actual requirements
-        console.log('More actions for program:', { programId, programName, programType });
     }
     
     /**

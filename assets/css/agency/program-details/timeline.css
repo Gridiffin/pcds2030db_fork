@@ -1,0 +1,202 @@
+/**
+ * Submission Timeline Styles
+ * 
+ * Styles for the submission timeline component.
+ */
+
+/* Timeline container */
+.timeline-container {
+    position: relative;
+    padding: 1rem 0;
+}
+
+.timeline-container::before {
+    content: '';
+    position: absolute;
+    left: 1.5rem;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--bs-primary), var(--bs-secondary));
+    z-index: 1;
+}
+
+/* Timeline items */
+.timeline-item {
+    position: relative;
+    display: flex;
+    margin-bottom: 2rem;
+    padding-left: 4rem;
+}
+
+.timeline-item:last-child {
+    margin-bottom: 0;
+}
+
+/* Timeline markers */
+.timeline-marker {
+    position: absolute;
+    left: 0.75rem;
+    top: 0.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    background: var(--bs-white);
+    border: 3px solid var(--bs-primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+
+.timeline-marker i {
+    font-size: 0.5rem;
+    color: var(--bs-primary);
+}
+
+/* Timeline content */
+.timeline-content {
+    background: var(--bs-white);
+    border: 1px solid var(--bs-gray-200);
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    flex: 1;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.timeline-content:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+/* Timeline header */
+.timeline-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.timeline-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--bs-gray-900);
+    margin: 0;
+}
+
+.timeline-header .badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+}
+
+/* Timeline meta information */
+.timeline-meta {
+    color: var(--bs-gray-600);
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+}
+
+.timeline-meta i {
+    color: var(--bs-gray-500);
+    margin-right: 0.25rem;
+}
+
+/* Timeline actions */
+.timeline-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.timeline-actions .btn {
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.timeline-actions .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* Hold Point History Table */
+#holdPointHistorySection .table {
+    margin-bottom: 0;
+}
+
+#holdPointHistorySection .table thead th {
+    background: var(--bs-gray-50);
+    border-bottom: 2px solid var(--bs-gray-200);
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--bs-gray-700);
+}
+
+#holdPointHistorySection .table tbody tr:hover {
+    background: var(--bs-gray-50);
+}
+
+#holdPointHistorySection .table td {
+    vertical-align: middle;
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--bs-gray-100);
+}
+
+#holdPointHistorySection .badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.4rem 0.6rem;
+}
+
+/* Empty state styling */
+.timeline-container:empty::after {
+    content: 'No submissions found';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--bs-gray-500);
+    font-style: italic;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .timeline-container::before {
+        left: 1rem;
+    }
+    
+    .timeline-item {
+        padding-left: 3rem;
+    }
+    
+    .timeline-marker {
+        left: 0.25rem;
+        width: 1.25rem;
+        height: 1.25rem;
+    }
+    
+    .timeline-marker i {
+        font-size: 0.4rem;
+    }
+    
+    .timeline-content {
+        padding: 1rem;
+    }
+    
+    .timeline-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .timeline-title {
+        font-size: 1rem;
+    }
+}
