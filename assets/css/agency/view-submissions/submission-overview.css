@@ -1,0 +1,33 @@
+/**
+ * Submission overview card styles
+ */
+
+.submission-overview {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-left: 4px solid var(--bs-primary);
+}
+
+.submission-meta {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.submission-status {
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.submission-actions {
+    gap: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    .submission-actions {
+        flex-direction: column;
+    }
+    
+    .submission-actions .btn {
+        width: 100%;
+    }
+}

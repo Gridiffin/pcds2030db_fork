@@ -1,0 +1,12 @@
+/**
+ * View Submissions - Main CSS Entry Point
+ * Imports all component styles for view submissions page
+ */
+
+/* Import component styles */
+@import './base.css';
+@import './submission-overview.css';
+@import './targets.css';
+@import './attachments.css';
+@import './sidebar.css';
+@import './actions.css';

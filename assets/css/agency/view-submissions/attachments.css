@@ -1,0 +1,67 @@
+/**
+ * Program attachments section styles
+ */
+
+.attachments-section .card-header {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+}
+
+.attachment-item {
+    border: 1px solid #e9ecef;
+    border-radius: 0.375rem;
+    padding: 0.75rem;
+    transition: all 0.2s ease;
+    background: #fff;
+}
+
+.attachment-item:hover {
+    border-color: #28a745;
+    box-shadow: 0 0.125rem 0.25rem rgba(40, 167, 69, 0.1);
+    transform: translateY(-1px);
+}
+
+.attachment-icon {
+    color: #28a745;
+    font-size: 1.25rem;
+    margin-right: 0.75rem;
+}
+
+.attachment-name {
+    font-weight: 500;
+    color: #212529;
+    text-decoration: none;
+}
+
+.attachment-name:hover {
+    color: #28a745;
+    text-decoration: underline;
+}
+
+.attachment-meta {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.attachment-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.attachment-actions .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+/* No attachments state */
+.no-attachments-state {
+    text-align: center;
+    padding: 2rem;
+    color: #6c757d;
+}
+
+.no-attachments-state .icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
