@@ -1,0 +1,162 @@
+/**
+ * Admin Programs Page Styles
+ * 
+ * This file contains all the specific styles for the admin programs page,
+ * including the layout of the three main cards (draft, finalized, templates),
+ * table styling, badges, buttons, and modals.
+ */
+
+/* =================================== */
+/* Card Layout & Headers               */
+/* =================================== */
+
+.draft-programs-card .card-header {
+    background: linear-gradient(135deg, #fff3cd 0%, #f8f9fa 100%);
+    border-left: 4px solid #ffc107 !important;
+}
+
+.finalized-programs-card .card-header {
+    background: linear-gradient(135deg, #d1edff 0%, #f8f9fa 100%);
+    border-left: 4px solid #198754 !important;
+}
+
+.empty-programs-card .card-header {
+    background: linear-gradient(135deg, #d1ecf1 0%, #f8f9fa 100%);
+    border-left: 4px solid #17a2b8 !important;
+}
+
+.view-programs-card-title {
+    font-weight: 600;
+    color: #2c3e50 !important;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* =================================== */
+/* Table Styles                        */
+/* =================================== */
+
+.table-custom thead th {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+    color: #495057;
+    padding: 1rem 0.75rem;
+    text-transform: uppercase;
+    font-size: 0.875rem;
+    letter-spacing: 0.5px;
+}
+
+.table-custom thead th i {
+    opacity: 0.7;
+}
+
+.table-custom thead th.sortable:hover {
+    background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+    cursor: pointer;
+}
+
+.table-custom tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.04);
+}
+
+.draft-program {
+    border-left: 4px solid #ffc107;
+}
+
+.draft-program:hover {
+    border-left-color: #ffb300;
+    background: #fffbeB;
+}
+
+/* =================================== */
+/* Badges & Indicators                 */
+/* =================================== */
+
+.rating-badge {
+    font-size: 0.875rem;
+    font-weight: 500;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-width: 120px;
+    justify-content: center;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.initiative-badge {
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 0.4rem 0.8rem;
+    border-radius: 0.4rem;
+}
+
+.program-type-indicator {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #6c757d;
+}
+
+/* =================================== */
+/* Action Buttons & Modals             */
+/* =================================== */
+
+.more-actions-btn {
+  transition: all 0.2s ease;
+}
+
+.more-actions-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+#moreActionsModal .modal-content {
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+#moreActionsModal .modal-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+}
+
+#moreActionsModal .actions-list .btn {
+  text-align: left;
+  padding: 0.75rem 1rem;
+}
+
+#moreActionsModal .actions-list .btn:hover {
+  transform: translateX(3px);
+  background-color: #f1f3f5;
+}
+
+/* =================================== */
+/* Column Sizing                       */
+/* =================================== */
+
+.program-name-col {
+  width: 30%;
+  max-width: 350px;
+}
+.agency-col {
+  width: 15%;
+}
+.initiative-col {
+  width: 25%;
+  max-width: 300px;
+}
+.rating-col {
+  width: 15%;
+}
+.date-col {
+  width: 15%;
+}
+.actions-col {
+  width: 10%;
+  text-align: right;
+}

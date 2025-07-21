@@ -67,16 +67,6 @@ $is_settings_page = in_array($current_page, ['reporting_periods.php', 'audit_log
                                 <i class="fas fa-list me-1"></i> All Programs
                             </a>
                         </li>
-                        <li>
-                            <a class="dropdown-item <?php if ($current_page == 'assign_programs.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/admin/programs/assign_programs.php">
-                                <i class="fas fa-tasks me-1"></i> Assign Programs
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item <?php if ($current_page == 'bulk_assign_initiatives.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/admin/programs/bulk_assign_initiatives.php">
-                                <i class="fas fa-layer-group me-1"></i> Bulk Assign Initiatives
-                            </a>
-                        </li>
                     </ul>
                 </li>
                   <!-- Initiatives Dropdown -->
