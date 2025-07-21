@@ -56,6 +56,13 @@ applyTo: '*all*'
 - **AJAX** if multiple pages share AJAX logic (like notifications, search, etc.), put that logic in a shared JS file and import it where needed.
 - a file is accessed throuhg routing from index,php (example:/index.php?page=agency_initiative_view&id=...) make sure all files use this link as the reference links. 
 - PROJECT_ROOT_PATH is used to reference a file outside the module of a certain file, __DIR__ is used to include files within partials/modules taht is in the same directory.
+- Define PROJECT_ROOT_PATH if not already defined in any files that uses it, to ensure consistent path resolution across the project.
+
+```php
+if (!defined('PROJECT_ROOT_PATH')) {
+    define('PROJECT_ROOT_PATH', dirname(dirname(dirname(dirname(__DIR__)))) . DIRECTORY_SEPARATOR);
+}
+
 
 IMPORTANT NOTE:  DO NOT INCLUDE BASE.PHP IN INDIVIDUAL FILE ANYMORE. base.php has been called in index.php and the hwhole system right now is using the consistent index routing.
 

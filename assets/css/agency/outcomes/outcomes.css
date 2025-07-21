@@ -1,0 +1,16 @@
+/**
+ * Outcomes Module - Main CSS Entry Point
+ * Imports all outcomes-related styles following modular architecture
+ */
+
+/* Base layout and common styles */
+@import './base.css';
+
+/* Page-specific styles */
+@import './view.css';
+@import './edit.css';
+@import './submit.css';
+
+/* Component styles */
+@import './tables.css';
+@import './charts.css';
