@@ -1,9 +1,31 @@
 # Login Module Refactor - Problems & Solutions Log
 
 **Date:** 2025-07-18  
-**Last Updated:** 2025-07-20
+**Last Updated:** 2025-07-21
 
 ## Recent Bugs Fixed
+
+### 18. Asset Helpers Path Resolution in Layout Files (2025-07-21)
+
+- **Problem:** Fatal error in multiple layout/view files:
+  ```
+  Warning: require_once(C:\laragon\www\pcds2030_dashboard_fork\lib/asset_helpers.php): Failed to open stream: No such file or directory
+  Warning: require_once(C:\laragon\www\pcds2030_dashboard_fork\views/layouts/agency_nav.php): Failed to open stream: No such file or directory
+  ```
+- **Cause:** Multiple files were using incorrect paths missing the `app/` directory prefix:
+  - `PROJECT_ROOT_PATH . 'lib/asset_helpers.php'` instead of `PROJECT_ROOT_PATH . 'app/lib/asset_helpers.php'`
+  - `PROJECT_ROOT_PATH . 'views/layouts/...'` instead of `PROJECT_ROOT_PATH . 'app/views/layouts/...'`
+- **Root Issue:** Inconsistent path handling across layout files - some files were still using old path structure assumptions.
+- **Solution:**
+  - **Phase 1:** Updated asset_helpers.php includes to use correct path: `PROJECT_ROOT_PATH . 'app/lib/asset_helpers.php'`
+  - **Phase 2:** Fixed all layout includes in base.php (navigation, header, footer, toast files) to include `app/` prefix
+  - Verified all referenced layout files exist in `app/views/layouts/` directory
+- **Files Fixed:**
+  - `app/views/layouts/base.php` (asset_helpers.php + all layout includes)
+  - `app/views/layouts/header.php` (asset_helpers.php)
+  - `app/views/agency/initiatives/view_initiative_original.php` (asset_helpers.php)
+  - `app/views/admin/initiatives/view_initiative.php` (asset_helpers.php)
+- **Prevention:** Always verify include paths follow the established pattern with `app/` prefix for all files within the app directory. Consider adding path validation checks in critical include statements.
 
 ### 17. Agency Programs Layout Issues - Navbar Overlap and Footer Positioning (2025-07-21)
 

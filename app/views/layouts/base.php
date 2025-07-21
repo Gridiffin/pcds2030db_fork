@@ -19,7 +19,7 @@ if (!defined('PROJECT_ROOT_PATH')) {
 }
 
 // Include necessary functions
-require_once PROJECT_ROOT_PATH . 'lib/asset_helpers.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/asset_helpers.php';
 
 // Define base URL for asset paths
 if (!defined('BASE_URL')) {
@@ -87,14 +87,14 @@ $additionalStyles = $additionalStyles ?? [];
     <?php
     // Include appropriate navigation based on user role
     if (function_exists('is_admin') && is_admin()) {
-        require_once PROJECT_ROOT_PATH . 'views/layouts/admin_nav.php';
+        require_once PROJECT_ROOT_PATH . 'app/views/layouts/admin_nav.php';
     } elseif (function_exists('is_agency') && is_agency()) {
-        require_once PROJECT_ROOT_PATH . 'views/layouts/agency_nav.php';
+        require_once PROJECT_ROOT_PATH . 'app/views/layouts/agency_nav.php';
     }
     
     // Include page header if it exists
-    if (isset($header_config) && file_exists(PROJECT_ROOT_PATH . 'views/layouts/page_header.php')) {
-        require_once PROJECT_ROOT_PATH . 'views/layouts/page_header.php';
+    if (isset($header_config) && file_exists(PROJECT_ROOT_PATH . 'app/views/layouts/page_header.php')) {
+        require_once PROJECT_ROOT_PATH . 'app/views/layouts/page_header.php';
     }
     ?>
     
@@ -106,13 +106,13 @@ $additionalStyles = $additionalStyles ?? [];
     <?php endif; ?>
     
     <!-- Toast Container -->
-    <?php if (file_exists(PROJECT_ROOT_PATH . 'views/layouts/main_toast.php')): ?>
-        <?php require_once PROJECT_ROOT_PATH . 'views/layouts/main_toast.php'; ?>
+    <?php if (file_exists(PROJECT_ROOT_PATH . 'app/views/layouts/main_toast.php')): ?>
+        <?php require_once PROJECT_ROOT_PATH . 'app/views/layouts/main_toast.php'; ?>
     <?php endif; ?>
     
     <!-- Footer -->
-    <?php if (file_exists(PROJECT_ROOT_PATH . 'views/layouts/footer.php')): ?>
-        <?php require_once PROJECT_ROOT_PATH . 'views/layouts/footer.php'; ?>
+    <?php if (file_exists(PROJECT_ROOT_PATH . 'app/views/layouts/footer.php')): ?>
+        <?php require_once PROJECT_ROOT_PATH . 'app/views/layouts/footer.php'; ?>
     <?php endif; ?>
     
     <!-- JavaScript Libraries -->
