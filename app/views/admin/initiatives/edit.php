@@ -283,15 +283,20 @@ if (isset($_SESSION['message']) && !empty($_SESSION['message'])) {
                             <?php else: ?>
                                 <div class="list-group list-group-flush">
                                     <?php foreach ($associated_programs as $program): ?>
-                                        <div class="list-group-item px-0">
-                                            <div class="fw-semibold small"><?php echo htmlspecialchars($program['program_name']); ?></div>
-                                            <div class="text-muted small">
-                                                <?php if ($program['program_number']): ?>
-                                                    <?php echo htmlspecialchars($program['program_number']); ?> • 
-                                                <?php endif; ?>
-                                                <?php echo htmlspecialchars($program['sector_name']); ?> • 
-                                                <?php echo htmlspecialchars($program['agency_name']); ?>
+                                        <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <div class="fw-semibold small"><?php echo htmlspecialchars($program['program_name']); ?></div>
+                                                <div class="text-muted small">
+                                                    <?php if ($program['program_number']): ?>
+                                                        <?php echo htmlspecialchars($program['program_number']); ?> • 
+                                                    <?php endif; ?>
+                                                    <?php echo htmlspecialchars($program['sector_name']); ?> • 
+                                                    <?php echo htmlspecialchars($program['agency_name']); ?>
+                                                </div>
                                             </div>
+                                            <a href="../programs/view_program.php?id=<?php echo (int)$program['program_id']; ?>" class="btn btn-outline-primary btn-sm ms-2" title="View Program">
+                                                <i class="fas fa-eye"></i> View Program
+                                            </a>
                                         </div>
                                     <?php endforeach; ?>
                                 </div>

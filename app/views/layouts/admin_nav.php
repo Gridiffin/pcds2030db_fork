@@ -59,7 +59,7 @@ $is_settings_page = in_array($current_page, ['reporting_periods.php', 'audit_log
                   <!-- Programs Dropdown -->
                 <li class="nav-item dropdown">
                     <button class="nav-link dropdown-toggle btn <?php if ($is_programs_active) echo 'active'; ?>" data-bs-toggle="dropdown" aria-expanded="false" type="button">
-                        <i class="fas fa-project-diagram me-1"></i> Programs <i class="fas fa-caret-down nav-dropdown-icon"></i>
+                        <i class="fas fa-project-diagram me-1"></i> Programs
                     </button>
                     <ul class="dropdown-menu">
                         <li>

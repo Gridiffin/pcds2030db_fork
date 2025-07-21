@@ -79,5 +79,18 @@
         <?php echo $inlineScripts; ?>
     </script>
 <?php endif; ?>
+
+<!-- Fallback: Force Bootstrap dropdown re-initialization if needed -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof bootstrap !== 'undefined' && typeof bootstrap.Dropdown !== 'undefined') {
+        document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(function(dropdownToggleEl) {
+            if (!bootstrap.Dropdown.getInstance(dropdownToggleEl)) {
+                new bootstrap.Dropdown(dropdownToggleEl);
+            }
+        });
+    }
+});
+</script>
 </body>
 </html>

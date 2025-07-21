@@ -10,17 +10,17 @@
 - **Problem:** Two layout issues in refactored view_programs.php:
   1. Header content covered by fixed navbar
   2. Footer appearing above content instead of at bottom
-- **Cause:** 
+- **Cause:**
   1. Missing `body { padding-top: 70px; }` CSS for navbar offset
   2. Using inline content pattern instead of proper `$contentFile` pattern which disrupts base layout structure
   3. Missing `<main class="flex-fill">` wrapper to make content expand and push footer to bottom
 - **Root Issue:** This follows the same pattern as Bug #13 from initiatives refactor - recurring navbar overlap issue across modules.
-- **Solution:** 
+- **Solution:**
   1. Added navbar padding fix to `assets/css/agency/view-programs.css` with responsive adjustments (70px desktop, 85px mobile)
   2. Created `view_programs_content.php` and updated main file to use `$contentFile` pattern for proper layout structure
   3. Added `<main class="flex-fill">` wrapper around content to ensure footer sticks to bottom (following initiatives pattern)
   4. Rebuilt Vite assets to include CSS fixes
-- **Files Fixed:** 
+- **Files Fixed:**
   - `assets/css/agency/view-programs.css` (navbar padding)
   - `app/views/agency/programs/view_programs.php` (content file pattern)
   - `app/views/agency/programs/view_programs_content.php` (new content file with flex-fill main wrapper)
@@ -34,7 +34,7 @@
   ```
 - **Cause:** Include path in `program_row.php` was missing the `app/` directory prefix: `PROJECT_ROOT_PATH . 'lib/rating_helpers.php'` instead of `PROJECT_ROOT_PATH . 'app/lib/rating_helpers.php'`.
 - **Root Issue:** This is a continuation of Bug #15 pattern - inconsistent path handling during refactoring.
-- **Solution:** 
+- **Solution:**
   - Fixed include path to use `PROJECT_ROOT_PATH . 'app/lib/rating_helpers.php'`
   - Verified all other includes in partials and main view are correct
 - **Files Fixed:** `app/views/agency/programs/partials/program_row.php`
@@ -48,7 +48,7 @@
   ```
 - **Cause:** The `PROJECT_ROOT_PATH` definition was using only 3 `dirname()` calls instead of 4, causing the path to resolve incorrectly and creating a duplicate `app` directory in the path.
 - **Root Issue:** `dirname(dirname(dirname(__DIR__)))` from `app/views/agency/programs/` resolves to `app/` instead of project root.
-- **Solution:** 
+- **Solution:**
   - Fixed `PROJECT_ROOT_PATH` definition to use 4 `dirname()` calls: `dirname(dirname(dirname(dirname(__DIR__))))`
   - This correctly resolves from `app/views/agency/programs/view_programs.php` to the project root
 - **Files Fixed:** `app/views/agency/programs/view_programs.php`
@@ -62,7 +62,7 @@
   PHP Deprecated: htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated
   ```
 - **Cause:** The `reporting_periods` table doesn't have a 'name' field; using `$current_period['name']` when it doesn't exist.
-- **Solution:** 
+- **Solution:**
   - Replaced `$current_period['name']` with `get_period_display_name($current_period)` function
   - Added null coalescing operators (`??`) for all period field accesses
   - Added proper null checks before displaying period information
@@ -213,7 +213,7 @@
 **Result:**
 
 - Agency dashboard module is now fully modular with clean separation of concerns
-- All assets are properly bundled through Vite with no hardcoded paths  
+- All assets are properly bundled through Vite with no hardcoded paths
 - JavaScript is organized in ES6 modules with clear component separation
 - CSS follows modular architecture consistent with initiatives module
 - Layout uses base.php pattern for consistency across the application
@@ -224,22 +224,26 @@
 ## Summary of Dashboard Refactor Bugs (11 Total)
 
 **Code Organization Issues (5 bugs):**
+
 - Bug #1: Monolithic File Structure (677-line file)
-- Bug #4: Inline JavaScript Configuration  
+- Bug #4: Inline JavaScript Configuration
 - Bug #5: Multiple Overlapping JavaScript Files
 - Bug #6: CSS Organization Issues
 - Bug #7: Mixed Layout Patterns
 
 **Asset & Build Issues (3 bugs):**
+
 - Bug #3: Hardcoded Asset References
 - Bug #8: Vite Configuration Missing Dashboard
 - Bug #9: Asset Path Structure Inconsistency
 
 **Architecture Issues (2 bugs):**
+
 - Bug #2: Old Header Pattern Usage
 - Bug #10: Complex AJAX Logic Integration
 
 **File Path Issues (1 bug):**
+
 - Bug #11: File Path Resolution Error in Content Partials
 
 **Status: ✅ ALL RESOLVED** - Module ready for testing and production use.
@@ -249,24 +253,29 @@
 ## 🔄 Recurring Bug Patterns & Prevention
 
 ### File Path Resolution Errors
+
 **Pattern:** `require_once(): Failed to open stream: No such file or directory`
 
 **Common Causes:**
+
 1. Missing subdirectory in include paths (e.g., forgetting `partials/` folder)
 2. Incorrect `__DIR__` usage when files are in nested directories
 3. Missing `app/` prefix when using `PROJECT_ROOT_PATH`
 
 **Prevention Checklist:**
+
 - [ ] Always verify actual file structure matches include paths
 - [ ] Use `list_dir` tool to confirm file locations before writing includes
 - [ ] Test include paths with `php -l` syntax checking
 - [ ] Follow consistent patterns: if files are in `partials/`, always include that in path
 
 **Affected Modules:**
+
 - Initiatives refactor (Bug #11): Missing `app/` prefix in multiple files
 - Dashboard refactor (Bug #11): Missing `partials/` subdirectory in includes
 
 **Standard Solutions:**
+
 - Use `__DIR__ . '/partials/filename.php'` for partials in subdirectories
 - Use `PROJECT_ROOT_PATH . 'app/path/to/file.php'` for cross-module includes
 - Always verify file structure before writing include statements
@@ -374,12 +383,14 @@
 ## Summary of Initiatives Refactor Bugs (13 Total)
 
 **File Structure & Path Issues (4 bugs):**
+
 - Bug #1: Hardcoded Asset Paths
-- Bug #10: Path Duplication in Base.php Include  
+- Bug #10: Path Duplication in Base.php Include
 - Bug #11: Incorrect File Path References
 - Bug #12: Incorrect Layout Element Ordering
 
 **Code Organization Issues (5 bugs):**
+
 - Bug #2: Monolithic File Structure (911-line files)
 - Bug #3: Inline JavaScript and CSS
 - Bug #4: Duplicate Database Query Logic
@@ -387,11 +398,13 @@
 - Bug #7: Missing Error Handling
 
 **Data & Performance Issues (3 bugs):**
+
 - Bug #5: Inconsistent Status Handling
 - Bug #8: Activity Feed Performance Issues
 - Bug #9: Rating Distribution Data Inconsistency
 
 **UI/UX Issues (1 bug):**
+
 - Bug #13: Fixed Navbar Overlapping Page Header
 
 ```
@@ -436,7 +449,7 @@ eports.php on line 75`
 
 **Next Steps for Resolution:**
 1. ✅ Fix PROJECT_ROOT_PATH definition in notifications.php
-2. ✅ Resolve function name collision between core.php and reports.php  
+2. ✅ Resolve function name collision between core.php and reports.php
 3. ✅ Audit all new lib files for function name conflicts
 4. ✅ Test the refactored modules to ensure they work properly
 
@@ -461,7 +474,7 @@ eports.php on line 75`
 - **Problem:** Both public reports page and notifications page have their headers covered by the fixed navbar, making content inaccessible.
 - **Cause:** Missing body class application and CSS navbar offset rules not properly applied to these specific pages.
 - **Root Cause Pattern:** Base layout system needed to support dynamic body classes for page-specific styling.
-- **Solution:** 
+- **Solution:**
   1. Enhanced base layout (`app/views/layouts/base.php`) to support both `$bodyClass` and `$pageClass` variables
   2. Added navbar offset CSS to reports module (`assets/css/agency/reports/reports.css`) with `body.reports-page` selector
   3. Updated both `public_reports.php` and `view_reports.php` to set `$bodyClass = 'reports-page'`
@@ -472,7 +485,7 @@ eports.php on line 75`
 - **Problem:** Reports pages show 404 errors for CSS/JS bundles with doubled extensions (`.bundle.css.bundle.css` and `.bundle.js.bundle.js`).
 - **Cause:** Base layout expects bundle names without extensions (`$cssBundle = 'agency-reports'`) but reports files were setting full paths with extensions (`$cssBundle = 'agency/reports.bundle.css'`).
 - **Root Cause Pattern:** Inconsistent bundle naming convention - base layout automatically adds `/dist/css/` and `.bundle.css`.
-- **Solution:** 
+- **Solution:**
   1. Updated `view_reports.php` and `public_reports.php` to use correct bundle names: `$cssBundle = 'agency-reports'` and `$jsBundle = 'agency-reports'`
   2. Added missing favicon.ico to both assets/images and assets/img directories (different layouts use different paths)
   3. Bundle paths now correctly resolve to `/dist/css/agency-reports.bundle.css` and `/dist/js/agency-reports.bundle.js`
@@ -482,7 +495,7 @@ eports.php on line 75`
 - **Problem:** Reports JavaScript modules showing 404 errors for missing AJAX endpoints: `get_public_reports.php` and `get_reports.php`.
 - **Cause:** JavaScript modules were created with AJAX functionality but corresponding backend endpoints were never created.
 - **Root Cause Pattern:** Frontend-backend mismatch during modular refactoring - JavaScript expects AJAX endpoints that don't exist.
-- **Solution:** 
+- **Solution:**
   1. Created `app/ajax/get_public_reports.php` - returns public reports available for agency download
   2. Created `app/ajax/get_reports.php` - returns reports for specific period and agency
   3. Both endpoints follow existing AJAX patterns with proper authentication and error handling
@@ -492,7 +505,7 @@ eports.php on line 75`
 - **Problem:** `PHP Fatal error: Call to undefined function is_agency() in get_public_reports.php:14`
 - **Cause:** AJAX endpoints missing required includes for agency core functions like `is_agency()`.
 - **Root Cause Pattern:** New AJAX files created without full dependency chain - missing `agencies/core.php` include.
-- **Solution:** 
+- **Solution:**
   1. Added `require_once '../lib/agencies/core.php';` to both `get_public_reports.php` and `get_reports.php`
   2. Added `require_once '../lib/admins/core.php';` to match working AJAX endpoint patterns
   3. Enhanced error messages to provide specific feedback: "User not logged in" vs "Access denied. User role: X"
@@ -503,7 +516,7 @@ eports.php on line 75`
 - **Problem:** `Unknown column 'agency_id' in 'where clause'` when loading public reports via AJAX.
 - **Cause:** Reports functions in `agencies/reports.php` assume `reports` table has `agency_id` column, but it doesn't exist in current database schema.
 - **Root Cause Pattern:** Functions created based on assumed schema without verifying actual database structure.
-- **Solution:** 
+- **Solution:**
   1. Updated `get_public_reports.php` to use working `get_public_reports()` function from `core.php`
   2. Updated `public_reports.php` view to use correct function
   3. Modified `get_reports.php` to return empty array with informative message until schema is clarified
@@ -519,7 +532,7 @@ eports.php on line 75`
 
 **Testing Results:**
 - ✅ Database connection exists
-- ✅ Database query successful  
+- ✅ Database query successful
 - ✅ Navbar padding added to reports CSS (6.36 kB bundle size)
 - ✅ Base layout supports dynamic body classes
 - ✅ Bundle paths corrected to use proper naming convention
@@ -533,7 +546,7 @@ eports.php on line 75`
 - **Problem:** Notifications page loads content but CSS/JS bundles not being requested in network tab, resulting in missing styles and functionality.
 - **Cause:** Notifications page missing `$cssBundle` and `$jsBundle` configuration variables, and missing `session.php` include.
 - **Root Cause Pattern:** Incomplete page configuration during refactoring - page content working but assets not loaded.
-- **Solution:** 
+- **Solution:**
   1. Added missing bundle configuration: `$cssBundle = 'notifications'` and `$jsBundle = 'notifications'`
   2. Added missing `session.php` include to match working pages pattern
   3. Bundles already exist in dist/ directory (notifications.bundle.css and notifications.bundle.js)
@@ -575,3 +588,13 @@ eports.php on line 75`
 - **Fix:**
   - On form submission, all `.editable-hint` elements are programmatically blurred before collecting data, ensuring the latest edits are committed and saved.
 - **Status:** Fixed in code, 2024-07-19.
+
+### 18. Admin Nav Dropdowns Not Working on Manage Initiatives Page (2025-07-21)
+
+- **Problem:** On the admin `manage_initiatives.php` page, navigation dropdowns (Programs, Initiatives, Settings) were not responsive/clickable, even though the rest of the page loaded fine.
+- **Cause:** Bootstrap dropdowns were not being initialized, likely due to a race condition or missed initialization caused by the order of script execution. No direct JS errors or conflicts were found in the page-specific bundle or layout. All required assets were loaded, but Bootstrap's data-API initialization was not always firing reliably.
+- **Solution:** Added a fallback script at the end of `footer.php` to force re-initialization of all dropdowns after DOMContentLoaded. This ensures that all dropdowns are initialized even if the automatic data-API initialization fails for any reason.
+- **Files Fixed:**
+  - `app/views/layouts/footer.php` (added fallback dropdown initialization script)
+- **Prevention:** For any future issues with Bootstrap component initialization, add a forced re-initialization as a robust fallback after all scripts have loaded.
+```

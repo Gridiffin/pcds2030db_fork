@@ -1,0 +1,16 @@
+/* Admin Initiatives Management Page Styles */
+
+@media (max-width: 768px) {
+    .table-responsive table {
+        font-size: 0.9em;
+    }
+    .badge {
+        font-size: 0.7em;
+    }
+}
+
+.view-container {
+    transition: opacity 0.3s ease;
+}
+
+/* Add more styles as needed when extracting from the PHP view */ 
