@@ -1,0 +1,154 @@
+/**
+ * Outcomes Module - View Page Styles
+ * Styles specific to viewing outcome details
+ */
+
+/* View page specific layout */
+.outcome-view-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.outcome-view-title {
+    flex: 1;
+    min-width: 300px;
+}
+
+.outcome-view-title h1 {
+    color: #2c3e50;
+    font-size: 1.75rem;
+    margin-bottom: 0.25rem;
+}
+
+.outcome-view-subtitle {
+    color: #6c757d;
+    font-size: 1rem;
+}
+
+.outcome-view-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+/* Outcome info cards */
+.outcome-info-card {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.outcome-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.outcome-info-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.outcome-info-label {
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.25rem;
+}
+
+.outcome-info-value {
+    color: #2c3e50;
+    font-size: 1rem;
+    word-break: break-word;
+}
+
+/* Data visualization section */
+.outcome-data-section {
+    margin-top: 2rem;
+}
+
+.outcome-empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #6c757d;
+}
+
+.outcome-empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.outcome-empty-state h4 {
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+/* Chart container */
+.outcome-chart-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    margin-top: 1rem;
+}
+
+.outcome-chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.outcome-chart-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.outcome-chart-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.outcome-chart-actions .btn {
+    padding: 6px 12px;
+    font-size: 0.875rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .outcome-view-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .outcome-view-actions {
+        justify-content: center;
+    }
+    
+    .outcome-info-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .outcome-chart-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .outcome-chart-actions {
+        justify-content: center;
+    }
+}

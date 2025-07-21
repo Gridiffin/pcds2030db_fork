@@ -1,0 +1,204 @@
+/* Individual Notification Item Component */
+
+.notification-item {
+    padding: 1rem 1.5rem;
+    border-left: 3px solid transparent;
+    transition: all 0.2s ease;
+    background: #fff;
+    cursor: pointer;
+}
+
+.notification-item:hover {
+    background: #f8f9fa;
+    transform: translateX(2px);
+}
+
+.notification-item.unread {
+    background: linear-gradient(90deg, rgba(0, 123, 255, 0.05), rgba(0, 123, 255, 0.02));
+    border-left-color: var(--notifications-primary);
+}
+
+.notification-item.unread:hover {
+    background: linear-gradient(90deg, rgba(0, 123, 255, 0.08), rgba(0, 123, 255, 0.03));
+}
+
+/* Notification icon */
+.notification-icon-sm {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(0, 123, 255, 0.1), rgba(0, 123, 255, 0.05));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--notifications-primary);
+    font-size: 1rem;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.notification-item.unread .notification-icon-sm {
+    background: linear-gradient(135deg, var(--notifications-primary), #0056b3);
+    color: white;
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+}
+
+/* Notification content */
+.notification-content {
+    flex-grow: 1;
+    min-width: 0; /* Allow text truncation */
+}
+
+.notification-message {
+    font-weight: 500;
+    color: #495057;
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+}
+
+.notification-item.unread .notification-message {
+    font-weight: 600;
+    color: #212529;
+}
+
+.notification-time {
+    color: #6c757d;
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+}
+
+.notification-item.unread .notification-time {
+    color: #495057;
+    font-weight: 500;
+}
+
+/* Notification meta information */
+.notification-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.notification-type-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.notification-type-badge.assigned-program {
+    background: rgba(0, 123, 255, 0.1);
+    color: var(--notifications-primary);
+}
+
+.notification-type-badge.deadline {
+    background: rgba(255, 193, 7, 0.1);
+    color: #856404;
+}
+
+.notification-type-badge.update {
+    background: rgba(23, 162, 184, 0.1);
+    color: #0c5460;
+}
+
+.notification-type-badge.feedback {
+    background: rgba(40, 167, 69, 0.1);
+    color: #155724;
+}
+
+.notification-time-ago {
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
+/* Action button */
+.notification-action {
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.notification-action .btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.875rem;
+    border-radius: 20px;
+    transition: all 0.2s ease;
+}
+
+.notification-action .btn-outline-primary {
+    color: var(--notifications-primary);
+    border-color: var(--notifications-primary);
+}
+
+.notification-action .btn-outline-primary:hover {
+    background: var(--notifications-primary);
+    border-color: var(--notifications-primary);
+    color: white;
+    transform: scale(1.02);
+}
+
+/* Selection and bulk actions */
+.notification-item.selected {
+    background: rgba(0, 123, 255, 0.1);
+    border-left-color: var(--notifications-primary);
+}
+
+.notification-checkbox {
+    margin-right: 0.75rem;
+}
+
+.notification-checkbox input[type="checkbox"] {
+    transform: scale(1.1);
+}
+
+/* Animation for new notifications */
+@keyframes notification-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.notification-item.new {
+    animation: notification-fade-in 0.5s ease;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .notification-item {
+        padding: 1rem;
+    }
+    
+    .notification-icon-sm {
+        width: 35px;
+        height: 35px;
+        font-size: 0.9rem;
+    }
+    
+    .notification-message {
+        font-size: 0.9rem;
+    }
+    
+    .notification-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .notification-action {
+        margin-left: 0;
+        margin-top: 0.5rem;
+        align-self: stretch;
+    }
+    
+    .notification-action .btn {
+        width: 100%;
+        padding: 0.6rem;
+    }
+}

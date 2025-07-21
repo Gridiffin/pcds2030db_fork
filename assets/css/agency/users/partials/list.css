@@ -1,0 +1,113 @@
+/* Notifications List Component */
+
+.notifications-list {
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.notifications-list .card-header {
+    background: linear-gradient(135deg, var(--notifications-primary), #0056b3);
+    color: white;
+    border-radius: 8px 8px 0 0;
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.notifications-list .card-title {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.notifications-badge-group {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.notifications-badge {
+    font-size: 0.875rem;
+    padding: 0.35rem 0.65rem;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+.notifications-badge.unread {
+    background: rgba(220, 53, 69, 0.9);
+    color: white;
+}
+
+.notifications-badge.total {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.notifications-list .card-body {
+    padding: 0;
+}
+
+/* List group styling */
+.notifications-list-group {
+    border: none;
+}
+
+.notifications-list-group .list-group-item {
+    border: none;
+    border-bottom: 1px solid #f0f0f0;
+    padding: 0;
+}
+
+.notifications-list-group .list-group-item:last-child {
+    border-bottom: none;
+}
+
+/* Empty state */
+.notifications-empty {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #6c757d;
+}
+
+.notifications-empty i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.notifications-empty h6 {
+    color: #495057;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.notifications-empty p {
+    margin-bottom: 0;
+    font-size: 0.95rem;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .notifications-list .card-header {
+        padding: 1rem;
+        flex-direction: column;
+        gap: 0.75rem;
+        align-items: flex-start;
+    }
+    
+    .notifications-badge-group {
+        align-self: stretch;
+        justify-content: space-between;
+    }
+    
+    .notifications-empty {
+        padding: 2rem 1rem;
+    }
+    
+    .notifications-empty i {
+        font-size: 2.5rem;
+    }
+}

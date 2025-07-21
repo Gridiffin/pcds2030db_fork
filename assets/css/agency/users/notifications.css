@@ -1,0 +1,105 @@
+/**
+ * Agency Notifications CSS
+ * Main entry point for all notifications-related styles
+ */
+
+/* Import base variables and components */
+@import '../../base/variables.css';
+
+/* Import component styles */
+@import 'partials/list.css';
+@import 'partials/item.css';
+@import 'partials/header.css';
+@import 'partials/pagination.css';
+
+/* Fixed navbar offset for notifications page */
+body.notifications-page {
+    padding-top: 70px; /* Offset for fixed navbar */
+}
+
+/* Responsive navbar offset */
+@media (max-width: 768px) {
+    body.notifications-page {
+        padding-top: 85px; /* Larger offset for mobile multi-line navbar */
+    }
+}
+
+/* Notifications specific variables */
+:root {
+    --notifications-primary: #007bff;
+    --notifications-success: #28a745;
+    --notifications-warning: #ffc107;
+    --notifications-danger: #dc3545;
+    --notifications-info: #17a2b8;
+    --notifications-light: #f8f9fa;
+    --notifications-dark: #343a40;
+}
+
+/* Main notifications container */
+.notifications-container {
+    padding: 1rem 0;
+}
+
+/* Notifications header */
+.notifications-header {
+    margin-bottom: 2rem;
+}
+
+.notifications-title {
+    color: var(--notifications-primary);
+    font-weight: 600;
+}
+
+/* Notifications layout */
+.notifications-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Loading states */
+.notifications-loading {
+    text-align: center;
+    padding: 2rem;
+    color: #6c757d;
+}
+
+.notifications-loading i {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Error states */
+.notifications-error {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 1rem;
+    border-radius: 6px;
+    border: 1px solid #f5c6cb;
+}
+
+/* Success states */
+.notifications-success {
+    background: #d4edda;
+    color: #155724;
+    padding: 1rem;
+    border-radius: 6px;
+    border: 1px solid #c3e6cb;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .notifications-container {
+        padding: 0.5rem 0;
+    }
+    
+    .notifications-content {
+        gap: 1rem;
+    }
+}
