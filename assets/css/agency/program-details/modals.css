@@ -1,0 +1,229 @@
+/**
+ * Modal Styles for Program Details
+ * 
+ * Styles for all modal dialogs used in the program details page.
+ */
+
+/* Modal enhancements */
+.modal-content {
+    border-radius: 0.75rem;
+    border: none;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+    background: linear-gradient(135deg, var(--bs-primary) 0%, var(--bs-primary-dark, #0056b3) 100%);
+    color: white;
+    border-bottom: none;
+    border-radius: 0.75rem 0.75rem 0 0;
+    padding: 1.25rem 1.5rem;
+}
+
+.modal-title {
+    font-weight: 600;
+    color: white !important;
+}
+
+.modal-header i {
+    color: white !important;
+}
+
+.modal-header .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+    opacity: 0.8;
+}
+
+.modal-header .btn-close:hover {
+    opacity: 1;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    border-top: 1px solid var(--bs-gray-200);
+    padding: 1rem 1.5rem;
+    background: var(--bs-gray-50);
+    border-radius: 0 0 0.75rem 0.75rem;
+}
+
+/* Status history modal specific */
+#statusHistoryModal .modal-dialog {
+    max-width: 800px;
+}
+
+#status-history-modal-body {
+    min-height: 200px;
+}
+
+/* Edit status modal specific */
+#editStatusModal .modal-dialog {
+    max-width: 500px;
+}
+
+#edit-status-modal-body {
+    min-height: 150px;
+}
+
+/* Submission modals */
+#viewSubmissionsModal .modal-dialog,
+#viewSubmissionModal .modal-dialog,
+#submitSubmissionModal .modal-dialog {
+    max-width: 700px;
+}
+
+/* List group items in modals */
+.modal .list-group-item {
+    border: 1px solid var(--bs-gray-200);
+    border-radius: 0.5rem;
+    margin-bottom: 0.75rem;
+    transition: all 0.2s ease;
+    padding: 1rem;
+}
+
+.modal .list-group-item:hover {
+    background: var(--bs-gray-50);
+    border-color: var(--bs-primary);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.modal .list-group-item:last-child {
+    margin-bottom: 0;
+}
+
+/* Modal list group content */
+.modal .list-group-item .fw-medium {
+    font-weight: 600;
+    color: var(--bs-gray-900);
+    margin-bottom: 0.5rem;
+}
+
+.modal .list-group-item .small {
+    font-size: 0.875rem;
+    color: var(--bs-gray-600);
+}
+
+.modal .list-group-item .badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.4rem 0.6rem;
+}
+
+/* Modal buttons */
+.modal .btn {
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.modal .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.modal .btn-sm {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+}
+
+.modal .btn-outline-primary:hover {
+    background: var(--bs-primary);
+    border-color: var(--bs-primary);
+    color: white;
+}
+
+.modal .btn-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    border: none;
+    color: white;
+}
+
+.modal .btn-danger:hover {
+    background: linear-gradient(135deg, #c82333 0%, #a71e2a 100%);
+}
+
+/* Delete submission button specific */
+.delete-submission-btn {
+    transition: all 0.3s ease;
+}
+
+.delete-submission-btn:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+}
+
+/* Empty state in modals */
+.modal .text-center.text-muted {
+    padding: 3rem 2rem;
+}
+
+.modal .fa-folder-open {
+    color: var(--bs-gray-400);
+    margin-bottom: 1rem;
+}
+
+/* Modal backdrop */
+.modal-backdrop {
+    background-color: rgba(0, 0, 0, 0.6);
+}
+
+/* Loading state in modals */
+.modal-body .loading-overlay {
+    border-radius: 0.5rem;
+}
+
+.modal-body .loading-spinner {
+    border: 3px solid var(--bs-gray-200);
+    border-top: 3px solid var(--bs-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive modal adjustments */
+@media (max-width: 768px) {
+    .modal-dialog {
+        margin: 1rem;
+        max-width: calc(100% - 2rem);
+    }
+    
+    .modal-header {
+        padding: 1rem;
+    }
+    
+    .modal-body {
+        padding: 1rem;
+    }
+    
+    .modal-footer {
+        padding: 0.75rem 1rem;
+    }
+    
+    .modal .list-group-item {
+        padding: 0.75rem;
+    }
+    
+    .modal-title {
+        font-size: 1.1rem;
+    }
+}
+
+/* Submission period display enhancements */
+.modal .list-group-item .fas.fa-calendar-alt {
+    color: var(--bs-primary);
+    margin-right: 0.5rem;
+}
+
+.modal .list-group-item .fas.fa-eye {
+    margin-right: 0.25rem;
+}
+
+.modal .list-group-item .fas.fa-trash {
+    margin-right: 0.25rem;
+}

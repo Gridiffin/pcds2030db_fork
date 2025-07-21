@@ -1,0 +1,162 @@
+/**
+ * Program Information Card Styles
+ * 
+ * Styles for the main program information display card.
+ */
+
+/* Program info card enhancements */
+.program-info-card {
+    border-radius: 0.75rem;
+    border: none;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    overflow: hidden;
+}
+
+.program-info-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1) !important;
+}
+
+.program-info-card .card-header {
+    background: linear-gradient(135deg, var(--forest-deep) 0%, var(--forest-medium) 100%);
+    border-bottom: none;
+    padding: 1.25rem;
+    color: white;
+}
+
+.program-info-card .card-title {
+    font-weight: 600;
+    color: white !important;
+    margin-bottom: 0;
+}
+
+.program-info-card .card-header .fas,
+.program-info-card .card-header i {
+    color: white !important;
+}
+
+.program-info-card .card-body {
+    padding: 1.5rem;
+}
+
+/* Program info grid layout */
+.program-info-card .row {
+    margin: 0;
+}
+
+.program-info-card .col-md-6 {
+    padding-left: 0;
+    padding-right: 1rem;
+}
+
+.program-info-card .col-md-6:last-child {
+    padding-right: 0;
+}
+
+/* Info item specific styling */
+.program-info-card .info-item {
+    border-bottom: 1px solid var(--bs-gray-100);
+    padding: 1rem 0;
+}
+
+.program-info-card .info-item:last-child {
+    border-bottom: none;
+}
+
+.program-info-card .info-icon {
+    background: rgba(var(--bs-primary-rgb), 0.1);
+    border-radius: 0.75rem;
+    width: 3rem;
+    height: 3rem;
+}
+
+.program-info-card .info-icon i {
+    font-size: 1.2rem;
+}
+
+.program-info-card .info-label {
+    color: var(--bs-gray-600);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+}
+
+.program-info-card .info-value {
+    color: var(--bs-gray-900);
+    font-size: 1rem;
+    line-height: 1.4;
+}
+
+/* Badge styling in info values */
+.program-info-card .badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.5rem 0.75rem;
+}
+
+/* Timeline icon styling */
+.program-info-card .fas.fa-long-arrow-alt-right {
+    color: var(--bs-gray-400);
+    margin: 0 0.5rem;
+}
+
+/* Description section */
+.program-info-card .info-section-title {
+    color: var(--bs-gray-700);
+    font-weight: 700;
+    margin-bottom: 1rem;
+    border-bottom: 2px solid var(--bs-primary);
+    padding-bottom: 0.5rem;
+}
+
+.program-info-card .description-box {
+    background: var(--bs-gray-50);
+    border: 1px solid var(--bs-gray-200);
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: var(--bs-gray-700);
+}
+
+/* Status badge specific styling */
+.program-info-card .status-badge {
+    font-size: 0.9rem;
+    font-weight: 700;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Draft indicator styling */
+.program-info-card .card-header .badge {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
+    font-weight: 600;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .program-info-card .col-md-6 {
+        padding-right: 0;
+        margin-bottom: 0.5rem;
+    }
+    
+    .program-info-card .info-item {
+        padding: 0.75rem 0;
+    }
+    
+    .program-info-card .info-icon {
+        width: 2.5rem;
+        height: 2.5rem;
+    }
+    
+    .program-info-card .info-icon i {
+        font-size: 1rem;
+    }
+}
