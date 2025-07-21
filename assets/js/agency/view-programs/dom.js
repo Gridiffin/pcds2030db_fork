@@ -15,7 +15,6 @@ export class ViewProgramsDOM {
         console.log('🎯 Initializing DOM handlers...');
         
         this.initDeleteModal();
-        this.initMoreActionsModal();
         this.initTooltips();
         this.initTableSorting();
         this.updateCounters();
@@ -108,29 +107,6 @@ export class ViewProgramsDOM {
         if (form) {
             form.submit();
         }
-    }
-    
-    /**
-     * Initialize more actions modal
-     */
-    initMoreActionsModal() {
-        document.querySelectorAll('.more-actions-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                
-                const programId = btn.getAttribute('data-program-id');
-                const programName = btn.getAttribute('data-program-name');
-                const programType = btn.getAttribute('data-program-type');
-                
-                this.showMoreActionsModal(programId, programName, programType);
-            });
-        });
-    }
-    
-    showMoreActionsModal(programId, programName, programType) {
-        // Create a simple dropdown menu or modal for more actions
-        // This is a placeholder - implement based on actual requirements
-        console.log('More actions for program:', { programId, programName, programType });
     }
     
     /**

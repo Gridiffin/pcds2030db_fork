@@ -3,6 +3,94 @@
 **Date:** 2025-07-21  
 **Last Updated:** 2025-07-21
 
+## 🐛 **ENHANCEMENT** - Bug #27.1: Modernize Three Dots Dropdown UI/UX
+
+**Date:** 2025-07-21  
+**Status:** ✅ **COMPLETED**  
+**Type:** UI/UX Enhancement  
+**Related to:** Bug #27 (Three Dots Button Fix)
+
+### **Enhancement Request:**
+Improve the three dots dropdown positioning and styling to match the modern design of the view programs page. Original dropdown appeared at top-left corner and had basic Bootstrap styling.
+
+### **Improvements Implemented:**
+
+1. **Smart Positioning Algorithm:**
+   - Centers dropdown relative to the clicked button
+   - Automatically adjusts if dropdown would go off-screen
+   - Maintains 10px margins from viewport edges
+   - Biases position near the button for context
+
+2. **Modern Visual Design:**
+   - **Header Section:** Gradient background with program icon and info
+   - **Action Items:** Card-style layout with colored icons and descriptions
+   - **Smooth Animations:** CSS transitions with easing curves
+   - **Enhanced Typography:** Clear hierarchy with titles and descriptions
+
+3. **Improved User Experience:**
+   - **Visual Feedback:** Button changes color when dropdown is active
+   - **Smooth Animations:** 300ms transitions with bounce easing
+   - **Better Information Hierarchy:** Each action shows title + description
+   - **Contextual Icons:** Color-coded icons for different action types
+
+### **Technical Implementation:**
+
+**CSS Additions** (`assets/css/agency/view-programs.css`):
+- `.more-actions-dropdown` - Main container with animations
+- `.dropdown-menu-modern` - Modern styling with rounded corners and shadows
+- `.dropdown-header-modern` - Forest-themed gradient header
+- `.dropdown-item-modern` - Enhanced action items with icons and descriptions
+- Color-coded action icons: Edit (blue), Submission (green), Add (orange), View (gray)
+
+**JavaScript Enhancements** (`assets/js/agency/view-programs/dom.js`):
+- Smart positioning algorithm with viewport boundary detection
+- Animation classes for smooth show/hide transitions
+- Enhanced HTML structure with semantic content
+
+### **Style Consistency:**
+- Uses forest theme colors (`--forest-deep`, `--forest-medium`)
+- Matches view programs page aesthetic with cards and gradients
+- Consistent with overall PCDS2030 design system
+
+### **Bundle Impact:**
+- CSS bundle: 4.81 kB → 7.31 kB (+2.5 kB for modern styling)
+- JS bundle: 18.00 kB → 19.62 kB (+1.62 kB for enhanced functionality)
+
+---
+
+## 🐛 **NEW BUG FIX** - Bug #27: View Programs Three Dots Button Not Working
+
+**Date Found:** 2025-07-21  
+**Status:** ✅ **FIXED**  
+**Severity:** Medium  
+**Location:** `app/views/agency/programs/view_programs.php` - Three dots button in program row
+
+### **Issue Description:**
+The three dots button (more actions) in the view programs table was non-functional. Clicking it would only log to console instead of showing a dropdown menu with editing options.
+
+### **Root Cause:**
+The JavaScript function `showMoreActionsModal()` in `assets/js/agency/view-programs/dom.js` was just a placeholder implementation with only `console.log()` output. No actual dropdown or modal was being created or shown.
+
+### **Solution Implemented:**
+1. **Created Dynamic Bootstrap Dropdown:** Implemented `showMoreActionsDropdown()` function that creates a Bootstrap dropdown menu positioned near the clicked button
+2. **Added Contextual Actions:** The dropdown shows program-specific actions:
+   - Edit Program Details (`edit_program.php?id=${programId}`)
+   - Edit Latest Submission (`edit_submission.php?program_id=${programId}`)
+   - Add New Submission (`add_submission.php?program_id=${programId}`)
+   - View Full Details (`program_details.php?id=${programId}`)
+3. **Improved UX:** Added click-outside-to-close functionality and proper positioning
+4. **Enhanced Event Handling:** Updated click handler to prevent event bubbling and position dropdown correctly
+
+### **Files Modified:**
+- `assets/js/agency/view-programs/dom.js` - Implemented proper dropdown functionality
+- Updated function names: `showMoreActionsModal` → `showMoreActionsDropdown`
+- Added positioning logic using `getBoundingClientRect()`
+
+### **Anti-Pattern Applied:**
+✅ **JavaScript Functionality** (Bug #27): Always implement complete functionality instead of placeholder code
+
+---
+
 ## ✅ Program Details Refactor Summary
 
 The program details page has been successfully refactored following best practices and patterns established in previous module refactors. This addresses the monolithic file structure and follows the established anti-patterns to avoid recurring bugs.
