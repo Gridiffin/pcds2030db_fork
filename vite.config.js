@@ -1,26 +1,33 @@
 import { defineConfig } from 'vite';
-import path from 'path';
+import manifest from 'vite-plugin-manifest';
+import copy from 'rollup-plugin-copy';
 
 export default defineConfig({
+  plugins: [
+    manifest(),
+    copy({
+      targets: [
+        { src: 'assets/images/*', dest: 'public/images' },
+        { src: 'assets/fonts/*', dest: 'public/fonts' }
+      ],
+      hook: 'writeBundle'
+    })
+  ],
   build: {
+    outDir: 'public/dist',
+    manifest: true,
     rollupOptions: {
       input: {
-        login: path.resolve(__dirname, 'assets/js/shared/login.js'),
-        manage_outcomes: 'assets/js/admin/manage_outcomes.js',
-        initiatives: path.resolve(__dirname, 'assets/js/agency/initiatives.js'),
-        dashboard: path.resolve(__dirname, 'assets/js/agency/dashboard/dashboard.js'),
-        'agency-reports': path.resolve(__dirname, 'assets/js/agency/reports/reports.js'),
-        'notifications': path.resolve(__dirname, 'assets/js/agency/users/notifications.js'),
-        'outcomes': path.resolve(__dirname, 'assets/js/agency/outcomes/outcomes.js'),
-        'view-programs': path.resolve(__dirname, 'assets/js/agency/view-programs/view-programs.js'),
-        'admin-manage-initiatives': path.resolve(__dirname, 'assets/js/admin/initiatives/manageInitiatives.js'),
-      },
-      output: {
-        entryFileNames: 'js/[name].bundle.js',
-        assetFileNames: 'css/[name].bundle.css',
+        main: 'frontend/main.js',
       },
     },
-    outDir: 'dist',
-    emptyOutDir: true,
+  },
+  server: {
+    proxy: {
+      '/': {
+        target: 'http://localhost:8080', // Your local PHP server
+        changeOrigin: true,
+      },
+    },
   },
 }); 

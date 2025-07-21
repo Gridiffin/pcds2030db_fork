@@ -1,4 +1,12 @@
 <?php
+/**
+ * Header for all pages
+ */
+
+// Include necessary files
+require_once __DIR__ . '/../../config/config.php';
+require_once ROOT_PATH . 'app/helpers/vite-helpers.php';
+
 // Ensure asset_url function is available
 if (!function_exists('asset_url')) {
     // Define PROJECT_ROOT_PATH if not already defined
@@ -147,8 +155,15 @@ if (!function_exists('asset_url')) {
         }
     </style>
 
-    <!-- Main JS - Restored inclusion -->
-    <script src="<?php echo asset_url('js', 'main.js'); ?>"></script>
+    <!-- Vite Assets -->
+    <?php echo vite_assets(); ?>
+
+    <!-- Additional Scripts -->
+    <?php if (isset($additionalScripts) && is_array($additionalScripts)): ?>
+        <?php foreach ($additionalScripts as $script): ?>
+            <script src="<?php echo $script; ?>"></script>
+        <?php endforeach; ?>
+    <?php endif; ?>
 
 </head>
 <body class="<?php echo isset($bodyClass) ? htmlspecialchars($bodyClass) : ''; ?><?php if (strpos($_SERVER['REQUEST_URI'], '/app/views/agency/') !== false) echo ' agency-layout'; ?><?php if (strpos($_SERVER['REQUEST_URI'], '/app/views/admin/') !== false) echo ' admin-layout'; ?>">
