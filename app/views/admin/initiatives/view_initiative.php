@@ -19,7 +19,7 @@ require_once PROJECT_ROOT_PATH . 'lib/agencies/index.php';
 require_once PROJECT_ROOT_PATH . 'lib/agencies/initiatives.php';
 require_once PROJECT_ROOT_PATH . 'lib/initiative_functions.php';
 require_once PROJECT_ROOT_PATH . 'lib/rating_helpers.php';
-require_once PROJECT_ROOT_PATH . 'lib/asset_helpers.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/asset_helpers.php';
 require_once PROJECT_ROOT_PATH . 'lib/db_names_helper.php';
 
 // Verify user is an admin

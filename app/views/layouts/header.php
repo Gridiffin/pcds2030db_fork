@@ -16,7 +16,7 @@ if (!function_exists('asset_url')) {
     
     // Include asset helpers to get asset_url function
     if (file_exists(PROJECT_ROOT_PATH . 'lib/asset_helpers.php')) {
-        require_once PROJECT_ROOT_PATH . 'lib/asset_helpers.php';
+        require_once PROJECT_ROOT_PATH . 'app/lib/asset_helpers.php';
     } elseif (file_exists(PROJECT_ROOT_PATH . 'config/config.php')) {
         require_once PROJECT_ROOT_PATH . 'config/config.php';
     } else {
