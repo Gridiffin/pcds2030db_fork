@@ -118,11 +118,12 @@ Refactoring the agency programs module starting with `view_programs.php` to foll
 
 ### Fixed Layout Issues - Navbar Overlap and Footer Positioning (2025-07-21)
 - **Issue**: Header covered by navbar, footer appearing above content
-- **Cause**: Missing navbar padding CSS and inline content pattern disrupting layout
+- **Cause**: Missing navbar padding CSS, inline content pattern disrupting layout, missing flex-fill wrapper
 - **Solution**: 
   1. Added `body { padding-top: 70px; }` CSS with responsive adjustments
   2. Created `view_programs_content.php` and switched to `$contentFile` pattern
-  3. Rebuilt Vite assets with CSS fixes
+  3. Added `<main class="flex-fill">` wrapper to ensure footer sticks to bottom (following initiatives pattern)
+  4. Rebuilt Vite assets with CSS fixes
 - **Status**: ✅ **FIXED** - Proper layout structure with navbar offset and footer positioning
 
 ---

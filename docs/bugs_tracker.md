@@ -13,16 +13,18 @@
 - **Cause:** 
   1. Missing `body { padding-top: 70px; }` CSS for navbar offset
   2. Using inline content pattern instead of proper `$contentFile` pattern which disrupts base layout structure
+  3. Missing `<main class="flex-fill">` wrapper to make content expand and push footer to bottom
 - **Root Issue:** This follows the same pattern as Bug #13 from initiatives refactor - recurring navbar overlap issue across modules.
 - **Solution:** 
   1. Added navbar padding fix to `assets/css/agency/view-programs.css` with responsive adjustments (70px desktop, 85px mobile)
   2. Created `view_programs_content.php` and updated main file to use `$contentFile` pattern for proper layout structure
-  3. Rebuilt Vite assets to include CSS fixes
+  3. Added `<main class="flex-fill">` wrapper around content to ensure footer sticks to bottom (following initiatives pattern)
+  4. Rebuilt Vite assets to include CSS fixes
 - **Files Fixed:** 
   - `assets/css/agency/view-programs.css` (navbar padding)
   - `app/views/agency/programs/view_programs.php` (content file pattern)
-  - `app/views/agency/programs/view_programs_content.php` (new content file)
-- **Prevention:** Always use proper content file pattern (`$contentFile`) for base layout integration and include navbar padding in module CSS.
+  - `app/views/agency/programs/view_programs_content.php` (new content file with flex-fill main wrapper)
+- **Prevention:** Always use proper content file pattern (`$contentFile`) for base layout integration, include navbar padding in module CSS, and wrap content in `<main class="flex-fill">` for proper footer positioning.
 
 ### 16. Agency Programs Partial - Missing app/ Directory in Path (2025-07-21)
 

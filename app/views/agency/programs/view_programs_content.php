@@ -5,6 +5,8 @@
  */
 ?>
 
+<main class="flex-fill">
+
 <!-- Toast Notification for Program Creation/Deletion -->
 <?php if (!empty($message)): ?>
     <script>
@@ -222,3 +224,5 @@
     window.currentUserRole = '<?php echo $_SESSION['role'] ?? ''; ?>';
     window.currentUserId = '<?php echo $_SESSION['user_id'] ?? ''; ?>';
 </script>
+
+</main>
