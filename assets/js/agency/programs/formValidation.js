@@ -7,13 +7,24 @@
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
- * Validates a date string format
+ * Validates a date string format and actual date validity
  * @param {string} date - The date string to validate
  * @returns {boolean} True if valid, false otherwise
  */
 export function validateDateFormat(date) {
     if (!date) return true; // Optional dates are valid
-    return DATE_REGEX.test(date);
+    
+    // Check format first
+    if (!DATE_REGEX.test(date)) return false;
+    
+    // Fix: Check if the date is actually valid (handles leap years, month boundaries)
+    const parsedDate = new Date(date + 'T00:00:00'); // Add time to avoid timezone issues
+    const [year, month, day] = date.split('-').map(Number);
+    
+    // Check if the parsed date matches the input (catches invalid dates like Feb 29 in non-leap years)
+    return parsedDate.getFullYear() === year && 
+           parsedDate.getMonth() === month - 1 && // getMonth() is 0-based
+           parsedDate.getDate() === day;
 }
 
 /**
@@ -33,7 +44,8 @@ export function validateDateRange(startDate, endDate) {
  * @returns {Object} Validation result with isValid and message
  */
 export function validateProgramName(name) {
-    if (!name.trim()) {
+    // Fix: Add null/undefined safety check
+    if (!name || typeof name !== 'string' || !name.trim()) {
         return { isValid: false, message: 'Program name is required' };
     }
     if (name.length > 255) {

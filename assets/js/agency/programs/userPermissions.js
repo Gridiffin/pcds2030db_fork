@@ -53,6 +53,12 @@ function validateUserSelection() {
         errorDiv.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i>Please select at least one user when restricting editors.';
         
         const userSection = document.getElementById('userSelectionSection');
+        // Fix: Add null safety check for DOM element
+        if (!userSection) {
+            console.warn('User selection section not found in DOM');
+            return false;
+        }
+        
         const existingError = userSection.querySelector('.alert-danger');
         if (existingError) {
             existingError.remove();
@@ -102,10 +108,16 @@ export function initUserPermissions() {
         form.addEventListener('submit', (e) => {
             if (!validateUserSelection()) {
                 e.preventDefault();
-                // Scroll to user section
+                // Scroll to user section with fallback for environments without scrollIntoView
                 const userSection = document.getElementById('userSelectionSection');
                 if (userSection) {
-                    userSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    // Fix: Add feature detection for scrollIntoView
+                    if (typeof userSection.scrollIntoView === 'function') {
+                        userSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    } else {
+                        // Fallback for test environments or older browsers
+                        userSection.focus();
+                    }
                 }
             }
         });

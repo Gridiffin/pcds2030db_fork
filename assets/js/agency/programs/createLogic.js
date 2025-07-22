@@ -14,8 +14,13 @@ const MAX_PROGRAM_NUMBER_LENGTH = 20;
  * @returns {Object} Validation result with isValid and message
  */
 export function validateProgramNumber(number, initiativeNumber) {
-    if (!number) {
+    // Fix: Add comprehensive null/undefined safety checks
+    if (!number || typeof number !== 'string') {
         return { isValid: false, message: 'Program number is required' };
+    }
+    
+    if (!initiativeNumber || typeof initiativeNumber !== 'string') {
+        return { isValid: false, message: 'Initiative number is required for validation' };
     }
 
     if (!PROGRAM_NUMBER_REGEX.test(number)) {
@@ -46,7 +51,11 @@ export function validateProgramNumber(number, initiativeNumber) {
  */
 export async function checkProgramNumberExists(number, initiativeId) {
     try {
-        const response = await fetch(`${window.APP_URL}/app/ajax/agency/check_program_number.php`, {
+        // Fix: Handle undefined window.APP_URL properly
+        const baseUrl = window.APP_URL || '';
+        const apiUrl = `${baseUrl}/app/ajax/agency/check_program_number.php`;
+        
+        const response = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({
@@ -56,7 +65,8 @@ export async function checkProgramNumberExists(number, initiativeId) {
         });
 
         const data = await response.json();
-        return data.exists;
+        // Fix: Handle missing 'exists' property with proper default
+        return data.exists === true; // Explicitly check for true, returns false for undefined/null
     } catch (error) {
         console.error('Error checking program number:', error);
         throw new Error('Failed to check program number');
