@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+<<<<<<< Updated upstream
 
 export default defineConfig({
   build: {
@@ -41,4 +42,27 @@ export default defineConfig({
       },
     },
   },
+=======
+import path from 'path';
+
+export default defineConfig({
+    build: {
+        rollupOptions: {
+            input: {
+                'login': path.resolve(__dirname, 'assets/js/login.js'),
+                'admin-dashboard': path.resolve(__dirname, 'assets/js/admin/dashboard.js'),
+                'agency-dashboard': path.resolve(__dirname, 'assets/js/agency/dashboard/dashboard.js'),
+                'agency-initiatives': path.resolve(__dirname, 'assets/js/agency/initiatives/view.js'),
+                'agency-programs-create': path.resolve(__dirname, 'assets/js/agency/programs/create.js'),
+                // Add more entry points as needed
+            },
+            output: {
+                entryFileNames: 'js/[name].bundle.js',
+                assetFileNames: 'css/[name].bundle.css',
+            }
+        },
+        outDir: 'dist',
+        emptyOutDir: true,
+    }
+>>>>>>> Stashed changes
 }); 

@@ -1,0 +1,97 @@
+/* Create Program Page Styles */
+
+/* Import sub-modules */
+@import 'form.css';
+@import 'timeline.css';
+@import 'permissions.css';
+
+/* Main layout styles */
+body.create-program-page {
+    padding-top: 70px; /* Fixed navbar offset */
+}
+
+@media (max-width: 768px) {
+    body.create-program-page {
+        padding-top: 85px; /* Increased padding for multi-line navbar on mobile */
+    }
+}
+
+/* Card styles */
+.create-program-card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    margin-bottom: 1.5rem;
+}
+
+.create-program-card .card-header {
+    background-color: #fff;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+    padding: 1rem;
+}
+
+.create-program-card .card-body {
+    padding: 1.5rem;
+}
+
+/* Form section styles */
+.form-section {
+    margin-bottom: 2rem;
+}
+
+.form-section:last-child {
+    margin-bottom: 0;
+}
+
+/* Help text styles */
+.form-text {
+    color: #6c757d;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+.form-text i {
+    color: #0d6efd;
+}
+
+/* Action buttons */
+.form-actions {
+    border-top: 1px solid #dee2e6;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+}
+
+/* Info section styles */
+.info-list li {
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+}
+
+.info-list li:last-child {
+    margin-bottom: 0;
+}
+
+.info-list i {
+    margin-right: 0.75rem;
+    width: 1.25rem;
+    text-align: center;
+}
+
+/* Validation styles */
+.validation-feedback {
+    display: none;
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.validation-feedback.show {
+    display: block;
+}
+
+.validation-feedback.is-valid {
+    color: #198754;
+}
+
+.validation-feedback.is-invalid {
+    color: #dc3545;
+} 
