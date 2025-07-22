@@ -111,11 +111,10 @@ $targets = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $program_rating = $program['rating'] ?? 'not_started';
 $rating_info = get_rating_info($program_rating);
 
-// Set page title
+// Set up base layout variables
 $pageTitle = 'View Submission - ' . $program['program_name'] . ' (' . $submission['period_display'] . ')';
-
-// Include header
-require_once '../../layouts/header.php';
+$cssBundle = 'programs';
+$jsBundle = null; // No specific JS bundle for this page
 
 // Configure modern page header
 $header_config = [
@@ -142,10 +141,11 @@ if ($can_edit) {
     ];
 }
 
-// Include modern page header
-require_once '../../layouts/page_header.php';
+// Set contentFile to null so content renders inline
+$contentFile = null;
 ?>
-
+<!-- Main Content -->
+<main class="flex-fill">
 <div class="container-fluid">
     <!-- Error/Success Messages -->
     <?php if (isset($_SESSION['message'])): ?>
@@ -622,7 +622,10 @@ window.submissionId = <?php echo $submission['submission_id']; ?>;
 window.APP_URL = '<?php echo APP_URL; ?>';
 </script>
 
+</div>
+</main>
+
 <?php
-// Include footer
-require_once '../../layouts/footer.php';
+// Include base layout
+require_once PROJECT_ROOT_PATH . 'app/views/layouts/base.php';
 ?>

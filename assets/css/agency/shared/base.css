@@ -4,10 +4,14 @@
  */
 
 /* Base foundation styles - CRITICAL */
-@import '../../base/variables.css';        /* ⭐ MISSING - CSS custom properties */
-@import '../../base/reset.css';            /* ⭐ MISSING - Reset/normalize */
-@import '../../base/typography.css';       /* ⭐ MISSING - Font styles */
-@import '../../base/utilities.css';        /* ⭐ MISSING - Utility classes */
+@import '../../base/variables.css';        /* CSS custom properties */
+@import '../../base/reset.css';            /* Reset/normalize */
+@import '../../base/typography.css';       /* Font styles */
+@import '../../base/utilities.css';        /* Utility classes */
+
+/* Layout system - CRITICAL for proper page structure */
+@import '../../layout/dashboard.css';      /* Body/main layout */
+@import '../../layout/header.css';         /* Page headers */
 
 /* Essential components for all agency pages */
 @import '../../components/bento-grid.css';
@@ -24,9 +28,6 @@
 /* Layout essentials */
 @import '../../layout/navigation.css';
 @import '../../layout/footer.css';
-/* Layout system */
-@import '../../layout/dashboard.css';
-@import '../../layout/header.css';
 
 /* Agency-specific styles */
 @import '../../pages/agency.css';

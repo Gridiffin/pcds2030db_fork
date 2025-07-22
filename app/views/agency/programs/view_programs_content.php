@@ -6,18 +6,15 @@
 ?>
 
 <main class="flex-fill">
-
-<!-- Toast Notification for Program Creation/Deletion -->
-<?php if (!empty($message)): ?>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            showToast('<?= ucfirst($messageType) ?>', <?= json_encode($message) ?>, '<?= $messageType ?>');
-        });
-    </script>
-<?php endif; ?>
-
-<div class="content-wrapper">
-    <div class="page-content">
+    <div class="container-fluid">
+        <!-- Toast Notification for Program Creation/Deletion -->
+        <?php if (!empty($message)): ?>
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    showToast('<?= ucfirst($messageType) ?>', <?= json_encode($message) ?>, '<?= $messageType ?>');
+                });
+            </script>
+        <?php endif; ?>
 
         <!-- Create Program Button -->
         <div class="mb-3">
@@ -214,15 +211,12 @@
         <!-- Delete Modal -->
         <?php require_once __DIR__ . '/partials/delete_modal.php'; ?>
 
+        <!-- JavaScript data and initialization -->
+        <script>
+            // Make program data available to JavaScript
+            window.allPrograms = <?php echo json_encode($programs); ?>;
+            window.currentUserRole = '<?php echo $_SESSION['role'] ?? ''; ?>';
+            window.currentUserId = '<?php echo $_SESSION['user_id'] ?? ''; ?>';
+        </script>
     </div>
-</div>
-
-<!-- JavaScript data and initialization -->
-<script>
-    // Make program data available to JavaScript
-    window.allPrograms = <?php echo json_encode($programs); ?>;
-    window.currentUserRole = '<?php echo $_SESSION['role'] ?? ''; ?>';
-    window.currentUserId = '<?php echo $_SESSION['user_id'] ?? ''; ?>';
-</script>
-
 </main>

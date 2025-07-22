@@ -3,8 +3,8 @@
  * Main entry point for all notifications-related styles
  */
 
-/* Import base variables and components */
-@import '../../base/variables.css';
+/* Import shared base */
+@import '../shared/base.css';
 
 /* Import component styles */
 @import 'partials/list.css';

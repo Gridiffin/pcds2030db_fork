@@ -5,6 +5,9 @@
  * for the enhanced edit submission page.
  */
 
+// Import CSS for bundle generation
+import '../../css/agency/programs/programs.css';
+
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize the page
     initPeriodSelector();

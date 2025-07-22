@@ -1,4 +1,4 @@
-function d(){typeof bootstrap<"u"&&bootstrap.Tooltip&&[].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]')).map(function(t){return new bootstrap.Tooltip(t)})}function h(n,t="info",e=5e3){document.querySelectorAll(".alert-toast").forEach(o=>o.remove());const a=document.createElement("div");return a.className=`alert alert-${t} alert-dismissible fade show alert-toast`,a.style.cssText=`
+/* empty css                         */function d(){typeof bootstrap<"u"&&bootstrap.Tooltip&&[].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]')).map(function(t){return new bootstrap.Tooltip(t)})}function h(n,t="info",e=5e3){document.querySelectorAll(".alert-toast").forEach(o=>o.remove());const a=document.createElement("div");return a.className=`alert alert-${t} alert-dismissible fade show alert-toast`,a.style.cssText=`
         position: fixed;
         top: 20px;
         right: 20px;

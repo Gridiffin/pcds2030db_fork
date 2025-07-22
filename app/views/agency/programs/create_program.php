@@ -103,8 +103,8 @@ $header_config = [
 ];
 
 // Set CSS and JS bundles
-$cssBundle = 'agency-programs-create';
-$jsBundle = 'agency-programs-create';
+$cssBundle = 'programs'; // CSS bundle for programs module
+$jsBundle = 'agency-create-program';
 
 // Set content file
 $contentFile = 'partials/create_program_content.php';

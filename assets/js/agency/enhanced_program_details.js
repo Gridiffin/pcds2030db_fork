@@ -3,6 +3,9 @@
  * Provides interactive functionality for the enhanced program details page
  */
 
+// Import CSS for bundle generation
+import '../../css/agency/programs/programs.css';
+
 class EnhancedProgramDetails {
     constructor() {
         this.programId = window.programId;
@@ -586,6 +589,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Export for potential use in other modules
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = EnhancedProgramDetails;
-} 
+export default EnhancedProgramDetails; 

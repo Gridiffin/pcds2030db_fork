@@ -155,8 +155,8 @@ $is_active_col = get_column_name('initiatives', 'is_active');
 
 // Configure page for base.php layout
 $pageTitle = 'Initiative Progress Tracker';
-$cssBundle = 'agency-initiatives';
-$jsBundle = 'agency-initiatives';
+$cssBundle = 'agency-initiatives'; // CSS bundle for initiatives module
+$jsBundle = 'agency-view-initiative';
 
 // Configure breadcrumbs
 $breadcrumbs = [

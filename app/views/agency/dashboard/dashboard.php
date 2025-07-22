@@ -29,7 +29,7 @@ if (!is_agency()) {
 
 // Set up variables for base.php layout
 $pageTitle = 'Agency Dashboard';
-$cssBundle = 'agency-dashboard';
+$cssBundle = 'agency-dashboard'; // CSS bundle for dashboard module
 $jsBundle = 'agency-dashboard';
 $contentFile = __DIR__ . '/dashboard_content.php';
 

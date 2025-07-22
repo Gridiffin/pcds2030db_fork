@@ -6,24 +6,24 @@
  * submissions, targets, attachments, and timeline.
  */
 
-// Define the root path
+// Define project root path for consistent file references
 if (!defined('PROJECT_ROOT_PATH')) {
     define('PROJECT_ROOT_PATH', rtrim(dirname(dirname(dirname(__DIR__))), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
 }
 
 // Include necessary files
 require_once PROJECT_ROOT_PATH . 'config/config.php';
-require_once ROOT_PATH . 'app/lib/db_connect.php';
-require_once ROOT_PATH . 'app/lib/session.php';
-require_once ROOT_PATH . 'app/lib/functions.php';
-require_once ROOT_PATH . 'app/lib/agencies/index.php';
-require_once ROOT_PATH . 'app/lib/agencies/programs.php';
-require_once ROOT_PATH . 'app/lib/rating_helpers.php';
-require_once ROOT_PATH . 'app/lib/agencies/program_attachments.php';
-require_once ROOT_PATH . 'app/lib/agencies/program_permissions.php';
-require_once ROOT_PATH . 'app/lib/agencies/program-details/data-processor.php';
-require_once ROOT_PATH . 'app/lib/agencies/program-details/error-handler.php';
-require_once ROOT_PATH . 'app/lib/program_status_helpers.php';
+require_once PROJECT_ROOT_PATH . 'lib/db_connect.php';
+require_once PROJECT_ROOT_PATH . 'lib/session.php';
+require_once PROJECT_ROOT_PATH . 'lib/functions.php';
+require_once PROJECT_ROOT_PATH . 'lib/agencies/index.php';
+require_once PROJECT_ROOT_PATH . 'lib/agencies/programs.php';
+require_once PROJECT_ROOT_PATH . 'lib/rating_helpers.php';
+require_once PROJECT_ROOT_PATH . 'lib/agencies/program_attachments.php';
+require_once PROJECT_ROOT_PATH . 'lib/agencies/program_permissions.php';
+require_once PROJECT_ROOT_PATH . 'lib/agencies/program-details/data-processor.php';
+require_once PROJECT_ROOT_PATH . 'lib/agencies/program-details/error-handler.php';
+require_once PROJECT_ROOT_PATH . 'lib/program_status_helpers.php';
 
 // Verify user is an agency
 if (!is_agency()) {
@@ -166,21 +166,23 @@ $is_owner = is_program_owner($program_id);
 
 // Set page title
 $pageTitle = 'Enhanced Program Details';
+$cssBundle = 'programs'; // CSS bundle for programs module
+$jsBundle = 'agency-program-details';
 
-// Additional scripts
-$additionalScripts = [
-    APP_URL . '/assets/js/utilities/rating_utils.js',
-    APP_URL . '/assets/js/agency/enhanced_program_details.js'
-];
+// Additional scripts - NO LONGER NEEDED, HANDLED BY BUNDLE
+// $additionalScripts = [
+//     APP_URL . '/assets/js/utilities/rating_utils.js',
+//     APP_URL . '/assets/js/agency/enhanced_program_details.js'
+// ];
 
-// Additional CSS
-$additionalCSS = [
-    APP_URL . '/assets/css/components/program-details.css',
-    APP_URL . '/assets/css/components/period-performance.css'
-];
+// Additional CSS - NO LONGER NEEDED, HANDLED BY BUNDLE
+// $additionalCSS = [
+//     APP_URL . '/assets/css/components/program-details.css',
+//     APP_URL . '/assets/css/components/period-performance.css'
+// ];
 
-// Include header
-require_once '../../layouts/header.php';
+// Include header - NO LONGER NEEDED, HANDLED BY base.php
+// require_once '../../layouts/header.php';
 
 // Back button URL depends on source
 $allSectorsUrl = APP_URL . '/app/views/agency/sectors/view_all_sectors.php';
@@ -209,8 +211,8 @@ $header_config = [
     ]
 ];
 
-// Include modern page header
-require_once '../../layouts/page_header.php';
+// Set contentFile to null so content renders inline
+$contentFile = null;
 
 // Use the status from the programs table
 $status = isset($program['status']) ? $program['status'] : 'active';
@@ -301,6 +303,7 @@ $showNoSubmissionsAlert = !$has_submissions; // Show for all users, but action l
 <?php endif; ?>
 
 <!-- Enhanced Program Overview -->
+<main class="flex-fill">
 <div class="container-fluid">
     <div class="row">
         <!-- Main Content -->
@@ -872,7 +875,10 @@ window.programId = <?php echo $program_id; ?>;
 window.APP_URL = '<?php echo APP_URL; ?>';
 </script>
 
+</div>
+</main>
+
 <?php
-// Include footer
-require_once '../../layouts/footer.php';
+// Include base layout
+require_once PROJECT_ROOT_PATH . 'app/views/layouts/base.php';
 ?> 

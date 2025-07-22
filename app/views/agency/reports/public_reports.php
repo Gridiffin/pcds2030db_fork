@@ -30,7 +30,7 @@ $public_reports = get_public_reports();
 
 // Set page variables for base layout
 $pageTitle = 'Public Reports';
-$cssBundle = 'agency-reports';
+$cssBundle = 'agency-reports'; // CSS bundle for reports module
 $jsBundle = 'agency-reports';
 $bodyClass = 'reports-page';
 $contentFile = __DIR__ . '/partials/public_reports_content.php';

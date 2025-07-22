@@ -1,6 +1,15 @@
 /* Import shared base */
 @import '../shared/base.css';
 
+/* Page-specific styles */
+@import './view_programs.css';
+@import './create.css';
+@import './edit_program.css';
+@import './add_submission.css';
+@import './form.css';
+@import './permissions.css';
+@import './timeline.css';
+
 /* Program-specific components */
 @import '../../components/program-details.css';
 @import '../../components/enhanced-program-details.css';

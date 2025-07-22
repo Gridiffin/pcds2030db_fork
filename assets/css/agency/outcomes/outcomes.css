@@ -6,6 +6,14 @@
 /* Import shared base */
 @import '../shared/base.css';
 
+/* Page-specific styles */
+@import './base.css';
+@import './submit.css';
+@import './view.css';
+@import './edit.css';
+@import './tables.css';
+@import './charts.css';
+
 /* Outcomes-specific components */
 @import '../../components/outcomes.css';
 @import '../../components/metric-create.css';
