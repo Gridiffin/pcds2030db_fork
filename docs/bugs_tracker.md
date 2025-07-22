@@ -92,6 +92,17 @@
 - **Files Fixed:** `app/views/agency/outcomes/partials/submit_content.php`
 - **Prevention:** Always use the proper display functions and null checks when working with database fields
 
+### 19. Bundle Name Mismatch in View Programs - More Actions Button Not Working (2025-07-22)
+
+- **Problem:** The "More Actions" button (with class `more-actions-btn`) in the view programs page was not responding to clicks. No modal/popup was appearing when clicked.
+- **Cause:** Bundle name mismatch between the PHP view file and the Vite configuration. The view programs page was trying to load bundles named `view-programs` but the actual Vite bundles were named `agency-view-programs`. This caused the JavaScript event handlers for the "More Actions" button to not be loaded.
+- **Root Issue:** After refactoring to use the base layout system, the bundle names in the PHP file were not updated to match the Vite configuration entry names.
+- **Solution:** 
+  - Updated `$cssBundle` and `$jsBundle` in `app/views/agency/programs/view_programs.php` from `'view-programs'` to `'agency-view-programs'`
+  - This ensures the correct JavaScript bundle is loaded, which contains the `initMoreActionsModal()` function that handles the "More Actions" button clicks
+- **Files Fixed:** `app/views/agency/programs/view_programs.php`
+- **Prevention:** Always verify that bundle names in PHP view files match the entry names defined in `vite.config.js`. When refactoring pages to use base layout, ensure bundle names are updated accordingly.
+
 ## Problems & Solutions During Login Refactor
 
 ### 1. Asset Loading and 404 Errors

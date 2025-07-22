@@ -1,25 +1,36 @@
 import { defineConfig } from 'vite';
-import manifest from 'vite-plugin-manifest';
-import copy from 'rollup-plugin-copy';
 
 export default defineConfig({
-  plugins: [
-    manifest(),
-    copy({
-      targets: [
-        { src: 'assets/images/*', dest: 'public/images' },
-        { src: 'assets/fonts/*', dest: 'public/fonts' }
-      ],
-      hook: 'writeBundle'
-    })
-  ],
   build: {
-    outDir: 'public/dist',
+    outDir: 'dist',
+    emptyOutDir: true,
     manifest: true,
     rollupOptions: {
       input: {
-        main: 'frontend/main.js',
+        // General
+        'login': 'assets/js/login.js',
+        'main': 'assets/js/main.js',
+
+        // Admin
+        'admin-dashboard': 'assets/js/admin/dashboard.js',
+        'admin-manage-initiatives': 'assets/js/admin/initiatives/manageInitiatives.js',
+        'admin-manage-outcomes': 'assets/js/admin/manage_outcomes.js',
+        'admin-edit-kpi': 'assets/js/admin/edit_kpi.js',
+
+        // Agency
+        'agency-dashboard': 'assets/js/agency/dashboard/dashboard.js',
+        'agency-initiatives': 'assets/js/agency/initiatives.js',
+        'agency-view-initiative': 'assets/js/agency/initiative-view.js',
+        'agency-view-programs': 'assets/js/agency/view_programs.js',
+        'agency-edit-program': 'assets/js/agency/programs/edit_program.js',
+        'agency-reports': 'assets/js/agency/reports/reports.js',
+        'notifications': 'assets/js/agency/users/notifications.js',
       },
+      output: {
+        entryFileNames: 'js/[name].bundle.js',
+        assetFileNames: 'css/[name].bundle.css',
+        chunkFileNames: 'js/[name]-[hash].js',
+      }
     },
   },
   server: {
