@@ -1,6 +1,10 @@
 /**
  * Login page functionality
  */
+
+// Import CSS for bundle generation
+import '../css/shared/login.css';
+
 document.addEventListener('DOMContentLoaded', function() {
     const loginForm = document.getElementById('loginForm');
     const loginBtn = document.getElementById('loginBtn');
