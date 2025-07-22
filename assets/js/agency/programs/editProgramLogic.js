@@ -145,7 +145,7 @@ function initStatusManagement(programId, apiUrl) {
                         loadStatus();
                         if (editModal) editModal.hide();
                     } else {
-                        alert(data.error || 'Failed to update status.');
+                        
                     }
                 });
         });

@@ -3,6 +3,12 @@
  * Handles functionality specific to the view reports page
  */
 
+// Import CSS for reports
+import '../../../css/agency/reports/reports.css';
+import '../../../css/agency/reports/partials/list.css';
+import '../../../css/agency/reports/partials/info.css';
+import '../../../css/agency/reports/partials/filter.css';
+
 export class ViewReports {
     
     constructor(logic, ajax) {
@@ -20,7 +26,7 @@ export class ViewReports {
         this.initializeFilters();
         this.loadInitialData();
         
-        console.log('View Reports page initialized');
+        
     }
     
     /**
@@ -339,7 +345,7 @@ export class ViewReports {
         if (typeof window.showToast === 'function') {
             window.showToast('Error', message, 'danger');
         } else {
-            alert(`Error: ${message}`);
+            
         }
     }
     
@@ -353,3 +359,19 @@ export class ViewReports {
         }
     }
 }
+
+// Initialize reports functionality when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize reports view if on reports page
+    if (document.querySelector('#reports-container') || document.querySelector('.reports-page')) {
+        // Import other report modules if needed
+        import('./logic.js').then(({ ReportsLogic }) => {
+            import('./ajax.js').then(({ ReportsAjax }) => {
+                const ajax = new ReportsAjax();
+                const logic = new ReportsLogic();
+                const viewReports = new ViewReports(logic, ajax);
+                viewReports.init();
+            }).catch(err => console.log('Reports modules not found, using basic functionality'));
+        }).catch(err => console.log('Reports modules not found, using basic functionality'));
+    }
+});

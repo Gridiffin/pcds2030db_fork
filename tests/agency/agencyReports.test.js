@@ -28,8 +28,8 @@ const mockDOM = () => {
 global.fetch = jest.fn();
 
 // Import the modules to test
-import ReportsManager from '../../../assets/js/agency/reports/logic.js';
-import ReportsAPI from '../../../assets/js/agency/reports/api.js';
+import { ReportsLogic } from '../../../assets/js/agency/reports/logic.js';
+import { ReportsAjax } from '../../../assets/js/agency/reports/ajax.js';
 
 describe('Agency Reports Module', () => {
     let reportsManager;
@@ -40,11 +40,11 @@ describe('Agency Reports Module', () => {
         jest.clearAllMocks();
         
         // Initialize modules
-        reportsAPI = new ReportsAPI();
-        reportsManager = new ReportsManager();
+        reportsAPI = new ReportsAjax();
+        reportsManager = new ReportsLogic();
     });
 
-    describe('ReportsAPI', () => {
+    describe('ReportsAjax', () => {
         test('should fetch reports successfully', async () => {
             const mockReports = [
                 { id: 1, title: 'Test Report 1', type: 'public' },
@@ -116,7 +116,7 @@ describe('Agency Reports Module', () => {
         });
     });
 
-    describe('ReportsManager', () => {
+    describe('ReportsLogic', () => {
         test('should initialize successfully', () => {
             expect(reportsManager).toBeDefined();
             expect(reportsManager.init).toBeDefined();

@@ -57,7 +57,7 @@ function initEventListeners() {
             e.preventDefault();
             e.stopPropagation();
             const button = e.target.classList.contains('remove-target-btn') ? e.target : e.target.closest('.remove-target-btn');
-            console.log('Delete button clicked:', button);
+            
             removeTargetRow(button);
         }
         
@@ -425,7 +425,7 @@ function fetchIncompleteTargets(periodId) {
     .then(data => {
         if (data.success) {
             incompleteTargets = data.incomplete_targets || [];
-            console.log(`Found ${incompleteTargets.length} incomplete targets to auto-fill`);
+            
         } else {
             console.warn('Failed to fetch incomplete targets:', data.error);
             incompleteTargets = [];
@@ -573,8 +573,8 @@ function showAddSubmissionForm() {
             </div>
         `;
         document.getElementById('dynamic-content').innerHTML = formHtml;
-        console.log('Form rendered, calling autoFillIncompleteTargets');
-        console.log('incompleteTargets at this point:', incompleteTargets);
+        
+        
         // Always auto-fill targets if we have any
         autoFillIncompleteTargets();
     });
@@ -584,30 +584,30 @@ function showAddSubmissionForm() {
  * Auto-fill the targets container with incomplete targets from previous periods
  */
 function autoFillIncompleteTargets() {
-    console.log('autoFillIncompleteTargets called');
-    console.log('incompleteTargets:', incompleteTargets);
-    console.log('incompleteTargets.length:', incompleteTargets.length);
+    
+    
+    
     
     const targetsContainer = document.getElementById('targets-container');
-    console.log('targetsContainer found:', !!targetsContainer);
+    
     
     if (!targetsContainer) {
-        console.log('No targets container found');
+        
         return;
     }
     
     if (incompleteTargets.length === 0) {
-        console.log('No incomplete targets to fill');
+        
         return;
     }
     
     // Clear any existing targets
     targetsContainer.innerHTML = '';
-    console.log('Cleared targets container');
+    
     
     // Add each incomplete target
     incompleteTargets.forEach((target, index) => {
-        console.log(`Adding target ${index + 1}:`, target);
+        
         addTargetRow(target);
     });
     
@@ -910,7 +910,7 @@ function addTargetRow(targetData = null) {
     container.appendChild(targetRow);
     
     // Log for debugging
-    console.log(`Added target #${targetNumber}`);
+    
 }
 
 /**
@@ -929,7 +929,7 @@ function removeTargetRow(button) {
         // Renumber targets
         renumberTargets();
         
-        console.log('Target removed successfully');
+        
     } else {
         console.error('Target container not found');
     }
@@ -949,7 +949,7 @@ function renumberTargets() {
     });
     
     // Log for debugging
-    console.log(`Renumbered ${targets.length} targets`);
+    
 }
 
 /**
@@ -1285,8 +1285,8 @@ function renderFieldHistory(submissionId, field, targetId, allFields) {
         });
         
         // Debug: Log the first few entries to see what data we're getting
-        console.log('History data sample:', data.history.slice(0, 3));
-        console.log('Grouped history keys:', Object.keys(groupedHistory));
+        
+        
         
         let historyHtml = `
             <div class='history-header mb-3'>

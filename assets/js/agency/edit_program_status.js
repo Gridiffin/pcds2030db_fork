@@ -165,7 +165,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 loadStatus();
                 bootstrap.Modal.getInstance(editModal).hide();
             } else {
-                alert(data.error || 'Failed to update status.');
+                
             }
         });
     }
@@ -275,7 +275,7 @@ document.addEventListener('DOMContentLoaded', function() {
             fetch(apiUrl, { method: 'POST', body: fd })
                 .then(res => res.json())
                 .then(data => {
-                    console.log('End hold point response:', data);
+                    
                     if (data.success) {
                         loadStatus();
                         showToast('Success', 'Hold point ended successfully! Program status changed to Active.', 'success');

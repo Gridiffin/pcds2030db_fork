@@ -29,8 +29,8 @@ if (!is_agency()) {
 
 // Set up variables for base.php layout
 $pageTitle = 'Agency Dashboard';
-$cssBundle = 'dashboard';
-$jsBundle = 'dashboard';
+$cssBundle = 'agency-dashboard';
+$jsBundle = 'agency-dashboard';
 $contentFile = __DIR__ . '/dashboard_content.php';
 
 // Configure page header

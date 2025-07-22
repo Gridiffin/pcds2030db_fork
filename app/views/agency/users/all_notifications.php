@@ -26,8 +26,8 @@ if (!is_agency()) {
 // Page configuration
 $pageTitle = 'All Notifications';
 $pageClass = 'notifications-page';
-$cssBundle = 'notifications';
-$jsBundle = 'notifications';
+$cssBundle = 'agency-notifications';
+$jsBundle = 'agency-notifications';
 $contentFile = 'partials/notifications_content.php';
 
 // Get notification data

@@ -37,8 +37,8 @@ const mockNotificationDOM = () => {
 global.fetch = jest.fn();
 
 // Import the modules to test
-import NotificationsManager from '../../../assets/js/agency/users/logic.js';
-import NotificationsAPI from '../../../assets/js/agency/users/api.js';
+import NotificationsLogic from '../../../assets/js/agency/users/logic.js';
+import { NotificationsAjax } from '../../../assets/js/agency/users/ajax.js';
 
 describe('Agency Notifications Module', () => {
     let notificationsManager;
@@ -49,11 +49,11 @@ describe('Agency Notifications Module', () => {
         jest.clearAllMocks();
         
         // Initialize modules
-        notificationsAPI = new NotificationsAPI();
-        notificationsManager = new NotificationsManager();
+        notificationsAPI = new NotificationsAjax();
+        notificationsManager = new NotificationsLogic();
     });
 
-    describe('NotificationsAPI', () => {
+    describe('NotificationsAjax', () => {
         test('should fetch notifications successfully', async () => {
             const mockNotifications = {
                 notifications: [
@@ -150,7 +150,7 @@ describe('Agency Notifications Module', () => {
         });
     });
 
-    describe('NotificationsManager', () => {
+    describe('NotificationsLogic', () => {
         test('should initialize successfully', () => {
             expect(notificationsManager).toBeDefined();
             expect(notificationsManager.init).toBeDefined();

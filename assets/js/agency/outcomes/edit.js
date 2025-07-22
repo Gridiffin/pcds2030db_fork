@@ -18,7 +18,7 @@ export class EditOutcome {
      * Initialize edit outcome functionality
      */
     init() {
-        console.log('EditOutcome: Initializing edit outcome module');
+        
         
         // Load configuration data
         this.loadConfiguration();
@@ -59,10 +59,7 @@ export class EditOutcome {
                 this.currentRowConfig = Array.isArray(rowConfig) ? rowConfig : (rowConfig.rows || []);
                 this.currentColumnConfig = Array.isArray(columnConfig) ? columnConfig : (columnConfig.columns || []);
                 
-                console.log('EditOutcome: Configuration loaded', {
-                    rows: this.currentRowConfig,
-                    columns: this.currentColumnConfig
-                });
+                
             } catch (error) {
                 console.error('EditOutcome: Error parsing configuration:', error);
                 this.currentRowConfig = [];
@@ -249,7 +246,7 @@ export class EditOutcome {
         // Set up event listeners for the new elements
         this.setupTableEventListeners();
         
-        console.log('EditOutcome: Table structure updated');
+        
     }
 
     /**
@@ -465,7 +462,7 @@ export class EditOutcome {
             columnConfigInput.value = JSON.stringify(structureData.columns);
         }
         
-        console.log('EditOutcome: Form data prepared for submission');
+        
     }
 
     /**
@@ -562,7 +559,7 @@ export class EditOutcome {
      */
     showSaveSuccess() {
         // Implementation depends on your alert system
-        console.log('EditOutcome: Save successful');
+        
     }
 
     /**
@@ -603,6 +600,6 @@ export class EditOutcome {
             this.chart = null;
         }
         
-        console.log('EditOutcome: Module destroyed');
+        
     }
 }

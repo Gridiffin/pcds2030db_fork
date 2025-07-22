@@ -37,12 +37,7 @@
                 <?php endif; ?>
             </div>
         <?php else: ?>
-            <?php if ((isset($_GET['debug']) && $_GET['debug'] == '1') || (isset($_SESSION['role']) && $_SESSION['role'] === 'admin')): ?>
-                <pre style="background:#f8f9fa; color:#333; border:1px solid #ccc; padding:1em; margin-bottom:1em;">
-                    initiative_name_col: <?php var_dump($initiative_name_col); ?>
-                    initiative keys: <?php if (!empty($initiatives)) var_dump(array_keys($initiatives[0])); else echo 'No initiatives.'; ?>
-                </pre>
-            <?php endif; ?>
+            
             <!-- Table View Only -->
             <div class="table-responsive">
                 <table class="table table-hover mb-0">

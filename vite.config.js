@@ -12,6 +12,10 @@ export default defineConfig({
                 'agency-programs-view': 'assets/js/agency/view_programs.js',
                 'agency-programs-create': 'assets/js/agency/programs/create.js',
                 'agency-programs-add-submission': 'assets/js/agency/programs/add_submission.js',
+                'agency-programs-edit': 'assets/js/agency/programs/edit_program.js',
+                'agency-reports': 'assets/js/agency/reports/view_reports.js',
+                'agency-outcomes': 'assets/js/agency/outcomes/outcomes.js',
+                'agency-notifications': 'assets/js/agency/users/notifications.js',
                 // Add more entry points as needed
             },
             output: {

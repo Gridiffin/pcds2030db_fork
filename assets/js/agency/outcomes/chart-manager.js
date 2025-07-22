@@ -29,7 +29,7 @@ export class ChartManager {
             const chartId = canvas.id || 'chart_' + Date.now();
             this.charts.set(chartId, chart);
             
-            console.log('ChartManager: Chart created successfully', chartId);
+            
             return chart;
         } catch (error) {
             console.error('ChartManager: Error creating chart:', error);
@@ -178,7 +178,7 @@ export class ChartManager {
             chart.data = chartData;
             chart.update('resize');
             
-            console.log('ChartManager: Chart updated successfully');
+            
         } catch (error) {
             console.error('ChartManager: Error updating chart:', error);
         }
@@ -212,7 +212,7 @@ export class ChartManager {
             
             chart.update('resize');
             
-            console.log('ChartManager: Chart type changed to', newType);
+            
         } catch (error) {
             console.error('ChartManager: Error changing chart type:', error);
         }
@@ -285,7 +285,7 @@ export class ChartManager {
             link.click();
             document.body.removeChild(link);
             
-            console.log('ChartManager: Chart exported as', filename + '.png');
+            
         } catch (error) {
             console.error('ChartManager: Error exporting chart:', error);
         }
@@ -306,7 +306,7 @@ export class ChartManager {
         if (chart) {
             chart.destroy();
             this.charts.delete(chartId);
-            console.log('ChartManager: Chart destroyed', chartId);
+            
         }
     }
 
@@ -316,7 +316,7 @@ export class ChartManager {
     destroy() {
         this.charts.forEach((chart, chartId) => {
             chart.destroy();
-            console.log('ChartManager: Chart destroyed', chartId);
+            
         });
         this.charts.clear();
     }

@@ -12,7 +12,7 @@ export class ViewProgramsDOM {
     }
     
     init() {
-        console.log('🎯 Initializing DOM handlers...');
+        
         
         this.initDeleteModal();
         this.initMoreActionsModal();
@@ -20,7 +20,7 @@ export class ViewProgramsDOM {
         this.initTableSorting();
         this.updateCounters();
         
-        console.log('✅ DOM handlers initialized');
+        
     }
     
     /**
@@ -29,7 +29,6 @@ export class ViewProgramsDOM {
     initDeleteModal() {
         const modal = document.getElementById('deleteModal');
         if (!modal) {
-            console.warn('Delete modal not found');
             return;
         }
         
@@ -130,7 +129,7 @@ export class ViewProgramsDOM {
     showMoreActionsModal(programId, programName, programType) {
         // Create a simple dropdown menu or modal for more actions
         // This is a placeholder - implement based on actual requirements
-        console.log('More actions for program:', { programId, programName, programType });
+        
     }
     
     /**
@@ -261,7 +260,7 @@ export class ViewProgramsDOM {
         if (typeof window.showToast === 'function') {
             window.showToast(title, message, type);
         } else {
-            console.log(`${title}: ${message}`);
+            
         }
     }
     

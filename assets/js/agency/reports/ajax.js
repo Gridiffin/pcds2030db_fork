@@ -237,8 +237,6 @@ export class ReportsAjax {
         // Show user-friendly error message
         if (typeof window.showToast === 'function') {
             window.showToast('Error', `Failed to ${operation}. Please try again.`, 'danger');
-        } else {
-            alert(`Error: Failed to ${operation}. Please try again.`);
         }
     }
     

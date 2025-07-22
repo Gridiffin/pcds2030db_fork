@@ -473,7 +473,7 @@ export default class NotificationsInteractions {
         const selectedIds = Array.from(this.app.selectedNotifications);
         
         if (selectedIds.length === 0) {
-            alert('Please select notifications to delete.');
+            
             return;
         }
         
@@ -489,7 +489,7 @@ export default class NotificationsInteractions {
         const selectedIds = Array.from(this.app.selectedNotifications);
         
         if (selectedIds.length === 0) {
-            alert('Please select notifications to mark as read.');
+            
             return;
         }
         
@@ -501,7 +501,7 @@ export default class NotificationsInteractions {
      */
     async handleMarkAsUnread(notificationIds) {
         // This would require a new endpoint
-        console.log('Mark as unread functionality not yet implemented:', notificationIds);
+        
         this.app.showError('Mark as unread functionality coming soon.');
     }
     
@@ -544,7 +544,7 @@ export default class NotificationsInteractions {
      */
     showNotificationPreview(notificationId) {
         // This could open a modal with full notification details
-        console.log('Notification preview for:', notificationId);
+        
     }
     
     /**
@@ -552,6 +552,6 @@ export default class NotificationsInteractions {
      */
     openNotificationSettings() {
         // This could open notification preferences modal
-        console.log('Opening notification settings...');
+        
     }
 }

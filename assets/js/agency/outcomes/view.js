@@ -16,7 +16,7 @@ export class ViewOutcome {
      * Initialize view outcome functionality
      */
     init() {
-        console.log('ViewOutcome: Initializing view outcome module');
+        
         
         // Load data from global variables set by PHP
         this.loadData();
@@ -41,11 +41,7 @@ export class ViewOutcome {
             this.columns = window.tableColumns || [];
             this.rows = window.tableRows || [];
             
-            console.log('ViewOutcome: Data loaded', {
-                tableData: this.tableData,
-                columns: this.columns,
-                rows: this.rows
-            });
+            
         }
     }
 
@@ -62,7 +58,7 @@ export class ViewOutcome {
      * Initialize chart visualization
      */
     initializeChart() {
-        console.log('ViewOutcome: Initializing chart');
+        
         
         const chartContainer = document.querySelector('.outcome-chart-container');
         const chartCanvas = document.getElementById('metricChart');
@@ -85,7 +81,7 @@ export class ViewOutcome {
                 type: 'line' // Default chart type for view mode
             });
             
-            console.log('ViewOutcome: Chart created successfully');
+            
         } catch (error) {
             console.error('ViewOutcome: Error creating chart:', error);
             this.showChartError();
@@ -96,7 +92,7 @@ export class ViewOutcome {
      * Show empty state when no data is available
      */
     showEmptyState() {
-        console.log('ViewOutcome: Showing empty state');
+        
         
         const chartContainer = document.querySelector('.outcome-chart-container');
         if (chartContainer) {
@@ -173,8 +169,6 @@ export class ViewOutcome {
             return;
         }
 
-        console.log('ViewOutcome: Changing chart type to', type);
-        
         try {
             this.chartManager.updateChartType(this.chart, type, {
                 data: this.tableData,
@@ -214,7 +208,7 @@ export class ViewOutcome {
             link.click();
             document.body.removeChild(link);
             
-            console.log('ViewOutcome: Chart exported successfully');
+            
         } catch (error) {
             console.error('ViewOutcome: Error exporting chart:', error);
         }
@@ -256,7 +250,7 @@ export class ViewOutcome {
             document.body.removeChild(link);
             window.URL.revokeObjectURL(url);
             
-            console.log('ViewOutcome: Data exported successfully');
+            
         } catch (error) {
             console.error('ViewOutcome: Error exporting data:', error);
         }
@@ -280,6 +274,6 @@ export class ViewOutcome {
         }
         
         // Remove event listeners (they'll be cleaned up with element removal)
-        console.log('ViewOutcome: Module destroyed');
+        
     }
 }

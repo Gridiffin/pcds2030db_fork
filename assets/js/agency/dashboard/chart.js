@@ -91,7 +91,7 @@ export class DashboardChart {
             // Make chart globally accessible for updates
             window.programRatingChart = this.chart;
             
-            console.log('✅ Program rating chart created successfully');
+            
             
         } catch (error) {
             console.error('❌ Error creating chart:', error);
@@ -130,7 +130,7 @@ export class DashboardChart {
             this.chart.data.datasets[0].data = newData.data;
             this.chart.data.labels = newData.labels;
             this.chart.update('active');
-            console.log('✅ Chart updated with new data');
+            
         }
     }
     

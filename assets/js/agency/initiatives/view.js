@@ -3,6 +3,11 @@
  * Handles DOM manipulation and Chart.js interaction for initiative view
  */
 
+// Import CSS
+import '../../../css/agency/initiatives/view.css';
+import '../../../css/agency/initiatives/listing.css';
+import '../../../css/agency/initiatives/base.css';
+
 import {
     parseRatingData,
     prepareChartData,

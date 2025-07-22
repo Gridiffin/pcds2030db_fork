@@ -138,6 +138,6 @@ function showToast(title, message, type = 'info', duration = 5000) {
         window.showToast(title, message, type, duration);
     } else {
         // Fallback if global showToast isn't loaded
-        alert(`${title}: ${message}`);
+        
     }
 }

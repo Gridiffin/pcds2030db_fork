@@ -2,6 +2,10 @@
  * View Programs Functionality
  * Handles filtering and interactions on the programs list page
  */
+
+// Import CSS for programs view
+import '../../css/agency/programs/view_programs.css';
+
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize delete functionality
     initDeleteButtons();
@@ -399,7 +403,6 @@ function initializePagination() {
         });
     }
     
-    console.log('Pagination initialized for both tables');
 }
 
 /**

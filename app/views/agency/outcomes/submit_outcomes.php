@@ -29,8 +29,8 @@ $outcomes = get_all_outcomes();
 
 // Set up variables for base.php layout
 $pageTitle = 'View Outcomes';
-$cssBundle = 'outcomes';
-$jsBundle = 'outcomes';
+$cssBundle = 'agency-outcomes';
+$jsBundle = 'agency-outcomes';
 $bodyClass = 'outcomes-page';
 $contentFile = __DIR__ . '/partials/submit_content.php';
 

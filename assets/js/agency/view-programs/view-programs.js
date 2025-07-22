@@ -22,7 +22,7 @@ class ViewPrograms {
     
     init() {
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('🚀 Initializing View Programs module...');
+            
             
             // Initialize all components
             this.dom.init();
@@ -31,7 +31,7 @@ class ViewPrograms {
             // Setup global event listeners
             this.setupGlobalEvents();
             
-            console.log('✅ View Programs module initialized successfully');
+            
         });
     }
     

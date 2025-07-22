@@ -16,13 +16,13 @@ export class ViewProgramsFilters {
     }
     
     init() {
-        console.log('🔍 Initializing filters...');
+        
         
         this.initDraftFilters();
         this.initFinalizedFilters();
         this.initEmptyFilters();
         
-        console.log('✅ Filters initialized');
+        
     }
     
     /**

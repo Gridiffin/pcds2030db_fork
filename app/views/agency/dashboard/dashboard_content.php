@@ -33,5 +33,5 @@
     // Pass current period ID for AJAX requests
     window.currentPeriodId = <?php echo json_encode($period_id); ?>;
     
-    console.log('📊 Dashboard data initialized');
+    
 </script>

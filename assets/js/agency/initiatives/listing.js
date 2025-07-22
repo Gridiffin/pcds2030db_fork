@@ -14,7 +14,7 @@ import {
  * Initialize initiatives listing page functionality
  */
 export function initializeListingPage() {
-    console.log('Initializing initiatives listing page...');
+    
     
     // Initialize search functionality
     initializeSearch();
@@ -31,7 +31,7 @@ export function initializeListingPage() {
     // Initialize filter reset functionality
     initializeFilterReset();
     
-    console.log('Initiatives listing page initialized successfully');
+    
 }
 
 /**

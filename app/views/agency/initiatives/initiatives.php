@@ -66,8 +66,8 @@ $initiatives = get_agency_initiatives($agency_id, $filters);
 
 // Configure page for base.php layout
 $pageTitle = 'Initiatives';
-$cssBundle = 'initiatives';
-$jsBundle = 'initiatives';
+$cssBundle = 'agency-initiatives';
+$jsBundle = 'agency-initiatives';
 
 // Configure the modern page header
 $header_config = [

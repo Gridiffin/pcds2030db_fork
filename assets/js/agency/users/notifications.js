@@ -32,7 +32,6 @@ class NotificationsApp {
      */
     init() {
         try {
-            console.log('Initializing Notifications App...');
             
             // Wait for DOM to be ready
             if (document.readyState === 'loading') {
@@ -60,7 +59,6 @@ class NotificationsApp {
             // Setup periodic refresh for new notifications
             this.setupAutoRefresh();
             
-            console.log('Notifications App initialized successfully');
         } catch (error) {
             console.error('Failed to setup Notifications App:', error);
             this.showError('Failed to setup notifications interface.');

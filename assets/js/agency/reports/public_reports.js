@@ -19,7 +19,7 @@ export class PublicReports {
         this.attachEventListeners();
         this.loadPublicReports();
         
-        console.log('Public Reports page initialized');
+        
     }
     
     /**
@@ -344,7 +344,7 @@ export class PublicReports {
         if (typeof window.showToast === 'function') {
             window.showToast('Error', message, 'danger');
         } else {
-            alert(`Error: ${message}`);
+            
         }
     }
 }

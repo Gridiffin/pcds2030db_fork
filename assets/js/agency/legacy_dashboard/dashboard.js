@@ -79,13 +79,6 @@ function initDashboardAssignedToggle() {
 function fetchDashboardData(includeAssigned) {
     const periodId = document.getElementById('periodSelector')?.value || '';
     
-    // Debug log
-    console.log('Fetching dashboard data:', {
-        periodId,
-        includeAssigned,
-        url: '../ajax/chart_data.php'  // Fixed path - go up one level from dashboard/
-    });
-    
     // Use the correct path to the AJAX endpoint
     const formData = new FormData();
     formData.append('period_id', periodId);
@@ -97,7 +90,6 @@ function fetchDashboardData(includeAssigned) {
     })
     .then(response => response.json())
     .then(data => {
-        console.log('Received dashboard data:', data);
         
         if (!data.success) {
             throw new Error(data.error || 'Unknown error');
@@ -182,7 +174,7 @@ function updateCardSubtitle(selector, value, total) {
 function renderRatingChart(chartData) {
     const chartCanvas = document.getElementById('programRatingChart');
     if (!chartCanvas) {
-        console.log('Chart canvas not found');
+        
         return;
     }
     
@@ -192,9 +184,7 @@ function renderRatingChart(chartData) {
         return;
     }
     
-    // Debug log
-    console.log('Rendering chart with data:', chartData);
-      // Clear any existing chart - with proper check to ensure it has destroy method
+    // Clear any existing chart - with proper check to ensure it has destroy method
     if (window.programRatingChart && typeof window.programRatingChart.destroy === 'function') {
         window.programRatingChart.destroy();
     }
@@ -260,7 +250,7 @@ function renderRatingChart(chartData) {
             }
         });
         
-        console.log('Chart successfully rendered');
+        
     } catch (error) {
         console.error('Error creating chart:', error);
     }
@@ -270,9 +260,9 @@ function renderRatingChart(chartData) {
  * Initialize the program table sorting functionality
  */
 function initProgramTableSorting() {
-    console.log('initProgramTableSorting called');
+    
     const programTable = document.getElementById('dashboardProgramsTable')?.closest('table');
-    console.log('programTable:', programTable);
+    
     const sortableHeaders = document.querySelectorAll('th.sortable');
     
     if (!programTable || !sortableHeaders.length) return;

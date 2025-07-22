@@ -433,7 +433,7 @@ class EnhancedProgramDetails {
             showToast(title, message, type, duration);
         } else {
             // Fallback to alert
-            alert(`${title}: ${message}`);
+            
         }
     }
 

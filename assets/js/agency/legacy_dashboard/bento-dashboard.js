@@ -176,7 +176,7 @@ class BentoDashboard {
                 // Actions cards don't need special handling
                 break;
             default:
-                console.log('Card clicked:', card);
+                
         }
     }
 
@@ -436,7 +436,7 @@ class BentoDashboard {
 
     handleQuickAction(button) {
         const action = button.textContent.trim();
-        console.log('Quick action triggered:', action);
+        
         
         // Add visual feedback
         button.classList.add('btn-loading');

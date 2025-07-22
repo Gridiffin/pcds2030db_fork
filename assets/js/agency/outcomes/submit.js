@@ -15,7 +15,7 @@ export class SubmitOutcomes {
      * Initialize submit outcomes functionality
      */
     init() {
-        console.log('SubmitOutcomes: Initializing submit outcomes module');
+        
         
         // Load initial data
         this.loadCurrentPeriod();
@@ -185,7 +185,7 @@ export class SubmitOutcomes {
         });
 
         container.innerHTML = html;
-        console.log('SubmitOutcomes: Rendered', this.filteredOutcomes.length, 'outcomes');
+        
     }
 
     /**
@@ -261,7 +261,7 @@ export class SubmitOutcomes {
         const action = event.target.textContent.trim().toLowerCase();
         const outcomeId = event.target.closest('.outcome-card').dataset.outcomeId;
         
-        console.log(`SubmitOutcomes: ${action} action for outcome ${outcomeId}`);
+        
     }
 
     /**
@@ -293,7 +293,7 @@ export class SubmitOutcomes {
             document.body.removeChild(link);
             window.URL.revokeObjectURL(url);
             
-            console.log('SubmitOutcomes: Outcomes exported successfully');
+            
         } catch (error) {
             console.error('SubmitOutcomes: Error exporting outcomes:', error);
         }
@@ -356,6 +356,6 @@ export class SubmitOutcomes {
      */
     destroy() {
         // Clean up any intervals or timeouts if needed
-        console.log('SubmitOutcomes: Module destroyed');
+        
     }
 }

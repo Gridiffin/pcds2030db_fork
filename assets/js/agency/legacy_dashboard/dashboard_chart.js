@@ -16,7 +16,7 @@
          * @param {Object} data - Chart data containing values and colors
          */
         init(data) {
-            console.log('ChartManager.init called with data:', data);
+            
             this.data = data;
             
             // Verify data integrity
@@ -25,11 +25,11 @@
                 return this;
             }
             
-            console.log('Chart data is valid, proceeding with chart creation');
+            
             
             const containerElement = document.getElementById(this.chartId).parentElement;
             if (data.hasPeriodData === false) {
-                console.log('No period data available, showing no-data message');
+                
                 this.showNoDataMessage(containerElement);
                 return this;
             }
@@ -92,8 +92,8 @@
                 return;
             }
             
-            console.log("Creating chart with data:", this.data.data);
-            console.log("Chart canvas element found:", ctx);
+            
+            
             
             // Check if Chart.js is available
             if (typeof Chart === 'undefined') {
@@ -101,7 +101,7 @@
                 return;
             }
             
-            console.log('Chart.js is available');
+            
             
             // Check for zero data - show empty message if all values are 0
             const hasData = this.data.data.some(value => value > 0);
@@ -120,7 +120,7 @@
             // Check for and destroy existing chart instance
             const existingChart = Chart.getChart(ctx);
             if (existingChart) {
-                console.log("Destroying existing chart instance");
+                
                 existingChart.destroy();
             }
             
@@ -193,7 +193,7 @@
                 }
             });
             
-            console.log("Chart created successfully");
+            
             
             // After first render, disable initial animation
             this.initialAnimation = false;
@@ -246,7 +246,8 @@
     }
 
     // Expose these functions to global scope
-    window.initializeDashboardChart = function(chartData) {        console.log("initializeDashboardChart called with data:", chartData);        const chartInstance = new ChartManager('programRatingChart');
+    window.initializeDashboardChart = function(chartData) {        
+        const chartInstance = new ChartManager('programRatingChart');
         chartInstance.init(chartData);
         
         // Make chart available globally for updates
@@ -255,7 +256,7 @@
     };
       // Make the updateChartByProgramType function globally accessible
     window.updateChartByProgramType = function(includeAssigned) {
-        console.log("updateChartByProgramType called with includeAssigned:", includeAssigned);
+        
         
         // Get current period ID from URL params or global variable
         const urlParams = new URLSearchParams(window.location.search);
@@ -273,7 +274,7 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                console.log("Received chart data from server:", data);
+                
                 
                 // Update chart with new data
                 if (window.dashboardChart) {
