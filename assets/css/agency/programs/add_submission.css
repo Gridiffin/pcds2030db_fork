@@ -1,0 +1,14 @@
+/**
+ * Styles for the Add Submission page.
+ * Ensures proper layout and spacing, especially with the fixed navbar.
+ */
+
+body.add-submission-page {
+    padding-top: 70px; /* Standard height for the desktop navbar */
+}
+
+@media (max-width: 768px) {
+    body.add-submission-page {
+        padding-top: 85px; /* Adjusted height for the mobile navbar */
+    }
+} 

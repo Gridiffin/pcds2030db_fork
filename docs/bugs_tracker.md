@@ -648,105 +648,49 @@ eports.php on line 75`
   - Added proper CSS/JS bundling with Vite
 - **Prevention:** Always use complete base.php layout pattern - either old layout (header/footer includes) OR new layout (base.php with content file), never mix both patterns.
 
-# Create Program Module Refactor - Potential Issues to Watch
+---
 
-**Date:** 2025-07-21
+# Add Submission Module Refactor - Summary & Learnings
 
-## Potential Issues Based on Past Refactors
+**Date:** 2025-07-22
 
-1. **Path Resolution Issues**
-   - Watch for missing `app/` prefix in include paths (common in initiatives Bug #11)
-   - Verify all includes use `PROJECT_ROOT_PATH . 'app/...'` pattern
-   - Check partial includes from main content file
+## Refactor Summary
 
-2. **Navbar Overlap**
-   - Fixed navbar may cover page content (recurring in initiatives Bug #13)
-   - Solution: Add proper body padding in `create.css`:
-     ```css
-     body.create-program-page {
-         padding-top: 70px; /* Desktop */
-     }
-     @media (max-width: 768px) {
-         body.create-program-page {
-             padding-top: 85px; /* Mobile */
-         }
-     }
-     ```
+- **Module:** `app/views/agency/programs/add_submission.php`
+- **Goal:** Refactor the "Add Submission" page to align with modern best practices, including using the base layout, modular assets (CSS/JS), and Vite bundling.
 
-3. **Asset Loading**
-   - Vite bundle paths must match layout expectations
-   - CSS/JS bundles should be named consistently
-   - Watch for hardcoded asset paths
+### Changes Implemented
 
-4. **Form Validation State**
-   - Form validation must persist after failed submission
-   - Error messages should be displayed properly
-   - Client and server validation must match
+1.  **Layout & Structure:**
+    *   Converted the page to use the `base.php` layout system, replacing the old `header.php`/`footer.php` includes.
+    *   Created a content partial (`partials/add_submission_content.php`) to separate HTML markup from PHP logic.
+    *   This fixed the footer positioning and ensures a consistent page structure.
 
-5. **AJAX Endpoint Availability**
-   - Program number check endpoint must be accessible
-   - Proper error handling for AJAX failures
-   - Correct path resolution for AJAX URLs
+2.  **Asset Management:**
+    *   Created a new CSS file (`assets/css/agency/programs/add_submission.css`) and added the standard navbar padding fix to prevent content overlap.
+    *   Moved the JavaScript file to a modular location (`assets/js/agency/programs/add_submission.js`) and converted it to an ES module.
+    *   Added a new entry to `vite.config.js` (`agency-programs-add-submission`) and rebuilt the assets.
 
-## Prevention Checklist
+3.  **Code Quality:**
+    *   Corrected the `PROJECT_ROOT_PATH` definition to prevent path resolution errors.
+    *   Modified the JavaScript to read data from `data-*` attributes on the form instead of relying on global `window` variables, improving encapsulation.
 
-1. **Path Resolution**
-   - [ ] Use `PROJECT_ROOT_PATH . 'app/...'` for all includes
-   - [ ] Verify partial paths relative to main content file
-   - [ ] Check AJAX endpoint paths
+### Bugs & Issues Encountered
 
-2. **Layout Integration**
-   - [ ] Add proper body class for navbar offset
-   - [ ] Use base layout pattern consistently
-   - [ ] Verify content file loading
+- **Build Failure:** The `npm run build` command initially failed due to an incorrect file path in `vite.config.js` for a different module (`create_program.js` instead of `create.js`).
+- **Solution:** Corrected the path in the Vite config, which allowed the build to complete successfully. This highlights the importance of verifying all entry points during a build.
 
-3. **Asset Management**
-   - [ ] Update Vite config with new bundles
-   - [ ] Use consistent bundle naming
-   - [ ] Remove any hardcoded paths
+**Result:** The "Add Submission" page is now fully modernized, maintainable, and consistent with the rest of the refactored application.
 
-4. **Validation**
-   - [ ] Implement both client and server validation
-   - [ ] Preserve form state on validation failure
-   - [ ] Show validation errors clearly
+### 20. Bundle Name Mismatch in View Programs - More Actions Button Not Working (Again) (2025-07-22)
 
-5. **AJAX Integration**
-   - [ ] Create and test AJAX endpoints
-   - [ ] Implement proper error handling
-   - [ ] Use dynamic base URL for paths
-
-## Testing Steps
-
-1. **Form Submission**
-   - [ ] Test with valid data
-   - [ ] Test with invalid data
-   - [ ] Verify error messages
-   - [ ] Check form state preservation
-
-2. **Program Number**
-   - [ ] Test with valid numbers
-   - [ ] Test with invalid numbers
-   - [ ] Test duplicate checking
-   - [ ] Verify initiative-specific validation
-
-3. **User Permissions**
-   - [ ] Test with restrictions enabled/disabled
-   - [ ] Test user selection
-   - [ ] Verify permissions are saved
-
-4. **Layout**
-   - [ ] Check navbar overlap
-   - [ ] Test responsive behavior
-   - [ ] Verify all sections visible
-
-5. **Asset Loading**
-   - [ ] Verify CSS loading
-   - [ ] Verify JS loading
-   - [ ] Check bundle paths
-
-## Notes
-
-- Follow established patterns from initiatives refactor
-- Use modular structure consistently
-- Maintain all existing functionality
-- Document any new patterns or solutions
+- **Problem:** The "More Actions" button in the view programs page was not responding to clicks. No modal/popup was appearing when clicked.
+- **Cause:** **Exact same issue as Bug #19** - Bundle name mismatch between the PHP view file and the Vite configuration. The view programs page was trying to load bundles named `'agency-view-programs'` but the actual Vite bundles were named `'agency-programs-view'`.
+- **Root Issue:** This is a **recurring pattern** - when refactoring pages to use the base layout system, bundle names in PHP files are not being updated to match the Vite configuration entry names.
+- **Solution:** Updated `$cssBundle` and `$jsBundle` in `app/views/agency/programs/view_programs.php` from `'agency-view-programs'` to `'agency-programs-view'` to match the Vite config.
+- **Files Fixed:** `app/views/agency/programs/view_programs.php`
+- **Prevention:** 
+  - **Always verify bundle names** in PHP view files match the entry names in `vite.config.js`
+  - **Create a checklist** for bundle name verification during refactoring
+  - **Consider standardizing naming convention** (e.g., always `module-section-page` format)
+  - **Add validation** to catch bundle name mismatches during build process

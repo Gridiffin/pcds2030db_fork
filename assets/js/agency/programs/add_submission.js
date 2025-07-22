@@ -1,19 +1,23 @@
+import '../../../css/agency/programs/add_submission.css';
+
 document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('addSubmissionForm');
+    if (!form) return;
+
     const periodSelect = document.getElementById('period_id');
     const targetsContainer = document.getElementById('targets-container');
     const addTargetBtn = document.getElementById('add-target-btn');
     
-    // Get program data for target number construction
-    const programNumber = window.programNumber || '';
+    const programNumber = form.dataset.programNumber || '';
     
-    // Highlight open periods
-    Array.from(periodSelect.options).forEach(option => {
-        if (option.dataset.status === 'open') {
-            option.classList.add('text-success', 'fw-bold');
-        }
-    });
+    if (periodSelect) {
+        Array.from(periodSelect.options).forEach(option => {
+            if (option.dataset.status === 'open') {
+                option.classList.add('text-success', 'fw-bold');
+            }
+        });
+    }
     
-    // Target management
     let targetCounter = 0;
     const addNewTarget = () => {
         targetCounter++;
@@ -49,22 +53,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 <textarea class="form-control form-control-sm" name="target_status_description[]" rows="1" placeholder="Achievements/Status"></textarea>
             </div>
         `;
-        targetsContainer.appendChild(targetEntry);
+        if (targetsContainer) {
+            targetsContainer.appendChild(targetEntry);
+        }
         
-        // Add remove functionality
         const removeBtn = targetEntry.querySelector('.remove-target');
         removeBtn.addEventListener('click', () => {
             targetEntry.remove();
             updateTargetNumbers();
         });
         
-        // Add target number validation
         const counterInput = targetEntry.querySelector('.target-counter-input');
         counterInput.addEventListener('blur', () => {
             validateTargetNumber(counterInput);
         });
     };
+
     const updateTargetNumbers = () => {
+        if (!targetsContainer) return;
         const targets = targetsContainer.querySelectorAll('.target-entry');
         targets.forEach((target, index) => {
             const label = target.querySelector('label');
@@ -75,28 +81,23 @@ document.addEventListener('DOMContentLoaded', function() {
         targetCounter = targets.length;
     };
     
-    // Target number validation function
     const validateTargetNumber = (input) => {
         const value = input.value.trim();
         const targetEntry = input.closest('.target-entry');
         const hiddenInput = targetEntry.querySelector('input[name="target_number[]"]');
         
-        // Remove existing validation classes
         input.classList.remove('is-valid', 'is-invalid');
         
-        // Clear validation message
         const existingFeedback = targetEntry.querySelector('.invalid-feedback');
         if (existingFeedback) {
             existingFeedback.remove();
         }
         
-        // If empty, it's valid (optional field)
         if (value === '') {
             hiddenInput.value = '';
             return true;
         }
         
-        // Check if it's a positive number
         const numValue = parseInt(value, 10);
         if (isNaN(numValue) || numValue < 1) {
             input.classList.add('is-invalid');
@@ -107,42 +108,47 @@ document.addEventListener('DOMContentLoaded', function() {
             return false;
         }
         
-        // Check for duplicates within the same submission
-        const allCounterInputs = targetsContainer.querySelectorAll('.target-counter-input');
-        let duplicateCount = 0;
-        allCounterInputs.forEach(otherInput => {
-            if (otherInput !== input && otherInput.value.trim() === value) {
-                duplicateCount++;
+        if (targetsContainer) {
+            const allCounterInputs = targetsContainer.querySelectorAll('.target-counter-input');
+            let duplicateCount = 0;
+            allCounterInputs.forEach(otherInput => {
+                if (otherInput !== input && otherInput.value.trim() === value) {
+                    duplicateCount++;
+                }
+            });
+            
+            if (duplicateCount > 0) {
+                input.classList.add('is-invalid');
+                const feedback = document.createElement('div');
+                feedback.className = 'invalid-feedback';
+                feedback.textContent = 'This target number is already used';
+                input.parentNode.appendChild(feedback);
+                return false;
             }
-        });
-        
-        if (duplicateCount > 0) {
-            input.classList.add('is-invalid');
-            const feedback = document.createElement('div');
-            feedback.className = 'invalid-feedback';
-            feedback.textContent = 'This target number is already used';
-            input.parentNode.appendChild(feedback);
-            return false;
         }
         
-        // Valid - construct full target number
         const fullTargetNumber = `${programNumber}.${value}`;
         hiddenInput.value = fullTargetNumber;
         input.classList.add('is-valid');
         return true;
     };
     
-    addTargetBtn.addEventListener('click', addNewTarget);
-    // Add one target by default
-    addNewTarget();
+    if (addTargetBtn) {
+        addTargetBtn.addEventListener('click', addNewTarget);
+    }
+    
+    // Add one target by default if the container exists
+    if (targetsContainer) {
+        addNewTarget();
+    }
 
-    // Modern multi-file upload UX
     const addAttachmentBtn = document.getElementById('add-attachment-btn');
     const attachmentsInput = document.getElementById('attachments');
     const attachmentsList = document.getElementById('attachments-list');
     let selectedFiles = [];
 
     function renderAttachmentsList() {
+        if (!attachmentsList) return;
         attachmentsList.innerHTML = '';
         selectedFiles.forEach((file, idx) => {
             const li = document.createElement('li');
@@ -169,7 +175,6 @@ document.addEventListener('DOMContentLoaded', function() {
         attachmentsInput.addEventListener('change', function() {
             if (attachmentsInput.files.length > 0) {
                 Array.from(attachmentsInput.files).forEach(file => {
-                    // Prevent duplicates
                     if (!selectedFiles.some(f => f.name === file.name && f.size === file.size && f.lastModified === file.lastModified)) {
                         selectedFiles.push(file);
                     }
@@ -179,11 +184,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // On form submit, validate target numbers and append all files to FormData
-    const form = document.getElementById('addSubmissionForm');
-    if (form) {
-        form.addEventListener('submit', function(e) {
-            // Validate all target numbers before submission
+    form.addEventListener('submit', function(e) {
+        if (targetsContainer) {
             const allCounterInputs = targetsContainer.querySelectorAll('.target-counter-input');
             let hasValidationErrors = false;
             
@@ -195,26 +197,28 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (hasValidationErrors) {
                 e.preventDefault();
-                showToast('Error', 'Please fix the target number validation errors before submitting.', 'danger');
+                // Assuming showToast is a global function
+                if (typeof showToast === 'function') {
+                    showToast('Error', 'Please fix the target number validation errors before submitting.', 'danger');
+                }
                 return;
             }
+        }
+        
+        if (selectedFiles.length > 0) {
+            const oldInputs = form.querySelectorAll('input[type="file"][name="attachments[]"]');
+            oldInputs.forEach(input => input.remove());
             
-            if (selectedFiles.length > 0) {
-                // Remove any existing file inputs
-                const oldInputs = form.querySelectorAll('input[type="file"][name="attachments[]"]');
-                oldInputs.forEach(input => input.remove());
-                // Create a new DataTransfer to hold all files
-                const dataTransfer = new DataTransfer();
-                selectedFiles.forEach(file => dataTransfer.items.add(file));
-                // Create a new file input and append to form
-                const newInput = document.createElement('input');
-                newInput.type = 'file';
-                newInput.name = 'attachments[]';
-                newInput.multiple = true;
-                newInput.className = 'd-none';
-                newInput.files = dataTransfer.files;
-                form.appendChild(newInput);
-            }
-        });
-    }
+            const dataTransfer = new DataTransfer();
+            selectedFiles.forEach(file => dataTransfer.items.add(file));
+            
+            const newInput = document.createElement('input');
+            newInput.type = 'file';
+            newInput.name = 'attachments[]';
+            newInput.multiple = true;
+            newInput.className = 'd-none';
+            newInput.files = dataTransfer.files;
+            form.appendChild(newInput);
+        }
+    });
 }); 
