@@ -630,4 +630,123 @@ eports.php on line 75`
 - **Files Fixed:**
   - `app/views/layouts/footer.php` (added fallback dropdown initialization script)
 - **Prevention:** For any future issues with Bootstrap component initialization, add a forced re-initialization as a robust fallback after all scripts have loaded.
-```
+
+### 19. Create Program Footer Positioning Issue (2025-07-21)
+
+- **Problem:** Footer appearing between header and content instead of at the bottom of the page in create program module.
+- **Cause:** The create program file was mixing old and new layout patterns. It was including `base.php` correctly but then had all content HTML directly in the file instead of using a content file, plus manually including the footer at the end.
+- **Root Issue:** Incomplete migration to base.php layout pattern - the file was partially refactored but still contained old layout structure.
+- **Solution:**
+  1. Removed all inline HTML content from main file
+  2. Set `$contentFile = 'partials/create_program_content.php'` to use proper content file pattern
+  3. Removed manual footer include at end of file
+  4. Moved all content to proper partials structure
+  5. Updated base layout integration to follow established pattern
+- **Files Fixed:**
+  - `app/views/agency/programs/create_program.php` (proper base layout usage)
+  - Created modular partials in `app/views/agency/programs/partials/`
+  - Added proper CSS/JS bundling with Vite
+- **Prevention:** Always use complete base.php layout pattern - either old layout (header/footer includes) OR new layout (base.php with content file), never mix both patterns.
+
+# Create Program Module Refactor - Potential Issues to Watch
+
+**Date:** 2025-07-21
+
+## Potential Issues Based on Past Refactors
+
+1. **Path Resolution Issues**
+   - Watch for missing `app/` prefix in include paths (common in initiatives Bug #11)
+   - Verify all includes use `PROJECT_ROOT_PATH . 'app/...'` pattern
+   - Check partial includes from main content file
+
+2. **Navbar Overlap**
+   - Fixed navbar may cover page content (recurring in initiatives Bug #13)
+   - Solution: Add proper body padding in `create.css`:
+     ```css
+     body.create-program-page {
+         padding-top: 70px; /* Desktop */
+     }
+     @media (max-width: 768px) {
+         body.create-program-page {
+             padding-top: 85px; /* Mobile */
+         }
+     }
+     ```
+
+3. **Asset Loading**
+   - Vite bundle paths must match layout expectations
+   - CSS/JS bundles should be named consistently
+   - Watch for hardcoded asset paths
+
+4. **Form Validation State**
+   - Form validation must persist after failed submission
+   - Error messages should be displayed properly
+   - Client and server validation must match
+
+5. **AJAX Endpoint Availability**
+   - Program number check endpoint must be accessible
+   - Proper error handling for AJAX failures
+   - Correct path resolution for AJAX URLs
+
+## Prevention Checklist
+
+1. **Path Resolution**
+   - [ ] Use `PROJECT_ROOT_PATH . 'app/...'` for all includes
+   - [ ] Verify partial paths relative to main content file
+   - [ ] Check AJAX endpoint paths
+
+2. **Layout Integration**
+   - [ ] Add proper body class for navbar offset
+   - [ ] Use base layout pattern consistently
+   - [ ] Verify content file loading
+
+3. **Asset Management**
+   - [ ] Update Vite config with new bundles
+   - [ ] Use consistent bundle naming
+   - [ ] Remove any hardcoded paths
+
+4. **Validation**
+   - [ ] Implement both client and server validation
+   - [ ] Preserve form state on validation failure
+   - [ ] Show validation errors clearly
+
+5. **AJAX Integration**
+   - [ ] Create and test AJAX endpoints
+   - [ ] Implement proper error handling
+   - [ ] Use dynamic base URL for paths
+
+## Testing Steps
+
+1. **Form Submission**
+   - [ ] Test with valid data
+   - [ ] Test with invalid data
+   - [ ] Verify error messages
+   - [ ] Check form state preservation
+
+2. **Program Number**
+   - [ ] Test with valid numbers
+   - [ ] Test with invalid numbers
+   - [ ] Test duplicate checking
+   - [ ] Verify initiative-specific validation
+
+3. **User Permissions**
+   - [ ] Test with restrictions enabled/disabled
+   - [ ] Test user selection
+   - [ ] Verify permissions are saved
+
+4. **Layout**
+   - [ ] Check navbar overlap
+   - [ ] Test responsive behavior
+   - [ ] Verify all sections visible
+
+5. **Asset Loading**
+   - [ ] Verify CSS loading
+   - [ ] Verify JS loading
+   - [ ] Check bundle paths
+
+## Notes
+
+- Follow established patterns from initiatives refactor
+- Use modular structure consistently
+- Maintain all existing functionality
+- Document any new patterns or solutions
