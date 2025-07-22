@@ -102,8 +102,8 @@ foreach ($programs as $program) {
 
 // Set up base layout variables
 $pageTitle = 'Agency Programs';
-$cssBundle = 'view-programs';
-$jsBundle = 'view-programs';
+$cssBundle = 'agency-view-programs';
+$jsBundle = 'agency-view-programs';
 
 // Configure modern page header
 $header_config = [
