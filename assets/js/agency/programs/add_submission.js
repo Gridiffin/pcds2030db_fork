@@ -1,4 +1,4 @@
-import '../../../css/agency/programs/add_submission.css';
+import '../../../css/agency/programs/programs.css';
 
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('addSubmissionForm');

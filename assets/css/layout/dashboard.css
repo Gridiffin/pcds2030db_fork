@@ -8,23 +8,14 @@ html, body {
     margin: 0;
     padding: 0;
     overflow-x: hidden;
-    display: flex;
-    flex-direction: column;
 }
 
-body {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-}
-
-/* Content wrapper - uses flexbox for sticky footer */
+/* Content wrapper - fills remaining space between nav and footer */
 .content-wrapper {
+    flex: 1;
+    padding-top: 85px; /* Account for fixed navbar (70px height) + 15px breathing space - NOTE: Agency pages override this to 0 in agency.css */
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
-    padding-top: 85px; /* Account for fixed navbar (70px height) + 15px breathing space - NOTE: Agency pages override this to 0 in agency.css */
-    flex: 1;
 }
 
 /* Main content area */
@@ -32,6 +23,7 @@ main.flex-fill {
     flex: 1 0 auto;
     width: 100%;
     padding: 1.5rem 0; /* Restored original padding */
+    padding-top: calc(85px + 1.5rem); /* Account for fixed navbar + content padding */
     display: flex;
     flex-direction: column;
 }

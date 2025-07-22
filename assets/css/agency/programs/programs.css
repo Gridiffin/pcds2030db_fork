@@ -1,0 +1,10 @@
+/* Import shared base */
+@import '../shared/base.css';
+
+/* Program-specific components */
+@import '../../components/program-details.css';
+@import '../../components/enhanced-program-details.css';
+@import '../../components/program-animations.css';
+@import '../../components/program-history.css';
+@import '../../components/table-word-wrap.css';
+@import '../../components/mobile-targets-display.css'; 

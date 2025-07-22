@@ -1,0 +1,6 @@
+/* Import shared base */
+@import '../shared/base.css';
+
+/* Initiative-specific styles */
+@import './view.css';
+@import '../../components/metric-details.css'; 
