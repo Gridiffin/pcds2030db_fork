@@ -6,7 +6,7 @@
  */
 
 // Import CSS for bundle generation
-import '../../css/agency/programs/programs.css';
+import '../../css/agency/programs/edit_submission_entry.css';
 
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize the page

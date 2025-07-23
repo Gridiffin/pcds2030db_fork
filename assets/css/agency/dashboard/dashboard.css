@@ -9,7 +9,7 @@
 @import '../shared/base.css';
 
 /* Dashboard-specific components */
-@import './base.css';                  /* ⭐ MISSING - Dashboard base styles */
+@import './base.css';                  
 @import './bento-grid.css';
 @import './initiatives.css';
 @import './programs.css';

@@ -25,7 +25,7 @@ if (!is_agency()) {
 
 // Set up base layout variables
 $pageTitle = 'Other Agencies\' Programs';
-$cssBundle = 'programs'; // Use same styles as view programs
+$cssBundle = 'agency-view-other-programs'; // Vite bundle for view other agency programs page
 $jsBundle = null;
 
 // Configure modern page header

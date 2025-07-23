@@ -11,7 +11,7 @@
 
 /* Layout system - CRITICAL for proper page structure */
 @import '../../layout/dashboard.css';      /* Body/main layout */
-@import '../../layout/header.css';         /* Page headers */
+@import '../../layout/page_header.css';         /* Page headers */
 
 /* Essential components for all agency pages */
 @import '../../components/bento-grid.css';

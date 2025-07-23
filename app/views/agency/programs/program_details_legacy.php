@@ -174,7 +174,7 @@ $is_owner = is_program_owner($program_id);
 
 // Set page title
 $pageTitle = 'Enhanced Program Details';
-$cssBundle = 'programs'; // CSS bundle for programs module
+$cssBundle = 'agency-program-details'; // Vite bundle for program details page
 $jsBundle = 'agency-program-details';
 
 // Additional scripts - NO LONGER NEEDED, HANDLED BY BUNDLE

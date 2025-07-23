@@ -104,13 +104,23 @@ foreach ($programs as $program) {
 
 // Set up base layout variables
 $pageTitle = 'Agency Programs';
-$cssBundle = 'programs'; // CSS bundle for programs module
+$cssBundle = 'agency-view-programs'; // Vite bundle for view programs page
 $jsBundle = 'agency-view-programs';
 
 // Configure modern page header
 $header_config = [
     'title' => 'Agency Programs',
     'subtitle' => 'View and manage your agency\'s programs',
+    'breadcrumb' => [
+        [
+            'text' => 'Home',
+            'url' => APP_URL . '/index.php?page=agency_dashboard'
+        ],
+        [
+            'text' => 'My Programs',
+            'url' => null // Current page, no link
+        ]
+    ],
     'variant' => 'green'
 ];
 

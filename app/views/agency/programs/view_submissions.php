@@ -59,7 +59,7 @@ $can_view = $submission_data['permissions']['can_view'];
 
 // Set up base layout variables
 $pageTitle = 'View Submission - ' . $program['program_name'] . ' (' . $submission['period_display'] . ')';
-$cssBundle = 'programs';
+$cssBundle = 'agency-view-submissions'; // Vite bundle for view submissions page
 $jsBundle = 'agency-view-submissions';
 
 // Configure modern page header

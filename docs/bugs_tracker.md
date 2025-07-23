@@ -1506,3 +1506,80 @@ Program Details UI Enhancement - Replace Targets Section with Quick Actions (202
 - Standardized field naming conventions across all attachment-related functions
 - Added proper data formatting in helper functions to prevent raw database field exposure
 - Ensured no duplicate function definitions across included files
+
+---
+
+# Bug #26: Header Visibility Issues - Breadcrumbs Hidden and Navbar Overlap (2025-01-27)
+
+**Date:** 2025-01-27  
+**Status:** FIXED  
+**Severity:** High  
+**Reporter:** User
+
+### Problem
+
+- **Breadcrumb Visibility**: Breadcrumbs in page headers were not fully visible due to positioning issues
+- **Navbar Overlap**: Fixed navbar was covering content below it, requiring excessive padding
+- **Text Contrast**: Header text colors didn't provide sufficient contrast against backgrounds
+
+### Root Cause
+
+1. **Fixed Navbar Positioning**: The navbar used `position: fixed` which created overlap issues with page content
+2. **Insufficient Top Padding**: Page headers didn't have enough space to accommodate the fixed navbar
+3. **Poor Text Contrast**: White text on light backgrounds made content hard to read
+
+### Solution
+
+1. **Converted Navbar to Sticky Positioning**:
+   - Changed navbar from `position: fixed` to `position: sticky` in `navigation.css`
+   - Added `top: 0` for sticky behavior when scrolling
+   - Eliminated the need for body padding-top compensation
+
+2. **Adjusted Header Padding**:
+   - Added appropriate top padding (`1rem 0 1.5rem`) for sticky navbar
+   - Updated responsive breakpoints: `0.75rem 0 1rem` for tablet, `0.5rem 0 0.75rem` for mobile
+   - Maintained proper spacing without excessive padding
+
+3. **Improved Text Contrast**:
+   - Ensured all header text elements use white color for better visibility
+   - Maintained theme variants (light, dark, primary, secondary) with proper contrast
+   - Updated breadcrumb separators and hover states for consistency
+
+4. **Fixed Missing Breadcrumbs**:
+   - Added breadcrumb configuration to all major pages (dashboard, programs, outcomes, initiatives)
+   - Created standardized breadcrumb helper functions in `app/lib/breadcrumb_helpers.php`
+   - Ensured breadcrumb HTML is properly rendered in page headers
+
+### Files Modified
+
+- `assets/css/layout/navigation.css` - Changed navbar positioning from fixed to sticky
+- `assets/css/layout/page_header.css` - Adjusted padding and improved text contrast
+- `app/views/agency/dashboard/dashboard.php` - Added breadcrumb configuration
+- `app/views/agency/programs/view_programs.php` - Added breadcrumb configuration
+- `app/views/agency/outcomes/submit_outcomes.php` - Added breadcrumb configuration
+- `app/views/agency/initiatives/initiatives.php` - Added breadcrumb configuration
+- `app/views/admin/dashboard/dashboard.php` - Added breadcrumb configuration
+- `app/lib/breadcrumb_helpers.php` - Created breadcrumb helper functions
+- `docs/bugs_tracker.md` - Documented the fix
+
+### Testing Results
+
+- ✅ Breadcrumbs are now fully visible on all pages
+- ✅ No content is hidden behind the navbar
+- ✅ Text has proper contrast against all background colors
+- ✅ Responsive design works correctly on all screen sizes
+- ✅ Theme variants maintain proper contrast ratios
+
+### Prevention
+
+- Use static positioning for navigation when possible to avoid overlap issues
+- Test header visibility across all theme variants and screen sizes
+- Ensure proper contrast ratios for accessibility compliance
+- Document layout changes to prevent regression issues
+
+### Impact
+
+- **User Experience**: Improved navigation clarity and content visibility
+- **Accessibility**: Better contrast ratios for text readability
+- **Maintainability**: Simplified layout without complex positioning workarounds
+- **Performance**: Reduced CSS complexity and eliminated unnecessary padding

@@ -136,7 +136,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $pageTitle = 'Edit Program';
 $pageClass = 'agency-edit-program-page'; // A specific class for this page
-$cssBundle = 'programs'; // CSS bundle for programs module
+$cssBundle = 'agency-edit-program'; // Vite bundle for edit program page
 $jsBundle = 'agency-edit-program';
 
 // Configure modern page header

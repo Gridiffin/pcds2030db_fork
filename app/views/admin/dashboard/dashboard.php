@@ -71,6 +71,12 @@ require_once '../../layouts/header.php';
 $header_config = [
     'title' => 'Admin Dashboard',
     'subtitle' => 'System overview and management',
+    'breadcrumb' => [
+        [
+            'text' => 'Dashboard',
+            'url' => null // Current page, no link
+        ]
+    ],
     'variant' => 'green',
     'actions' => [
         [

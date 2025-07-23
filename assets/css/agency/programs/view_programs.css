@@ -5,6 +5,7 @@
 
 /* Import shared base styles */
 @import '../shared/base.css';
+@import './view_programs.css';
 
 /* Programs table styling */
 .programs-table {
