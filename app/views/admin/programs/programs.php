@@ -8,7 +8,7 @@
 
 // Define the project root path correctly by navigating up from the current file's directory.
 if (!defined('PROJECT_ROOT_PATH')) {
-    define('PROJECT_ROOT_PATH', dirname(dirname(dirname(dirname(__DIR__)))) . '/');
+    define('PROJECT_ROOT_PATH', rtrim(dirname(dirname(dirname(dirname(__DIR__)))), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
 }
 
 // Include the main config file which defines global constants like APP_URL.
@@ -19,58 +19,33 @@ if (!isset($programs_with_drafts)) {
     require_once PROJECT_ROOT_PATH . 'app/controllers/AdminProgramsController.php';
 }
 
-// Additional scripts for this page.
+// Set up variables for base layout
+$pageTitle = $pageTitle ?? 'Admin Programs';
+$cssBundle = 'programs';
+$jsBundle = 'admin-programs';
 $additionalScripts = [
     APP_URL . '/assets/js/admin/programs/programs.js',
 ];
 
-// Include header.
-require_once PROJECT_ROOT_PATH . 'app/views/layouts/header.php';
-
-// Configure modern page header.
+// Configure modern page header
 $header_config = [
-    'title' => $pageTitle ?? 'Admin Programs',
+    'title' => $pageTitle,
     'subtitle' => 'View and manage programs across all agencies',
-    'variant' => 'blue'
+    'variant' => 'green',
+    'actions' => [
+        [
+            'text' => 'Bulk Assign Initiatives',
+            'url' => 'bulk_assign_initiatives.php',
+            'class' => 'btn-light',
+            'icon' => 'fas fa-link'
+        ]
+    ]
 ];
 
-// Include modern page header.
-require_once PROJECT_ROOT_PATH . 'app/views/layouts/page_header.php';
-?>
+// Set content file that contains the main page content
+$contentFile = __DIR__ . '/partials/programs_content.php';
 
-<!-- Toast Notification for Program Creation/Deletion -->
-<?php if (!empty($message)): ?>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            showToast('<?= ucfirst($messageType) ?>', <?= json_encode($message) ?>, '<?= $messageType ?>');
-        });
-    </script>
-<?php endif; ?>
-
-<div class="mb-3">
-    <a href="bulk_assign_initiatives.php" class="btn btn-outline-secondary">
-        <i class="fas fa-link me-1"></i> Bulk Assign Initiatives
-    </a>
-</div>
-
-<?php
-// Include the partials for each program table.
-require_once __DIR__ . '/partials/_draft_programs_table.php';
-require_once __DIR__ . '/partials/_finalized_programs_table.php';
-require_once __DIR__ . '/partials/_template_programs_table.php';
-require_once __DIR__ . '/partials/_modals.php';
-?>
-
-<?php
-// Include footer.
-require_once PROJECT_ROOT_PATH . 'app/views/layouts/footer.php';
-?>
-
-<script>
-// Pass necessary PHP variables to JavaScript.
-window.currentUserRole = '<?php echo $_SESSION['role'] ?? ''; ?>';
-window.currentPeriodId = '<?php echo $period_id ?? ''; ?>';
-</script>
+include PROJECT_ROOT_PATH . '/app/views/layouts/base.php';
 
 
 

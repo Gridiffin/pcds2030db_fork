@@ -133,7 +133,7 @@ function filterPrograms() {
         
         // Initiative filter
         if (initiativeValue) {
-            if (initiativeValue === 'none' && initiativeId !== '') {
+            if (initiativeValue === 'none' && initiativeId !== '0' && initiativeId !== '') {
                 visible = false;
             } else if (initiativeValue !== 'none' && initiativeId !== initiativeValue) {
                 visible = false;
