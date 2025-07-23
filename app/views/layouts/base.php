@@ -78,8 +78,8 @@ $additionalStyles = $additionalStyles ?? [];
         require_once PROJECT_ROOT_PATH . 'app/views/layouts/agency_nav.php';
     }
     
-    // Include page header if it exists
-    if (isset($header_config) && file_exists(PROJECT_ROOT_PATH . 'app/views/layouts/page_header.php')) {
+    // Include page header if it exists and not disabled
+    if (isset($header_config) && !isset($disable_page_header) && file_exists(PROJECT_ROOT_PATH . 'app/views/layouts/page_header.php')) {
         require_once PROJECT_ROOT_PATH . 'app/views/layouts/page_header.php';
     }
     ?>
