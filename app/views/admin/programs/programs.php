@@ -8,7 +8,7 @@
 
 // Define the project root path correctly by navigating up from the current file's directory.
 if (!defined('PROJECT_ROOT_PATH')) {
-    define('PROJECT_ROOT_PATH', dirname(dirname(dirname(dirname(__DIR__)))) . '/');
+    define('PROJECT_ROOT_PATH', rtrim(dirname(dirname(dirname(dirname(__DIR__)))), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
 }
 
 // Include the main config file which defines global constants like APP_URL.

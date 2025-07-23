@@ -5,6 +5,39 @@
 
 ## Recent Bugs Fixed
 
+### 22. Admin Path Resolution Error - asset_helpers.php Not Found (2025-07-23)
+
+- **Problem:** Fatal error in admin pages: `Failed opening required 'C:\laragon\www\pcds2030_dashboard_fork\app\app/lib/asset_helpers.php'`
+- **Root Cause:** Inconsistent PROJECT_ROOT_PATH calculations between admin files and base layout
+  - **Admin files** (`app/views/admin/[module]/file.php`): 4 directory levels deep from project root
+  - **Used wrong calculation:** `dirname(dirname(dirname(__DIR__)))` (3 levels) = Points to `app/views/` instead of project root
+  - **Should use:** `dirname(dirname(dirname(dirname(__DIR__))))` (4 levels) = Points to project root
+- **Impact:** All admin pages crashed with "No such file or directory" error when trying to include asset_helpers.php
+- **Pattern Analysis:**
+  - **Agency files:** ✅ Correctly using 4 dirname levels (working)
+  - **Admin files:** ❌ Incorrectly using 3 dirname levels (broken)
+  - **Base layout:** ✅ Correctly using 3 dirname levels for its location (working)
+- **Solution Phase 1:** Fixed PROJECT_ROOT_PATH calculation in all admin PHP files to use 4 dirname levels
+- **Problem Phase 2:** After fixing PROJECT_ROOT_PATH, discovered admin files using incorrect include paths:
+  - **Wrong:** `PROJECT_ROOT_PATH . 'config/config.php'` (looking in project root)
+  - **Correct:** `PROJECT_ROOT_PATH . 'app/config/config.php'` (actual location)
+- **Solution Phase 2:** Fixed all require_once paths in admin files to include 'app/' prefix
+- **Files Fixed Phase 1:**
+  - `app/views/admin/initiatives/manage_initiatives.php` - Fixed dirname count (3→4)
+  - `app/views/admin/initiatives/view_initiative.php` - Fixed dirname count (3→4)
+  - `app/views/admin/programs/add_submission.php` - Fixed dirname count (3→4)
+  - `app/views/admin/programs/edit_program.php` - Fixed dirname count (3→4)
+  - `app/views/admin/programs/edit_submission.php` - Fixed dirname count (3→4)
+  - `app/views/admin/programs/index.php` - Fixed dirname count (3→4)
+  - `app/views/admin/programs/list_program_submissions.php` - Fixed dirname count (3→4)
+  - `app/views/admin/programs/programs.php` - Fixed dirname count and format (3→4)
+  - `app/views/admin/programs/view_submissions.php` - Fixed dirname count (3→4)
+  - Report files already had correct paths (4 levels)
+- **Files Fixed Phase 2:**
+  - All above files: Fixed require_once paths from `config/` to `app/config/`, `lib/` to `app/lib/`
+- **Result:** Admin pages should now load correctly with proper asset and config inclusion
+- **Prevention:** Standardize PROJECT_ROOT_PATH calculation and include paths based on actual file locations, not copy-paste patterns
+
 ### 19. Agency Programs Unit Testing - Implementation vs Test Expectation Mismatches (2025-07-21)
 
 - **Problem:** During Jest test creation for createLogic.js, discovered multiple bugs and implementation inconsistencies:
@@ -39,7 +72,7 @@
   6. **DOM Element Access Without Null Checks** - `userSection.querySelector()` crashed when userSection was null
   7. **scrollIntoView Browser API Compatibility** - Function not available in test environments or older browsers
 - **Root Cause:** Lack of defensive programming practices and insufficient input validation across the codebase
-- **Impact:** 
+- **Impact:**
   - **High Severity:** Application crashes on form submission with empty fields
   - **High Severity:** Invalid dates accepted into database causing data integrity issues
   - **Medium Severity:** API calls failing with 404 errors in certain environments
@@ -53,16 +86,19 @@
   2. **Fixed Date Validation Logic:**
      ```javascript
      // Added proper date validity checking with leap year support
-     const parsedDate = new Date(date + 'T00:00:00');
-     return parsedDate.getFullYear() === year && 
-            parsedDate.getMonth() === month - 1 && 
-            parsedDate.getDate() === day;
+     const parsedDate = new Date(date + "T00:00:00");
+     return (
+       parsedDate.getFullYear() === year &&
+       parsedDate.getMonth() === month - 1 &&
+       parsedDate.getDate() === day
+     );
      ```
   3. **Fixed Null Safety (validateProgramNumber):**
      ```javascript
      // Added comprehensive type and null checking for both parameters
-     if (!number || typeof number !== 'string') return error;
-     if (!initiativeNumber || typeof initiativeNumber !== 'string') return error;
+     if (!number || typeof number !== "string") return error;
+     if (!initiativeNumber || typeof initiativeNumber !== "string")
+       return error;
      ```
   4. **Fixed URL Construction:**
      ```javascript
@@ -77,14 +113,19 @@
   6. **Fixed DOM Null Safety:**
      ```javascript
      // Added null checks before DOM operations
-     if (!userSection) { console.warn('Element not found'); return false; }
+     if (!userSection) {
+       console.warn("Element not found");
+       return false;
+     }
      ```
   7. **Fixed scrollIntoView Compatibility:**
      ```javascript
      // Added feature detection with fallback
-     if (typeof userSection.scrollIntoView === 'function') {
-         userSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-     } else { userSection.focus(); }
+     if (typeof userSection.scrollIntoView === "function") {
+       userSection.scrollIntoView({ behavior: "smooth", block: "center" });
+     } else {
+       userSection.focus();
+     }
      ```
 - **Files Fixed:**
   - `assets/js/agency/programs/formValidation.js` (null safety + date validation)
@@ -92,7 +133,7 @@
   - `assets/js/agency/programs/userPermissions.js` (DOM null safety + scrollIntoView compatibility)
 - **Test Results After Fixes:**
   - **createLogic.test.js:** ✅ 25/25 tests passing (was 17/25)
-  - **formValidation.test.js:** ✅ 21/21 tests passing (was 16/21)  
+  - **formValidation.test.js:** ✅ 21/21 tests passing (was 16/21)
   - **Total Critical Bugs Fixed:** 7/9 (remaining 2 are in other modules)
 - **Prevention:** Implemented comprehensive input validation patterns, defensive programming practices, and proper feature detection. All functions now handle null/undefined inputs gracefully.
 
@@ -230,7 +271,7 @@
 - **Problem:** The "More Actions" button (with class `more-actions-btn`) in the view programs page was not responding to clicks. No modal/popup was appearing when clicked.
 - **Cause:** Bundle name mismatch between the PHP view file and the Vite configuration. The view programs page was trying to load bundles named `view-programs` but the actual Vite bundles were named `agency-view-programs`. This caused the JavaScript event handlers for the "More Actions" button to not be loaded.
 - **Root Issue:** After refactoring to use the base layout system, the bundle names in the PHP file were not updated to match the Vite configuration entry names.
-- **Solution:** 
+- **Solution:**
   - Updated `$cssBundle` and `$jsBundle` in `app/views/agency/programs/view_programs.php` from `'view-programs'` to `'agency-view-programs'`
   - This ensures the correct JavaScript bundle is loaded, which contains the `initMoreActionsModal()` function that handles the "More Actions" button clicks
 - **Files Fixed:** `app/views/agency/programs/view_programs.php`
@@ -822,8 +863,9 @@ eports.php on line 75`
 - **Root Issue:** This is a **recurring pattern** - when refactoring pages to use the base layout system, bundle names in PHP files are not being updated to match the Vite configuration entry names.
 - **Solution:** Updated `$cssBundle` and `$jsBundle` in `app/views/agency/programs/view_programs.php` from `'agency-view-programs'` to `'agency-programs-view'` to match the Vite config.
 - **Files Fixed:** `app/views/agency/programs/view_programs.php`
-- **Prevention:** 
+- **Prevention:**
   - **Always verify bundle names** in PHP view files match the entry names in `vite.config.js`
   - **Create a checklist** for bundle name verification during refactoring
   - **Consider standardizing naming convention** (e.g., always `module-section-page` format)
   - **Add validation** to catch bundle name mismatches during build process
+```
