@@ -4,7 +4,7 @@
  */
 
 // Import CSS for programs view
-import '../../css/agency/programs/programs.css';
+import '../../css/agency/programs/view_programs.css';
 
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize delete functionality

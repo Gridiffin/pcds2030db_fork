@@ -111,7 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Page configuration
 $pageTitle = 'Add Submission - ' . htmlspecialchars($program['program_name']);
 $bodyClass = 'add-submission-page';
-$cssBundle = 'programs'; // CSS bundle for programs module
+$cssBundle = 'agency-add-submission'; // Vite bundle for add submission page
 $jsBundle = 'agency-add-submission';
 
 // Configure modern page header

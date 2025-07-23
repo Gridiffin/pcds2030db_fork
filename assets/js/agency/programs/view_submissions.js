@@ -4,7 +4,8 @@
  */
 
 // Import CSS for bundle generation
-import '../../../css/agency/programs/programs.css';
+import '../../../css/agency/programs/view_submissions_entry.css';
+import '../../../css/agency/programs/view_submissions.css';
 
 // Import utility functions
 import { showAlert } from '../../shared/utils.js';

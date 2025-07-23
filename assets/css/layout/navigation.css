@@ -5,9 +5,7 @@
 /* Navbar container */
 .navbar {
   position: fixed;
-  top: 0;
-  right: 0;
-  left: 0;
+  top: 0; /* Stick to top when scrolling */
   z-index: 1050 !important;
   display: flex;
   flex-wrap: nowrap;
@@ -447,14 +445,14 @@
   }
 }
 
-/* Make sure header content scrolls properly under fixed navbar */
-body {
-  padding-top: 70px; /* Match navbar min-height */
-}
+/* Remove body padding-top since navbar is now sticky */
+/* body {
+  padding-top: 70px;
+} */
 
-/* Adjust padding for multi-line navbar when needed */
-@media (max-width: 480px) {
+/* Remove multi-line navbar padding adjustments */
+/* @media (max-width: 480px) {
   body {
     padding-top: 85px;
   }
-}
+} */

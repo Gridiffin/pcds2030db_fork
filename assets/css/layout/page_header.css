@@ -1,0 +1,252 @@
+/**
+ * Page Header Component Styles
+ * 
+ * This file contains styles for the redesigned page header component
+ * that includes title, subtitle, and breadcrumb navigation.
+ */
+
+/* Page Header Container */
+.page-header {
+    padding: 2rem 0 1.5rem; /* Add small top padding for sticky navbar */
+    margin-bottom: 1.5rem;
+    background-color: #5a7554;
+    border-bottom: 1px solid #e9ecef;
+}
+
+/* Title Styles - LARGEST */
+.page-header__title {
+    font-size: 2.5rem; /* Increased from 1.75rem */
+    font-weight: 700; /* Increased weight for better prominence */
+    color: #ffffff;
+    margin-bottom: 0.75rem; /* Increased spacing */
+    line-height: 1.2;
+}
+
+/* Subtitle Styles - SECOND LARGEST */
+.page-header__subtitle {
+    font-size: 1.4rem; /* Increased from 1rem */
+    color: #ffffff;
+    margin-bottom: 0;
+    font-weight: 400;
+    line-height: 1.3;
+}
+
+/* Breadcrumb Container */
+.page-header__breadcrumb {
+    margin-bottom: 1rem; /* Increased spacing */
+}
+
+/* Breadcrumb Items - SMALLEST */
+.page-header .breadcrumb {
+    padding: 0;
+    margin-bottom: 0;
+    background-color: transparent;
+    font-size: 1rem; /* Increased from 0.875rem */
+}
+
+/* Remove the ::before separator */
+.page-header .breadcrumb-item + .breadcrumb-item::before {
+    display: none !important;
+}
+
+/* New separator element styling */
+.page-header .breadcrumb-separator {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 1.1em;
+    font-weight: 600;
+    vertical-align: middle;
+    line-height: 1;
+    margin: 0 0.5rem;
+    display: inline-block;
+    user-select: none;
+    pointer-events: none;
+}
+
+.page-header .breadcrumb-item a {
+    color: rgba(255, 255, 255, 0.8); /* Slightly more visible */
+    text-decoration: none;
+    font-size: 1rem;
+    font-weight: 400;
+}
+
+.page-header .breadcrumb-item a:hover {
+    color: #ffffff;
+    text-decoration: underline;
+}
+
+/* Active breadcrumb - THIRD LARGEST */
+.page-header .breadcrumb-item.active {
+    color: #54b8fa; /* Full white for active state */
+    font-size: 1.1rem; /* Slightly larger than regular breadcrumbs */
+    font-weight: 500; /* Medium weight for prominence */
+}
+
+/* Visual Separation */
+.page-header + .container,
+.page-header + .container-fluid {
+    margin-top: 1.5rem;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .page-header {
+        padding: 0.75rem 0 1rem;
+    }
+    
+    .page-header__title {
+        font-size: 2rem; /* Maintain hierarchy: largest */
+    }
+    
+    .page-header__subtitle {
+        font-size: 1.2rem; /* Maintain hierarchy: second largest */
+    }
+    
+    .page-header .breadcrumb {
+        font-size: 0.9rem; /* Maintain hierarchy: smallest */
+    }
+    
+    .page-header .breadcrumb-item.active {
+        font-size: 1rem; /* Maintain hierarchy: third largest */
+    }
+}
+
+/* Small Screen Adjustments */
+@media (max-width: 576px) {
+    .page-header {
+        padding: 0.5rem 0 0.75rem;
+    }
+    
+    .page-header__title {
+        font-size: 1.75rem; /* Maintain hierarchy: largest */
+    }
+    
+    .page-header__subtitle {
+        font-size: 1.1rem; /* Maintain hierarchy: second largest */
+    }
+    
+    .page-header .breadcrumb {
+        font-size: 0.85rem; /* Maintain hierarchy: smallest */
+    }
+    
+    .page-header .breadcrumb-item.active {
+        font-size: 0.95rem; /* Maintain hierarchy: third largest */
+    }
+    
+    .page-header__breadcrumb {
+        margin-bottom: 0.75rem;
+    }
+}/* Theme Variants */
+.page-header--light {
+    background-color: #ffffff;
+    border-bottom: 1px solid #e9ecef;
+}
+
+/* Override text colors for light variant to maintain readability */
+.page-header--light .page-header__title,
+.page-header--light .page-header__subtitle {
+    color: #212529; /* Dark text for light background */
+}
+
+.page-header--light .breadcrumb-item + .breadcrumb-item::before {
+    color: #6c757d;
+    font-size: 1rem; /* Maintain size consistency */
+}
+
+.page-header--light .breadcrumb-item a {
+    color: #0d6efd;
+    font-size: 1rem; /* Maintain size consistency */
+}
+
+.page-header--light .breadcrumb-item.active {
+    color: #6c757d;
+    font-size: 1rem; /* Maintain hierarchy */
+}
+
+.page-header--dark {
+    background-color: #343a40;
+    border-bottom: 1px solid #495057;
+}
+
+.page-header--dark .page-header__title,
+.page-header--dark .page-header__subtitle,
+.page-header--dark .breadcrumb-item,
+.page-header--dark .breadcrumb-item.active {
+    color: #ffffff; /* White text for dark background */
+}
+
+.page-header--dark .breadcrumb-item a {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.page-header--dark .breadcrumb-item a:hover {
+    color: #ffffff;
+}
+
+.page-header--dark .breadcrumb-item + .breadcrumb-item::before {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1rem; /* Maintain size consistency */
+}
+
+.page-header--primary {
+    background-color: #0d6efd;
+    border-bottom: 1px solid #0a58ca;
+}
+
+.page-header--primary .page-header__title,
+.page-header--primary .page-header__subtitle,
+.page-header--primary .breadcrumb-item,
+.page-header--primary .breadcrumb-item.active {
+    color: #ffffff; /* White text for primary background */
+}
+
+.page-header--primary .breadcrumb-item a {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.page-header--primary .breadcrumb-item a:hover {
+    color: #ffffff;
+}
+
+.page-header--primary .breadcrumb-item + .breadcrumb-item::before {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1rem; /* Maintain size consistency */
+}
+
+.page-header--secondary {
+    background-color: #6c757d;
+    border-bottom: 1px solid #5a6268;
+}
+
+.page-header--secondary .page-header__title,
+.page-header--secondary .page-header__subtitle,
+.page-header--secondary .breadcrumb-item,
+.page-header--secondary .breadcrumb-item.active {
+    color: #ffffff; /* White text for secondary background */
+}
+
+.page-header--secondary .breadcrumb-item a {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.page-header--secondary .breadcrumb-item a:hover {
+    color: #ffffff;
+}
+
+.page-header--secondary .breadcrumb-item + .breadcrumb-item::before {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1rem; /* Maintain size consistency */
+}
+
+.page-header .breadcrumb-item,
+.page-header .breadcrumb-item a,
+.page-header .breadcrumb-item.active {
+    display: inline-block;
+    vertical-align: middle;
+    line-height: 1.2;
+    margin: 0;
+    padding: 0;
+}
+
+.page-header .breadcrumb-item:last-child::before {
+    display: none !important;
+}

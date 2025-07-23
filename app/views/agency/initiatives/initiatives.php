@@ -73,6 +73,16 @@ $jsBundle = 'agency-initiatives';
 $header_config = [
     'title' => 'Initiatives',
     'subtitle' => 'View initiatives where your agency has assigned programs',
+    'breadcrumb' => [
+        [
+            'text' => 'Home',
+            'url' => APP_URL . '/index.php?page=agency_dashboard'
+        ],
+        [
+            'text' => 'Initiatives',
+            'url' => null // Current page, no link
+        ]
+    ],
     'variant' => 'blue',
     'actions' => []
 ];

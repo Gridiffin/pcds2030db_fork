@@ -37,6 +37,12 @@ $contentFile = __DIR__ . '/dashboard_content.php';
 $header_config = [
     'title' => 'Agency Dashboard',
     'subtitle' => 'Program tracking and reporting',
+    'breadcrumb' => [
+        [
+            'text' => 'Dashboard',
+            'url' => null // Current page, no link
+        ]
+    ],
     'variant' => 'green',
     'actions' => [
         [

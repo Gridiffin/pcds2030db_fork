@@ -38,6 +38,16 @@ $contentFile = __DIR__ . '/partials/submit_content.php';
 $header_config = [
     'title' => 'View Outcomes',
     'subtitle' => 'View and explore all outcomes data',
+    'breadcrumb' => [
+        [
+            'text' => 'Home',
+            'url' => APP_URL . '/index.php?page=agency_dashboard'
+        ],
+        [
+            'text' => 'Outcomes',
+            'url' => null // Current page, no link
+        ]
+    ],
     'variant' => 'green',
     'actions' => [
         [
