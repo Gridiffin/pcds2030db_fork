@@ -64,13 +64,13 @@ $is_active_col = get_column_name('initiatives', 'is_active');
 
 // Set up variables for base layout
 $pageTitle = 'Initiatives';
-$cssBundle = 'admin-manage-initiatives';
+$cssBundle = 'outcomes';
 $jsBundle = 'admin-manage-initiatives';
 $contentFile = __DIR__ . '/partials/content.php';
 $header_config = [
     'title' => 'Initiatives',
     'subtitle' => 'View initiatives where your agency has assigned programs',
-    'variant' => 'blue',
+    'variant' => 'green',
     'actions' => []
 ];
 require_once dirname(__DIR__, 2) . '/layouts/base.php';
