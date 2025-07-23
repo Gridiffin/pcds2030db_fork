@@ -266,15 +266,13 @@ if (isset($_SESSION['message']) && !empty($_SESSION['message'])) {
                                     </th>
                                     <th>Program Name</th>
                                     <th>Current Initiative</th>
-                                    <th>Sector</th>
                                     <th>Agency</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php foreach ($programs as $program): ?>
-                                    <tr data-program-id="<?php echo $program['program_id']; ?>"
-                                        data-sector-id="<?php echo $program['sector_id']; ?>"
-                                        data-initiative-id="<?php echo $program['initiative_id'] ?? ''; ?>">
+                                    <tr data-program-id="<?php echo intval($program['program_id']); ?>"
+                                        data-initiative-id="<?php echo intval($program['initiative_id'] ?? 0); ?>">
                                         <td>
                                             <div class="form-check">
                                                 <input class="form-check-input program-checkbox" 
@@ -306,7 +304,6 @@ if (isset($_SESSION['message']) && !empty($_SESSION['message'])) {
                                                 </span>
                                             <?php endif; ?>
                                         </td>
-                                        <td><?php echo htmlspecialchars($program['sector_name']); ?></td>
                                         <td><?php echo htmlspecialchars($program['agency_name']); ?></td>
                                     </tr>
                                 <?php endforeach; ?>
