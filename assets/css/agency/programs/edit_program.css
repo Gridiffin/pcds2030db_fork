@@ -5,6 +5,9 @@
  * Imports modular partials for form, timeline, and permissions.
  */
 
+/* Import shared base styles */
+@import '../shared/base.css';
+
 @import url('./partials/_form.css');
 @import url('./partials/_timeline.css');
 @import url('./partials/_permissions.css');

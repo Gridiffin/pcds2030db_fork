@@ -6,7 +6,7 @@
  */
 
 // Import styles
-import '../../../../assets/css/agency/programs/edit_program.css';
+import '../../../css/agency/programs/programs.css';
 
 // Import logic
 import { initEditProgram } from './editProgramLogic.js';

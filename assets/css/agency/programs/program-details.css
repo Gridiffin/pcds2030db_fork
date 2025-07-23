@@ -1,0 +1,364 @@
+/**
+ * Program Details Module CSS
+ * Modular styles for the program details page
+ */
+
+/* Import base program styles */
+@import url("./programs.css");
+
+/* Import component styles */
+@import url("../../components/program-details.css");
+
+/* Program Details Specific Styles */
+.program-details-container {
+  padding: 1rem 0;
+}
+
+/* Timeline specific styles */
+.timeline-container {
+  position: relative;
+  padding-left: 2rem;
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.timeline-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.timeline-item:hover {
+  background-color: rgba(var(--primary-rgb), 0.02);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-left: -1rem;
+  margin-right: -1rem;
+}
+
+.timeline-marker {
+  position: absolute;
+  left: -2rem;
+  top: 0.5rem;
+  width: 1rem;
+  height: 1rem;
+  background-color: var(--primary-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.1);
+}
+
+.timeline-marker i {
+  color: white;
+  font-size: 0.5rem;
+}
+
+.timeline-content {
+  max-height: 60px;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.timeline-item.expanded .timeline-content {
+  max-height: none;
+}
+
+.timeline-header {
+  display: flex;
+  justify-content: between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.timeline-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  margin: 0;
+}
+
+.timeline-meta {
+  margin-bottom: 0.75rem;
+}
+
+.timeline-actions {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.timeline-item:hover .timeline-actions,
+.timeline-item.expanded .timeline-actions {
+  opacity: 1;
+}
+
+/* Info item layout improvements */
+.info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.info-icon {
+  flex-shrink: 0;
+  margin-top: 0.25rem;
+}
+
+.info-content {
+  flex-grow: 1;
+}
+
+.info-label {
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.info-value {
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+/* Stat items in sidebar */
+.stat-item {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.stat-item:last-child {
+  border-bottom: none;
+}
+
+.stat-label {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+/* Attachment items */
+.attachment-item {
+  transition: background-color 0.2s ease;
+}
+
+.attachment-item:hover {
+  background-color: rgba(var(--primary-rgb), 0.02);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .timeline-container {
+    padding-left: 1.5rem;
+  }
+
+  .timeline-marker {
+    left: -1.5rem;
+    width: 0.75rem;
+    height: 0.75rem;
+  }
+
+  .timeline-marker i {
+    font-size: 0.4rem;
+  }
+
+  .info-item {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .info-icon {
+    align-self: flex-start;
+  }
+
+  .program-details-container {
+    padding: 0.5rem 0;
+  }
+}
+
+/* Animation classes */
+.animate-in {
+  animation: slideInUp 0.6s ease-out;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Button click animation */
+.btn-clicked {
+  transform: scale(0.95);
+  transition: transform 0.1s ease;
+}
+
+/* Mobile optimized cards */
+.mobile-optimized {
+  margin-bottom: 1rem;
+}
+
+.mobile-optimized .card-body {
+  padding: 1rem;
+}
+
+.mobile-optimized .info-item {
+  margin-bottom: 1rem;
+}
+
+/* Enhanced hover effects */
+.card:hover {
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Status indicator enhancements */
+.program-status-indicator {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* Responsive adjustments for status */
+@media (max-width: 600px) {
+  .program-status-indicator {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .status-badge,
+  #hold-point-info {
+    margin-bottom: 0.5rem;
+  }
+} /* Read-
+only actions notice styling */
+.read-only-actions-notice {
+  background: linear-gradient(
+    135deg,
+    rgba(108, 117, 125, 0.05),
+    rgba(108, 117, 125, 0.1)
+  );
+  border: 1px solid rgba(108, 117, 125, 0.2);
+}
+
+.read-only-actions-notice .card-header {
+  background: linear-gradient(
+    45deg,
+    rgba(108, 117, 125, 0.1),
+    rgba(108, 117, 125, 0.15)
+  );
+  border-bottom: 1px solid rgba(108, 117, 125, 0.2);
+}
+
+.read-only-actions-notice .card-title {
+  color: #6c757d !important;
+}
+
+.read-only-actions-notice .card-title i {
+  color: #6c757d !important;
+}
+
+/* Quick actions in main content area adjustments */
+.quick-actions-card {
+  /* Ensure it fits well in the main content flow */
+  max-width: 100%;
+}
+
+.quick-actions-card .btn {
+  /* Slightly smaller buttons for main content area */
+  padding: 0.65rem 0.9rem;
+  font-size: 0.95rem;
+}
+
+.quick-actions-card .card-body {
+  padding: 1.5rem;
+}
+
+/* Responsive adjustments for quick actions in main content */
+@media (max-width: 768px) {
+  .quick-actions-card .btn {
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+  }
+
+  .quick-actions-card .card-body {
+    padding: 1.25rem;
+  }
+} /* Subm
+ission Selection Modal Styling */
+.submission-option {
+  transition: all 0.2s ease;
+  border-radius: 0.5rem !important;
+  margin-bottom: 0.5rem;
+}
+
+.submission-option:hover {
+  background-color: rgba(var(--primary-rgb), 0.05) !important;
+  border-color: rgba(var(--primary-rgb), 0.2) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.submission-option:active {
+  transform: translateY(0);
+}
+
+.submission-option h6 {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.submission-option .badge {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+}
+
+/* Loading state for submission details */
+.submission-loading {
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Enhanced modal styling */
+#selectSubmissionModal .modal-body {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+#viewSubmissionModal .table td {
+  padding: 0.5rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+#viewSubmissionModal .table td:first-child {
+  font-weight: 500;
+  color: var(--text-muted);
+  width: 30%;
+}
+
+/* Responsive adjustments for modals */
+@media (max-width: 768px) {
+  .submission-option h6 {
+    font-size: 0.95rem;
+  }
+
+  .submission-option small {
+    font-size: 0.8rem;
+  }
+
+  #selectSubmissionModal .modal-body {
+    max-height: 300px;
+  }
+}

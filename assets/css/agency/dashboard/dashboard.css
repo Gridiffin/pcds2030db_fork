@@ -5,8 +5,11 @@
  * and provides the entry point for Vite bundling
  */
 
-/* Import modular components */
-@import './base.css';
+/* Import shared base */
+@import '../shared/base.css';
+
+/* Dashboard-specific components */
+@import './base.css';                  /* ⭐ MISSING - Dashboard base styles */
 @import './bento-grid.css';
 @import './initiatives.css';
 @import './programs.css';

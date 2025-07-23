@@ -38,7 +38,7 @@ if ($selected_period) {
 
 // Set page variables for base layout
 $pageTitle = 'View Reports';
-$cssBundle = 'agency-reports';
+$cssBundle = 'agency-reports'; // CSS bundle for reports module
 $jsBundle = 'agency-reports';
 $bodyClass = 'reports-page';
 $contentFile = __DIR__ . '/partials/view_reports_content.php';

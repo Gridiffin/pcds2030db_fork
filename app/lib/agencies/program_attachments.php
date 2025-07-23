@@ -299,12 +299,12 @@ function get_program_attachments($program_id) {
 }
 
 /**
- * Get attachments for a specific submission
+ * Get attachments for a specific submission with user details
  *
  * @param int $submission_id Submission ID
- * @return array Array of attachments
+ * @return array Array of attachments with user information
  */
-function get_submission_attachments($submission_id) {
+function get_submission_attachments_with_details($submission_id) {
     global $conn;
     
     $submission_id = intval($submission_id);
