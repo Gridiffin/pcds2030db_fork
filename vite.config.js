@@ -5,18 +5,29 @@ export default defineConfig({
     build: {
         rollupOptions: {
             input: {
+                // Login Module (already correct)
                 'login': path.resolve(__dirname, 'assets/js/login.js'),
-                'admin-dashboard': path.resolve(__dirname, 'assets/js/admin/dashboard.js'),
+
+                // Agency Core
                 'agency-dashboard': path.resolve(__dirname, 'assets/js/agency/dashboard/dashboard.js'),
-                'agency-initiatives': path.resolve(__dirname, 'assets/js/agency/initiatives/view.js'),
-                'agency-programs-view': 'assets/js/agency/view_programs.js',
-                'agency-programs-create': 'assets/js/agency/programs/create.js',
-                'agency-programs-add-submission': 'assets/js/agency/programs/add_submission.js',
-                'agency-programs-edit': 'assets/js/agency/programs/edit_program.js',
-                'agency-reports': 'assets/js/agency/reports/view_reports.js',
-                'agency-outcomes': 'assets/js/agency/outcomes/outcomes.js',
-                'agency-notifications': 'assets/js/agency/users/notifications.js',
-                // Add more entry points as needed
+
+                // Agency Programs Module (Individual Pages)
+                'agency-view-programs': path.resolve(__dirname, 'assets/js/agency/view_programs.js'),
+                'agency-create-program': path.resolve(__dirname, 'assets/js/agency/programs/create.js'),
+                'agency-edit-program': path.resolve(__dirname, 'assets/js/agency/programs/edit_program.js'),
+                'agency-add-submission': path.resolve(__dirname, 'assets/js/agency/programs/add_submission.js'),
+                'agency-program-details': path.resolve(__dirname, 'assets/js/agency/enhanced_program_details.js'),
+                'agency-edit-submission': path.resolve(__dirname, 'assets/js/agency/edit_submission.js'),
+                'agency-view-submissions': path.resolve(__dirname, 'assets/js/agency/programs/view_submissions.js'),
+                'agency-view-other-programs': path.resolve(__dirname, 'assets/js/agency/programs/view_other_agency_programs.js'),
+
+                // Agency Other Modules
+                'agency-initiatives': path.resolve(__dirname, 'assets/js/agency/initiatives/view.js'), // Note: using view.js as entry
+                'agency-view-initiative': path.resolve(__dirname, 'assets/js/agency/initiatives/view_initiative.js'),
+                'agency-outcomes': path.resolve(__dirname, 'assets/js/agency/outcomes/outcomes.js'),
+                'agency-submit-outcomes': path.resolve(__dirname, 'assets/js/agency/outcomes/submit_outcomes.js'),
+                'agency-reports': path.resolve(__dirname, 'assets/js/agency/reports/reports.js'),
+                'agency-notifications': path.resolve(__dirname, 'assets/js/agency/users/notifications.js'),
             },
             output: {
                 entryFileNames: 'js/[name].bundle.js',

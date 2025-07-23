@@ -4,9 +4,7 @@
  */
 
 // Import CSS
-import '../../../css/agency/initiatives/view.css';
-import '../../../css/agency/initiatives/listing.css';
-import '../../../css/agency/initiatives/base.css';
+import '../../../css/agency/initiatives/initiatives.css';
 
 import {
     parseRatingData,

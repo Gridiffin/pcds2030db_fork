@@ -1,0 +1,38 @@
+/**
+ * Agency Shared Base Styles
+ * Core styles needed across all agency pages
+ */
+
+/* Base foundation styles - CRITICAL */
+@import '../../base/variables.css';        /* CSS custom properties */
+@import '../../base/reset.css';            /* Reset/normalize */
+@import '../../base/typography.css';       /* Font styles */
+@import '../../base/utilities.css';        /* Utility classes */
+
+/* Layout system - CRITICAL for proper page structure */
+@import '../../layout/dashboard.css';      /* Body/main layout */
+@import '../../layout/header.css';         /* Page headers */
+
+/* Essential components for all agency pages */
+@import '../../components/bento-grid.css';
+@import '../../components/dashboard-cards.css';
+@import '../../components/cards.css';
+@import '../../components/tables.css';
+@import '../../components/buttons.css';
+@import '../../components/forms.css';
+@import '../../components/badges.css';
+@import '../../components/alerts.css';
+@import '../../components/progress.css';
+@import '../../components/footer.css';
+
+/* Layout essentials */
+@import '../../layout/navigation.css';
+@import '../../layout/footer.css';
+
+/* Agency-specific styles */
+@import '../../pages/agency.css';
+@import '../../custom/agency.css';
+
+/* Common components */
+@import '../../components/rating-indicators.css';
+@import '../../components/notifications.css'; 

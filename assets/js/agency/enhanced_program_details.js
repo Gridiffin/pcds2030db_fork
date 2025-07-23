@@ -3,589 +3,802 @@
  * Provides interactive functionality for the enhanced program details page
  */
 
+// Import CSS for bundle generation
+import "../../css/agency/programs/program-details.css";
+
 class EnhancedProgramDetails {
-    constructor() {
-        this.programId = window.programId;
-        this.isOwner = window.isOwner;
-        this.currentUser = window.currentUser;
-        this.APP_URL = window.APP_URL;
-        
-        this.init();
+  constructor() {
+    this.programId = window.programId;
+    this.isOwner = window.isOwner;
+    this.currentUser = window.currentUser;
+    this.APP_URL = window.APP_URL;
+
+    this.init();
+  }
+
+  init() {
+    this.bindEvents();
+    this.initializeComponents();
+    this.loadAdditionalData();
+    this.loadProgramStatus();
+    // Only enable editing logic if edit-status-btn exists (edit page)
+    if (document.getElementById("edit-status-btn")) {
+      this.enableStatusEditing = true;
+    } else {
+      this.enableStatusEditing = false;
+    }
+  }
+
+  loadProgramStatus() {
+    const self = this;
+    fetch(
+      `${this.APP_URL}/app/api/program_status.php?action=status&program_id=${this.programId}`
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        self.renderStatus(data);
+      });
+  }
+
+  renderStatus(data) {
+    const badge = document.getElementById("program-status-badge");
+    const holdInfo = document.getElementById("hold-point-info");
+    const holdSection = document.getElementById("holdPointManagementSection");
+
+    if (!badge) return;
+
+    let status = data.status || "active";
+    let statusLabel =
+      status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, " ");
+    badge.textContent = statusLabel;
+
+    // Dynamically build class list for the badge
+    const statusInfo = this.getStatusInfo(status);
+    badge.className = `badge status-badge ${statusInfo.class} py-2 px-3`;
+    badge.innerHTML = `<i class="${statusInfo.icon} me-1"></i> ${statusLabel}`;
+
+    if (status === "on_hold" && data.hold_point) {
+      if (holdInfo) {
+        holdInfo.innerHTML = `<i class='fas fa-pause-circle text-warning'></i> On Hold: <b>${
+          data.hold_point.reason || ""
+        }</b> <span class='text-muted'>(${this.formatDate(
+          data.hold_point.created_at
+        )})</span> <span>${
+          data.hold_point.remarks ? " - " + data.hold_point.remarks : ""
+        }</span>`;
+      }
+      if (holdSection) {
+        holdSection.style.display = "block";
+        document.getElementById("hold_reason").value =
+          data.hold_point.reason || "";
+        document.getElementById("hold_remarks").value =
+          data.hold_point.remarks || "";
+      }
+    } else {
+      if (holdInfo) {
+        holdInfo.innerHTML = "";
+      }
+      if (holdSection) {
+        holdSection.style.display = "none";
+      }
+    }
+  }
+
+  bindEvents() {
+    // Target progress bars animation
+    this.animateProgressBars();
+
+    // Timeline item interactions
+    this.bindTimelineEvents();
+
+    // Attachment interactions
+    this.bindAttachmentEvents();
+
+    // Quick action buttons
+    this.bindQuickActionEvents();
+
+    // Responsive behavior
+    this.bindResponsiveEvents();
+    // Status/History buttons
+    const statusBtn = document.getElementById("edit-status-btn");
+    const historyBtn = document.getElementById("view-status-history-btn");
+    if (statusBtn && this.enableStatusEditing) {
+      statusBtn.addEventListener("click", () => this.openEditStatusModal());
+    }
+    if (historyBtn) {
+      historyBtn.addEventListener("click", () => this.openStatusHistoryModal());
     }
 
-    init() {
-        this.bindEvents();
-        this.initializeComponents();
-        this.loadAdditionalData();
-        this.loadProgramStatus();
-        // Only enable editing logic if edit-status-btn exists (edit page)
-        if (document.getElementById('edit-status-btn')) {
-            this.enableStatusEditing = true;
+    const updateHoldBtn = document.getElementById("updateHoldPointBtn");
+    if (updateHoldBtn) {
+      updateHoldBtn.addEventListener("click", () => this.updateHoldPoint());
+    }
+
+    const endHoldBtn = document.getElementById("endHoldPointBtn");
+    if (endHoldBtn) {
+      endHoldBtn.addEventListener("click", () => this.endHoldPoint());
+    }
+
+    // Add delete submission button handler (robust for modal content)
+    document.addEventListener("click", (e) => {
+      const btn = e.target.closest(".delete-submission-btn");
+      if (btn) {
+        const submissionId = btn.getAttribute("data-submission-id");
+        this.handleDeleteSubmission(submissionId, btn);
+      }
+    });
+
+    // Add submission selection handler
+    document.addEventListener("click", (e) => {
+      const submissionOption = e.target.closest(".submission-option");
+      if (submissionOption) {
+        this.handleSubmissionSelection(submissionOption);
+      }
+    });
+  }
+
+  handleDeleteSubmission(submissionId, btn) {
+    if (!submissionId) return;
+    if (
+      !confirm(
+        "Are you sure you want to delete this submission? This action cannot be undone."
+      )
+    )
+      return;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+    fetch(`${this.APP_URL}/app/api/program_submissions.php`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ submission_id: submissionId }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          this.showToast(
+            "Deleted",
+            "Submission deleted successfully.",
+            "success"
+          );
+          // Close the modal if inside one
+          const modal = btn.closest(".modal");
+          if (
+            modal &&
+            typeof bootstrap !== "undefined" &&
+            bootstrap.Modal.getInstance(modal)
+          ) {
+            bootstrap.Modal.getInstance(modal).hide();
+          }
+          setTimeout(() => window.location.reload(), 1200);
         } else {
-            this.enableStatusEditing = false;
+          this.showToast(
+            "Error",
+            data.error || "Failed to delete submission.",
+            "danger"
+          );
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-trash"></i> Delete Submission';
         }
+      })
+      .catch(() => {
+        this.showToast("Error", "Failed to delete submission.", "danger");
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-trash"></i> Delete Submission';
+      });
+  }
+
+  handleSubmissionSelection(submissionOption) {
+    // Get submission data from the clicked option
+    const submissionId = submissionOption.getAttribute('data-submission-id');
+    const periodId = submissionOption.getAttribute('data-period-id');
+    const periodDisplay = submissionOption.getAttribute('data-period-display');
+    const isDraft = submissionOption.getAttribute('data-is-draft') === 'true';
+    const submissionDate = submissionOption.getAttribute('data-submission-date');
+
+    // Close the selection modal
+    const selectModal = bootstrap.Modal.getInstance(document.getElementById('selectSubmissionModal'));
+    if (selectModal) {
+      selectModal.hide();
     }
 
-    loadProgramStatus() {
-        const self = this;
-        fetch(`${this.APP_URL}/app/api/program_status.php?action=status&program_id=${this.programId}`)
-            .then(res => res.json())
-            .then(data => {
-                self.renderStatus(data);
-            });
+    // Load submission details and show view modal
+    this.loadSubmissionDetails(submissionId, periodId, periodDisplay, isDraft, submissionDate);
+  }
+
+  loadSubmissionDetails(submissionId, periodId, periodDisplay, isDraft, submissionDate) {
+    // Show the view submission modal
+    const viewModal = new bootstrap.Modal(document.getElementById('viewSubmissionModal'));
+    viewModal.show();
+
+    // Update modal title
+    document.getElementById('viewSubmissionModalLabel').textContent = `${periodDisplay} - Submission Details`;
+
+    // Show loading state
+    const modalBody = document.getElementById('viewSubmissionModalBody');
+    modalBody.innerHTML = `
+      <div class="text-center p-4">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2 text-muted">Loading submission details...</p>
+      </div>
+    `;
+
+    // For now, use basic submission data (can be enhanced with API call later)
+    setTimeout(() => {
+      this.renderSubmissionDetails({
+        rating: 'in_progress',
+        targets: []
+      }, periodDisplay, isDraft, submissionDate, periodId);
+    }, 500);
+  }
+
+  renderSubmissionDetails(submission, periodDisplay, isDraft, submissionDate, periodId) {
+    const modalBody = document.getElementById('viewSubmissionModalBody');
+    
+    // Format submission date
+    const formattedDate = submissionDate ? new Date(submissionDate).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    }) : 'Not submitted';
+
+    modalBody.innerHTML = `
+      <div class="row">
+        <div class="col-md-6">
+          <h6>Submission Information</h6>
+          <table class="table table-sm">
+            <tr>
+              <td><strong>Period:</strong></td>
+              <td>${periodDisplay}</td>
+            </tr>
+            <tr>
+              <td><strong>Status:</strong></td>
+              <td>
+                <span class="badge bg-${isDraft ? 'warning' : 'success'}">
+                  ${isDraft ? 'Draft' : 'Finalized'}
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Submitted:</strong></td>
+              <td>${formattedDate}</td>
+            </tr>
+            <tr>
+              <td><strong>Rating:</strong></td>
+              <td>
+                <span class="badge rating-${(submission.rating || 'not_started').replace(/[^a-z0-9]/gi, '_').toLowerCase()}">
+                  ${this.formatRating(submission.rating || 'not_started')}
+                </span>
+              </td>
+            </tr>
+          </table>
+        </div>
+        <div class="col-md-6">
+          <h6>Quick Actions</h6>
+          <div class="d-grid gap-2">
+            <a href="view_submissions.php?program_id=${this.programId}&period_id=${periodId}" 
+               class="btn btn-primary">
+              <i class="fas fa-eye me-2"></i>View Full Details
+            </a>
+            ${isDraft && this.canEdit ? `
+            <a href="edit_submission.php?program_id=${this.programId}&period_id=${periodId}" 
+               class="btn btn-warning">
+              <i class="fas fa-edit me-2"></i>Edit Draft
+            </a>
+            ` : ''}
+          </div>
+        </div>
+      </div>
+      
+      <div class="mt-3">
+        <p class="text-muted">
+          <i class="fas fa-info-circle me-1"></i>
+          Click "View Full Details" to see complete submission information including targets and achievements.
+        </p>
+      </div>
+    `;
+  }
+
+  formatRating(rating) {
+    return rating.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  }
+
+  initializeComponents() {
+    // Initialize tooltips
+    this.initTooltips();
+
+    // Initialize animations
+    this.initAnimations();
+
+    // Initialize charts if needed
+    this.initCharts();
+  }
+
+  loadAdditionalData() {
+    // Load additional program statistics
+    this.loadProgramStats();
+
+    // Load target progress data
+    this.loadTargetProgress();
+  }
+
+  animateProgressBars() {
+    const progressBars = document.querySelectorAll(".progress-bar");
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const progressBar = entry.target;
+          const width = progressBar.style.width;
+
+          // Reset width to 0 for animation
+          progressBar.style.width = "0%";
+
+          // Animate to target width
+          setTimeout(() => {
+            progressBar.style.transition = "width 1s ease-in-out";
+            progressBar.style.width = width;
+          }, 100);
+
+          observer.unobserve(progressBar);
+        }
+      });
+    });
+
+    progressBars.forEach((bar) => observer.observe(bar));
+  }
+
+  bindTimelineEvents() {
+    const timelineItems = document.querySelectorAll(".timeline-item");
+
+    timelineItems.forEach((item) => {
+      item.addEventListener("click", (e) => {
+        // Don't trigger if clicking on a link
+        if (e.target.tagName === "A" || e.target.closest("a")) {
+          return;
+        }
+
+        // Toggle timeline item details
+        this.toggleTimelineDetails(item);
+      });
+
+      // Add hover effects
+      item.addEventListener("mouseenter", () => {
+        item.classList.add("timeline-item-hover");
+      });
+
+      item.addEventListener("mouseleave", () => {
+        item.classList.remove("timeline-item-hover");
+      });
+    });
+  }
+
+  toggleTimelineDetails(timelineItem) {
+    const content = timelineItem.querySelector(".timeline-content");
+    const isExpanded = timelineItem.classList.contains("expanded");
+
+    if (isExpanded) {
+      timelineItem.classList.remove("expanded");
+      content.style.maxHeight = "60px";
+    } else {
+      timelineItem.classList.add("expanded");
+      content.style.maxHeight = content.scrollHeight + "px";
     }
+  }
 
-    renderStatus(data) {
-        const badge = document.getElementById('program-status-badge');
-        const holdInfo = document.getElementById('hold-point-info');
-        const holdSection = document.getElementById('holdPointManagementSection');
+  bindAttachmentEvents() {
+    const attachmentItems = document.querySelectorAll(".attachment-item");
 
-        if (!badge) return;
+    attachmentItems.forEach((item) => {
+      const downloadBtn = item.querySelector(".attachment-actions .btn");
 
-        let status = data.status || 'active';
-        let statusLabel = status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ');
-        badge.textContent = statusLabel;
-
-        // Dynamically build class list for the badge
-        const statusInfo = this.getStatusInfo(status);
-        badge.className = `badge status-badge ${statusInfo.class} py-2 px-3`;
-        badge.innerHTML = `<i class="${statusInfo.icon} me-1"></i> ${statusLabel}`;
-
-        if (status === 'on_hold' && data.hold_point) {
-            if(holdInfo) {
-                holdInfo.innerHTML = `<i class='fas fa-pause-circle text-warning'></i> On Hold: <b>${data.hold_point.reason || ''}</b> <span class='text-muted'>(${this.formatDate(data.hold_point.created_at)})</span> <span>${data.hold_point.remarks ? ' - ' + data.hold_point.remarks : ''}</span>`;
-            }
-            if (holdSection) {
-                holdSection.style.display = 'block';
-                document.getElementById('hold_reason').value = data.hold_point.reason || '';
-                document.getElementById('hold_remarks').value = data.hold_point.remarks || '';
-            }
-        } else {
-            if(holdInfo) {
-                holdInfo.innerHTML = '';
-            }
-            if (holdSection) {
-                holdSection.style.display = 'none';
-            }
-        }
-    }
-
-    bindEvents() {
-        // Target progress bars animation
-        this.animateProgressBars();
-        
-        // Timeline item interactions
-        this.bindTimelineEvents();
-        
-        // Attachment interactions
-        this.bindAttachmentEvents();
-        
-        // Quick action buttons
-        this.bindQuickActionEvents();
-        
-        // Responsive behavior
-        this.bindResponsiveEvents();
-        // Status/History buttons
-        const statusBtn = document.getElementById('edit-status-btn');
-        const historyBtn = document.getElementById('view-status-history-btn');
-        if (statusBtn && this.enableStatusEditing) {
-            statusBtn.addEventListener('click', () => this.openEditStatusModal());
-        }
-        if (historyBtn) {
-            historyBtn.addEventListener('click', () => this.openStatusHistoryModal());
-        }
-
-        const updateHoldBtn = document.getElementById('updateHoldPointBtn');
-        if (updateHoldBtn) {
-            updateHoldBtn.addEventListener('click', () => this.updateHoldPoint());
-        }
-
-        const endHoldBtn = document.getElementById('endHoldPointBtn');
-        if (endHoldBtn) {
-            endHoldBtn.addEventListener('click', () => this.endHoldPoint());
-        }
-
-        // Add delete submission button handler (robust for modal content)
-        document.addEventListener('click', (e) => {
-            const btn = e.target.closest('.delete-submission-btn');
-            if (btn) {
-                const submissionId = btn.getAttribute('data-submission-id');
-                this.handleDeleteSubmission(submissionId, btn);
-            }
+      if (downloadBtn) {
+        downloadBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          this.handleAttachmentDownload(downloadBtn.href, item);
         });
-    }
+      }
+    });
+  }
 
-    handleDeleteSubmission(submissionId, btn) {
-        if (!submissionId) return;
-        if (!confirm('Are you sure you want to delete this submission? This action cannot be undone.')) return;
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
-        fetch(`${this.APP_URL}/app/api/program_submissions.php`, {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ submission_id: submissionId })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                this.showToast('Deleted', 'Submission deleted successfully.', 'success');
-                // Close the modal if inside one
-                const modal = btn.closest('.modal');
-                if (modal && typeof bootstrap !== 'undefined' && bootstrap.Modal.getInstance(modal)) {
-                    bootstrap.Modal.getInstance(modal).hide();
-                }
-                setTimeout(() => window.location.reload(), 1200);
-            } else {
-                this.showToast('Error', data.error || 'Failed to delete submission.', 'danger');
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-trash"></i> Delete Submission';
-            }
-        })
-        .catch(() => {
-            this.showToast('Error', 'Failed to delete submission.', 'danger');
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-trash"></i> Delete Submission';
-        });
-    }
+  handleAttachmentDownload(url, item) {
+    // Show loading state
+    const btn = item.querySelector(".attachment-actions .btn");
+    const originalContent = btn.innerHTML;
 
-    initializeComponents() {
-        // Initialize tooltips
-        this.initTooltips();
-        
-        // Initialize animations
-        this.initAnimations();
-        
-        // Initialize charts if needed
-        this.initCharts();
-    }
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    btn.disabled = true;
 
-    loadAdditionalData() {
-        // Load additional program statistics
-        this.loadProgramStats();
-        
-        // Load target progress data
-        this.loadTargetProgress();
-    }
+    // Simulate download (in real implementation, this would be an actual download)
+    setTimeout(() => {
+      // Open download in new window
+      window.open(url, "_blank");
 
-    animateProgressBars() {
-        const progressBars = document.querySelectorAll('.progress-bar');
-        
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const progressBar = entry.target;
-                    const width = progressBar.style.width;
-                    
-                    // Reset width to 0 for animation
-                    progressBar.style.width = '0%';
-                    
-                    // Animate to target width
-                    setTimeout(() => {
-                        progressBar.style.transition = 'width 1s ease-in-out';
-                        progressBar.style.width = width;
-                    }, 100);
-                    
-                    observer.unobserve(progressBar);
-                }
-            });
-        });
+      // Reset button
+      btn.innerHTML = originalContent;
+      btn.disabled = false;
 
-        progressBars.forEach(bar => observer.observe(bar));
-    }
+      // Show success message
+      this.showToast(
+        "Download Started",
+        "File download has been initiated.",
+        "success"
+      );
+    }, 500);
+  }
 
-    bindTimelineEvents() {
-        const timelineItems = document.querySelectorAll('.timeline-item');
-        
-        timelineItems.forEach(item => {
-            item.addEventListener('click', (e) => {
-                // Don't trigger if clicking on a link
-                if (e.target.tagName === 'A' || e.target.closest('a')) {
-                    return;
-                }
-                
-                // Toggle timeline item details
-                this.toggleTimelineDetails(item);
-            });
-            
-            // Add hover effects
-            item.addEventListener('mouseenter', () => {
-                item.classList.add('timeline-item-hover');
-            });
-            
-            item.addEventListener('mouseleave', () => {
-                item.classList.remove('timeline-item-hover');
-            });
-        });
-    }
+  bindQuickActionEvents() {
+    const quickActionBtns = document.querySelectorAll(".card-body .btn");
 
-    toggleTimelineDetails(timelineItem) {
-        const content = timelineItem.querySelector('.timeline-content');
-        const isExpanded = timelineItem.classList.contains('expanded');
-        
-        if (isExpanded) {
-            timelineItem.classList.remove('expanded');
-            content.style.maxHeight = '60px';
-        } else {
-            timelineItem.classList.add('expanded');
-            content.style.maxHeight = content.scrollHeight + 'px';
-        }
-    }
-
-    bindAttachmentEvents() {
-        const attachmentItems = document.querySelectorAll('.attachment-item');
-        
-        attachmentItems.forEach(item => {
-            const downloadBtn = item.querySelector('.attachment-actions .btn');
-            
-            if (downloadBtn) {
-                downloadBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    this.handleAttachmentDownload(downloadBtn.href, item);
-                });
-            }
-        });
-    }
-
-    handleAttachmentDownload(url, item) {
-        // Show loading state
-        const btn = item.querySelector('.attachment-actions .btn');
-        const originalContent = btn.innerHTML;
-        
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-        btn.disabled = true;
-        
-        // Simulate download (in real implementation, this would be an actual download)
+    quickActionBtns.forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        // Add click animation
+        btn.classList.add("btn-clicked");
         setTimeout(() => {
-            // Open download in new window
-            window.open(url, '_blank');
-            
-            // Reset button
-            btn.innerHTML = originalContent;
-            btn.disabled = false;
-            
-            // Show success message
-            this.showToast('Download Started', 'File download has been initiated.', 'success');
-        }, 500);
-    }
+          btn.classList.remove("btn-clicked");
+        }, 200);
+      });
+    });
+  }
 
-    bindQuickActionEvents() {
-        const quickActionBtns = document.querySelectorAll('.card-body .btn');
-        
-        quickActionBtns.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                // Add click animation
-                btn.classList.add('btn-clicked');
-                setTimeout(() => {
-                    btn.classList.remove('btn-clicked');
-                }, 200);
-            });
+  bindResponsiveEvents() {
+    // Handle responsive behavior
+    const handleResize = () => {
+      const isMobile = window.innerWidth < 768;
+
+      if (isMobile) {
+        this.enableMobileView();
+      } else {
+        this.enableDesktopView();
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    handleResize(); // Initial call
+  }
+
+  enableMobileView() {
+    const cards = document.querySelectorAll(".card");
+    cards.forEach((card) => {
+      card.classList.add("mobile-optimized");
+    });
+  }
+
+  enableDesktopView() {
+    const cards = document.querySelectorAll(".card");
+    cards.forEach((card) => {
+      card.classList.remove("mobile-optimized");
+    });
+  }
+
+  initTooltips() {
+    // Initialize Bootstrap tooltips if available
+    if (typeof bootstrap !== "undefined" && bootstrap.Tooltip) {
+      const tooltipTriggerList = [].slice.call(
+        document.querySelectorAll('[data-bs-toggle="tooltip"]')
+      );
+      tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+      });
+    }
+  }
+
+  initAnimations() {
+    // Animate cards on scroll
+    const cards = document.querySelectorAll(".card");
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("animate-in");
+          }
         });
-    }
+      },
+      { threshold: 0.1 }
+    );
 
-    bindResponsiveEvents() {
-        // Handle responsive behavior
-        const handleResize = () => {
-            const isMobile = window.innerWidth < 768;
-            
-            if (isMobile) {
-                this.enableMobileView();
-            } else {
-                this.enableDesktopView();
-            }
-        };
-        
-        window.addEventListener('resize', handleResize);
-        handleResize(); // Initial call
-    }
+    cards.forEach((card) => observer.observe(card));
+  }
 
-    enableMobileView() {
-        const cards = document.querySelectorAll('.card');
-        cards.forEach(card => {
-            card.classList.add('mobile-optimized');
-        });
-    }
+  initCharts() {
+    // Initialize any charts if needed
+    // This could include progress charts, timeline charts, etc.
+  }
 
-    enableDesktopView() {
-        const cards = document.querySelectorAll('.card');
-        cards.forEach(card => {
-            card.classList.remove('mobile-optimized');
-        });
-    }
+  loadProgramStats() {
+    // Load additional program statistics via AJAX
+    if (!this.programId) return;
 
-    initTooltips() {
-        // Initialize Bootstrap tooltips if available
-        if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
-            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-            tooltipTriggerList.map(function (tooltipTriggerEl) {
-                return new bootstrap.Tooltip(tooltipTriggerEl);
-            });
+    fetch(
+      `${this.APP_URL}/app/ajax/get_program_stats.php?program_id=${this.programId}`
+    )
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          this.updateProgramStats(data.stats);
         }
+      })
+      .catch((error) => {
+        console.error("Error loading program stats:", error);
+      });
+  }
+
+  updateProgramStats(stats) {
+    // Update statistics display
+    const statElements = document.querySelectorAll(".stat-item .badge");
+
+    if (stats.total_submissions !== undefined) {
+      const submissionsBadge = document.querySelector(
+        ".stat-item:first-child .badge"
+      );
+      if (submissionsBadge) {
+        submissionsBadge.textContent = stats.total_submissions;
+      }
     }
 
-    initAnimations() {
-        // Animate cards on scroll
-        const cards = document.querySelectorAll('.card');
-        
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('animate-in');
-                }
+    if (stats.completion_rate !== undefined) {
+      const progressBars = document.querySelectorAll(
+        ".target-progress .progress-bar"
+      );
+      progressBars.forEach((bar) => {
+        bar.style.width = `${stats.completion_rate}%`;
+      });
+    }
+
+    // Update Last Activity
+    const lastActivityElem = document.getElementById("last-activity-value");
+    if (lastActivityElem) {
+      if (stats.last_activity_date) {
+        const date = new Date(stats.last_activity_date);
+        lastActivityElem.textContent = isNaN(date.getTime())
+          ? "Never"
+          : date.toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
             });
-        }, { threshold: 0.1 });
-
-        cards.forEach(card => observer.observe(card));
+      } else {
+        lastActivityElem.textContent = "Never";
+      }
     }
+  }
 
-    initCharts() {
-        // Initialize any charts if needed
-        // This could include progress charts, timeline charts, etc.
-    }
+  loadTargetProgress() {
+    // Load target progress data
+    if (!this.programId) return;
 
-    loadProgramStats() {
-        // Load additional program statistics via AJAX
-        if (!this.programId) return;
-        
-        fetch(`${this.APP_URL}/app/ajax/get_program_stats.php?program_id=${this.programId}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    this.updateProgramStats(data.stats);
-                }
-            })
-            .catch(error => {
-                console.error('Error loading program stats:', error);
-            });
-    }
-
-    updateProgramStats(stats) {
-        // Update statistics display
-        const statElements = document.querySelectorAll('.stat-item .badge');
-        
-        if (stats.total_submissions !== undefined) {
-            const submissionsBadge = document.querySelector('.stat-item:first-child .badge');
-            if (submissionsBadge) {
-                submissionsBadge.textContent = stats.total_submissions;
-            }
+    fetch(
+      `${this.APP_URL}/app/ajax/get_target_progress.php?program_id=${this.programId}`
+    )
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          this.updateTargetProgress(data.progress);
         }
-        
-        if (stats.completion_rate !== undefined) {
-            const progressBars = document.querySelectorAll('.target-progress .progress-bar');
-            progressBars.forEach(bar => {
-                bar.style.width = `${stats.completion_rate}%`;
-            });
+      })
+      .catch((error) => {
+        console.error("Error loading target progress:", error);
+      });
+  }
+
+  updateTargetProgress(progress) {
+    // Update target progress indicators
+    progress.forEach((targetProgress) => {
+      const targetItem = document.querySelector(
+        `[data-target-id="${targetProgress.target_id}"]`
+      );
+      if (targetItem) {
+        const progressBar = targetItem.querySelector(".progress-bar");
+        const progressText = targetItem.querySelector(".text-muted");
+
+        if (progressBar) {
+          progressBar.style.width = `${targetProgress.percentage}%`;
         }
 
-        // Update Last Activity
-        const lastActivityElem = document.getElementById('last-activity-value');
-        if (lastActivityElem) {
-            if (stats.last_activity_date) {
-                const date = new Date(stats.last_activity_date);
-                lastActivityElem.textContent = isNaN(date.getTime()) ? 'Never' : date.toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric'
-                });
-            } else {
-                lastActivityElem.textContent = 'Never';
-            }
+        if (progressText) {
+          progressText.textContent = `${targetProgress.percentage}% Complete`;
         }
-    }
+      }
+    });
+  }
 
-    loadTargetProgress() {
-        // Load target progress data
-        if (!this.programId) return;
-        
-        fetch(`${this.APP_URL}/app/ajax/get_target_progress.php?program_id=${this.programId}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    this.updateTargetProgress(data.progress);
-                }
-            })
-            .catch(error => {
-                console.error('Error loading target progress:', error);
-            });
+  showToast(title, message, type = "info", duration = 5000) {
+    // Show toast notification
+    if (typeof showToast === "function") {
+      showToast(title, message, type, duration);
+    } else {
+      // Fallback to alert
     }
+  }
 
-    updateTargetProgress(progress) {
-        // Update target progress indicators
-        progress.forEach(targetProgress => {
-            const targetItem = document.querySelector(`[data-target-id="${targetProgress.target_id}"]`);
-            if (targetItem) {
-                const progressBar = targetItem.querySelector('.progress-bar');
-                const progressText = targetItem.querySelector('.text-muted');
-                
-                if (progressBar) {
-                    progressBar.style.width = `${targetProgress.percentage}%`;
-                }
-                
-                if (progressText) {
-                    progressText.textContent = `${targetProgress.percentage}% Complete`;
-                }
-            }
-        });
-    }
+  // Utility methods
+  formatFileSize(bytes) {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  }
 
-    showToast(title, message, type = 'info', duration = 5000) {
-        // Show toast notification
-        if (typeof showToast === 'function') {
-            showToast(title, message, type, duration);
-        } else {
-            // Fallback to alert
-            
-        }
-    }
+  formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  }
 
-    // Utility methods
-    formatFileSize(bytes) {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    }
+  openEditStatusModal() {
+    if (!this.enableStatusEditing) return;
+    // Fetch current status and hold point for form
+    fetch(
+      `${this.APP_URL}/app/api/program_status.php?action=status&program_id=${this.programId}`
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        this.renderEditStatusForm(data);
+        const modal = new bootstrap.Modal(
+          document.getElementById("editStatusModal")
+        );
+        modal.show();
+      });
+  }
 
-    formatDate(dateString) {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        });
-    }
-
-    openEditStatusModal() {
-        if (!this.enableStatusEditing) return;
-        // Fetch current status and hold point for form
-        fetch(`${this.APP_URL}/app/api/program_status.php?action=status&program_id=${this.programId}`)
-            .then(res => res.json())
-            .then(data => {
-                this.renderEditStatusForm(data);
-                const modal = new bootstrap.Modal(document.getElementById('editStatusModal'));
-                modal.show();
-            });
-    }
-
-    renderEditStatusForm(data) {
-        if (!this.enableStatusEditing) return;
-        const modalBody = document.getElementById('edit-status-modal-body');
-        if (!modalBody) return;
-        let status = data.status || 'active';
-        let hold = data.hold_point || {};
-        // Status options
-        const statusOptions = [
-            { value: 'active', label: 'Active' },
-            { value: 'on_hold', label: 'On Hold' },
-            { value: 'completed', label: 'Completed' },
-            { value: 'delayed', label: 'Delayed' },
-            { value: 'cancelled', label: 'Cancelled' }
-        ];
-        let html = `<form id='edit-status-form'>
+  renderEditStatusForm(data) {
+    if (!this.enableStatusEditing) return;
+    const modalBody = document.getElementById("edit-status-modal-body");
+    if (!modalBody) return;
+    let status = data.status || "active";
+    let hold = data.hold_point || {};
+    // Status options
+    const statusOptions = [
+      { value: "active", label: "Active" },
+      { value: "on_hold", label: "On Hold" },
+      { value: "completed", label: "Completed" },
+      { value: "delayed", label: "Delayed" },
+      { value: "cancelled", label: "Cancelled" },
+    ];
+    let html = `<form id='edit-status-form'>
             <div class='mb-3'>
                 <label for='status-select' class='form-label'>Status</label>
                 <select class='form-select' id='status-select' name='status'>
-                    ${statusOptions.map(opt => `<option value='${opt.value}' ${opt.value === status ? 'selected' : ''}>${opt.label}</option>`).join('')}
+                    ${statusOptions
+                      .map(
+                        (opt) =>
+                          `<option value='${opt.value}' ${
+                            opt.value === status ? "selected" : ""
+                          }>${opt.label}</option>`
+                      )
+                      .join("")}
                 </select>
             </div>
             <div class='mb-3'>
                 <label for='status-remarks' class='form-label'>Remarks (optional)</label>
                 <textarea class='form-control' id='status-remarks' name='remarks' rows='2'></textarea>
             </div>`;
-        if (status === 'on_hold' || hold) {
-            html += `<div id='hold-point-fields'>
+    if (status === "on_hold" || hold) {
+      html += `<div id='hold-point-fields'>
                 <div class='mb-3'>
                     <label for='hold-reason' class='form-label'>Hold Reason</label>
-                    <input type='text' class='form-control' id='hold-reason' name='reason' value='${hold.reason || ''}' required />
+                    <input type='text' class='form-control' id='hold-reason' name='reason' value='${
+                      hold.reason || ""
+                    }' required />
                 </div>
                 <div class='mb-3'>
                     <label for='hold-remarks' class='form-label'>Hold Remarks (optional)</label>
-                    <textarea class='form-control' id='hold-remarks' name='hold_remarks' rows='2'>${hold.remarks || ''}</textarea>
+                    <textarea class='form-control' id='hold-remarks' name='hold_remarks' rows='2'>${
+                      hold.remarks || ""
+                    }</textarea>
                 </div>
             </div>`;
-        }
-        html += `<button type='submit' class='btn btn-primary'>Save</button>
+    }
+    html += `<button type='submit' class='btn btn-primary'>Save</button>
         </form>`;
-        modalBody.innerHTML = html;
-        // Show/hide hold fields on status change
-        const statusSelect = document.getElementById('status-select');
-        statusSelect.addEventListener('change', (e) => {
-            const holdFields = document.getElementById('hold-point-fields');
-            if (e.target.value === 'on_hold') {
-                if (!holdFields) {
-                    // Add hold fields
-                    const div = document.createElement('div');
-                    div.id = 'hold-point-fields';
-                    div.innerHTML = `<div class='mb-3'><label for='hold-reason' class='form-label'>Hold Reason</label><input type='text' class='form-control' id='hold-reason' name='reason' required /></div><div class='mb-3'><label for='hold-remarks' class='form-label'>Hold Remarks (optional)</label><textarea class='form-control' id='hold-remarks' name='hold_remarks' rows='2'></textarea></div>`;
-                    statusSelect.parentNode.parentNode.appendChild(div);
-                } else {
-                    holdFields.style.display = '';
-                }
-            } else if (holdFields) {
-                holdFields.style.display = 'none';
-            }
-        });
-        // Submit handler
-        document.getElementById('edit-status-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.submitStatusForm();
-        });
-    }
+    modalBody.innerHTML = html;
+    // Show/hide hold fields on status change
+    const statusSelect = document.getElementById("status-select");
+    statusSelect.addEventListener("change", (e) => {
+      const holdFields = document.getElementById("hold-point-fields");
+      if (e.target.value === "on_hold") {
+        if (!holdFields) {
+          // Add hold fields
+          const div = document.createElement("div");
+          div.id = "hold-point-fields";
+          div.innerHTML = `<div class='mb-3'><label for='hold-reason' class='form-label'>Hold Reason</label><input type='text' class='form-control' id='hold-reason' name='reason' required /></div><div class='mb-3'><label for='hold-remarks' class='form-label'>Hold Remarks (optional)</label><textarea class='form-control' id='hold-remarks' name='hold_remarks' rows='2'></textarea></div>`;
+          statusSelect.parentNode.parentNode.appendChild(div);
+        } else {
+          holdFields.style.display = "";
+        }
+      } else if (holdFields) {
+        holdFields.style.display = "none";
+      }
+    });
+    // Submit handler
+    document
+      .getElementById("edit-status-form")
+      .addEventListener("submit", (e) => {
+        e.preventDefault();
+        this.submitStatusForm();
+      });
+  }
 
-    submitStatusForm() {
-        if (!this.enableStatusEditing) return;
-        const form = document.getElementById('edit-status-form');
-        const formData = new FormData(form);
-        formData.append('action', 'set_status');
-        formData.append('program_id', this.programId);
-        fetch(`${this.APP_URL}/app/api/program_status.php`, {
-            method: 'POST',
-            body: formData
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                this.loadProgramStatus();
-                bootstrap.Modal.getInstance(document.getElementById('editStatusModal')).hide();
-                this.showToast('Status Updated', 'Program status updated successfully.', 'success');
-            } else {
-                this.showToast('Error', data.error || 'Failed to update status.', 'danger');
-            }
-        });
-    }
+  submitStatusForm() {
+    if (!this.enableStatusEditing) return;
+    const form = document.getElementById("edit-status-form");
+    const formData = new FormData(form);
+    formData.append("action", "set_status");
+    formData.append("program_id", this.programId);
+    fetch(`${this.APP_URL}/app/api/program_status.php`, {
+      method: "POST",
+      body: formData,
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          this.loadProgramStatus();
+          bootstrap.Modal.getInstance(
+            document.getElementById("editStatusModal")
+          ).hide();
+          this.showToast(
+            "Status Updated",
+            "Program status updated successfully.",
+            "success"
+          );
+        } else {
+          this.showToast(
+            "Error",
+            data.error || "Failed to update status.",
+            "danger"
+          );
+        }
+      });
+  }
 
-    openStatusHistoryModal() {
-        fetch(`${this.APP_URL}/app/api/program_status.php?action=status_history&program_id=${this.programId}`)
-            .then(res => res.json())
-            .then(data => {
-                this.renderStatusHistory(data);
-                const modal = new bootstrap.Modal(document.getElementById('statusHistoryModal'));
-                modal.show();
-            });
-    }
+  openStatusHistoryModal() {
+    fetch(
+      `${this.APP_URL}/app/api/program_status.php?action=status_history&program_id=${this.programId}`
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        this.renderStatusHistory(data);
+        const modal = new bootstrap.Modal(
+          document.getElementById("statusHistoryModal")
+        );
+        modal.show();
+      });
+  }
 
-    renderStatusHistory(data) {
-        const modalBody = document.getElementById('status-history-modal-body');
-        if (!modalBody) return;
-        let html = '<h6>Status Changes</h6><ul class="list-group mb-3">';
-        (data.status_history || []).forEach(item => {
-            html += `<li class="list-group-item"><b>${item.status}</b> by User #${item.changed_by} <span class="text-muted">(${this.formatDate(item.changed_at)})</span> ${item.remarks ? ' - ' + item.remarks : ''}</li>`;
-        });
-        html += '</ul><h6>Hold Points</h6><ul class="list-group">';
-        (data.hold_points || []).forEach(item => {
-            html += `<li class="list-group-item"><i class='fas fa-pause-circle text-warning'></i> <b>${item.reason}</b> (${this.formatDate(item.created_at)})${item.ended_at ? ' - Ended: ' + this.formatDate(item.ended_at) : ''} ${item.remarks ? ' - ' + item.remarks : ''}</li>`;
-        });
-        html += '</ul>';
-        modalBody.innerHTML = html;
-    }
+  renderStatusHistory(data) {
+    const modalBody = document.getElementById("status-history-modal-body");
+    if (!modalBody) return;
+    let html = '<h6>Status Changes</h6><ul class="list-group mb-3">';
+    (data.status_history || []).forEach((item) => {
+      html += `<li class="list-group-item"><b>${item.status}</b> by User #${
+        item.changed_by
+      } <span class="text-muted">(${this.formatDate(item.changed_at)})</span> ${
+        item.remarks ? " - " + item.remarks : ""
+      }</li>`;
+    });
+    html += '</ul><h6>Hold Points</h6><ul class="list-group">';
+    (data.hold_points || []).forEach((item) => {
+      html += `<li class="list-group-item"><i class='fas fa-pause-circle text-warning'></i> <b>${
+        item.reason
+      }</b> (${this.formatDate(item.created_at)})${
+        item.ended_at ? " - Ended: " + this.formatDate(item.ended_at) : ""
+      } ${item.remarks ? " - " + item.remarks : ""}</li>`;
+    });
+    html += "</ul>";
+    modalBody.innerHTML = html;
+  }
 }
 
 // Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    new EnhancedProgramDetails();
+document.addEventListener("DOMContentLoaded", function () {
+  new EnhancedProgramDetails();
 });
 
 // Export for potential use in other modules
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = EnhancedProgramDetails;
-} 
+export default EnhancedProgramDetails;

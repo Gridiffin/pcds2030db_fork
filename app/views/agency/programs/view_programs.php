@@ -2,7 +2,9 @@
 /**
  * View Programs - Refactored with Best Practices
  * 
- * Interface for agency users to view their programs.
+ * Interface for agency users to v# Set up base layout variables
+$pageTitle = 'Agency Programs';
+$jsBundle = 'agency-programs-view';their programs.
  * Modular structure with base.php layout and Vite bundling.
  */
 
@@ -102,8 +104,8 @@ foreach ($programs as $program) {
 
 // Set up base layout variables
 $pageTitle = 'Agency Programs';
-$cssBundle = 'agency-programs-view';
-$jsBundle = 'agency-programs-view';
+$cssBundle = 'programs'; // CSS bundle for programs module
+$jsBundle = 'agency-view-programs';
 
 // Configure modern page header
 $header_config = [

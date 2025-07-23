@@ -3,6 +3,9 @@
  * Main entry point for all reports-related styles
  */
 
+/* Import shared base */
+@import '../shared/base.css';
+
 /* Import component styles */
 @import 'partials/filter.css';
 @import 'partials/list.css';

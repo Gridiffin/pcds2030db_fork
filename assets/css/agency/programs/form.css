@@ -1,5 +1,8 @@
 /* Program Form Styles */
 
+/* Import shared base styles */
+@import '../shared/base.css';
+
 /* Form layout */
 .program-form {
     max-width: 100%;

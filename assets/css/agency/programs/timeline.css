@@ -1,5 +1,8 @@
 /* Program Timeline Styles */
 
+/* Import shared base styles */
+@import '../shared/base.css';
+
 /* Timeline card */
 .timeline-card {
     background-color: #fff;

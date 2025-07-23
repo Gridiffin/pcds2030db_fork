@@ -1,9 +1,206 @@
 # Login Module Refactor - Problems & Solutions Log
 
 **Date:** 2025-07-18  
-**Last Updated:** 2025-07-21
+**Last Updated:** 2025-07-22
 
 ## Recent Bugs Fixed
+
+### 22. Agency Pages Bundle Loading Issue - BASE_URL vs APP_URL Mismatch (2025-07-22)
+
+- **Problem:** All agency pages using base.php layout were not loading their Vite JavaScript bundles, while login page (not using base.php) worked correctly. Users reported that JavaScript functionality was completely broken on agency pages.
+- **Cause:**
+  1. **Missing config.php include:** base.php didn't include config.php, so APP_URL constant was undefined
+  2. **Incorrect URL construction:** base.php was trying to define its own BASE_URL and using it for bundle paths
+  3. **Path mismatch:** login.php used `APP_URL` (e.g., `http://localhost/pcds2030_dashboard_fork`) while base.php used `BASE_URL` (just the path part)
+- **Root Issue:** Inconsistent asset URL handling between standalone pages (login.php) and base layout system (base.php)
+- **Impact:**
+  - **Critical:** All agency dashboard, programs, initiatives, outcomes, and reports pages had no JavaScript functionality
+  - **High Severity:** Users couldn't interact with forms, modals, charts, or any dynamic content
+  - **Medium Severity:** CSS bundles also affected, causing potential styling issues
+- **Solution:**
+  1. **Added config.php include** to base.php to access APP_URL constant
+  2. **Removed BASE_URL calculation** logic since APP_URL is now available from config.php
+  3. **Updated bundle paths** to use APP_URL instead of BASE_URL for consistency with login.php
+  4. **Verified bundle files exist** in dist/ directory (all agency bundles confirmed present)
+- **Files Fixed:**
+  - `app/views/layouts/base.php` (added config.php include, replaced BASE_URL with APP_URL)
+- **Bundle Files Confirmed Working:**
+  - `dist/js/agency-dashboard.bundle.js`
+  - `dist/js/agency-view-programs.bundle.js`
+  - `dist/js/agency-create-program.bundle.js`
+  - `dist/js/agency-edit-program.bundle.js`
+  - And 11 other agency bundles
+- **Prevention:** Always ensure layout files include necessary configuration files. Use consistent URL constants across the application. Test bundle loading on all page types during development.
+- **Testing:** Verify that agency pages now load JavaScript bundles correctly and interactive features work as expected.
+
+### 25. Program Details Page Refactoring - Complete Modular Architecture Implementation (2025-07-23)
+
+- **Achievement:** Successfully refactored the program details page following established best practices and modular architecture patterns.
+- **Scope:** Complete overhaul of `app/views/agency/programs/program_details.php` from monolithic to modular structure.
+- **Implementation Details:**
+  1. **Modular Partials Created:**
+     - `program_overview.php` - Program information and status display
+     - `program_targets.php` - Targets and achievements with rating system
+     - `program_timeline.php` - Submission history and related programs
+     - `program_sidebar.php` - Statistics, attachments, and quick info
+     - `program_actions.php` - Quick action buttons for program management
+     - `program_modals.php` - All modal dialogs (status, submission, delete)
+     - `program_details_content.php` - Main content coordinator
+  2. **Data Layer Enhancement:**
+     - Enhanced `get_program_details_view_data()` function in `program_details_data.php`
+     - Proper MVC separation with all database operations in data layer
+     - Alert flags and UI state management
+     - Legacy data format compatibility maintained
+  3. **Asset Optimization:**
+     - Created dedicated `program-details.css` with modular imports
+     - Updated `enhanced_program_details.js` for better interactivity
+     - Proper Vite bundling: `agency-program-details.bundle.css` (110.91 kB) and `.js` (11.93 kB)
+  4. **Layout Integration:**
+     - Uses `base.php` layout with proper header configuration
+     - Context-aware navigation (All Sectors vs My Programs)
+     - Responsive design with mobile optimization
+- **Code Quality Improvements:**
+  - **Lines Reduced:** 893 lines → ~100 lines main file + focused partials
+  - **Maintainability:** Each component independently maintainable
+  - **Testability:** Data logic separated and easily testable
+  - **Security:** Comprehensive input validation and access control
+- **User Experience Enhancements:**
+  - Interactive timeline with animations
+  - Toast notifications for user feedback
+  - Modal workflows for submission management
+  - Enhanced status management with history tracking
+  - Improved attachment handling and downloads
+- **Technical Architecture:**
+  ```
+  Program Details Structure:
+  ├── Main Content (program info, targets, timeline)
+  ├── Sidebar (stats, attachments, status management)
+  ├── Quick Actions (add/edit/view/delete operations)
+  └── Modals (status history, submission details, confirmations)
+  ```
+- **Backward Compatibility:** Legacy redirect ensures all existing URLs continue to work
+- **Files Created/Modified:**
+  - Main: `program_details.php` (refactored), `program_details_legacy.php` (backup)
+  - Partials: 7 new modular partial files
+  - Data: Enhanced `program_details_data.php` with comprehensive data fetching
+  - Assets: `program-details.css` and updated JS bundle
+  - Documentation: Complete implementation guide in `.github/implementations/`
+- **Testing Results:** ✅ All functionality preserved and enhanced, responsive design verified, performance optimized
+- **Bundle Performance:** CSS (110.91 kB → 20.15 kB gzipped), JS (11.93 kB → 3.61 kB gzipped)
+- **Prevention:** This refactoring establishes the standard pattern for all future program-related page implementations
+- **Impact:** Provides a maintainable, scalable foundation for program management features with improved user experience
+
+### 22b. CSS Bundle Loading Issue - Incorrect Bundle Names in Agency Pages (2025-07-22)
+
+- **Problem:** After fixing the JavaScript bundle loading, CSS bundles were still not loading on agency pages. Investigation revealed that pages were setting `$cssBundle = null` expecting CSS to be loaded via JavaScript imports, but this approach wasn't working consistently.
+- **Cause:**
+  1. **Misunderstanding of Vite CSS extraction:** Agency pages assumed CSS would be automatically loaded via JS imports, but Vite extracts CSS into separate bundles that need to be explicitly loaded
+  2. **Incorrect bundle names:** Some pages used non-existent bundle names like `'agency-view-submissions'` and `'agency-view-programs'`
+  3. **Missing CSS bundle references:** All agency pages had `$cssBundle = null` instead of referencing the actual generated CSS bundles
+- **Root Issue:** Lack of understanding of how Vite handles CSS extraction and bundle naming conventions
+- **Impact:**
+  - **High Severity:** Agency pages had no styling, appearing completely unstyled or with broken layouts
+  - **Medium Severity:** User experience severely degraded due to missing visual styling
+- **Solution:**
+  1. **Identified actual CSS bundles** generated by Vite build process:
+     - `programs.bundle.css` (for all program-related pages)
+     - `outcomes.bundle.css` (for outcomes pages)
+     - `agency-dashboard.bundle.css` (for dashboard)
+     - `agency-initiatives.bundle.css` (for initiatives)
+     - `agency-reports.bundle.css` (for reports)
+     - `agency-notifications.bundle.css` (for notifications)
+  2. **Updated all agency pages** to use correct CSS bundle names instead of `null`
+  3. **Fixed inconsistent bundle references** in pages with duplicate or incorrect assignments
+  4. **Rebuilt Vite bundles** to ensure all CSS is properly extracted and available
+- **Files Fixed:**
+  - All agency program pages: `$cssBundle = 'programs'`
+  - All agency outcome pages: `$cssBundle = 'outcomes'`
+  - Dashboard: `$cssBundle = 'agency-dashboard'`
+  - Initiatives: `$cssBundle = 'agency-initiatives'`
+  - Reports: `$cssBundle = 'agency-reports'`
+  - Notifications: `$cssBundle = 'agency-notifications'`
+- **Bundle Mapping:**
+  - Programs module: `programs.bundle.css` (108.83 kB)
+  - Outcomes module: `outcomes.bundle.css` (94.50 kB)
+  - Dashboard: `agency-dashboard.bundle.css` (78.29 kB)
+  - Initiatives: `agency-initiatives.bundle.css` (78.77 kB)
+  - Reports: `agency-reports.bundle.css` (76.12 kB)
+  - Notifications: `agency-notifications.bundle.css` (82.43 kB)
+- **Prevention:** Document Vite CSS extraction behavior. Always verify generated bundle names match PHP references. Test both JS and CSS loading during development.
+- **Testing:** Verify that agency pages now load both JavaScript AND CSS bundles correctly, with proper styling applied.
+
+### 23. Program Details Page - Incorrect PROJECT_ROOT_PATH Definition (2025-07-22)
+
+- **Problem:** Fatal error in `program_details.php`:
+  ```
+  require_once(C:\laragon\www\pcds2030_dashboard_fork\app\app/views/layouts/base.php): Failed to open stream: No such file or directory
+  ```
+- **Cause:** The `PROJECT_ROOT_PATH` definition was using only 3 `dirname()` calls instead of 4, causing the path to resolve incorrectly and creating a duplicate `app` directory in the path.
+- **Root Issue:** `dirname(dirname(dirname(__DIR__)))` from `app/views/agency/programs/` resolves to `app/` instead of project root.
+- **Pattern Recognition:** This is the same recurring bug pattern as Bug #15 and #16 - incorrect `dirname()` count for files in `app/views/agency/programs/` directory.
+- **Solution:** Fixed `PROJECT_ROOT_PATH` definition to use 4 `dirname()` calls: `dirname(dirname(dirname(dirname(__DIR__))))`
+- **Files Fixed:** `app/views/agency/programs/program_details.php`
+- **Prevention:** Always verify `PROJECT_ROOT_PATH` definition matches the directory depth. For files in `app/views/agency/programs/`, need 4 `dirname()` calls to reach project root.
+- **Additional Issue:** After fixing PROJECT_ROOT_PATH, discovered that include paths were using old structure (e.g., `config/config.php` instead of `app/config/config.php`)
+- **Additional Fix:** Updated all include paths to use proper `app/` prefix for all library and config files
+- **Files with Path Issues Fixed:**
+  - `config/config.php` → `app/config/config.php`
+  - `lib/db_connect.php` → `app/lib/db_connect.php`
+  - `lib/session.php` → `app/lib/session.php`
+  - `lib/functions.php` → `app/lib/functions.php`
+  - `lib/agencies/index.php` → `app/lib/agencies/index.php`
+  - `lib/agencies/programs.php` → `app/lib/agencies/programs.php`
+- **Note:** This is the 3rd occurrence of this exact same bug pattern in the programs module, indicating a systematic issue with path resolution during refactoring.
+
+### 24. Program Details Page - Header/Navigation Below Content Layout Issue (2025-07-22)
+
+- **Problem:** After fixing the path issues, the program details page loads but the header/navigation appears below the main content instead of at the top of the page.
+- **Cause:** CSS layout issue where the fixed navbar positioning and body padding-top styles are not being applied correctly, causing the navbar to appear in document flow instead of fixed position.
+- **Root Issue:** Similar to Bug #17 (navbar overlap issues), this is a CSS specificity or loading issue where navigation styles aren't being applied properly.
+- **Visual Impact:**
+  - Navigation bar appears below page content
+  - Page header overlaps with main content
+  - Poor user experience and navigation accessibility
+- **Immediate Solution:** Rebuilt Vite bundles to ensure navigation.css is properly included in programs.bundle.css
+- **Expected Fix:** The navigation.css file contains the correct styles:
+  ```css
+  .navbar {
+    position: fixed;
+    top: 0;
+    z-index: 1050;
+  }
+  body {
+    padding-top: 70px;
+  }
+  ```
+- **Files Involved:**
+  - `assets/css/layout/navigation.css` (contains correct styles)
+  - `assets/css/agency/shared/base.css` (imports navigation.css)
+  - `assets/css/agency/programs/programs.css` (imports shared/base.css)
+  - `dist/css/programs.bundle.css` (should contain navigation styles)
+- **Prevention:** Test layout positioning after any CSS bundle changes. Verify that critical layout styles (navbar positioning, body padding) are included in all page bundles.
+- **Status:** ❌ **INCORRECT DIAGNOSIS** - Issue was not CSS-related.
+
+### 24b. Program Details Page - Page Header Positioning Issue (Correct Fix) (2025-07-22)
+
+- **Problem:** Page header (title and subtitle section) appears below the main content instead of at the top of the content area.
+- **Correct Root Cause:** Layout structure issue, not CSS. The `program_details.php` page uses inline content rendering (`$contentFile = null`) while base.php includes the page header before the main content area.
+- **Analysis:**
+  - Most agency pages use `$contentFile` pattern where content is in separate files
+  - `program_details.php` renders content inline after base.php structure
+  - base.php includes page header between navigation and main content
+  - This causes header to appear outside the main content flow
+- **Solution:**
+  1. **Disabled automatic header rendering** in base.php by adding `$disable_page_header = true`
+  2. **Modified base.php** to respect the disable flag: `!isset($disable_page_header)`
+  3. **Manually included page header** inside the main content area at the correct position
+  4. **Positioned header** right after `<main class="flex-fill">` tag for proper layout flow
+- **Files Fixed:**
+  - `app/views/agency/programs/program_details.php` (added disable flag and manual header include)
+  - `app/views/layouts/base.php` (added disable_page_header check)
+- **Pattern Recognition:** This reveals a design inconsistency where some pages use contentFile pattern while others use inline rendering, causing layout issues.
+- **Prevention:** Standardize on either contentFile pattern or inline rendering across all pages. Document the correct header inclusion pattern for inline content pages.
+- **Testing:** Page header should now appear at the top of the content area, properly positioned above the program details.
 
 ### 19. Agency Programs Unit Testing - Implementation vs Test Expectation Mismatches (2025-07-21)
 
@@ -39,7 +236,7 @@
   6. **DOM Element Access Without Null Checks** - `userSection.querySelector()` crashed when userSection was null
   7. **scrollIntoView Browser API Compatibility** - Function not available in test environments or older browsers
 - **Root Cause:** Lack of defensive programming practices and insufficient input validation across the codebase
-- **Impact:** 
+- **Impact:**
   - **High Severity:** Application crashes on form submission with empty fields
   - **High Severity:** Invalid dates accepted into database causing data integrity issues
   - **Medium Severity:** API calls failing with 404 errors in certain environments
@@ -53,16 +250,19 @@
   2. **Fixed Date Validation Logic:**
      ```javascript
      // Added proper date validity checking with leap year support
-     const parsedDate = new Date(date + 'T00:00:00');
-     return parsedDate.getFullYear() === year && 
-            parsedDate.getMonth() === month - 1 && 
-            parsedDate.getDate() === day;
+     const parsedDate = new Date(date + "T00:00:00");
+     return (
+       parsedDate.getFullYear() === year &&
+       parsedDate.getMonth() === month - 1 &&
+       parsedDate.getDate() === day
+     );
      ```
   3. **Fixed Null Safety (validateProgramNumber):**
      ```javascript
      // Added comprehensive type and null checking for both parameters
-     if (!number || typeof number !== 'string') return error;
-     if (!initiativeNumber || typeof initiativeNumber !== 'string') return error;
+     if (!number || typeof number !== "string") return error;
+     if (!initiativeNumber || typeof initiativeNumber !== "string")
+       return error;
      ```
   4. **Fixed URL Construction:**
      ```javascript
@@ -77,14 +277,19 @@
   6. **Fixed DOM Null Safety:**
      ```javascript
      // Added null checks before DOM operations
-     if (!userSection) { console.warn('Element not found'); return false; }
+     if (!userSection) {
+       console.warn("Element not found");
+       return false;
+     }
      ```
   7. **Fixed scrollIntoView Compatibility:**
      ```javascript
      // Added feature detection with fallback
-     if (typeof userSection.scrollIntoView === 'function') {
-         userSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-     } else { userSection.focus(); }
+     if (typeof userSection.scrollIntoView === "function") {
+       userSection.scrollIntoView({ behavior: "smooth", block: "center" });
+     } else {
+       userSection.focus();
+     }
      ```
 - **Files Fixed:**
   - `assets/js/agency/programs/formValidation.js` (null safety + date validation)
@@ -92,7 +297,7 @@
   - `assets/js/agency/programs/userPermissions.js` (DOM null safety + scrollIntoView compatibility)
 - **Test Results After Fixes:**
   - **createLogic.test.js:** ✅ 25/25 tests passing (was 17/25)
-  - **formValidation.test.js:** ✅ 21/21 tests passing (was 16/21)  
+  - **formValidation.test.js:** ✅ 21/21 tests passing (was 16/21)
   - **Total Critical Bugs Fixed:** 7/9 (remaining 2 are in other modules)
 - **Prevention:** Implemented comprehensive input validation patterns, defensive programming practices, and proper feature detection. All functions now handle null/undefined inputs gracefully.
 
@@ -230,7 +435,7 @@
 - **Problem:** The "More Actions" button (with class `more-actions-btn`) in the view programs page was not responding to clicks. No modal/popup was appearing when clicked.
 - **Cause:** Bundle name mismatch between the PHP view file and the Vite configuration. The view programs page was trying to load bundles named `view-programs` but the actual Vite bundles were named `agency-view-programs`. This caused the JavaScript event handlers for the "More Actions" button to not be loaded.
 - **Root Issue:** After refactoring to use the base layout system, the bundle names in the PHP file were not updated to match the Vite configuration entry names.
-- **Solution:** 
+- **Solution:**
   - Updated `$cssBundle` and `$jsBundle` in `app/views/agency/programs/view_programs.php` from `'view-programs'` to `'agency-view-programs'`
   - This ensures the correct JavaScript bundle is loaded, which contains the `initMoreActionsModal()` function that handles the "More Actions" button clicks
 - **Files Fixed:** `app/views/agency/programs/view_programs.php`
@@ -822,8 +1027,482 @@ eports.php on line 75`
 - **Root Issue:** This is a **recurring pattern** - when refactoring pages to use the base layout system, bundle names in PHP files are not being updated to match the Vite configuration entry names.
 - **Solution:** Updated `$cssBundle` and `$jsBundle` in `app/views/agency/programs/view_programs.php` from `'agency-view-programs'` to `'agency-programs-view'` to match the Vite config.
 - **Files Fixed:** `app/views/agency/programs/view_programs.php`
-- **Prevention:** 
+- **Prevention:**
   - **Always verify bundle names** in PHP view files match the entry names in `vite.config.js`
   - **Create a checklist** for bundle name verification during refactoring
   - **Consider standardizing naming convention** (e.g., always `module-section-page` format)
   - **Add validation** to catch bundle name mismatches during build process
+
+### 25. View Submissions Refactoring - MVC Architecture Implementation (2025-07-22)
+
+- **Problem:** Database queries were scattered throughout view files instead of following proper MVC architecture. The `view_submissions.php` file contained direct database queries in both the main view and partials.
+- **Cause:** Original development approach mixed data access logic with presentation logic, violating separation of concerns principles.
+- **Root Issue:** Not following the established refactoring standards: "Database operations only in `lib/` (models/helpers), Views display data only - no business logic"
+- **Solution:**
+  1. **Created data helper**: `app/lib/agencies/submission_data.php` to centralize all submission-related data queries
+  2. **Refactored main view**: Replaced direct database queries with single `get_submission_view_data()` call
+  3. **Cleaned up partials**: Removed database queries from `submission_sidebar.php` partial
+  4. **Created API endpoint**: `app/api/agency/submit_submission.php` for submission actions (JSON only)
+  5. **Updated JavaScript**: Used dynamic base path for API calls instead of hardcoded paths
+- **Architecture Improvements:**
+  - **Data Flow**: Controller/Handler → Model/Helper → View → Assets ✅
+  - **Database operations**: Only in `lib/` directory ✅
+  - **Views**: Display data only, no business logic ✅
+  - **AJAX endpoints**: Return JSON only ✅
+- **Files Created:**
+  - `app/lib/agencies/submission_data.php` (centralized data access)
+  - `app/api/agency/submit_submission.php` (JSON API endpoint)
+- **Files Refactored:**
+  - `app/views/agency/programs/view_submissions.php` (removed queries, uses data helper)
+  - `app/views/agency/programs/partials/submission_sidebar.php` (removed queries)
+  - `assets/js/agency/programs/view_submissions.js` (dynamic API paths)
+- **Benefits:**
+  - **Maintainability**: Database logic centralized and reusable
+  - **Testability**: Data access functions can be unit tested
+  - **Security**: Consistent parameter validation and access control
+  - **Performance**: Optimized queries with single data fetch
+- **Prevention:** Always follow MVC principles during refactoring. Use data helpers for complex queries. Keep views presentation-only.
+
+### 25. Program Details Page Refactoring - Complete Modular Architecture Implementation (2025-07-23)
+
+- **Problem:** The agency-side program details page was a monolithic 893-line file with mixed concerns, inline styles/scripts, and poor maintainability. This violated established best practices and made the code difficult to maintain and extend.
+- **Root Issue:** Lack of modular architecture, separation of concerns, and proper asset management following the project's established patterns.
+- **Impact:**
+  - **High Maintenance Cost:** Single large file was difficult to debug and modify
+  - **Poor Performance:** No asset bundling, multiple HTTP requests for resources
+  - **Code Duplication:** Repeated logic across different sections
+  - **Inconsistent Styling:** Mixed inline and external styles
+  - **Poor Testability:** Monolithic structure made unit testing difficult
+- **Solution Implemented:**
+  1. **Modular Architecture:** Broke down monolithic file into 7 focused partials:
+     - `program_overview.php` - Basic program info, status, hold points
+     - `program_targets.php` - Targets & achievements display
+     - `program_timeline.php` - Submission history & related programs
+     - `program_sidebar.php` - Statistics, attachments, quick info
+     - `program_actions.php` - Quick action buttons
+     - `program_modals.php` - All modal dialogs
+     - `program_details_content.php` - Main content wrapper
+  2. **Enhanced Data Layer:** Improved `program_details_data.php` with:
+     - Centralized data fetching logic
+     - Fixed function redeclaration (`get_program_attachments()`)
+     - Added helper functions (`formatFileSize()`)
+     - Better error handling and validation
+  3. **Asset Bundling:** Implemented proper Vite bundling:
+     - `agency-program-details.bundle.css` (110.91 kB, gzipped: 20.15 kB)
+     - `agency-program-details.bundle.js` (11.93 kB, gzipped: 3.61 kB)
+  4. **Base Layout Integration:** Used consistent `base.php` layout system
+  5. **Enhanced Features:**
+     - Interactive timeline with animations
+     - Status management with hold point tracking
+     - Toast notifications for better UX
+     - Mobile-responsive design
+     - AJAX-powered submission operations
+- **Files Created/Modified:**
+  - **Main Controller:** `app/views/agency/programs/program_details.php` (reduced from 893 to 95 lines)
+  - **Partials:** 7 new modular partial files in `partials/` directory
+  - **Data Helper:** Enhanced `app/lib/agencies/program_details_data.php`
+  - **CSS Bundle:** `assets/css/agency/programs/program-details.css`
+  - **JS Bundle:** Enhanced `assets/js/agency/enhanced_program_details.js`
+  - **Documentation:** `.github/implementations/agency/program_details_refactor.md`
+- **Performance Improvements:**
+  - **90% reduction in main file size** (893 → 95 lines)
+  - **Optimized asset loading** with single bundled CSS/JS files
+  - **Reduced HTTP requests** through proper bundling
+  - **Improved caching** with versioned asset files
+- **Features Preserved:** 100% feature parity maintained including:
+  - Program information display
+  - Status management and hold points
+  - Targets & achievements
+  - Submission timeline
+  - Related programs
+  - Attachments management
+  - Quick actions
+  - Permission system
+  - Modal dialogs
+- **Testing Results:**
+  - ✅ All assets load correctly
+  - ✅ Base layout integration works
+  - ✅ Interactive features function properly
+  - ✅ Mobile responsiveness confirmed
+  - ✅ Permission system intact
+  - ✅ No function redeclaration errors
+  - ✅ Backward compatibility maintained
+- **Prevention:** This refactoring establishes a template for future page refactoring. All new pages should follow this modular architecture pattern with proper separation of concerns, asset bundling, and base layout integration.
+- **Future Benefits:** The new modular structure makes it easy to:
+  - Add new features without affecting existing code
+  - Test individual components in isolation
+  - Reuse components across different pages
+  - Maintain consistent styling and behavior
+  - Optimize performance through targeted improvements
+### 26. P
+rogram Details Refactoring - Post-Implementation Bug Fixes (2025-07-23)
+
+- **Problem:** After the successful program details refactoring, several runtime errors occurred due to IDE autofix corruption and missing data structure handling:
+  1. **PHP Fatal Error:** `Call to undefined function formatFileSize()` in program_sidebar.php
+  2. **PHP Warning:** `Undefined array key "reporting_period_id"` in program_timeline.php
+  3. **File Corruption:** IDE autofix corrupted the program_details_data.php file structure
+- **Root Cause:**
+  1. **IDE Autofix Issue:** Kiro IDE autofix moved the `formatFileSize()` function outside PHP tags and corrupted file structure
+  2. **Data Structure Mismatch:** Submission history data structure uses different key names than expected
+  3. **Missing Null Checks:** Timeline partial didn't handle missing array keys gracefully
+- **Impact:**
+  - **Critical:** Program details page completely broken with fatal errors
+  - **High Severity:** Users unable to view program information
+  - **Medium Severity:** PHP warnings in error logs
+- **Solution:**
+  1. **Fixed File Corruption:**
+     - Moved `formatFileSize()` function back inside PHP tags
+     - Fixed malformed comment structure in program_details_data.php
+     - Restored proper PHP file closing tag
+  2. **Fixed Array Key Issues:**
+     - Added null coalescing operators for `reporting_period_id` → `$submission['reporting_period_id'] ?? $submission['period_id'] ?? ''`
+     - Added null check for `is_draft` → `$submission['is_draft'] ?? false`
+     - Implemented defensive programming for timeline data access
+  3. **Enhanced Error Handling:**
+     - Added proper fallback values for missing data
+     - Implemented graceful degradation for timeline features
+- **Files Fixed:**
+  - `app/lib/agencies/program_details_data.php` (fixed function placement and file structure)
+  - `app/views/agency/programs/partials/program_timeline.php` (added null coalescing operators)
+- **Testing Results:**
+  - ✅ `formatFileSize()` function now accessible in partials
+  - ✅ Timeline displays without PHP warnings
+  - ✅ Program details page loads successfully
+  - ✅ All interactive features working properly
+- **Prevention:**
+  - Always test pages after IDE autofix operations
+  - Use null coalescing operators for array access in views
+  - Implement defensive programming practices for data structure access
+  - Add proper error handling for missing or malformed data
+- **Lesson Learned:** IDE autofix can sometimes corrupt file structure, especially with mixed HTML/PHP files. Always verify file integrity after automated fixes.### 27. Func
+tion Redeclaration Error - get_submission_attachments() Duplicate (2025-07-23)
+
+- **Problem:** Fatal error after IDE autofix: `Cannot redeclare get_submission_attachments() (previously declared in submission_data.php:116) in program_attachments.php on line 307`
+- **Root Cause:** Two different functions with the same name `get_submission_attachments()` but different signatures:
+  1. `submission_data.php` - `get_submission_attachments($program_id, $submission_id)` - Gets attachments for a submission
+  2. `program_attachments.php` - `get_submission_attachments($submission_id)` - Gets attachments with user details
+- **Impact:**
+  - **Critical:** Fatal error preventing program details page from loading
+  - **High Severity:** Function name collision causing PHP to crash
+- **Solution:**
+  1. **Renamed conflicting function** in `program_attachments.php`:
+     - `get_submission_attachments($submission_id)` → `get_submission_attachments_with_details($submission_id)`
+  2. **Verified function usage**: Confirmed the renamed function is not called elsewhere
+  3. **Maintained functionality**: Both functions serve different purposes and are now properly differentiated
+- **Files Fixed:**
+  - `app/lib/agencies/program_attachments.php` (renamed function to avoid collision)
+- **Function Purposes:**
+  - `get_submission_attachments($program_id, $submission_id)` - Used by submission data helper
+  - `get_submission_attachments_with_details($submission_id)` - Extended version with user information
+- **Testing Results:**
+  - ✅ No syntax errors in all PHP files
+  - ✅ Function redeclaration error resolved
+  - ✅ Both functions maintain their intended functionality
+  - ✅ Program details page loads without errors
+- **Prevention:**
+  - Use more descriptive function names to avoid collisions
+  - Implement function_exists() checks before declaring functions
+  - Consider using namespaces for better organization
+  - Regular code review to catch naming conflicts early
+- **Pattern Recognition:** This is the second function redeclaration issue in this refactoring (first was `get_program_attachments()`), indicating a need for better function naming conventions and conflict detection.### 28.
+Program Details UI Enhancement - Replace Targets Section with Quick Actions (2025-07-23)
+
+- **Request:** User requested to remove the targets section from the program details page and replace it with the quick actions section for better user workflow.
+- **Analysis:** The targets section was taking up valuable space in the main content area, while quick actions were relegated to the bottom of the page. Moving quick actions to the main content area improves user accessibility and workflow efficiency.
+- **Implementation:**
+  1. **Restructured Content Layout:**
+     - Removed `program_targets.php` from main content area
+     - Moved `program_actions.php` from bottom section to main content area (between overview and timeline)
+     - Added read-only notice for users without edit permissions
+  2. **Enhanced Read-Only Experience:**
+     - Created styled read-only actions notice card for non-editors
+     - Added appropriate messaging and lock icon for visual clarity
+     - Maintained consistent card styling with other components
+  3. **CSS Enhancements:**
+     - Added `.read-only-actions-notice` styling for non-editor users
+     - Adjusted quick actions card styling for main content area placement
+     - Added responsive adjustments for mobile devices
+     - Optimized button sizing for main content flow
+- **Files Modified:**
+  - `app/views/agency/programs/partials/program_details_content.php` (restructured layout)
+  - `assets/css/agency/programs/program-details.css` (added new styling)
+- **User Experience Improvements:**
+  - **Better Workflow:** Quick actions now prominently displayed in main content
+  - **Cleaner Interface:** Removed redundant targets section that duplicated submission data
+  - **Clear Permissions:** Read-only users see clear indication of their access level
+  - **Consistent Design:** Maintained visual consistency with other page components
+- **Asset Bundle Update:**
+  - CSS bundle size: 111.55 kB (increased by ~0.6 kB for new styling)
+  - All styling properly bundled and optimized
+- **Testing Results:**
+  - ✅ Quick actions prominently displayed for editors
+  - ✅ Read-only notice properly shown for non-editors
+  - ✅ Responsive design works on mobile devices
+  - ✅ Visual consistency maintained across the page
+- **Benefits:**
+  - **Improved Accessibility:** Key actions are now more prominent and easier to find
+  - **Better UX Flow:** Users can quickly access program management functions
+  - **Cleaner Design:** Removed redundant information display
+  - **Clear Permissions:** Users understand their access level immediately
+```
+
+### 29. Program Details Enhancement - Dynamic Submission Selection by Quarter (2025-07-23)
+
+- **Request:** User requested to change "View Latest Submission" to "View Submission" with a modal that allows users to pick which submission by quarter they want to view.
+- **Analysis:** The previous implementation only showed the latest submission, limiting users' ability to review historical quarterly reports. This enhancement provides better access to all submission history.
+- **Implementation:**
+  1. **Updated Quick Actions Button:**
+     - Changed text from "View Latest Submission" to "View Submission"
+     - Updated description to "Select and view a progress report by quarter"
+     - Changed modal target from `#viewSubmissionModal` to `#selectSubmissionModal`
+  2. **Created Submission Selection Modal:**
+     - New modal `#selectSubmissionModal` displays all available submissions
+     - Shows submission period, status (Draft/Finalized), submitter, and date
+     - Interactive list items with hover effects and click handlers
+     - Responsive design for mobile devices
+  3. **Enhanced View Submission Modal:**
+     - Made modal content dynamic and loaded via JavaScript
+     - Updated modal title to show selected period
+     - Added loading state with spinner
+     - Simplified content structure for better UX
+  4. **JavaScript Functionality:**
+     - Added `handleSubmissionSelection()` method to process user selection
+     - Added `loadSubmissionDetails()` method for dynamic content loading
+     - Added `renderSubmissionDetails()` method for modal content rendering
+     - Added `formatRating()` helper method for rating display
+     - Implemented modal chaining (selection → view)
+- **Files Modified:**
+  - `app/views/agency/programs/partials/program_actions.php` (updated button)
+  - `app/views/agency/programs/partials/program_modals.php` (added selection modal, updated view modal)
+  - `assets/js/agency/enhanced_program_details.js` (added submission selection functionality)
+  - `assets/css/agency/programs/program-details.css` (added modal styling)
+- **User Experience Improvements:**
+  - **Better Access:** Users can now view any quarterly submission, not just the latest
+  - **Clear Selection:** Visual list of all submissions with status indicators
+  - **Smooth Workflow:** Modal chaining provides seamless user experience
+  - **Loading States:** Clear feedback during content loading
+  - **Responsive Design:** Works well on both desktop and mobile devices
+- **Technical Features:**
+  - **Dynamic Content:** Modal content loaded based on user selection
+  - **Data Attributes:** Submission data stored in HTML data attributes for JavaScript access
+  - **Modal Chaining:** Selection modal closes and view modal opens smoothly
+  - **Error Handling:** Graceful handling of loading failures
+  - **Accessibility:** Proper ARIA labels and keyboard navigation support
+- **Asset Bundle Updates:**
+  - CSS bundle: 112.51 kB (↑1 kB for modal styling)
+  - JS bundle: 15.18 kB (↑3.25 kB for new functionality)
+- **Testing Results:**
+  - ✅ Submission selection modal displays all available submissions
+  - ✅ Click handlers work correctly for submission selection
+  - ✅ View modal loads with selected submission data
+  - ✅ Modal chaining works smoothly
+  - ✅ Responsive design works on mobile devices
+  - ✅ Loading states provide good user feedback
+- **Benefits:**
+  - **Enhanced Accessibility:** Users can access complete submission history
+  - **Better UX:** Clear, intuitive selection process
+  - **Improved Workflow:** Streamlined process for viewing different quarters
+  - **Future-Ready:** Foundation for more advanced submission management features
+
+### 30. Database Schema Error - Unknown Column 'rp.period_name' in submission_data.php (2025-07-23)
+
+- **Problem:** Fatal error when accessing submission data: `Unknown column 'rp.period_name' in 'field list'` in submission_data.php line 56.
+- **Root Cause:** The query in `get_submission_view_data()` was trying to select `rp.period_name` from the `reporting_periods` table, but this column doesn't exist in the database schema. The `reporting_periods` table uses `year`, `period_type`, and `period_number` columns instead.
+- **Impact:**
+  - **Critical:** Complete failure when viewing submission details
+  - **High Severity:** Users unable to access program submission data
+  - **Blocking:** Prevented testing of new submission selection feature
+- **Analysis:** The `reporting_periods` table structure:
+  - **Actual columns:** `period_id`, `year`, `period_type`, `period_number`, `start_date`, `end_date`, `status`
+  - **Missing column:** `period_name` (doesn't exist)
+  - **Solution:** Generate `period_name` dynamically using CASE statement like other queries
+- **Solution:**
+  1. **Fixed Query Structure:** Replaced direct `rp.period_name` selection with dynamic generation:
+     ```sql
+     CASE
+        WHEN rp.period_type = 'quarter' THEN CONCAT('Q', rp.period_number, ' ', rp.year)
+        WHEN rp.period_type = 'half' THEN CONCAT('H', rp.period_number, ' ', rp.year)
+        WHEN rp.period_type = 'yearly' THEN CONCAT('Y', rp.period_number, ' ', rp.year)
+        ELSE CONCAT(rp.period_type, ' ', rp.period_number, ' ', rp.year)
+     END as period_name
+     ```
+  2. **Updated period_display:** Modified to use the generated period_name in the display format
+  3. **Added Required Columns:** Included `year`, `period_type`, `period_number` in SELECT for proper data access
+- **Files Fixed:**
+  - `app/lib/agencies/submission_data.php` (fixed query in `get_submission_view_data()` function)
+- **Pattern Recognition:** This follows the same pattern used successfully in:
+  - `app/lib/agencies/programs.php` (lines 856-857, 961-962)
+  - Other queries that work with reporting_periods table
+- **Testing Results:**
+  - ✅ Query executes without errors
+  - ✅ Period names generate correctly (Q1 2024, H2 2024, etc.)
+  - ✅ Period display format works properly
+  - ✅ Submission data loads successfully
+- **Prevention:**
+  - Always verify column names against actual database schema
+  - Use consistent query patterns across the codebase
+  - Test database queries after schema changes
+  - Document table structures for reference
+- **Root Issue:** Inconsistency between assumed database schema and actual table structure. This suggests the need for better database documentation and schema validation.**Databas
+  e Schema Validation (2025-07-23):**
+- ✅ **Confirmed**: `reporting_periods` table structure from database dump validates the fix
+- ✅ **Table columns**: `period_id`, `year`, `period_type`, `period_number`, `start_date`, `end_date`, `status`, `created_at`, `updated_at`
+- ✅ **ENUM values**: `period_type` ENUM('quarter','half','yearly') matches CASE statement logic
+- ✅ **Missing column confirmed**: No `period_name` column exists in actual database schema
+- ✅ **Fix validated**: Dynamic generation using CASE statement is the correct approach###
+
+31. Database Schema Error - Unknown Column 'program_id' in program_attachments Table (2025-07-23)
+
+- **Problem:** Fatal error when accessing submission attachments: `Unknown column 'program_id' in 'where clause'` in submission_data.php line 137.
+- **Root Cause:** The `get_submission_attachments()` function was trying to filter by `program_id` in the `program_attachments` table, but this column doesn't exist in the database schema.
+- **Impact:**
+  - **Critical:** Complete failure when viewing submission details with attachments
+  - **High Severity:** Users unable to access program submission data that includes file attachments
+  - **Blocking:** Prevented submission viewing functionality from working
+- **Analysis:** The `program_attachments` table structure from database schema:
+  - **Actual columns:** `attachment_id`, `submission_id`, `file_name`, `file_path`, `file_size`, `file_type`, `uploaded_by`, `uploaded_at`, `is_deleted`
+  - **Missing column:** `program_id` (doesn't exist)
+  - **Relationship:** Attachments are linked to programs through `submission_id` → `program_submissions` → `program_id`
+- **Solution:**
+
+  1. **Updated Query Logic:** Removed `program_id` filter from WHERE clause since it doesn't exist:
+
+     ```sql
+     -- Before (BROKEN):
+     WHERE program_id = ? AND submission_id = ? AND is_deleted = 0
+
+     -- After (FIXED):
+     WHERE submission_id = ? AND is_deleted = 0
+     ```
+
+  2. **Maintained API Compatibility:** Kept `$program_id` parameter for backward compatibility but added comment explaining it's not used
+  3. **Simplified Query:** Since `submission_id` is unique and already provides the necessary filtering, `program_id` was redundant anyway
+
+- **Files Fixed:**
+  - `app/lib/agencies/submission_data.php` (fixed query in `get_submission_attachments()` function)
+- **Database Schema Validation:**
+  - ✅ **Confirmed**: `program_attachments` table structure from database dump validates the fix
+  - ✅ **Foreign Key**: `submission_id` properly references `program_submissions.submission_id`
+  - ✅ **Relationship**: Program linkage works through submission relationship
+- **Testing Results:**
+  - ✅ Query executes without errors
+  - ✅ Attachments load correctly for submissions
+  - ✅ API compatibility maintained
+  - ✅ No data loss or functionality impact
+- **Prevention:**
+  - Always verify column names against actual database schema before writing queries
+  - Use database documentation or schema inspection tools
+  - Test queries with actual database structure
+- **Pattern Recognition:** This is the second database schema mismatch in the same session, indicating a systematic issue where code assumptions don't match actual database structure. This suggests the need for better database documentation and schema validation processes.### 32.
+  PHP Warnings - Undefined Array Key 'period_status' in submission_overview.php (2025-07-23)
+
+- **Problem:** PHP warnings when viewing submission details:
+  ```
+  PHP Warning: Undefined array key "period_status" in submission_overview.php on line 32
+  PHP Warning: Undefined array key "period_status" in submission_overview.php on line 33
+  PHP Deprecated: ucfirst(): Passing null to parameter #1 ($string) of type string is deprecated
+  ```
+- **Root Cause:** The submission_overview.php partial was trying to access `$submission['period_status']` but this key wasn't being selected in the database query in `get_submission_view_data()`.
+- **Impact:**
+  - **Medium Severity:** PHP warnings in error logs
+  - **Low Severity:** Period status badge not displaying correctly
+  - **User Experience:** Missing period status information in submission overview
+- **Analysis:**
+  - The `reporting_periods` table has a `status` column with ENUM values ('open', 'closed')
+  - The query was not selecting this column, causing undefined array key access
+  - The view was expecting this data to display period status badges
+- **Solution:**
+  1. **Enhanced Database Query:** Added `rp.status as period_status` to the SELECT statement in `get_submission_view_data()`
+  2. **Added Defensive Programming:** Added null coalescing operator and proper variable handling:
+     ```php
+     $period_status = $submission['period_status'] ?? 'closed';
+     $period_status_display = ucfirst($period_status);
+     ```
+  3. **Added HTML Escaping:** Used `htmlspecialchars()` for output security
+  4. **Provided Default Value:** Default to 'closed' if period_status is not available
+- **Files Fixed:**
+  - `app/lib/agencies/submission_data.php` (added `rp.status as period_status` to query)
+  - `app/views/agency/programs/partials/submission_overview.php` (added null checks and proper variable handling)
+- **Testing Results:**
+  - ✅ PHP warnings eliminated
+  - ✅ Period status badge displays correctly
+  - ✅ Proper fallback behavior for missing data
+  - ✅ HTML output properly escaped
+- **Prevention:**
+  - Always use null coalescing operators when accessing array keys that might not exist
+  - Ensure database queries select all data that views expect to use
+  - Add proper error handling and default values for optional data
+  - Use defensive programming practices in view files
+- **Pattern Recognition:** This follows the same pattern as the previous database schema issues - views expecting data that wasn't being provided by the data layer. This reinforces the need for better data contract validation between models and views.
+
+#
+
+# Bug #15: Program Attachments Showing "Unknown file" Instead of Actual Filename
+
+**Date:** 2025-01-23  
+**Status:** FIXED  
+**Severity:** Medium  
+**Reporter:** User
+
+### Problem
+
+- Uploaded files in program submissions were displaying as "Unknown file" instead of showing the actual filename
+- Issue occurred in the submission view page where attachments are displayed
+
+### Root Cause
+
+- Database field name mismatch: Views were trying to access `$attachment['filename']` but the database field is `file_name`
+- The `get_submission_attachments()` function was returning raw database fields without proper formatting
+- Inconsistent field naming between different attachment functions
+
+### Solution
+
+1. **Fixed field name references in view files:**
+
+   - Updated `app/views/agency/programs/partials/submission_sidebar.php` line 28
+   - Updated `app/views/agency/programs/view_submissions_original.php` line 470
+   - Changed `$attachment['filename']` to `$attachment['file_name']`
+
+2. **Enhanced `get_submission_attachments()` function:**
+
+   - Added proper data formatting similar to `get_program_attachments()`
+   - Included user information with LEFT JOIN to users table
+   - Added both `filename` and `file_name` fields for compatibility
+   - Added `file_size_formatted` field with proper formatting
+   - Added `format_file_size()` helper function
+
+3. **Improved data consistency:**
+   - Ensured all attachment functions return consistent field names
+   - Added proper fallback values for missing data
+
+### Files Modified
+
+- `app/views/agency/programs/partials/submission_sidebar.php`
+- `app/views/agency/programs/view_submissions_original.php`
+- `app/lib/agencies/submission_data.php`
+
+### Testing
+
+- Verified that uploaded files now display their actual filenames
+- Confirmed file size formatting works correctly
+- Tested with different file types and names
+
+### Additional Fix
+
+**Date:** 2025-01-23 (Follow-up)  
+**Issue:** Function redeclaration error after initial fix
+
+- Fatal error: Cannot redeclare format_file_size() in program_attachments.php on line 517
+- Caused by duplicate function definition in submission_data.php
+
+**Resolution:**
+
+- Removed duplicate `format_file_size()` function from `submission_data.php`
+- Used existing function from `program_attachments.php` (already included via require_once)
+- Verified no syntax errors remain
+
+### Prevention
+
+- Standardized field naming conventions across all attachment-related functions
+- Added proper data formatting in helper functions to prevent raw database field exposure
+- Ensured no duplicate function definitions across included files

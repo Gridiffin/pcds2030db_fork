@@ -8,17 +8,18 @@
 
 // Define project root path for consistent file references
 if (!defined('PROJECT_ROOT_PATH')) {
-    define('PROJECT_ROOT_PATH', rtrim(dirname(dirname(dirname(__DIR__))), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
+    define('PROJECT_ROOT_PATH', dirname(dirname(dirname(dirname(__DIR__)))) . DIRECTORY_SEPARATOR);
 }
 
+
 // Include necessary files
-require_once PROJECT_ROOT_PATH . 'config/config.php';
-require_once PROJECT_ROOT_PATH . 'lib/db_connect.php';
-require_once PROJECT_ROOT_PATH . 'lib/session.php';
-require_once PROJECT_ROOT_PATH . 'lib/functions.php';
-require_once PROJECT_ROOT_PATH . 'lib/agencies/programs.php';
-require_once PROJECT_ROOT_PATH . 'lib/agencies/program_permissions.php';
-require_once PROJECT_ROOT_PATH . 'lib/initiative_functions.php';
+require_once PROJECT_ROOT_PATH . 'app/config/config.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/agencies/programs.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/agencies/program_permissions.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/initiative_functions.php';
 
 // Verify user is an agency
 if (!is_agency()) {
@@ -76,14 +77,16 @@ foreach ($existing_submissions as $submission) {
 
 // Set page title
 $pageTitle = 'Edit Submission - ' . $program['program_name'];
+$cssBundle = 'programs'; // CSS bundle for programs module
+$jsBundle = 'agency-edit-submission';
 
-// Additional CSS for edit submission page
-$additionalCSS = [
-    APP_URL . '/assets/css/agency/edit_submission.css',
-];
+// Additional CSS for edit submission page - NO LONGER NEEDED, HANDLED BY BUNDLE
+// $additionalCSS = [
+//     APP_URL . '/assets/css/agency/edit_submission.css',
+// ];
 
-// Include header
-require_once '../../layouts/header.php';
+// Include header - NO LONGER NEEDED, HANDLED BY base.php
+// require_once '../../layouts/header.php';
 
 // Configure modern page header
 $header_config = [
@@ -100,12 +103,13 @@ $header_config = [
     ]
 ];
 
-// Include modern page header
-require_once '../../layouts/page_header.php';
+// Content will be rendered inline
+$contentFile = null;
 ?>
 
 <!-- Remove fixed and sticky info bar markup -->
 
+<main class="flex-fill">
 <div class="container-fluid">
     <!-- Remove .row and column wrappers for single-column layout -->
     <!-- Main content and history sidebar will be rendered inside the main card/form -->
@@ -264,9 +268,11 @@ window.programNumber = <?= json_encode($program['program_number'] ?? '') ?>;
 window.initiativeNumber = <?= json_encode($program['initiative_number'] ?? '') ?>;
 </script>
 
-<script src="<?php echo asset_url('js/agency', 'edit_submission.js'); ?>"></script>
+</div>
+</main>
+
 
 <?php
-// Include footer
-require_once '../../layouts/footer.php';
+// Include base layout
+require_once PROJECT_ROOT_PATH . 'app/views/layouts/base.php';
 ?> 

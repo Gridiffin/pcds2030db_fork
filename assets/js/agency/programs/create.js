@@ -4,7 +4,7 @@
  */
 
 // Import CSS
-import '../../../css/agency/programs/create.css';
+import '../../../css/agency/programs/programs.css';
 
 // Import modules
 import { initProgramNumberValidation } from './createLogic.js';

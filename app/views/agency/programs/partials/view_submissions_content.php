@@ -1,0 +1,36 @@
+<?php
+/**
+ * View Submissions Content Partial
+ * Main content for the view submissions page
+ */
+?>
+<!-- Main Content -->
+<main class="flex-fill">
+<div class="container-fluid">
+    <!-- Error/Success Messages -->
+    <?php if (isset($_SESSION['message'])): ?>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                showToast('<?= ucfirst($_SESSION['message_type']) ?>', <?= json_encode($_SESSION['message']) ?>, '<?= $_SESSION['message_type'] ?>');
+            });
+        </script>
+        <?php 
+        unset($_SESSION['message']);
+        unset($_SESSION['message_type']);
+        ?>
+    <?php endif; ?>
+
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <?php require_once __DIR__ . '/submission_overview.php'; ?>
+            <?php require_once __DIR__ . '/submission_targets.php'; ?>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <?php require_once __DIR__ . '/submission_sidebar.php'; ?>
+        </div>
+    </div>
+</div>
+</main>
