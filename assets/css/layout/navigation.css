@@ -445,14 +445,14 @@
   }
 }
 
-/* Remove body padding-top since navbar is now sticky */
-/* body {
+/* Body padding for fixed navbar */
+body {
   padding-top: 70px;
-} */
+}
 
-/* Remove multi-line navbar padding adjustments */
-/* @media (max-width: 480px) {
+/* Multi-line navbar padding adjustments */
+@media (max-width: 480px) {
   body {
     padding-top: 85px;
   }
-} */
+}

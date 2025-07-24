@@ -5,5 +5,6 @@
         {
             "text": "Be extremely detailed in your commit messages, explaining the why and how of your changes. put some small context in front of the commit message. For example, if it's a fix then put [FIX]. ",
         }
-    ]
+    ],
+    "claudeCodeChat.permissions.yoloMode": true
 }
