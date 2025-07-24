@@ -14,115 +14,146 @@
         View your agency's programs, their progress, and recent updates. Use the cards below to explore program status and activity.
     </div>
     
-    <!-- Bento Grid Dashboard -->
-    <section class="section">
-        <div class="container-fluid">
-            <!-- Bento Grid Layout -->
-            <div class="bento-grid">
-                <!-- Total Programs Card -->
-                <div class="bento-card size-3x1 primary">
-                    <div class="bento-card-header">
-                        <h3 class="bento-card-title">
-                            <div class="bento-card-icon" style="background: rgba(255,255,255,0.2);">
-                                <i class="fas fa-clipboard-list"></i>
-                            </div>
-                            Total Programs
-                        </h3>
-                    </div>
-                    <div class="bento-card-content text-center">
-                        <div class="display-4 fw-bold mb-2"><?php echo $stats['total']; ?></div>
-                        <p class="mb-0 opacity-75">Active programs in your portfolio</p>
+    <!-- Programs Dashboard -->
+    <div class="container-fluid">
+        <!-- Statistics Row -->
+        <div class="row g-4 mb-4">
+            <!-- Total Programs Card -->
+            <div class="col-lg-3 col-md-6">
+                <div class="card-modern card-stat-modern">
+                    <div class="card-body-modern text-center">
+                        <div class="card-icon-modern text-forest-deep mb-3">
+                            <i class="fas fa-clipboard-list fa-2x"></i>
+                        </div>
+                        <div class="card-stat-number-modern"><?php echo $stats['total']; ?></div>
+                        <div class="card-stat-label-modern">Total Programs</div>
+                        <div class="card-stat-change-modern text-muted">Active programs in your portfolio</div>
                     </div>
                 </div>
+            </div>
 
-                <!-- On Track Programs Card -->
-                <div class="bento-card size-3x1 success">
-                    <div class="bento-card-header">
-                        <h3 class="bento-card-title">
-                            <div class="bento-card-icon" style="background: rgba(255,255,255,0.2);">
-                                <i class="fas fa-calendar-check"></i>
-                            </div>
-                            On Track
-                        </h3>
-                    </div>
-                    <div class="bento-card-content text-center">
-                        <div class="display-4 fw-bold mb-2"><?php echo $stats['on-track']; ?></div>
-                        <p class="mb-0 opacity-75">
+            <!-- On Track Programs Card -->
+            <div class="col-lg-3 col-md-6">
+                <div class="card-modern card-stat-modern">
+                    <div class="card-body-modern text-center">
+                        <div class="card-icon-modern text-success mb-3">
+                            <i class="fas fa-calendar-check fa-2x"></i>
+                        </div>
+                        <div class="card-stat-number-modern text-success"><?php echo $stats['on-track']; ?></div>
+                        <div class="card-stat-label-modern">On Track</div>
+                        <div class="card-stat-change-modern card-stat-change-positive-modern">
                             <?php echo $stats['total'] > 0 ? round(($stats['on-track'] / $stats['total']) * 100) : 0; ?>% of total
-                        </p>
+                        </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Delayed Programs Card -->
-                <div class="bento-card size-3x1 warning">
-                    <div class="bento-card-header">
-                        <h3 class="bento-card-title">
-                            <div class="bento-card-icon" style="background: rgba(255,255,255,0.2);">
-                                <i class="fas fa-exclamation-triangle"></i>
-                            </div>
-                            Delayed
-                        </h3>
-                    </div>
-                    <div class="bento-card-content text-center">
-                        <div class="display-4 fw-bold mb-2"><?php echo $stats['delayed']; ?></div>
-                        <p class="mb-0 opacity-75">
+            <!-- Delayed Programs Card -->
+            <div class="col-lg-3 col-md-6">
+                <div class="card-modern card-stat-modern">
+                    <div class="card-body-modern text-center">
+                        <div class="card-icon-modern text-warning mb-3">
+                            <i class="fas fa-exclamation-triangle fa-2x"></i>
+                        </div>
+                        <div class="card-stat-number-modern text-warning"><?php echo $stats['delayed']; ?></div>
+                        <div class="card-stat-label-modern">Delayed</div>
+                        <div class="card-stat-change-modern text-muted">
                             <?php echo $stats['total'] > 0 ? round(($stats['delayed'] / $stats['total']) * 100) : 0; ?>% of total
-                        </p>
+                        </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Completed Programs Card -->
-                <div class="bento-card size-3x1 info">
-                    <div class="bento-card-header">
-                        <h3 class="bento-card-title">
-                            <div class="bento-card-icon" style="background: rgba(255,255,255,0.2);">
-                                <i class="fas fa-trophy"></i>
-                            </div>
-                            Completed
-                        </h3>
-                    </div>
-                    <div class="bento-card-content text-center">
-                        <div class="display-4 fw-bold mb-2"><?php echo $stats['completed']; ?></div>
-                        <p class="mb-0 opacity-75">
+            <!-- Completed Programs Card -->
+            <div class="col-lg-3 col-md-6">
+                <div class="card-modern card-stat-modern">
+                    <div class="card-body-modern text-center">
+                        <div class="card-icon-modern text-info mb-3">
+                            <i class="fas fa-trophy fa-2x"></i>
+                        </div>
+                        <div class="card-stat-number-modern text-info"><?php echo $stats['completed']; ?></div>
+                        <div class="card-stat-label-modern">Completed</div>
+                        <div class="card-stat-change-modern card-stat-change-positive-modern">
                             <?php echo $stats['total'] > 0 ? round(($stats['completed'] / $stats['total']) * 100) : 0; ?>% of total
-                        </p>
+                        </div>
                     </div>
                 </div>
+            </div>
+        </div>
 
-                <!-- Program Rating Chart -->
-                <div class="bento-card size-6x2">
-                    <div class="bento-card-header">
-                        <h3 class="bento-card-title">
-                            <div class="bento-card-icon" style="background: #667eea;">
+        <!-- Content Row -->
+        <div class="row g-4">
+            <!-- Program Rating Chart -->
+            <div class="col-lg-8">
+                <div class="card-modern card-elevated-modern h-100">
+                    <div class="card-header-modern">
+                        <h3 class="card-title-modern">
+                            <div class="card-icon-modern text-forest-medium">
                                 <i class="fas fa-chart-pie"></i>
                             </div>
                             Program Rating Distribution
                         </h3>
                     </div>
-                    <div class="bento-card-content">
+                    <div class="card-body-modern">
                         <div class="chart-container" style="position: relative; height: 300px; width: 100%">
                             <canvas id="programRatingChart"></canvas>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Recent Program Updates -->
-                <div class="bento-card size-6x2">
-                    <div class="bento-card-header">
-                        <h3 class="bento-card-title">
-                            <div class="bento-card-icon" style="background: #11998e;">
-                                <i class="fas fa-clock"></i>
+            <!-- Quick Actions Card -->
+            <div class="col-lg-4">
+                <div class="card-modern card-elevated-modern h-100">
+                    <div class="card-header-modern">
+                        <h3 class="card-title-modern">
+                            <div class="card-icon-modern text-forest-deep">
+                                <i class="fas fa-bolt"></i>
                             </div>
-                            Recent Program Updates
+                            Quick Actions
                         </h3>
-                        <span class="badge bg-primary" id="programCount"><?php echo count($recentUpdates); ?></span>
                     </div>
-                    <div class="bento-card-content">
+                    <div class="card-body-modern">
+                        <div class="d-grid gap-3">
+                            <a href="../programs/create_program.php" class="btn-modern btn-primary-modern">
+                                <i class="fas fa-plus me-2"></i>Create Program
+                            </a>
+                            <a href="../programs/add_submission.php" class="btn-modern btn-outline-primary-modern">
+                                <i class="fas fa-edit me-2"></i>Submit Data
+                            </a>
+                            <a href="../outcomes/submit_outcomes.php" class="btn-modern btn-outline-success-modern">
+                                <i class="fas fa-upload me-2"></i>Submit Outcomes
+                            </a>
+                            <a href="../reports/view_reports.php" class="btn-modern btn-outline-info-modern">
+                                <i class="fas fa-chart-bar me-2"></i>View Reports
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Program Updates -->
+        <div class="row g-4 mt-1">
+            <div class="col-12">
+                <div class="card-modern card-elevated-modern">
+                    <div class="card-header-modern">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <h3 class="card-title-modern mb-0">
+                                <div class="card-icon-modern text-forest-light">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                Recent Program Updates
+                            </h3>
+                            <span class="badge bg-forest-medium text-white" id="programCount"><?php echo count($recentUpdates); ?></span>
+                        </div>
+                    </div>
+                    <div class="card-body-modern">
                         <?php if (empty($recentUpdates)): ?>
                             <div class="text-center py-5">
                                 <i class="fas fa-info-circle fa-3x text-muted mb-3"></i>
-                                <p>No recent program updates found.</p>
-                                <a href="submit_program_data.php" class="btn btn-primary btn-sm">
+                                <p class="mb-3">No recent program updates found.</p>
+                                <a href="submit_program_data.php" class="btn-modern btn-primary-modern btn-sm-modern">
                                     <i class="fas fa-edit me-1"></i> Update Program Data
                                 </a>
                             </div>
@@ -196,43 +227,15 @@
                                 </table>
                             </div>
                             
-                            <div class="bento-card-footer">
-                                <a href="../programs/view_programs.php" class="btn btn-outline-primary">
+                            <div class="card-footer-modern">
+                                <a href="../programs/view_programs.php" class="btn-modern btn-outline-primary-modern">
                                     View All Programs <i class="fas fa-arrow-right ms-1"></i>
                                 </a>
                             </div>
                         <?php endif; ?>
                     </div>
                 </div>
-
-                <!-- Quick Actions Card -->
-                <div class="bento-card size-3x1">
-                    <div class="bento-card-header">
-                        <h3 class="bento-card-title">
-                            <div class="bento-card-icon" style="background: #4facfe;">
-                                <i class="fas fa-bolt"></i>
-                            </div>
-                            Quick Actions
-                        </h3>
-                    </div>
-                    <div class="bento-card-content">
-                        <div class="d-grid gap-2">
-                            <a href="../programs/create_program.php" class="btn btn-primary">
-                                <i class="fas fa-plus me-2"></i>Create Program
-                            </a>
-                            <a href="../programs/add_submission.php" class="btn btn-outline-primary">
-                                <i class="fas fa-edit me-2"></i>Submit Data
-                            </a>
-                            <a href="../outcomes/submit_outcomes.php" class="btn btn-outline-success">
-                                <i class="fas fa-upload me-2"></i>Submit Outcomes
-                            </a>
-                            <a href="../reports/view_reports.php" class="btn btn-outline-info">
-                                <i class="fas fa-chart-bar me-2"></i>View Reports
-                            </a>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
-    </section>
+    </div>
 </section>

@@ -6,12 +6,12 @@
 ?>
 
 <!-- Program Name -->
-<div class="form-group">
-    <label for="program_name" class="form-label">
+<div class="form-group-modern">
+    <label for="program_name" class="form-label-modern">
         Program Name <span class="required-field">*</span>
     </label>
     <input type="text" 
-           class="form-control" 
+           class="form-input-modern" 
            id="program_name" 
            name="program_name" 
            required
@@ -24,12 +24,12 @@
 </div>
 
 <!-- Initiative Selection -->
-<div class="form-group">
-    <label for="initiative_id" class="form-label">
+<div class="form-group-modern">
+    <label for="initiative_id" class="form-label-modern">
         Link to Initiative
         <span class="badge bg-secondary ms-1">Optional</span>
     </label>
-    <select class="form-select" id="initiative_id" name="initiative_id">
+    <select class="form-select-modern" id="initiative_id" name="initiative_id">
         <option value="">Select an initiative (optional)</option>
         <?php foreach ($active_initiatives as $initiative): ?>
             <option value="<?php echo $initiative['initiative_id']; ?>"
@@ -48,12 +48,12 @@
 </div>
 
 <!-- Program Number -->
-<div class="form-group">
-    <label for="program_number" class="form-label">
+<div class="form-group-modern">
+    <label for="program_number" class="form-label-modern">
         Program Number
     </label>
     <input type="text" 
-           class="form-control" 
+           class="form-input-modern" 
            id="program_number" 
            name="program_number" 
            placeholder="Select initiative first"
@@ -74,9 +74,9 @@
 </div>
 
 <!-- Brief Description -->
-<div class="form-group">
-    <label for="brief_description" class="form-label">Brief Description</label>
-    <textarea class="form-control" 
+<div class="form-group-modern">
+    <label for="brief_description" class="form-label-modern">Brief Description</label>
+    <textarea class="form-textarea-modern" 
               id="brief_description" 
               name="brief_description"
               rows="3"

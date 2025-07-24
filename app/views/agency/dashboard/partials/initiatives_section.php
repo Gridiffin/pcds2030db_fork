@@ -15,7 +15,7 @@
     </div>
     
     <!-- Initiative Carousel Card -->
-    <div class="bento-card carousel-card" id="programCarouselCard">
+    <div class="card-modern card-elevated-modern carousel-card" id="programCarouselCard">
         <div class="carousel-inner" id="initiativeCarouselInner">
             <?php
             // Fetch initiatives for the agency

@@ -1,69 +1,629 @@
 /**
- * Badge Components
+ * Modern Badge Component System
+ * Clean, accessible badges with forest theme
+ * No gradients, minimal shadows, flat design
  */
 
-/* Standard badges */
-.badge {
-  display: inline-block;
-  padding: 0.4em 0.7em;
-  font-size: 0.75em;
-  font-weight: var(--font-weight-medium);
-  line-height: 1;
-  text-align: center;
-  white-space: nowrap;
-  vertical-align: baseline;
-  border-radius: var(--border-radius-md);
-  transition: all var(--transition-speed) ease;
+/* === Base Badge Styles === */
+.badge-modern {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-3);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-none);
+    text-align: center;
+    white-space: nowrap;
+    border-radius: var(--radius-base);
+    border: var(--border-1) solid transparent;
+    transition: var(--transition-fast);
+    text-decoration: none;
 }
 
-.badge:hover {
-  transform: translateY(-1px);
+/* Badge Sizes */
+.badge-sm-modern {
+    padding: calc(var(--space-1) * 0.5) var(--space-2);
+    font-size: var(--font-size-xs);
 }
 
-/* Badge colors */
+.badge-lg-modern {
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--font-size-sm);
+}
+
+.badge-xl-modern {
+    padding: var(--space-3) var(--space-5);
+    font-size: var(--font-size-base);
+}
+
+/* === Badge Color Variants === */
+
+/* Primary */
+.badge-primary-modern {
+    background-color: var(--color-primary);
+    color: var(--color-white);
+}
+
+.badge-primary-modern:hover {
+    background-color: var(--forest-deep);
+    transform: translateY(-1px);
+}
+
+/* Secondary */
+.badge-secondary-modern {
+    background-color: var(--color-gray-500);
+    color: var(--color-white);
+}
+
+.badge-secondary-modern:hover {
+    background-color: var(--color-gray-600);
+    transform: translateY(-1px);
+}
+
+/* Success */
+.badge-success-modern {
+    background-color: var(--color-success);
+    color: var(--color-white);
+}
+
+.badge-success-modern:hover {
+    background-color: #1B5E20;
+    transform: translateY(-1px);
+}
+
+/* Warning */
+.badge-warning-modern {
+    background-color: var(--color-warning);
+    color: var(--color-white);
+}
+
+.badge-warning-modern:hover {
+    background-color: #E65100;
+    transform: translateY(-1px);
+}
+
+/* Danger */
+.badge-danger-modern {
+    background-color: var(--color-danger);
+    color: var(--color-white);
+}
+
+.badge-danger-modern:hover {
+    background-color: #B71C1C;
+    transform: translateY(-1px);
+}
+
+/* Info */
+.badge-info-modern {
+    background-color: var(--color-info);
+    color: var(--color-white);
+}
+
+.badge-info-modern:hover {
+    background-color: #01579B;
+    transform: translateY(-1px);
+}
+
+/* Light */
+.badge-light-modern {
+    background-color: var(--color-gray-100);
+    color: var(--color-gray-800);
+    border-color: var(--color-gray-200);
+}
+
+.badge-light-modern:hover {
+    background-color: var(--color-gray-200);
+    transform: translateY(-1px);
+}
+
+/* Dark */
+.badge-dark-modern {
+    background-color: var(--color-gray-800);
+    color: var(--color-white);
+}
+
+.badge-dark-modern:hover {
+    background-color: var(--color-gray-900);
+    transform: translateY(-1px);
+}
+
+/* Forest Theme Variants */
+.badge-forest-modern {
+    background-color: var(--forest-medium);
+    color: var(--color-white);
+}
+
+.badge-forest-modern:hover {
+    background-color: var(--forest-deep);
+    transform: translateY(-1px);
+}
+
+.badge-forest-light-modern {
+    background-color: var(--forest-light);
+    color: var(--color-white);
+}
+
+.badge-forest-light-modern:hover {
+    background-color: var(--forest-medium);
+    transform: translateY(-1px);
+}
+
+/* === Badge Style Variants === */
+
+/* Outlined Badges */
+.badge-outlined-modern {
+    background-color: transparent;
+    border-width: var(--border-1);
+}
+
+.badge-primary-outlined-modern {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.badge-primary-outlined-modern:hover {
+    background-color: var(--color-primary);
+    color: var(--color-white);
+}
+
+.badge-secondary-outlined-modern {
+    color: var(--color-gray-600);
+    border-color: var(--color-gray-300);
+}
+
+.badge-secondary-outlined-modern:hover {
+    background-color: var(--color-gray-500);
+    color: var(--color-white);
+}
+
+.badge-success-outlined-modern {
+    color: var(--color-success);
+    border-color: var(--color-success);
+}
+
+.badge-success-outlined-modern:hover {
+    background-color: var(--color-success);
+    color: var(--color-white);
+}
+
+.badge-warning-outlined-modern {
+    color: var(--color-warning);
+    border-color: var(--color-warning);
+}
+
+.badge-warning-outlined-modern:hover {
+    background-color: var(--color-warning);
+    color: var(--color-white);
+}
+
+.badge-danger-outlined-modern {
+    color: var(--color-danger);
+    border-color: var(--color-danger);
+}
+
+.badge-danger-outlined-modern:hover {
+    background-color: var(--color-danger);
+    color: var(--color-white);
+}
+
+.badge-info-outlined-modern {
+    color: var(--color-info);
+    border-color: var(--color-info);
+}
+
+.badge-info-outlined-modern:hover {
+    background-color: var(--color-info);
+    color: var(--color-white);
+}
+
+/* Soft Badges */
+.badge-soft-modern {
+    border: none;
+}
+
+.badge-primary-soft-modern {
+    background-color: rgba(var(--forest-deep-rgb), 0.1);
+    color: var(--color-primary);
+}
+
+.badge-primary-soft-modern:hover {
+    background-color: rgba(var(--forest-deep-rgb), 0.2);
+}
+
+.badge-secondary-soft-modern {
+    background-color: var(--color-gray-100);
+    color: var(--color-gray-700);
+}
+
+.badge-secondary-soft-modern:hover {
+    background-color: var(--color-gray-200);
+}
+
+.badge-success-soft-modern {
+    background-color: rgba(var(--color-success-rgb), 0.1);
+    color: var(--color-success);
+}
+
+.badge-success-soft-modern:hover {
+    background-color: rgba(var(--color-success-rgb), 0.2);
+}
+
+.badge-warning-soft-modern {
+    background-color: rgba(var(--color-warning-rgb), 0.1);
+    color: var(--color-warning);
+}
+
+.badge-warning-soft-modern:hover {
+    background-color: rgba(var(--color-warning-rgb), 0.2);
+}
+
+.badge-danger-soft-modern {
+    background-color: rgba(var(--color-danger-rgb), 0.1);
+    color: var(--color-danger);
+}
+
+.badge-danger-soft-modern:hover {
+    background-color: rgba(var(--color-danger-rgb), 0.2);
+}
+
+.badge-info-soft-modern {
+    background-color: rgba(var(--color-info-rgb), 0.1);
+    color: var(--color-info);
+}
+
+.badge-info-soft-modern:hover {
+    background-color: rgba(var(--color-info-rgb), 0.2);
+}
+
+/* === Status Indicator Badges === */
+.badge-status-modern {
+    position: relative;
+    padding-left: var(--space-4);
+}
+
+.badge-status-modern::before {
+    content: '';
+    position: absolute;
+    left: var(--space-2);
+    top: 50%;
+    transform: translateY(-50%);
+    width: 6px;
+    height: 6px;
+    border-radius: var(--radius-full);
+    background-color: currentColor;
+}
+
+/* Status-specific styles */
+.badge-status-active-modern {
+    background-color: rgba(var(--color-success-rgb), 0.1);
+    color: var(--color-success);
+}
+
+.badge-status-active-modern::before {
+    background-color: var(--color-success);
+}
+
+.badge-status-inactive-modern {
+    background-color: rgba(108, 117, 125, 0.1);
+    color: var(--color-gray-600);
+}
+
+.badge-status-inactive-modern::before {
+    background-color: var(--color-gray-500);
+}
+
+.badge-status-pending-modern {
+    background-color: rgba(var(--color-warning-rgb), 0.1);
+    color: var(--color-warning);
+}
+
+.badge-status-pending-modern::before {
+    background-color: var(--color-warning);
+}
+
+.badge-status-draft-modern {
+    background-color: rgba(var(--color-info-rgb), 0.1);
+    color: var(--color-info);
+}
+
+.badge-status-draft-modern::before {
+    background-color: var(--color-info);
+}
+
+.badge-status-error-modern {
+    background-color: rgba(var(--color-danger-rgb), 0.1);
+    color: var(--color-danger);
+}
+
+.badge-status-error-modern::before {
+    background-color: var(--color-danger);
+}
+
+/* === Pill Badges === */
+.badge-pill-modern {
+    border-radius: var(--radius-full);
+}
+
+/* === Dot Badges === */
+.badge-dot-modern {
+    width: 8px;
+    height: 8px;
+    padding: 0;
+    border-radius: var(--radius-full);
+    font-size: 0;
+}
+
+/* === Notification Badges === */
+.badge-notification-modern {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 var(--space-1);
+    font-size: 10px;
+    line-height: 18px;
+    border-radius: var(--radius-full);
+    background-color: var(--color-danger);
+    color: var(--color-white);
+    border: 2px solid var(--color-white);
+}
+
+/* === Removable Badges === */
+.badge-removable-modern {
+    padding-right: var(--space-1);
+}
+
+.badge-close-modern {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    margin-left: var(--space-1);
+    font-size: 12px;
+    line-height: 1;
+    color: currentColor;
+    opacity: 0.7;
+    border: none;
+    background: none;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.badge-close-modern:hover {
+    opacity: 1;
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* === Badge Groups === */
+.badge-group-modern {
+    display: inline-flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+.badge-group-modern .badge-modern {
+    margin: 0;
+}
+
+/* === Interactive Badges === */
+.badge-interactive-modern {
+    cursor: pointer;
+    user-select: none;
+}
+
+.badge-interactive-modern:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.badge-interactive-modern:active {
+    transform: translateY(0);
+}
+
+/* === Legacy Compatibility === */
+/* Map old badge classes to new modern classes for backward compatibility */
 .badge.bg-primary {
-  background-color: var(--primary-color) !important;
-  color: white !important;
+    background-color: var(--color-primary) !important;
+    color: var(--color-white) !important;
+    border-radius: var(--radius-base);
+    font-weight: var(--font-weight-semibold);
+    padding: var(--space-1) var(--space-3);
+    font-size: var(--font-size-xs);
+    transition: var(--transition-fast);
+}
+
+.badge.bg-primary:hover {
+    background-color: var(--forest-deep) !important;
+    transform: translateY(-1px);
 }
 
 .badge.bg-secondary {
-  background-color: #6c757d !important;
-  color: white !important;
+    background-color: var(--color-gray-500) !important;
+    color: var(--color-white) !important;
+    border-radius: var(--radius-base);
+    font-weight: var(--font-weight-semibold);
+    padding: var(--space-1) var(--space-3);
+    font-size: var(--font-size-xs);
+    transition: var(--transition-fast);
+}
+
+.badge.bg-secondary:hover {
+    background-color: var(--color-gray-600) !important;
+    transform: translateY(-1px);
 }
 
 .badge.bg-success {
-  background-color: var(--secondary-color) !important;
-  color: white !important;
+    background-color: var(--color-success) !important;
+    color: var(--color-white) !important;
+    border-radius: var(--radius-base);
+    font-weight: var(--font-weight-semibold);
+    padding: var(--space-1) var(--space-3);
+    font-size: var(--font-size-xs);
+    transition: var(--transition-fast);
 }
 
-.badge.bg-danger {
-  background-color: var(--danger-color) !important;
-  color: white !important;
+.badge.bg-success:hover {
+    background-color: #1B5E20 !important;
+    transform: translateY(-1px);
 }
 
 .badge.bg-warning {
-  background-color: var(--warning-color) !important;
-  color: #212529 !important; /* Dark text for good contrast */
+    background-color: var(--color-warning) !important;
+    color: var(--color-white) !important;
+    border-radius: var(--radius-base);
+    font-weight: var(--font-weight-semibold);
+    padding: var(--space-1) var(--space-3);
+    font-size: var(--font-size-xs);
+    transition: var(--transition-fast);
+}
+
+.badge.bg-warning:hover {
+    background-color: #E65100 !important;
+    transform: translateY(-1px);
+}
+
+.badge.bg-danger {
+    background-color: var(--color-danger) !important;
+    color: var(--color-white) !important;
+    border-radius: var(--radius-base);
+    font-weight: var(--font-weight-semibold);
+    padding: var(--space-1) var(--space-3);
+    font-size: var(--font-size-xs);
+    transition: var(--transition-fast);
+}
+
+.badge.bg-danger:hover {
+    background-color: #B71C1C !important;
+    transform: translateY(-1px);
 }
 
 .badge.bg-info {
-  background-color: var(--info-color) !important;
-  color: white !important;
+    background-color: var(--color-info) !important;
+    color: var(--color-white) !important;
+    border-radius: var(--radius-base);
+    font-weight: var(--font-weight-semibold);
+    padding: var(--space-1) var(--space-3);
+    font-size: var(--font-size-xs);
+    transition: var(--transition-fast);
+}
+
+.badge.bg-info:hover {
+    background-color: #01579B !important;
+    transform: translateY(-1px);
 }
 
 .badge.bg-light {
-  background-color: var(--light-color) !important;
-  color: #212529 !important;
+    background-color: var(--color-gray-100) !important;
+    color: var(--color-gray-800) !important;
+    border-radius: var(--radius-base);
+    font-weight: var(--font-weight-semibold);
+    padding: var(--space-1) var(--space-3);
+    font-size: var(--font-size-xs);
+    transition: var(--transition-fast);
+    border: var(--border-1) solid var(--color-gray-200);
+}
+
+.badge.bg-light:hover {
+    background-color: var(--color-gray-200) !important;
+    transform: translateY(-1px);
 }
 
 .badge.bg-dark {
-  background-color: var(--dark-color) !important;
-  color: white !important;
+    background-color: var(--color-gray-800) !important;
+    color: var(--color-white) !important;
+    border-radius: var(--radius-base);
+    font-weight: var(--font-weight-semibold);
+    padding: var(--space-1) var(--space-3);
+    font-size: var(--font-size-xs);
+    transition: var(--transition-fast);
 }
 
-/* Badge with close button */
-.badge .btn-close {
-  font-size: 0.6rem;
-  margin-left: 5px;
-  padding: 0.2rem;
+.badge.bg-dark:hover {
+    background-color: var(--color-gray-900) !important;
+    transform: translateY(-1px);
+}
+
+/* Forest theme badges for legacy */
+.badge.bg-forest-medium {
+    background-color: var(--forest-medium) !important;
+    color: var(--color-white) !important;
+    border-radius: var(--radius-base);
+    font-weight: var(--font-weight-semibold);
+    padding: var(--space-1) var(--space-3);
+    font-size: var(--font-size-xs);
+    transition: var(--transition-fast);
+}
+
+.badge.bg-forest-medium:hover {
+    background-color: var(--forest-deep) !important;
+    transform: translateY(-1px);
+}
+
+/* === Responsive Design === */
+@media (max-width: 768px) {
+    .badge-modern {
+        font-size: var(--font-size-xs);
+        padding: calc(var(--space-1) * 0.75) var(--space-2);
+    }
+    
+    .badge-lg-modern {
+        font-size: var(--font-size-xs);
+        padding: var(--space-1) var(--space-3);
+    }
+    
+    .badge-xl-modern {
+        font-size: var(--font-size-sm);
+        padding: var(--space-2) var(--space-4);
+    }
+    
+    .badge-group-modern {
+        gap: var(--space-1);
+    }
+}
+
+/* === Accessibility === */
+.badge-modern:focus {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.badge-modern:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .badge-modern,
+    .badge-modern * {
+        transition: none !important;
+        transform: none !important;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .badge-modern {
+        border-width: 2px;
+    }
+    
+    .badge-outlined-modern {
+        border-width: 3px;
+    }
+}
+
+/* === Print Styles === */
+@media print {
+    .badge-modern {
+        background: transparent !important;
+        color: black !important;
+        border: 1px solid black !important;
+    }
+    
+    .badge-close-modern {
+        display: none !important;
+    }
 }
