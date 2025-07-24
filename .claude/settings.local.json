@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(npm run build:*)",
+      "Bash(rm:*)",
+      "Bash(npm install)",
+      "Bash(npm install:*)",
+      "Bash(npx vite build:*)",
+      "Bash(ls:*)",
+      "Bash(npm cache clean:*)",
+      "Bash(npx --yes vite@5.4.1 build)",
+      "Bash(npm test)",
+      "Bash(composer install:*)",
+      "Bash(npm view:*)",
+      "Bash(php:*)",
+      "Bash(mkdir:*)"
+    ],
+    "deny": []
+  }
+}
