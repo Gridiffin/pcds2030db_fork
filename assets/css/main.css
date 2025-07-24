@@ -9,7 +9,7 @@
 
 /* Layout */
 @import 'layout/navigation.css';
-@import 'layout/header.css';
+@import 'layout/page_header.css';
 @import 'layout/footer.css';
 @import 'layout/grid.css';
 

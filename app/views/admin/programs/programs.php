@@ -14,6 +14,18 @@ if (!defined('PROJECT_ROOT_PATH')) {
 // Include the main config file which defines global constants like APP_URL.
 require_once PROJECT_ROOT_PATH . 'app/config/config.php';
 
+// Include necessary libraries
+require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/admins/index.php';
+
+// Verify user is an admin
+if (!is_admin()) {
+    header('Location: ' . APP_URL . '/login.php');
+    exit;
+}
+
 // Ensure the controller has run and prepared the data. If not, load it.
 if (!isset($programs_with_drafts)) {
     require_once PROJECT_ROOT_PATH . 'app/controllers/AdminProgramsController.php';
