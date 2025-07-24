@@ -30,7 +30,7 @@ export default defineConfig({
                 // Agency Other Modules
                 'agency-initiatives': path.resolve(__dirname, 'assets/js/agency/initiatives/view.js'), // Note: using view.js as entry
                 'agency-view-initiative': path.resolve(__dirname, 'assets/js/agency/initiatives/view_initiative.js'),
-                'agency-outcomes': path.resolve(__dirname, 'assets/js/agency/outcomes/outcomes.js'),
+                'outcomes': path.resolve(__dirname, 'assets/js/agency/outcomes/outcomes.js'),
                 'agency-submit-outcomes': path.resolve(__dirname, 'assets/js/agency/outcomes/submit_outcomes.js'),
                 'agency-reports': path.resolve(__dirname, 'assets/js/agency/reports/reports.js'),
                 'agency-notifications': path.resolve(__dirname, 'assets/js/agency/users/notifications.js'),

@@ -57,16 +57,8 @@ $additionalStyles = $additionalStyles ?? [];
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
     
-    <!-- Modern Design System -->
-    <link rel="stylesheet" href="<?php echo APP_URL; ?>/assets/css/design-tokens.css">
-    <link rel="stylesheet" href="<?php echo APP_URL; ?>/assets/css/components/navbar-modern.css">
-    <link rel="stylesheet" href="<?php echo APP_URL; ?>/assets/css/components/footer-modern.css">
-    <link rel="stylesheet" href="<?php echo APP_URL; ?>/assets/css/components/buttons-modern.css">
-    <link rel="stylesheet" href="<?php echo APP_URL; ?>/assets/css/components/cards-modern.css">
-    <link rel="stylesheet" href="<?php echo APP_URL; ?>/assets/css/components/forms-modern.css">
-    <link rel="stylesheet" href="<?php echo APP_URL; ?>/assets/css/modern-compatibility.css">
-    
-    <!-- Dynamic CSS Bundle (Vite) -->
+    <!-- 🚫 INDIVIDUAL CSS FILES REMOVED - USING VITE BUNDLES ONLY -->
+    <!-- CSS Bundle - extracted from JS imports by Vite -->
     <?php if ($cssBundle): ?>
     <link rel="stylesheet" href="<?php echo APP_URL; ?>/dist/css/<?php echo htmlspecialchars($cssBundle); ?>.bundle.css">
     <?php endif; ?>
@@ -127,22 +119,8 @@ $additionalStyles = $additionalStyles ?? [];
     <!-- Chart.js - Ensure it's always loaded before dashboard scripts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 
-    <!-- Utility scripts -->
-    <?php if (function_exists('asset_url')): ?>
-    <script src="<?php echo asset_url('js/utilities', 'rating_utils.js'); ?>"></script>
-    <script src="<?php echo asset_url('js/utilities', 'dropdown_init.js'); ?>"></script>
-    <script src="<?php echo asset_url('js/utilities', 'mobile_dropdown_position.js'); ?>"></script>
-    <script src="<?php echo asset_url('js/utilities', 'initialization.js'); ?>"></script>
-    <script src="<?php echo asset_url('js/utilities', 'form_utils.js'); ?>"></script>
-    <script src="<?php echo asset_url('js/utilities', 'filter_utils.js'); ?>"></script>
-    <?php else: ?>
-    <script src="<?php echo APP_URL; ?>/assets/js/utilities/rating_utils.js"></script>
-    <script src="<?php echo APP_URL; ?>/assets/js/utilities/dropdown_init.js"></script>
-    <script src="<?php echo APP_URL; ?>/assets/js/utilities/mobile_dropdown_position.js"></script>
-    <script src="<?php echo APP_URL; ?>/assets/js/utilities/initialization.js"></script>
-    <script src="<?php echo APP_URL; ?>/assets/js/utilities/form_utils.js"></script>
-    <script src="<?php echo APP_URL; ?>/assets/js/utilities/filter_utils.js"></script>
-    <?php endif; ?>
+    <!-- 🚫 INDIVIDUAL JS FILES REMOVED - USING VITE BUNDLES ONLY -->
+    <!-- All JavaScript utilities now loaded through vite bundles -->
     
     <!-- Core App JavaScript -->
     <script>
@@ -158,7 +136,7 @@ $additionalStyles = $additionalStyles ?? [];
         });
     </script>
     
-    <!-- Dynamic JS Bundle (Vite) -->
+    <!-- JS Bundle - loads after all other scripts -->
     <?php if ($jsBundle): ?>
     <script type="module" src="<?php echo APP_URL; ?>/dist/js/<?php echo htmlspecialchars($jsBundle); ?>.bundle.js"></script>
     <?php endif; ?>

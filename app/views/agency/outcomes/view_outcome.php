@@ -65,7 +65,7 @@ $has_data = !empty($columns) && !empty($rows);
 // Set up variables for base.php layout
 $pageTitle = 'View Outcome Details';
 $cssBundle = 'outcomes'; // CSS bundle for outcomes module
-$jsBundle = 'agency-outcomes';
+$jsBundle = 'outcomes';
 $bodyClass = 'outcomes-page';
 $contentFile = __DIR__ . '/partials/view_content.php';
 

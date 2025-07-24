@@ -4,26 +4,38 @@
  */
 
 /* Base foundation styles - CRITICAL */
+@import '../../design-tokens.css';         /* Modern design tokens */
 @import '../../base/variables.css';        /* CSS custom properties */
 @import '../../base/reset.css';            /* Reset/normalize */
 @import '../../base/typography.css';       /* Font styles */
 @import '../../base/utilities.css';        /* Utility classes */
+@import '../../modern-compatibility.css';  /* Modern component compatibility */
 
 /* Layout system - CRITICAL for proper page structure */
 @import '../../layout/dashboard.css';      /* Body/main layout */
 @import '../../layout/page_header.css';         /* Page headers */
+@import '../../components/navbar-modern.css';   /* Modern navbar styles */
+@import '../../components/footer-modern.css';   /* Modern footer styles */
+
+/* Modern components - Primary */
+@import '../../components/cards-modern.css';
+@import '../../components/buttons-modern.css';
+@import '../../components/forms-modern.css';
+@import '../../components/badges.css';    /* Modern badges */
+@import '../../components/tables-modern.css';    /* NEW: Modern tables */
+@import '../../components/alerts-modern.css';    /* NEW: Modern alerts */
+@import '../../components/modals-modern.css';    /* NEW: Modern modals */
+@import '../../components/pagination-modern.css'; /* NEW: Modern pagination */
 
 /* Essential components for all agency pages */
-@import '../../components/bento-grid.css';
 @import '../../components/dashboard-cards.css';
-@import '../../components/cards.css';
-@import '../../components/tables.css';
-@import '../../components/buttons.css';
-@import '../../components/forms.css';
-@import '../../components/badges.css';
-@import '../../components/alerts.css';
 @import '../../components/progress.css';
 @import '../../components/footer.css';
+
+/* ✅ LEGACY CSS SUCCESSFULLY REMOVED - PHASE 4 COMPLETE
+   All legacy component imports have been eliminated.
+   System now uses 100% modern component architecture.
+*/
 
 /* Layout essentials */
 @import '../../layout/navigation.css';

@@ -29,10 +29,10 @@
                 <h5 class="card-title view-programs-card-title m-0 d-flex align-items-center">
                     <i class="fas fa-edit text-warning me-2"></i>
                     Programs with Draft Submissions
-                    <span class="badge bg-warning text-dark ms-2" title="These programs have draft submissions that can be edited">
+                    <span class="badge-modern badge-warning-modern ms-2" title="These programs have draft submissions that can be edited">
                         <i class="fas fa-pencil-alt me-1"></i> Draft Submissions
                     </span>
-                    <span class="badge bg-secondary ms-2" id="draft-count"><?php echo count($programs_with_drafts); ?></span>
+                    <span class="badge-modern badge-secondary-modern ms-2" id="draft-count"><?php echo count($programs_with_drafts); ?></span>
                 </h5>
             </div>
             
@@ -44,9 +44,9 @@
             ?>
             
             <div class="card-body pt-2 p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover table-custom mb-0" id="draftProgramsTable">
-                        <thead class="table-light">
+                <div class="table-responsive-modern">
+                    <table class="table-modern table-striped-modern mb-0" id="draftProgramsTable">
+                        <thead>
                             <tr>
                                 <th class="sortable" data-sort="name">
                                     <i class="fas fa-project-diagram me-1"></i>Program Information 
@@ -92,10 +92,10 @@
                 <h5 class="card-title view-programs-card-title m-0 d-flex align-items-center">
                     <i class="fas fa-check-circle text-success me-2"></i>
                     Programs with Finalized Submissions
-                    <span class="badge bg-success ms-2" title="These programs have finalized submissions">
+                    <span class="badge-modern badge-success-modern ms-2" title="These programs have finalized submissions">
                         <i class="fas fa-check me-1"></i> Finalized
                     </span>
-                    <span class="badge bg-secondary ms-2" id="finalized-count"><?php echo count($programs_with_submissions); ?></span>
+                    <span class="badge-modern badge-secondary-modern ms-2" id="finalized-count"><?php echo count($programs_with_submissions); ?></span>
                 </h5>
             </div>
             
@@ -155,10 +155,10 @@
                 <h5 class="card-title view-programs-card-title m-0 d-flex align-items-center text-white">
                     <i class="fas fa-folder-open text-white me-2" style="color: #fff !important;"></i>
                     Program Templates
-                    <span class="badge bg-info ms-2" title="These programs are templates waiting for progress reports">
+                    <span class="badge-modern badge-info-modern ms-2" title="These programs are templates waiting for progress reports">
                         <i class="fas fa-file-alt me-1 text-white"></i> Ready for Reports
                     </span>
-                    <span class="badge bg-secondary ms-2" id="empty-count"><?php echo count($programs_without_submissions); ?></span>
+                    <span class="badge-modern badge-secondary-modern ms-2" id="empty-count"><?php echo count($programs_without_submissions); ?></span>
                 </h5>
             </div>
             

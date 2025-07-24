@@ -429,6 +429,38 @@
     }
 }
 
+/* === Bento Grid Compatibility === */
+/* Allow modern cards to work with existing bento grid sizing classes */
+.card-modern.size-3x1,
+.card-modern.size-6x2 {
+    /* Inherit grid positioning from existing bento grid system */
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.card-modern.size-3x1 .card-body-modern,
+.card-modern.size-6x2 .card-body-modern {
+    flex: 1;
+}
+
+.card-modern .card-icon-modern {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.5rem;
+    background-color: var(--forest-ultra-light);
+    margin-right: var(--space-3);
+    flex-shrink: 0;
+}
+
+.card-title-modern {
+    display: flex;
+    align-items: center;
+}
+
 /* === Performance Optimizations === */
 .card-modern * {
     will-change: auto;

@@ -1,0 +1,500 @@
+/**
+ * Modern Alert Component System
+ * Clean, accessible alerts and notifications with forest theme
+ * Toast notifications and inline alerts
+ */
+
+/* === Base Alert Styles === */
+.alert-modern {
+    position: relative;
+    padding: var(--space-4) var(--space-5);
+    margin-bottom: var(--space-4);
+    border: var(--border-1) solid transparent;
+    border-radius: var(--radius-base);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height-normal);
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+}
+
+.alert-modern .alert-icon {
+    flex-shrink: 0;
+    font-size: var(--font-size-lg);
+    line-height: 1;
+    margin-top: 2px;
+}
+
+.alert-modern .alert-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.alert-modern .alert-title {
+    font-weight: var(--font-weight-semibold);
+    margin-bottom: var(--space-1);
+    font-size: var(--font-size-base);
+}
+
+.alert-modern .alert-description {
+    margin: 0;
+    opacity: 0.9;
+}
+
+/* === Alert Variants === */
+
+/* Success Alert */
+.alert-success-modern {
+    background-color: rgba(var(--color-success-rgb), 0.1);
+    border-color: var(--color-success);
+    color: var(--color-success);
+}
+
+.alert-success-modern .alert-icon {
+    color: var(--color-success);
+}
+
+/* Warning Alert */
+.alert-warning-modern {
+    background-color: rgba(var(--color-warning-rgb), 0.1);
+    border-color: var(--color-warning);
+    color: #8B4513; /* Darker brown for better contrast */
+}
+
+.alert-warning-modern .alert-icon {
+    color: var(--color-warning);
+}
+
+/* Danger/Error Alert */
+.alert-danger-modern {
+    background-color: rgba(var(--color-danger-rgb), 0.1);
+    border-color: var(--color-danger);
+    color: var(--color-danger);
+}
+
+.alert-danger-modern .alert-icon {
+    color: var(--color-danger);
+}
+
+/* Info Alert */
+.alert-info-modern {
+    background-color: rgba(var(--color-info-rgb), 0.1);
+    border-color: var(--color-info);
+    color: var(--color-info);
+}
+
+.alert-info-modern .alert-icon {
+    color: var(--color-info);
+}
+
+/* Light Alert */
+.alert-light-modern {
+    background-color: var(--color-gray-50);
+    border-color: var(--color-gray-200);
+    color: var(--color-gray-700);
+}
+
+.alert-light-modern .alert-icon {
+    color: var(--color-gray-500);
+}
+
+/* Dark Alert */
+.alert-dark-modern {
+    background-color: var(--color-gray-800);
+    border-color: var(--color-gray-700);
+    color: var(--color-white);
+}
+
+.alert-dark-modern .alert-icon {
+    color: var(--color-gray-300);
+}
+
+/* Forest Theme Alert */
+.alert-forest-modern {
+    background-color: rgba(var(--forest-medium-rgb), 0.1);
+    border-color: var(--forest-medium);
+    color: var(--forest-deep);
+}
+
+.alert-forest-modern .alert-icon {
+    color: var(--forest-medium);
+}
+
+/* === Alert Styles === */
+
+/* Solid Alerts */
+.alert-solid-modern.alert-success-modern {
+    background-color: var(--color-success);
+    border-color: var(--color-success);
+    color: var(--color-white);
+}
+
+.alert-solid-modern.alert-warning-modern {
+    background-color: var(--color-warning);
+    border-color: var(--color-warning);
+    color: var(--color-white);
+}
+
+.alert-solid-modern.alert-danger-modern {
+    background-color: var(--color-danger);
+    border-color: var(--color-danger);
+    color: var(--color-white);
+}
+
+.alert-solid-modern.alert-info-modern {
+    background-color: var(--color-info);
+    border-color: var(--color-info);
+    color: var(--color-white);
+}
+
+.alert-solid-modern .alert-icon {
+    color: var(--color-white);
+}
+
+/* Outlined Alerts */
+.alert-outlined-modern {
+    background-color: transparent;
+    border-width: var(--border-2);
+}
+
+/* === Dismissible Alerts === */
+.alert-dismissible-modern {
+    padding-right: var(--space-12);
+}
+
+.alert-close-modern {
+    position: absolute;
+    top: var(--space-3);
+    right: var(--space-3);
+    background: none;
+    border: none;
+    color: currentColor;
+    cursor: pointer;
+    padding: var(--space-1);
+    border-radius: var(--radius-sm);
+    opacity: 0.7;
+    transition: var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+}
+
+.alert-close-modern:hover {
+    opacity: 1;
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.alert-close-modern:focus {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+}
+
+/* === Alert Sizes === */
+.alert-sm-modern {
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--font-size-sm);
+}
+
+.alert-sm-modern .alert-icon {
+    font-size: var(--font-size-base);
+}
+
+.alert-lg-modern {
+    padding: var(--space-6) var(--space-8);
+    font-size: var(--font-size-lg);
+}
+
+.alert-lg-modern .alert-icon {
+    font-size: var(--font-size-xl);
+}
+
+/* === Toast Notifications === */
+.toast-container-modern {
+    position: fixed;
+    top: var(--space-6);
+    right: var(--space-6);
+    z-index: 9999;
+    pointer-events: none;
+}
+
+.toast-modern {
+    pointer-events: auto;
+    max-width: 400px;
+    margin-bottom: var(--space-3);
+    background-color: var(--color-white);
+    border: var(--border-1) solid var(--color-gray-200);
+    border-radius: var(--radius-base);
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    transform: translateX(100%);
+    transition: all var(--transition-base);
+}
+
+.toast-modern.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.toast-modern.hide {
+    opacity: 0;
+    transform: translateX(100%);
+}
+
+.toast-header-modern {
+    display: flex;
+    align-items: center;
+    padding: var(--space-3) var(--space-4);
+    border-bottom: var(--border-1) solid var(--color-gray-200);
+    background-color: var(--color-gray-50);
+    border-radius: var(--radius-base) var(--radius-base) 0 0;
+}
+
+.toast-icon-modern {
+    margin-right: var(--space-2);
+    font-size: var(--font-size-lg);
+}
+
+.toast-title-modern {
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-base);
+    margin: 0;
+    flex: 1;
+}
+
+.toast-close-modern {
+    background: none;
+    border: none;
+    color: var(--color-gray-500);
+    cursor: pointer;
+    padding: var(--space-1);
+    border-radius: var(--radius-sm);
+    opacity: 0.7;
+    transition: var(--transition-fast);
+}
+
+.toast-close-modern:hover {
+    opacity: 1;
+    background-color: var(--color-gray-200);
+}
+
+.toast-body-modern {
+    padding: var(--space-4);
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-normal);
+}
+
+/* Toast Variants */
+.toast-success-modern .toast-header-modern {
+    background-color: rgba(var(--color-success-rgb), 0.1);
+    border-color: var(--color-success);
+}
+
+.toast-success-modern .toast-icon-modern {
+    color: var(--color-success);
+}
+
+.toast-warning-modern .toast-header-modern {
+    background-color: rgba(var(--color-warning-rgb), 0.1);
+    border-color: var(--color-warning);
+}
+
+.toast-warning-modern .toast-icon-modern {
+    color: var(--color-warning);
+}
+
+.toast-danger-modern .toast-header-modern {
+    background-color: rgba(var(--color-danger-rgb), 0.1);
+    border-color: var(--color-danger);
+}
+
+.toast-danger-modern .toast-icon-modern {
+    color: var(--color-danger);
+}
+
+.toast-info-modern .toast-header-modern {
+    background-color: rgba(var(--color-info-rgb), 0.1);
+    border-color: var(--color-info);
+}
+
+.toast-info-modern .toast-icon-modern {
+    color: var(--color-info);
+}
+
+/* === Progress Alerts === */
+.alert-progress-modern {
+    border-bottom: 3px solid var(--color-gray-200);
+    position: relative;
+    overflow: hidden;
+}
+
+.alert-progress-modern::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background-color: var(--color-primary);
+    width: 0;
+    transition: width var(--transition-base);
+}
+
+.alert-progress-modern.loading::after {
+    animation: progress-animation 2s ease-in-out infinite;
+}
+
+@keyframes progress-animation {
+    0% { width: 0; }
+    50% { width: 100%; }
+    100% { width: 0; }
+}
+
+/* === Alert Actions === */
+.alert-actions-modern {
+    margin-top: var(--space-3);
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+.alert-actions-modern .btn-modern {
+    font-size: var(--font-size-sm);
+    padding: var(--space-1) var(--space-3);
+}
+
+/* === Inline Validation Alerts === */
+.alert-inline-modern {
+    margin-bottom: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--font-size-sm);
+    border-radius: var(--radius-sm);
+}
+
+.alert-inline-modern .alert-icon {
+    font-size: var(--font-size-sm);
+    margin-top: 0;
+}
+
+/* === Banner Alerts === */
+.alert-banner-modern {
+    border-radius: 0;
+    margin-bottom: 0;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    border-bottom: var(--border-3) solid;
+    padding: var(--space-4) var(--space-6);
+}
+
+/* === Legacy Compatibility === */
+/* Bootstrap alert class compatibility */
+.alert {
+    @extend .alert-modern;
+}
+
+.alert-success {
+    @extend .alert-success-modern;
+}
+
+.alert-warning {
+    @extend .alert-warning-modern;
+}
+
+.alert-danger {
+    @extend .alert-danger-modern;
+}
+
+.alert-info {
+    @extend .alert-info-modern;
+}
+
+.alert-dismissible {
+    @extend .alert-dismissible-modern;
+}
+
+/* === Responsive Design === */
+@media (max-width: 768px) {
+    .toast-container-modern {
+        top: var(--space-4);
+        right: var(--space-4);
+        left: var(--space-4);
+    }
+    
+    .toast-modern {
+        max-width: none;
+        transform: translateY(-100%);
+    }
+    
+    .toast-modern.show {
+        transform: translateY(0);
+    }
+    
+    .toast-modern.hide {
+        transform: translateY(-100%);
+    }
+    
+    .alert-modern {
+        padding: var(--space-3) var(--space-4);
+    }
+    
+    .alert-actions-modern {
+        margin-top: var(--space-2);
+    }
+    
+    .alert-actions-modern .btn-modern {
+        flex: 1;
+        min-width: 0;
+    }
+}
+
+/* === Accessibility === */
+.alert-modern[role="alert"] {
+    /* Announced by screen readers immediately */
+}
+
+.alert-modern[role="status"] {
+    /* Announced by screen readers when convenient */
+}
+
+.alert-modern:focus {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .alert-modern {
+        border-width: 2px;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .toast-modern,
+    .alert-close-modern,
+    .toast-close-modern {
+        transition: none;
+    }
+    
+    .alert-progress-modern::after {
+        animation: none;
+    }
+}
+
+/* === Print Styles === */
+@media print {
+    .toast-container-modern,
+    .alert-close-modern,
+    .toast-close-modern,
+    .alert-actions-modern {
+        display: none;
+    }
+    
+    .alert-modern {
+        box-shadow: none;
+        border: 1px solid black;
+        background: transparent !important;
+        color: black !important;
+    }
+}

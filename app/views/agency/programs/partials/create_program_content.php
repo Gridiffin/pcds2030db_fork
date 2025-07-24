@@ -35,15 +35,17 @@ if ($agency_id) {
             </script>
 
             <!-- Simple Program Creation Form -->
-            <div class="card create-program-card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-plus-circle me-2"></i>
+            <div class="card-modern card-elevated-modern create-program-card">
+                <div class="card-header-modern">
+                    <h5 class="card-title-modern">
+                        <div class="card-icon-modern text-forest-deep">
+                            <i class="fas fa-plus-circle"></i>
+                        </div>
                         Create New Program
                     </h5>
                 </div>
-                <div class="card-body">
-                    <form method="post" id="createProgramForm" class="program-form">
+                <div class="card-body-modern">
+                    <form method="post" id="createProgramForm" class="form-modern program-form">
                         <div class="row">
                             <div class="col-md-8">
                                 <?php require 'program_form.php'; ?>
@@ -58,11 +60,11 @@ if ($agency_id) {
 
                         <!-- Form Actions -->
                         <div class="form-actions">
-                            <a href="view_programs.php" class="btn btn-outline-secondary">
+                            <a href="view_programs.php" class="btn-modern btn-outline-secondary-modern">
                                 <i class="fas fa-times me-2"></i>
                                 Cancel
                             </a>
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" class="btn-modern btn-primary-modern">
                                 <i class="fas fa-save me-2"></i>
                                 Create Program
                             </button>

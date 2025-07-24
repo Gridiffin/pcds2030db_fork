@@ -89,7 +89,7 @@
                                                 <h6 class="mb-1"><?php echo htmlspecialchars($outcome['table_name']); ?></h6>
                                                 <small class="text-muted"><?php echo date('M j, Y', strtotime($outcome['updated_at'])); ?></small>
                                             </div>
-                                            <span class="badge bg-<?php echo $outcome['is_draft'] ? 'warning' : 'success'; ?>">
+                                            <span class="badge-modern badge-<?php echo $outcome['is_draft'] ? 'warning' : 'success'; ?>-modern">
                                                 <?php echo $outcome['is_draft'] ? 'Draft' : 'Submitted'; ?>
                                             </span>
                                         </div>

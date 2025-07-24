@@ -57,28 +57,17 @@ if (!function_exists('asset_url')) {
     <!-- CSS Libraries -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
-    <!-- Main CSS (imports all component and layout CSS) -->
-    <link rel="stylesheet" href="<?php echo asset_url('css', 'main.css'); ?>">
     
-    <!-- Simple header CSS -->
-    <link rel="stylesheet" href="<?php echo asset_url('css', 'simple-header.css'); ?>">
-
+    <!-- 🚫 INDIVIDUAL CSS FILES REMOVED - USING BUNDLES ONLY -->
+    <!-- All CSS now loaded through vite bundles based on current page -->
+    
     <!-- Set global APP_URL JavaScript variable for URL helper functions -->
     <script>
         window.APP_URL = '<?php echo APP_URL; ?>';
     </script>
-    <!-- JavaScript URL helper functions -->
-    <script src="<?php echo asset_url('js', 'url_helpers.js'); ?>"></script>
     
-    <!-- Responsive navbar text handler -->
-    <script src="<?php echo asset_url('js', 'responsive-navbar.js'); ?>"></script>
-    
-    <!-- Additional page-specific styles -->
-    <?php if (isset($additionalStyles) && is_array($additionalStyles)): ?>
-        <?php foreach($additionalStyles as $style): ?>
-            <link href="<?php echo $style; ?>" rel="stylesheet">
-        <?php endforeach; ?>
-    <?php endif; ?>
+    <!-- 🚫 INDIVIDUAL JS FILES REMOVED - USING BUNDLES ONLY -->
+    <!-- All JavaScript now loaded through vite bundles based on current page -->
     
     <!-- Inline page-specific styles -->
     <?php if (isset($inlineStyles)): ?>

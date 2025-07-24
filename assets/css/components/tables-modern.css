@@ -1,0 +1,504 @@
+/**
+ * Modern Table Component System
+ * Responsive, accessible tables with forest theme
+ * Mobile-first design with card fallback
+ */
+
+/* === Base Table Styles === */
+.table-modern {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+    background-color: var(--color-white);
+    border-radius: var(--radius-base);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    margin-bottom: var(--space-6);
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-normal);
+}
+
+/* === Table Header === */
+.table-modern thead {
+    background-color: var(--forest-ultra-light);
+    border-bottom: var(--border-2) solid var(--color-gray-200);
+}
+
+.table-modern th {
+    padding: var(--space-4) var(--space-3);
+    text-align: left;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-gray-800);
+    border-bottom: var(--border-1) solid var(--color-gray-200);
+    white-space: nowrap;
+    position: relative;
+}
+
+.table-modern th:first-child {
+    padding-left: var(--space-6);
+}
+
+.table-modern th:last-child {
+    padding-right: var(--space-6);
+}
+
+/* === Sortable Headers === */
+.table-modern th.sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: var(--transition-fast);
+}
+
+.table-modern th.sortable:hover {
+    background-color: var(--forest-pale);
+    color: var(--color-primary);
+}
+
+.table-modern th.sortable .sort-icon {
+    margin-left: var(--space-2);
+    opacity: 0.5;
+    transition: var(--transition-fast);
+}
+
+.table-modern th.sortable:hover .sort-icon {
+    opacity: 1;
+}
+
+.table-modern th.sortable.sort-asc .sort-icon::before {
+    content: '\f0de'; /* FontAwesome up arrow */
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+}
+
+.table-modern th.sortable.sort-desc .sort-icon::before {
+    content: '\f0dd'; /* FontAwesome down arrow */
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+}
+
+/* === Table Body === */
+.table-modern tbody tr {
+    border-bottom: var(--border-1) solid var(--color-gray-100);
+    transition: var(--transition-fast);
+}
+
+.table-modern tbody tr:last-child {
+    border-bottom: none;
+}
+
+.table-modern tbody tr:hover {
+    background-color: var(--forest-ultra-light);
+}
+
+.table-modern td {
+    padding: var(--space-4) var(--space-3);
+    vertical-align: middle;
+    color: var(--color-gray-700);
+    border-bottom: var(--border-1) solid var(--color-gray-100);
+}
+
+.table-modern td:first-child {
+    padding-left: var(--space-6);
+}
+
+.table-modern td:last-child {
+    padding-right: var(--space-6);
+}
+
+/* === Table Variants === */
+
+/* Striped Table */
+.table-striped-modern tbody tr:nth-child(even) {
+    background-color: var(--color-gray-50);
+}
+
+.table-striped-modern tbody tr:nth-child(even):hover {
+    background-color: var(--forest-ultra-light);
+}
+
+/* Bordered Table */
+.table-bordered-modern {
+    border: var(--border-1) solid var(--color-gray-200);
+}
+
+.table-bordered-modern th,
+.table-bordered-modern td {
+    border-right: var(--border-1) solid var(--color-gray-200);
+}
+
+.table-bordered-modern th:last-child,
+.table-bordered-modern td:last-child {
+    border-right: none;
+}
+
+/* Compact Table */
+.table-compact-modern th,
+.table-compact-modern td {
+    padding: var(--space-2) var(--space-3);
+}
+
+.table-compact-modern th:first-child,
+.table-compact-modern td:first-child {
+    padding-left: var(--space-4);
+}
+
+.table-compact-modern th:last-child,
+.table-compact-modern td:last-child {
+    padding-right: var(--space-4);
+}
+
+/* === Responsive Table Wrapper === */
+.table-responsive-modern {
+    overflow-x: auto;
+    border-radius: var(--radius-base);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: var(--space-6);
+}
+
+.table-responsive-modern .table-modern {
+    margin-bottom: 0;
+    box-shadow: none;
+}
+
+/* === Status and Action Columns === */
+.table-modern .status-column {
+    width: 120px;
+    text-align: center;
+}
+
+.table-modern .action-column {
+    width: 150px;
+    text-align: right;
+}
+
+.table-modern .action-column .btn-group-modern {
+    display: inline-flex;
+    gap: var(--space-1);
+}
+
+/* === Table Status Indicators === */
+.table-status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.table-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-full);
+    flex-shrink: 0;
+}
+
+.table-status-dot.status-success {
+    background-color: var(--color-success);
+}
+
+.table-status-dot.status-warning {
+    background-color: var(--color-warning);
+}
+
+.table-status-dot.status-danger {
+    background-color: var(--color-danger);
+}
+
+.table-status-dot.status-info {
+    background-color: var(--color-info);
+}
+
+.table-status-dot.status-secondary {
+    background-color: var(--color-gray-500);
+}
+
+/* === Empty State === */
+.table-empty-state {
+    padding: var(--space-12) var(--space-6);
+    text-align: center;
+    color: var(--color-gray-500);
+}
+
+.table-empty-state .empty-icon {
+    font-size: 3rem;
+    color: var(--color-gray-300);
+    margin-bottom: var(--space-4);
+}
+
+.table-empty-state .empty-title {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-gray-600);
+    margin-bottom: var(--space-2);
+}
+
+.table-empty-state .empty-description {
+    font-size: var(--font-size-base);
+    color: var(--color-gray-500);
+    margin-bottom: var(--space-4);
+}
+
+/* === Loading State === */
+.table-loading {
+    position: relative;
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.table-loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.8),
+        transparent
+    );
+    animation: table-shimmer 1.5s infinite;
+}
+
+@keyframes table-shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* === Mobile Card Layout === */
+@media (max-width: 768px) {
+    .table-responsive-modern {
+        overflow-x: visible;
+        box-shadow: none;
+    }
+
+    .table-card-mobile .table-modern,
+    .table-card-mobile .table-modern thead,
+    .table-card-mobile .table-modern tbody,
+    .table-card-mobile .table-modern th,
+    .table-card-mobile .table-modern td,
+    .table-card-mobile .table-modern tr {
+        display: block;
+    }
+
+    .table-card-mobile .table-modern thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+
+    .table-card-mobile .table-modern tbody tr {
+        background-color: var(--color-white);
+        border: var(--border-1) solid var(--color-gray-200);
+        border-radius: var(--radius-base);
+        margin-bottom: var(--space-4);
+        padding: var(--space-4);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .table-card-mobile .table-modern tbody tr:hover {
+        background-color: var(--color-white);
+        box-shadow: var(--shadow-md);
+    }
+
+    .table-card-mobile .table-modern td {
+        border: none;
+        padding: var(--space-2) 0;
+        text-align: right;
+        position: relative;
+        padding-left: 40%;
+    }
+
+    .table-card-mobile .table-modern td:before {
+        content: attr(data-label);
+        position: absolute;
+        left: 0;
+        top: var(--space-2);
+        width: 35%;
+        padding-right: var(--space-2);
+        white-space: nowrap;
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-gray-600);
+        text-align: left;
+    }
+
+    .table-card-mobile .table-modern .action-column {
+        width: 100%;
+        text-align: center;
+        padding-top: var(--space-3);
+        border-top: var(--border-1) solid var(--color-gray-200);
+        margin-top: var(--space-3);
+    }
+
+    .table-card-mobile .table-modern .action-column:before {
+        display: none;
+    }
+}
+
+/* === Pagination Integration === */
+.table-pagination-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: var(--space-4);
+    padding: 0 var(--space-2);
+}
+
+.table-pagination-info {
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-600);
+}
+
+.table-pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+/* === Search and Filter Integration === */
+.table-filters {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-4);
+    padding: var(--space-4);
+    background-color: var(--color-gray-50);
+    border-radius: var(--radius-base);
+    border: var(--border-1) solid var(--color-gray-200);
+}
+
+.table-search {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex: 1;
+    max-width: 400px;
+}
+
+.table-search .input-modern {
+    flex: 1;
+}
+
+.table-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+/* === Bulk Actions === */
+.table-bulk-actions {
+    display: none;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-6);
+    background-color: var(--forest-ultra-light);
+    border-bottom: var(--border-1) solid var(--color-gray-200);
+}
+
+.table-bulk-actions.active {
+    display: flex;
+}
+
+.table-bulk-actions .bulk-count {
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-primary);
+}
+
+.table-modern .bulk-checkbox {
+    width: auto;
+}
+
+.table-modern th.bulk-checkbox,
+.table-modern td.bulk-checkbox {
+    width: 40px;
+    text-align: center;
+}
+
+/* === Legacy Compatibility === */
+/* Graceful fallback for existing Bootstrap table classes */
+.table {
+    @extend .table-modern;
+}
+
+.table-hover tbody tr:hover {
+    background-color: var(--forest-ultra-light);
+}
+
+.table-striped tbody tr:nth-child(odd) {
+    background-color: var(--color-gray-50);
+}
+
+.table-bordered {
+    border: var(--border-1) solid var(--color-gray-200);
+}
+
+.table-responsive {
+    overflow-x: auto;
+    border-radius: var(--radius-base);
+}
+
+/* === Accessibility === */
+.table-modern thead th {
+    position: relative;
+}
+
+.table-modern thead th[aria-sort="ascending"]::after {
+    content: '\f0de';
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    position: absolute;
+    right: var(--space-2);
+    color: var(--color-primary);
+}
+
+.table-modern thead th[aria-sort="descending"]::after {
+    content: '\f0dd';
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    position: absolute;
+    right: var(--space-2);
+    color: var(--color-primary);
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .table-modern {
+        border: 2px solid var(--color-gray-800);
+    }
+    
+    .table-modern th,
+    .table-modern td {
+        border: 1px solid var(--color-gray-600);
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .table-modern tbody tr,
+    .table-modern th.sortable,
+    .table-modern .sort-icon {
+        transition: none;
+    }
+    
+    .table-loading::after {
+        animation: none;
+    }
+}
+
+/* === Print Styles === */
+@media print {
+    .table-modern {
+        box-shadow: none;
+        border: 1px solid black;
+    }
+    
+    .table-modern tbody tr:hover {
+        background-color: transparent;
+    }
+    
+    .table-filters,
+    .table-pagination-wrapper,
+    .table-bulk-actions,
+    .action-column {
+        display: none;
+    }
+}

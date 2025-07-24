@@ -1,0 +1,452 @@
+/**
+ * Modern Pagination Component System
+ * Accessible, responsive pagination with forest theme
+ * Page navigation, page size controls, and pagination info
+ */
+
+/* === Base Pagination === */
+.pagination-modern {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+    margin: var(--space-6) 0;
+    list-style: none;
+    padding: 0;
+}
+
+.pagination-item-modern {
+    display: inline-flex;
+}
+
+.pagination-link-modern {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 40px;
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-gray-600);
+    text-decoration: none;
+    border: var(--border-1) solid var(--color-gray-300);
+    border-radius: var(--radius-base);
+    background-color: var(--color-white);
+    transition: var(--transition-fast);
+    cursor: pointer;
+    user-select: none;
+}
+
+.pagination-link-modern:hover {
+    background-color: var(--forest-ultra-light);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    transform: translateY(-1px);
+}
+
+.pagination-link-modern:focus {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+/* === Active State === */
+.pagination-item-modern.active .pagination-link-modern {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-white);
+    pointer-events: none;
+}
+
+/* === Disabled State === */
+.pagination-item-modern.disabled .pagination-link-modern {
+    background-color: var(--color-gray-50);
+    border-color: var(--color-gray-200);
+    color: var(--color-gray-400);
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* === Previous/Next Buttons === */
+.pagination-prev-modern,
+.pagination-next-modern {
+    font-weight: var(--font-weight-semibold);
+    gap: var(--space-1);
+}
+
+.pagination-prev-modern .pagination-link-modern {
+    padding-left: var(--space-2);
+}
+
+.pagination-next-modern .pagination-link-modern {
+    padding-right: var(--space-2);
+}
+
+/* === First/Last Buttons === */
+.pagination-first-modern,
+.pagination-last-modern {
+    font-weight: var(--font-weight-semibold);
+}
+
+/* === Ellipsis === */
+.pagination-ellipsis-modern .pagination-link-modern {
+    border: none;
+    background: none;
+    cursor: default;
+    pointer-events: none;
+}
+
+/* === Pagination Sizes === */
+
+/* Small Pagination */
+.pagination-sm-modern .pagination-link-modern {
+    min-width: 32px;
+    height: 32px;
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--font-size-xs);
+}
+
+/* Large Pagination */
+.pagination-lg-modern .pagination-link-modern {
+    min-width: 48px;
+    height: 48px;
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--font-size-base);
+}
+
+/* === Pagination Variants === */
+
+/* Rounded Pagination */
+.pagination-rounded-modern .pagination-link-modern {
+    border-radius: var(--radius-full);
+}
+
+/* Outlined Pagination */
+.pagination-outlined-modern .pagination-link-modern {
+    background-color: transparent;
+    border-width: var(--border-2);
+}
+
+.pagination-outlined-modern .pagination-item-modern.active .pagination-link-modern {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-white);
+}
+
+/* Minimal Pagination */
+.pagination-minimal-modern .pagination-link-modern {
+    border: none;
+    background-color: transparent;
+    border-radius: var(--radius-base);
+}
+
+.pagination-minimal-modern .pagination-link-modern:hover {
+    background-color: var(--forest-ultra-light);
+}
+
+.pagination-minimal-modern .pagination-item-modern.active .pagination-link-modern {
+    background-color: var(--color-primary);
+    color: var(--color-white);
+}
+
+/* === Pagination Info === */
+.pagination-info-modern {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-4);
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-600);
+}
+
+.pagination-info-modern .info-text {
+    flex: 1;
+}
+
+.pagination-info-modern .info-total {
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-gray-800);
+}
+
+/* === Page Size Selector === */
+.page-size-selector-modern {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
+}
+
+.page-size-selector-modern .select-modern {
+    min-width: 80px;
+}
+
+.page-size-label-modern {
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-600);
+    white-space: nowrap;
+}
+
+/* === Pagination Container === */
+.pagination-container-modern {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.pagination-controls-modern {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+}
+
+/* === Jump to Page === */
+.pagination-jump-modern {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--font-size-sm);
+}
+
+.pagination-jump-modern .input-modern {
+    width: 60px;
+    text-align: center;
+}
+
+.pagination-jump-modern .btn-modern {
+    padding: var(--space-1) var(--space-3);
+    font-size: var(--font-size-xs);
+}
+
+/* === Advanced Pagination === */
+.pagination-advanced-modern {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding: var(--space-4);
+    background-color: var(--color-gray-50);
+    border-radius: var(--radius-base);
+    border: var(--border-1) solid var(--color-gray-200);
+}
+
+.pagination-advanced-modern .pagination-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+}
+
+/* === Pagination with Progress === */
+.pagination-progress-modern {
+    position: relative;
+    margin-bottom: var(--space-2);
+}
+
+.pagination-progress-bar-modern {
+    height: 4px;
+    background-color: var(--color-gray-200);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.pagination-progress-fill-modern {
+    height: 100%;
+    background-color: var(--color-primary);
+    border-radius: var(--radius-full);
+    transition: width var(--transition-base);
+}
+
+/* === Responsive Design === */
+@media (max-width: 768px) {
+    .pagination-modern {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .pagination-controls-modern {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+    }
+    
+    .pagination-info-modern {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--space-2);
+    }
+    
+    .page-size-selector-modern {
+        justify-content: center;
+    }
+    
+    .pagination-jump-modern {
+        justify-content: center;
+    }
+    
+    /* Hide non-essential pagination items on mobile */
+    .pagination-item-modern:not(.pagination-prev-modern):not(.pagination-next-modern):not(.active) {
+        display: none;
+    }
+    
+    .pagination-item-modern:not(.pagination-prev-modern):not(.pagination-next-modern):not(.active):nth-child(-n+3),
+    .pagination-item-modern:not(.pagination-prev-modern):not(.pagination-next-modern):not(.active):nth-last-child(-n+3) {
+        display: inline-flex;
+    }
+}
+
+@media (max-width: 480px) {
+    .pagination-link-modern {
+        min-width: 36px;
+        height: 36px;
+        padding: var(--space-2);
+        font-size: var(--font-size-xs);
+    }
+    
+    .pagination-prev-modern .pagination-link-modern,
+    .pagination-next-modern .pagination-link-modern {
+        padding: var(--space-2) var(--space-3);
+    }
+    
+    .pagination-advanced-modern {
+        padding: var(--space-3);
+    }
+}
+
+/* === Legacy Compatibility === */
+/* Bootstrap pagination class compatibility */
+.pagination {
+    @extend .pagination-modern;
+}
+
+.page-item {
+    @extend .pagination-item-modern;
+}
+
+.page-link {
+    @extend .pagination-link-modern;
+}
+
+.page-item.active .page-link {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-white);
+}
+
+.page-item.disabled .page-link {
+    background-color: var(--color-gray-50);
+    border-color: var(--color-gray-200);
+    color: var(--color-gray-400);
+    cursor: not-allowed;
+}
+
+/* === Loading State === */
+.pagination-loading-modern {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.pagination-loading-modern::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid var(--color-gray-300);
+    border-top: 2px solid var(--color-primary);
+    border-radius: 50%;
+    animation: pagination-spin 1s linear infinite;
+}
+
+@keyframes pagination-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* === Accessibility === */
+.pagination-modern[role="navigation"] {
+    /* Proper ARIA role for screen readers */
+}
+
+.pagination-modern[aria-label] {
+    /* Should have descriptive label */
+}
+
+.pagination-link-modern[aria-current="page"] {
+    /* Current page should be announced */
+}
+
+.pagination-link-modern[aria-disabled="true"] {
+    /* Disabled state for screen readers */
+}
+
+/* === High Contrast Mode === */
+@media (prefers-contrast: high) {
+    .pagination-link-modern {
+        border-width: 2px;
+    }
+    
+    .pagination-item-modern.active .pagination-link-modern {
+        border-width: 3px;
+    }
+}
+
+/* === Reduced Motion === */
+@media (prefers-reduced-motion: reduce) {
+    .pagination-link-modern,
+    .pagination-progress-fill-modern {
+        transition: none;
+    }
+    
+    .pagination-link-modern:hover {
+        transform: none;
+    }
+    
+    .pagination-loading-modern::after {
+        animation: none;
+    }
+}
+
+/* === Print Styles === */
+@media print {
+    .pagination-modern,
+    .pagination-controls-modern,
+    .page-size-selector-modern,
+    .pagination-jump-modern {
+        display: none;
+    }
+    
+    .pagination-info-modern {
+        display: block;
+        margin-bottom: var(--space-2);
+    }
+}
+
+/* === Dark Theme Support === */
+@media (prefers-color-scheme: dark) {
+    .pagination-link-modern {
+        background-color: var(--color-gray-700);
+        border-color: var(--color-gray-600);
+        color: var(--color-gray-200);
+    }
+    
+    .pagination-link-modern:hover {
+        background-color: var(--color-gray-600);
+        border-color: var(--color-primary);
+        color: var(--color-primary);
+    }
+    
+    .pagination-item-modern.disabled .pagination-link-modern {
+        background-color: var(--color-gray-800);
+        border-color: var(--color-gray-700);
+        color: var(--color-gray-500);
+    }
+    
+    .pagination-advanced-modern {
+        background-color: var(--color-gray-800);
+        border-color: var(--color-gray-700);
+    }
+}

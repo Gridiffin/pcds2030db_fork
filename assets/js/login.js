@@ -3,6 +3,7 @@
  */
 
 // Import CSS for bundle generation
+import '../css/main.css';
 import '../css/shared/login.css';
 
 document.addEventListener('DOMContentLoaded', function() {
