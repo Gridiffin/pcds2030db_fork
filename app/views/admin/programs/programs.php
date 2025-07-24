@@ -21,10 +21,10 @@ if (!isset($programs_with_drafts)) {
 
 // Set up variables for base layout
 $pageTitle = $pageTitle ?? 'Admin Programs';
-$cssBundle = 'programs';
+$cssBundle = 'admin-programs';
 $jsBundle = 'admin-programs';
 $additionalScripts = [
-    APP_URL . '/assets/js/admin/programs/programs.js',
+    // Additional scripts specific to admin programs can be added here if needed
 ];
 
 // Configure modern page header

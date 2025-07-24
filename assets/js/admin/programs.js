@@ -4,6 +4,7 @@
 // Import CSS
 import '../../css/components/admin-common.css';
 import '../../css/pages/admin.css';
+import '../../css/admin/programs.css';
 import '../../css/components/tables.css';
 import '../../css/components/cards.css';
 import '../../css/components/forms.css';
