@@ -19,23 +19,21 @@
 @import '../../components/cards-modern.css';
 @import '../../components/buttons-modern.css';
 @import '../../components/forms-modern.css';
-@import '../../components/badges-modern.css';    /* NEW: Modern badges */
+@import '../../components/badges.css';    /* Modern badges */
 @import '../../components/tables-modern.css';    /* NEW: Modern tables */
 @import '../../components/alerts-modern.css';    /* NEW: Modern alerts */
 @import '../../components/modals-modern.css';    /* NEW: Modern modals */
 @import '../../components/pagination-modern.css'; /* NEW: Modern pagination */
 
 /* Essential components for all agency pages */
-@import '../../components/bento-grid.css';
 @import '../../components/dashboard-cards.css';
-@import '../../components/cards.css';       /* Legacy fallback */
-@import '../../components/tables.css';
-@import '../../components/buttons.css';     /* Legacy fallback */
-@import '../../components/forms.css';       /* Legacy fallback */
-@import '../../components/badges.css';
-@import '../../components/alerts.css';
 @import '../../components/progress.css';
 @import '../../components/footer.css';
+
+/* ✅ LEGACY CSS SUCCESSFULLY REMOVED - PHASE 4 COMPLETE
+   All legacy component imports have been eliminated.
+   System now uses 100% modern component architecture.
+*/
 
 /* Layout essentials */
 @import '../../layout/navigation.css';

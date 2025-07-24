@@ -109,8 +109,8 @@
                         . "<div class='d-flex align-items-center gap-2'>"
                         . "<i class='fas fa-leaf fa-lg me-2'></i>"
                         . "<span class='h5 fw-bold mb-0'>" . htmlspecialchars($name) . "</span>"
-                        . ($code ? "<span class='badge bg-primary ms-2'>#" . htmlspecialchars($code) . "</span>" : "")
-                        . ($is_active ? "<span class='badge bg-success ms-2'>Active</span>" : "<span class='badge bg-secondary ms-2'>Inactive</span>")
+                        . ($code ? "<span class='badge-modern badge-primary-modern ms-2'>#" . htmlspecialchars($code) . "</span>" : "")
+                        . ($is_active ? "<span class='badge-modern badge-success-modern ms-2'>Active</span>" : "<span class='badge-modern badge-secondary-modern ms-2'>Inactive</span>")
                         . "</div>"
                         . "<div class='d-flex align-items-center gap-2'>"
                         . "<span class='small text-muted'>Programs: $program_count</span>"

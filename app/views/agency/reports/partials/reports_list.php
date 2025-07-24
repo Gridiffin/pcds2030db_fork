@@ -73,12 +73,12 @@ global $reports, $selected_period;
                                         <td>
                                             <div class="reports-actions">
                                                 <a href="<?php echo $downloadUrl; ?>" 
-                                                   class="btn btn-outline-primary btn-sm view-report-btn" 
+                                                   class="btn-modern btn-outline-primary-modern btn-sm-modern view-report-btn" 
                                                    target="_blank" 
                                                    title="View Report">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
-                                                <button class="btn btn-outline-success btn-sm download-report-btn" 
+                                                <button class="btn-modern btn-outline-success-modern btn-sm-modern download-report-btn" 
                                                         data-report-id="<?php echo $report['report_id']; ?>" 
                                                         data-file-type="<?php echo $report['file_type'] ?? 'pdf'; ?>"
                                                         title="Download Report">

@@ -9,7 +9,7 @@
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="card-title m-0">
             <i class="fas fa-lightbulb me-2"></i>Your Initiatives
-            <span class="badge bg-primary ms-2"><?php echo count($initiatives); ?></span>
+            <span class="badge-modern badge-primary-modern ms-2"><?php echo count($initiatives); ?></span>
         </h5>
         <div class="d-flex align-items-center">
             <div class="text-muted small">
@@ -31,7 +31,7 @@
                     <?php endif; ?>
                 </p>
                 <?php if (!empty($search) || $status_filter !== ''): ?>
-                    <a href="initiatives.php" class="btn btn-outline-primary">
+                    <a href="initiatives.php" class="btn-modern btn-outline-primary-modern">
                         <i class="fas fa-undo me-1"></i>Clear Filters
                     </a>
                 <?php endif; ?>
@@ -40,7 +40,7 @@
             
             <!-- Table View Only -->
             <div class="table-responsive">
-                <table class="table table-hover mb-0">
+                <table class="table-modern table-striped-modern mb-0">
                     <thead class="table-light">
                         <tr>
                             <th>Initiative</th>
@@ -59,7 +59,7 @@
                                         <div class="flex-grow-1">
                                             <div class="fw-semibold mb-1">
                                                 <?php if (!empty($initiative[$initiative_number_col])): ?>
-                                                    <span class="badge bg-primary me-2">
+                                                    <span class="badge-modern badge-primary-modern me-2">
                                                         <?php echo htmlspecialchars($initiative[$initiative_number_col] ?? ''); ?>
                                                     </span>
                                                 <?php endif; ?>
@@ -77,12 +77,12 @@
                                     </div>
                                 </td>
                                 <td class="text-center">
-                                    <span class="badge bg-info">
+                                    <span class="badge-modern badge-info-modern">
                                         <?php echo isset($initiative['agency_program_count']) ? $initiative['agency_program_count'] : 0; ?> programs included
                                     </span>
                                 </td>
                                 <td class="text-center">
-                                    <span class="badge bg-secondary">
+                                    <span class="badge-modern badge-secondary-modern">
                                         <?php echo isset($initiative['total_program_count']) ? $initiative['total_program_count'] : 0; ?> total
                                     </span>
                                 </td>
@@ -110,14 +110,14 @@
                                 </td>
                                 <td>
                                     <?php if (!empty($initiative[$is_active_col])): ?>
-                                        <span class="badge bg-success">Active</span>
+                                        <span class="badge-modern badge-success-modern">Active</span>
                                     <?php else: ?>
-                                        <span class="badge bg-secondary">Inactive</span>
+                                        <span class="badge-modern badge-secondary-modern">Inactive</span>
                                     <?php endif; ?>
                                 </td>
                                 <td class="text-center">
                                     <a href="view_initiative.php?id=<?php echo isset($initiative[$initiative_id_col]) ? htmlspecialchars($initiative[$initiative_id_col]) : ''; ?>" 
-                                       class="btn btn-outline-primary btn-sm"
+                                       class="btn-modern btn-outline-primary-modern btn-sm-modern"
                                        title="View Initiative Details">
                                         <i class="fas fa-eye me-1"></i>View Details
                                     </a>

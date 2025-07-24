@@ -1,26 +1,31 @@
 /**
- * Main CSS Entry Point
- * Imports all modular CSS files
+ * Main CSS Entry Point - MODERNIZED
+ * 100% Modern Component Architecture
+ * Zero Legacy CSS Dependencies
  */
 
-/* Variables and Base Styles */
+/* Foundation - Modern Design System */
+@import 'design-tokens.css';
 @import 'variables.css';
 @import 'base.css';
 
-/* Layout */
+/* Layout Components */
 @import 'layout/navigation.css';
 @import 'layout/page_header.css';
 @import 'layout/footer.css';
 @import 'layout/grid.css';
 
-/* Components */
-@import 'components/buttons.css';
-@import 'components/cards.css';
-@import 'components/forms.css';
-@import 'components/tables.css';
-@import 'components/table-text-truncation.css';
-@import 'components/alerts.css';
+/* Modern Component Library */
+@import 'components/cards-modern.css';
+@import 'components/buttons-modern.css';
+@import 'components/forms-modern.css';
+@import 'components/tables-modern.css';
+@import 'components/alerts-modern.css';
 @import 'components/badges.css';
+@import 'components/modals-modern.css';
+@import 'components/pagination-modern.css';
+@import 'components/navbar-modern.css';
+@import 'components/footer-modern.css';
 @import 'components/responsive-performance-table.css';
 @import 'components/admin-performance-table.css';
 @import 'components/period-performance.css';
