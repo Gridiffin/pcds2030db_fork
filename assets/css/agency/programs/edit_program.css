@@ -12,6 +12,18 @@
 @import url('./partials/_timeline.css');
 @import url('./partials/_permissions.css');
 
+/* Fix for fixed navbar overlap - ensure proper body padding */
+body {
+    padding-top: 70px; /* Match navbar height to prevent overlap */
+}
+
+/* Adjust padding for multi-line navbar when needed */
+@media (max-width: 768px) {
+    body {
+        padding-top: 85px; /* Account for multi-line navbar on mobile */
+    }
+}
+
 /* Status badge enhancement */
 .status-badge {
   font-weight: 500;
