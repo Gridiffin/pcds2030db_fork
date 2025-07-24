@@ -6,7 +6,12 @@
  */
 
 // Import CSS (Vite will extract this)
+import '../../../css/main.css';
 import '../../../css/agency/dashboard/dashboard.css';
+
+// Import essential utilities
+import '../../utilities/initialization.js';
+import '../../utilities/dropdown_init.js';
 
 // Import JavaScript modules
 import { DashboardChart } from './chart.js';

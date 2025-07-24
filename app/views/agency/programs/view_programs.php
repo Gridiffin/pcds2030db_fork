@@ -2,9 +2,7 @@
 /**
  * View Programs - Refactored with Best Practices
  * 
- * Interface for agency users to v# Set up base layout variables
-$pageTitle = 'Agency Programs';
-$jsBundle = 'agency-programs-view';their programs.
+ * Interface for agency users to view their programs.
  * Modular structure with base.php layout and Vite bundling.
  */
 

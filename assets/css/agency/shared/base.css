@@ -14,6 +14,8 @@
 /* Layout system - CRITICAL for proper page structure */
 @import '../../layout/dashboard.css';      /* Body/main layout */
 @import '../../layout/page_header.css';         /* Page headers */
+@import '../../components/navbar-modern.css';   /* Modern navbar styles */
+@import '../../components/footer-modern.css';   /* Modern footer styles */
 
 /* Modern components - Primary */
 @import '../../components/cards-modern.css';

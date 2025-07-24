@@ -4,7 +4,12 @@
  */
 
 // Import CSS for programs view
+import '../../css/main.css';
 import '../../css/agency/programs/view_programs.css';
+
+// Import essential utilities
+import '../utilities/initialization.js';
+import '../utilities/dropdown_init.js';
 
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize delete functionality
