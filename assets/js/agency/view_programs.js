@@ -11,6 +11,9 @@ import '../../css/agency/programs/view_programs.css';
 import '../utilities/initialization.js';
 import '../utilities/dropdown_init.js';
 
+// Import main utilities including showToast
+import '../main.js';
+
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize delete functionality
     initDeleteButtons();
@@ -414,7 +417,7 @@ function initializePagination() {
  * Initialize delete buttons functionality
  */
 function initDeleteButtons() {
-    const deleteButtons = document.querySelectorAll('.delete-program-btn');
+    const deleteButtons = document.querySelectorAll('.trigger-delete-modal');
     const modal = document.getElementById('deleteModal');
     
     if (!modal || !deleteButtons.length) return;
@@ -426,6 +429,11 @@ function initDeleteButtons() {
     
     deleteButtons.forEach(button => {
         button.addEventListener('click', function() {
+            console.log('[DEBUG] Delete button clicked', {
+                programId: this.getAttribute('data-id'),
+                programName: this.getAttribute('data-name'),
+                button: this
+            });
             const programId = this.getAttribute('data-id');
             const programName = this.getAttribute('data-name');
             

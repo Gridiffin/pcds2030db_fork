@@ -402,47 +402,97 @@
 }
 
 /* === Legacy Compatibility === */
-/* Bootstrap modal class compatibility */
+/* Bootstrap modal class compatibility - Fix invisible modals */
 .modal {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: 9998;
+    z-index: 1055 !important; /* Higher z-index to ensure visibility */
     display: none;
+    overflow-x: hidden;
+    overflow-y: auto;
+    outline: 0;
 }
 
 .modal.show {
-    display: flex;
+    display: flex !important;
     align-items: center;
     justify-content: center;
 }
 
 .modal-dialog {
-    @extend .modal-modern;
+    position: relative;
+    width: auto;
+    margin: 0.5rem;
+    pointer-events: all;
+    max-width: 500px;
+    margin: 1.75rem auto;
 }
 
 .modal-content {
-    background: transparent;
-    border: none;
-    box-shadow: none;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    pointer-events: auto;
+    background-color: #fff !important;
+    border: 1px solid rgba(0, 0, 0, 0.125);
+    border-radius: 0.375rem;
+    outline: 0;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
 }
 
 .modal-header {
-    @extend .modal-header-modern;
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1rem;
+    border-bottom: 1px solid #dee2e6;
+    border-top-left-radius: calc(0.375rem - 1px);
+    border-top-right-radius: calc(0.375rem - 1px);
 }
 
 .modal-title {
-    @extend .modal-title-modern;
+    margin-bottom: 0;
+    line-height: 1.5;
+    font-size: 1.25rem;
+    font-weight: 500;
 }
 
 .modal-body {
-    @extend .modal-body-modern;
+    position: relative;
+    flex: 1 1 auto;
+    padding: 1rem;
 }
 
 .modal-footer {
-    @extend .modal-footer-modern;
+    display: flex;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0.75rem 1rem;
+    border-top: 1px solid #dee2e6;
+    border-bottom-right-radius: calc(0.375rem - 1px);
+    border-bottom-left-radius: calc(0.375rem - 1px);
+}
+
+/* Modal backdrop fix */
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1050 !important;
+    width: 100vw;
+    height: 100vh;
+    background-color: #000;
+    opacity: 0.5;
+}
+
+.modal-backdrop.show {
+    opacity: 0.5;
 }
 
 /* === Accessibility === */

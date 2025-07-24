@@ -17,7 +17,6 @@ require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/agencies/index.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/agencies/outcomes.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/rating_helpers.php';
 require_once PROJECT_ROOT_PATH . 'app/controllers/DashboardController.php';
 
@@ -75,8 +74,6 @@ $stats = $dashboardData['stats'];
 $chartData = $dashboardData['chart_data'];
 $recentUpdates = $dashboardData['recent_updates'];
 
-// Get outcomes statistics for the agency
-$outcomes_stats = get_agency_outcomes_statistics(null, $period_id);
 
 // Include the base layout
 require_once PROJECT_ROOT_PATH . 'app/views/layouts/base.php';

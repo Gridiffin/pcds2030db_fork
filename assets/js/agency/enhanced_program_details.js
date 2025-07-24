@@ -6,6 +6,9 @@
 // Import CSS for bundle generation
 import "../../css/agency/programs/program-details.css";
 
+// Import main utilities including showToast
+import '../main.js';
+
 class EnhancedProgramDetails {
   constructor() {
     this.programId = window.programId;
@@ -610,7 +613,40 @@ class EnhancedProgramDetails {
       showToast(title, message, type, duration);
     } else {
       // Fallback to alert
+      alert(`${title}: ${message}`);
     }
+  }
+
+  getStatusInfo(status) {
+    // Return status styling information
+    const statusMap = {
+      'active': {
+        class: 'bg-success',
+        icon: 'fas fa-play-circle'
+      },
+      'on_hold': {
+        class: 'bg-warning',
+        icon: 'fas fa-pause-circle'
+      },
+      'completed': {
+        class: 'bg-primary',
+        icon: 'fas fa-check-circle'
+      },
+      'delayed': {
+        class: 'bg-danger',
+        icon: 'fas fa-exclamation-triangle'
+      },
+      'cancelled': {
+        class: 'bg-secondary',
+        icon: 'fas fa-times-circle'
+      },
+      'not_started': {
+        class: 'bg-light text-dark',
+        icon: 'fas fa-clock'
+      }
+    };
+
+    return statusMap[status] || statusMap['active'];
   }
 
   // Utility methods

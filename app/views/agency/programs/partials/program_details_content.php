@@ -11,14 +11,26 @@
     <?php if ($alert_flags['show_draft_alert']): ?>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            <?php if ($can_edit): ?>
-            showToastWithAction('Draft Submission', 'This program is in draft mode.', 'warning', 10000, {
-                text: 'Edit & Submit',
-                url: '<?= APP_URL ?>/app/views/agency/programs/edit_program.php?id=<?= $program['program_id'] ?>'
-            });
-            <?php else: ?>
-            showToast('Draft Submission', 'This program is in draft mode and pending final submission.', 'warning', 8000);
-            <?php endif; ?>
+            // Wait for global functions to be available
+            function waitForToastFunctions() {
+                <?php if ($can_edit): ?>
+                if (typeof window.showToastWithAction === 'function') {
+                    showToastWithAction('Draft Submission', 'This program is in draft mode.', 'warning', 10000, {
+                        text: 'Edit & Submit',
+                        url: '<?= APP_URL ?>/app/views/agency/programs/edit_program.php?id=<?= $program['program_id'] ?>'
+                    });
+                } else {
+                    setTimeout(waitForToastFunctions, 100);
+                }
+                <?php else: ?>
+                if (typeof window.showToast === 'function') {
+                    showToast('Draft Submission', 'This program is in draft mode and pending final submission.', 'warning', 8000);
+                } else {
+                    setTimeout(waitForToastFunctions, 100);
+                }
+                <?php endif; ?>
+            }
+            waitForToastFunctions();
         });
     </script>
     <?php endif; ?>
@@ -26,7 +38,15 @@
     <?php if ($alert_flags['show_finalized_alert']): ?>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            showToast('Finalized', 'This program\'s latest progress report is finalized.', 'success', 8000);
+            // Wait for global functions to be available
+            function waitForToastFunctions() {
+                if (typeof window.showToast === 'function') {
+                    showToast('Finalized', 'This program\'s latest progress report is finalized.', 'success', 8000);
+                } else {
+                    setTimeout(waitForToastFunctions, 100);
+                }
+            }
+            waitForToastFunctions();
         });
     </script>
     <?php endif; ?>
@@ -35,7 +55,15 @@
     <?php if (isset($_SESSION['message'])): ?>
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                showAlert('<?= $_SESSION['message'] ?>', '<?= $_SESSION['message_type'] ?>');
+                // Wait for global functions to be available
+                function waitForToastFunctions() {
+                    if (typeof window.showToast === 'function') {
+                        showToast('<?= ucfirst($_SESSION['message_type']) ?>', '<?= $_SESSION['message'] ?>', '<?= $_SESSION['message_type'] ?>');
+                    } else {
+                        setTimeout(waitForToastFunctions, 100);
+                    }
+                }
+                waitForToastFunctions();
             });
         </script>
         <?php 

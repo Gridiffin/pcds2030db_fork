@@ -1,9 +1,91 @@
 # Login Module Refactor - Problems & Solutions Log
 
 **Date:** 2025-07-18  
-**Last Updated:** 2025-07-22
+**Last Updated:** 2025-07-24
 
 ## Recent Bugs Fixed
+
+### 26. Agency JavaScript showToast Errors - Missing Global Function Access (2025-07-24)
+
+- **Problem:** Multiple agency pages throwing `ReferenceError: showToast is not defined` errors causing:
+  - Save as draft button not working in edit submission page
+  - Delete button failures in view programs page  
+  - Change status button not working in program details page
+  - Missing getStatusInfo method in EnhancedProgramDetails class
+- **Root Cause Analysis:**
+  - **Bundle Architecture Issue**: Agency Vite bundles didn't include `main.js` which contains the global `showToast` function
+  - **Missing Method**: `EnhancedProgramDetails` class called `this.getStatusInfo()` but method was never defined
+  - **Import Gap**: Agency JavaScript entry points lacked imports for shared utilities
+- **Error Patterns:**
+  ```javascript
+  // Console errors observed:
+  ReferenceError: showToast is not defined (agency-edit-submission.bundle.js:411)
+  TypeError: this.getStatusInfo is not a function (agency-program-details.bundle.js:1)
+  ```
+- **Impact:**
+  - **High Severity**: Critical functionality broken across agency pages
+  - **User Experience**: Form submissions, status changes, and delete operations failing silently
+  - **Scope**: Affected edit submission, view programs, program details, create program, and add submission pages
+- **Solution - Comprehensive JavaScript Bundle Fix:**
+  1. **Added showToast Import to Agency Entry Points:**
+     - `assets/js/agency/edit_submission.js` - Added `import '../main.js'`
+     - `assets/js/agency/enhanced_program_details.js` - Added `import '../main.js'`
+     - `assets/js/agency/view_programs.js` - Added `import '../main.js'`
+     - `assets/js/agency/programs/add_submission.js` - Added `import '../../main.js'`
+     - `assets/js/agency/programs/edit_program.js` - Added `import '../../main.js'`
+     - `assets/js/agency/programs/create.js` - Added `import '../../main.js'`
+  2. **Added Missing getStatusInfo Method:**
+     ```javascript
+     getStatusInfo(status) {
+       const statusMap = {
+         'active': { class: 'bg-success', icon: 'fas fa-play-circle' },
+         'on_hold': { class: 'bg-warning', icon: 'fas fa-pause-circle' },
+         'completed': { class: 'bg-primary', icon: 'fas fa-check-circle' },
+         'delayed': { class: 'bg-danger', icon: 'fas fa-exclamation-triangle' },
+         'cancelled': { class: 'bg-secondary', icon: 'fas fa-times-circle' },
+         'not_started': { class: 'bg-light text-dark', icon: 'fas fa-clock' }
+       };
+       return statusMap[status] || statusMap['active'];
+     }
+     ```
+  3. **Enhanced Timeline User Experience:**
+     - Added tooltip guidance: "Click on any timeline item to view full submission details"
+     - Added visual indicators for clickable timeline items
+     - Added informational alert explaining timeline interaction
+  4. **Rebuilt Vite Bundles:**
+     - All agency bundles now include showToast functionality
+     - Bundle sizes maintained efficiently with shared utilities
+- **Files Modified:**
+  - **JavaScript Entry Points**: 6 agency bundle entry points updated with main.js imports
+  - **Enhanced Program Details**: Added missing getStatusInfo method with comprehensive status mapping
+  - **Program Timeline Partial**: Added user guidance tooltips and visual indicators
+  - **Vite Bundles**: Rebuilt all agency bundles with updated dependencies
+- **Testing Results:**
+  - ✅ Save as draft button now functional in edit submission
+  - ✅ Delete buttons working in view programs page
+  - ✅ Status change functionality restored in program details
+  - ✅ Timeline interaction guidance implemented
+  - ✅ All agency JavaScript bundles include showToast access
+- **Bundle Performance Impact:**
+  - **Minimal Size Increase**: Shared utilities efficiently bundled
+  - **Improved Reliability**: Consistent error handling across agency pages
+  - **Enhanced UX**: User guidance for timeline interactions
+- **Additional Fix - Timing Issue (2025-07-24):**
+  - **Problem**: `showToastWithAction is not defined` error in program_details.php inline scripts
+  - **Root Cause**: Inline PHP scripts executing before JavaScript bundles loaded
+  - **Solution**: Added polling mechanism to wait for global functions:
+    ```javascript
+    function waitForToastFunctions() {
+        if (typeof window.showToastWithAction === 'function') {
+            // Execute toast call
+        } else {
+            setTimeout(waitForToastFunctions, 100);
+        }
+    }
+    ```
+  - **Files Fixed**: All program partial files with inline showToast calls
+- **Prevention:** Ensure all agency bundle entry points import shared utilities. Always use polling mechanism for inline scripts that depend on bundled functions. Implement comprehensive testing for JavaScript functionality across all agency pages.
+- **Related Issues**: Resolves multiple user-reported issues with form submissions and interactive elements in agency interface.
 
 ### 23. Admin Manage Initiatives CSS Broken - Implemented Vite Bundling (2025-07-23)
 

@@ -9,6 +9,9 @@
 import '../../../css/agency/programs/edit_program_entry.css';
 import '../../../css/agency/programs/edit_program.css';
 
+// Import main utilities including showToast
+import '../../main.js';
+
 // Import logic
 import { initEditProgram } from './editProgramLogic.js';
 

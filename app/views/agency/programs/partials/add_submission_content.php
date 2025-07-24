@@ -19,7 +19,15 @@ require_once PROJECT_ROOT_PATH . '/app/helpers/vite-helpers.php';
             <?php if (!empty($message)): ?>
                 <script>
                     document.addEventListener('DOMContentLoaded', function() {
-                        showToast('<?= ucfirst($messageType) ?>', <?= json_encode($message) ?>, '<?= $messageType ?>');
+                        // Wait for global functions to be available
+                        function waitForToastFunctions() {
+                            if (typeof window.showToast === 'function') {
+                                showToast('<?= ucfirst($messageType) ?>', <?= json_encode($message) ?>, '<?= $messageType ?>');
+                            } else {
+                                setTimeout(waitForToastFunctions, 100);
+                            }
+                        }
+                        waitForToastFunctions();
                     });
                 </script>
             <?php endif; ?>

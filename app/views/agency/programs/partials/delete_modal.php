@@ -1,5 +1,5 @@
 <!-- Enhanced Delete Confirmation Modal (Double Confirmation) -->
-<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+<div class="modal" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header bg-danger text-white">
@@ -8,13 +8,13 @@
             </div>
             <div class="modal-body">
                 <div id="deleteStep1">
-                    <div class="alert alert-warning">
-                        <h6 class="alert-heading">⚠️ Warning: This action cannot be undone</h6>
-                        <p class="mb-0">
+                    <div style="background: #fff3cd; color: #856404; border-radius: 6px; padding: 1rem; margin-bottom: 1rem; border: 1px solid #ffeeba;">
+                        <strong style="font-size: 1.1em; display: flex; align-items: center;"><span style="font-size: 1.3em; margin-right: 0.5em;">⚠️</span> Warning: This action cannot be undone</strong>
+                        <p class="mb-0" style="margin-top: 0.5em;">
                             You are about to delete the program: 
                             <strong id="program-name-display">Program Name</strong>
                         </p>
-                        <hr>
+                        <hr style="border-color: #ffeeba; margin: 0.5em 0;">
                         <p class="mb-0 small">
                             This will permanently remove:
                         </p>

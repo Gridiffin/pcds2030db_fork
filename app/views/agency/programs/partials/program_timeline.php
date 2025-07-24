@@ -11,12 +11,23 @@
     <div class="card-header">
         <h5 class="card-title mb-0">
             <i class="fas fa-history me-2"></i>Submission Timeline
+            <i class="fas fa-info-circle text-muted ms-2" 
+               data-bs-toggle="tooltip" 
+               data-bs-placement="top" 
+               title="Click on any timeline item to view full submission details"></i>
         </h5>
     </div>
     <div class="card-body">
         <div class="timeline-container">
+            <div class="alert alert-info alert-sm mb-3">
+                <i class="fas fa-lightbulb me-2"></i>
+                <strong>Tip:</strong> Click on any timeline item below to view full submission details and expand the content.
+            </div>
             <?php foreach ($submission_history['submissions'] as $submission): ?>
-                <div class="timeline-item">
+                <div class="timeline-item clickable-timeline-item" style="cursor: pointer;" 
+                     data-bs-toggle="tooltip" 
+                     data-bs-placement="right" 
+                     title="Click to view full submission details">
                     <div class="timeline-marker">
                         <i class="fas fa-circle"></i>
                     </div>

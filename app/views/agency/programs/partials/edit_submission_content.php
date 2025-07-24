@@ -7,7 +7,15 @@
     <?php if (isset($_SESSION['message'])): ?>
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                showToast('<?= ucfirst($_SESSION['message_type']) ?>', <?= json_encode($_SESSION['message']) ?>, '<?= $_SESSION['message_type'] ?>');
+                // Wait for global functions to be available
+                function waitForToastFunctions() {
+                    if (typeof window.showToast === 'function') {
+                        showToast('<?= ucfirst($_SESSION['message_type']) ?>', <?= json_encode($_SESSION['message']) ?>, '<?= $_SESSION['message_type'] ?>');
+                    } else {
+                        setTimeout(waitForToastFunctions, 100);
+                    }
+                }
+                waitForToastFunctions();
             });
         </script>
         <?php 

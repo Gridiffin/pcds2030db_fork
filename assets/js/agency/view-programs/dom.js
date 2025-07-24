@@ -93,7 +93,8 @@ export class ViewProgramsDOM {
         const continueBtn = document.getElementById('delete-continue-btn');
         const confirmBtn = document.getElementById('delete-confirm-btn');
         
-        if (step1) step1.style.display = 'none';
+        // Always show step1 (the warning)
+        if (step1) step1.style.display = '';
         if (step2) step2.style.display = '';
         if (continueBtn) continueBtn.style.display = 'none';
         if (confirmBtn) {

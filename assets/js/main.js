@@ -155,6 +155,7 @@ function showToast(title, message, type = 'info', duration = 5000) {
         toastContainer = document.createElement('div');
         toastContainer.id = 'toast-container';
         toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+        toastContainer.style.zIndex = '9999';
         document.body.appendChild(toastContainer);
     }
     
@@ -168,6 +169,9 @@ function showToast(title, message, type = 'info', duration = 5000) {
     toast.setAttribute('role', 'alert');
     toast.setAttribute('aria-live', 'assertive');
     toast.setAttribute('aria-atomic', 'true');
+    toast.style.display = 'block';
+    toast.style.opacity = '0';
+    toast.style.transition = 'opacity 0.3s ease';
     
     // Toast content
     toast.innerHTML = `
@@ -175,30 +179,51 @@ function showToast(title, message, type = 'info', duration = 5000) {
             <div class="toast-body">
                 <strong>${title}</strong>: ${message}
             </div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="this.closest('.toast').remove()" aria-label="Close"></button>
         </div>
     `;
     
     // Add to container
     toastContainer.appendChild(toast);
     
-    // Initialize and show using Bootstrap if available
-    if (typeof bootstrap !== 'undefined' && typeof bootstrap.Toast !== 'undefined') {
-        const bsToast = new bootstrap.Toast(toast, {
-            autohide: true,
-            delay: duration
-        });
-        bsToast.show();
-    } else {
-        // Fallback if Bootstrap isn't available
+    // Show with animation
+    setTimeout(() => {
         toast.style.opacity = '1';
-        setTimeout(() => {
-            toast.style.opacity = '0';
-            setTimeout(() => {
+    }, 10);
+    
+    // Initialize Bootstrap Toast if available, otherwise use fallback
+    if (typeof bootstrap !== 'undefined' && typeof bootstrap.Toast !== 'undefined') {
+        try {
+            const bsToast = new bootstrap.Toast(toast, {
+                autohide: true,
+                delay: duration
+            });
+            bsToast.show();
+            
+            // Clean up after Bootstrap handles it
+            toast.addEventListener('hidden.bs.toast', function() {
                 if (toast.parentNode) {
                     toast.parentNode.removeChild(toast);
                 }
-            }, 500);
+            });
+        } catch (e) {
+            console.warn('Bootstrap Toast failed, using fallback:', e);
+            // Use fallback
+            useFallbackToast(toast, duration);
+        }
+    } else {
+        // Fallback implementation
+        useFallbackToast(toast, duration);
+    }
+    
+    function useFallbackToast(toastElement, duration) {
+        setTimeout(() => {
+            toastElement.style.opacity = '0';
+            setTimeout(() => {
+                if (toastElement.parentNode) {
+                    toastElement.parentNode.removeChild(toastElement);
+                }
+            }, 300);
         }, duration);
     }
 }
@@ -408,3 +433,8 @@ function createModal(options) {
         id: modalId
     };
 }
+
+// Make functions globally available
+window.showToast = showToast;
+window.showToastWithAction = showToastWithAction;
+window.createModal = createModal;

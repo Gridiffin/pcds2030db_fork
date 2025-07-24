@@ -142,6 +142,8 @@ a.btn:hover {
     transition: all 0.2s ease-in-out;
     position: relative;
     overflow: hidden;
+    cursor: pointer !important;
+    pointer-events: auto !important;
 }
 
 .btn:hover {
@@ -152,6 +154,18 @@ a.btn:hover {
 .btn:active {
     transform: translateY(0);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Ensure buttons are always clickable */
+button, .btn, input[type="button"], input[type="submit"] {
+    cursor: pointer !important;
+    pointer-events: auto !important;
+}
+
+/* Fix for disabled buttons */
+.btn:disabled, .btn.disabled {
+    cursor: not-allowed !important;
+    pointer-events: auto !important;
 }
 
 .btn-primary {

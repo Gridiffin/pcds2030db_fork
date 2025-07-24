@@ -1,5 +1,8 @@
 import '../../../css/agency/programs/add_submission_entry.css';
 
+// Import main utilities including showToast
+import '../../main.js';
+
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('addSubmissionForm');
     if (!form) return;

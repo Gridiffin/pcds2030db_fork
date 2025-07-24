@@ -11,13 +11,13 @@ if (!defined('PROJECT_ROOT_PATH')) {
 }
 
 // Include necessary files
-require_once PROJECT_ROOT_PATH . 'config/config.php';
-require_once PROJECT_ROOT_PATH . 'lib/db_connect.php';
-require_once PROJECT_ROOT_PATH . 'lib/session.php';
-require_once PROJECT_ROOT_PATH . 'lib/functions.php';
-require_once PROJECT_ROOT_PATH . 'lib/agencies/index.php';
-require_once PROJECT_ROOT_PATH . 'lib/agencies/program_permissions.php';
-require_once PROJECT_ROOT_PATH . 'lib/audit_log.php';
+require_once PROJECT_ROOT_PATH . 'app/config/config.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/agencies/index.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/agencies/program_permissions.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/audit_log.php';
 
 // Verify user is an agency
 if (!is_agency()) {
@@ -82,14 +82,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['program_id'])) {
         $conn->commit();
         
         $_SESSION['message'] = 'Program deleted successfully.';
-        $_SESSION['message_type'] = 'success';        // Log the successful deletion
+        $_SESSION['message_type'] = 'success';
+        
+        // Log the successful deletion
         log_audit_action('delete_program', "Program Name: $program_name | Program ID: $program_id", 'success', $user_id);
     } catch (Exception $e) {
         // Rollback on error
         $conn->rollback();
         
         $_SESSION['message'] = 'Failed to delete program: ' . $e->getMessage();
-        $_SESSION['message_type'] = 'danger';        // Log the failed deletion attempt
+        $_SESSION['message_type'] = 'danger';
+        
+        // Log the failed deletion attempt
         log_audit_action('delete_program_failed', "Program Name: $program_name | Program ID: $program_id | Error: " . $e->getMessage(), 'failure', $user_id);
     }
     

@@ -16,9 +16,6 @@
         
         <!-- Programs Section -->
         <?php require_once __DIR__ . '/partials/programs_section.php'; ?>
-        
-        <!-- Outcomes Section -->
-        <?php require_once __DIR__ . '/partials/outcomes_section.php'; ?>
     </div>
 </main>
 
