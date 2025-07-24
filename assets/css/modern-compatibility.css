@@ -1,0 +1,383 @@
+/**
+ * Modern Components Compatibility Layer
+ * Ensures modern components work well with existing Bootstrap and legacy styles
+ */
+
+/* === Body adjustments for modern navbar === */
+body {
+    font-family: var(--font-family);
+    padding-top: var(--navbar-height);
+}
+
+/* === Modern navbar takes precedence over Bootstrap navbar === */
+.navbar-modern {
+    z-index: var(--z-navbar) !important;
+}
+
+/* === Content wrapper adjustments === */
+.content-wrapper {
+    min-height: calc(100vh - var(--navbar-height));
+    padding-top: var(--space-4);
+}
+
+/* === Legacy Bootstrap compatibility === */
+.container-fluid {
+    padding-right: var(--space-4);
+    padding-left: var(--space-4);
+}
+
+@media (min-width: 576px) {
+    .container-fluid {
+        padding-right: var(--space-6);
+        padding-left: var(--space-6);
+    }
+}
+
+@media (min-width: 768px) {
+    .container-fluid {
+        padding-right: var(--space-8);
+        padding-left: var(--space-8);
+    }
+}
+
+/* === Page header adjustments === */
+.page-header {
+    margin-top: 0;
+    padding-top: var(--space-4);
+    padding-bottom: var(--space-4);
+}
+
+/* === Bootstrap button compatibility === */
+.btn:not(.btn-modern) {
+    transition: var(--transition-fast);
+}
+
+.btn:not(.btn-modern):hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn:not(.btn-modern):active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-sm);
+}
+
+/* === Bootstrap card compatibility === */
+.card:not(.card-modern) {
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-base);
+    transition: var(--transition-base);
+}
+
+.card:not(.card-modern):hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* === Form element compatibility === */
+.form-control:not(.form-input-modern),
+.form-select:not(.form-select-modern) {
+    border-radius: var(--radius-base);
+    transition: var(--transition-base);
+}
+
+.form-control:not(.form-input-modern):focus,
+.form-select:not(.form-select-modern):focus {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-focus-primary);
+}
+
+/* === Table enhancements === */
+.table {
+    border-radius: var(--radius-base);
+    overflow: hidden;
+}
+
+.table thead th {
+    background-color: var(--forest-ultra-light);
+    color: var(--color-primary);
+    border-bottom: var(--border-2) solid var(--color-gray-200);
+}
+
+.table tbody tr:hover {
+    background-color: var(--forest-ultra-light);
+}
+
+/* === Alert enhancements === */
+.alert {
+    border-radius: var(--radius-lg);
+    border-left: var(--space-1) solid;
+}
+
+.alert-primary {
+    border-left-color: var(--color-primary);
+    background-color: rgba(var(--color-primary-rgb), 0.1);
+    color: var(--color-primary);
+}
+
+.alert-success {
+    border-left-color: var(--color-success);
+    background-color: rgba(var(--color-success-rgb), 0.1);
+    color: var(--color-success);
+}
+
+.alert-warning {
+    border-left-color: var(--color-warning);
+    background-color: rgba(var(--color-warning-rgb), 0.1);
+    color: var(--color-warning);
+}
+
+.alert-danger {
+    border-left-color: var(--color-danger);
+    background-color: rgba(var(--color-danger-rgb), 0.1);
+    color: var(--color-danger);
+}
+
+.alert-info {
+    border-left-color: var(--color-info);
+    background-color: rgba(var(--color-info-rgb), 0.1);
+    color: var(--color-info);
+}
+
+/* === Badge enhancements === */
+.badge {
+    border-radius: var(--radius-base);
+    font-weight: var(--font-weight-medium);
+}
+
+.badge.bg-primary {
+    background-color: var(--color-primary) !important;
+}
+
+.badge.bg-success {
+    background-color: var(--color-success) !important;
+}
+
+.badge.bg-warning {
+    background-color: var(--color-warning) !important;
+}
+
+.badge.bg-danger {
+    background-color: var(--color-danger) !important;
+}
+
+.badge.bg-info {
+    background-color: var(--color-info) !important;
+}
+
+/* === Dropdown compatibility === */
+.dropdown-menu {
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    border: var(--border-1) solid var(--color-gray-200);
+}
+
+.dropdown-item {
+    transition: var(--transition-fast);
+    border-radius: var(--radius-base);
+    margin: var(--space-1) var(--space-2);
+    padding: var(--space-2) var(--space-3);
+}
+
+.dropdown-item:hover {
+    background-color: var(--forest-ultra-light);
+    color: var(--color-primary);
+}
+
+/* === Modal enhancements === */
+.modal-content {
+    border-radius: var(--radius-xl);
+    border: none;
+    box-shadow: var(--shadow-2xl);
+}
+
+.modal-header {
+    border-bottom: var(--border-1) solid var(--color-gray-200);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+}
+
+.modal-footer {
+    border-top: var(--border-1) solid var(--color-gray-200);
+    border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+}
+
+/* === Pagination enhancements === */
+.pagination .page-link {
+    border-radius: var(--radius-base);
+    margin: 0 var(--space-1);
+    color: var(--color-primary);
+    border: var(--border-1) solid var(--color-gray-300);
+    transition: var(--transition-fast);
+}
+
+.pagination .page-link:hover {
+    background-color: var(--forest-ultra-light);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.pagination .page-item.active .page-link {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+/* === Spinner/Loading compatibility === */
+.spinner-border {
+    color: var(--color-primary);
+}
+
+.spinner-border-primary {
+    color: var(--color-primary);
+}
+
+.spinner-border-success {
+    color: var(--color-success);
+}
+
+.spinner-border-warning {
+    color: var(--color-warning);
+}
+
+.spinner-border-danger {
+    color: var(--color-danger);
+}
+
+.spinner-border-info {
+    color: var(--color-info);
+}
+
+/* === Progress bar enhancements === */
+.progress {
+    border-radius: var(--radius-full);
+    background-color: var(--color-gray-200);
+}
+
+.progress-bar {
+    border-radius: var(--radius-full);
+}
+
+.progress-bar.bg-primary {
+    background-color: var(--color-primary) !important;
+}
+
+.progress-bar.bg-success {
+    background-color: var(--color-success) !important;
+}
+
+.progress-bar.bg-warning {
+    background-color: var(--color-warning) !important;
+}
+
+.progress-bar.bg-danger {
+    background-color: var(--color-danger) !important;
+}
+
+.progress-bar.bg-info {
+    background-color: var(--color-info) !important;
+}
+
+/* === Toast enhancements === */
+.toast {
+    border-radius: var(--radius-lg);
+    border: var(--border-1) solid var(--color-gray-200);
+    box-shadow: var(--shadow-lg);
+}
+
+.toast-header {
+    border-bottom: var(--border-1) solid var(--color-gray-200);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+/* === Legacy navbar adjustments === */
+.navbar:not(.navbar-modern) {
+    box-shadow: var(--shadow-sm);
+}
+
+.navbar-brand {
+    font-weight: var(--font-weight-bold);
+    color: var(--color-primary) !important;
+}
+
+.nav-link {
+    font-weight: var(--font-weight-medium);
+    transition: var(--transition-fast);
+}
+
+.nav-link:hover {
+    color: var(--color-primary) !important;
+}
+
+.nav-link.active {
+    color: var(--color-primary) !important;
+    font-weight: var(--font-weight-semibold);
+}
+
+/* === Utility classes enhancement === */
+.text-primary {
+    color: var(--color-primary) !important;
+}
+
+.text-success {
+    color: var(--color-success) !important;
+}
+
+.text-warning {
+    color: var(--color-warning) !important;
+}
+
+.text-danger {
+    color: var(--color-danger) !important;
+}
+
+.text-info {
+    color: var(--color-info) !important;
+}
+
+.bg-primary {
+    background-color: var(--color-primary) !important;
+}
+
+.bg-success {
+    background-color: var(--color-success) !important;
+}
+
+.bg-warning {
+    background-color: var(--color-warning) !important;
+}
+
+.bg-danger {
+    background-color: var(--color-danger) !important;
+}
+
+.bg-info {
+    background-color: var(--color-info) !important;
+}
+
+/* === Print styles === */
+@media print {
+    .navbar-modern,
+    .footer-modern {
+        display: none !important;
+    }
+    
+    body {
+        padding-top: 0 !important;
+    }
+    
+    * {
+        box-shadow: none !important;
+        text-shadow: none !important;
+    }
+}
+
+/* === Reduced motion support === */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}

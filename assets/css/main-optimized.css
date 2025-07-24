@@ -1,0 +1,392 @@
+/**
+ * PCDS 2030 Dashboard - Optimized CSS Entry Point
+ * Modern Forest Theme - Performance Focused
+ * 
+ * Import Order:
+ * 1. Design Tokens (CSS Custom Properties)
+ * 2. Reset & Base Styles
+ * 3. Layout Components
+ * 4. UI Components
+ * 5. Page-Specific Styles
+ * 6. Custom Theme Overrides
+ */
+
+/* === 1. Design Tokens === */
+@import 'design-tokens.css';
+
+/* === 2. Foundation & Reset === */
+@import 'base/reset.css';
+@import 'base/typography.css';
+@import 'base/utilities.css';
+
+/* === 3. Layout System === */
+@import 'layout/navigation.css';
+@import 'layout/footer.css';
+@import 'layout/grid.css';
+@import 'layout/page_header.css';
+@import 'layout/dashboard.css';
+
+/* === 4. Core Components === */
+@import 'components/buttons.css';
+@import 'components/cards.css';
+@import 'components/forms.css';
+@import 'components/tables.css';
+@import 'components/modals.css';
+@import 'components/alerts.css';
+@import 'components/badges.css';
+@import 'components/toast.css';
+
+/* === 5. UI Components === */
+@import 'components/ui/modal.css';
+@import 'components/ui/tabs.css';
+@import 'components/ui/tooltip.css';
+
+/* === 6. Advanced Components === */
+@import 'components/dashboard-cards.css';
+@import 'components/bento-grid.css';
+@import 'components/footer.css';
+@import 'components/page-header.css';
+@import 'components/animations.css';
+@import 'components/progress.css';
+@import 'components/notifications.css';
+
+/* === 7. Data Components === */
+@import 'components/responsive-performance-table.css';
+@import 'components/admin-performance-table.css';
+@import 'components/table-text-truncation.css';
+@import 'components/table-word-wrap.css';
+@import 'components/table-browser-fixes.css';
+@import 'components/mobile-targets-display.css';
+
+/* === 8. Feature Components === */
+@import 'components/rating-indicators.css';
+@import 'components/ratings.css';
+@import 'components/rating-colors.css';
+@import 'components/period-performance.css';
+@import 'components/bulk-assignment.css';
+@import 'components/status-grid.css';
+@import 'components/hybrid-status-grid.css';
+
+/* === 9. Domain Components === */
+@import 'components/sectors-view.css';
+@import 'components/program-details.css';
+@import 'components/enhanced-program-details.css';
+@import 'components/program-animations.css';
+@import 'components/metric-details.css';
+@import 'components/program-history.css';
+@import 'components/metric-create.css';
+@import 'components/outcomes.css';
+@import 'components/submission-audit-history.css';
+
+/* === 10. Admin Components === */
+@import 'components/admin.css';
+@import 'components/admin-common.css';
+@import 'admin/programs.css';
+@import 'admin/programs/programs.css';
+
+/* === 11. Agency Components === */
+@import 'agency/program-review.css';
+@import 'agency/program-targets.css';
+
+/* === 12. Page-Specific Styles === */
+@import 'pages/style-guide.css';
+@import 'pages/admin.css';
+@import 'pages/agency.css';
+@import 'pages/home.css';
+@import 'pages/program.css';
+@import 'pages/report-generator.css';
+@import 'pages/initiative-view.css';
+@import 'pages/view-programs.css';
+@import 'pages/add_submission.css';
+
+/* === 13. Custom Theme & Overrides === */
+@import 'custom/theme.css';
+@import 'custom/agency.css';
+@import 'custom/admin.css';
+
+/* === 14. Utility & Helper Classes === */
+@import 'table-structure-designer.css';
+
+/* === Performance-Focused Base Styles === */
+
+/* Modern CSS Reset Enhancement */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+/* Root and Body */
+html {
+    font-size: 16px;
+    line-height: 1.15;
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-normal);
+    line-height: var(--line-height-normal);
+    color: var(--color-gray-800);
+    background-color: var(--color-gray-50);
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Typography Consistency */
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-family);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-tight);
+    margin: 0 0 var(--space-4) 0;
+    color: var(--color-gray-900);
+}
+
+h1 { font-size: var(--font-size-4xl); }
+h2 { font-size: var(--font-size-3xl); }
+h3 { font-size: var(--font-size-2xl); }
+h4 { font-size: var(--font-size-xl); }
+h5 { font-size: var(--font-size-lg); }
+h6 { font-size: var(--font-size-base); }
+
+p {
+    margin: 0 0 var(--space-4) 0;
+    line-height: var(--line-height-normal);
+}
+
+/* Link Styles */
+a {
+    color: var(--color-primary);
+    text-decoration: none;
+    transition: var(--transition-fast);
+}
+
+a:hover {
+    color: var(--forest-medium);
+    text-decoration: underline;
+}
+
+/* Button Reset */
+button,
+input,
+optgroup,
+select,
+textarea {
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height-normal);
+    margin: 0;
+}
+
+/* Focus Styles */
+:focus {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* Modern Form Elements */
+input,
+select,
+textarea {
+    background-color: var(--color-white);
+    border: var(--border-1) solid var(--color-gray-300);
+    border-radius: var(--radius-base);
+    padding: var(--form-element-padding-y) var(--form-element-padding-x);
+    transition: var(--transition-base);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-focus-primary);
+    outline: none;
+}
+
+/* Performance Optimizations */
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* Prevent layout shift */
+.container-fluid {
+    width: 100%;
+    padding-right: var(--space-4);
+    padding-left: var(--space-4);
+    margin-right: auto;
+    margin-left: auto;
+}
+
+/* Modern Flexbox Utilities */
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.flex-row { flex-direction: row; }
+.items-center { align-items: center; }
+.items-start { align-items: flex-start; }
+.items-end { align-items: flex-end; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.justify-start { justify-content: flex-start; }
+.justify-end { justify-content: flex-end; }
+
+/* Modern Grid Utilities */
+.grid { display: grid; }
+.grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+.grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+/* Spacing Utilities */
+.gap-1 { gap: var(--space-1); }
+.gap-2 { gap: var(--space-2); }
+.gap-3 { gap: var(--space-3); }
+.gap-4 { gap: var(--space-4); }
+.gap-6 { gap: var(--space-6); }
+.gap-8 { gap: var(--space-8); }
+
+/* Margin Utilities */
+.m-0 { margin: 0; }
+.mb-2 { margin-bottom: var(--space-2); }
+.mb-4 { margin-bottom: var(--space-4); }
+.mb-6 { margin-bottom: var(--space-6); }
+.mb-8 { margin-bottom: var(--space-8); }
+
+/* Padding Utilities */
+.p-0 { padding: 0; }
+.p-2 { padding: var(--space-2); }
+.p-4 { padding: var(--space-4); }
+.p-6 { padding: var(--space-6); }
+.p-8 { padding: var(--space-8); }
+
+/* Text Utilities */
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.text-xs { font-size: var(--font-size-xs); }
+.text-sm { font-size: var(--font-size-sm); }
+.text-base { font-size: var(--font-size-base); }
+.text-lg { font-size: var(--font-size-lg); }
+.text-xl { font-size: var(--font-size-xl); }
+.text-2xl { font-size: var(--font-size-2xl); }
+.text-3xl { font-size: var(--font-size-3xl); }
+.text-4xl { font-size: var(--font-size-4xl); }
+
+.font-light { font-weight: var(--font-weight-light); }
+.font-normal { font-weight: var(--font-weight-normal); }
+.font-medium { font-weight: var(--font-weight-medium); }
+.font-semibold { font-weight: var(--font-weight-semibold); }
+.font-bold { font-weight: var(--font-weight-bold); }
+
+/* Color Utilities */
+.text-primary { color: var(--color-primary); }
+.text-success { color: var(--color-success); }
+.text-warning { color: var(--color-warning); }
+.text-danger { color: var(--color-danger); }
+.text-info { color: var(--color-info); }
+
+.bg-primary { background-color: var(--color-primary); }
+.bg-success { background-color: var(--color-success); }
+.bg-warning { background-color: var(--color-warning); }
+.bg-danger { background-color: var(--color-danger); }
+.bg-info { background-color: var(--color-info); }
+
+/* === Responsive Design === */
+
+/* Mobile First Approach */
+@media (min-width: 640px) {
+    .container-fluid {
+        padding-right: var(--space-6);
+        padding-left: var(--space-6);
+    }
+    
+    .sm\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .sm\:text-lg { font-size: var(--font-size-lg); }
+}
+
+@media (min-width: 768px) {
+    .container-fluid {
+        padding-right: var(--space-8);
+        padding-left: var(--space-8);
+    }
+    
+    .md\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .md\:text-xl { font-size: var(--font-size-xl); }
+}
+
+@media (min-width: 1024px) {
+    .lg\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .lg\:text-2xl { font-size: var(--font-size-2xl); }
+}
+
+/* === Performance Enhancements === */
+
+/* Reduce paint and layout thrashing */
+.btn,
+.card,
+.form-control,
+.table tr {
+    will-change: auto;
+}
+
+/* Optimize animations for performance */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Hardware acceleration for smooth animations */
+.btn:hover,
+.card:hover {
+    transform: translateZ(0);
+}
+
+/* Print styles */
+@media print {
+    * {
+        background: transparent !important;
+        color: black !important;
+        box-shadow: none !important;
+        text-shadow: none !important;
+    }
+    
+    .navbar,
+    .footer,
+    .btn {
+        display: none !important;
+    }
+}
+
+/* === Legacy Support Patches === */
+
+/* Fix layout gap between agency navbar and header */
+.agency-header-wrapper {
+    margin-top: 0;
+    padding-top: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.page-header {
+    margin-top: 0;
+    padding-top: var(--space-4);
+}
+
+.navbar.fixed-top {
+    margin-bottom: 0;
+}

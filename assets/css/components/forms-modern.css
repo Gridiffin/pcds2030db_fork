@@ -1,0 +1,502 @@
+/**
+ * Modern Form Component System
+ * Clean, accessible design with forest theme
+ * Performance-focused with clear validation states
+ */
+
+/* === Base Form Styles === */
+.form-modern {
+    width: 100%;
+}
+
+.form-group-modern {
+    margin-bottom: var(--space-6);
+    position: relative;
+}
+
+.form-group-modern:last-child {
+    margin-bottom: 0;
+}
+
+/* === Form Labels === */
+.form-label-modern {
+    display: block;
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-gray-800);
+    margin-bottom: var(--space-2);
+    line-height: var(--line-height-normal);
+}
+
+.form-label-required-modern::after {
+    content: ' *';
+    color: var(--color-danger);
+    font-weight: var(--font-weight-bold);
+}
+
+.form-label-optional-modern::after {
+    content: ' (optional)';
+    color: var(--color-gray-500);
+    font-weight: var(--font-weight-normal);
+    font-size: var(--font-size-sm);
+}
+
+/* === Base Input Styles === */
+.form-input-modern,
+.form-select-modern,
+.form-textarea-modern {
+    width: 100%;
+    height: var(--form-element-height);
+    padding: var(--form-element-padding-y) var(--form-element-padding-x);
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-normal);
+    line-height: var(--line-height-normal);
+    color: var(--color-gray-800);
+    background-color: var(--color-white);
+    background-clip: padding-box;
+    border: var(--form-element-border-width) solid var(--form-element-border-color);
+    border-radius: var(--form-element-border-radius);
+    transition: var(--transition-base);
+    appearance: none;
+}
+
+.form-input-modern:focus,
+.form-select-modern:focus,
+.form-textarea-modern:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-focus-primary);
+    background-color: var(--color-white);
+}
+
+.form-input-modern:hover:not(:focus),
+.form-select-modern:hover:not(:focus),
+.form-textarea-modern:hover:not(:focus) {
+    border-color: var(--color-gray-400);
+}
+
+.form-input-modern::placeholder,
+.form-textarea-modern::placeholder {
+    color: var(--color-gray-500);
+    opacity: 1;
+}
+
+/* === Textarea Specific === */
+.form-textarea-modern {
+    height: auto;
+    min-height: 100px;
+    resize: vertical;
+    line-height: var(--line-height-relaxed);
+}
+
+/* === Select Specific === */
+.form-select-modern {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right var(--space-3) center;
+    background-size: 16px 12px;
+    padding-right: calc(var(--space-3) + 20px);
+}
+
+.form-select-modern:focus {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23537D5D' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+}
+
+/* === Input Sizes === */
+.form-input-sm-modern {
+    height: calc(var(--form-element-height) * 0.875);
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--font-size-sm);
+    border-radius: var(--radius-sm);
+}
+
+.form-input-lg-modern {
+    height: calc(var(--form-element-height) * 1.25);
+    padding: var(--space-4) var(--space-4);
+    font-size: var(--font-size-lg);
+    border-radius: var(--radius-lg);
+}
+
+/* === Input Groups === */
+.form-input-group-modern {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    width: 100%;
+}
+
+.form-input-group-modern .form-input-modern {
+    position: relative;
+    flex: 1 1 auto;
+    width: 1%;
+    min-width: 0;
+}
+
+.form-input-group-text-modern {
+    display: flex;
+    align-items: center;
+    padding: var(--form-element-padding-y) var(--space-3);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-normal);
+    line-height: var(--line-height-normal);
+    color: var(--color-gray-600);
+    text-align: center;
+    white-space: nowrap;
+    background-color: var(--color-gray-100);
+    border: var(--form-element-border-width) solid var(--form-element-border-color);
+    border-radius: var(--form-element-border-radius);
+}
+
+.form-input-group-modern .form-input-group-text-modern:first-child {
+    border-right: 0;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.form-input-group-modern .form-input-modern:not(:first-child) {
+    border-left: 0;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.form-input-group-modern .form-input-group-text-modern:last-child {
+    border-left: 0;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.form-input-group-modern .form-input-modern:not(:last-child) {
+    border-right: 0;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+/* === Checkbox and Radio === */
+.form-check-modern {
+    display: block;
+    min-height: 1.5rem;
+    padding-left: 2rem;
+    margin-bottom: var(--space-3);
+    position: relative;
+}
+
+.form-check-input-modern {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-top: 0.125rem;
+    margin-left: -2rem;
+    vertical-align: top;
+    background-color: var(--color-white);
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    border: var(--border-1) solid var(--color-gray-400);
+    appearance: none;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.form-check-input-modern[type="checkbox"] {
+    border-radius: var(--radius-sm);
+}
+
+.form-check-input-modern[type="radio"] {
+    border-radius: var(--radius-full);
+}
+
+.form-check-input-modern:focus {
+    border-color: var(--color-primary);
+    outline: none;
+    box-shadow: var(--shadow-focus-primary);
+}
+
+.form-check-input-modern:checked {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.form-check-input-modern[type="checkbox"]:checked {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M6 10l3 3l6-6'/%3e%3c/svg%3e");
+}
+
+.form-check-input-modern[type="radio"]:checked {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='2' fill='%23fff'/%3e%3c/svg%3e");
+}
+
+.form-check-label-modern {
+    color: var(--color-gray-800);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-normal);
+    cursor: pointer;
+    margin-bottom: 0;
+}
+
+/* === Switch Component === */
+.form-switch-modern {
+    padding-left: 3rem;
+}
+
+.form-switch-modern .form-check-input-modern {
+    width: 2.5rem;
+    height: 1.25rem;
+    margin-left: -3rem;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba%2833, 37, 41, 0.25%29'/%3e%3c/svg%3e");
+    background-position: left center;
+    border-radius: var(--radius-full);
+    transition: var(--transition-base);
+}
+
+.form-switch-modern .form-check-input-modern:checked {
+    background-position: right center;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e");
+}
+
+/* === Form Validation States === */
+.form-group-modern.is-valid .form-input-modern,
+.form-group-modern.is-valid .form-select-modern,
+.form-group-modern.is-valid .form-textarea-modern {
+    border-color: var(--color-success);
+    padding-right: calc(1.5em + 0.75rem);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%232E7D32' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right calc(0.375em + 0.1875rem) center;
+    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+
+.form-group-modern.is-valid .form-input-modern:focus,
+.form-group-modern.is-valid .form-select-modern:focus,
+.form-group-modern.is-valid .form-textarea-modern:focus {
+    border-color: var(--color-success);
+    box-shadow: var(--shadow-focus-success);
+}
+
+.form-group-modern.is-invalid .form-input-modern,
+.form-group-modern.is-invalid .form-select-modern,
+.form-group-modern.is-invalid .form-textarea-modern {
+    border-color: var(--color-danger);
+    padding-right: calc(1.5em + 0.75rem);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23C62828'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23C62828' stroke='none'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right calc(0.375em + 0.1875rem) center;
+    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+
+.form-group-modern.is-invalid .form-input-modern:focus,
+.form-group-modern.is-invalid .form-select-modern:focus,
+.form-group-modern.is-invalid .form-textarea-modern:focus {
+    border-color: var(--color-danger);
+    box-shadow: var(--shadow-focus-danger);
+}
+
+/* === Validation Feedback === */
+.form-feedback-modern {
+    display: none;
+    width: 100%;
+    margin-top: var(--space-1);
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-normal);
+}
+
+.form-feedback-valid-modern {
+    color: var(--color-success);
+}
+
+.form-feedback-invalid-modern {
+    color: var(--color-danger);
+}
+
+.form-group-modern.is-valid .form-feedback-valid-modern,
+.form-group-modern.is-invalid .form-feedback-invalid-modern {
+    display: block;
+}
+
+/* === Form Help Text === */
+.form-help-modern {
+    margin-top: var(--space-1);
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-600);
+    line-height: var(--line-height-normal);
+}
+
+/* === Floating Labels === */
+.form-floating-modern {
+    position: relative;
+}
+
+.form-floating-modern .form-input-modern,
+.form-floating-modern .form-select-modern,
+.form-floating-modern .form-textarea-modern {
+    height: calc(3.5rem + 2px);
+    line-height: 1.25;
+    padding: 1rem 0.75rem 0.25rem 0.75rem;
+}
+
+.form-floating-modern .form-label-modern {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    padding: 1rem 0.75rem;
+    pointer-events: none;
+    border: var(--border-1) solid transparent;
+    transform-origin: 0 0;
+    transition: var(--transition-base);
+    color: var(--color-gray-500);
+    margin-bottom: 0;
+}
+
+.form-floating-modern .form-input-modern:focus ~ .form-label-modern,
+.form-floating-modern .form-input-modern:not(:placeholder-shown) ~ .form-label-modern,
+.form-floating-modern .form-select-modern:focus ~ .form-label-modern,
+.form-floating-modern .form-select-modern:not([value=""]) ~ .form-label-modern,
+.form-floating-modern .form-textarea-modern:focus ~ .form-label-modern,
+.form-floating-modern .form-textarea-modern:not(:placeholder-shown) ~ .form-label-modern {
+    opacity: 0.65;
+    transform: scale(0.85) translateY(-0.5rem) translateX(0.15rem);
+    color: var(--color-primary);
+}
+
+/* === File Input === */
+.form-file-modern {
+    position: relative;
+    display: inline-block;
+}
+
+.form-file-input-modern {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    height: var(--form-element-height);
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.form-file-label-modern {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 1;
+    height: var(--form-element-height);
+    padding: var(--form-element-padding-y) var(--form-element-padding-x);
+    overflow: hidden;
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-normal);
+    line-height: var(--line-height-normal);
+    color: var(--color-gray-600);
+    background-color: var(--color-white);
+    border: var(--form-element-border-width) solid var(--form-element-border-color);
+    border-radius: var(--form-element-border-radius);
+    cursor: pointer;
+}
+
+.form-file-label-modern::after {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 3;
+    display: block;
+    height: calc(var(--form-element-height) - 2px);
+    padding: var(--form-element-padding-y) var(--space-3);
+    line-height: calc(var(--form-element-height) - 2px - 2 * var(--form-element-padding-y));
+    color: var(--color-gray-600);
+    content: "Browse";
+    background-color: var(--color-gray-100);
+    border-left: inherit;
+    border-radius: 0 var(--form-element-border-radius) var(--form-element-border-radius) 0;
+}
+
+.form-file-input-modern:focus ~ .form-file-label-modern {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-focus-primary);
+}
+
+/* === Form Layout === */
+.form-row-modern {
+    display: flex;
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+}
+
+.form-col-modern {
+    flex: 1;
+    min-width: 0;
+}
+
+.form-col-auto-modern {
+    flex: 0 0 auto;
+    width: auto;
+}
+
+/* === Responsive Design === */
+@media (max-width: 768px) {
+    .form-row-modern {
+        flex-direction: column;
+        gap: var(--space-4);
+    }
+    
+    .form-input-group-text-modern {
+        font-size: var(--font-size-sm);
+        padding: var(--space-2-5) var(--space-2-5);
+    }
+    
+    .form-floating-modern .form-input-modern,
+    .form-floating-modern .form-select-modern,
+    .form-floating-modern .form-textarea-modern {
+        height: calc(3rem + 2px);
+        padding: 0.875rem 0.75rem 0.25rem 0.75rem;
+    }
+}
+
+/* === Performance Optimizations === */
+.form-input-modern,
+.form-select-modern,
+.form-textarea-modern {
+    will-change: auto;
+}
+
+.form-input-modern:focus,
+.form-select-modern:focus,
+.form-textarea-modern:focus {
+    will-change: border-color, box-shadow;
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .form-input-modern,
+    .form-select-modern,
+    .form-textarea-modern,
+    .form-check-input-modern,
+    .form-floating-modern .form-label-modern {
+        transition: none !important;
+    }
+}
+
+/* === High Contrast Mode Support === */
+@media (prefers-contrast: high) {
+    .form-input-modern,
+    .form-select-modern,
+    .form-textarea-modern {
+        border-width: 2px;
+    }
+    
+    .form-check-input-modern {
+        border-width: 2px;
+    }
+}
+
+/* === Print Styles === */
+@media print {
+    .form-input-modern,
+    .form-select-modern,
+    .form-textarea-modern {
+        background: transparent !important;
+        border: 1px solid black !important;
+        box-shadow: none !important;
+    }
+}

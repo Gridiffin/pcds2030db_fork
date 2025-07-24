@@ -55,8 +55,16 @@ $additionalStyles = $additionalStyles ?? [];
     
     <!-- CSS Libraries -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
     
+    <!-- Modern Design System -->
+    <link rel="stylesheet" href="<?php echo APP_URL; ?>/assets/css/design-tokens.css">
+    <link rel="stylesheet" href="<?php echo APP_URL; ?>/assets/css/components/navbar-modern.css">
+    <link rel="stylesheet" href="<?php echo APP_URL; ?>/assets/css/components/footer-modern.css">
+    <link rel="stylesheet" href="<?php echo APP_URL; ?>/assets/css/components/buttons-modern.css">
+    <link rel="stylesheet" href="<?php echo APP_URL; ?>/assets/css/components/cards-modern.css">
+    <link rel="stylesheet" href="<?php echo APP_URL; ?>/assets/css/components/forms-modern.css">
+    <link rel="stylesheet" href="<?php echo APP_URL; ?>/assets/css/modern-compatibility.css">
     
     <!-- Dynamic CSS Bundle (Vite) -->
     <?php if ($cssBundle): ?>
@@ -67,17 +75,16 @@ $additionalStyles = $additionalStyles ?? [];
     <?php foreach ($additionalStyles as $style): ?>
     <link rel="stylesheet" href="<?php echo htmlspecialchars($style); ?>">
     <?php endforeach; ?>
-    
-    <!-- Chart.js (if needed) -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="d-flex flex-column min-vh-100<?php echo isset($bodyClass) ? ' ' . htmlspecialchars($bodyClass) : ''; ?><?php echo isset($pageClass) ? ' ' . htmlspecialchars($pageClass) : ''; ?>">
     <?php
     // Include appropriate navigation based on user role
     if (function_exists('is_admin') && is_admin()) {
-        require_once PROJECT_ROOT_PATH . 'app/views/layouts/admin_nav.php';
+        // Use modern admin navbar
+        require_once PROJECT_ROOT_PATH . 'app/views/layouts/admin-navbar-modern.php';
     } elseif (function_exists('is_agency') && is_agency()) {
-        require_once PROJECT_ROOT_PATH . 'app/views/layouts/agency_nav.php';
+        // Use modern navbar for agency users
+        require_once PROJECT_ROOT_PATH . 'app/views/layouts/navbar-modern.php';
     }
     
     // Include page header if not explicitly disabled
@@ -107,20 +114,105 @@ $additionalStyles = $additionalStyles ?? [];
     <?php endif; ?>
     
     <!-- Footer -->
-    <?php if (file_exists(PROJECT_ROOT_PATH . 'app/views/layouts/footer.php')): ?>
+    <?php if (file_exists(PROJECT_ROOT_PATH . 'app/views/layouts/footer-modern.php')): ?>
+        <?php require_once PROJECT_ROOT_PATH . 'app/views/layouts/footer-modern.php'; ?>
+    <?php elseif (file_exists(PROJECT_ROOT_PATH . 'app/views/layouts/footer.php')): ?>
         <?php require_once PROJECT_ROOT_PATH . 'app/views/layouts/footer.php'; ?>
     <?php endif; ?>
     
     <!-- JavaScript Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+
+    <!-- Chart.js - Ensure it's always loaded before dashboard scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+
+    <!-- Utility scripts -->
+    <?php if (function_exists('asset_url')): ?>
+    <script src="<?php echo asset_url('js/utilities', 'rating_utils.js'); ?>"></script>
+    <script src="<?php echo asset_url('js/utilities', 'dropdown_init.js'); ?>"></script>
+    <script src="<?php echo asset_url('js/utilities', 'mobile_dropdown_position.js'); ?>"></script>
+    <script src="<?php echo asset_url('js/utilities', 'initialization.js'); ?>"></script>
+    <script src="<?php echo asset_url('js/utilities', 'form_utils.js'); ?>"></script>
+    <script src="<?php echo asset_url('js/utilities', 'filter_utils.js'); ?>"></script>
+    <?php else: ?>
+    <script src="<?php echo APP_URL; ?>/assets/js/utilities/rating_utils.js"></script>
+    <script src="<?php echo APP_URL; ?>/assets/js/utilities/dropdown_init.js"></script>
+    <script src="<?php echo APP_URL; ?>/assets/js/utilities/mobile_dropdown_position.js"></script>
+    <script src="<?php echo APP_URL; ?>/assets/js/utilities/initialization.js"></script>
+    <script src="<?php echo APP_URL; ?>/assets/js/utilities/form_utils.js"></script>
+    <script src="<?php echo APP_URL; ?>/assets/js/utilities/filter_utils.js"></script>
+    <?php endif; ?>
+    
+    <!-- Core App JavaScript -->
+    <script>
+        // Handle preloader
+        window.addEventListener('load', function() {
+            const preloader = document.getElementById('preloader');
+            if (preloader) {
+                preloader.classList.add('preloader-hide');
+                setTimeout(() => {
+                    preloader.style.display = 'none';
+                }, 300);
+            }
+        });
+    </script>
     
     <!-- Dynamic JS Bundle (Vite) -->
     <?php if ($jsBundle): ?>
     <script type="module" src="<?php echo APP_URL; ?>/dist/js/<?php echo htmlspecialchars($jsBundle); ?>.bundle.js"></script>
     <?php endif; ?>
     
-    <!-- Additional JavaScript Files -->
-    <?php foreach ($additionalScripts as $script): ?>
-    <script src="<?php echo htmlspecialchars($script); ?>"></script>
-    <?php endforeach; ?>
+    <!-- Additional page-specific scripts -->
+    <?php if (isset($additionalScripts) && is_array($additionalScripts)): ?>
+        <?php foreach($additionalScripts as $script): ?>
+            <?php if (strpos($script, 'http') === 0 || strpos($script, '//') === 0): ?>
+                <!-- External script -->
+                <script src="<?php echo $script; ?>"></script>
+            <?php elseif (strpos($script, 'asset_url') !== false || strpos($script, 'APP_URL') !== false): ?>
+                <!-- Script already using helper functions -->
+                <script src="<?php echo $script; ?>"></script>
+            <?php else: ?>
+                <!-- Convert relative path to asset_url -->
+                <?php
+                    // Extract path parts
+                    $pathParts = explode('/', $script);
+                    $filename = array_pop($pathParts);
+                    $directory = implode('/', $pathParts);
+                    // Remove 'assets/' prefix if present
+                    $directory = str_replace('assets/', '', $directory);
+                ?>
+                <?php if (function_exists('asset_url')): ?>
+                <script src="<?php echo asset_url($directory, $filename); ?>"></script>
+                <?php else: ?>
+                <script src="<?php echo APP_URL; ?>/assets/<?php echo $script; ?>"></script>
+                <?php endif; ?>
+            <?php endif; ?>
+        <?php endforeach; ?>
+    <?php endif; ?>
+
+    <!-- Inline page-specific scripts -->
+    <?php if (isset($inlineScripts)): ?>
+    <script>
+        <?php echo $inlineScripts; ?>
+    </script>
+    <?php endif; ?>
+
+    <!-- Fallback: Force Bootstrap dropdown re-initialization if needed -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof bootstrap !== 'undefined' && typeof bootstrap.Dropdown !== 'undefined') {
+            document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(function(dropdownToggleEl) {
+                if (!bootstrap.Dropdown.getInstance(dropdownToggleEl)) {
+                    new bootstrap.Dropdown(dropdownToggleEl);
+                }
+            });
+        }
+    });
+    </script>
+
+    <!-- Toast container for notifications -->
+    <div id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3" aria-live="polite" aria-atomic="true"></div>
+
 </body>
 </html>
