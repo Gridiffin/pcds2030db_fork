@@ -1227,8 +1227,9 @@ function handleFormSubmission(form, submitter) {
             window.location.href =
               window.APP_URL + "/app/views/admin/programs/programs.php";
           } else {
+            // Redirect to view programs for agency users
             window.location.href =
-              window.APP_URL + "/app/views/admin/programs/programs.php";
+              window.APP_URL + "/app/views/agency/programs/view_programs.php";
           }
           return;
         }

@@ -39,10 +39,10 @@
                 <small class="text-muted d-block mt-1">Select and view a progress report by quarter</small>
             </div>
             <div class="col-md-6 mb-3">
-                <button type="button" class="btn-modern btn-outline-danger-modern w-100" data-bs-toggle="modal" data-bs-target="#deleteSubmissionModal">
-                    <i class="fas fa-trash me-2"></i>Delete Submission
+                <button type="button" class="btn-modern btn-outline-danger-modern w-100" data-bs-toggle="modal" data-bs-target="#deleteProgramModal">
+                    <i class="fas fa-trash me-2"></i>Delete Program
                 </button>
-                <small class="text-muted d-block mt-1">Delete a draft or latest progress report for this program</small>
+                <small class="text-muted d-block mt-1">Permanently delete this program and all its data</small>
             </div>
             <?php endif; ?>
         </div>

@@ -114,6 +114,51 @@
 </div>
 <?php endif; ?>
 
+<!-- Delete Program Modal -->
+<?php if ($can_edit): ?>
+<div class="modal fade" id="deleteProgramModal" tabindex="-1" aria-labelledby="deleteProgramModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteProgramModalLabel">Delete Program</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Warning:</strong> This action cannot be undone and will permanently delete all program data.
+                </div>
+                
+                <p>Are you sure you want to delete this program?</p>
+                <p><strong>Program:</strong> <?php echo htmlspecialchars($program['program_name'] ?? 'Unknown'); ?></p>
+                
+                <div class="program-info bg-light p-3 rounded">
+                    <h6>This will permanently remove:</h6>
+                    <ul class="mb-0">
+                        <li>All program submissions and progress data</li>
+                        <li>All associated targets and achievements</li>
+                        <li>All file attachments and documents</li>
+                        <li>All historical audit records</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="delete-program-confirm-btn">
+                    <i class="fas fa-trash me-2"></i>Delete Program
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden form for program deletion -->
+<form action="<?php echo APP_URL; ?>/app/views/agency/programs/delete_program.php" method="post" id="delete-program-details-form" style="display:none;">
+    <input type="hidden" name="program_id" value="<?php echo $program['program_id']; ?>">
+    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
+</form>
+<?php endif; ?>
+
 <!-- Delete Submission Modal -->
 <?php if ($has_submissions && $can_edit): ?>
 <div class="modal fade" id="deleteSubmissionModal" tabindex="-1" aria-labelledby="deleteSubmissionModalLabel" aria-hidden="true">

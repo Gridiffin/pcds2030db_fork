@@ -424,8 +424,13 @@ function initDeleteButtons() {
     
     const programNameDisplay = document.getElementById('program-name-display');
     const programIdInput = document.getElementById('program-id-input');
+    const continueBtn = document.getElementById('delete-continue-btn');
+    const confirmBtn = document.getElementById('delete-confirm-btn');
+    const deleteStep1 = document.getElementById('deleteStep1');
+    const deleteStep2 = document.getElementById('deleteStep2');
+    const deleteForm = document.getElementById('delete-program-form');
     
-    if (!programNameDisplay || !programIdInput) return;
+    if (!programNameDisplay || !programIdInput || !continueBtn || !confirmBtn || !deleteStep1 || !deleteStep2 || !deleteForm) return;
     
     deleteButtons.forEach(button => {
         button.addEventListener('click', function() {
@@ -440,10 +445,31 @@ function initDeleteButtons() {
             programNameDisplay.textContent = programName;
             programIdInput.value = programId;
             
+            // Reset modal to step 1
+            deleteStep1.style.display = 'block';
+            deleteStep2.style.display = 'none';
+            continueBtn.style.display = 'inline-block';
+            confirmBtn.style.display = 'none';
+            
             // Show the modal
             const bsModal = new bootstrap.Modal(modal);
             bsModal.show();
         });
+    });
+    
+    // Handle Continue button click
+    continueBtn.addEventListener('click', function() {
+        // Move to step 2
+        deleteStep1.style.display = 'none';
+        deleteStep2.style.display = 'block';
+        continueBtn.style.display = 'none';
+        confirmBtn.style.display = 'inline-block';
+    });
+    
+    // Handle final confirmation
+    confirmBtn.addEventListener('click', function() {
+        // Submit the delete form
+        deleteForm.submit();
     });
 }
 

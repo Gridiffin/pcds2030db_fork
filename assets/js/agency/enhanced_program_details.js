@@ -138,6 +138,20 @@ class EnhancedProgramDetails {
         this.handleSubmissionSelection(submissionOption);
       }
     });
+
+    // Add delete program button handler
+    const deleteProgramBtn = document.getElementById("delete-program-confirm-btn");
+    if (deleteProgramBtn) {
+      deleteProgramBtn.addEventListener("click", () => this.handleDeleteProgram());
+    }
+  }
+
+  handleDeleteProgram() {
+    const deleteForm = document.getElementById("delete-program-details-form");
+    if (!deleteForm) return;
+
+    // Submit the form to delete the program
+    deleteForm.submit();
   }
 
   handleDeleteSubmission(submissionId, btn) {
@@ -204,8 +218,8 @@ class EnhancedProgramDetails {
       selectModal.hide();
     }
 
-    // Load submission details and show view modal
-    this.loadSubmissionDetails(submissionId, periodId, periodDisplay, isDraft, submissionDate);
+    // Redirect directly to the view submission page instead of showing modal
+    window.location.href = `view_submissions.php?program_id=${this.programId}&period_id=${periodId}`;
   }
 
   loadSubmissionDetails(submissionId, periodId, periodDisplay, isDraft, submissionDate) {

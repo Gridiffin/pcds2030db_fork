@@ -5,9 +5,9 @@
  * Handles deletion of agency-created programs.
  */
 
-// Define the root path
+// Define project root path for consistent file references
 if (!defined('PROJECT_ROOT_PATH')) {
-    define('PROJECT_ROOT_PATH', rtrim(dirname(dirname(dirname(__DIR__))), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
+    define('PROJECT_ROOT_PATH', dirname(dirname(dirname(dirname(__DIR__)))) . DIRECTORY_SEPARATOR);
 }
 
 // Include necessary files
@@ -66,13 +66,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['program_id'])) {
     $conn->begin_transaction();
     
     try {
-        // Delete program submissions first
+        // Delete related records in the correct order to avoid foreign key constraint violations
+        
+        // 1. Delete program hold points
+        $delete_hold_points = "DELETE FROM program_hold_points WHERE program_id = ?";
+        $stmt = $conn->prepare($delete_hold_points);
+        $stmt->bind_param("i", $program_id);
+        $stmt->execute();
+        
+        // 2. Delete program status history
+        $delete_status_history = "DELETE FROM program_status_history WHERE program_id = ?";
+        $stmt = $conn->prepare($delete_status_history);
+        $stmt->bind_param("i", $program_id);
+        $stmt->execute();
+        
+        // 3. Delete program submissions (these are already handled but keeping for completeness)
         $delete_submissions = "DELETE FROM program_submissions WHERE program_id = ?";
         $stmt = $conn->prepare($delete_submissions);
         $stmt->bind_param("i", $program_id);
         $stmt->execute();
         
-        // Then delete the program
+        // Note: program_user_assignments will be automatically deleted due to ON DELETE CASCADE
+        
+        // 4. Finally delete the program itself
         $delete_program = "DELETE FROM programs WHERE program_id = ?";
         $stmt = $conn->prepare($delete_program);
         $stmt->bind_param("i", $program_id);

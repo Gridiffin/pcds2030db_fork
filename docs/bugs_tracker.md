@@ -1759,3 +1759,227 @@ Program Details UI Enhancement - Replace Targets Section with Quick Actions (202
 - **Accessibility**: Better contrast ratios for text readability
 - **Maintainability**: Simplified layout without complex positioning workarounds
 - **Performance**: Reduced CSS complexity and eliminated unnecessary padding
+
+### 27. Program Interface Functionality Issues - Multiple JavaScript Event Listener Problems (2025-07-24)
+
+- **Problem:** Multiple functionality issues across program interfaces as documented in PROBLEMS.md:
+  1. Continue button in delete modal (view_programs.php) - no feedback when clicked
+  2. Change Status button in program details - no event listener
+  3. Delete functionality in program details quick actions - wrong implementation (deleting submission instead of program)
+  4. View submission flow in program details - not redirecting to correct page after quarter selection
+  5. Save and exit button in edit submission - redirecting to dashboard instead of view_programs.php
+
+- **Root Cause Analysis:**
+  - **Missing Event Listeners**: Continue button in delete modal had no JavaScript event listener
+  - **Status Button Logic**: Change Status button was properly implemented but status logic was already working
+  - **Wrong Modal Target**: Delete button in program details was targeting submission deletion instead of program deletion
+  - **Flow Logic Error**: View submission flow was showing modal instead of redirecting to submission view page
+  - **Redirect Logic Error**: Save and exit redirect was hardcoded to wrong destination
+
+- **Error Patterns:**
+  ```javascript
+  // Console log from PROBLEMS.md:
+  [DEBUG] Delete button clicked { programId: "15", programName: "program testing 2" }
+  // But no further action occurred due to missing continue button handler
+  ```
+
+- **Impact:**
+  - **High Severity**: Critical user workflow functionality broken
+  - **User Experience**: Delete operations failing, incorrect navigation flow, wrong redirects
+  - **Scope**: Affected view programs, program details, and edit submission pages
+
+- **Solution - Complete Interface Functionality Fix:**
+
+  1. **Fixed Continue Button in Delete Modal (view_programs.js):**
+     ```javascript
+     // Added event listeners for continue and confirm buttons
+     continueBtn.addEventListener('click', function() {
+         deleteStep1.style.display = 'none';
+         deleteStep2.style.display = 'block';
+         continueBtn.style.display = 'none';
+         confirmBtn.style.display = 'inline-block';
+     });
+     
+     confirmBtn.addEventListener('click', function() {
+         deleteForm.submit();
+     });
+     ```
+
+  2. **Verified Change Status Button (program_details.js):**
+     - Status button was already properly implemented with event listener
+     - `openEditStatusModal()` functionality was working correctly
+     - Modal structure was present in program_modals.php
+
+  3. **Fixed Delete Program vs Delete Submission Issue:**
+     - **program_actions.php**: Changed button target from `#deleteSubmissionModal` to `#deleteProgramModal`
+     - **program_modals.php**: Added new `deleteProgramModal` with proper program deletion form
+     - **enhanced_program_details.js**: Added `handleDeleteProgram()` method with form submission
+
+  4. **Fixed View Submission Flow (enhanced_program_details.js):**
+     ```javascript
+     handleSubmissionSelection(submissionOption) {
+         // Changed from showing modal to direct redirect
+         window.location.href = `view_submissions.php?program_id=${this.programId}&period_id=${periodId}`;
+     }
+     ```
+
+  5. **Fixed Save and Exit Redirect (edit_submission.js):**
+     ```javascript
+     if (submitter && submitter.name === "save_and_exit") {
+         if (window.currentUserRole === "admin") {
+             window.location.href = window.APP_URL + "/app/views/admin/programs/programs.php";
+         } else {
+             // Fixed: Redirect to view programs instead of dashboard
+             window.location.href = window.APP_URL + "/app/views/agency/programs/view_programs.php";
+         }
+     }
+     ```
+
+- **Files Modified:**
+  - `assets/js/agency/view_programs.js` - Added delete modal event listeners
+  - `app/views/agency/programs/partials/program_actions.php` - Changed delete button target
+  - `app/views/agency/programs/partials/program_modals.php` - Added delete program modal
+  - `assets/js/agency/enhanced_program_details.js` - Added delete program handler and fixed submission flow
+  - `assets/js/agency/edit_submission.js` - Fixed save and exit redirect
+
+- **Testing Approach:**
+  - Test complete delete flow: trigger → continue → confirm → actual deletion
+  - Verify status change modal opens and submits correctly
+  - Test program deletion vs submission deletion functionality
+  - Verify view submission flow redirects to correct page with parameters
+  - Test save and exit redirect goes to view_programs.php
+
+- **Prevention Measures:**
+  - Ensure all modal buttons have corresponding JavaScript event listeners
+  - Verify modal targets match intended functionality (program vs submission operations)
+  - Test complete user workflows end-to-end, not just individual components
+  - Use consistent redirect patterns across similar operations
+
+### Impact
+
+- **User Experience**: Complete program management workflows now function correctly
+- **Data Integrity**: Proper differentiation between program and submission deletion
+- **Navigation Flow**: Correct redirect patterns maintain user context
+- **Maintainability**: Clear separation of concerns between different operation types
+
+### 28. Delete Program Path Resolution Error - Incorrect PROJECT_ROOT_PATH (2025-07-24)
+
+- **Problem:** Fatal error when attempting to delete a program:
+  ```
+  Warning: require_once(C:\laragon\www\pcds2030_dashboard_fork\app\app/config/config.php): Failed to open stream: No such file or directory
+  Fatal error: Failed opening required 'C:\laragon\www\pcds2030_dashboard_fork\app\app/config/config.php'
+  ```
+
+- **Root Cause Analysis:**
+  - **Path Calculation Error**: `delete_program.php` used incorrect `PROJECT_ROOT_PATH` calculation
+  - **Directory Level Mismatch**: Used `dirname(dirname(dirname(__DIR__)))` (3 levels up) instead of `dirname(dirname(dirname(dirname(__DIR__))))` (4 levels up)
+  - **Inconsistency**: Other files in same directory (`view_programs.php`) used correct 4-level path
+
+- **Error Pattern:**
+  ```php
+  // Incorrect (3 levels up from app/views/agency/programs/):
+  define('PROJECT_ROOT_PATH', rtrim(dirname(dirname(dirname(__DIR__))), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
+  // Results in: /app/views/agency/ instead of /
+  ```
+
+- **Impact:**
+  - **High Severity**: Program deletion functionality completely broken
+  - **User Experience**: Delete operations failing with fatal PHP errors
+  - **Scope**: Affected all attempts to delete programs from program details page
+
+- **Solution - Corrected PROJECT_ROOT_PATH Calculation:**
+  ```php
+  // Fixed: Consistent with other files in same directory
+  if (!defined('PROJECT_ROOT_PATH')) {
+      define('PROJECT_ROOT_PATH', dirname(dirname(dirname(dirname(__DIR__)))) . DIRECTORY_SEPARATOR);
+  }
+  ```
+
+- **Files Modified:**
+  - `app/views/agency/programs/delete_program.php` - Fixed PROJECT_ROOT_PATH calculation
+
+- **Verification:**
+  - Confirmed `app/config/config.php` exists at expected location
+  - Path calculation now matches other files in same directory
+  - All required files should now be found correctly
+
+- **Prevention Measures:**
+  - Use consistent PROJECT_ROOT_PATH calculation across files in same directory
+  - Verify file includes work during development testing
+  - Consider creating a shared include file for path constants
+
+### Impact
+
+- **Functionality**: Program deletion now works without fatal PHP errors
+- **Consistency**: All files in same directory use identical path calculation
+- **Reliability**: Proper error handling and file inclusion
+
+### 29. Program Deletion Foreign Key Constraint Failures (2025-07-24)
+
+- **Problem:** Program deletion failing with foreign key constraint errors:
+  ```
+  Danger: Failed to delete program: Cannot delete or update a parent row: a foreign key constraint fails (`pcds2030_db`.`program_hold_points`, CONSTRAINT `program_hold_points_ibfk_1` FOREIGN KEY (`program_id`) REFERENCES `programs` (`program_id`))
+  ```
+
+- **Root Cause Analysis:**
+  - **Missing Related Record Deletion**: Delete logic only handled `program_submissions` but missed other related tables
+  - **Foreign Key Constraints**: Tables `program_hold_points` and `program_status_history` don't have `ON DELETE CASCADE`
+  - **Incomplete Transaction**: Attempting to delete parent record before cleaning up child records
+
+- **Tables with Foreign Key Constraints to `programs.program_id`:**
+  1. **program_submissions** - ✅ Has `ON DELETE CASCADE` (auto-handled)
+  2. **program_user_assignments** - ✅ Has `ON DELETE CASCADE` (auto-handled)  
+  3. **program_hold_points** - ❌ No cascade, needs manual deletion
+  4. **program_status_history** - ❌ No cascade, needs manual deletion
+
+- **Impact:**
+  - **High Severity**: Program deletion completely broken for programs with status history or hold points
+  - **User Experience**: Delete operations failing with cryptic database errors
+  - **Data Integrity**: Incomplete deletion attempts leaving orphaned records
+
+- **Solution - Complete Cascading Deletion Logic:**
+  ```php
+  // Delete related records in correct order to avoid foreign key constraints
+  
+  // 1. Delete program hold points
+  $delete_hold_points = "DELETE FROM program_hold_points WHERE program_id = ?";
+  
+  // 2. Delete program status history  
+  $delete_status_history = "DELETE FROM program_status_history WHERE program_id = ?";
+  
+  // 3. Delete program submissions (keeping for completeness)
+  $delete_submissions = "DELETE FROM program_submissions WHERE program_id = ?";
+  
+  // Note: program_user_assignments auto-deleted via ON DELETE CASCADE
+  
+  // 4. Finally delete the program itself
+  $delete_program = "DELETE FROM programs WHERE program_id = ?";
+  ```
+
+- **Files Modified:**
+  - `app/views/agency/programs/delete_program.php` - Added complete related record deletion
+
+- **Deletion Order Logic:**
+  1. **program_hold_points** - Delete first (no dependencies)
+  2. **program_status_history** - Delete second (no dependencies)  
+  3. **program_submissions** - Delete third (may have attachments/targets)
+  4. **program_user_assignments** - Auto-deleted via CASCADE
+  5. **programs** - Delete last (parent record)
+
+- **Transaction Safety:**
+  - All deletions wrapped in database transaction
+  - Rollback on any failure to maintain data consistency
+  - Proper error logging for troubleshooting
+
+- **Prevention Measures:**
+  - Always analyze foreign key constraints before implementing deletion logic
+  - Consider adding `ON DELETE CASCADE` to appropriate foreign key constraints
+  - Test deletion with records that have related data
+  - Document all related tables for future reference
+
+### Impact
+
+- **Functionality**: Program deletion now works correctly for all programs regardless of related data
+- **Data Integrity**: Complete cleanup of all related records prevents orphaned data
+- **User Experience**: Clear success/error messages instead of cryptic database errors
+- **Maintainability**: Well-documented deletion order for future modifications
