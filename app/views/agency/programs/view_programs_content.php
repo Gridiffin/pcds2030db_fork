@@ -31,28 +31,26 @@
             </div>
         </div>
 
-        <!-- Tab Navigation -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-header p-0">
-                <nav class="nav nav-tabs card-header-tabs" id="programTabs" role="tablist">
-                    <button class="nav-link active" id="draft-tab" data-bs-toggle="tab" data-bs-target="#draft-programs" type="button" role="tab" aria-controls="draft-programs" aria-selected="true">
-                        <i class="fas fa-edit text-warning me-2"></i>
-                        Draft Submissions
-                        <span class="badge bg-warning text-dark ms-2"><?php echo count($programs_with_drafts); ?></span>
-                    </button>
-                    <button class="nav-link" id="finalized-tab" data-bs-toggle="tab" data-bs-target="#finalized-programs" type="button" role="tab" aria-controls="finalized-programs" aria-selected="false">
-                        <i class="fas fa-check-circle text-success me-2"></i>
-                        Finalized Submissions
-                        <span class="badge bg-success ms-2"><?php echo count($programs_with_submissions); ?></span>
-                    </button>
-                    <button class="nav-link" id="templates-tab" data-bs-toggle="tab" data-bs-target="#template-programs" type="button" role="tab" aria-controls="template-programs" aria-selected="false">
-                        <i class="fas fa-folder-open text-info me-2"></i>
-                        Program Templates
-                        <span class="badge bg-info ms-2"><?php echo count($programs_without_submissions); ?></span>
-                    </button>
-                </nav>
-            </div>
-            
+        <!-- Tab Navigation - Pill Design -->
+        <div class="pill-tabs-container forest-theme mb-3">
+            <nav class="nav-tabs-pill" id="programTabs" role="tablist">
+                <button class="nav-link active" id="draft-tab" data-bs-toggle="tab" data-bs-target="#draft-programs" type="button" role="tab" aria-controls="draft-programs" aria-selected="true">
+                    Draft Submissions
+                    <span class="simple-badge"><?php echo count($programs_with_drafts); ?></span>
+                </button>
+                <button class="nav-link" id="finalized-tab" data-bs-toggle="tab" data-bs-target="#finalized-programs" type="button" role="tab" aria-controls="finalized-programs" aria-selected="false">
+                    Finalized Submissions
+                    <span class="simple-badge"><?php echo count($programs_with_submissions); ?></span>
+                </button>
+                <button class="nav-link" id="templates-tab" data-bs-toggle="tab" data-bs-target="#template-programs" type="button" role="tab" aria-controls="template-programs" aria-selected="false">
+                    Program Templates
+                    <span class="simple-badge"><?php echo count($programs_without_submissions); ?></span>
+                </button>
+            </nav>
+        </div>
+        
+        <!-- Tab Content - Separate Card -->
+        <div class="content-card shadow-sm">
             <div class="tab-content" id="programTabsContent">
 
                 <!-- Draft Programs Tab Pane -->

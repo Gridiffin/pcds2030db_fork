@@ -463,29 +463,97 @@
     }
 }
 
-/* Enhanced Tabs - Bigger and More Visible */
-.card-header {
-    padding: 1.5rem 2rem;
-    background: #f8f9fa;
-    border-bottom: 2px solid #dee2e6;
+/* Pill Tabs Design - Forest Theme */
+.pill-tabs-container {
+    background: rgba(var(--forest-pale-rgb), 0.3);
+    border: 1px solid rgba(var(--forest-light-rgb), 0.4);
+    border-radius: 0.5rem;
+    padding: 0.375rem;
+    display: inline-flex;
+    gap: 0.25rem;
 }
 
-.nav-tabs .nav-link {
-    font-size: 1.1rem;
+.pill-tabs-container.forest-theme {
+    background: rgba(var(--forest-pale-rgb), 0.2);
+    border-color: rgba(var(--forest-light-rgb), 0.3);
+}
+
+/* Pill Tab Navigation */
+.nav-tabs-pill {
+    display: flex;
+    margin: 0;
+    border: none;
+    background: transparent;
+    gap: 0.25rem;
+}
+
+.nav-tabs-pill .nav-link {
+    font-size: 0.875rem;
+    font-weight: 500;
+    padding: 0.5rem 0.75rem;
+    color: var(--forest-deep);
+    border: none;
+    border-radius: 0.375rem;
+    background: transparent;
+    text-decoration: none;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.nav-tabs-pill .nav-link:hover {
+    color: var(--forest-deep);
+    background: rgba(255, 255, 255, 0.6);
+}
+
+.nav-tabs-pill .nav-link.active {
+    color: white;
     font-weight: 600;
-    padding: 1rem 1.5rem;
-    color: #495057;
+    background: var(--forest-deep);
+    box-shadow: 0 1px 3px rgba(var(--forest-deep-rgb), 0.3);
 }
 
-.nav-tabs .nav-link.active {
-    font-weight: 700;
-    color: #007bff;
-    border-bottom-color: #007bff;
+/* Simple Badges for Pills */
+.simple-badge {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.125rem 0.5rem;
+    margin-left: 0.5rem;
+    background: rgba(var(--forest-light-rgb), 0.3);
+    color: var(--forest-deep);
+    border-radius: 1rem;
+    line-height: 1.2;
 }
 
-.nav-tabs .nav-link .badge {
-    font-size: 0.85rem;
-    padding: 0.4rem 0.6rem;
+.nav-tabs-pill .nav-link.active .simple-badge {
+    background: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Content Card (separate from tabs) */
+.content-card {
+    background: white;
+    border: 1px solid #d1d9e0;
+    border-radius: 0.5rem;
+}
+
+/* Pill Tabs Responsive Design */
+@media (max-width: 768px) {
+    .pill-tabs-container {
+        padding: 0.25rem;
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .nav-tabs-pill .nav-link {
+        padding: 0.5rem 0.5rem;
+        font-size: 0.8rem;
+    }
+    
+    .simple-badge {
+        font-size: 0.7rem;
+        padding: 0.1rem 0.4rem;
+    }
 }
 
 /* Enhanced Responsive Design */
