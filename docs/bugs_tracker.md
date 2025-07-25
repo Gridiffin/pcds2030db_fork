@@ -1,15 +1,106 @@
 # Login Module Refactor - Problems & Solutions Log
 
 **Date:** 2025-07-18  
-**Last Updated:** 2025-07-24
+**Last Updated:** 2025-07-25
 
 ## Recent Bugs Fixed
+
+### 28. Admin Programs Path Issues - Incorrect Include Paths (2025-07-25)
+
+- **Problem:** Multiple admin programs pages throwing "Failed to open stream: No such file or directory" errors causing:
+  - Fatal error on `edit_program.php` trying to include `lib/admins/index.php`
+  - Missing file errors for various admin helper functions
+  - Pages failing to load due to incorrect path references
+- **Root Cause Analysis:**
+  - **Path Inconsistency**: Some files using old `lib/admins/` path instead of correct `app/lib/admins/`
+  - **Mixed Path Constants**: Some files using old `ROOT_PATH` instead of `PROJECT_ROOT_PATH`
+  - **Relative Path Issues**: Some files using relative includes instead of absolute paths
+- **Error Patterns:**
+  ```php
+  // Incorrect paths observed:
+  require_once PROJECT_ROOT_PATH . 'lib/admins/index.php';  // Missing 'app/'
+  require_once ROOT_PATH . 'app/lib/admins/index.php';     // Wrong constant
+  require_once '../../../config/config.php';              // Relative path
+  ```
+- **Impact:**
+  - **High Severity**: Admin program pages completely broken
+  - **Scope**: Multiple admin programs files unable to load
+  - **User Experience**: Fatal errors preventing access to admin functionality
+- **Solution - Path Standardization:**
+  1. **Fixed Include Paths:**
+     - `edit_program.php` - Fixed `lib/admins/` → `app/lib/admins/`
+     - `add_submission.php` - Fixed `lib/admins/` → `app/lib/admins/`
+     - `bulk_assign_initiatives.php` - Fixed `ROOT_PATH` → `PROJECT_ROOT_PATH` and relative includes
+  2. **Standardized Path Pattern:**
+     ```php
+     // Correct pattern for all admin files:
+     if (!defined('PROJECT_ROOT_PATH')) {
+         define('PROJECT_ROOT_PATH', rtrim(dirname(dirname(dirname(dirname(__DIR__)))), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
+     }
+     require_once PROJECT_ROOT_PATH . 'app/lib/admins/index.php';
+     require_once PROJECT_ROOT_PATH . 'app/lib/initiative_functions.php';
+     ```
+  3. **Files Fixed:**
+     - `app/views/admin/programs/edit_program.php` - Path corrections
+     - `app/views/admin/programs/add_submission.php` - Path corrections
+     - `app/views/admin/programs/bulk_assign_initiatives.php` - Complete path refactor
+- **Prevention:** Use consistent `PROJECT_ROOT_PATH` constant throughout admin files. Always use absolute paths with proper `app/lib/` prefix for library includes.
+- **Related Issues**: Part of ongoing admin interface stabilization following modal fixes (Bug #27).
+
+### 27. Admin Programs Modal Not Working - Missing main.js Import (2025-07-25)
+
+- **Problem:** Modal functionality not working on admin programs page causing:
+  - Delete confirmation modal not opening when clicking delete buttons
+  - More actions modal not functioning properly
+  - Missing shared utilities like showToast function
+- **Root Cause Analysis:**
+  - **Bundle Architecture Issue**: Admin programs bundle `admin-programs.js` didn't include `main.js` which contains essential shared utilities
+  - **Import Gap**: Admin JavaScript entry point lacked imports for shared utilities (same pattern as Bug #26 for agency pages)
+  - **Modal Dependencies**: Modal functionality relies on shared utilities that weren't being loaded
+- **Error Patterns:**
+  ```javascript
+  // Expected console errors (similar to agency pages):
+  ReferenceError: showToast is not defined
+  // Modal clicks not triggering proper functionality
+  ```
+- **Impact:**
+  - **High Severity**: Critical admin functionality broken
+  - **User Experience**: Admin cannot delete programs or use modal interactions
+  - **Scope**: Affected admin programs management page
+- **Solution - Admin Bundle Fix:**
+  1. **Added main.js Import to Admin Entry Point:**
+     - `assets/js/admin/programs.js` - Added `import '../main.js'` for shared utilities
+     - Added `import './programs_delete.js'` for specific delete modal functionality
+  2. **Updated Bundle Structure:**
+
+     ```javascript
+     // Before: Only bootstrap modal fix
+     import "./bootstrap_modal_fix.js";
+
+     // After: Complete functionality
+     import "../main.js"; // Essential shared utilities (showToast, etc.)
+     import "./bootstrap_modal_fix.js";
+     import "./programs_delete.js"; // Delete modal functionality
+     ```
+
+  3. **Rebuilt Vite Bundles:**
+     - Admin programs bundle now includes all necessary utilities
+     - Bundle properly sized with shared utilities
+- **Files Modified:**
+  - **JavaScript Entry Point**: `assets/js/admin/programs.js` updated with main.js import
+  - **Vite Bundles**: Rebuilt admin-programs bundle with updated dependencies
+- **Testing:**
+  - ✅ Created `test_admin_modal.php` for verification
+  - ✅ Modal functionality should now work properly
+  - ✅ Admin programs bundle includes showToast access
+- **Prevention:** Ensure all admin bundle entry points import shared utilities following the same pattern established for agency bundles in Bug #26.
+- **Related Issues**: Follows same fix pattern as Bug #26 - missing main.js imports causing JavaScript functionality failures.
 
 ### 26. Agency JavaScript showToast Errors - Missing Global Function Access (2025-07-24)
 
 - **Problem:** Multiple agency pages throwing `ReferenceError: showToast is not defined` errors causing:
   - Save as draft button not working in edit submission page
-  - Delete button failures in view programs page  
+  - Delete button failures in view programs page
   - Change status button not working in program details page
   - Missing getStatusInfo method in EnhancedProgramDetails class
 - **Root Cause Analysis:**
@@ -76,11 +167,11 @@
   - **Solution**: Added polling mechanism to wait for global functions:
     ```javascript
     function waitForToastFunctions() {
-        if (typeof window.showToastWithAction === 'function') {
-            // Execute toast call
-        } else {
-            setTimeout(waitForToastFunctions, 100);
-        }
+      if (typeof window.showToastWithAction === "function") {
+        // Execute toast call
+      } else {
+        setTimeout(waitForToastFunctions, 100);
+      }
     }
     ```
   - **Files Fixed**: All program partial files with inline showToast calls
@@ -1707,16 +1798,19 @@ Program Details UI Enhancement - Replace Targets Section with Quick Actions (202
 ### Solution
 
 1. **Converted Navbar to Sticky Positioning**:
+
    - Changed navbar from `position: fixed` to `position: sticky` in `navigation.css`
    - Added `top: 0` for sticky behavior when scrolling
    - Eliminated the need for body padding-top compensation
 
 2. **Adjusted Header Padding**:
+
    - Added appropriate top padding (`1rem 0 1.5rem`) for sticky navbar
    - Updated responsive breakpoints: `0.75rem 0 1rem` for tablet, `0.5rem 0 0.75rem` for mobile
    - Maintained proper spacing without excessive padding
 
 3. **Improved Text Contrast**:
+
    - Ensured all header text elements use white color for better visibility
    - Maintained theme variants (light, dark, primary, secondary) with proper contrast
    - Updated breadcrumb separators and hover states for consistency
@@ -1763,6 +1857,7 @@ Program Details UI Enhancement - Replace Targets Section with Quick Actions (202
 ### 27. Program Interface Functionality Issues - Multiple JavaScript Event Listener Problems (2025-07-24)
 
 - **Problem:** Multiple functionality issues across program interfaces as documented in PROBLEMS.md:
+
   1. Continue button in delete modal (view_programs.php) - no feedback when clicked
   2. Change Status button in program details - no event listener
   3. Delete functionality in program details quick actions - wrong implementation (deleting submission instead of program)
@@ -1770,6 +1865,7 @@ Program Details UI Enhancement - Replace Targets Section with Quick Actions (202
   5. Save and exit button in edit submission - redirecting to dashboard instead of view_programs.php
 
 - **Root Cause Analysis:**
+
   - **Missing Event Listeners**: Continue button in delete modal had no JavaScript event listener
   - **Status Button Logic**: Change Status button was properly implemented but status logic was already working
   - **Wrong Modal Target**: Delete button in program details was targeting submission deletion instead of program deletion
@@ -1777,6 +1873,7 @@ Program Details UI Enhancement - Replace Targets Section with Quick Actions (202
   - **Redirect Logic Error**: Save and exit redirect was hardcoded to wrong destination
 
 - **Error Patterns:**
+
   ```javascript
   // Console log from PROBLEMS.md:
   [DEBUG] Delete button clicked { programId: "15", programName: "program testing 2" }
@@ -1784,6 +1881,7 @@ Program Details UI Enhancement - Replace Targets Section with Quick Actions (202
   ```
 
 - **Impact:**
+
   - **High Severity**: Critical user workflow functionality broken
   - **User Experience**: Delete operations failing, incorrect navigation flow, wrong redirects
   - **Scope**: Affected view programs, program details, and edit submission pages
@@ -1791,31 +1889,35 @@ Program Details UI Enhancement - Replace Targets Section with Quick Actions (202
 - **Solution - Complete Interface Functionality Fix:**
 
   1. **Fixed Continue Button in Delete Modal (view_programs.js):**
+
      ```javascript
      // Added event listeners for continue and confirm buttons
-     continueBtn.addEventListener('click', function() {
-         deleteStep1.style.display = 'none';
-         deleteStep2.style.display = 'block';
-         continueBtn.style.display = 'none';
-         confirmBtn.style.display = 'inline-block';
+     continueBtn.addEventListener("click", function () {
+       deleteStep1.style.display = "none";
+       deleteStep2.style.display = "block";
+       continueBtn.style.display = "none";
+       confirmBtn.style.display = "inline-block";
      });
-     
-     confirmBtn.addEventListener('click', function() {
-         deleteForm.submit();
+
+     confirmBtn.addEventListener("click", function () {
+       deleteForm.submit();
      });
      ```
 
   2. **Verified Change Status Button (program_details.js):**
+
      - Status button was already properly implemented with event listener
      - `openEditStatusModal()` functionality was working correctly
      - Modal structure was present in program_modals.php
 
   3. **Fixed Delete Program vs Delete Submission Issue:**
+
      - **program_actions.php**: Changed button target from `#deleteSubmissionModal` to `#deleteProgramModal`
      - **program_modals.php**: Added new `deleteProgramModal` with proper program deletion form
      - **enhanced_program_details.js**: Added `handleDeleteProgram()` method with form submission
 
   4. **Fixed View Submission Flow (enhanced_program_details.js):**
+
      ```javascript
      handleSubmissionSelection(submissionOption) {
          // Changed from showing modal to direct redirect
@@ -1826,16 +1928,19 @@ Program Details UI Enhancement - Replace Targets Section with Quick Actions (202
   5. **Fixed Save and Exit Redirect (edit_submission.js):**
      ```javascript
      if (submitter && submitter.name === "save_and_exit") {
-         if (window.currentUserRole === "admin") {
-             window.location.href = window.APP_URL + "/app/views/admin/programs/programs.php";
-         } else {
-             // Fixed: Redirect to view programs instead of dashboard
-             window.location.href = window.APP_URL + "/app/views/agency/programs/view_programs.php";
-         }
+       if (window.currentUserRole === "admin") {
+         window.location.href =
+           window.APP_URL + "/app/views/admin/programs/programs.php";
+       } else {
+         // Fixed: Redirect to view programs instead of dashboard
+         window.location.href =
+           window.APP_URL + "/app/views/agency/programs/view_programs.php";
+       }
      }
      ```
 
 - **Files Modified:**
+
   - `assets/js/agency/view_programs.js` - Added delete modal event listeners
   - `app/views/agency/programs/partials/program_actions.php` - Changed delete button target
   - `app/views/agency/programs/partials/program_modals.php` - Added delete program modal
@@ -1843,6 +1948,7 @@ Program Details UI Enhancement - Replace Targets Section with Quick Actions (202
   - `assets/js/agency/edit_submission.js` - Fixed save and exit redirect
 
 - **Testing Approach:**
+
   - Test complete delete flow: trigger → continue → confirm → actual deletion
   - Verify status change modal opens and submits correctly
   - Test program deletion vs submission deletion functionality
@@ -1865,17 +1971,20 @@ Program Details UI Enhancement - Replace Targets Section with Quick Actions (202
 ### 28. Delete Program Path Resolution Error - Incorrect PROJECT_ROOT_PATH (2025-07-24)
 
 - **Problem:** Fatal error when attempting to delete a program:
+
   ```
   Warning: require_once(C:\laragon\www\pcds2030_dashboard_fork\app\app/config/config.php): Failed to open stream: No such file or directory
   Fatal error: Failed opening required 'C:\laragon\www\pcds2030_dashboard_fork\app\app/config/config.php'
   ```
 
 - **Root Cause Analysis:**
+
   - **Path Calculation Error**: `delete_program.php` used incorrect `PROJECT_ROOT_PATH` calculation
   - **Directory Level Mismatch**: Used `dirname(dirname(dirname(__DIR__)))` (3 levels up) instead of `dirname(dirname(dirname(dirname(__DIR__))))` (4 levels up)
   - **Inconsistency**: Other files in same directory (`view_programs.php`) used correct 4-level path
 
 - **Error Pattern:**
+
   ```php
   // Incorrect (3 levels up from app/views/agency/programs/):
   define('PROJECT_ROOT_PATH', rtrim(dirname(dirname(dirname(__DIR__))), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
@@ -1883,11 +1992,13 @@ Program Details UI Enhancement - Replace Targets Section with Quick Actions (202
   ```
 
 - **Impact:**
+
   - **High Severity**: Program deletion functionality completely broken
   - **User Experience**: Delete operations failing with fatal PHP errors
   - **Scope**: Affected all attempts to delete programs from program details page
 
 - **Solution - Corrected PROJECT_ROOT_PATH Calculation:**
+
   ```php
   // Fixed: Consistent with other files in same directory
   if (!defined('PROJECT_ROOT_PATH')) {
@@ -1896,9 +2007,11 @@ Program Details UI Enhancement - Replace Targets Section with Quick Actions (202
   ```
 
 - **Files Modified:**
+
   - `app/views/agency/programs/delete_program.php` - Fixed PROJECT_ROOT_PATH calculation
 
 - **Verification:**
+
   - Confirmed `app/config/config.php` exists at expected location
   - Path calculation now matches other files in same directory
   - All required files should now be found correctly
@@ -1917,56 +2030,64 @@ Program Details UI Enhancement - Replace Targets Section with Quick Actions (202
 ### 29. Program Deletion Foreign Key Constraint Failures (2025-07-24)
 
 - **Problem:** Program deletion failing with foreign key constraint errors:
+
   ```
   Danger: Failed to delete program: Cannot delete or update a parent row: a foreign key constraint fails (`pcds2030_db`.`program_hold_points`, CONSTRAINT `program_hold_points_ibfk_1` FOREIGN KEY (`program_id`) REFERENCES `programs` (`program_id`))
   ```
 
 - **Root Cause Analysis:**
+
   - **Missing Related Record Deletion**: Delete logic only handled `program_submissions` but missed other related tables
   - **Foreign Key Constraints**: Tables `program_hold_points` and `program_status_history` don't have `ON DELETE CASCADE`
   - **Incomplete Transaction**: Attempting to delete parent record before cleaning up child records
 
 - **Tables with Foreign Key Constraints to `programs.program_id`:**
+
   1. **program_submissions** - ✅ Has `ON DELETE CASCADE` (auto-handled)
-  2. **program_user_assignments** - ✅ Has `ON DELETE CASCADE` (auto-handled)  
+  2. **program_user_assignments** - ✅ Has `ON DELETE CASCADE` (auto-handled)
   3. **program_hold_points** - ❌ No cascade, needs manual deletion
   4. **program_status_history** - ❌ No cascade, needs manual deletion
 
 - **Impact:**
+
   - **High Severity**: Program deletion completely broken for programs with status history or hold points
   - **User Experience**: Delete operations failing with cryptic database errors
   - **Data Integrity**: Incomplete deletion attempts leaving orphaned records
 
 - **Solution - Complete Cascading Deletion Logic:**
+
   ```php
   // Delete related records in correct order to avoid foreign key constraints
-  
+
   // 1. Delete program hold points
   $delete_hold_points = "DELETE FROM program_hold_points WHERE program_id = ?";
-  
-  // 2. Delete program status history  
+
+  // 2. Delete program status history
   $delete_status_history = "DELETE FROM program_status_history WHERE program_id = ?";
-  
+
   // 3. Delete program submissions (keeping for completeness)
   $delete_submissions = "DELETE FROM program_submissions WHERE program_id = ?";
-  
+
   // Note: program_user_assignments auto-deleted via ON DELETE CASCADE
-  
+
   // 4. Finally delete the program itself
   $delete_program = "DELETE FROM programs WHERE program_id = ?";
   ```
 
 - **Files Modified:**
+
   - `app/views/agency/programs/delete_program.php` - Added complete related record deletion
 
 - **Deletion Order Logic:**
+
   1. **program_hold_points** - Delete first (no dependencies)
-  2. **program_status_history** - Delete second (no dependencies)  
+  2. **program_status_history** - Delete second (no dependencies)
   3. **program_submissions** - Delete third (may have attachments/targets)
   4. **program_user_assignments** - Auto-deleted via CASCADE
   5. **programs** - Delete last (parent record)
 
 - **Transaction Safety:**
+
   - All deletions wrapped in database transaction
   - Rollback on any failure to maintain data consistency
   - Proper error logging for troubleshooting

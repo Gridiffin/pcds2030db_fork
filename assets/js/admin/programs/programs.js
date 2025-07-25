@@ -192,27 +192,14 @@ function sortTable(table, sortBy, direction) {
 
 /**
  * Initializes the delete confirmation modal.
+ * Note: Only handles modal-triggered deletes now, external delete buttons removed.
  */
 function initializeDeleteModal() {
     const deleteModal = document.getElementById('deleteModal');
     if (!deleteModal) return;
 
-    document.body.addEventListener('click', event => {
-        const deleteButton = event.target.closest('.delete-program-btn');
-        if (deleteButton) {
-            const programId = deleteButton.dataset.id;
-            const programName = deleteButton.dataset.name;
-            
-            const programNameDisplay = deleteModal.querySelector('#program-name-display');
-            const programIdInput = deleteModal.querySelector('#program-id-input');
-
-            if (programNameDisplay) programNameDisplay.textContent = programName;
-            if (programIdInput) programIdInput.value = programId;
-
-            const modal = new bootstrap.Modal(deleteModal);
-            modal.show();
-        }
-    });
+    // The delete modal is now only triggered through triggerDeleteFromModal function
+    // from the "More Actions" modal. No need for click event listeners here.
 }
 
 /**
@@ -309,18 +296,37 @@ function createMoreActionsModalElement() {
  * @param {string} programName - The name of the program to delete.
  */
 function triggerDeleteFromModal(programId, programName) {
+    console.log('triggerDeleteFromModal called with:', { programId, programName });
+    
     const deleteModal = document.getElementById('deleteModal');
-    if (!deleteModal) return;
+    if (!deleteModal) {
+        console.error('Delete modal not found');
+        return;
+    }
 
     const programNameDisplay = deleteModal.querySelector('#program-name-display');
     const programIdInput = deleteModal.querySelector('#program-id-input');
 
-    if (programNameDisplay) programNameDisplay.textContent = programName;
-    if (programIdInput) programIdInput.value = programId;
+    if (programNameDisplay) {
+        programNameDisplay.textContent = programName;
+        console.log('Set program name display to:', programName);
+    } else {
+        console.error('Program name display element not found');
+    }
+    
+    if (programIdInput) {
+        programIdInput.value = programId;
+        console.log('Set program ID input to:', programId);
+    } else {
+        console.error('Program ID input element not found');
+    }
 
     const modal = new bootstrap.Modal(deleteModal);
     modal.show();
 }
+
+// Make function globally accessible immediately
+window.triggerDeleteFromModal = triggerDeleteFromModal;
 
 /**
  * Capitalizes the first letter of a string.

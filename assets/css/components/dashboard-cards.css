@@ -143,29 +143,33 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(to bottom right, rgba(255, 255, 255, 0.03), transparent);
+  background: rgba(255, 255, 255, 0.03); /* Subtle solid overlay instead of gradient */
   z-index: -1;
 }
 
 /* Color variations */
 .stat-card.primary {
-  background: linear-gradient(45deg, #fff, #f8f9fa);
+  background: #fff; /* Solid white background */
   border-left: 4px solid #0d6efd;
+  box-shadow: 0 2px 4px rgba(13, 110, 253, 0.1); /* Subtle colored shadow */
 }
 
 .stat-card.success {
-  background: linear-gradient(45deg, #fff, #f8f9fa);
+  background: #fff; /* Solid white background */
   border-left: 4px solid #28a745;
+  box-shadow: 0 2px 4px rgba(40, 167, 69, 0.1); /* Subtle colored shadow */
 }
 
 .stat-card.warning {
-  background: linear-gradient(45deg, #fff, #f8f9fa);
+  background: #fff; /* Solid white background */
   border-left: 4px solid #ffc107;
+  box-shadow: 0 2px 4px rgba(255, 193, 7, 0.1); /* Subtle colored shadow */
 }
 
 .stat-card.danger {
-  background: linear-gradient(45deg, #fff, #f8f9fa);
+  background: #fff; /* Solid white background */
   border-left: 4px solid #dc3545;
+  box-shadow: 0 2px 4px rgba(220, 53, 69, 0.1); /* Subtle colored shadow */
 }
 
 /* Icon colors for each variation */
@@ -203,7 +207,9 @@
 }
 
 .stat-card.secondary {
-  background: linear-gradient(45deg, #6c757d, #858796); /* Gray - Not Started */
+  background: #6c757d; /* Solid gray background */
+  border-left: 4px solid #6c757d;
+  box-shadow: 0 2px 4px rgba(108, 117, 125, 0.1); /* Subtle colored shadow */
 }
 
 /* Vertical layout variant */

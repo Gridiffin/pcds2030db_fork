@@ -4,15 +4,20 @@
  * Allows admins to assign multiple programs to initiatives at once
  */
 
+// Define the project root path correctly by navigating up from the current file's directory.
+if (!defined('PROJECT_ROOT_PATH')) {
+    define('PROJECT_ROOT_PATH', rtrim(dirname(dirname(dirname(dirname(__DIR__)))), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
+}
+
 // Include necessary files
-require_once '../../../config/config.php';
-require_once ROOT_PATH . 'app/lib/db_connect.php';
-require_once ROOT_PATH . 'app/lib/session.php';
-require_once ROOT_PATH . 'app/lib/functions.php';
-require_once ROOT_PATH . 'app/lib/admins/index.php';
-require_once ROOT_PATH . 'app/lib/initiative_functions.php';
-require_once ROOT_PATH . 'app/lib/audit_log.php';
-require_once ROOT_PATH . 'app/lib/numbering_helpers.php';
+require_once PROJECT_ROOT_PATH . 'app/config/config.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/admins/index.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/initiative_functions.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/audit_log.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/numbering_helpers.php';
 
 // Verify user is admin
 if (!is_admin()) {

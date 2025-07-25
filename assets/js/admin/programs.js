@@ -16,7 +16,9 @@ import '../../css/components/forms.css';
 import '../../css/components/buttons.css';
 import '../../css/components/page-header.css';
 
-// Import JavaScript - Only safe/common files
+// Import JavaScript - Core utilities and functionality
+import '../main.js';  // Essential shared utilities (showToast, etc.)
 import './bootstrap_modal_fix.js';
+import './programs_delete.js';  // Delete modal functionality
 
 console.log('Admin programs bundle loaded');

@@ -182,7 +182,7 @@
     position: absolute;
     top: -5px;
     right: -5px;
-    background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+    background: #dc3545; /* Solid red instead of gradient */
     color: white;
     font-size: 0.625rem;
     font-weight: 700;
@@ -192,6 +192,7 @@
     animation: newBadgePulse 2s infinite;
     text-transform: uppercase;
     letter-spacing: 0.025em;
+    box-shadow: 0 1px 3px rgba(220, 53, 69, 0.3); /* Subtle shadow for depth */
 }
 
 @keyframes newBadgePulse {
