@@ -1,0 +1,1362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horizontal Box Layout with Tabs - Style Guide</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* CSS Variables (Forest Theme) */
+        :root {
+            /* Colors */
+            --color-primary: #22543d;
+            --color-success: #38a169;
+            --color-warning: #d69e2e;
+            --color-danger: #e53e3e;
+            --color-info: #3182ce;
+            --color-secondary: #718096;
+            
+            /* Forest Theme */
+            --forest-ultra-light: #f7fafc;
+            --forest-pale: #edf2f7;
+            --forest-light: #e2e8f0;
+            --forest-medium: #cbd5e0;
+            
+            /* Spacing */
+            --space-1: 0.25rem;
+            --space-2: 0.5rem;
+            --space-3: 0.75rem;
+            --space-4: 1rem;
+            --space-5: 1.25rem;
+            --space-6: 1.5rem;
+            --space-8: 2rem;
+            
+            /* Typography */
+            --font-size-sm: 0.875rem;
+            --font-size-base: 1rem;
+            --font-size-lg: 1.125rem;
+            --font-size-xl: 1.25rem;
+            --font-weight-medium: 500;
+            --font-weight-semibold: 600;
+            --font-weight-bold: 700;
+            
+            /* Layout */
+            --radius-base: 0.5rem;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            
+            /* Transitions */
+            --transition-fast: all 0.15s ease;
+            --transition-base: all 0.3s ease;
+        }
+
+        body {
+            background-color: var(--forest-ultra-light);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #2d3748;
+        }
+
+        /* Tab Navigation */
+        .programs-tabs {
+            background: white;
+            border-radius: var(--radius-base) var(--radius-base) 0 0;
+            border: 1px solid var(--forest-light);
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .tab-nav {
+            display: flex;
+            padding: 0;
+            margin: 0;
+            list-style: none;
+            border-bottom: 1px solid var(--forest-light);
+        }
+
+        .tab-nav-item {
+            flex: 1;
+        }
+
+        .tab-nav-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-2);
+            padding: var(--space-4) var(--space-5);
+            text-decoration: none;
+            color: var(--color-secondary);
+            font-weight: var(--font-weight-medium);
+            border-bottom: 3px solid transparent;
+            transition: var(--transition-fast);
+            position: relative;
+        }
+
+        .tab-nav-link:hover {
+            color: var(--color-primary);
+            background-color: var(--forest-ultra-light);
+        }
+
+        .tab-nav-link.active {
+            color: var(--color-primary);
+            border-bottom-color: var(--color-primary);
+            background-color: white;
+        }
+
+        .tab-count {
+            background: var(--color-secondary);
+            color: white;
+            font-size: var(--font-size-sm);
+            padding: var(--space-1) var(--space-2);
+            border-radius: 50px;
+            min-width: 24px;
+            text-align: center;
+            font-weight: var(--font-weight-semibold);
+        }
+
+        .tab-nav-link.active .tab-count {
+            background: var(--color-primary);
+        }
+
+        /* Tab Content */
+        .tab-content {
+            background: white;
+            border: 1px solid var(--forest-light);
+            border-top: none;
+            border-radius: 0 0 var(--radius-base) var(--radius-base);
+            min-height: 600px;
+        }
+
+        .tab-pane {
+            display: none;
+            padding: var(--space-6);
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        /* Program Box (Horizontal Layout) */
+        .program-box {
+            background: white;
+            border: 1px solid var(--forest-light);
+            border-radius: var(--radius-base);
+            margin-bottom: var(--space-4);
+            transition: var(--transition-base);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .program-box:hover {
+            border-color: var(--color-primary);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
+        }
+
+        .program-box-content {
+            display: flex;
+            flex-direction: column;
+            padding: var(--space-5);
+            gap: var(--space-3);
+            position: relative;
+        }
+
+        /* Status Indicator (Left Side) */
+        .status-indicator {
+            flex-shrink: 0;
+            width: 4px;
+            height: 60px;
+            border-radius: 2px;
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .status-draft {
+            background: var(--color-warning);
+        }
+
+        .status-finalized {
+            background: var(--color-success);
+        }
+
+        .status-template {
+            background: var(--color-info);
+        }
+
+        /* Program Header Section */
+        .program-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--space-3);
+        }
+
+        .program-title-section {
+            display: flex;
+            align-items: flex-start;
+            gap: var(--space-3);
+        }
+
+        .program-number {
+            background: var(--color-info);
+            color: white;
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-semibold);
+            padding: var(--space-1) var(--space-2);
+            border-radius: calc(var(--radius-base) / 2);
+            flex-shrink: 0;
+        }
+
+        .program-name {
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-primary);
+            line-height: 1.4;
+            margin: 0;
+            text-decoration: none;
+            cursor: pointer;
+            transition: var(--transition-fast);
+        }
+
+        .program-name:hover {
+            color: #1a365d;
+            text-decoration: underline;
+        }
+
+        .program-description {
+            font-size: var(--font-size-sm);
+            color: var(--color-secondary);
+            line-height: 1.4;
+            margin-top: var(--space-2);
+            margin-bottom: var(--space-1);
+        }
+
+        /* Program Meta Row */
+        .program-meta-row {
+            display: flex;
+            align-items: center;
+            gap: var(--space-6);
+            font-size: var(--font-size-sm);
+        }
+
+        /* Initiative Section */
+        .initiative-info {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .initiative-icon {
+            background: var(--color-primary);
+            color: white;
+            padding: var(--space-2);
+            border-radius: calc(var(--radius-base) / 2);
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-semibold);
+            min-width: 32px;
+            text-align: center;
+            cursor: help;
+        }
+
+        .no-initiative {
+            color: var(--color-secondary);
+            font-style: italic;
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        /* Status Section */
+        .status-info {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .status-circle {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .status-active {
+            background: var(--color-success);
+        }
+
+        .status-inactive {
+            background: var(--color-secondary);
+        }
+
+        .status-pending {
+            background: var(--color-warning);
+        }
+
+        .status-completed {
+            background: var(--color-info);
+        }
+
+        .status-text {
+            font-weight: var(--font-weight-medium);
+            color: #2d3748;
+        }
+
+        /* Date Section */
+        .date-info {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            color: var(--color-secondary);
+        }
+
+        /* Editors Section */
+        .editors-info {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .editors-label {
+            font-size: var(--font-size-sm);
+            color: var(--color-secondary);
+            font-weight: var(--font-weight-medium);
+        }
+
+        .editors-avatars {
+            display: flex;
+            align-items: center;
+            gap: var(--space-1);
+        }
+
+        .editor-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 1px solid var(--forest-light);
+            object-fit: cover;
+        }
+
+        .editors-all {
+            font-size: var(--font-size-sm);
+            color: var(--color-secondary);
+            font-style: italic;
+        }
+
+        /* Action Section */
+        .action-info {
+            position: relative;
+        }
+
+        .action-btn {
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            padding: var(--space-2) var(--space-4);
+            border-radius: var(--radius-base);
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-medium);
+            cursor: pointer;
+            transition: var(--transition-fast);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            min-width: 100px;
+            justify-content: center;
+        }
+
+        .action-btn:hover {
+            background: #1a365d;
+        }
+
+        /* Timeline Section */
+        .timeline-info {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            font-size: var(--font-size-sm);
+            color: var(--color-secondary);
+        }
+
+        .timeline-info.timeline-absolute {
+            position: absolute;
+            right: var(--space-5);
+            bottom: var(--space-5);
+        }
+
+        .timeline-dates {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .timeline-separator {
+            color: var(--color-secondary);
+            font-weight: var(--font-weight-medium);
+            margin: 0 var(--space-1);
+        }
+
+        .dropdown-menu-custom {
+            position: absolute;
+            top: 115%;
+            right: 0;
+            background: white;
+            border: 1px solid var(--forest-light);
+            border-radius: var(--radius-base);
+            box-shadow: var(--shadow-lg);
+            min-width: 200px;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: var(--transition-fast);
+        }
+
+        .dropdown-menu-custom.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-item-custom {
+            padding: var(--space-3) var(--space-4);
+            color: #2d3748;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            transition: var(--transition-fast);
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            font-size: var(--font-size-sm);
+            cursor: pointer;
+        }
+
+        .dropdown-item-custom:hover {
+            background: var(--forest-ultra-light);
+            color: var(--color-primary);
+        }
+
+        .dropdown-item-custom.danger:hover {
+            background: rgba(229, 62, 62, 0.1);
+            color: var(--color-danger);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: var(--space-8);
+            color: var(--color-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: var(--space-4);
+            opacity: 0.5;
+        }
+
+        .empty-state-title {
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-semibold);
+            margin-bottom: var(--space-2);
+        }
+
+        .empty-state-text {
+            font-size: var(--font-size-base);
+            margin-bottom: var(--space-4);
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: absolute;
+            background: #1a1a1a;
+            color: white;
+            padding: var(--space-2) var(--space-3);
+            border-radius: calc(var(--radius-base) / 2);
+            font-size: 0.75rem;
+            white-space: nowrap;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: var(--transition-fast);
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 4px solid transparent;
+            border-top-color: #1a1a1a;
+        }
+
+        .initiative-icon:hover .tooltip {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .program-meta-row {
+                flex-wrap: wrap;
+                gap: var(--space-4);
+            }
+
+            .program-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: var(--space-2);
+            }
+
+            .action-info {
+                align-self: stretch;
+            }
+
+            .action-btn {
+                width: 100%;
+            }
+
+            .timeline-info.timeline-absolute {
+                position: static;
+                margin-top: var(--space-3);
+                align-self: flex-end;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .tab-nav {
+                flex-direction: column;
+            }
+
+            .tab-nav-link {
+                justify-content: flex-start;
+                padding: var(--space-3) var(--space-4);
+            }
+
+            .program-box-content {
+                padding: var(--space-4);
+            }
+
+            .program-number {
+                font-size: 0.75rem;
+            }
+
+            .program-name {
+                font-size: var(--font-size-base);
+            }
+        }
+
+        /* Demo Styles */
+        .demo-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: var(--space-8);
+        }
+
+        .demo-title {
+            text-align: center;
+            color: var(--color-primary);
+            margin-bottom: var(--space-8);
+            font-size: 2.5rem;
+            font-weight: var(--font-weight-bold);
+        }
+
+        .comparison-note {
+            background: white;
+            padding: var(--space-6);
+            border-radius: var(--radius-base);
+            border-left: 4px solid var(--color-success);
+            margin-bottom: var(--space-8);
+        }
+
+        /* Create Button */
+        .create-program-btn {
+            background: var(--color-success);
+            color: white;
+            border: none;
+            padding: var(--space-3) var(--space-5);
+            border-radius: var(--radius-base);
+            font-weight: var(--font-weight-medium);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2);
+            margin-bottom: var(--space-6);
+            transition: var(--transition-fast);
+        }
+
+        .create-program-btn:hover {
+            background: #2f855a;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <h1 class="demo-title">
+            <i class="fas fa-list-alt me-3"></i>
+            Horizontal Box Layout with Tabs
+        </h1>
+
+        <div class="comparison-note">
+            <h3><i class="fas fa-lightbulb me-2 text-success"></i>Design Benefits</h3>
+            <ul class="mb-0">
+                <li><strong>Rich Information Display:</strong> Program descriptions provide context without cluttering the interface</li>
+                <li><strong>Editor Visibility:</strong> User avatars show who can edit each program, with "All" for agency-wide access</li>
+                <li><strong>Project Timeline:</strong> Positioned in same column as actions but at metadata row level with vertical spacing</li>
+                <li><strong>Clickable Program Names:</strong> Direct navigation without needing separate view buttons</li>
+                <li><strong>Compact Initiative Display:</strong> Icon + number with tooltips saves horizontal space</li>
+                <li><strong>Clear Status Indicators:</strong> Simple colored circles with descriptive text</li>
+                <li><strong>Streamlined Actions:</strong> Single dropdown button with contextual menu items</li>
+                <li><strong>Mobile Responsive:</strong> All elements adapt gracefully to smaller screens</li>
+            </ul>
+        </div>
+
+        <!-- Create Program Button -->
+        <a href="#" class="create-program-btn">
+            <i class="fas fa-plus-circle"></i>
+            Create New Program
+        </a>
+
+        <!-- Main Programs Interface -->
+        <div class="programs-tabs">
+            <!-- Tab Navigation -->
+            <ul class="tab-nav">
+                <li class="tab-nav-item">
+                    <a href="#draft-programs" class="tab-nav-link active" onclick="switchTab(event, 'draft-programs')">
+                        <i class="fas fa-edit text-warning"></i>
+                        Draft Submissions
+                        <span class="tab-count">3</span>
+                    </a>
+                </li>
+                <li class="tab-nav-item">
+                    <a href="#finalized-programs" class="tab-nav-link" onclick="switchTab(event, 'finalized-programs')">
+                        <i class="fas fa-check-circle text-success"></i>
+                        Finalized Submissions
+                        <span class="tab-count">4</span>
+                    </a>
+                </li>
+                <li class="tab-nav-item">
+                    <a href="#template-programs" class="tab-nav-link" onclick="switchTab(event, 'template-programs')">
+                        <i class="fas fa-folder-open text-info"></i>
+                        Program Templates
+                        <span class="tab-count">2</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="tab-content">
+            <!-- Draft Programs Tab -->
+            <div id="draft-programs" class="tab-pane active">
+                <!-- Draft Program 1 -->
+                <div class="program-box">
+                    <div class="status-indicator status-draft"></div>
+                    <div class="program-box-content">
+                        <div class="program-header">
+                            <div class="program-title-section">
+                                <div class="program-number">PROG-2024-001</div>
+                                <div>
+                                    <a href="#" class="program-name">Digital Infrastructure Modernization Initiative</a>
+                                    <div class="program-description">
+                                        Comprehensive modernization of the agency's digital infrastructure to improve service delivery and operational efficiency through cloud adoption and system integration.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="action-info">
+                                <button class="action-btn" onclick="toggleDropdown(this)">
+                                    <i class="fas fa-cog"></i>
+                                    Actions
+                                    <i class="fas fa-chevron-down ms-1"></i>
+                                </button>
+                                <div class="dropdown-menu-custom">
+                                    <button class="dropdown-item-custom">
+                                        <i class="fas fa-eye"></i>
+                                        View Details
+                                    </button>
+                                    <button class="dropdown-item-custom">
+                                        <i class="fas fa-edit"></i>
+                                        Edit Submission
+                                    </button>
+                                    <button class="dropdown-item-custom">
+                                        <i class="fas fa-share"></i>
+                                        Submit for Review
+                                    </button>
+                                    <button class="dropdown-item-custom">
+                                        <i class="fas fa-copy"></i>
+                                        Duplicate Program
+                                    </button>
+                                    <button class="dropdown-item-custom danger">
+                                        <i class="fas fa-trash"></i>
+                                        Delete Program
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="program-meta-row">
+                            <div class="initiative-info">
+                                <div class="initiative-icon">
+                                    <i class="fas fa-lightbulb"></i>
+                                    001
+                                    <div class="tooltip">Technology Advancement Program</div>
+                                </div>
+                            </div>
+
+                            <div class="status-info">
+                                <div class="status-circle status-active"></div>
+                                <span class="status-text">Active</span>
+                            </div>
+
+                            <div class="date-info">
+                                <i class="fas fa-clock"></i>
+                                Jan 15, 2024 2:30 PM
+                            </div>
+
+                            <div class="editors-info">
+                                <span class="editors-label">Editors:</span>
+                                <div class="editors-avatars">
+                                    <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=50&h=50&fit=crop&crop=face" alt="John Smith" class="editor-avatar" title="John Smith">
+                                    <img src="https://images.unsplash.com/photo-1494790108755-2616b332c265?w=50&h=50&fit=crop&crop=face" alt="Sarah Johnson" class="editor-avatar" title="Sarah Johnson">
+                                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50&h=50&fit=crop&crop=face" alt="Mike Chen" class="editor-avatar" title="Mike Chen">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="timeline-info timeline-absolute">
+                            <i class="fas fa-calendar-alt"></i>
+                            <div class="timeline-dates">
+                                Jan 1, 2024
+                                <span class="timeline-separator">→</span>
+                                Dec 31, 2024
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Draft Program 2 -->
+                <div class="program-box">
+                    <div class="status-indicator status-draft"></div>
+                    <div class="program-box-content">
+                        <div class="program-header">
+                            <div class="program-title-section">
+                                <div class="program-number">PROG-2024-007</div>
+                                <div>
+                                    <a href="#" class="program-name">Community Outreach and Engagement Platform</a>
+                                    <div class="program-description">
+                                        Development of a comprehensive platform to enhance community engagement through digital channels, surveys, and feedback mechanisms for improved public participation.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="action-info">
+                                <button class="action-btn" onclick="toggleDropdown(this)">
+                                    <i class="fas fa-cog"></i>
+                                    Actions
+                                    <i class="fas fa-chevron-down ms-1"></i>
+                                </button>
+                                <div class="dropdown-menu-custom">
+                                    <button class="dropdown-item-custom">
+                                        <i class="fas fa-eye"></i>
+                                        View Details
+                                    </button>
+                                    <button class="dropdown-item-custom">
+                                        <i class="fas fa-edit"></i>
+                                        Edit Submission
+                                    </button>
+                                    <button class="dropdown-item-custom">
+                                        <i class="fas fa-share"></i>
+                                        Submit for Review
+                                    </button>
+                                </div>
+                                
+                                <!-- No timeline for this project -->
+                            </div>
+                        </div>
+
+                        <div class="program-meta-row">
+                            <!-- No timeline for this program -->
+
+                            <div class="initiative-info">
+                                <div class="initiative-icon">
+                                    <i class="fas fa-lightbulb"></i>
+                                    003
+                                    <div class="tooltip">Public Engagement Enhancement</div>
+                                </div>
+                            </div>
+
+                            <div class="status-info">
+                                <div class="status-circle status-completed"></div>
+                                <span class="status-text">Completed</span>
+                            </div>
+
+                            <div class="date-info">
+                                <i class="fas fa-clock"></i>
+                                Jan 12, 2024 11:45 AM
+                            </div>
+
+                            <div class="editors-info">
+                                <span class="editors-label">Editors:</span>
+                                <span class="editors-all">All</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Draft Program 3 -->
+                <div class="program-box">
+                    <div class="status-indicator status-draft"></div>
+                    <div class="program-box-content">
+                        <div class="program-header">
+                            <div class="program-title-section">
+                                <div class="program-number">PROG-2024-012</div>
+                                <div>
+                                    <a href="#" class="program-name">Sustainable Resource Management System</a>
+                                    <div class="program-description">
+                                        Implementation of sustainable resource management practices and systems to reduce environmental impact while maintaining operational efficiency and cost-effectiveness.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="action-info">
+                                <button class="action-btn" onclick="toggleDropdown(this)">
+                                    <i class="fas fa-cog"></i>
+                                    Actions
+                                    <i class="fas fa-chevron-down ms-1"></i>
+                                </button>
+                                <div class="dropdown-menu-custom">
+                                    <button class="dropdown-item-custom">
+                                        <i class="fas fa-eye"></i>
+                                        View Details
+                                    </button>
+                                    <button class="dropdown-item-custom">
+                                        <i class="fas fa-edit"></i>
+                                        Edit Submission
+                                    </button>
+                                    <button class="dropdown-item-custom">
+                                        <i class="fas fa-share"></i>
+                                        Submit for Review
+                                    </button>
+                                    <button class="dropdown-item-custom">
+                                        <i class="fas fa-copy"></i>
+                                        Duplicate Program
+                                    </button>
+                                    <button class="dropdown-item-custom danger">
+                                        <i class="fas fa-trash"></i>
+                                        Delete Program
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="program-meta-row">
+                            <div class="initiative-info">
+                                <div class="initiative-icon">
+                                    <i class="fas fa-lightbulb"></i>
+                                    005
+                                    <div class="tooltip">Environmental Sustainability Initiative</div>
+                                </div>
+                            </div>
+
+                            <div class="status-info">
+                                <div class="status-circle status-pending"></div>
+                                <span class="status-text">Pending</span>
+                            </div>
+
+                            <div class="date-info">
+                                <i class="fas fa-clock"></i>
+                                Jan 8, 2024 4:20 PM
+                            </div>
+
+                            <div class="editors-info">
+                                <span class="editors-label">Editors:</span>
+                                <div class="editors-avatars">
+                                    <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=50&h=50&fit=crop&crop=face" alt="Alex Rodriguez" class="editor-avatar" title="Alex Rodriguez">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="timeline-info timeline-absolute">
+                            <i class="fas fa-calendar-alt"></i>
+                            <div class="timeline-dates">
+                                Feb 1, 2024
+                                <span class="timeline-separator">→</span>
+                                Jun 30, 2024
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Finalized Programs Tab -->
+            <div id="finalized-programs" class="tab-pane">
+                <!-- Finalized Program 1 -->
+                <div class="program-box">
+                    <div class="status-indicator status-finalized"></div>
+                    <div class="program-box-content">
+                        <div class="program-header">
+                            <div class="program-title-section">
+                                <div class="program-number">PROG-2024-003</div>
+                                <a href="#" class="program-name">Healthcare Services Integration Project</a>
+                            </div>
+                            <div class="action-info">
+                                <button class="action-btn" onclick="toggleDropdown(this)">
+                                    <i class="fas fa-cog"></i>
+                                    Actions
+                                    <i class="fas fa-chevron-down ms-1"></i>
+                                </button>
+                                <div class="dropdown-menu-custom">
+                                    <button class="dropdown-item-custom">
+                                        <i class="fas fa-eye"></i>
+                                        View Details
+                                    </button>
+                                    <button class="dropdown-item-custom">
+                                        <i class="fas fa-file-alt"></i>
+                                        View Reports
+                                    </button>
+                                    <button class="dropdown-item-custom">
+                                        <i class="fas fa-download"></i>
+                                        Export Data
+                                    </button>
+                                    <button class="dropdown-item-custom">
+                                        <i class="fas fa-copy"></i>
+                                        Duplicate Program
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="program-meta-row">
+                            <div class="initiative-info">
+                                <div class="initiative-icon">
+                                    <i class="fas fa-lightbulb"></i>
+                                    002
+                                    <div class="tooltip">Healthcare Improvement Initiative</div>
+                                </div>
+                            </div>
+
+                            <div class="status-info">
+                                <div class="status-circle status-completed"></div>
+                                <span class="status-text">Completed</span>
+                            </div>
+
+                            <div class="date-info">
+                                <i class="fas fa-clock"></i>
+                                Jan 10, 2024 9:15 AM
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Finalized Program 2 -->
+                <div class="program-box">
+                    <div class="status-indicator status-finalized"></div>
+                    <div class="program-box-content">
+                        <div class="program-info">
+                            <div class="program-header">
+                                <div class="program-number">PROG-2024-005</div>
+                                <h3 class="program-name">Economic Development Support Framework</h3>
+                            </div>
+                            <div class="program-type">
+                                <i class="fas fa-folder-plus"></i>
+                                Agency-Created Program
+                            </div>
+                        </div>
+
+                        <div class="initiative-info">
+                            <div class="initiative-badge" title="INIT-004 - Economic Growth Initiative">
+                                <i class="fas fa-lightbulb me-1"></i>
+                                INIT-004 - Economic Growth Initiative
+                            </div>
+                        </div>
+
+                        <div class="rating-info">
+                            <div class="rating-badge rating-on-track">
+                                <i class="fas fa-calendar-check"></i>
+                                On Track for Year
+                            </div>
+                        </div>
+
+                        <div class="date-info">
+                            <div class="date-label">Last Submitted</div>
+                            <div class="date-value">
+                                <i class="fas fa-calendar-check"></i>
+                                Jan 5, 2024 3:30 PM
+                            </div>
+                        </div>
+
+                        <div class="action-info">
+                            <button class="action-btn" onclick="toggleDropdown(this)">
+                                <i class="fas fa-cog"></i>
+                                Actions
+                                <i class="fas fa-chevron-down ms-1"></i>
+                            </button>
+                            <div class="dropdown-menu-custom">
+                                <button class="dropdown-item-custom">
+                                    <i class="fas fa-eye"></i>
+                                    View Details
+                                </button>
+                                <button class="dropdown-item-custom">
+                                    <i class="fas fa-file-alt"></i>
+                                    View Reports
+                                </button>
+                                <button class="dropdown-item-custom">
+                                    <i class="fas fa-download"></i>
+                                    Export Data
+                                </button>
+                                <button class="dropdown-item-custom">
+                                    <i class="fas fa-copy"></i>
+                                    Duplicate Program
+                                </button>
+                                <button class="dropdown-item-custom danger">
+                                    <i class="fas fa-trash"></i>
+                                    Delete Program
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Finalized Program 3 -->
+                <div class="program-box">
+                    <div class="status-indicator status-finalized"></div>
+                    <div class="program-box-content">
+                        <div class="program-info">
+                            <div class="program-header">
+                                <div class="program-number">PROG-2024-008</div>
+                                <h3 class="program-name">Education Technology Enhancement Initiative</h3>
+                            </div>
+                            <div class="program-type">
+                                <i class="fas fa-tasks"></i>
+                                Assigned Program
+                            </div>
+                        </div>
+
+                        <div class="initiative-info">
+                            <div class="initiative-badge" title="INIT-007 - Education Modernization">
+                                <i class="fas fa-lightbulb me-1"></i>
+                                INIT-007 - Education Modernization
+                            </div>
+                        </div>
+
+                        <div class="rating-info">
+                            <div class="rating-badge rating-on-track">
+                                <i class="fas fa-calendar-check"></i>
+                                On Track for Year
+                            </div>
+                        </div>
+
+                        <div class="date-info">
+                            <div class="date-label">Last Submitted</div>
+                            <div class="date-value">
+                                <i class="fas fa-calendar-check"></i>
+                                Dec 28, 2023 2:15 PM
+                            </div>
+                        </div>
+
+                        <div class="action-info">
+                            <button class="action-btn" onclick="toggleDropdown(this)">
+                                <i class="fas fa-cog"></i>
+                                Actions
+                                <i class="fas fa-chevron-down ms-1"></i>
+                            </button>
+                            <div class="dropdown-menu-custom">
+                                <button class="dropdown-item-custom">
+                                    <i class="fas fa-eye"></i>
+                                    View Details
+                                </button>
+                                <button class="dropdown-item-custom">
+                                    <i class="fas fa-file-alt"></i>
+                                    View Reports
+                                </button>
+                                <button class="dropdown-item-custom">
+                                    <i class="fas fa-download"></i>
+                                    Export Data
+                                </button>
+                                <button class="dropdown-item-custom">
+                                    <i class="fas fa-copy"></i>
+                                    Duplicate Program
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Finalized Program 4 -->
+                <div class="program-box">
+                    <div class="status-indicator status-finalized"></div>
+                    <div class="program-box-content">
+                        <div class="program-info">
+                            <div class="program-header">
+                                <div class="program-number">PROG-2024-010</div>
+                                <h3 class="program-name">Public Safety Enhancement Program</h3>
+                            </div>
+                            <div class="program-type">
+                                <i class="fas fa-folder-plus"></i>
+                                Agency-Created Program
+                            </div>
+                        </div>
+
+                        <div class="initiative-info">
+                            <div class="initiative-badge" title="INIT-008 - Public Safety Initiative">
+                                <i class="fas fa-lightbulb me-1"></i>
+                                INIT-008 - Public Safety Initiative
+                            </div>
+                        </div>
+
+                        <div class="rating-info">
+                            <div class="rating-badge rating-delayed">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Severe Delays
+                            </div>
+                        </div>
+
+                        <div class="date-info">
+                            <div class="date-label">Last Submitted</div>
+                            <div class="date-value">
+                                <i class="fas fa-calendar-check"></i>
+                                Dec 22, 2023 4:45 PM
+                            </div>
+                        </div>
+
+                        <div class="action-info">
+                            <button class="action-btn" onclick="toggleDropdown(this)">
+                                <i class="fas fa-cog"></i>
+                                Actions
+                                <i class="fas fa-chevron-down ms-1"></i>
+                            </button>
+                            <div class="dropdown-menu-custom">
+                                <button class="dropdown-item-custom">
+                                    <i class="fas fa-eye"></i>
+                                    View Details
+                                </button>
+                                <button class="dropdown-item-custom">
+                                    <i class="fas fa-file-alt"></i>
+                                    View Reports
+                                </button>
+                                <button class="dropdown-item-custom">
+                                    <i class="fas fa-download"></i>
+                                    Export Data
+                                </button>
+                                <button class="dropdown-item-custom">
+                                    <i class="fas fa-copy"></i>
+                                    Duplicate Program
+                                </button>
+                                <button class="dropdown-item-custom danger">
+                                    <i class="fas fa-trash"></i>
+                                    Delete Program
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Template Programs Tab -->
+            <div id="template-programs" class="tab-pane">
+                <!-- Template Program 1 -->
+                <div class="program-box">
+                    <div class="status-indicator status-template"></div>
+                    <div class="program-box-content">
+                        <div class="program-info">
+                            <div class="program-header">
+                                <div class="program-number">PROG-2024-009</div>
+                                <h3 class="program-name">Innovation Lab Development Program</h3>
+                            </div>
+                            <div class="program-type">
+                                <i class="fas fa-folder-plus"></i>
+                                Agency-Created Program
+                            </div>
+                        </div>
+
+                        <div class="initiative-info">
+                            <div class="initiative-badge" title="INIT-006 - Innovation and Research Initiative">
+                                <i class="fas fa-lightbulb me-1"></i>
+                                INIT-006 - Innovation and Research Initiative
+                            </div>
+                        </div>
+
+                        <div class="rating-info">
+                            <div class="rating-badge rating-not-started">
+                                <i class="fas fa-hourglass-start"></i>
+                                Not Started
+                            </div>
+                        </div>
+
+                        <div class="date-info">
+                            <div class="date-label">Created Date</div>
+                            <div class="date-value">
+                                <i class="fas fa-calendar-plus"></i>
+                                Dec 28, 2023 1:00 PM
+                            </div>
+                        </div>
+
+                        <div class="action-info">
+                            <button class="action-btn" onclick="toggleDropdown(this)">
+                                <i class="fas fa-cog"></i>
+                                Actions
+                                <i class="fas fa-chevron-down ms-1"></i>
+                            </button>
+                            <div class="dropdown-menu-custom">
+                                <button class="dropdown-item-custom">
+                                    <i class="fas fa-eye"></i>
+                                    View Details
+                                </button>
+                                <button class="dropdown-item-custom">
+                                    <i class="fas fa-plus"></i>
+                                    Create Submission
+                                </button>
+                                <button class="dropdown-item-custom">
+                                    <i class="fas fa-copy"></i>
+                                    Duplicate Program
+                                </button>
+                                <button class="dropdown-item-custom danger">
+                                    <i class="fas fa-trash"></i>
+                                    Delete Program
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Template Program 2 -->
+                <div class="program-box">
+                    <div class="status-indicator status-template"></div>
+                    <div class="program-box-content">
+                        <div class="program-info">
+                            <div class="program-header">
+                                <div class="program-number">PROG-2024-011</div>
+                                <h3 class="program-name">Citizen Services Portal Enhancement</h3>
+                            </div>
+                            <div class="program-type">
+                                <i class="fas fa-tasks"></i>
+                                Assigned Program
+                            </div>
+                        </div>
+
+                        <div class="program-meta-row">
+                            <div class="initiative-info">
+                                <div class="no-initiative">
+                                    <i class="fas fa-minus"></i>
+                                    Not Linked to Initiative
+                                </div>
+                            </div>
+
+                            <div class="status-info">
+                                <div class="status-circle status-inactive"></div>
+                                <span class="status-text">Inactive</span>
+                            </div>
+
+                            <div class="date-info">
+                                <i class="fas fa-clock"></i>
+                                Dec 20, 2023 4:45 PM
+                            </div>
+                        </div>
+
+                        <div class="action-info">
+                            <button class="action-btn" onclick="toggleDropdown(this)">
+                                <i class="fas fa-cog"></i>
+                                Actions
+                                <i class="fas fa-chevron-down ms-1"></i>
+                            </button>
+                            <div class="dropdown-menu-custom">
+                                <button class="dropdown-item-custom">
+                                    <i class="fas fa-eye"></i>
+                                    View Details
+                                </button>
+                                <button class="dropdown-item-custom">
+                                    <i class="fas fa-plus"></i>
+                                    Create Submission
+                                </button>
+                                <button class="dropdown-item-custom">
+                                    <i class="fas fa-copy"></i>
+                                    Duplicate Program
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Implementation Notes -->
+        <div class="comparison-note" style="margin-top: 3rem;">
+            <h3><i class="fas fa-code me-2 text-primary"></i>Implementation Notes</h3>
+            <ul class="mb-0">
+                <li><strong>Program Descriptions:</strong> Brief description from programs table displayed below program name</li>
+                <li><strong>Editor Avatars:</strong> 24px circular avatars with hover tooltips, "All" text when all agency users are editors</li>
+                <li><strong>Timeline Display:</strong> Single calendar icon with date range, positioned at bottom-right of program box</li>
+                <li><strong>Initiative Tooltips:</strong> Hover over initiative icons to see full initiative names</li>
+                <li><strong>Status System:</strong> Colored circles (Active=green, Completed=blue, Pending=yellow, Inactive=gray)</li>
+                <li><strong>Simplified Timeline:</strong> No start/end labels, just calendar icon and date range with arrow</li>
+                <li><strong>Avatar Integration:</strong> Uses same styling as navbar avatars for consistency</li>
+                <li><strong>Conditional Rendering:</strong> Timeline section only appears when timeline data exists</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching functionality
+        function switchTab(event, tabId) {
+            event.preventDefault();
+            
+            // Remove active class from all tabs and panes
+            document.querySelectorAll('.tab-nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-pane').forEach(pane => {
+                pane.classList.remove('active');
+            });
+            
+            // Add active class to clicked tab and corresponding pane
+            event.target.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        // Dropdown functionality
+        function toggleDropdown(button) {
+            const dropdown = button.nextElementSibling;
+            const isOpen = dropdown.classList.contains('show');
+            
+            // Close all other dropdowns
+            document.querySelectorAll('.dropdown-menu-custom.show').forEach(menu => {
+                menu.classList.remove('show');
+            });
+            
+            // Toggle current dropdown
+            if (!isOpen) {
+                dropdown.classList.add('show');
+            }
+        }
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.action-info')) {
+                document.querySelectorAll('.dropdown-menu-custom.show').forEach(menu => {
+                    menu.classList.remove('show');
+                });
+            }
+        });
+
+        // Handle dropdown item clicks
+        document.addEventListener('click', function(event) {
+            if (event.target.closest('.dropdown-item-custom')) {
+                event.preventDefault();
+                console.log('Action clicked:', event.target.textContent.trim());
+                // Handle the action here
+                
+                // Close dropdown after action
+                document.querySelectorAll('.dropdown-menu-custom.show').forEach(menu => {
+                    menu.classList.remove('show');
+                });
+            }
+        });
+    </script>
+</body>
+</html>
