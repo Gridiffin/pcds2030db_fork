@@ -66,6 +66,7 @@ if (empty($subtitle) && isset($headerSubtitle)) {
 $showBreadcrumb = $header_config['showBreadcrumb'] ?? true;
 $showSubtitle = $header_config['showSubtitle'] ?? true;
 $titleTag = $header_config['titleTag'] ?? 'h1';
+$subtitleHtml = $header_config['subtitle_html'] ?? false;
 
 // Build CSS classes
 $header_classes = ['page-header'];
@@ -123,7 +124,13 @@ if (isset($header_config['theme']) && in_array($header_config['theme'], ['light'
             <div class="col-12 text-left">
                 <<?php echo $titleTag; ?> class="page-header__title"><?php echo htmlspecialchars($title); ?></<?php echo $titleTag; ?>>
                 <?php if (!empty($subtitle) && $showSubtitle): ?>
-                    <p class="page-header__subtitle"><?php echo htmlspecialchars($subtitle); ?></p>
+                    <p class="page-header__subtitle">
+                        <?php if ($subtitleHtml): ?>
+                            <?php echo $subtitle; ?>
+                        <?php else: ?>
+                            <?php echo htmlspecialchars($subtitle); ?>
+                        <?php endif; ?>
+                    </p>
                 <?php endif; ?>
             </div>
         </div>
@@ -141,6 +148,7 @@ unset(
     $header_classes, 
     $showBreadcrumb, 
     $showSubtitle, 
-    $titleTag
+    $titleTag,
+    $subtitleHtml
 );
 ?>

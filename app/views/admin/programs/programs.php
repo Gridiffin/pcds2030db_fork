@@ -45,6 +45,82 @@ $additionalScripts = [
     // Additional scripts specific to admin programs can be added here if needed
 ];
 
+// Inline script to handle delete functionality
+$inlineScripts = '
+// Define triggerDeleteFromModal function globally
+window.triggerDeleteFromModal = function(programId, programName) {
+    console.log("triggerDeleteFromModal called with:", { programId, programName });
+    
+    // First, close the "More Actions" modal if it\'s open
+    const moreActionsModal = document.getElementById("moreActionsModal");
+    if (moreActionsModal) {
+        const moreActionsModalInstance = bootstrap.Modal.getInstance(moreActionsModal);
+        if (moreActionsModalInstance) {
+            moreActionsModalInstance.hide();
+        }
+    }
+    
+    // Wait a bit for the first modal to close, then show delete modal
+    setTimeout(function() {
+        const deleteModal = document.getElementById("deleteModal");
+        if (!deleteModal) {
+            console.error("Delete modal not found");
+            return;
+        }
+
+        const programNameDisplay = deleteModal.querySelector("#program-name-display");
+        const programIdInput = deleteModal.querySelector("#program-id-input");
+
+        if (programNameDisplay) {
+            programNameDisplay.textContent = programName;
+            console.log("Set program name display to:", programName);
+        } else {
+            console.error("Program name display element not found");
+        }
+        
+        if (programIdInput) {
+            programIdInput.value = programId;
+            console.log("Set program ID input to:", programId);
+        } else {
+            console.error("Program ID input element not found");
+        }
+
+        const modal = new bootstrap.Modal(deleteModal);
+        modal.show();
+    }, 300); // Wait 300ms for the first modal to fully close
+};
+
+// Handle form submission to close modal and show loading state
+document.addEventListener("DOMContentLoaded", function() {
+    const deleteForm = document.getElementById("delete-program-form");
+    if (deleteForm) {
+        deleteForm.addEventListener("submit", function(e) {
+            console.log("Form submitted with program_id:", document.getElementById("program-id-input").value);
+            
+            // Get the modal instance
+            const deleteModal = document.getElementById("deleteModal");
+            const modalInstance = bootstrap.Modal.getInstance(deleteModal);
+            
+            // Show loading state
+            const submitBtn = deleteForm.querySelector("button[type=submit]");
+            if (submitBtn) {
+                submitBtn.innerHTML = "<i class=\"fas fa-spinner fa-spin me-2\"></i>Deleting...";
+                submitBtn.disabled = true;
+            }
+            
+            // Close the modal after a brief delay to show the loading state
+            setTimeout(function() {
+                if (modalInstance) {
+                    modalInstance.hide();
+                }
+            }, 500);
+        });
+    }
+});
+
+console.log("Delete function loaded successfully");
+';
+
 // Configure modern page header
 $header_config = [
     'title' => $pageTitle,

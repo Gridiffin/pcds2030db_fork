@@ -18,11 +18,11 @@ require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/agencies/programs.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/agencies/program_permissions.php';
-require_once PROJECT_ROOT_PATH . 'lib/admins/index.php';
-require_once PROJECT_ROOT_PATH . 'lib/admins/program_management.php';
-require_once PROJECT_ROOT_PATH . 'lib/initiative_functions.php';
-require_once PROJECT_ROOT_PATH . 'lib/numbering_helpers.php';
-require_once PROJECT_ROOT_PATH . 'lib/rating_helpers.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/admins/index.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/admins/program_management.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/initiative_functions.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/numbering_helpers.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/rating_helpers.php';
 
 // Verify user is admin
 if (!is_admin()) {

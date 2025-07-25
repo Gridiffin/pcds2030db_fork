@@ -253,14 +253,6 @@
                                                 data-bs-placement="top">
                                             <i class="fas fa-ellipsis-v"></i>
                                         </button>
-                                        <button type="button" class="btn btn-outline-danger flex-fill delete-program-btn" 
-                                                data-id="<?php echo $program['program_id']; ?>" 
-                                                data-name="<?php echo htmlspecialchars($program['program_name']); ?>" 
-                                                title="Permanently delete this program and all its data"
-                                                data-bs-toggle="tooltip" 
-                                                data-bs-placement="top">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
                                     </div>
                                 </td>
                             </tr>

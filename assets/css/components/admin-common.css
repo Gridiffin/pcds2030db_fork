@@ -31,11 +31,12 @@
 
 /* Header Styling */
 .simple-header.forest-theme {
-  background: linear-gradient(135deg, var(--forest-deep) 0%, var(--forest-medium) 100%);
+  background: var(--forest-deep); /* Solid forest color instead of gradient */
   color: white;
   padding: 2rem 0;
   margin-bottom: 2rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  border-bottom: 3px solid var(--forest-medium); /* Add border for visual interest */
 }
 
 .simple-header.forest-theme .header-title {
