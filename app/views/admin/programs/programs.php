@@ -33,8 +33,14 @@ if (!isset($programs_with_drafts)) {
 
 // Set up variables for base layout
 $pageTitle = $pageTitle ?? 'Admin Programs';
-$cssBundle = 'admin-programs';
+$cssBundle = 'main'; // Use main CSS bundle which includes all necessary styles
 $jsBundle = 'admin-programs';
+$additionalStyles = [
+    // Add admin-specific CSS files that may not be in the main bundle
+    APP_URL . '/assets/css/admin/admin-common.css',
+    APP_URL . '/assets/css/admin/programs.css',
+    APP_URL . '/assets/css/custom/admin.css'
+];
 $additionalScripts = [
     // Additional scripts specific to admin programs can be added here if needed
 ];
