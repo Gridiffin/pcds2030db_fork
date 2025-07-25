@@ -97,6 +97,9 @@ project_structure_best_practices.md
 
 ## 📦 Key Principles
 
+- All unnecessary debug and test files have been removed from the project root and codebase. Only unit test files are retained in the `tests/` directory.
+- Maintain a clean codebase by regularly removing obsolete debug and test files after development or refactoring phases.
+- Unit tests should be kept in the `tests/` directory and maintained as part of the development workflow.
 - **Separation of Concerns:** Views, logic, assets, and tests are all separated.
 - **Modularization:** Each feature/page has its own folder for partials, JS, and CSS.
 - **Testability:** Pure logic is separated for easy unit testing.
