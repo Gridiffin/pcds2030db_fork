@@ -314,7 +314,7 @@ $showNoSubmissionsAlert = !$has_submissions; // Show for all users, but action l
 <?php endif; ?>
 
 <!-- Enhanced Program Overview -->
-<main class="flex-fill">
+<main>
     <?php
     // Include page header manually in the correct position
     if (isset($header_config) && file_exists(PROJECT_ROOT_PATH . 'app/views/layouts/page_header.php')) {

@@ -5,7 +5,7 @@
  */
 ?>
 
-<main class="flex-fill">
+<main>
     <div class="container-fluid">
         <!-- Toast Notification for Program Creation/Deletion -->
         <?php if (!empty($message)): ?>

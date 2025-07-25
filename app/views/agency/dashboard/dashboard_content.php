@@ -9,7 +9,7 @@
 ?>
 
 <!-- Main Content -->
-<main class="flex-fill">
+<main>
     <div class="container-fluid">
         <!-- Initiatives Section -->
         <?php require_once __DIR__ . '/partials/initiatives_section.php'; ?>

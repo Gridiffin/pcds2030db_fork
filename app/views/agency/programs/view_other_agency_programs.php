@@ -39,7 +39,7 @@ $header_config = [
 $contentFile = null;
 ?>
 
-<main class="flex-fill">
+<main>
     <div class="container-fluid">
         <div class="card shadow-sm">
             <div class="card-body text-center py-5">

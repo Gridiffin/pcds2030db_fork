@@ -1,5 +1,5 @@
 <!-- Main Content for Edit Submission Page -->
-<main class="flex-fill">
+<main>
 <div class="container-fluid">
     <!-- Remove .row and column wrappers for single-column layout -->
     <!-- Main content and history sidebar will be rendered inside the main card/form -->

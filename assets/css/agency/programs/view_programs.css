@@ -65,6 +65,59 @@
     margin-bottom: 20px;
 }
 
+/* Tab Navigation Styling */
+.nav-link:not(.active) {
+    color: white !important;
+}
+
+.nav-link:not(.active) i {
+    color: white !important;
+}
+
+.nav-link:not(.active):hover {
+    color: white !important;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.nav-link:not(.active):hover i {
+    color: white !important;
+}
+
+/* Alternative layout system - CSS Grid instead of Flexbox */
+body.d-flex.flex-column.min-vh-100 {
+    display: grid !important;
+    grid-template-rows: auto auto auto;
+    min-height: 100vh;
+    padding-top: 4rem !important; /* Force proper navbar spacing */
+}
+
+/* Make main content area not use flex-fill */
+main.flex-fill {
+    flex: unset !important;
+    grid-row: 2;
+}
+
+/* Alternative: Simple sticky footer approach (comment out grid above and use this instead)
+body.d-flex.flex-column.min-vh-100 {
+    display: block !important;
+    min-height: 100vh;
+    padding-top: 4rem !important;
+    position: relative;
+}
+
+main.flex-fill {
+    min-height: calc(100vh - 4rem - 60px);
+    padding-bottom: 60px;
+}
+
+footer {
+    position: sticky;
+    bottom: 0;
+    margin-top: auto;
+}
+*/
+
+
 /* Responsive design */
 @media (max-width: 768px) {
     .programs-table {

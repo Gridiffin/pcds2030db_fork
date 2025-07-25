@@ -445,9 +445,9 @@
   }
 }
 
-/* Body padding for fixed navbar */
+/* Body padding for fixed navbar - using design token */
 body {
-  padding-top: 70px;
+  padding-top: var(--navbar-height);
 }
 
 /* Multi-line navbar padding adjustments */
