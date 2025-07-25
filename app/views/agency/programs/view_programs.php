@@ -30,6 +30,9 @@ if (!is_agency()) {
 $message = $_SESSION['message'] ?? '';
 $messageType = $_SESSION['message_type'] ?? 'info';
 
+// Check if showing created program message
+$show_created_message = isset($_GET['created']) && $_GET['created'] == '1';
+
 // Clear message from session
 if (isset($_SESSION['message'])) {
     unset($_SESSION['message']);

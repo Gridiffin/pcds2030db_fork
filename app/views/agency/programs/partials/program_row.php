@@ -104,54 +104,51 @@ if ($is_draft) {
                     <i class="fas fa-chevron-down ms-1"></i>
                 </button>
                 <div class="dropdown-menu-custom">
-                    <!-- View Button -->
+                    <!-- View Program (Always Available) -->
                     <a href="program_details.php?id=<?php echo $program['program_id']; ?>" 
                        class="dropdown-item-custom"
                        title="View detailed program information including submissions, targets, and progress">
                         <i class="fas fa-eye"></i>
-                        View Details
+                        View Program
                     </a>
 
                     <?php 
                     // Check if user can edit this program
                     $can_edit = can_edit_program($program['program_id']);
                     $can_delete = is_focal_user() || is_program_creator($program['program_id']);
+                    
+                    // Determine program state
+                    $has_submission = isset($program['latest_submission_id']) && $program['latest_submission_id'];
+                    $is_template = !$has_submission;
+                    $program_state = $is_template ? 'template' : ($is_draft ? 'draft' : 'finalized');
                     ?>
 
-                    <!-- Edit/More Actions -->
                     <?php if ($can_edit): ?>
-                    <button type="button" class="dropdown-item-custom more-actions-btn" 
-                            data-program-id="<?php echo $program['program_id']; ?>"
-                            data-program-name="<?php echo htmlspecialchars($program['program_name']); ?>"
-                            data-program-type="<?php echo $is_assigned ? 'assigned' : 'created'; ?>"
-                            title="Edit submission and program details">
-                        <i class="fas fa-edit"></i>
-                        Edit Submission
-                    </button>
-                    <a href="edit_program.php?id=<?php echo $program['program_id']; ?>" 
-                       class="dropdown-item-custom"
-                       title="Modify program details, targets, and basic information">
-                        <i class="fas fa-cog"></i>
-                        Edit Program
-                    </a>
-                    <?php endif; ?>
+                        <!-- Edit Program (Available for all states) -->
+                        <a href="edit_program.php?id=<?php echo $program['program_id']; ?>" 
+                           class="dropdown-item-custom"
+                           title="Modify program details, targets, and basic information">
+                            <i class="fas fa-cog"></i>
+                            Edit Program
+                        </a>
 
-                    <!-- Copy Program -->
-                    <button type="button" class="dropdown-item-custom" 
-                            title="Create a copy of this program">
-                        <i class="fas fa-copy"></i>
-                        Duplicate Program
-                    </button>
-
-                    <!-- Delete Button -->
-                    <?php if ($can_delete): ?>
-                    <button type="button" class="dropdown-item-custom danger trigger-delete-modal" 
-                            data-id="<?php echo $program['program_id']; ?>" 
-                            data-name="<?php echo htmlspecialchars($program['program_name']); ?>" 
-                            title="Delete this program and all its submissions">
-                        <i class="fas fa-trash"></i>
-                        Delete Program
-                    </button>
+                        <?php if ($program_state === 'template'): ?>
+                            <!-- Add Submission (Template state only) -->
+                            <a href="add_submission.php?program_id=<?php echo $program['program_id']; ?>" 
+                               class="dropdown-item-custom"
+                               title="Add a new submission for this program">
+                                <i class="fas fa-plus"></i>
+                                Add Submission
+                            </a>
+                        <?php else: ?>
+                            <!-- Edit Submission (Draft and Finalized states) -->
+                            <a href="edit_submission.php?program_id=<?php echo $program['program_id']; ?>" 
+                               class="dropdown-item-custom"
+                               title="Edit the latest submission for this program">
+                                <i class="fas fa-edit"></i>
+                                Edit Submission
+                            </a>
+                        <?php endif; ?>
                     <?php endif; ?>
                 </div>
             </div>

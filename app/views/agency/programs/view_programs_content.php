@@ -15,6 +15,15 @@
                 });
             </script>
         <?php endif; ?>
+        
+        <!-- Show success message when redirected from program creation -->
+        <?php if ($show_created_message): ?>
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    showToast('Success', 'Program created successfully! Your new program is now available in the Templates section.', 'success');
+                });
+            </script>
+        <?php endif; ?>
 
         <!-- Prominent Create Program Section -->
         <div class="create-program-hero mb-4">
@@ -34,15 +43,19 @@
         <!-- Tab Navigation - Pill Design -->
         <div class="pill-tabs-container forest-theme mb-3">
             <nav class="nav-tabs-pill" id="programTabs" role="tablist">
-                <button class="nav-link active" id="draft-tab" data-bs-toggle="tab" data-bs-target="#draft-programs" type="button" role="tab" aria-controls="draft-programs" aria-selected="true">
+                <?php
+                // Determine which tab should be active based on URL parameter
+                $active_tab = $_GET['tab'] ?? 'draft';
+                ?>
+                <button class="nav-link <?php echo $active_tab === 'draft' ? 'active' : ''; ?>" id="draft-tab" data-bs-toggle="tab" data-bs-target="#draft-programs" type="button" role="tab" aria-controls="draft-programs" aria-selected="<?php echo $active_tab === 'draft' ? 'true' : 'false'; ?>">
                     Draft Submissions
                     <span class="simple-badge"><?php echo count($programs_with_drafts); ?></span>
                 </button>
-                <button class="nav-link" id="finalized-tab" data-bs-toggle="tab" data-bs-target="#finalized-programs" type="button" role="tab" aria-controls="finalized-programs" aria-selected="false">
+                <button class="nav-link <?php echo $active_tab === 'finalized' ? 'active' : ''; ?>" id="finalized-tab" data-bs-toggle="tab" data-bs-target="#finalized-programs" type="button" role="tab" aria-controls="finalized-programs" aria-selected="<?php echo $active_tab === 'finalized' ? 'true' : 'false'; ?>">
                     Finalized Submissions
                     <span class="simple-badge"><?php echo count($programs_with_submissions); ?></span>
                 </button>
-                <button class="nav-link" id="templates-tab" data-bs-toggle="tab" data-bs-target="#template-programs" type="button" role="tab" aria-controls="template-programs" aria-selected="false">
+                <button class="nav-link <?php echo $active_tab === 'templates' ? 'active' : ''; ?>" id="templates-tab" data-bs-toggle="tab" data-bs-target="#template-programs" type="button" role="tab" aria-controls="template-programs" aria-selected="<?php echo $active_tab === 'templates' ? 'true' : 'false'; ?>">
                     Program Templates
                     <span class="simple-badge"><?php echo count($programs_without_submissions); ?></span>
                 </button>
@@ -54,7 +67,7 @@
             <div class="tab-content" id="programTabsContent">
 
                 <!-- Draft Programs Tab Pane -->
-                <div class="tab-pane fade show active" id="draft-programs" role="tabpanel" aria-labelledby="draft-tab">
+                <div class="tab-pane fade <?php echo $active_tab === 'draft' ? 'show active' : ''; ?>" id="draft-programs" role="tabpanel" aria-labelledby="draft-tab">
                     <div class="card-body p-0">
                         <div class="p-4 border-bottom">
                             <h5 class="card-title m-0 d-flex align-items-center">
@@ -100,7 +113,7 @@
                 </div>
 
                 <!-- Finalized Programs Tab Pane -->
-                <div class="tab-pane fade" id="finalized-programs" role="tabpanel" aria-labelledby="finalized-tab">
+                <div class="tab-pane fade <?php echo $active_tab === 'finalized' ? 'show active' : ''; ?>" id="finalized-programs" role="tabpanel" aria-labelledby="finalized-tab">
                     <div class="card-body p-0">
                         <div class="p-4 border-bottom">
                             <h5 class="card-title m-0 d-flex align-items-center">
@@ -146,7 +159,7 @@
                 </div>
 
                 <!-- Template Programs Tab Pane -->
-                <div class="tab-pane fade" id="template-programs" role="tabpanel" aria-labelledby="templates-tab">
+                <div class="tab-pane fade <?php echo $active_tab === 'templates' ? 'show active' : ''; ?>" id="template-programs" role="tabpanel" aria-labelledby="templates-tab">
                     <div class="card-body p-0">
                         <div class="p-4 border-bottom">
                             <h5 class="card-title m-0 d-flex align-items-center">
