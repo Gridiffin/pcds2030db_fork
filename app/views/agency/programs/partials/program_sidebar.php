@@ -100,9 +100,6 @@
     </div>
     <div class="card-body">
         <div class="d-grid gap-2">
-            <button type="button" class="btn btn-outline-primary btn-sm" id="edit-status-btn">
-                <i class="fas fa-edit me-2"></i>Change Status
-            </button>
             <button type="button" class="btn btn-outline-secondary btn-sm" id="view-status-history-btn">
                 <i class="fas fa-history me-2"></i>View History
             </button>

@@ -118,11 +118,11 @@
                             <a href="../programs/create_program.php" class="btn-modern btn-primary-modern">
                                 <i class="fas fa-plus me-2"></i>Create Program
                             </a>
-                            <a href="../programs/add_submission.php" class="btn-modern btn-outline-primary-modern">
-                                <i class="fas fa-edit me-2"></i>Submit Data
+                            <a href="../programs/view_programs.php" class="btn-modern btn-outline-primary-modern">
+                                <i class="fas fa-edit me-2"></i>View Programs
                             </a>
                             <a href="../outcomes/submit_outcomes.php" class="btn-modern btn-outline-success-modern">
-                                <i class="fas fa-upload me-2"></i>Submit Outcomes
+                                <i class="fas fa-upload me-2"></i>View Outcomes
                             </a>
                             <a href="../reports/view_reports.php" class="btn-modern btn-outline-info-modern">
                                 <i class="fas fa-chart-bar me-2"></i>View Reports

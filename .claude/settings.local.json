@@ -15,7 +15,9 @@
       "Bash(composer install:*)",
       "Bash(npm view:*)",
       "Bash(php:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "WebFetch(domain:ibb.co)",
+      "WebFetch(domain:i.ibb.co)"
     ],
     "deny": []
   }

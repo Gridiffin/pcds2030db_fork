@@ -16,11 +16,19 @@
             </script>
         <?php endif; ?>
 
-        <!-- Create Program Button -->
-        <div class="mb-3">
-            <a href="<?php echo APP_URL; ?>/app/views/agency/programs/create_program.php" class="btn btn-primary">
-                <i class="fas fa-plus-circle me-1"></i> Create New Program
-            </a>
+        <!-- Prominent Create Program Section -->
+        <div class="create-program-hero mb-4">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h4 class="mb-2 text-dark">Ready to start a new program?</h4>
+                    <p class="text-muted mb-0">Create a new program to begin tracking your initiatives.</p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <a href="<?php echo APP_URL; ?>/app/views/agency/programs/create_program.php" class="btn btn-success btn-lg create-program-cta">
+                        <i class="fas fa-plus-circle me-2"></i> Create New Program
+                    </a>
+                </div>
+            </div>
         </div>
 
         <!-- Tab Navigation -->
