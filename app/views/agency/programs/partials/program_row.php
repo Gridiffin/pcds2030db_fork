@@ -123,6 +123,17 @@ if ($is_draft) {
                     $program_state = $is_template ? 'template' : ($is_draft ? 'draft' : 'finalized');
                     ?>
 
+                    <?php if ($has_submission): ?>
+                        <!-- View Submission (Available when program has submissions) -->
+                        <button type="button" 
+                                class="dropdown-item-custom border-0 bg-transparent text-start w-100" 
+                                onclick="openSubmissionSelection(<?php echo $program['program_id']; ?>)"
+                                title="View submission details for different reporting periods">
+                            <i class="fas fa-file-alt"></i>
+                            View Submission
+                        </button>
+                    <?php endif; ?>
+
                     <?php if ($can_edit): ?>
                         <!-- Edit Program (Available for all states) -->
                         <a href="edit_program.php?id=<?php echo $program['program_id']; ?>" 

@@ -70,14 +70,27 @@
                 <div class="tab-pane fade <?php echo $active_tab === 'draft' ? 'show active' : ''; ?>" id="draft-programs" role="tabpanel" aria-labelledby="draft-tab">
                     <div class="card-body p-0">
                         <div class="p-4 border-bottom">
-                            <h5 class="card-title m-0 d-flex align-items-center">
-                                <i class="fas fa-edit text-warning me-2"></i>
-                                Programs with Draft Submissions
-                                <span class="badge bg-warning text-dark ms-2" title="These programs have draft submissions that can be edited">
-                                    <i class="fas fa-pencil-alt me-1"></i> Draft Submissions
-                                </span>
-                                <span class="badge bg-secondary ms-2" id="draft-count"><?php echo count($programs_with_drafts); ?></span>
-                            </h5>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="card-title m-0 d-flex align-items-center">
+                                    <i class="fas fa-edit text-warning me-2"></i>
+                                    Programs with Draft Submissions
+                                    <span class="badge bg-warning text-dark ms-2" title="These programs have draft submissions that can be edited">
+                                        <i class="fas fa-pencil-alt me-1"></i> Draft Submissions
+                                    </span>
+                                    <span class="badge bg-secondary ms-2" id="draft-count"><?php echo count($programs_with_drafts); ?></span>
+                                </h5>
+                                
+                                <?php if (is_focal_user()): ?>
+                                <div class="focal-actions">
+                                    <button type="button" class="btn btn-primary btn-sm me-2" onclick="FinalizationTutorial.open()" title="Learn how to finalize submissions">
+                                        <i class="fas fa-graduation-cap me-1"></i> How to Finalize
+                                    </button>
+                                    <button type="button" class="btn btn-success" id="quickFinalizeBtn" title="Quick finalize submissions">
+                                        <i class="fas fa-check-circle me-1"></i> Finalize Submissions
+                                    </button>
+                                </div>
+                                <?php endif; ?>
+                            </div>
                         </div>
             
                         <!-- Draft Programs Filters -->
@@ -208,6 +221,15 @@
 
         <!-- Delete Modal -->
         <?php require_once __DIR__ . '/partials/delete_modal.php'; ?>
+        
+        <!-- Finalization Tutorial Modal (Focal Users Only) -->
+        <?php require_once __DIR__ . '/partials/finalization_tutorial_modal.php'; ?>
+        
+        <!-- Quick Finalize Modal (Focal Users Only) -->
+        <?php require_once __DIR__ . '/partials/quick_finalize_modal.php'; ?>
+        
+        <!-- Submission Selection Modal -->
+        <?php require_once __DIR__ . '/partials/submission_selection_modal.php'; ?>
 
         <!-- JavaScript data and initialization -->
         <script>

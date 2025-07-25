@@ -4,6 +4,7 @@
 @import 'components/rating-colors.css';
 @import 'agency/program-review.css';
 @import 'agency/program-targets.css';
+@import 'agency/finalization-tutorial.css';
 @import 'admin/programs.css';
 @import 'table-structure-designer.css';
 @import url("components/ui/modal.css");

@@ -1,6 +1,10 @@
-- 20:41:40.460 Uncaught ReferenceError: toggleDropdown is not defined
-    onclick http://localhost/pcds2030_dashboard_fork/app/views/agency/programs/view_programs.php:1
-3 view_programs.php:1:1
-    onclick http://localhost/pcds2030_dashboard_fork/app/views/agency/programs/view_programs.php:1
-- you forgot the tab that can switch between sections. i dont want all 3 sections to be shown in one page. one section per one page.
-- the view programs page is still showing html texts, seems like the css is not running? (https://ibb.co/vWmxSwY)
+- for quick finalize modal you dont have to pop out the modal to choose which period of submissions to be viewed bcs the users literally already choose which submission reporting period they want to finalize in the quick finalize modal.
+- html body.d-flex.flex-column.min-vh-100 footer.footer-modern div.footer-container div.footer-bottom div.footer-status span.status-indicator
+- this status indicator is appearing in the wrong place. the html showed that it is in the footer but in program modules it appear at the left side of the screen
+- remove program type filter. repalce ratin filter with status. view programs should show the program status not program rating in the program boxes. (<div class="status-info">
+                <div class="status-circle status-pending"></div>
+                <span class="status-text">On Track for Year</span>
+            </div>)
+
+- the tootip for initative name taht pops out from the initative number overflowed out of the screen
+- 
