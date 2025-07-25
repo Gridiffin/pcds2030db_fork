@@ -145,7 +145,7 @@ if ($can_edit) {
 $contentFile = null;
 ?>
 <!-- Main Content -->
-<main class="flex-fill">
+<main>
 <div class="container-fluid">
     <!-- Error/Success Messages -->
     <?php if (isset($_SESSION['message'])): ?>

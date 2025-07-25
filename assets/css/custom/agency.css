@@ -123,5 +123,5 @@ body.agency-layout {
 
 /* Dashboard header wrapper padding to offset fixed navbar */
 .dashboard-header-wrapper {
-    padding-top: 70px;
+    padding-top: var(--navbar-height);
 }

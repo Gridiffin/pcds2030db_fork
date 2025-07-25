@@ -44,7 +44,7 @@
                         </span>
                     </div>
                     <div>
-                        <button class="btn btn-outline-primary btn-sm me-2" id="edit-status-btn">Change Status</button>
+                        <!-- Removed Change Status button -->
                         <button class="btn btn-outline-secondary btn-sm" id="view-status-history-btn">Status History</button>
                     </div>
                 </div>

@@ -85,6 +85,7 @@ $program_display_name .= htmlspecialchars($program['program_name']);
 $header_config = [
     'title' => 'Program Details',
     'subtitle' => $program_display_name,
+    'subtitle_html' => true,
     'variant' => 'white',
     'actions' => [
         [

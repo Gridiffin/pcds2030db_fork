@@ -28,6 +28,123 @@
     font-weight: 500;
 }
 
+/* Pill Tabs Design - Forest Theme */
+.pill-tabs-container {
+    background: rgba(210, 208, 160, 0.3); /* Fallback */
+    background: rgba(var(--forest-pale-rgb), 0.3);
+    border: 1px solid rgba(158, 188, 138, 0.4); /* Fallback */
+    border: 1px solid rgba(var(--forest-light-rgb), 0.4);
+    border-radius: 0.5rem;
+    padding: 0.375rem;
+    display: flex;
+    justify-content: center;
+    gap: 0.25rem;
+    width: 100%;
+}
+
+.pill-tabs-container.forest-theme {
+    background: rgba(210, 208, 160, 0.2); /* Fallback */
+    background: rgba(var(--forest-pale-rgb), 0.2);
+    border-color: rgba(158, 188, 138, 0.3); /* Fallback */
+    border-color: rgba(var(--forest-light-rgb), 0.3);
+}
+
+/* Pill Tab Navigation */
+.nav-tabs-pill {
+    display: flex;
+    margin: 0;
+    border: none;
+    background: transparent;
+    gap: 0.25rem;
+}
+
+.pill-tabs-container .nav-tabs-pill .nav-link,
+.nav-tabs-pill .nav-link {
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    padding: 0.5rem 0.75rem !important;
+    color: #000000 !important;
+    border: none !important;
+    border-radius: 0.375rem !important;
+    background: transparent !important;
+    text-decoration: none !important;
+    transition: all 0.15s ease !important;
+    white-space: nowrap !important;
+}
+
+.pill-tabs-container .nav-tabs-pill .nav-link:hover,
+.nav-tabs-pill .nav-link:hover {
+    color: #000000 !important;
+    background: rgba(255, 255, 255, 0.6) !important;
+    border: none !important;
+}
+
+/* Extra specific selectors for Bootstrap override */
+button.nav-link:not(.active) {
+    color: #000000 !important;
+}
+
+.pill-tabs-container button.nav-link:not(.active) {
+    color: #000000 !important;
+}
+
+.pill-tabs-container .nav-tabs-pill .nav-link.active,
+.nav-tabs-pill .nav-link.active,
+button.nav-link.active {
+    color: white !important;
+    font-weight: 600 !important;
+    background: #537D5D !important; /* Fallback */
+    background: var(--forest-deep) !important;
+    box-shadow: 0 1px 3px rgba(83, 125, 93, 0.3) !important; /* Fallback */
+    box-shadow: 0 1px 3px rgba(var(--forest-deep-rgb), 0.3) !important;
+    border: none !important;
+}
+
+/* Simple Badges for Pills */
+.simple-badge {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.125rem 0.5rem;
+    margin-left: 0.5rem;
+    background: rgba(158, 188, 138, 0.3); /* Fallback */
+    background: rgba(var(--forest-light-rgb), 0.3);
+    color: #000000;
+    border-radius: 1rem;
+    line-height: 1.2;
+}
+
+.nav-tabs-pill .nav-link.active .simple-badge {
+    background: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Content Card (separate from tabs) */
+.content-card {
+    background: white;
+    border: 1px solid #d1d9e0;
+    border-radius: 0.5rem;
+}
+
+/* Pill Tabs Responsive Design */
+@media (max-width: 768px) {
+    .pill-tabs-container {
+        padding: 0.25rem;
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .nav-tabs-pill .nav-link {
+        padding: 0.5rem 0.5rem;
+        font-size: 0.8rem;
+    }
+    
+    .simple-badge {
+        font-size: 0.7rem;
+        padding: 0.1rem 0.4rem;
+    }
+}
+
 .status-active {
     background-color: #d4edda;
     color: #155724;
@@ -64,6 +181,59 @@
     border-radius: 8px;
     margin-bottom: 20px;
 }
+
+/* Tab Navigation Styling */
+.nav-link:not(.active) {
+    color: white !important;
+}
+
+.nav-link:not(.active) i {
+    color: white !important;
+}
+
+.nav-link:not(.active):hover {
+    color: white !important;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.nav-link:not(.active):hover i {
+    color: white !important;
+}
+
+/* Alternative layout system - CSS Grid instead of Flexbox */
+body.d-flex.flex-column.min-vh-100 {
+    display: grid !important;
+    grid-template-rows: auto auto auto;
+    min-height: 100vh;
+    padding-top: 4rem !important; /* Force proper navbar spacing */
+}
+
+/* Make main content area not use flex-fill */
+main.flex-fill {
+    flex: unset !important;
+    grid-row: 2;
+}
+
+/* Alternative: Simple sticky footer approach (comment out grid above and use this instead)
+body.d-flex.flex-column.min-vh-100 {
+    display: block !important;
+    min-height: 100vh;
+    padding-top: 4rem !important;
+    position: relative;
+}
+
+main.flex-fill {
+    min-height: calc(100vh - 4rem - 60px);
+    padding-bottom: 60px;
+}
+
+footer {
+    position: sticky;
+    bottom: 0;
+    margin-top: auto;
+}
+*/
+
 
 /* Responsive design */
 @media (max-width: 768px) {

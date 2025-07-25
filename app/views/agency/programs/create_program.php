@@ -66,13 +66,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
             
-            // Set success message and redirect
-            $_SESSION['message'] = $result['message'];
-            $_SESSION['message_type'] = 'success';
-            
-            // Redirect to programs list
-            header('Location: view_programs.php');
-            exit;
+            // Set success message and show modal prompt
+            $message = $result['message'];
+            $messageType = 'success';
+            $created_program_id = $program_id;
+            $showSuccessModal = true;
         } else {
             $message = $result['error'] ?? 'An error occurred while creating the program.';
             $messageType = 'danger';
@@ -109,14 +107,65 @@ $jsBundle = 'agency-create-program';
 // Set content file
 $contentFile = 'partials/create_program_content.php';
 
-// Display success/error messages
+// Display success/error messages or modal
 if (!empty($message)) {
-    echo "<script>
-        document.addEventListener('DOMContentLoaded', function() {
-            showToast('" . ucfirst($messageType) . "', " . json_encode($message) . ", '$messageType');
-        });
-    </script>";
+    if (isset($showSuccessModal) && $showSuccessModal) {
+        // Show professional modal instead of toast
+        echo "<script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Show the success modal
+                var successModal = new bootstrap.Modal(document.getElementById('programSuccessModal'));
+                successModal.show();
+            });
+        </script>";
+    } else {
+        echo "<script>
+            document.addEventListener('DOMContentLoaded', function() {
+                showToast('" . ucfirst($messageType) . "', " . json_encode($message) . ", '$messageType');
+            });
+        </script>";
+    }
+}
+
+// Add success modal HTML if needed
+if (isset($showSuccessModal) && $showSuccessModal) {
+    $modalHtml = '
+    <!-- Program Creation Success Modal -->
+    <div class="modal fade" id="programSuccessModal" tabindex="-1" aria-labelledby="programSuccessModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="programSuccessModalLabel">
+                        <i class="fas fa-check-circle me-2"></i>Program Created Successfully!
+                    </h5>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <div class="mb-4">
+                        <i class="fas fa-clipboard-list text-success" style="font-size: 3rem;"></i>
+                    </div>
+                    <h6 class="mb-3">Your program template is ready!</h6>
+                    <p class="text-muted mb-4">Would you like to add your first submission now, or return to view your programs?</p>
+                </div>
+                <div class="modal-footer justify-content-center border-0 pb-4">
+                    <a href="add_submission.php?program_id=' . $created_program_id . '" class="btn btn-success me-2">
+                        <i class="fas fa-plus me-1"></i>Add First Submission
+                    </a>
+                    <a href="view_programs.php?tab=templates&created=1" class="btn btn-outline-secondary">
+                        <i class="fas fa-list me-1"></i>View All Programs
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>';
+    
+    // Store modal HTML to be displayed after base layout
+    $additionalContent = $modalHtml;
 }
 
 // Include base layout
 require_once PROJECT_ROOT_PATH . 'app/views/layouts/base.php';
+
+// Output modal after page content if needed
+if (isset($additionalContent)) {
+    echo $additionalContent;
+}

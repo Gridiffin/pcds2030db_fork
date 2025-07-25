@@ -10,19 +10,6 @@ require_once PROJECT_ROOT_PATH . 'app/views/layouts/page_header.php';
 
 <div class="outcomes-submit-container">
     
-    <!-- Quick Actions -->
-    <div class="quick-actions">
-        <h4 class="quick-actions-title">Quick Actions</h4>
-        <div class="quick-actions-grid">
-            <a href="#" class="quick-action-btn" data-action="refresh">
-                <i class="fas fa-sync-alt"></i> Refresh Data
-            </a>
-            <a href="#" class="quick-action-btn" data-action="export">
-                <i class="fas fa-download"></i> Export List
-            </a>
-        </div>
-    </div>
-
     <!-- Outcomes Grid -->
     <div id="outcomes-grid" class="outcomes-grid">
         <?php if (!empty($outcomes)): ?>

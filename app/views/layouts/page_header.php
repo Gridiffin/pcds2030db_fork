@@ -125,6 +125,15 @@ if (isset($header_config['theme']) && in_array($header_config['theme'], ['light'
                 <<?php echo $titleTag; ?> class="page-header__title"><?php echo htmlspecialchars($title); ?></<?php echo $titleTag; ?>>
                 <?php if (!empty($subtitle) && $showSubtitle): ?>
                     <p class="page-header__subtitle">
+                        <?php
+                        if (!empty($header_config['subtitle_html'])) {
+                            echo $subtitle; // Output raw HTML
+                        } else {
+                            echo htmlspecialchars($subtitle);
+                        }
+                        ?>
+                    </p>
+                    <p class="page-header__subtitle">
                         <?php if ($subtitleHtml): ?>
                             <?php echo $subtitle; ?>
                         <?php else: ?>

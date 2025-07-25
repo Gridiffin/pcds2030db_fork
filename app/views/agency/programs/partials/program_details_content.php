@@ -5,7 +5,7 @@
  */
 ?>
 <!-- Main Content -->
-<main class="flex-fill">
+<main>
 <div class="container-fluid">
     <!-- Toast Notifications for Alerts -->
     <?php if ($alert_flags['show_draft_alert']): ?>
