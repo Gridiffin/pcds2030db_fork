@@ -1,7 +1,7 @@
 <?php
 /**
- * Program Row Partial
- * Renders a single program row for tables
+ * Program Box Partial
+ * Renders a single program as a horizontal box/card
  */
 
 // Extract program data
@@ -21,22 +21,26 @@ $rating_map = [
     'not_started' => [
         'label' => 'Not Started', 
         'class' => 'secondary',
-        'icon' => 'fas fa-hourglass-start'
+        'icon' => 'fas fa-hourglass-start',
+        'circle_class' => 'status-inactive'
     ],
     'on_track_for_year' => [
         'label' => 'On Track for Year', 
         'class' => 'warning',
-        'icon' => 'fas fa-calendar-check'
+        'icon' => 'fas fa-calendar-check',
+        'circle_class' => 'status-pending'
     ],
     'monthly_target_achieved' => [
         'label' => 'Monthly Target Achieved', 
         'class' => 'success',
-        'icon' => 'fas fa-check-circle'
+        'icon' => 'fas fa-check-circle',
+        'circle_class' => 'status-completed'
     ],
     'severe_delay' => [
         'label' => 'Severe Delays', 
         'class' => 'danger',
-        'icon' => 'fas fa-exclamation-triangle'
+        'icon' => 'fas fa-exclamation-triangle',
+        'circle_class' => 'status-pending'
     ]
 ];
 
@@ -51,131 +55,181 @@ $rating_order = [
     'severe_delay' => 3,
     'not_started' => 4
 ];
+
+// Determine status indicator class
+$status_class = 'status-template';
+if ($is_draft) {
+    $status_class = 'status-draft';
+} elseif (isset($program['latest_submission_id']) && $program['latest_submission_id'] && !$is_draft) {
+    $status_class = 'status-finalized';
+}
 ?>
 
-<tr class="<?php echo $is_draft ? 'draft-program' : ''; ?>" 
-    data-program-type="<?php echo $is_assigned ? 'assigned' : 'created'; ?>">
+<div class="program-box <?php echo $is_draft ? 'draft-program' : ''; ?>" 
+     data-program-type="<?php echo $is_assigned ? 'assigned' : 'created'; ?>"
+     data-rating="<?php echo $current_rating; ?>" 
+     data-rating-order="<?php echo $rating_order[$current_rating] ?? 999; ?>"
+     data-initiative="<?php echo !empty($program['initiative_name']) ? htmlspecialchars($program['initiative_name']) : 'zzz_no_initiative'; ?>"
+     data-initiative-id="<?php echo $program['initiative_id'] ?? '0'; ?>">
     
-    <!-- Program Information -->
-    <td class="text-truncate program-name-col">
-        <div class="fw-medium">
-            <span class="program-name" title="<?php echo htmlspecialchars($program['program_name']); ?>">
+    <!-- Status Indicator -->
+    <div class="status-indicator <?php echo $status_class; ?>"></div>
+    
+    <div class="program-box-content">
+        <!-- Program Header -->
+        <div class="program-header">
+            <div class="program-title-section">
                 <?php if (!empty($program['program_number'])): ?>
-                    <span class="badge bg-info me-2" title="Program Number">
-                        <?php echo htmlspecialchars($program['program_number']); ?>
-                    </span>
+                    <div class="program-number"><?php echo htmlspecialchars($program['program_number']); ?></div>
                 <?php endif; ?>
-                <?php echo htmlspecialchars($program['program_name']); ?>
-            </span>
-            <?php if ($is_draft): ?>
-                <span class="draft-indicator" title="Draft"></span>
-            <?php endif; ?>
-        </div>
-        <div class="small text-muted program-type-indicator">
-            <i class="fas fa-<?php echo $is_assigned ? 'tasks' : 'folder-plus'; ?> me-1"></i>
-            <?php echo $is_assigned ? 'Assigned' : 'Agency-Created'; ?>
-        </div>
-    </td>
+                <div>
+                    <a href="program_details.php?id=<?php echo $program['program_id']; ?>" 
+                       class="program-name" 
+                       title="<?php echo htmlspecialchars($program['program_name']); ?>">
+                        <?php echo htmlspecialchars($program['program_name']); ?>
+                    </a>
+                    <?php if (!empty($program['description'])): ?>
+                        <div class="program-description">
+                            <?php echo htmlspecialchars($program['description']); ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+            
+            <!-- Actions Section -->
+            <div class="action-info">
+                <button class="action-btn" onclick="toggleDropdown(this)">
+                    <i class="fas fa-cog"></i>
+                    Actions
+                    <i class="fas fa-chevron-down ms-1"></i>
+                </button>
+                <div class="dropdown-menu-custom">
+                    <!-- View Button -->
+                    <a href="program_details.php?id=<?php echo $program['program_id']; ?>" 
+                       class="dropdown-item-custom"
+                       title="View detailed program information including submissions, targets, and progress">
+                        <i class="fas fa-eye"></i>
+                        View Details
+                    </a>
 
-    <!-- Initiative -->
-    <td class="text-truncate initiative-col initiative-display" 
-        data-initiative="<?php echo !empty($program['initiative_name']) ? htmlspecialchars($program['initiative_name']) : 'zzz_no_initiative'; ?>"
-        data-initiative-id="<?php echo $program['initiative_id'] ?? '0'; ?>">
-        <?php if (!empty($program['initiative_name'])): ?>
-            <span class="badge bg-primary initiative-badge" title="Initiative">
-                <i class="fas fa-lightbulb me-1"></i>
-                <span class="initiative-badge-card" title="<?php 
-                    echo !empty($program['initiative_number']) ? 
-                        htmlspecialchars($program['initiative_number'] . ' - ' . $program['initiative_name']) : 
-                        htmlspecialchars($program['initiative_name']); 
-                ?>">
                     <?php 
-                    echo !empty($program['initiative_number']) ? 
-                        htmlspecialchars($program['initiative_number'] . ' - ' . $program['initiative_name']) : 
-                        htmlspecialchars($program['initiative_name']); 
+                    // Check if user can edit this program
+                    $can_edit = can_edit_program($program['program_id']);
+                    $can_delete = is_focal_user() || is_program_creator($program['program_id']);
                     ?>
-                </span>
-            </span>
-        <?php else: ?>
-            <span class="text-muted small">
-                <i class="fas fa-minus me-1"></i>Not Linked
-            </span>
-        <?php endif; ?>
-    </td>
 
-    <!-- Rating (if shown) -->
-    <?php if ($show_rating): ?>
-    <td data-rating="<?php echo $current_rating; ?>" 
-        data-rating-order="<?php echo $rating_order[$current_rating] ?? 999; ?>">
-        <span class="badge bg-<?php echo $rating_map[$current_rating]['class']; ?> rating-badge" 
-              title="<?php echo $rating_map[$current_rating]['label']; ?>">
-            <i class="<?php echo $rating_map[$current_rating]['icon']; ?> me-1"></i>
-            <?php echo $rating_map[$current_rating]['label']; ?>
-        </span>
-    </td>
-    <?php endif; ?>
+                    <!-- Edit/More Actions -->
+                    <?php if ($can_edit): ?>
+                    <button type="button" class="dropdown-item-custom more-actions-btn" 
+                            data-program-id="<?php echo $program['program_id']; ?>"
+                            data-program-name="<?php echo htmlspecialchars($program['program_name']); ?>"
+                            data-program-type="<?php echo $is_assigned ? 'assigned' : 'created'; ?>"
+                            title="Edit submission and program details">
+                        <i class="fas fa-edit"></i>
+                        Edit Submission
+                    </button>
+                    <a href="edit_program.php?id=<?php echo $program['program_id']; ?>" 
+                       class="dropdown-item-custom"
+                       title="Modify program details, targets, and basic information">
+                        <i class="fas fa-cog"></i>
+                        Edit Program
+                    </a>
+                    <?php endif; ?>
 
-    <!-- Last Updated -->
-    <td>
-        <?php 
-        $date_iso = '';
-        if (isset($program['updated_at']) && $program['updated_at']) {
-            $date_iso = date('Y-m-d', strtotime($program['updated_at']));
-            $date_display = date('M j, Y g:i A', strtotime($program['updated_at']));
-        } elseif (isset($program['created_at']) && $program['created_at']) {
-            $date_iso = date('Y-m-d', strtotime($program['created_at']));
-            $date_display = date('M j, Y g:i A', strtotime($program['created_at']));
-        } else {
-            $date_display = 'Not set';
-        }
-        ?>
-        <span <?php if ($date_iso) echo 'data-date="' . $date_iso . '"'; ?>>
-            <?php echo $date_display; ?>
-        </span>
-    </td>
+                    <!-- Copy Program -->
+                    <button type="button" class="dropdown-item-custom" 
+                            title="Create a copy of this program">
+                        <i class="fas fa-copy"></i>
+                        Duplicate Program
+                    </button>
 
-    <!-- Actions -->
-    <td>
-        <div class="btn-group btn-group-sm d-flex flex-nowrap" role="group" aria-label="Program actions">
-            <!-- View Button -->
-            <a href="program_details.php?id=<?php echo $program['program_id']; ?>" 
-               class="btn btn-outline-secondary flex-fill" 
-               title="View detailed program information including submissions, targets, and progress"
-               data-bs-toggle="tooltip" 
-               data-bs-placement="top">
-                <i class="fas fa-eye"></i>
-            </a>
-
-            <?php 
-            // Check if user can edit this program
-            $can_edit = can_edit_program($program['program_id']);
-            $can_delete = is_focal_user() || is_program_creator($program['program_id']);
-            ?>
-
-            <!-- Edit/More Actions Button -->
-            <?php if ($can_edit): ?>
-            <button type="button" class="btn btn-outline-secondary flex-fill more-actions-btn" 
-                    data-program-id="<?php echo $program['program_id']; ?>"
-                    data-program-name="<?php echo htmlspecialchars($program['program_name']); ?>"
-                    data-program-type="<?php echo $is_assigned ? 'assigned' : 'created'; ?>"
-                    title="Edit submission and program details"
-                    data-bs-toggle="tooltip" 
-                    data-bs-placement="top">
-                <i class="fas fa-ellipsis-v"></i>
-            </button>
-            <?php endif; ?>
-
-            <!-- Delete Button -->
-            <?php if ($can_delete): ?>
-            <button type="button" class="btn btn-outline-danger flex-fill trigger-delete-modal" 
-                    data-id="<?php echo $program['program_id']; ?>" 
-                    data-name="<?php echo htmlspecialchars($program['program_name']); ?>" 
-                    data-bs-toggle="tooltip" 
-                    data-bs-placement="top"
-                    title="Delete this program and all its submissions">
-                <i class="fas fa-trash"></i>
-            </button>
-            <?php endif; ?>
+                    <!-- Delete Button -->
+                    <?php if ($can_delete): ?>
+                    <button type="button" class="dropdown-item-custom danger trigger-delete-modal" 
+                            data-id="<?php echo $program['program_id']; ?>" 
+                            data-name="<?php echo htmlspecialchars($program['program_name']); ?>" 
+                            title="Delete this program and all its submissions">
+                        <i class="fas fa-trash"></i>
+                        Delete Program
+                    </button>
+                    <?php endif; ?>
+                </div>
+            </div>
         </div>
-    </td>
-</tr>
+
+        <!-- Program Meta Row -->
+        <div class="program-meta-row">
+            <!-- Initiative -->
+            <div class="initiative-info">
+                <?php if (!empty($program['initiative_name'])): ?>
+                    <?php if (!empty($program['initiative_number'])): ?>
+                        <div class="initiative-icon">
+                            <i class="fas fa-lightbulb"></i>
+                            <?php echo htmlspecialchars($program['initiative_number']); ?>
+                            <div class="tooltip">
+                                <?php echo htmlspecialchars($program['initiative_name']); ?>
+                            </div>
+                        </div>
+                    <?php else: ?>
+                        <!-- Fallback to full badge for initiatives without numbers -->
+                        <span class="initiative-badge" title="Initiative">
+                            <i class="fas fa-lightbulb me-1"></i>
+                            <?php echo htmlspecialchars($program['initiative_name']); ?>
+                        </span>
+                    <?php endif; ?>
+                <?php else: ?>
+                    <div class="no-initiative">
+                        <i class="fas fa-minus"></i>
+                        Not Linked to Initiative
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <!-- Status/Rating -->
+            <?php if ($show_rating): ?>
+            <div class="status-info">
+                <div class="status-circle <?php echo $rating_map[$current_rating]['circle_class']; ?>"></div>
+                <span class="status-text"><?php echo $rating_map[$current_rating]['label']; ?></span>
+            </div>
+            <?php endif; ?>
+
+            <!-- Last Updated -->
+            <div class="date-info">
+                <?php 
+                $date_iso = '';
+                if (isset($program['updated_at']) && $program['updated_at']) {
+                    $date_iso = date('Y-m-d', strtotime($program['updated_at']));
+                    $date_display = date('M j, Y g:i A', strtotime($program['updated_at']));
+                } elseif (isset($program['created_at']) && $program['created_at']) {
+                    $date_iso = date('Y-m-d', strtotime($program['created_at']));
+                    $date_display = date('M j, Y g:i A', strtotime($program['created_at']));
+                } else {
+                    $date_display = 'Not set';
+                }
+                ?>
+                <i class="fas fa-clock"></i>
+                <span <?php if ($date_iso) echo 'data-date="' . $date_iso . '"'; ?>>
+                    <?php echo $date_display; ?>
+                </span>
+            </div>
+
+            <!-- Editors (placeholder for future implementation) -->
+            <div class="editors-info">
+                <span class="editors-label">Editors:</span>
+                <span class="editors-all">All</span>
+            </div>
+        </div>
+
+        <!-- Timeline (placeholder for future implementation) -->
+        <?php if (false): // Placeholder - will be implemented later ?>
+        <div class="timeline-info timeline-absolute">
+            <i class="fas fa-calendar-alt"></i>
+            <div class="timeline-dates">
+                Jan 1, 2024
+                <span class="timeline-separator">→</span>
+                Dec 31, 2024
+            </div>
+        </div>
+        <?php endif; ?>
+    </div>
+</div>

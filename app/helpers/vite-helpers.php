@@ -16,11 +16,26 @@ function vite_assets($bundle_name = null) {
         // Fallback for CLI or when DOCUMENT_ROOT is not set
         $doc_root = dirname(dirname(dirname(__FILE__)));
     }
+    
+    // For this specific project structure, ensure we use the correct path
+    if (strpos($doc_root, 'pcds2030_dashboard_fork') === false) {
+        // We're likely in a web context where DOCUMENT_ROOT points to a different location
+        $doc_root = dirname(dirname(dirname(__FILE__)));
+    }
+    
     $dist_path = rtrim($doc_root, '/') . '/dist/';
     
     // Auto-detect bundle name if not provided
     if (!$bundle_name) {
         $bundle_name = detect_bundle_name();
+    }
+    
+    // Debug output (remove in production)
+    if (isset($_GET['debug_vite'])) {
+        echo "<!-- DEBUG: Bundle name detected: $bundle_name -->\n";
+        echo "<!-- DEBUG: Dist path: $dist_path -->\n";
+        echo "<!-- DEBUG: REQUEST_URI: " . ($_SERVER['REQUEST_URI'] ?? 'not set') . " -->\n";
+        echo "<!-- DEBUG: SCRIPT_NAME: " . ($_SERVER['SCRIPT_NAME'] ?? 'not set') . " -->\n";
     }
     
     if ($is_dev) {
@@ -33,16 +48,40 @@ function vite_assets($bundle_name = null) {
     // Production mode - load bundled assets
     $html = '';
     
+    // Determine the web-accessible path based on current request
+    $app_base_path = '';
+    if (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '/pcds2030_dashboard_fork/') !== false) {
+        $app_base_path = '/pcds2030_dashboard_fork';
+    }
+    
     // Load CSS bundle
     $css_file = $dist_path . 'css/' . $bundle_name . '.bundle.css';
     if (file_exists($css_file)) {
-        $html .= '<link rel="stylesheet" href="/dist/css/' . $bundle_name . '.bundle.css">' . "\n";
+        $css_url = $app_base_path . '/dist/css/' . $bundle_name . '.bundle.css';
+        $html .= '<link rel="stylesheet" href="' . $css_url . '">' . "\n";
+        if (isset($_GET['debug_vite'])) {
+            echo "<!-- DEBUG: CSS file found and loaded: $css_file -->\n";
+            echo "<!-- DEBUG: CSS URL: $css_url -->\n";
+        }
+    } else {
+        if (isset($_GET['debug_vite'])) {
+            echo "<!-- DEBUG: CSS file NOT found: $css_file -->\n";
+        }
     }
     
     // Load JS bundle
     $js_file = $dist_path . 'js/' . $bundle_name . '.bundle.js';
     if (file_exists($js_file)) {
-        $html .= '<script type="module" src="/dist/js/' . $bundle_name . '.bundle.js"></script>' . "\n";
+        $js_url = $app_base_path . '/dist/js/' . $bundle_name . '.bundle.js';
+        $html .= '<script type="module" src="' . $js_url . '"></script>' . "\n";
+        if (isset($_GET['debug_vite'])) {
+            echo "<!-- DEBUG: JS file found and loaded: $js_file -->\n";
+            echo "<!-- DEBUG: JS URL: $js_url -->\n";
+        }
+    } else {
+        if (isset($_GET['debug_vite'])) {
+            echo "<!-- DEBUG: JS file NOT found: $js_file -->\n";
+        }
     }
 
     return $html;
@@ -60,11 +99,26 @@ function detect_bundle_name() {
     $page = basename($script_name, '.php');
     $path_parts = explode('/', trim($request_uri, '/'));
     
+    // Debug output (remove in production)
+    if (isset($_GET['debug_vite'])) {
+        echo "<!-- DEBUG: detect_bundle_name() called -->\n";
+        echo "<!-- DEBUG: Page extracted: $page -->\n";
+        echo "<!-- DEBUG: Path parts: " . implode(', ', $path_parts) . " -->\n";
+    }
+    
     // Agency module mapping
     if (strpos($request_uri, '/agency/') !== false) {
         // Programs module (check first to avoid dashboard fallback)
         if (strpos($request_uri, '/programs/') !== false || $page === 'view_programs' || strpos($request_uri, 'view_programs') !== false) {
+            if (isset($_GET['debug_vite'])) {
+                echo "<!-- DEBUG: In programs module detection -->\n";
+                echo "<!-- DEBUG: Page check: $page === 'view_programs' = " . ($page === 'view_programs' ? 'true' : 'false') . " -->\n";
+                echo "<!-- DEBUG: view_programs in URI: " . (strpos($request_uri, 'view_programs') !== false ? 'true' : 'false') . " -->\n";
+            }
             if ($page === 'view_programs' || $page === 'view_programs_content' || strpos($request_uri, 'view_programs') !== false) {
+                if (isset($_GET['debug_vite'])) {
+                    echo "<!-- DEBUG: Returning agency-view-programs bundle -->\n";
+                }
                 return 'agency-view-programs';
             }
             if ($page === 'create_program') {
@@ -142,7 +196,11 @@ function detect_bundle_name() {
     }
     
     // Default fallback
-    return 'agency-dashboard';
+    $bundle_name = 'agency-dashboard';
+    if (isset($_GET['debug_vite'])) {
+        echo "<!-- DEBUG: Returning default bundle: $bundle_name -->\n";
+    }
+    return $bundle_name;
 }
 
 /**

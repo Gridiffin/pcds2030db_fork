@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card-Based Programs Layout - Style Guide</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* CSS Variables (Forest Theme) */
+        :root {
+            /* Colors */
+            --color-primary: #22543d;
+            --color-success: #38a169;
+            --color-warning: #d69e2e;
+            --color-danger: #e53e3e;
+            --color-info: #3182ce;
+            --color-secondary: #718096;
+            
+            /* Forest Theme */
+            --forest-ultra-light: #f7fafc;
+            --forest-pale: #edf2f7;
+            --forest-light: #e2e8f0;
+            --forest-medium: #cbd5e0;
+            
+            /* Spacing */
+            --space-1: 0.25rem;
+            --space-2: 0.5rem;
+            --space-3: 0.75rem;
+            --space-4: 1rem;
+            --space-5: 1.25rem;
+            --space-6: 1.5rem;
+            --space-8: 2rem;
+            
+            /* Typography */
+            --font-size-sm: 0.875rem;
+            --font-size-base: 1rem;
+            --font-size-lg: 1.125rem;
+            --font-size-xl: 1.25rem;
+            --font-weight-medium: 500;
+            --font-weight-semibold: 600;
+            --font-weight-bold: 700;
+            
+            /* Layout */
+            --radius-base: 0.5rem;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            
+            /* Transitions */
+            --transition-fast: all 0.15s ease;
+            --transition-base: all 0.3s ease;
+        }
+
+        body {
+            background-color: var(--forest-ultra-light);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #2d3748;
+        }
+
+        /* Program Card Styles */
+        .program-card {
+            background: white;
+            border-radius: var(--radius-base);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--forest-light);
+            transition: var(--transition-base);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .program-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--color-primary);
+        }
+
+        .program-card-header {
+            padding: var(--space-4) var(--space-5);
+            border-bottom: 1px solid var(--forest-light);
+            background: var(--forest-ultra-light);
+        }
+
+        .program-card-body {
+            padding: var(--space-5);
+        }
+
+        .program-card-footer {
+            padding: var(--space-4) var(--space-5);
+            background: var(--forest-ultra-light);
+            border-top: 1px solid var(--forest-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Program Status Indicators */
+        .program-status-badge {
+            position: absolute;
+            top: var(--space-3);
+            right: var(--space-3);
+            z-index: 10;
+        }
+
+        .status-draft {
+            background: var(--color-warning);
+            color: white;
+        }
+
+        .status-finalized {
+            background: var(--color-success);
+            color: white;
+        }
+
+        .status-template {
+            background: var(--color-info);
+            color: white;
+        }
+
+        /* Program Information */
+        .program-number {
+            background: var(--color-info);
+            color: white;
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-semibold);
+            padding: var(--space-1) var(--space-2);
+            border-radius: calc(var(--radius-base) / 2);
+            display: inline-block;
+            margin-bottom: var(--space-2);
+        }
+
+        .program-name {
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-primary);
+            margin-bottom: var(--space-2);
+            line-height: 1.4;
+        }
+
+        .program-type {
+            font-size: var(--font-size-sm);
+            color: var(--color-secondary);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        /* Initiative Badge */
+        .initiative-badge {
+            background: var(--color-primary);
+            color: white;
+            padding: var(--space-2) var(--space-3);
+            border-radius: calc(var(--radius-base) / 2);
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-medium);
+            margin-bottom: var(--space-3);
+            display: inline-block;
+        }
+
+        .no-initiative {
+            color: var(--color-secondary);
+            font-style: italic;
+            font-size: var(--font-size-sm);
+        }
+
+        /* Rating Badge */
+        .rating-badge {
+            padding: var(--space-2) var(--space-3);
+            border-radius: calc(var(--radius-base) / 2);
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-medium);
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .rating-not-started {
+            background: rgba(113, 128, 150, 0.15);
+            color: var(--color-secondary);
+        }
+
+        .rating-on-track {
+            background: rgba(214, 158, 46, 0.15);
+            color: var(--color-warning);
+        }
+
+        .rating-achieved {
+            background: rgba(56, 161, 105, 0.15);
+            color: var(--color-success);
+        }
+
+        .rating-delayed {
+            background: rgba(229, 62, 62, 0.15);
+            color: var(--color-danger);
+        }
+
+        /* Meta Information */
+        .program-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: var(--space-4);
+            padding-top: var(--space-3);
+            border-top: 1px solid var(--forest-light);
+            font-size: var(--font-size-sm);
+            color: var(--color-secondary);
+        }
+
+        .last-updated {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        /* Action Dropdown */
+        .action-dropdown {
+            position: relative;
+        }
+
+        .action-btn {
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            padding: var(--space-2) var(--space-4);
+            border-radius: var(--radius-base);
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-medium);
+            cursor: pointer;
+            transition: var(--transition-fast);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .action-btn:hover {
+            background: #1a365d;
+        }
+
+        .dropdown-menu-custom {
+            position: absolute;
+            top: 115%;
+            right: 0;
+            background: white;
+            border: 1px solid var(--forest-light);
+            border-radius: var(--radius-base);
+            box-shadow: var(--shadow-lg);
+            min-width: 180px;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: var(--transition-fast);
+        }
+
+        .dropdown-menu-custom.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-item-custom {
+            padding: var(--space-3) var(--space-4);
+            color: #2d3748;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            transition: var(--transition-fast);
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            font-size: var(--font-size-sm);
+        }
+
+        .dropdown-item-custom:hover {
+            background: var(--forest-ultra-light);
+            color: var(--color-primary);
+        }
+
+        .dropdown-item-custom.danger:hover {
+            background: rgba(229, 62, 62, 0.1);
+            color: var(--color-danger);
+        }
+
+        /* Grid Layout */
+        .programs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: var(--space-6);
+            margin-top: var(--space-6);
+        }
+
+        /* Section Headers */
+        .section-header {
+            background: white;
+            border-radius: var(--radius-base);
+            padding: var(--space-4) var(--space-5);
+            box-shadow: var(--shadow-sm);
+            border-left: 4px solid var(--color-primary);
+            margin-bottom: var(--space-6);
+        }
+
+        .section-title {
+            font-size: var(--font-size-xl);
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-primary);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+
+        .section-count {
+            background: var(--color-secondary);
+            color: white;
+            font-size: var(--font-size-sm);
+            padding: var(--space-1) var(--space-2);
+            border-radius: 50px;
+            min-width: 24px;
+            text-align: center;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .programs-grid {
+                grid-template-columns: 1fr;
+                gap: var(--space-4);
+            }
+            
+            .program-card-footer {
+                flex-direction: column;
+                gap: var(--space-3);
+                align-items: stretch;
+            }
+            
+            .program-meta {
+                flex-direction: column;
+                gap: var(--space-2);
+                align-items: start;
+            }
+        }
+
+        /* Demo Styles */
+        .demo-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: var(--space-8);
+        }
+
+        .demo-title {
+            text-align: center;
+            color: var(--color-primary);
+            margin-bottom: var(--space-8);
+            font-size: 2.5rem;
+            font-weight: var(--font-weight-bold);
+        }
+
+        .comparison-note {
+            background: white;
+            padding: var(--space-6);
+            border-radius: var(--radius-base);
+            border-left: 4px solid var(--color-success);
+            margin-bottom: var(--space-8);
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <h1 class="demo-title">
+            <i class="fas fa-th-large me-3"></i>
+            Card-Based Programs Layout
+        </h1>
+
+        <div class="comparison-note">
+            <h3><i class="fas fa-lightbulb me-2 text-success"></i>Design Benefits</h3>
+            <ul class="mb-0">
+                <li><strong>Cleaner Visual Hierarchy:</strong> Each program has its own dedicated space with clear information grouping</li>
+                <li><strong>Better Mobile Experience:</strong> Cards stack naturally and maintain readability on all screen sizes</li>
+                <li><strong>Reduced Cognitive Load:</strong> Single dropdown action button instead of multiple separate buttons</li>
+                <li><strong>Enhanced Scanability:</strong> Visual badges and status indicators make information more accessible</li>
+                <li><strong>Flexible Layout:</strong> Grid system adapts to different screen sizes and content amounts</li>
+            </ul>
+        </div>
+
+        <!-- Draft Programs Section -->
+        <div class="section-header">
+            <h2 class="section-title">
+                <i class="fas fa-edit text-warning"></i>
+                Programs with Draft Submissions
+                <span class="section-count">3</span>
+            </h2>
+        </div>
+
+        <div class="programs-grid">
+            <!-- Draft Program Card 1 -->
+            <div class="program-card">
+                <div class="program-status-badge">
+                    <span class="badge status-draft">
+                        <i class="fas fa-pencil-alt me-1"></i>Draft
+                    </span>
+                </div>
+                
+                <div class="program-card-header">
+                    <div class="program-number">PROG-2024-001</div>
+                    <div class="program-name">Digital Infrastructure Modernization Initiative</div>
+                    <div class="program-type">
+                        <i class="fas fa-folder-plus"></i>
+                        Agency-Created
+                    </div>
+                </div>
+
+                <div class="program-card-body">
+                    <div class="initiative-badge">
+                        <i class="fas fa-lightbulb me-1"></i>
+                        INIT-001 - Technology Advancement Program
+                    </div>
+                    
+                    <div class="rating-badge rating-on-track">
+                        <i class="fas fa-calendar-check"></i>
+                        On Track for Year
+                    </div>
+
+                    <div class="program-meta">
+                        <div class="last-updated">
+                            <i class="fas fa-clock"></i>
+                            Jan 15, 2024 2:30 PM
+                        </div>
+                    </div>
+                </div>
+
+                <div class="program-card-footer">
+                    <div class="action-dropdown">
+                        <button class="action-btn" onclick="toggleDropdown(this)">
+                            <i class="fas fa-cog"></i>
+                            Actions
+                            <i class="fas fa-chevron-down ms-1"></i>
+                        </button>
+                        <div class="dropdown-menu-custom">
+                            <a href="#" class="dropdown-item-custom">
+                                <i class="fas fa-eye"></i>
+                                View Details
+                            </a>
+                            <a href="#" class="dropdown-item-custom">
+                                <i class="fas fa-edit"></i>
+                                Edit Submission
+                            </a>
+                            <a href="#" class="dropdown-item-custom">
+                                <i class="fas fa-share"></i>
+                                Submit for Review
+                            </a>
+                            <a href="#" class="dropdown-item-custom">
+                                <i class="fas fa-copy"></i>
+                                Duplicate Program
+                            </a>
+                            <button class="dropdown-item-custom danger">
+                                <i class="fas fa-trash"></i>
+                                Delete Program
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Draft Program Card 2 -->
+            <div class="program-card">
+                <div class="program-status-badge">
+                    <span class="badge status-draft">
+                        <i class="fas fa-pencil-alt me-1"></i>Draft
+                    </span>
+                </div>
+                
+                <div class="program-card-header">
+                    <div class="program-number">PROG-2024-007</div>
+                    <div class="program-name">Community Outreach and Engagement Platform</div>
+                    <div class="program-type">
+                        <i class="fas fa-tasks"></i>
+                        Assigned
+                    </div>
+                </div>
+
+                <div class="program-card-body">
+                    <div class="initiative-badge">
+                        <i class="fas fa-lightbulb me-1"></i>
+                        INIT-003 - Public Engagement Enhancement
+                    </div>
+                    
+                    <div class="rating-badge rating-achieved">
+                        <i class="fas fa-check-circle"></i>
+                        Monthly Target Achieved
+                    </div>
+
+                    <div class="program-meta">
+                        <div class="last-updated">
+                            <i class="fas fa-clock"></i>
+                            Jan 12, 2024 11:45 AM
+                        </div>
+                    </div>
+                </div>
+
+                <div class="program-card-footer">
+                    <div class="action-dropdown">
+                        <button class="action-btn" onclick="toggleDropdown(this)">
+                            <i class="fas fa-cog"></i>
+                            Actions
+                            <i class="fas fa-chevron-down ms-1"></i>
+                        </button>
+                        <div class="dropdown-menu-custom">
+                            <a href="#" class="dropdown-item-custom">
+                                <i class="fas fa-eye"></i>
+                                View Details
+                            </a>
+                            <a href="#" class="dropdown-item-custom">
+                                <i class="fas fa-edit"></i>
+                                Edit Submission
+                            </a>
+                            <a href="#" class="dropdown-item-custom">
+                                <i class="fas fa-share"></i>
+                                Submit for Review
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Draft Program Card 3 -->
+            <div class="program-card">
+                <div class="program-status-badge">
+                    <span class="badge status-draft">
+                        <i class="fas fa-pencil-alt me-1"></i>Draft
+                    </span>
+                </div>
+                
+                <div class="program-card-header">
+                    <div class="program-number">PROG-2024-012</div>
+                    <div class="program-name">Sustainable Resource Management System</div>
+                    <div class="program-type">
+                        <i class="fas fa-folder-plus"></i>
+                        Agency-Created
+                    </div>
+                </div>
+
+                <div class="program-card-body">
+                    <div class="initiative-badge">
+                        <i class="fas fa-lightbulb me-1"></i>
+                        INIT-005 - Environmental Sustainability Initiative
+                    </div>
+                    
+                    <div class="rating-badge rating-delayed">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Severe Delays
+                    </div>
+
+                    <div class="program-meta">
+                        <div class="last-updated">
+                            <i class="fas fa-clock"></i>
+                            Jan 8, 2024 4:20 PM
+                        </div>
+                    </div>
+                </div>
+
+                <div class="program-card-footer">
+                    <div class="action-dropdown">
+                        <button class="action-btn" onclick="toggleDropdown(this)">
+                            <i class="fas fa-cog"></i>
+                            Actions
+                            <i class="fas fa-chevron-down ms-1"></i>
+                        </button>
+                        <div class="dropdown-menu-custom">
+                            <a href="#" class="dropdown-item-custom">
+                                <i class="fas fa-eye"></i>
+                                View Details
+                            </a>
+                            <a href="#" class="dropdown-item-custom">
+                                <i class="fas fa-edit"></i>
+                                Edit Submission
+                            </a>
+                            <a href="#" class="dropdown-item-custom">
+                                <i class="fas fa-share"></i>
+                                Submit for Review
+                            </a>
+                            <a href="#" class="dropdown-item-custom">
+                                <i class="fas fa-copy"></i>
+                                Duplicate Program
+                            </a>
+                            <button class="dropdown-item-custom danger">
+                                <i class="fas fa-trash"></i>
+                                Delete Program
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Finalized Programs Section -->
+        <div class="section-header" style="margin-top: 3rem;">
+            <h2 class="section-title">
+                <i class="fas fa-check-circle text-success"></i>
+                Programs with Finalized Submissions
+                <span class="section-count">2</span>
+            </h2>
+        </div>
+
+        <div class="programs-grid">
+            <!-- Finalized Program Card 1 -->
+            <div class="program-card">
+                <div class="program-status-badge">
+                    <span class="badge status-finalized">
+                        <i class="fas fa-check me-1"></i>Finalized
+                    </span>
+                </div>
+                
+                <div class="program-card-header">
+                    <div class="program-number">PROG-2024-003</div>
+                    <div class="program-name">Healthcare Services Integration Project</div>
+                    <div class="program-type">
+                        <i class="fas fa-tasks"></i>
+                        Assigned
+                    </div>
+                </div>
+
+                <div class="program-card-body">
+                    <div class="initiative-badge">
+                        <i class="fas fa-lightbulb me-1"></i>
+                        INIT-002 - Healthcare Improvement Initiative
+                    </div>
+                    
+                    <div class="rating-badge rating-achieved">
+                        <i class="fas fa-check-circle"></i>
+                        Monthly Target Achieved
+                    </div>
+
+                    <div class="program-meta">
+                        <div class="last-updated">
+                            <i class="fas fa-clock"></i>
+                            Jan 10, 2024 9:15 AM
+                        </div>
+                    </div>
+                </div>
+
+                <div class="program-card-footer">
+                    <div class="action-dropdown">
+                        <button class="action-btn" onclick="toggleDropdown(this)">
+                            <i class="fas fa-cog"></i>
+                            Actions
+                            <i class="fas fa-chevron-down ms-1"></i>
+                        </button>
+                        <div class="dropdown-menu-custom">
+                            <a href="#" class="dropdown-item-custom">
+                                <i class="fas fa-eye"></i>
+                                View Details
+                            </a>
+                            <a href="#" class="dropdown-item-custom">
+                                <i class="fas fa-file-alt"></i>
+                                View Reports
+                            </a>
+                            <a href="#" class="dropdown-item-custom">
+                                <i class="fas fa-download"></i>
+                                Export Data
+                            </a>
+                            <a href="#" class="dropdown-item-custom">
+                                <i class="fas fa-copy"></i>
+                                Duplicate Program
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Finalized Program Card 2 -->
+            <div class="program-card">
+                <div class="program-status-badge">
+                    <span class="badge status-finalized">
+                        <i class="fas fa-check me-1"></i>Finalized
+                    </span>
+                </div>
+                
+                <div class="program-card-header">
+                    <div class="program-number">PROG-2024-005</div>
+                    <div class="program-name">Economic Development Support Framework</div>
+                    <div class="program-type">
+                        <i class="fas fa-folder-plus"></i>
+                        Agency-Created
+                    </div>
+                </div>
+
+                <div class="program-card-body">
+                    <div class="initiative-badge">
+                        <i class="fas fa-lightbulb me-1"></i>
+                        INIT-004 - Economic Growth Initiative
+                    </div>
+                    
+                    <div class="rating-badge rating-on-track">
+                        <i class="fas fa-calendar-check"></i>
+                        On Track for Year
+                    </div>
+
+                    <div class="program-meta">
+                        <div class="last-updated">
+                            <i class="fas fa-clock"></i>
+                            Jan 5, 2024 3:30 PM
+                        </div>
+                    </div>
+                </div>
+
+                <div class="program-card-footer">
+                    <div class="action-dropdown">
+                        <button class="action-btn" onclick="toggleDropdown(this)">
+                            <i class="fas fa-cog"></i>
+                            Actions
+                            <i class="fas fa-chevron-down ms-1"></i>
+                        </button>
+                        <div class="dropdown-menu-custom">
+                            <a href="#" class="dropdown-item-custom">
+                                <i class="fas fa-eye"></i>
+                                View Details
+                            </a>
+                            <a href="#" class="dropdown-item-custom">
+                                <i class="fas fa-file-alt"></i>
+                                View Reports
+                            </a>
+                            <a href="#" class="dropdown-item-custom">
+                                <i class="fas fa-download"></i>
+                                Export Data
+                            </a>
+                            <a href="#" class="dropdown-item-custom">
+                                <i class="fas fa-copy"></i>
+                                Duplicate Program
+                            </a>
+                            <button class="dropdown-item-custom danger">
+                                <i class="fas fa-trash"></i>
+                                Delete Program
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Program Templates Section -->
+        <div class="section-header" style="margin-top: 3rem;">
+            <h2 class="section-title">
+                <i class="fas fa-folder-open text-info"></i>
+                Program Templates
+                <span class="section-count">2</span>
+            </h2>
+        </div>
+
+        <div class="programs-grid">
+            <!-- Template Program Card 1 -->
+            <div class="program-card">
+                <div class="program-status-badge">
+                    <span class="badge status-template">
+                        <i class="fas fa-file-alt me-1"></i>Template
+                    </span>
+                </div>
+                
+                <div class="program-card-header">
+                    <div class="program-number">PROG-2024-009</div>
+                    <div class="program-name">Innovation Lab Development Program</div>
+                    <div class="program-type">
+                        <i class="fas fa-folder-plus"></i>
+                        Agency-Created
+                    </div>
+                </div>
+
+                <div class="program-card-body">
+                    <div class="initiative-badge">
+                        <i class="fas fa-lightbulb me-1"></i>
+                        INIT-006 - Innovation and Research Initiative
+                    </div>
+                    
+                    <div class="rating-badge rating-not-started">
+                        <i class="fas fa-hourglass-start"></i>
+                        Not Started
+                    </div>
+
+                    <div class="program-meta">
+                        <div class="last-updated">
+                            <i class="fas fa-clock"></i>
+                            Dec 28, 2023 1:00 PM
+                        </div>
+                    </div>
+                </div>
+
+                <div class="program-card-footer">
+                    <div class="action-dropdown">
+                        <button class="action-btn" onclick="toggleDropdown(this)">
+                            <i class="fas fa-cog"></i>
+                            Actions
+                            <i class="fas fa-chevron-down ms-1"></i>
+                        </button>
+                        <div class="dropdown-menu-custom">
+                            <a href="#" class="dropdown-item-custom">
+                                <i class="fas fa-eye"></i>
+                                View Details
+                            </a>
+                            <a href="#" class="dropdown-item-custom">
+                                <i class="fas fa-plus"></i>
+                                Create Submission
+                            </a>
+                            <a href="#" class="dropdown-item-custom">
+                                <i class="fas fa-copy"></i>
+                                Duplicate Program
+                            </a>
+                            <button class="dropdown-item-custom danger">
+                                <i class="fas fa-trash"></i>
+                                Delete Program
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Template Program Card 2 -->
+            <div class="program-card">
+                <div class="program-status-badge">
+                    <span class="badge status-template">
+                        <i class="fas fa-file-alt me-1"></i>Template
+                    </span>
+                </div>
+                
+                <div class="program-card-header">
+                    <div class="program-number">PROG-2024-011</div>
+                    <div class="program-name">Citizen Services Portal Enhancement</div>
+                    <div class="program-type">
+                        <i class="fas fa-tasks"></i>
+                        Assigned
+                    </div>
+                </div>
+
+                <div class="program-card-body">
+                    <div class="no-initiative">
+                        <i class="fas fa-minus me-1"></i>
+                        Not Linked to Initiative
+                    </div>
+                    
+                    <div class="rating-badge rating-not-started">
+                        <i class="fas fa-hourglass-start"></i>
+                        Not Started
+                    </div>
+
+                    <div class="program-meta">
+                        <div class="last-updated">
+                            <i class="fas fa-clock"></i>
+                            Dec 20, 2023 4:45 PM
+                        </div>
+                    </div>
+                </div>
+
+                <div class="program-card-footer">
+                    <div class="action-dropdown">
+                        <button class="action-btn" onclick="toggleDropdown(this)">
+                            <i class="fas fa-cog"></i>
+                            Actions
+                            <i class="fas fa-chevron-down ms-1"></i>
+                        </button>
+                        <div class="dropdown-menu-custom">
+                            <a href="#" class="dropdown-item-custom">
+                                <i class="fas fa-eye"></i>
+                                View Details
+                            </a>
+                            <a href="#" class="dropdown-item-custom">
+                                <i class="fas fa-plus"></i>
+                                Create Submission
+                            </a>
+                            <a href="#" class="dropdown-item-custom">
+                                <i class="fas fa-copy"></i>
+                                Duplicate Program
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Implementation Notes -->
+        <div class="comparison-note" style="margin-top: 3rem;">
+            <h3><i class="fas fa-code me-2 text-primary"></i>Implementation Notes</h3>
+            <ul class="mb-0">
+                <li><strong>CSS Structure:</strong> Uses existing CSS variables from the forest theme and modern card system</li>
+                <li><strong>Responsive Grid:</strong> Auto-fill grid with minimum 380px card width, single column on mobile</li>
+                <li><strong>Action Dropdown:</strong> Single button with contextual menu items based on program status and permissions</li>
+                <li><strong>Status Indicators:</strong> Visual badges in consistent positions for quick program status identification</li>
+                <li><strong>Accessibility:</strong> Proper ARIA labels, keyboard navigation, and screen reader support</li>
+                <li><strong>Performance:</strong> Minimal DOM elements, CSS transforms for animations, and efficient grid layout</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Dropdown functionality
+        function toggleDropdown(button) {
+            const dropdown = button.nextElementSibling;
+            const isOpen = dropdown.classList.contains('show');
+            
+            // Close all other dropdowns
+            document.querySelectorAll('.dropdown-menu-custom.show').forEach(menu => {
+                menu.classList.remove('show');
+            });
+            
+            // Toggle current dropdown
+            if (!isOpen) {
+                dropdown.classList.add('show');
+            }
+        }
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.action-dropdown')) {
+                document.querySelectorAll('.dropdown-menu-custom.show').forEach(menu => {
+                    menu.classList.remove('show');
+                });
+            }
+        });
+
+        // Prevent dropdown items from closing dropdown immediately
+        document.addEventListener('click', function(event) {
+            if (event.target.closest('.dropdown-item-custom')) {
+                event.preventDefault();
+                // Handle the action here
+                console.log('Action clicked:', event.target.textContent.trim());
+            }
+        });
+    </script>
+</body>
+</html>

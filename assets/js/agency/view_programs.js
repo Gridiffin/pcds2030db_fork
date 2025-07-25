@@ -4,7 +4,6 @@
  */
 
 // Import CSS for programs view
-import '../../css/main.css';
 import '../../css/agency/programs/view_programs.css';
 
 // Import essential utilities
@@ -13,6 +12,62 @@ import '../utilities/dropdown_init.js';
 
 // Import main utilities including showToast
 import '../main.js';
+
+// Global toggle dropdown function for custom dropdowns
+window.toggleDropdown = function(button) {
+    const dropdown = button.nextElementSibling;
+    if (!dropdown || !dropdown.classList.contains('dropdown-menu-custom')) {
+        return;
+    }
+    
+    // Find the program box container
+    const programBox = button.closest('.program-box');
+    
+    // Close all other dropdowns first and remove dropdown-active class
+    document.querySelectorAll('.dropdown-menu-custom.show').forEach(menu => {
+        if (menu !== dropdown) {
+            menu.classList.remove('show');
+            const otherProgramBox = menu.closest('.program-box');
+            if (otherProgramBox) {
+                otherProgramBox.classList.remove('dropdown-active');
+            }
+        }
+    });
+    
+    // Toggle current dropdown
+    const isShowing = dropdown.classList.contains('show');
+    dropdown.classList.toggle('show');
+    
+    // Add/remove dropdown-active class for z-index management
+    if (programBox) {
+        if (isShowing) {
+            programBox.classList.remove('dropdown-active');
+            // Remove body class if no dropdowns are open
+            if (!document.querySelector('.dropdown-menu-custom.show')) {
+                document.body.classList.remove('dropdown-open');
+            }
+        } else {
+            programBox.classList.add('dropdown-active');
+            // Add body class when dropdown opens
+            document.body.classList.add('dropdown-open');
+        }
+    }
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function closeDropdown(e) {
+        if (!button.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.classList.remove('show');
+            if (programBox) {
+                programBox.classList.remove('dropdown-active');
+                // Remove body class if no dropdowns are open
+                if (!document.querySelector('.dropdown-menu-custom.show')) {
+                    document.body.classList.remove('dropdown-open');
+                }
+            }
+            document.removeEventListener('click', closeDropdown);
+        }
+    });
+};
 
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize delete functionality
@@ -43,43 +98,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 100);
     }
     
-    // Initialize table sorting
-    const tables = ['draftProgramsTable', 'finalizedProgramsTable'];
-    tables.forEach(tableId => {
-        const table = document.getElementById(tableId);
-        if (!table) return;
-        
-        const sortableHeaders = table.querySelectorAll('th.sortable');
-        sortableHeaders.forEach(header => {
-            header.style.cursor = 'pointer';
-            header.addEventListener('click', function() {
-                const sortBy = this.getAttribute('data-sort');
-                const currentDirection = this.getAttribute('data-direction') || 'asc';
-                const newDirection = currentDirection === 'asc' ? 'desc' : 'asc';
-                
-                // Update all icons in this table
-                sortableHeaders.forEach(h => {
-                    const icon = h.querySelector('i');
-                    if (h === this) {
-                        icon.className = newDirection === 'asc' 
-                            ? 'fas fa-sort-up ms-1' 
-                            : 'fas fa-sort-down ms-1';
-                    } else {
-                        icon.className = 'fas fa-sort ms-1';
-                        h.removeAttribute('data-direction');
-                    }
-                });
-                
-                // Update direction attribute
-                this.setAttribute('data-direction', newDirection);
-                
-                // Refresh pagination after sorting
-                if (window.tablePaginations[tableId]) {
-                    window.tablePaginations[tableId].refresh();
-                }
-            });
-        });
-    });
+    // Initialize box sorting (sorting will be implemented differently for horizontal boxes)
+    // TODO: Implement sorting for horizontal box layout if needed
+    // For now, we'll comment this out as the sorting logic needs to be redesigned for boxes
       // Initialize draft table filters
     const draftSearchInput = document.getElementById('draftProgramSearch');
     const draftRatingFilter = document.getElementById('draftRatingFilter');
@@ -154,15 +175,17 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Handle filtering for specific table
-function applyFilters(tableType) {
-    const tableId = tableType === 'draft' ? 'draftProgramsTable' : 'finalizedProgramsTable';
-    const filterBadgesId = tableType === 'draft' ? 'draftFilterBadges' : 'finalizedFilterBadges';
+// Handle filtering for specific container
+function applyFilters(containerType) {
+    const containerId = containerType === 'draft' ? 'draftProgramsContainer' : 
+                       (containerType === 'finalized' ? 'finalizedProgramsContainer' : 'emptyProgramsContainer');
+    const filterBadgesId = containerType === 'draft' ? 'draftFilterBadges' : 
+                          (containerType === 'finalized' ? 'finalizedFilterBadges' : 'emptyFilterBadges');
     
-    const searchInput = document.getElementById(tableType + 'ProgramSearch');
-    const ratingFilter = document.getElementById(tableType + 'RatingFilter');
-    const typeFilter = document.getElementById(tableType + 'TypeFilter');
-    const initiativeFilter = document.getElementById(tableType + 'InitiativeFilter');
+    const searchInput = document.getElementById(containerType + 'ProgramSearch');
+    const ratingFilter = document.getElementById(containerType + 'RatingFilter');
+    const typeFilter = document.getElementById(containerType + 'TypeFilter');
+    const initiativeFilter = document.getElementById(containerType + 'InitiativeFilter');
     
     const searchText = searchInput ? searchInput.value.toLowerCase() : '';
     const ratingValue = ratingFilter ? ratingFilter.value : '';
@@ -179,22 +202,22 @@ function applyFilters(tableType) {
         let badgesHtml = '<span class="badge-label">Active filters:</span>';
         
         if (searchText) {
-            badgesHtml += `<span class="filter-badge">"${searchText}" <i class="fas fa-times remove-filter" data-filter="search" data-table="${tableType}"></i></span>`;
+            badgesHtml += `<span class="filter-badge">"${searchText}" <i class="fas fa-times remove-filter" data-filter="search" data-container="${containerType}"></i></span>`;
         }
         
         if (ratingValue) {
-            const ratingLabel = document.getElementById(tableType + 'RatingFilter').options[document.getElementById(tableType + 'RatingFilter').selectedIndex].text;
-            badgesHtml += `<span class="filter-badge">${ratingLabel} <i class="fas fa-times remove-filter" data-filter="rating" data-table="${tableType}"></i></span>`;
+            const ratingLabel = document.getElementById(containerType + 'RatingFilter').options[document.getElementById(containerType + 'RatingFilter').selectedIndex].text;
+            badgesHtml += `<span class="filter-badge">${ratingLabel} <i class="fas fa-times remove-filter" data-filter="rating" data-container="${containerType}"></i></span>`;
         }
         
         if (typeValue) {
-            const typeLabel = document.getElementById(tableType + 'TypeFilter').options[document.getElementById(tableType + 'TypeFilter').selectedIndex].text;
-            badgesHtml += `<span class="filter-badge">${typeLabel} <i class="fas fa-times remove-filter" data-filter="type" data-table="${tableType}"></i></span>`;
+            const typeLabel = document.getElementById(containerType + 'TypeFilter').options[document.getElementById(containerType + 'TypeFilter').selectedIndex].text;
+            badgesHtml += `<span class="filter-badge">${typeLabel} <i class="fas fa-times remove-filter" data-filter="type" data-container="${containerType}"></i></span>`;
         }
         
         if (initiativeValue) {
-            const initiativeLabel = document.getElementById(tableType + 'InitiativeFilter').options[document.getElementById(tableType + 'InitiativeFilter').selectedIndex].text;
-            badgesHtml += `<span class="filter-badge">${initiativeLabel} <i class="fas fa-times remove-filter" data-filter="initiative" data-table="${tableType}"></i></span>`;
+            const initiativeLabel = document.getElementById(containerType + 'InitiativeFilter').options[document.getElementById(containerType + 'InitiativeFilter').selectedIndex].text;
+            badgesHtml += `<span class="filter-badge">${initiativeLabel} <i class="fas fa-times remove-filter" data-filter="initiative" data-container="${containerType}"></i></span>`;
         }
         
         if (filterBadgesContainer) {
@@ -204,63 +227,58 @@ function applyFilters(tableType) {
             filterBadgesContainer.querySelectorAll('.remove-filter').forEach(icon => {
                 icon.addEventListener('click', function() {
                     const filterType = this.getAttribute('data-filter');
-                    const tableType = this.getAttribute('data-table');
+                    const containerType = this.getAttribute('data-container');
                       if (filterType === 'search') {
-                        document.getElementById(tableType + 'ProgramSearch').value = '';
+                        document.getElementById(containerType + 'ProgramSearch').value = '';
                     } else if (filterType === 'rating') {
-                        document.getElementById(tableType + 'RatingFilter').value = '';
+                        document.getElementById(containerType + 'RatingFilter').value = '';
                     } else if (filterType === 'type') {
-                        document.getElementById(tableType + 'TypeFilter').value = '';
+                        document.getElementById(containerType + 'TypeFilter').value = '';
                     } else if (filterType === 'initiative') {
-                        document.getElementById(tableType + 'InitiativeFilter').value = '';
+                        document.getElementById(containerType + 'InitiativeFilter').value = '';
                     }
                     
-                    applyFilters(tableType);
+                    applyFilters(containerType);
                 });            });
         }
     }
     
-    // Apply filters to table rows
-    const tableRows = document.querySelectorAll(`#${tableId} tbody tr`);
+    // Apply filters to program boxes
+    const programBoxes = document.querySelectorAll(`#${containerId} .program-box`);
     
-    tableRows.forEach((row, index) => {
-        // Skip "no programs found" rows
-        if (row.querySelector('td[colspan]')) {
-            return;
-        }
-        
-        // Get program data from the allPrograms array
-        // We need to determine which program this row represents
-        const programNameElement = row.querySelector('td:first-child .fw-medium .program-name');
+    programBoxes.forEach((box, index) => {
+        // Get program data from the program box data attributes
+        const programNameElement = box.querySelector('.program-name');
         if (!programNameElement) return;
         
-        const programNameInRow = programNameElement.textContent.trim();
+        const programNameInBox = programNameElement.textContent.trim();
         
         // Find matching program in allPrograms array
         let currentProgram = null;
         if (typeof allPrograms !== 'undefined') {
             currentProgram = allPrograms.find(p => {
                 const programDisplayName = (p.program_number ? p.program_number + ' ' : '') + p.program_name;
-                return programDisplayName === programNameInRow || p.program_name === programNameInRow;
+                return programDisplayName === programNameInBox || p.program_name === programNameInBox;
             });
         }
         
         // Fallback to DOM parsing if program not found in data
         if (!currentProgram) {
-            const programNameElement = row.querySelector('td:first-child .fw-medium');
+            const programNameElement = box.querySelector('.program-name');
             const programName = programNameElement?.textContent.toLowerCase() || '';
-              // Extract program number from the badge if it exists
-            const programNumberBadge = programNameElement?.querySelector('.badge.bg-info');
+              // Extract program number from the number badge if it exists
+            const programNumberBadge = box.querySelector('.program-number');
             const programNumber = programNumberBadge ? programNumberBadge.textContent.toLowerCase() : '';
             
-            // Get initiative information - 2nd column now
-            const initiativeElement = row.querySelector('td:nth-child(2)');
+            // Get initiative information from the initiative section
+            const initiativeElement = box.querySelector('.initiative-info');
             const initiativeText = initiativeElement?.textContent.trim().toLowerCase() || '';
-            const hasInitiative = initiativeElement?.querySelector('.badge.bg-primary') !== null;
+            const hasInitiative = initiativeElement?.querySelector('.initiative-icon, .initiative-badge') !== null;
             
-            // Rating is now in 3rd column
-            const ratingText = row.querySelector('td:nth-child(3) .badge')?.textContent.trim().toLowerCase() || '';
-            const programType = row.getAttribute('data-program-type') || '';
+            // Get rating from status section
+            const ratingElement = box.querySelector('.status-info .status-text');
+            const ratingText = ratingElement?.textContent.trim().toLowerCase() || '';
+            const programType = box.getAttribute('data-program-type') || '';
             
             // Map display text back to rating values for comparison
             const ratingMap = {
@@ -311,12 +329,12 @@ function applyFilters(tableType) {
                 }
             }
             
-            // Show or hide the row by adding/removing d-none class
+            // Show or hide the box by adding/removing d-none class
             // This is compatible with the pagination utility
             if (showRow) {
-                row.classList.remove('d-none');
+                box.classList.remove('d-none');
             } else {
-                row.classList.add('d-none');
+                box.classList.add('d-none');
             }
             return;
         }
@@ -361,26 +379,26 @@ function applyFilters(tableType) {
             }
         }
         
-        // Show or hide the row by adding/removing d-none class
+        // Show or hide the box by adding/removing d-none class
         // This is compatible with the pagination utility
         if (showRow) {
-            row.classList.remove('d-none');
+            box.classList.remove('d-none');
         } else {
-            row.classList.add('d-none');
+            box.classList.add('d-none');
         }
     });
     
     // Update "no results" message if needed
-    updateNoResultsMessage(tableId);
+    updateNoResultsMessage(containerId);
     
     // Update pagination after filtering
-    if (window.tablePaginations[tableId]) {
-        window.tablePaginations[tableId].onFilterChange();
+    if (window.tablePaginations[containerId]) {
+        window.tablePaginations[containerId].onFilterChange();
     }
 }
 
 /**
- * Initialize pagination for both tables
+ * Initialize pagination for program containers
  */
 function initializePagination() {
     // Check if TablePagination is available
@@ -389,28 +407,41 @@ function initializePagination() {
         return;
     }
     
-    // Initialize pagination for draft programs table
-    const draftTable = document.getElementById('draftProgramsTable');
-    if (draftTable) {
+    // Initialize pagination for draft programs container
+    const draftContainer = document.getElementById('draftProgramsContainer');
+    if (draftContainer) {
         window.tablePaginations = window.tablePaginations || {};
-        window.tablePaginations['draftProgramsTable'] = new TablePagination('draftProgramsTable', {
+        window.tablePaginations['draftProgramsContainer'] = new TablePagination('draftProgramsContainer', {
             itemsPerPage: 5,
             paginationContainerId: 'draftProgramsPagination',
-            counterElementId: 'draftProgramsCounter'
+            counterElementId: 'draftProgramsCounter',
+            itemSelector: '.program-box' // Use program boxes instead of table rows
         });
     }
     
-    // Initialize pagination for finalized programs table
-    const finalizedTable = document.getElementById('finalizedProgramsTable');
-    if (finalizedTable) {
+    // Initialize pagination for finalized programs container
+    const finalizedContainer = document.getElementById('finalizedProgramsContainer');
+    if (finalizedContainer) {
         window.tablePaginations = window.tablePaginations || {};
-        window.tablePaginations['finalizedProgramsTable'] = new TablePagination('finalizedProgramsTable', {
+        window.tablePaginations['finalizedProgramsContainer'] = new TablePagination('finalizedProgramsContainer', {
             itemsPerPage: 5,
             paginationContainerId: 'finalizedProgramsPagination',
-            counterElementId: 'finalizedProgramsCounter'
+            counterElementId: 'finalizedProgramsCounter',
+            itemSelector: '.program-box' // Use program boxes instead of table rows
         });
     }
     
+    // Initialize pagination for empty programs container  
+    const emptyContainer = document.getElementById('emptyProgramsContainer');
+    if (emptyContainer) {
+        window.tablePaginations = window.tablePaginations || {};
+        window.tablePaginations['emptyProgramsContainer'] = new TablePagination('emptyProgramsContainer', {
+            itemsPerPage: 5,
+            paginationContainerId: 'emptyProgramsPagination',
+            counterElementId: 'emptyProgramsCounter',
+            itemSelector: '.program-box' // Use program boxes instead of table rows
+        });
+    }
 }
 
 /**
@@ -474,32 +505,36 @@ function initDeleteButtons() {
 }
 
 /**
- * Update "no results" message when all filtered rows are hidden
+ * Update "no results" message when all filtered boxes are hidden
  */
-function updateNoResultsMessage(tableId) {
-    const tbody = document.querySelector(`#${tableId} tbody`);
-    if (!tbody) return;
+function updateNoResultsMessage(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
     
-    // Check if there are any visible rows (not hidden by filters)
-    const visibleRows = Array.from(tbody.querySelectorAll('tr:not(.d-none)')).filter(row => 
-        !row.querySelector('td[colspan]') // Exclude "no results" rows
-    );
+    // Check if there are any visible boxes (not hidden by filters)
+    const visibleBoxes = Array.from(container.querySelectorAll('.program-box:not(.d-none)'));
     
-    // If all rows are filtered out
-    if (visibleRows.length === 0) {
-        // Check if we already have a "no results" row
-        let noResultsRow = tbody.querySelector('.no-filter-results');
-          if (!noResultsRow) {
-            noResultsRow = document.createElement('tr');
-            noResultsRow.className = 'no-filter-results';
-            noResultsRow.innerHTML = '<td colspan="5" class="text-center py-4">No matching programs found.</td>';
-            tbody.appendChild(noResultsRow);
+    // If all boxes are filtered out
+    if (visibleBoxes.length === 0) {
+        // Check if we already have a "no results" message
+        let noResultsMessage = container.querySelector('.no-filter-results');
+          if (!noResultsMessage) {
+            noResultsMessage = document.createElement('div');
+            noResultsMessage.className = 'no-filter-results programs-empty-state';
+            noResultsMessage.innerHTML = `
+                <div class="empty-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                <div class="empty-title">No Matching Programs Found</div>
+                <div class="empty-description">Try adjusting your filters to see more results.</div>
+            `;
+            container.appendChild(noResultsMessage);
         }
     } else {
-        // Remove any existing "no results" row if we have visible rows
-        const noResultsRow = tbody.querySelector('.no-filter-results');
-        if (noResultsRow) {
-            noResultsRow.remove();
+        // Remove any existing "no results" message if we have visible boxes
+        const noResultsMessage = container.querySelector('.no-filter-results');
+        if (noResultsMessage) {
+            noResultsMessage.remove();
         }
     }
 }

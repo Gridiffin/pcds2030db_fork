@@ -1,0 +1,586 @@
+/**
+ * Programs Modern Box Component
+ * Horizontal box layout for program listings
+ * Based on the horizontal box style guide design
+ */
+
+/* === Program Box Container === */
+.program-box {
+    background: white;
+    border: 1px solid var(--forest-light);
+    border-radius: var(--radius-base);
+    margin-bottom: var(--space-4);
+    transition: var(--transition-base);
+    position: relative;
+    overflow: visible;
+    box-shadow: var(--shadow-sm);
+}
+
+/* Fix for parent containers that might clip dropdowns */
+.tab-content,
+.card-body,
+.programs-container {
+    overflow: visible !important;
+}
+
+/* Specific fix for view programs page card structure */
+.card.shadow-sm.mb-4 .card-body.p-0,
+#programTabsContent .tab-pane .card-body.p-0,
+.container-fluid .card.shadow-sm.mb-4 {
+    overflow: visible !important;
+}
+
+.program-box:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+    z-index: 1;
+}
+
+/* Ensure program boxes with open dropdowns override hover states */
+.program-box.dropdown-active {
+    z-index: 9997 !important;
+}
+
+.program-box.dropdown-active:hover {
+    z-index: 9997 !important;
+}
+
+.program-box-content {
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-5);
+    gap: var(--space-3);
+    position: relative;
+}
+
+/* === Status Indicator (Left Side) === */
+.status-indicator {
+    flex-shrink: 0;
+    width: 4px;
+    height: 60px;
+    border-radius: 2px;
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.status-draft {
+    background: var(--color-warning);
+}
+
+.status-finalized {
+    background: var(--color-success);
+}
+
+.status-template {
+    background: var(--color-info);
+}
+
+/* === Program Header Section === */
+.program-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-3);
+}
+
+.program-title-section {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    flex: 1;
+    min-width: 0;
+}
+
+.program-number {
+    background: var(--color-info);
+    color: white;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    padding: var(--space-1) var(--space-2);
+    border-radius: calc(var(--radius-base) / 2);
+    flex-shrink: 0;
+}
+
+.program-name {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-primary);
+    line-height: 1.4;
+    margin: 0;
+    text-decoration: none;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.program-name:hover {
+    color: #1a365d;
+    text-decoration: underline;
+}
+
+.program-description {
+    font-size: var(--font-size-sm);
+    color: var(--color-secondary);
+    line-height: 1.4;
+    margin-top: var(--space-2);
+    margin-bottom: var(--space-1);
+}
+
+/* === Program Meta Row === */
+.program-meta-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-6);
+    font-size: var(--font-size-sm);
+}
+
+/* === Initiative Section === */
+.initiative-info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.initiative-icon {
+    background: var(--color-primary);
+    color: white;
+    padding: var(--space-2);
+    border-radius: calc(var(--radius-base) / 2);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    min-width: 32px;
+    text-align: center;
+    cursor: help;
+    position: relative;
+}
+
+.no-initiative {
+    color: var(--color-secondary);
+    font-style: italic;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+/* Legacy badge support for existing initiative badges */
+.initiative-badge {
+    background: var(--color-primary);
+    color: white;
+    padding: var(--space-2) var(--space-3);
+    border-radius: calc(var(--radius-base) / 2);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    display: inline-block;
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* === Status Section === */
+.status-info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.status-circle {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.status-active {
+    background: var(--color-success);
+}
+
+.status-inactive {
+    background: var(--color-secondary);
+}
+
+.status-pending {
+    background: var(--color-warning);
+}
+
+.status-completed {
+    background: var(--color-info);
+}
+
+.status-text {
+    font-weight: var(--font-weight-medium);
+    color: #2d3748;
+}
+
+/* Legacy badge support for existing rating badges */
+.rating-badge {
+    padding: var(--space-2) var(--space-3);
+    border-radius: calc(var(--radius-base) / 2);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+/* === Date Section === */
+.date-info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--color-secondary);
+}
+
+/* === Editors Section === */
+.editors-info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.editors-label {
+    font-size: var(--font-size-sm);
+    color: var(--color-secondary);
+    font-weight: var(--font-weight-medium);
+}
+
+.editors-avatars {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.editor-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 1px solid var(--forest-light);
+    object-fit: cover;
+}
+
+.editors-all {
+    font-size: var(--font-size-sm);
+    color: var(--color-secondary);
+    font-style: italic;
+}
+
+/* === Action Section === */
+.action-info {
+    position: relative;
+    z-index: 10;
+}
+
+.action-btn {
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-base);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: var(--transition-fast);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 100px;
+    justify-content: center;
+}
+
+.action-btn:hover {
+    background: #1a365d;
+}
+
+/* Legacy support for existing button groups */
+.btn-group-sm {
+    display: flex;
+    gap: var(--space-1);
+}
+
+.btn-group-sm .btn {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--font-size-sm);
+}
+
+/* === Timeline Section === */
+.timeline-info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--font-size-sm);
+    color: var(--color-secondary);
+}
+
+.timeline-info.timeline-absolute {
+    position: absolute;
+    right: var(--space-5);
+    bottom: var(--space-5);
+}
+
+.timeline-dates {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.timeline-separator {
+    color: var(--color-secondary);
+    font-weight: var(--font-weight-medium);
+    margin: 0 var(--space-1);
+}
+
+/* === Dropdown Menu === */
+.dropdown-menu-custom {
+    position: absolute;
+    top: 115%;
+    right: 0;
+    background: white;
+    border: 1px solid var(--forest-light);
+    border-radius: var(--radius-base);
+    box-shadow: var(--shadow-lg);
+    min-width: 200px;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: var(--transition-fast);
+}
+
+.dropdown-menu-custom.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+/* Ensure dropdown parent has higher z-index when dropdown is shown */
+.action-info:has(.dropdown-menu-custom.show) {
+    z-index: 9998;
+}
+
+/* Alternative for browsers that don't support :has() */
+.dropdown-active .action-info {
+    z-index: 9998;
+}
+.dropdown-active .program-box {
+    z-index: 9997;
+}
+
+/* Prevent other program boxes from interfering when dropdown is open */
+body:has(.dropdown-menu-custom.show) .program-box:not(.dropdown-active):hover {
+    z-index: 1;
+}
+
+/* Fallback for browsers without :has() support */
+.dropdown-open .program-box:not(.dropdown-active):hover {
+    z-index: 1;
+}
+
+.dropdown-item-custom {
+    padding: var(--space-3) var(--space-4);
+    color: #2d3748;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    transition: var(--transition-fast);
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+}
+
+.dropdown-item-custom:hover {
+    background: var(--forest-ultra-light);
+    color: var(--color-primary);
+}
+
+.dropdown-item-custom.danger:hover {
+    background: rgba(229, 62, 62, 0.1);
+    color: var(--color-danger);
+}
+
+/* === Tooltip === */
+.tooltip {
+    position: absolute;
+    background: #1a1a1a;
+    color: white;
+    padding: var(--space-2) var(--space-3);
+    border-radius: calc(var(--radius-base) / 2);
+    font-size: 0.75rem;
+    white-space: nowrap;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: var(--transition-fast);
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 4px solid transparent;
+    border-top-color: #1a1a1a;
+}
+
+.initiative-icon:hover .tooltip {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* === Empty State === */
+.programs-empty-state {
+    text-align: center;
+    padding: var(--space-12) var(--space-6);
+    color: var(--color-secondary);
+    background: white;
+    border: 1px solid var(--forest-light);
+    border-radius: var(--radius-base);
+    margin-bottom: var(--space-4);
+}
+
+.programs-empty-state .empty-icon {
+    font-size: 3rem;
+    color: var(--forest-medium);
+    margin-bottom: var(--space-4);
+}
+
+.programs-empty-state .empty-title {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-gray-600);
+    margin-bottom: var(--space-2);
+}
+
+.programs-empty-state .empty-description {
+    font-size: var(--font-size-base);
+    color: var(--color-secondary);
+}
+
+/* === Draft Program Indicator === */
+.draft-indicator {
+    position: absolute;
+    top: var(--space-2);
+    right: var(--space-2);
+    background: var(--color-warning);
+    color: white;
+    padding: var(--space-1) var(--space-2);
+    border-radius: calc(var(--radius-base) / 2);
+    font-size: 0.75rem;
+    font-weight: var(--font-weight-semibold);
+}
+
+/* === Responsive Design === */
+@media (max-width: 992px) {
+    .program-meta-row {
+        flex-wrap: wrap;
+        gap: var(--space-4);
+    }
+
+    .program-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-2);
+    }
+
+    .action-info {
+        align-self: stretch;
+    }
+
+    .action-btn {
+        width: 100%;
+    }
+
+    .timeline-info.timeline-absolute {
+        position: static;
+        margin-top: var(--space-3);
+        align-self: flex-end;
+    }
+}
+
+@media (max-width: 768px) {
+    .program-box-content {
+        padding: var(--space-4);
+    }
+
+    .program-title-section {
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+
+    .program-number {
+        font-size: 0.75rem;
+        align-self: flex-start;
+    }
+
+    .program-name {
+        font-size: var(--font-size-base);
+    }
+
+    .program-meta-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-3);
+    }
+
+    .dropdown-menu-custom {
+        position: fixed;
+        top: 50% !important;
+        left: 50% !important;
+        right: auto !important;
+        transform: translate(-50%, -50%) !important;
+        max-width: 90vw;
+    }
+}
+
+/* === Compatibility with Existing Classes === */
+/* Support for existing table-related classes that might be used */
+
+/* === High Contrast Mode Support === */
+@media (prefers-contrast: high) {
+    .program-box {
+        border-width: 2px;
+    }
+    
+    .status-circle {
+        border: 1px solid var(--color-gray-800);
+    }
+}
+
+/* === Reduced Motion Support === */
+@media (prefers-reduced-motion: reduce) {
+    .program-box,
+    .program-box * {
+        transition: none !important;
+        transform: none !important;
+    }
+}
+
+/* === Print Styles === */
+@media print {
+    .program-box {
+        background: transparent !important;
+        border: 1px solid black !important;
+        box-shadow: none !important;
+        page-break-inside: avoid;
+        margin-bottom: var(--space-2);
+    }
+    
+    .action-info,
+    .dropdown-menu-custom {
+        display: none !important;
+    }
+    
+    .timeline-info.timeline-absolute {
+        position: static !important;
+        margin-top: var(--space-2) !important;
+    }
+}

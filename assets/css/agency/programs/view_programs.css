@@ -5,6 +5,7 @@
 
 /* Import shared base styles */
 @import '../shared/base.css';
+@import '../../components/programs-modern-box.css';
 
 /* Programs table styling */
 .programs-table {
