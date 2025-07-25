@@ -6,12 +6,19 @@
  * Using standard Bootstrap modals with fixes.
  */
 
-// Include necessary files
-require_once '../../../config/config.php';
-require_once ROOT_PATH . 'app/lib/db_connect.php';
-require_once ROOT_PATH . 'app/lib/session.php';
-require_once ROOT_PATH . 'app/lib/functions.php';
-require_once ROOT_PATH . 'app/lib/admins/index.php';
+// Define the project root path correctly by navigating up from the current file's directory.
+if (!defined('PROJECT_ROOT_PATH')) {
+    define('PROJECT_ROOT_PATH', rtrim(dirname(dirname(dirname(dirname(__DIR__)))), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
+}
+
+// Include the main config file which defines global constants like APP_URL.
+require_once PROJECT_ROOT_PATH . 'app/config/config.php';
+
+// Include necessary libraries
+require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/admins/index.php';
 
 // Verify user is admin
 if (!is_admin()) {
@@ -108,17 +115,23 @@ $agency_users = array_filter($all_users, function($user) {
     return $user['role'] === 'agency' || $user['role'] === 'focal';
 });
 
-// Additional scripts
+// Set up variables for base layout
+$cssBundle = 'main'; // Use main CSS bundle which includes all necessary styles
+$jsBundle = 'admin-users';
+$additionalStyles = [
+    // Add admin-specific CSS files that may not be in the main bundle
+    APP_URL . '/assets/css/admin/admin-common.css',
+    APP_URL . '/assets/css/admin/users.css',
+    APP_URL . '/assets/css/custom/admin.css'
+];
 $additionalScripts = [
     APP_URL . '/assets/js/admin/user_form_manager.js',
     APP_URL . '/assets/js/admin/user_table_manager.js',
-    APP_URL . '/assets/js/admin/simple_users.js'
+    APP_URL . '/assets/js/admin/simple_users.js',
+    APP_URL . '/assets/js/admin/manage_users.js'
 ];
 
-// Include header
-require_once '../../layouts/header.php';
-
-// Configure the modern page header
+// Configure modern page header
 $header_config = [
     'title' => 'User Management',
     'subtitle' => 'Create and manage user accounts for the system',
@@ -133,54 +146,7 @@ $header_config = [
     ]
 ];
 
-// Include the modern page header
-require_once '../../layouts/page_header.php';
-?>
+// Set content file that contains the main page content
+$contentFile = __DIR__ . '/partials/manage_users_content.php';
 
-<!-- Make APP_URL and other data available to JavaScript -->
-<script>
-    // Define APP_URL for JavaScript to fix the "APP_URL is not defined" error
-    window.APP_URL = '<?php echo APP_URL; ?>';
-    
-    // Store any success/error messages for toast notifications - always use toast for AJAX responses
-    window.pageMessages = {
-        message: '<?php echo addslashes($message); ?>',
-        type: '<?php echo $message_type; ?>',
-        // Always use toast for ajax responses or when explicitly requested
-        useToast: <?php echo (!empty($message) && (isset($show_toast_only) && $show_toast_only)) ? 'true' : 'false'; ?>
-    };
-</script>
-
-<script src="<?php echo APP_URL; ?>/assets/js/admin/manage_users.js"></script>
-
-<?php if (!empty($message) && empty($show_toast_only)): ?>
-    <div class="alert alert-forest alert-<?php echo $message_type; ?> alert-dismissible fade show" role="alert">
-        <div class="d-flex align-items-center">
-            <i class="fas fa-<?php echo $message_type === 'success' ? 'check-circle' : 'exclamation-circle'; ?> alert-icon"></i>
-            <div><?php echo $message; ?></div>
-            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>    </div>
-<?php endif; ?>
-
-<!-- User Management Content -->
-<main class="flex-fill">
-    <div id="userTablesWrapper">
-        <?php
-        // Render Admin Users Table
-        $users = $admin_users;
-        $tableTitle = 'Admin Users';
-        $roleType = 'admin';
-        include '_user_table.php';
-        // Render Agency Users Table
-        $users = $agency_users;
-        $tableTitle = 'Agency Users';
-        $roleType = 'agency';
-        include '_user_table.php';
-        ?>
-    </div> <!-- End of userTablesWrapper -->
-</main>
-
-<?php
-// Include footer
-require_once '../../layouts/footer.php';
-?>
+include PROJECT_ROOT_PATH . '/app/views/layouts/base.php';

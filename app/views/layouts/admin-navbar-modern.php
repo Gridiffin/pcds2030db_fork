@@ -1,8 +1,15 @@
 <?php
 /**
  * Modern Admin Navigation Component
- * Performance-focused design with forest theme
- * Based on modern navbar but with admin-specific links
+ * Performance-focused design with forest them    [
+        'url' => APP_URL . '/app/views/admin/settings/system_settings.php',
+        'label' => 'Settings',
+        'icon' => 'fas fa-cog',
+                            <a href="<?php echo APP_URL; ?>/app/views/admin/settings/system_settings.php" class="user-dropdown-item" role="menuitem">
+                        <i class="fas fa-cog me-2" aria-hidden="true"></i>
+                        Admin Settings
+                    </a>ive_pages' => ['system_settings.php', 'settings.php', 'email_settings.php', 'audit_log.php', 'reporting_periods.php', 'manage_periods.php']
+    ],Based on modern navbar but with admin-specific links
  */
 
 // Ensure database connection is available
@@ -83,22 +90,22 @@ $nav_items = [
         'active_pages' => ['programs.php', 'create_program.php', 'edit_program.php', 'program_details.php']
     ],
     [
-        'url' => APP_URL . '/app/views/admin/users/users.php',
+        'url' => APP_URL . '/app/views/admin/users/manage_users.php',
         'label' => 'Users',
         'icon' => 'fas fa-users',
-        'active_pages' => ['users.php', 'create_user.php', 'edit_user.php', 'user_details.php']
+        'active_pages' => ['manage_users.php', 'add_user.php', 'edit_user.php']
     ],
     [
-        'url' => APP_URL . '/app/views/admin/reports/reports.php',
+        'url' => APP_URL . '/app/views/admin/reports/generate_reports.php',
         'label' => 'Reports',
         'icon' => 'fas fa-chart-bar',
-        'active_pages' => ['reports.php', 'generate_report.php', 'view_report.php']
+        'active_pages' => ['generate_reports.php', 'reports.php', 'generate_report.php', 'view_report.php']
     ],
     [
-        'url' => APP_URL . '/app/views/admin/settings/settings.php',
+        'url' => APP_URL . '/app/views/admin/settings/system_settings.php',
         'label' => 'Settings',
         'icon' => 'fas fa-cog',
-        'active_pages' => ['settings.php', 'system_settings.php', 'email_settings.php']
+        'active_pages' => ['system_settings.php', 'settings.php', 'email_settings.php', 'audit_log.php', 'reporting_periods.php', 'manage_periods.php']
     ]
 ];
 
@@ -247,11 +254,11 @@ $user_initials = strtoupper($user_initials);
                         <i class="fas fa-user item-icon" aria-hidden="true"></i>
                         Profile
                     </a>
-                    <a href="<?php echo APP_URL; ?>/app/views/admin/settings/settings.php" class="user-dropdown-item" role="menuitem">
+                    <a href="<?php echo APP_URL; ?>/app/views/admin/settings/system_settings.php" class="user-dropdown-item" role="menuitem">
                         <i class="fas fa-cog item-icon" aria-hidden="true"></i>
                         Admin Settings
                     </a>
-                    <a href="<?php echo APP_URL; ?>/app/views/admin/users/users.php" class="user-dropdown-item" role="menuitem">
+                    <a href="<?php echo APP_URL; ?>/app/views/admin/users/manage_users.php" class="user-dropdown-item" role="menuitem">
                         <i class="fas fa-users item-icon" aria-hidden="true"></i>
                         Manage Users
                     </a>

@@ -45,7 +45,7 @@ if (isset($_SESSION['user_role'])) {
             $quick_links = [
                 ['url' => APP_URL . '/app/views/admin/dashboard/dashboard.php', 'label' => 'Admin Dashboard', 'icon' => 'fas fa-tachometer-alt'],
                 ['url' => APP_URL . '/app/views/admin/programs/programs.php', 'label' => 'Manage Programs', 'icon' => 'fas fa-cogs'],
-                ['url' => APP_URL . '/app/views/admin/users/users.php', 'label' => 'User Management', 'icon' => 'fas fa-users'],
+                ['url' => APP_URL . '/app/views/admin/users/manage_users.php', 'label' => 'User Management', 'icon' => 'fas fa-users'],
                 ['url' => APP_URL . '/app/views/admin/reports/reports.php', 'label' => 'System Reports', 'icon' => 'fas fa-chart-bar']
             ];
             break;

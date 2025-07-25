@@ -5,16 +5,23 @@
  * Main interface for admin users, powered by a controller.
  */
 
-// Include necessary files
-require_once '../../../config/config.php';
-require_once ROOT_PATH . 'app/lib/db_connect.php';
-require_once ROOT_PATH . 'app/lib/session.php';
-require_once ROOT_PATH . 'app/lib/functions.php';
-require_once ROOT_PATH . 'app/lib/admins/index.php';
-require_once ROOT_PATH . 'app/lib/admins/outcomes.php';
+// Define the project root path correctly by navigating up from the current file's directory.
+if (!defined('PROJECT_ROOT_PATH')) {
+    define('PROJECT_ROOT_PATH', rtrim(dirname(dirname(dirname(dirname(__DIR__)))), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
+}
+
+// Include the main config file which defines global constants like APP_URL.
+require_once PROJECT_ROOT_PATH . 'app/config/config.php';
+
+// Include necessary libraries
+require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/admins/index.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/admins/outcomes.php';
 
 // Include the controller to fetch data
-require_once ROOT_PATH . 'app/controllers/AdminDashboardController.php';
+require_once PROJECT_ROOT_PATH . 'app/controllers/AdminDashboardController.php';
 
 // Verify user is admin
 if (!is_admin()) {
@@ -57,17 +64,25 @@ $agency_programs = get_admin_programs_list($period_id, [
 $assigned_count = count($assigned_programs);
 $agency_count = count($agency_programs);
 
-// Additional scripts
+// Set page title
+$pageTitle = 'Admin Dashboard';
+
+// Set up variables for base layout
+$cssBundle = 'main'; // Use main CSS bundle which includes all necessary styles
+$jsBundle = 'admin-dashboard';
+$additionalStyles = [
+    // Add admin-specific CSS files that may not be in the main bundle
+    APP_URL . '/assets/css/admin/admin-common.css',
+    APP_URL . '/assets/css/admin/dashboard.css',
+    APP_URL . '/assets/css/custom/admin.css'
+];
 $additionalScripts = [
     asset_url('js/admin', 'dashboard_charts.js'),
     asset_url('js/admin', 'dashboard.js'),
     asset_url('js', 'period_selector.js')
 ];
 
-// Include header
-require_once '../../layouts/header.php';
-
-// Configure the modern page header
+// Configure modern page header
 $header_config = [
     'title' => 'Admin Dashboard',
     'subtitle' => 'System overview and management',
@@ -89,47 +104,11 @@ $header_config = [
     ]
 ];
 
-// Include the modern page header
-require_once '../../layouts/page_header.php';
-
 // Pass hasActivePeriod to JavaScript
 $hasActivePeriod = isset($current_period) && !empty($current_period);
-?>
 
-<script>
-    const hasActivePeriod = <?php echo $hasActivePeriod ? 'true' : 'false'; ?>;
-</script>
+// Set content file that contains the main page content
+$contentFile = __DIR__ . '/partials/dashboard_content.php';
 
-<!-- Dashboard Content -->
-<main class="flex-fill">
-    <section class="section">
-        <div class="container-fluid">
-            <!-- Period Selector Component -->
-
-            <!-- Quick Actions Section -->
-            <?php require_once 'partials/_quick_actions.php'; ?>
-
-            <!-- Stats Overview -->
-            <div data-period-content="stats_section">
-                <?php require_once 'partials/_stats_overview.php'; ?>
-            </div>
-
-            <!-- Programs Overview Section -->
-            <?php require_once 'partials/_programs_overview.php'; ?>
-
-            <!-- Outcomes Overview Section -->
-            <?php require_once 'partials/_outcomes_overview.php'; ?>
-
-            <!-- Recent Submissions -->
-            <div class="row">
-                <?php require_once 'partials/_recent_submissions.php'; ?>
-            </div>
-        </div>
-    </section>
-</main>
-
-<?php
-// Include footer
-require_once '../../layouts/footer.php';
-?>
+include PROJECT_ROOT_PATH . '/app/views/layouts/base.php';
 
