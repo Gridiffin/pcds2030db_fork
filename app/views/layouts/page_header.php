@@ -120,27 +120,55 @@ if (isset($header_config['theme']) && in_array($header_config['theme'], ['light'
             </div>
             <?php endif; ?>
             
-            <!-- Title and Subtitle (Centered) -->
-            <div class="col-12 text-left">
-                <<?php echo $titleTag; ?> class="page-header__title"><?php echo htmlspecialchars($title); ?></<?php echo $titleTag; ?>>
-                <?php if (!empty($subtitle) && $showSubtitle): ?>
-                    <p class="page-header__subtitle">
-                        <?php
-                        if (!empty($header_config['subtitle_html'])) {
-                            echo $subtitle; // Output raw HTML
-                        } else {
-                            echo htmlspecialchars($subtitle);
-                        }
-                        ?>
-                    </p>
-                    <p class="page-header__subtitle">
-                        <?php if ($subtitleHtml): ?>
-                            <?php echo $subtitle; ?>
-                        <?php else: ?>
-                            <?php echo htmlspecialchars($subtitle); ?>
+            <!-- Title, Subtitle and Actions -->
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-start flex-wrap">
+                    <!-- Title and Subtitle (Left side) -->
+                    <div class="page-header__content">
+                        <<?php echo $titleTag; ?> class="page-header__title"><?php echo htmlspecialchars($title); ?></<?php echo $titleTag; ?>>
+                        <?php if (!empty($subtitle) && $showSubtitle): ?>
+                            <p class="page-header__subtitle">
+                                <?php
+                                if (!empty($header_config['subtitle_html']) || $subtitleHtml) {
+                                    echo $subtitle; // Output raw HTML
+                                } else {
+                                    echo htmlspecialchars($subtitle);
+                                }
+                                ?>
+                            </p>
                         <?php endif; ?>
-                    </p>
-                <?php endif; ?>
+                    </div>
+
+                    <!-- Actions (Right side) -->
+                    <?php if (!empty($header_config['actions'])): ?>
+                    <div class="page-header__actions d-flex align-items-center gap-2 flex-wrap">
+                        <?php foreach ($header_config['actions'] as $action): ?>
+                            <?php if (isset($action['html'])): ?>
+                                <!-- Custom HTML action (e.g., badges) -->
+                                <?php echo $action['html']; ?>
+                            <?php elseif (isset($action['text']) || isset($action['icon'])): ?>
+                                <!-- Button action -->
+                                <?php
+                                $actionUrl = $action['url'] ?? '#';
+                                $actionClass = 'btn ' . ($action['class'] ?? 'btn-primary');
+                                $actionId = isset($action['id']) ? ' id="' . htmlspecialchars($action['id']) . '"' : '';
+                                $actionText = $action['text'] ?? '';
+                                $actionIcon = $action['icon'] ?? '';
+                                ?>
+                                <a href="<?php echo htmlspecialchars($actionUrl); ?>" 
+                                   class="<?php echo htmlspecialchars($actionClass); ?>"<?php echo $actionId; ?>>
+                                    <?php if ($actionIcon): ?>
+                                        <i class="<?php echo htmlspecialchars($actionIcon); ?><?php echo $actionText ? ' me-2' : ''; ?>"></i>
+                                    <?php endif; ?>
+                                    <?php if ($actionText): ?>
+                                        <?php echo htmlspecialchars($actionText); ?>
+                                    <?php endif; ?>
+                                </a>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
     </div>
