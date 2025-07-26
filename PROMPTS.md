@@ -17,5 +17,5 @@ periods-management.js:77:5
 
 
 - separate all the programs modules to use their own bundle per page just like how it is in agency side. (e.g view programs has its own bundle, edit program has its own bundle, etc)
-- remove refresh data button in all admin pages. keep the other buttons and elements intact
+- remove refresh data button in all header of admin pages. keep the other buttons and elements intact
 - remove system settings page out of admin views

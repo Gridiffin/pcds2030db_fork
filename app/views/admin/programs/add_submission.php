@@ -114,8 +114,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Set up variables for base_admin layout
 $pageTitle = 'Add Submission (Admin) - ' . $program['program_name'];
-$cssBundle = 'admin-programs';
-$jsBundle = 'admin-programs';
+$cssBundle = 'admin-add-submission'; // Specific bundle for add submission page
+$jsBundle = 'admin-add-submission';
 $contentFile = __DIR__ . '/partials/add_submission_content.php';
 
 // Configure modern page header

@@ -33,11 +33,14 @@ if (!isset($programs_with_drafts)) {
 
 // Set up variables for base_admin layout
 $pageTitle = 'Admin Programs';
-$cssBundle = 'admin-programs';
-$jsBundle = 'admin-programs';
+$cssBundle = 'admin-view-programs'; // Specific bundle for view programs page
+$jsBundle = 'admin-view-programs';
 
-// Inline script to handle delete functionality
+// Inline script to handle delete functionality  
 $inlineScripts = '
+console.log("DEBUG: CSS Bundle set to: admin-view-programs");
+console.log("DEBUG: Expected CSS file: /dist/css/admin-view-programs.bundle.css");
+
 // Define triggerDeleteFromModal function globally
 window.triggerDeleteFromModal = function(programId, programName) {
     console.log("triggerDeleteFromModal called with:", { programId, programName });

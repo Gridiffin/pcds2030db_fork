@@ -107,8 +107,10 @@ $programs = get_admin_programs_list($period_id, []);
 // Get all active initiatives
 $initiatives = get_initiatives_for_select(true);
 
-// Set page title
+// Set page title and bundles
 $pageTitle = 'Bulk Initiative Assignment';
+$cssBundle = 'admin-bulk-assign-initiatives'; // Specific bundle for bulk assign page
+$jsBundle = 'admin-bulk-assign-initiatives';
 
 // Additional scripts
 $additionalScripts = [

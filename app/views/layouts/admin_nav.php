@@ -17,7 +17,7 @@ $is_initiative_page = (strpos($current_uri, '/initiatives/') !== false);
 
 // Enhanced program page detection - include all program and submission related pages
 $program_pages = [
-    'programs.php', 'assign_programs.php', 'edit_program.php', 'edit_program_2.0.php', 
+    'programs.php', 'assign_programs.php', 'edit_program.php', 
     'view_program.php', 'delete_program.php', 'bulk_assign_initiatives.php', 
     'reopen_program.php', 'unsubmit.php', 'resubmit.php', 'manage_programs.php'
 ];

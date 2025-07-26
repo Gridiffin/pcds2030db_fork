@@ -12,6 +12,13 @@ export default defineConfig({
                 'admin-common': path.resolve(__dirname, 'assets/js/admin/admin-common.js'),
                 'admin-dashboard': path.resolve(__dirname, 'assets/js/admin/admin-dashboard.js'),
                 'admin-programs': path.resolve(__dirname, 'assets/js/admin/admin-programs.js'),
+                
+                // Admin Programs Module (Individual Pages)
+                'admin-view-programs': path.resolve(__dirname, 'assets/js/admin/programs/view_programs.js'),
+                'admin-edit-program': path.resolve(__dirname, 'assets/js/admin/programs/edit_program.js'),
+                'admin-add-submission': path.resolve(__dirname, 'assets/js/admin/programs/add_submission.js'),
+                'admin-bulk-assign-initiatives': path.resolve(__dirname, 'assets/js/admin/programs/bulk_assign_initiatives.js'),
+                
                 'admin-users': path.resolve(__dirname, 'assets/js/admin/admin-users.js'),
                 'admin-reports': path.resolve(__dirname, 'assets/js/admin/admin-reports.js'),
                 'admin-settings': path.resolve(__dirname, 'assets/js/admin/admin-settings.js'),

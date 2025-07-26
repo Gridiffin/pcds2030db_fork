@@ -180,8 +180,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Set page title
+// Set page title and bundles
 $pageTitle = 'Edit Program';
+$cssBundle = 'admin-edit-program'; // Specific bundle for edit program page
+$jsBundle = 'admin-edit-program';
 
 // Include header
 require_once '../../layouts/header.php';
