@@ -100,33 +100,29 @@ try {
     // Log the finalization action (optional - only if audit_log table exists)
     try {
         $log_query = "
-            INSERT INTO audit_log (
+            INSERT INTO audit_logs (
                 user_id, 
                 action, 
-                table_name, 
-                record_id, 
-                changes, 
+                details, 
+                ip_address,
+                status,
                 created_at
             ) VALUES (
                 ?,
                 'finalize_submission',
-                'program_submissions',
                 ?,
                 ?,
+                'success',
                 NOW()
             )
         ";
         
-        $changes = json_encode([
-            'action' => 'finalized_submission',
-            'submission_id' => $submission_id,
-            'program_id' => $program_id,
-            'period_id' => $period_id
-        ]);
+        $details = "Finalized submission ID: $submission_id for program ID: $program_id, period ID: $period_id";
+        $ip_address = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
         
         $log_stmt = $conn->prepare($log_query);
         if ($log_stmt) {
-            $log_stmt->bind_param('iis', $_SESSION['user_id'], $submission_id, $changes);
+            $log_stmt->bind_param('iss', $_SESSION['user_id'], $details, $ip_address);
             $log_stmt->execute();
         }
     } catch (Exception $audit_error) {

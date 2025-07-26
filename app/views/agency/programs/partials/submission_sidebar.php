@@ -14,18 +14,10 @@
 <?php if (!empty($attachments)): ?>
 <div class="card shadow-sm mb-4">
     <div class="card-header">
-        <div class="d-flex justify-content-between align-items-center">
-            <h5 class="card-title mb-0">
-                <i class="fas fa-paperclip me-2 text-success"></i>
-                Program Attachments
-            </h5>
-            <?php if ($can_edit && (!isset($is_finalize_mode) || !$is_finalize_mode)): ?>
-                <a href="edit_submission.php?program_id=<?php echo $program_id; ?>&period_id=<?php echo $period_id; ?>" 
-                   class="btn btn-sm btn-outline-primary">
-                    <i class="fas fa-edit me-1"></i>Edit Submission
-                </a>
-            <?php endif; ?>
-        </div>
+        <h5 class="card-title mb-0">
+            <i class="fas fa-paperclip me-2 text-success"></i>
+            Program Attachments
+        </h5>
     </div>
     <div class="card-body">
         <div class="row">
