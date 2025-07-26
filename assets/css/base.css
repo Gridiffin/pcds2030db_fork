@@ -12,6 +12,9 @@
 @import url("components/ui/tooltip.css");
 @import url("components/quick-finalize-modal.css");
 @import url("layout/page_header.css");
+@import url("components/admin-navbar-modern.css");
+@import url("components/admin-common.css");
+@import url("components/shared-modals.css");
 
 /* Import new admin styles */
 @import url("admin/programs/programs.css");

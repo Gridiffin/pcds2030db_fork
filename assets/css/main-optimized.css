@@ -52,7 +52,6 @@
 
 /* === 7. Data Components === */
 @import 'components/responsive-performance-table.css';
-@import 'components/admin-performance-table.css';
 @import 'components/table-text-truncation.css';
 @import 'components/table-word-wrap.css';
 @import 'components/table-browser-fixes.css';
@@ -79,7 +78,6 @@
 @import 'components/submission-audit-history.css';
 
 /* === 10. Admin Components === */
-@import 'components/admin.css';
 @import 'components/admin-common.css';
 @import 'admin/programs.css';
 @import 'admin/programs/programs.css';

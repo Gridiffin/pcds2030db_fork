@@ -12,7 +12,7 @@ export default defineConfig({
                 'admin-common': path.resolve(__dirname, 'assets/js/admin/admin-common.js'),
                 'admin-manage-initiatives': path.resolve(__dirname, 'assets/js/admin/manage-initiatives.js'),
                 'admin-reports': path.resolve(__dirname, 'assets/js/admin/reports.js'),
-                'admin-programs': path.resolve(__dirname, 'assets/js/admin/programs.js'),
+                'admin-programs': path.resolve(__dirname, 'assets/js/admin/programs-management.js'),
 
                 // Agency Core
                 'agency-dashboard': path.resolve(__dirname, 'assets/js/agency/dashboard/dashboard.js'),
