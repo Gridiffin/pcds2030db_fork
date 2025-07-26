@@ -17,7 +17,7 @@ if (!is_focal_user()) {
             <div class="modal-header bg-success text-white">
                 <h5 class="modal-title" id="quickFinalizeModalLabel">
                     <i class="fas fa-check-circle me-2"></i>
-                    Quick Finalize Submissions
+                    <span id="modalTitleText">Finalize Submission</span>
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -39,50 +39,40 @@ if (!is_focal_user()) {
 
                 <!-- Main Content -->
                 <div id="finalizeMainContent" class="d-none">
-                    <!-- Instructions -->
-                    <div class="alert alert-info mb-4">
-                        <i class="fas fa-info-circle me-2"></i>
-                        <strong>Quick Finalize Process:</strong> Select the programs and reporting periods you want to finalize, then click "Finalize Selected" to complete the process.
-                    </div>
-
-                    <!-- Program Selection -->
-                    <div class="row">
-                        <div class="col-md-8">
-                            <h6 class="mb-3">
-                                <i class="fas fa-list me-2"></i>
-                                Available Draft Submissions
-                            </h6>
-                            
-                            <!-- Programs List Container -->
-                            <div id="finalizeProgramsList" class="finalize-programs-container">
-                                <!-- Content will be loaded via JavaScript -->
-                            </div>
+                    <!-- Step 1: Program Info and Period Selection -->
+                    <div id="step1Content">
+                        <!-- Program Information -->
+                        <div class="alert alert-info mb-4">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Step 1:</strong> Choose a reporting period to review and finalize your submission.
                         </div>
-                        
-                        <div class="col-md-4">
-                            <!-- Selection Summary -->
-                            <div class="selection-summary-card">
+
+                        <div class="program-info-card mb-4">
+                            <h6 class="mb-3">
+                                <i class="fas fa-folder me-2"></i>
+                                Program: <span id="selectedProgramName"></span>
+                            </h6>
+                        </div>
+
+                        <!-- Available Draft Periods -->
+                        <div class="row">
+                            <div class="col-12">
                                 <h6 class="mb-3">
-                                    <i class="fas fa-clipboard-check me-2"></i>
-                                    Finalization Summary
+                                    <i class="fas fa-calendar-alt me-2"></i>
+                                    Available Draft Reporting Periods
                                 </h6>
                                 
-                                <div id="selectionSummary">
-                                    <div class="text-muted text-center py-4">
-                                        <i class="fas fa-hand-pointer fa-2x mb-2"></i>
-                                        <p>Select programs to see summary</p>
-                                    </div>
-                                </div>
-                                
-                                <!-- Finalize Button -->
-                                <div class="mt-3">
-                                    <button type="button" class="btn btn-success w-100" id="finalizeSelectedBtn" disabled>
-                                        <i class="fas fa-check-circle me-2"></i>
-                                        Finalize Selected (<span id="selectedCount">0</span>)
-                                    </button>
+                                <!-- Periods List Container -->
+                                <div id="availablePeriodsList" class="periods-container">
+                                    <!-- Content will be loaded via JavaScript -->
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Step 2: Submission Review (will be shown after period selection) -->
+                    <div id="step2Content" class="d-none">
+                        <!-- Step 2 content will be dynamically loaded -->
                     </div>
                 </div>
 
@@ -106,138 +96,29 @@ if (!is_focal_user()) {
                         <i class="fas fa-times me-1"></i> Cancel
                     </button>
                     
-                    <div>
-                        <button type="button" class="btn btn-info me-2" id="viewDetailsBtn" disabled title="View submission details for selected program">
-                            <i class="fas fa-file-alt me-1"></i> View Details
-                        </button>
+                    <div id="modalFooterActions">
+                        <!-- Step 1 Actions -->
+                        <div id="step1Actions">
+                            <button type="button" class="btn btn-primary" id="reviewSubmissionBtn" disabled>
+                                <i class="fas fa-eye me-1"></i> Review Submission
+                            </button>
+                        </div>
                         
-                        <button type="button" class="btn btn-success" id="finalizeConfirmBtn" style="display: none;">
-                            <i class="fas fa-check me-1"></i> Confirm Finalization
-                        </button>
+                        <!-- Step 2 Actions -->
+                        <div id="step2Actions" class="d-none">
+                            <button type="button" class="btn btn-outline-primary me-2" id="editSubmissionBtn">
+                                <i class="fas fa-edit me-1"></i> Edit
+                            </button>
+                            <button type="button" class="btn btn-success" id="confirmFinalizeBtn">
+                                <i class="fas fa-check me-1"></i> Confirm & Submit
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-
-<style>
-/* Quick Finalize Modal Styles */
-.finalize-programs-container {
-    max-height: 400px;
-    overflow-y: auto;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    background: #f8f9fa;
-}
-
-.finalize-program-item {
-    background: white;
-    border-bottom: 1px solid #e9ecef;
-    padding: 1rem;
-    transition: all 0.2s ease;
-}
-
-.finalize-program-item:last-child {
-    border-bottom: none;
-}
-
-.finalize-program-item:hover {
-    background: #f8f9fa;
-}
-
-.finalize-program-item.selected {
-    background: #e7f3ff;
-    border-left: 4px solid #007bff;
-}
-
-.program-checkbox {
-    margin-right: 0.75rem;
-}
-
-.program-info h6 {
-    margin-bottom: 0.25rem;
-    color: #2c5aa0;
-}
-
-.program-meta {
-    font-size: 0.875rem;
-    color: #6c757d;
-}
-
-.period-selection {
-    margin-top: 0.75rem;
-    padding-top: 0.75rem;
-    border-top: 1px solid #e9ecef;
-}
-
-.period-option {
-    display: flex;
-    align-items: center;
-    padding: 0.5rem;
-    background: #f8f9fa;
-    border-radius: 4px;
-    margin-bottom: 0.5rem;
-}
-
-.period-option:last-child {
-    margin-bottom: 0;
-}
-
-.period-option input[type="checkbox"] {
-    margin-right: 0.5rem;
-}
-
-.selection-summary-card {
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    padding: 1.25rem;
-    position: sticky;
-    top: 20px;
-}
-
-.summary-item {
-    display: flex;
-    justify-content-between;
-    align-items: center;
-    padding: 0.5rem 0;
-    border-bottom: 1px solid #e9ecef;
-}
-
-.summary-item:last-child {
-    border-bottom: none;
-}
-
-.summary-program-name {
-    font-weight: 500;
-    color: #2c5aa0;
-}
-
-.summary-period {
-    font-size: 0.875rem;
-    color: #6c757d;
-}
-
-.finalize-results-item {
-    display: flex;
-    align-items-center;
-    padding: 0.5rem 0;
-    border-bottom: 1px solid #e9ecef;
-}
-
-.finalize-results-item:last-child {
-    border-bottom: none;
-}
-
-.result-status.success {
-    color: #198754;
-}
-
-.result-status.error {
-    color: #dc3545;
-}
-</style>
 
 <script>
 // Quick Finalize Modal JavaScript will be added to finalization-tutorial.js

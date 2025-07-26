@@ -154,9 +154,11 @@ if (isset($header_config['theme']) && in_array($header_config['theme'], ['light'
                                 $actionId = isset($action['id']) ? ' id="' . htmlspecialchars($action['id']) . '"' : '';
                                 $actionText = $action['text'] ?? '';
                                 $actionIcon = $action['icon'] ?? '';
+                                $actionOnclick = isset($action['onclick']) ? ' onclick="' . htmlspecialchars($action['onclick']) . '"' : '';
+                                $actionTarget = isset($action['target']) ? ' target="' . htmlspecialchars($action['target']) . '"' : '';
                                 ?>
                                 <a href="<?php echo htmlspecialchars($actionUrl); ?>" 
-                                   class="<?php echo htmlspecialchars($actionClass); ?>"<?php echo $actionId; ?>>
+                                   class="<?php echo htmlspecialchars($actionClass); ?>"<?php echo $actionId; ?><?php echo $actionOnclick; ?><?php echo $actionTarget; ?>>
                                     <?php if ($actionIcon): ?>
                                         <i class="<?php echo htmlspecialchars($actionIcon); ?><?php echo $actionText ? ' me-2' : ''; ?>"></i>
                                     <?php endif; ?>

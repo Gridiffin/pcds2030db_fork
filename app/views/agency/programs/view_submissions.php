@@ -28,6 +28,7 @@ if (!is_agency()) {
 // Get parameters from URL
 $program_id = isset($_GET['program_id']) ? intval($_GET['program_id']) : 0;
 $period_id = isset($_GET['period_id']) ? intval($_GET['period_id']) : 0;
+$is_finalize_mode = isset($_GET['finalize']) && $_GET['finalize'] == '1';
 
 // Validate required parameters
 if (!$program_id || !$period_id) {
@@ -77,8 +78,24 @@ $header_config = [
     ]
 ];
 
-// Add edit button if user can edit
-if ($can_edit) {
+// Add appropriate action buttons based on mode and permissions
+if ($is_finalize_mode && is_focal_user() && isset($submission['is_draft']) && $submission['is_draft']) {
+    // Finalization mode for focal users with draft submissions
+    $header_config['actions'][] = [
+        'url' => 'edit_submission.php?program_id=' . $program_id . '&period_id=' . $period_id,
+        'text' => 'Edit Submission',
+        'icon' => 'fas fa-edit',
+        'class' => 'btn-outline-primary me-2'
+    ];
+    $header_config['actions'][] = [
+        'url' => '#',
+        'text' => 'Finalize Submission',
+        'icon' => 'fas fa-check-circle',
+        'class' => 'btn-success',
+        'onclick' => 'confirmFinalization(' . $program_id . ', ' . $period_id . ', \'' . addslashes($program['program_name']) . '\'); return false;'
+    ];
+} elseif ($can_edit && !$is_finalize_mode) {
+    // Normal edit mode
     $header_config['actions'][] = [
         'url' => 'edit_submission.php?program_id=' . $program_id . '&period_id=' . $period_id,
         'text' => 'Edit Submission',

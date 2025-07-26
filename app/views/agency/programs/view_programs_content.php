@@ -82,11 +82,8 @@
                                 
                                 <?php if (is_focal_user()): ?>
                                 <div class="focal-actions">
-                                    <button type="button" class="btn btn-primary btn-sm me-2" onclick="FinalizationTutorial.open()" title="Learn how to finalize submissions">
+                                    <button type="button" class="btn btn-primary btn-sm" onclick="FinalizationTutorial.open()" title="Learn how to finalize submissions">
                                         <i class="fas fa-graduation-cap me-1"></i> How to Finalize
-                                    </button>
-                                    <button type="button" class="btn btn-success" id="quickFinalizeBtn" title="Quick finalize submissions">
-                                        <i class="fas fa-check-circle me-1"></i> Finalize Submissions
                                     </button>
                                 </div>
                                 <?php endif; ?>
@@ -95,7 +92,7 @@
             
                         <!-- Draft Programs Filters -->
                         <?php 
-                        $filters = ['rating'];
+                        $filters = ['status'];
                         $filterPrefix = 'draft';
                         require_once __DIR__ . '/partials/program_filters.php'; 
                         ?>
@@ -141,7 +138,7 @@
                         
                         <!-- Finalized Programs Filters -->
                         <?php 
-                        $filters = ['rating'];
+                        $filters = ['status'];
                         $filterPrefix = 'finalized';
                         require_once __DIR__ . '/partials/program_filters.php'; 
                         ?>
@@ -227,6 +224,9 @@
         
         <!-- Quick Finalize Modal (Focal Users Only) -->
         <?php require_once __DIR__ . '/partials/quick_finalize_modal.php'; ?>
+        
+        <!-- Simple Finalize Modal (New Implementation) -->
+        <?php require_once __DIR__ . '/partials/simple_finalize_modal.php'; ?>
         
         <!-- Submission Selection Modal -->
         <?php require_once __DIR__ . '/partials/submission_selection_modal.php'; ?>

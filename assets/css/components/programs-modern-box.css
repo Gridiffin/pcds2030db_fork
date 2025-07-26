@@ -6,8 +6,8 @@
 
 /* === Program Box Container === */
 .program-box {
-    background: white;
-    border: 1px solid var(--forest-light);
+    background: white !important;
+    border: 1px solid var(--forest-light) !important;
     border-radius: var(--radius-base);
     margin-bottom: var(--space-4);
     transition: var(--transition-base);
@@ -37,6 +37,8 @@
     z-index: 1;
 }
 
+/* Clean program box styling - no aggressive overrides */
+
 /* Ensure program boxes with open dropdowns override hover states */
 .program-box.dropdown-active {
     z-index: 9997 !important;
@@ -54,29 +56,7 @@
     position: relative;
 }
 
-/* === Status Indicator (Left Side) === */
-.status-indicator {
-    flex-shrink: 0;
-    width: 4px;
-    height: 60px;
-    border-radius: 2px;
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-}
-
-.status-draft {
-    background: var(--color-warning);
-}
-
-.status-finalized {
-    background: var(--color-success);
-}
-
-.status-template {
-    background: var(--color-info);
-}
+/* Status indicators removed - using badges instead */
 
 /* === Program Header Section === */
 .program-header {
@@ -419,6 +399,45 @@ body:has(.dropdown-menu-custom.show) .program-box:not(.dropdown-active):hover {
     bottom: 125%;
     left: 50%;
     transform: translateX(-50%);
+    max-width: 300px;
+    word-wrap: break-word;
+    white-space: normal;
+}
+
+/* Prevent tooltip overflow on screen edges */
+.tooltip {
+    /* Default positioning */
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* Adjust positioning if tooltip would overflow right edge */
+@media (max-width: 768px) {
+    .tooltip {
+        left: 0;
+        transform: none;
+        max-width: 250px;
+    }
+}
+
+/* For very small screens, position tooltip to the right of element */
+@media (max-width: 480px) {
+    .tooltip {
+        bottom: auto;
+        top: 50%;
+        left: 110%;
+        transform: translateY(-50%);
+        max-width: 200px;
+    }
+    
+    .tooltip::after {
+        top: 50%;
+        left: -4px;
+        transform: translateY(-50%);
+        border: 4px solid transparent;
+        border-right-color: #1a1a1a;
+        border-top-color: transparent;
+    }
 }
 
 .tooltip::after {

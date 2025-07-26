@@ -535,8 +535,22 @@ class SubmissionSelectionModal {
         }
     }
     
-    async openForProgram(programId) {
+    async openForProgram(programId, forFinalization = false) {
         if (!this.modal) return;
+        
+        // Store the finalization flag for later use
+        this.isFinalizationMode = forFinalization;
+        this.currentProgramId = programId;
+        
+        // Update modal title based on mode
+        const modalTitle = document.getElementById('submissionSelectionModalLabel');
+        if (modalTitle) {
+            if (forFinalization) {
+                modalTitle.innerHTML = '<i class="fas fa-check-circle me-2"></i>Select Submission to Review & Finalize';
+            } else {
+                modalTitle.innerHTML = '<i class="fas fa-eye me-2"></i>Select Submission to View';
+            }
+        }
         
         // Show modal
         const modalInstance = new bootstrap.Modal(this.modal);
@@ -673,7 +687,7 @@ class SubmissionSelectionModal {
 let submissionSelectionModal = null;
 
 // Ensure global functions are available immediately
-window.openSubmissionSelection = function(programId) {
+window.openSubmissionSelection = function(programId, forFinalization = false) {
     // Initialize if not already done
     if (!submissionSelectionModal) {
         submissionSelectionModal = new SubmissionSelectionModal();
@@ -684,13 +698,14 @@ window.openSubmissionSelection = function(programId) {
         setTimeout(() => {
             submissionSelectionModal = new SubmissionSelectionModal();
             if (submissionSelectionModal.modal) {
-                submissionSelectionModal.openForProgram(programId);
+                submissionSelectionModal.openForProgram(programId, forFinalization);
             }
         }, 100);
         return;
     }
     
-    submissionSelectionModal.openForProgram(programId);
+    // Pass the finalization flag to the modal
+    submissionSelectionModal.openForProgram(programId, forFinalization);
 };
 
 window.navigateToSubmission = function(programId, periodId) {
@@ -703,7 +718,366 @@ window.navigateToSubmission = function(programId, periodId) {
         }
     }
     
-    // Navigate to the submission view
-    window.location.href = `view_submissions.php?program_id=${programId}&period_id=${periodId}`;
+    // Check if we're in finalization mode
+    const isFinalizationMode = submissionSelectionModal && submissionSelectionModal.isFinalizationMode;
+    
+    // Navigate to the submission view with finalization flag if needed
+    let url = `view_submissions.php?program_id=${programId}&period_id=${periodId}`;
+    if (isFinalizationMode) {
+        url += '&finalize=1';
+    }
+    
+    window.location.href = url;
 };
+
+/**
+ * Single Program Finalization Workflow
+ * Handles the new guided finalization process for individual programs
+ */
+
+// Global variables for the workflow
+let currentProgramId = null;
+let currentProgramName = '';
+let selectedPeriodId = null;
+let selectedPeriodName = '';
+let selectedSubmissionId = null;
+
+/**
+ * Opens the single program finalize modal
+ * Called when user clicks "Finalize Submission" on a program
+ */
+function openSingleProgramFinalize(programId, programName) {
+    currentProgramId = programId;
+    currentProgramName = programName;
+    
+    // Check if modal exists
+    const modalElement = document.getElementById('quickFinalizeModal');
+    if (!modalElement) {
+        console.error('Quick finalize modal not found');
+        alert('Modal not available. Please refresh the page and try again.');
+        return;
+    }
+    
+    // Update modal title and program name with safety checks
+    const modalTitleText = document.getElementById('modalTitleText');
+    const selectedProgramName = document.getElementById('selectedProgramName');
+    
+    if (modalTitleText) modalTitleText.textContent = `Finalize Submission - ${programName}`;
+    if (selectedProgramName) selectedProgramName.textContent = programName;
+    
+    // Reset modal state
+    resetFinalizationModal();
+    
+    // Load available draft periods for this program
+    loadAvailablePeriods(programId);
+    
+    // Show the modal
+    const modal = new bootstrap.Modal(modalElement);
+    modal.show();
+}
+
+/**
+ * Resets the modal to its initial state
+ */
+function resetFinalizationModal() {
+    // Hide all content sections with safety checks
+    const finalizeLoadingState = document.getElementById('finalizeLoadingState');
+    const finalizeErrorState = document.getElementById('finalizeErrorState');
+    const finalizeMainContent = document.getElementById('finalizeMainContent');
+    const finalizeSuccessState = document.getElementById('finalizeSuccessState');
+    
+    if (finalizeLoadingState) finalizeLoadingState.classList.remove('d-none');
+    if (finalizeErrorState) finalizeErrorState.classList.add('d-none');
+    if (finalizeMainContent) finalizeMainContent.classList.add('d-none');
+    if (finalizeSuccessState) finalizeSuccessState.classList.add('d-none');
+    
+    // Reset step visibility
+    const step1Content = document.getElementById('step1Content');
+    const step2Content = document.getElementById('step2Content');
+    
+    if (step1Content) step1Content.classList.remove('d-none');
+    if (step2Content) step2Content.classList.add('d-none');
+    
+    // Reset footer actions
+    const step1Actions = document.getElementById('step1Actions');
+    const step2Actions = document.getElementById('step2Actions');
+    
+    if (step1Actions) step1Actions.classList.remove('d-none');
+    if (step2Actions) step2Actions.classList.add('d-none');
+    
+    // Reset button states
+    const reviewSubmissionBtn = document.getElementById('reviewSubmissionBtn');
+    if (reviewSubmissionBtn) reviewSubmissionBtn.disabled = true;
+    
+    // Clear selected period
+    selectedPeriodId = null;
+    selectedPeriodName = '';
+    selectedSubmissionId = null;
+}
+
+/**
+ * Loads available draft periods for the selected program
+ */
+function loadAvailablePeriods(programId) {
+    fetch(`../../../ajax/get_program_draft_periods.php?program_id=${programId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayAvailablePeriods(data.periods);
+                // Show main content, hide loading
+                document.getElementById('finalizeLoadingState').classList.add('d-none');
+                document.getElementById('finalizeMainContent').classList.remove('d-none');
+            } else {
+                showFinalizationError(data.message || 'Failed to load available periods');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading periods:', error);
+            showFinalizationError('An error occurred while loading periods');
+        });
+}
+
+/**
+ * Displays the available draft periods in the modal
+ */
+function displayAvailablePeriods(periods) {
+    const container = document.getElementById('availablePeriodsList');
+    
+    if (periods.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-4 text-muted">
+                <i class="fas fa-info-circle fa-2x mb-2"></i>
+                <p>No draft submissions found for this program.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    periods.forEach(period => {
+        html += `
+            <div class="period-item" onclick="selectPeriod(${period.period_id}, '${period.period_name}', '${period.submission_id}')">
+                <div class="period-info">
+                    <h6>${period.period_name}</h6>
+                    <div class="period-meta">
+                        <span class="badge bg-warning me-2">Draft</span>
+                        <span class="text-muted">Last updated: ${period.last_updated}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+/**
+ * Handles period selection
+ */
+function selectPeriod(periodId, periodName, submissionId) {
+    // Remove previous selection
+    document.querySelectorAll('.period-item').forEach(item => {
+        item.classList.remove('selected');
+    });
+    
+    // Add selection to clicked item
+    event.currentTarget.classList.add('selected');
+    
+    // Store selection
+    selectedPeriodId = periodId;
+    selectedPeriodName = periodName;
+    selectedSubmissionId = submissionId;
+    
+    // Enable review button
+    document.getElementById('reviewSubmissionBtn').disabled = false;
+}
+
+/**
+ * Loads submission details for review in step 2
+ */
+function loadSubmissionForReview(submissionId) {
+    // Show loading state
+    document.getElementById('step1Content').classList.add('d-none');
+    document.getElementById('finalizeLoadingState').classList.remove('d-none');
+    document.getElementById('finalizeMainContent').classList.remove('d-none');
+    
+    fetch(`../../../ajax/get_submission_preview.php?submission_id=${submissionId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displaySubmissionReview(data.submission);
+                // Show step 2
+                document.getElementById('finalizeLoadingState').classList.add('d-none');
+                document.getElementById('step2Content').classList.remove('d-none');
+                
+                // Update footer actions
+                document.getElementById('step1Actions').classList.add('d-none');
+                document.getElementById('step2Actions').classList.remove('d-none');
+                
+                // Update modal title
+                document.getElementById('modalTitleText').textContent = `Review Submission - ${selectedPeriodName}`;
+            } else {
+                showFinalizationError(data.message || 'Failed to load submission details');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading submission:', error);
+            showFinalizationError('An error occurred while loading submission details');
+        });
+}
+
+/**
+ * Displays submission details for review
+ */
+function displaySubmissionReview(submission) {
+    const step2Content = document.getElementById('step2Content');
+    
+    let html = `
+        <div class="alert alert-success mb-4">
+            <i class="fas fa-check-circle me-2"></i>
+            <strong>Step 2:</strong> Review your submission below. You can edit if needed or confirm to finalize.
+        </div>
+        
+        <div class="submission-preview-card p-4 border rounded">
+            <h6 class="mb-3">
+                <i class="fas fa-file-alt me-2"></i>
+                Submission Preview - ${selectedPeriodName}
+            </h6>
+            
+            <div class="submission-details">
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Program:</strong> ${currentProgramName}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Period:</strong> ${selectedPeriodName}
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-md-6">
+                        <strong>Status:</strong> <span class="badge bg-warning">Draft</span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Last Updated:</strong> ${submission.updated_at || 'Not set'}
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <h6>Summary:</h6>
+                    <p class="text-muted">${submission.summary || 'No summary provided'}</p>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    step2Content.innerHTML = html;
+}
+
+/**
+ * Finalizes the selected submission
+ */
+function finalizeSubmission(submissionId) {
+    // Show loading state
+    document.getElementById('step2Content').classList.add('d-none');
+    document.getElementById('finalizeLoadingState').classList.remove('d-none');
+    
+    fetch('../../../ajax/finalize_submission.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            submission_id: submissionId,
+            program_id: currentProgramId,
+            period_id: selectedPeriodId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showFinalizationSuccessState();
+        } else {
+            showFinalizationError(data.message || 'Failed to finalize submission');
+        }
+    })
+    .catch(error => {
+        console.error('Error finalizing submission:', error);
+        showFinalizationError('An error occurred while finalizing submission');
+    });
+}
+
+/**
+ * Shows success state after finalization
+ */
+function showFinalizationSuccessState() {
+    document.getElementById('finalizeLoadingState').classList.add('d-none');
+    document.getElementById('finalizeSuccessState').classList.remove('d-none');
+    
+    // Update success message
+    const successContent = `
+        <div class="text-success mb-3">
+            <i class="fas fa-check-circle fa-3x"></i>
+        </div>
+        <h5 class="text-success">Submission Finalized Successfully!</h5>
+        <p class="text-muted">Your submission for <strong>${selectedPeriodName}</strong> has been finalized and is now available for review.</p>
+        
+        <div class="mt-4">
+            <button type="button" class="btn btn-primary me-2" onclick="window.location.reload()">
+                <i class="fas fa-refresh me-1"></i> Refresh Page
+            </button>
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                <i class="fas fa-times me-1"></i> Close
+            </button>
+        </div>
+    `;
+    
+    document.getElementById('finalizeSuccessState').innerHTML = successContent;
+}
+
+/**
+ * Shows error state
+ */
+function showFinalizationError(message) {
+    document.getElementById('finalizeLoadingState').classList.add('d-none');
+    document.getElementById('finalizeMainContent').classList.add('d-none');
+    document.getElementById('finalizeErrorState').classList.remove('d-none');
+    document.getElementById('finalizeErrorMessage').textContent = message;
+}
+
+/**
+ * Initialize event listeners for the new workflow
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    // Review submission button
+    document.getElementById('reviewSubmissionBtn')?.addEventListener('click', function() {
+        if (!selectedPeriodId) {
+            alert('Please select a reporting period first.');
+            return;
+        }
+        
+        // Load submission details for review
+        loadSubmissionForReview(selectedSubmissionId);
+    });
+
+    // Edit submission button
+    document.getElementById('editSubmissionBtn')?.addEventListener('click', function() {
+        if (selectedSubmissionId) {
+            // Redirect to edit submission page
+            window.location.href = `edit_submission.php?submission_id=${selectedSubmissionId}&program_id=${currentProgramId}`;
+        }
+    });
+
+    // Confirm finalize button
+    document.getElementById('confirmFinalizeBtn')?.addEventListener('click', function() {
+        // Show confirmation dialog
+        const confirmMessage = `Are you sure you want to finalize this submission?\n\nYou can still edit after finalizing, but the changes would be saved as a draft.`;
+        
+        if (confirm(confirmMessage)) {
+            finalizeSubmission(selectedSubmissionId);
+        }
+    });
+});
+
+// Make functions globally available
+window.openSingleProgramFinalize = openSingleProgramFinalize;
 

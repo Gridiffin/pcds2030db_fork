@@ -66,14 +66,12 @@ if ($is_draft) {
 ?>
 
 <div class="program-box <?php echo $is_draft ? 'draft-program' : ''; ?>" 
-     data-program-type="<?php echo $is_assigned ? 'assigned' : 'created'; ?>"
-     data-rating="<?php echo $current_rating; ?>" 
-     data-rating-order="<?php echo $rating_order[$current_rating] ?? 999; ?>"
+     data-status="<?php echo $current_rating; ?>" 
+     data-status-order="<?php echo $rating_order[$current_rating] ?? 999; ?>"
      data-initiative="<?php echo !empty($program['initiative_name']) ? htmlspecialchars($program['initiative_name']) : 'zzz_no_initiative'; ?>"
      data-initiative-id="<?php echo $program['initiative_id'] ?? '0'; ?>">
     
-    <!-- Status Indicator -->
-    <div class="status-indicator <?php echo $status_class; ?>"></div>
+    <!-- Status indicator removed - using badges instead -->
     
     <div class="program-box-content">
         <!-- Program Header -->
@@ -159,6 +157,17 @@ if ($is_draft) {
                                 <i class="fas fa-edit"></i>
                                 Edit Submission
                             </a>
+
+                            <?php if ($program_state === 'draft' && is_focal_user()): ?>
+                                <!-- Review & Finalize Submission (Draft state only, focal users only) -->
+                                <button type="button" 
+                                        class="dropdown-item-custom border-0 bg-transparent text-start w-100" 
+                                        onclick="openSubmissionSelection(<?php echo $program['program_id']; ?>, true)"
+                                        title="Review full submission details and finalize">
+                                    <i class="fas fa-check-circle text-success"></i>
+                                    Review & Finalize
+                                </button>
+                            <?php endif; ?>
                         <?php endif; ?>
                     <?php endif; ?>
                 </div>
@@ -193,7 +202,7 @@ if ($is_draft) {
                 <?php endif; ?>
             </div>
 
-            <!-- Status/Rating -->
+            <!-- Status -->
             <?php if ($show_rating): ?>
             <div class="status-info">
                 <div class="status-circle <?php echo $rating_map[$current_rating]['circle_class']; ?>"></div>

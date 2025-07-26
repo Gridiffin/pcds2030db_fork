@@ -7,4 +7,4 @@
             </div>)
 
 - the tootip for initative name taht pops out from the initative number overflowed out of the screen
-- 
+- the css of quick finalize modal should not be inline

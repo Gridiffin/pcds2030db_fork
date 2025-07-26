@@ -17,7 +17,8 @@
       "Bash(php:*)",
       "Bash(mkdir:*)",
       "WebFetch(domain:ibb.co)",
-      "WebFetch(domain:i.ibb.co)"
+      "WebFetch(domain:i.ibb.co)",
+      "Bash(mv:*)"
     ],
     "deny": []
   }

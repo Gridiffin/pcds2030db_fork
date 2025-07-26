@@ -22,29 +22,19 @@ $filterPrefix = $filterPrefix ?? '';
             </div>
         </div>
 
-        <!-- Rating Filter (if applicable) -->
-        <?php if (in_array('rating', $filters)): ?>
+        <!-- Status Filter (if applicable) -->
+        <?php if (in_array('status', $filters)): ?>
         <div class="col-md-2 col-sm-6">
-            <label for="<?php echo $filterPrefix; ?>RatingFilter" class="form-label">Rating</label>
-            <select class="form-select" id="<?php echo $filterPrefix; ?>RatingFilter">
-                <option value="">All Ratings</option>
-                <option value="target-achieved">Monthly Target Achieved</option>
-                <option value="on-track-yearly">On Track for Year</option>
-                <option value="severe-delay">Severe Delays</option>
-                <option value="not-started">Not Started</option>
+            <label for="<?php echo $filterPrefix; ?>StatusFilter" class="form-label">Status</label>
+            <select class="form-select" id="<?php echo $filterPrefix; ?>StatusFilter">
+                <option value="">All Status</option>
+                <option value="monthly_target_achieved">Monthly Target Achieved</option>
+                <option value="on_track_for_year">On Track for Year</option>
+                <option value="severe_delay">Severe Delays</option>
+                <option value="not_started">Not Started</option>
             </select>
         </div>
         <?php endif; ?>
-
-        <!-- Type Filter -->
-        <div class="col-md-2 col-sm-6">
-            <label for="<?php echo $filterPrefix; ?>TypeFilter" class="form-label">Program Type</label>
-            <select class="form-select" id="<?php echo $filterPrefix; ?>TypeFilter">
-                <option value="">All Types</option>
-                <option value="assigned">Assigned</option>
-                <option value="created">Agency-Created Programs</option>
-            </select>
-        </div>
 
         <!-- Initiative Filter -->
         <div class="col-md-3 col-sm-6">

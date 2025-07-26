@@ -10,6 +10,7 @@
 @import url("components/ui/modal.css");
 @import url("components/ui/tabs.css");
 @import url("components/ui/tooltip.css");
+@import url("components/quick-finalize-modal.css");
 @import url("layout/page_header.css");
 
 /* Import new admin styles */

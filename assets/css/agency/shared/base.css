@@ -47,4 +47,5 @@
 
 /* Common components */
 @import '../../components/rating-indicators.css';
-@import '../../components/notifications.css'; 
+@import '../../components/notifications.css';
+@import '../../components/programs-modern-box.css'; 

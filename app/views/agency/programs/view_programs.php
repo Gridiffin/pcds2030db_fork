@@ -132,6 +132,7 @@ $contentFile = __DIR__ . '/view_programs_content.php';
 // Load for all users since it contains submission selection functionality used by everyone
 $additionalScripts = [];
 $additionalScripts[] = APP_URL . '/assets/js/agency/finalization-tutorial.js';
+$additionalScripts[] = APP_URL . '/assets/js/agency/simple-finalize.js';
 
 // Include base layout - it will render header, nav, content, and footer
 require_once PROJECT_ROOT_PATH . 'app/views/layouts/base.php';

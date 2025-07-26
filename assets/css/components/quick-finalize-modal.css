@@ -1,0 +1,210 @@
+/**
+ * Quick Finalize Modal Styles
+ * Styles for the focal user quick finalization modal - single program workflow
+ */
+
+/* Nuclear z-index approach - absolute highest level */
+#quickFinalizeModal {
+    z-index: 2147483647 !important;
+}
+
+#quickFinalizeModal .modal-backdrop {
+    z-index: 2147483646 !important;
+}
+
+#quickFinalizeModal .modal-dialog {
+    z-index: 2147483647 !important;
+}
+
+#quickFinalizeModal .modal-content {
+    z-index: 2147483647 !important;
+}
+
+/* Nuclear approach - force all other elements down */
+body.modal-open * {
+    z-index: 1 !important;
+}
+
+body.modal-open #quickFinalizeModal,
+body.modal-open #quickFinalizeModal *,
+body.modal-open .modal-backdrop {
+    z-index: 2147483647 !important;
+}
+
+/* Ensure program boxes are forced down */
+.modal-open .program-box,
+.modal-open .program-box *,
+.modal-open .program-box:hover,
+.modal-open .program-box:hover * {
+    z-index: 1 !important;
+}
+
+/* Program Info Card */
+.program-info-card {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.program-info-card h6 {
+    margin-bottom: 0;
+    color: #2c5aa0;
+    font-weight: 600;
+}
+
+/* Periods Container */
+.periods-container {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    background: #f8f9fa;
+}
+
+.period-item {
+    background: white;
+    border-bottom: 1px solid #e9ecef;
+    padding: 1rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.period-item:last-child {
+    border-bottom: none;
+}
+
+.period-item:hover {
+    background: #f8f9fa;
+}
+
+.period-item.selected {
+    background: #e7f3ff;
+    border-left: 4px solid #007bff;
+}
+
+.period-info h6 {
+    margin-bottom: 0.25rem;
+    color: #2c5aa0;
+}
+
+.period-meta {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+/* Legacy styles for backward compatibility */
+.finalize-programs-container {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    background: #f8f9fa;
+}
+
+.finalize-program-item {
+    background: white;
+    border-bottom: 1px solid #e9ecef;
+    padding: 1rem;
+    transition: all 0.2s ease;
+}
+
+.finalize-program-item:last-child {
+    border-bottom: none;
+}
+
+.finalize-program-item:hover {
+    background: #f8f9fa;
+}
+
+.finalize-program-item.selected {
+    background: #e7f3ff;
+    border-left: 4px solid #007bff;
+}
+
+.program-checkbox {
+    margin-right: 0.75rem;
+}
+
+.program-info h6 {
+    margin-bottom: 0.25rem;
+    color: #2c5aa0;
+}
+
+.program-meta {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.period-selection {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #e9ecef;
+}
+
+.period-option {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem;
+    background: #f8f9fa;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+}
+
+.period-option:last-child {
+    margin-bottom: 0;
+}
+
+.period-option input[type="checkbox"] {
+    margin-right: 0.5rem;
+}
+
+.selection-summary-card {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 1.25rem;
+    position: sticky;
+    top: 20px;
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.summary-item:last-child {
+    border-bottom: none;
+}
+
+.summary-program-name {
+    font-weight: 500;
+    color: #2c5aa0;
+}
+
+.summary-period {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.finalize-results-item {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.finalize-results-item:last-child {
+    border-bottom: none;
+}
+
+.result-status.success {
+    color: #198754;
+}
+
+.result-status.error {
+    color: #dc3545;
+}

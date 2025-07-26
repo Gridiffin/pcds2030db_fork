@@ -232,11 +232,13 @@
     font-size: var(--font-size-sm);
 }
 
-.status-indicator {
+.footer-status .status-indicator {
     width: 8px;
     height: 8px;
     border-radius: var(--radius-full);
     background-color: var(--color-success);
+    position: static;
+    flex-shrink: 0;
 }
 
 .status-text {
