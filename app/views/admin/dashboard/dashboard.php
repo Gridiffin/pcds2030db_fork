@@ -46,43 +46,31 @@ $recent_submissions = get_recent_submissions($period_id, 5);
 // Get outcomes statistics for the dashboard
 $outcomes_stats = get_outcomes_statistics($period_id);
 
-// Get both assigned and agency-created programs for display
-$assigned_programs = get_admin_programs_list($period_id, [
-    'is_assigned' => true,
-    'limit' => 5,
-    'sort_by' => 'p.created_at',
-    'sort_order' => 'DESC'
-]);
-$agency_programs = get_admin_programs_list($period_id, [
-    'is_assigned' => false,
+// Get latest 5 programs for display
+$latest_programs = get_admin_programs_list($period_id, [
     'limit' => 5,
     'sort_by' => 'p.created_at',
     'sort_order' => 'DESC'
 ]);
 
-// Count assigned and agency-created programs
-$assigned_count = count($assigned_programs);
-$agency_count = count($agency_programs);
+// Count total programs
+$total_programs_count = count($latest_programs);
 
-// Set page title
+// Set up variables for base_admin layout
 $pageTitle = 'Admin Dashboard';
-
-// Set up variables for base layout
-$cssBundle = 'main'; // Use main CSS bundle which includes all necessary styles
+$cssBundle = 'admin-dashboard';
 $jsBundle = 'admin-dashboard';
-$additionalStyles = [
-    // Add admin-specific CSS files that may not be in the main bundle
-    APP_URL . '/assets/css/admin/admin-common.css',
-    APP_URL . '/assets/css/admin/dashboard.css',
-    APP_URL . '/assets/css/custom/admin.css'
-];
-$additionalScripts = [
-    asset_url('js/admin', 'dashboard_charts.js'),
-    asset_url('js/admin', 'dashboard.js'),
-    asset_url('js', 'period_selector.js')
-];
+$contentFile = __DIR__ . '/partials/dashboard_content.php';
+$metaDescription = 'PCDS 2030 Admin Dashboard - System overview and management tools';
 
-// Configure modern page header
+// Pass hasActivePeriod to JavaScript for inline scripts
+$hasActivePeriod = isset($current_period) && !empty($current_period);
+$inlineScripts = "
+    var hasActivePeriod = " . ($hasActivePeriod ? 'true' : 'false') . ";
+    var currentPeriodId = " . ($period_id ? $period_id : 'null') . ";
+";
+
+// Configure page header
 $header_config = [
     'title' => 'Admin Dashboard',
     'subtitle' => 'System overview and management',
@@ -104,11 +92,6 @@ $header_config = [
     ]
 ];
 
-// Pass hasActivePeriod to JavaScript
-$hasActivePeriod = isset($current_period) && !empty($current_period);
-
-// Set content file that contains the main page content
-$contentFile = __DIR__ . '/partials/dashboard_content.php';
-
-include PROJECT_ROOT_PATH . '/app/views/layouts/base.php';
+// Include the admin base layout
+require_once PROJECT_ROOT_PATH . 'app/views/layouts/base_admin.php';
 

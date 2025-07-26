@@ -30,7 +30,7 @@ $controller->handlePost();
 $pageTitle = 'System Settings';
 
 // Set up variables for base layout
-$cssBundle = 'main';
+$cssBundle = 'admin-settings'; // Use modular admin-settings CSS bundle (~75kB vs 352kB)
 $jsBundle = 'admin-common';
 $additionalStyles = [
     APP_URL . '/assets/css/admin/admin-common.css'
@@ -49,4 +49,4 @@ $header_config = [
 
 // Set content file that contains the main page content
 $contentFile = __DIR__ . '/partials/system_settings_content.php';
-include PROJECT_ROOT_PATH . '/app/views/layouts/base.php';
+require_once PROJECT_ROOT_PATH . 'app/views/layouts/base_admin.php';

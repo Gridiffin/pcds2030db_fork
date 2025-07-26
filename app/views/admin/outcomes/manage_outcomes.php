@@ -42,7 +42,7 @@ $outcomes = get_all_outcomes();
 $current_period = get_current_reporting_period();
 
 // Set up variables for base layout
-$cssBundle = 'main';
+$cssBundle = 'admin-outcomes'; // Use modular admin-outcomes CSS bundle (~85kB vs 352kB)
 $jsBundle = 'admin-common';
 $additionalStyles = [
     APP_URL . '/dist/js/manage_outcomes.bundle.css'
@@ -55,6 +55,16 @@ $additionalScripts = [
 $header_config = [
     'title' => 'Manage Outcomes',
     'subtitle' => 'Admin interface to manage outcomes across all sectors',
+    'breadcrumb' => [
+        [
+            'text' => 'Home',
+            'url' => APP_URL . '/app/views/admin/dashboard/dashboard.php'
+        ],
+        [
+            'text' => 'Outcomes',
+            'url' => null // Current page, no link
+        ]
+    ],
     'variant' => 'green',
     'actions' => [
         [
@@ -94,4 +104,4 @@ if ($current_period) {
 
 // Set content file that contains the main page content
 $contentFile = __DIR__ . '/partials/manage_outcomes_content.php';
-include PROJECT_ROOT_PATH . '/app/views/layouts/base.php';
+require_once PROJECT_ROOT_PATH . 'app/views/layouts/base_admin.php';

@@ -31,19 +31,10 @@ if (!isset($programs_with_drafts)) {
     require_once PROJECT_ROOT_PATH . 'app/controllers/AdminProgramsController.php';
 }
 
-// Set up variables for base layout
-$pageTitle = $pageTitle ?? 'Admin Programs';
-$cssBundle = 'main'; // Use main CSS bundle which includes all necessary styles
+// Set up variables for base_admin layout
+$pageTitle = 'Admin Programs';
+$cssBundle = 'admin-programs';
 $jsBundle = 'admin-programs';
-$additionalStyles = [
-    // Add admin-specific CSS files that may not be in the main bundle
-    APP_URL . '/assets/css/admin/admin-common.css',
-    APP_URL . '/assets/css/admin/programs.css',
-    APP_URL . '/assets/css/custom/admin.css'
-];
-$additionalScripts = [
-    // Additional scripts specific to admin programs can be added here if needed
-];
 
 // Inline script to handle delete functionality
 $inlineScripts = '
@@ -125,6 +116,16 @@ console.log("Delete function loaded successfully");
 $header_config = [
     'title' => $pageTitle,
     'subtitle' => 'View and manage programs across all agencies',
+    'breadcrumb' => [
+        [
+            'text' => 'Home',
+            'url' => APP_URL . '/app/views/admin/dashboard/dashboard.php'
+        ],
+        [
+            'text' => 'Programs',
+            'url' => null // Current page, no link
+        ]
+    ],
     'variant' => 'green',
     'actions' => [
         [
@@ -139,7 +140,7 @@ $header_config = [
 // Set content file that contains the main page content
 $contentFile = __DIR__ . '/partials/programs_content.php';
 
-include PROJECT_ROOT_PATH . '/app/views/layouts/base.php';
+require_once PROJECT_ROOT_PATH . 'app/views/layouts/base_admin.php';
 
 
 

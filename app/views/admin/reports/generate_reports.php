@@ -2,12 +2,8 @@
 /**
  * Generate Reports Page
  * 
- * Administrative interface for generating PPTX reports for selected reporting periods and sectors.
+ * Administrative interface for generating PPTX reports for selected reporting periods.
  * Features include program selection, ordering, and comprehensive report generation.
- * 
- * @author PCDS Dashboard System
- * @version 2.0
- * @since 1.0
  */
 
 // Security and initialization
@@ -21,7 +17,6 @@ require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/admins/index.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/admins/agencies.php';
 
 // Security check: Verify user is admin
 if (!is_admin()) {
@@ -31,7 +26,7 @@ if (!is_admin()) {
 
 // Page configuration
 $pageTitle = 'Generate Reports';
-$pageDescription = 'Create and manage sector progress reports in PPTX format';
+$pageDescription = 'Create and manage progress reports in PPTX format';
 
 /**
  * Get all reporting periods for dropdown selection
@@ -61,21 +56,6 @@ function getReportingPeriods() {
     }
 }
 
-/**
- * Get all sectors for dropdown selection
- * @return array Array of sectors
- */
-function getSectors() {
-    // Since sectors table has been removed, return a default sector
-    // This maintains backward compatibility while the system transitions
-    return [
-        [
-            'sector_id' => 1,
-            'sector_name' => 'Forestry Sector',
-            'description' => 'Forestry and environmental management programs'
-        ]
-    ];
-}
 
 /**
  * Check if a report should display the "NEW" badge
@@ -139,8 +119,6 @@ function formatPeriod($report) {
 
 // Fetch data for page
 $periods = getReportingPeriods();
-// System is configured for Forestry Sector only (sector_id = 1)
-// Note: $agencies variable was removed as it's not used in this file
 
 // Additional CSS files for this page
 $additionalStyles = [
@@ -164,22 +142,34 @@ $additionalScripts = [
     APP_URL . '/assets/js/admin/reports-pagination.js'
 ];
 
-// Set up variables for base layout
-$cssBundle = 'main'; // Use main CSS bundle which includes all necessary styles
+// Set up variables for base_admin layout
+$cssBundle = 'admin-reports';
 $jsBundle = 'admin-reports';
-$additionalStyles = [
-    // Add admin-specific CSS files that may not be in the main bundle
-    APP_URL . '/assets/css/admin/admin-common.css',
-    APP_URL . '/assets/css/admin/reports.css',
-    APP_URL . '/assets/css/custom/admin.css'
-];
 
 // Configure modern page header
 $header_config = [
     'title' => 'Generate Reports',
-    'subtitle' => 'Create and manage sector progress reports in PPTX format',
+    'subtitle' => 'Create and manage progress reports in PPTX format',
+    'breadcrumb' => [
+        [
+            'text' => 'Home',
+            'url' => APP_URL . '/app/views/admin/dashboard/dashboard.php'
+        ],
+        [
+            'text' => 'Reports',
+            'url' => null // Current page, no link
+        ]
+    ],
     'variant' => 'green',
-    'actions' => []
+    'actions' => [
+        [
+            'text' => 'Refresh',
+            'url' => '#',
+            'id' => 'refreshPage',
+            'class' => 'btn-light',
+            'icon' => 'fas fa-sync-alt'
+        ]
+    ]
 ];
 
 // JavaScript Configuration Object for ReportGenerator
@@ -198,5 +188,4 @@ $jsConfig = [
 // Set content file that contains the main page content
 $contentFile = __DIR__ . '/partials/generate_reports_content.php';
 
-include PROJECT_ROOT_PATH . '/app/views/layouts/base.php';
-?>
+require_once PROJECT_ROOT_PATH . 'app/views/layouts/base_admin.php';

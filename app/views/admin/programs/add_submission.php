@@ -112,11 +112,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Set page title
+// Set up variables for base_admin layout
 $pageTitle = 'Add Submission (Admin) - ' . $program['program_name'];
-
-// Include header
-require_once '../../layouts/header.php';
+$cssBundle = 'admin-programs';
+$jsBundle = 'admin-programs';
+$contentFile = __DIR__ . '/partials/add_submission_content.php';
 
 // Configure modern page header
 $header_config = [
@@ -388,5 +388,6 @@ window.programNumber = <?php echo json_encode($program['program_number'] ?? '');
 
 <?php
 // Include footer
-require_once '../../layouts/footer.php';
+// Include the admin base layout
+require_once PROJECT_ROOT_PATH . 'app/views/layouts/base_admin.php';
 ?> 

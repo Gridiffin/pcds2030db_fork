@@ -1,7 +1,11 @@
 /**
  * Manage Users Page - Custom Implementation
  * Fixed password validation issue
+ * Uses modular CSS import: users.css (~80kB vs 352kB main.css)
  */
+
+// Import users-specific CSS bundle
+import '../../css/admin/users/users.css';
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize Bootstrap tooltips
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));

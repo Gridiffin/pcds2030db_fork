@@ -30,7 +30,7 @@ $pageTitle = 'Reporting Periods Management';
 $currentPage = 'periods';
 
 // Set up variables for base layout
-$cssBundle = 'main';
+$cssBundle = 'admin-periods'; // Use modular admin-periods CSS bundle (~70kB vs 352kB)
 $jsBundle = 'admin-common';
 $additionalStyles = [
     asset_url('css', 'admin/periods.css')
@@ -55,5 +55,5 @@ $header_config = [
     ]
 ];
 
-include PROJECT_ROOT_PATH . '/app/views/layouts/base.php';
+require_once PROJECT_ROOT_PATH . 'app/views/layouts/base_admin.php';
 ?>

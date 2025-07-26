@@ -18,7 +18,9 @@
       "Bash(mkdir:*)",
       "WebFetch(domain:ibb.co)",
       "WebFetch(domain:i.ibb.co)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(node:*)",
+      "Bash(sed:*)"
     ],
     "deny": []
   }

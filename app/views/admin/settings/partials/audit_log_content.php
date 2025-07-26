@@ -89,13 +89,18 @@ foreach ($tables as $table) {
     } elseif ($table === 'programs') {
         $name_column = 'program_name';
     } elseif ($table === 'outcomes') {
-        $name_column = 'detail_name';
+        $name_column = 'title'; // Use title column for outcomes
     }
 
-    // Build select columns string
-    $select_columns = "$pk_column AS record_id, created_at, updated_at";
+    // Build select columns string - handle tables without created_at
+    $timestamp_columns = "updated_at";
+    if ($table !== 'outcomes') {
+        $timestamp_columns = "created_at, updated_at";
+    }
+    
+    $select_columns = "$pk_column AS record_id, $timestamp_columns";
     if ($name_column) {
-        $select_columns = "$pk_column AS record_id, $name_column, created_at, updated_at";
+        $select_columns = "$pk_column AS record_id, $name_column, $timestamp_columns";
     }
 
     // Fetch records with id, name (if applicable), created_at, updated_at
@@ -113,15 +118,25 @@ foreach ($tables as $table) {
             if ($name_column && isset($data_row[$name_column])) {
                 $display_id = $data_row[$name_column];
             }
-            // Add created_at entry
-            $rows[] = [
-                'table_name' => $table,
-                'record_id' => $display_id,
-                'event_type' => 'Created',
-                'event_date' => $data_row['created_at']
-            ];
-            // Add updated_at entry only if different from created_at
-            if ($data_row['updated_at'] !== $data_row['created_at']) {
+            // Add created_at entry only if the column exists
+            if (isset($data_row['created_at'])) {
+                $rows[] = [
+                    'table_name' => $table,
+                    'record_id' => $display_id,
+                    'event_type' => 'Created',
+                    'event_date' => $data_row['created_at']
+                ];
+                // Add updated_at entry only if different from created_at
+                if ($data_row['updated_at'] !== $data_row['created_at']) {
+                    $rows[] = [
+                        'table_name' => $table,
+                        'record_id' => $display_id,
+                        'event_type' => 'Updated',
+                        'event_date' => $data_row['updated_at']
+                    ];
+                }
+            } else {
+                // For tables without created_at, just show updated_at
                 $rows[] = [
                     'table_name' => $table,
                     'record_id' => $display_id,

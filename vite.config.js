@@ -8,11 +8,16 @@ export default defineConfig({
                 // Login Module (already correct)
                 'login': path.resolve(__dirname, 'assets/js/login.js'),
 
-                // Admin Modules
+                // Admin Modules (JS entry points that import their CSS)
                 'admin-common': path.resolve(__dirname, 'assets/js/admin/admin-common.js'),
+                'admin-dashboard': path.resolve(__dirname, 'assets/js/admin/admin-dashboard.js'),
+                'admin-programs': path.resolve(__dirname, 'assets/js/admin/admin-programs.js'),
+                'admin-users': path.resolve(__dirname, 'assets/js/admin/admin-users.js'),
+                'admin-reports': path.resolve(__dirname, 'assets/js/admin/admin-reports.js'),
+                'admin-settings': path.resolve(__dirname, 'assets/js/admin/admin-settings.js'),
+                'admin-outcomes': path.resolve(__dirname, 'assets/js/admin/admin-outcomes.js'),
+                'admin-periods': path.resolve(__dirname, 'assets/js/admin/admin-periods.js'),
                 'admin-manage-initiatives': path.resolve(__dirname, 'assets/js/admin/manage-initiatives.js'),
-                'admin-reports': path.resolve(__dirname, 'assets/js/admin/reports.js'),
-                'admin-programs': path.resolve(__dirname, 'assets/js/admin/programs-management.js'),
 
                 // Agency Core
                 'agency-dashboard': path.resolve(__dirname, 'assets/js/agency/dashboard/dashboard.js'),

@@ -81,7 +81,7 @@ $agencies = get_all_agencies($conn);
 $pageTitle = 'Edit User';
 
 // Set up variables for base layout
-$cssBundle = 'main'; // Use main CSS bundle which includes all necessary styles
+$cssBundle = 'admin-users'; // Use modular admin-users CSS bundle (~80kB vs 352kB)
 $jsBundle = 'admin-users';
 $additionalStyles = [
     // Add admin-specific CSS files that may not be in the main bundle
@@ -109,4 +109,4 @@ $header_config = [
 // Set content file that contains the main page content
 $contentFile = __DIR__ . '/partials/edit_user_content.php';
 
-include PROJECT_ROOT_PATH . '/app/views/layouts/base.php';
+require_once PROJECT_ROOT_PATH . 'app/views/layouts/base_admin.php';

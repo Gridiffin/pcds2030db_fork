@@ -1,10 +1,14 @@
 /**
- * Admin Programs Page Styles
- * 
- * This file contains all the specific styles for the admin programs page,
- * including the layout of the three main cards (draft, finalized, templates),
- * table styling, badges, buttons, and modals.
+ * Admin Programs CSS Entry Point  
+ * Base + programs-specific components
+ * Replaces main.css import for programs module (~100kB vs 352kB)
  */
+
+/* Import shared admin foundation */
+@import '../shared/base.css';
+
+/* Programs-specific components */
+@import '../../components/bulk-assignment.css';
 
 /* =================================== */
 /* Card Layout & Headers               */

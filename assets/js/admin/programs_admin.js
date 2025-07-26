@@ -1,7 +1,11 @@
 /**
  * Admin Programs Functionality
  * Handles filtering and interactions on the admin programs page
+ * Uses modular CSS import: programs.css (~100kB vs 352kB main.css)
  */
+
+// Import programs-specific CSS bundle
+import '../../css/admin/programs/programs.css';
 
 /**
  * Filter programs based on the section (draft, finalized, or empty)
@@ -244,138 +248,6 @@ function initializeFiltering() {
     
     if (resetEmptyBtn) {
         resetEmptyBtn.addEventListener('click', () => resetFilters('empty'));
-    }
-}
-
-/**
- * Filter programs based on the section (draft, finalized, or empty)
- */
-function filterPrograms(section) {
-    let tableId, searchId, ratingId, typeId, agencyId, initiativeId, badgeContainerId, countId;
-    
-    if (section === 'draft') {
-        tableId = 'draftProgramsTable';
-        searchId = 'draftProgramSearch';
-        ratingId = 'draftRatingFilter';
-        typeId = 'draftTypeFilter';
-        agencyId = 'draftAgencyFilter';
-        initiativeId = 'draftInitiativeFilter';
-        badgeContainerId = 'draftFilterBadges';
-        countId = 'draft-count';
-    } else if (section === 'finalized') {
-        tableId = 'finalizedProgramsTable';
-        searchId = 'finalizedProgramSearch';
-        ratingId = 'finalizedRatingFilter';
-        typeId = 'finalizedTypeFilter';
-        agencyId = 'finalizedAgencyFilter';
-        initiativeId = 'finalizedInitiativeFilter';
-        badgeContainerId = 'finalizedFilterBadges';
-        countId = 'finalized-count';
-    } else if (section === 'empty') {
-        tableId = 'emptyProgramsTable';
-        searchId = 'emptyProgramSearch';
-        ratingId = null; // Empty programs don't have rating filter
-        typeId = 'emptyTypeFilter';
-        agencyId = 'emptyAgencyFilter';
-        initiativeId = 'emptyInitiativeFilter';
-        badgeContainerId = 'emptyFilterBadges';
-        countId = 'empty-count';
-    }
-    
-    const table = document.getElementById(tableId);
-    if (!table) return;
-    
-    // Get filter values
-    const searchValue = document.getElementById(searchId)?.value.toLowerCase() || '';
-    const ratingValue = ratingId ? document.getElementById(ratingId)?.value || '' : '';
-    const typeValue = document.getElementById(typeId)?.value || '';
-    const agencyValue = document.getElementById(agencyId)?.value || '';
-    const initiativeValue = document.getElementById(initiativeId)?.value || '';
-    
-    // Get all rows in the table body
-    const rows = table.querySelectorAll('tbody tr');
-    let visibleCount = 0;
-    
-    rows.forEach(row => {
-        // Skip if this is the "no results" row
-        if (row.children.length === 1 && row.children[0].getAttribute('colspan')) {
-            row.style.display = 'none';
-            return;
-        }
-        
-        let showRow = true;
-        
-        // Search filter - check program name and number
-        if (searchValue) {
-            const programNameElement = row.querySelector('.program-name');
-            const programName = programNameElement ? programNameElement.textContent.toLowerCase() : '';
-            if (!programName.includes(searchValue)) {
-                showRow = false;
-            }
-        }
-        
-        // Rating filter (only for draft and finalized sections)
-        if (ratingValue && ratingId) {
-            const ratingData = row.getAttribute('data-rating');
-            const ratingMap = {
-                'target-achieved': 'monthly_target_achieved',
-                'on-track-yearly': 'on_track_for_year', 
-                'severe-delay': 'severe_delay',
-                'not-started': 'not_started'
-            };
-            if (ratingMap[ratingValue] && ratingData !== ratingMap[ratingValue]) {
-                showRow = false;
-            }
-        }
-        
-        // Type filter
-        if (typeValue) {
-            const programType = row.getAttribute('data-program-type');
-            if (programType !== typeValue) {
-                showRow = false;
-            }
-        }
-        
-        // Agency filter
-        if (agencyValue) {
-            const agencyData = row.getAttribute('data-agency-id');
-            if (agencyData !== agencyValue) {
-                showRow = false;
-            }
-        }
-        
-        // Initiative filter
-        if (initiativeValue) {
-            const initiativeData = row.getAttribute('data-initiative-id') || '0';
-            if (initiativeValue === 'no-initiative') {
-                if (initiativeData !== '0' && initiativeData !== '') {
-                    showRow = false;
-                }
-            } else {
-                if (initiativeData !== initiativeValue) {
-                    showRow = false;
-                }
-            }
-        }
-        
-        // Show/hide row
-        row.style.display = showRow ? '' : 'none';
-        if (showRow) visibleCount++;
-    });
-    
-    // Update count badge
-    const countElement = document.getElementById(countId);
-    if (countElement) {
-        countElement.textContent = visibleCount;
-    }
-    
-    // Show "no results" message if needed
-    if (visibleCount === 0) {
-        const tbody = table.querySelector('tbody');
-        const colspan = section === 'empty' ? 5 : 6; // Empty section has fewer columns
-        const noResultsRow = document.createElement('tr');
-        noResultsRow.innerHTML = `<td colspan="${colspan}" class="text-center py-4">No programs found matching the current filters.</td>`;
-        tbody.appendChild(noResultsRow);
     }
 }
 
