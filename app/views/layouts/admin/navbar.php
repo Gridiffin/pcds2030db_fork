@@ -60,11 +60,6 @@ $nav_items = [
                 'icon' => 'fas fa-users'
             ],
             [
-                'title' => 'System Settings',
-                'url' => APP_URL . '/app/views/admin/settings/system_settings.php',
-                'icon' => 'fas fa-server'
-            ],
-            [
                 'title' => 'Audit Log',
                 'url' => APP_URL . '/app/views/admin/settings/audit_log.php',
                 'icon' => 'fas fa-history'

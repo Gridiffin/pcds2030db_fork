@@ -33,7 +33,7 @@ $is_initiatives_active = $is_initiative_page;
 $is_report_page = $current_page == 'generate_reports.php';
 
 // Check if current page is settings related (including users)
-$is_settings_page = in_array($current_page, ['reporting_periods.php', 'audit_log.php', 'manage_periods.php', 'system_settings.php', 'manage_users.php', 'add_user.php']);
+$is_settings_page = in_array($current_page, ['reporting_periods.php', 'audit_log.php', 'manage_periods.php', 'manage_users.php', 'add_user.php']);
 ?>
 
 <!-- Main Navigation -->
@@ -110,11 +110,6 @@ $is_settings_page = in_array($current_page, ['reporting_periods.php', 'audit_log
                         <i class="fas fa-cog"></i>
                         <i class="fas fa-caret-down nav-dropdown-icon small"></i>
                     </button>                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li>
-                            <a class="dropdown-item <?php if ($current_page == 'system_settings.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/admin/settings/system_settings.php">
-                                <i class="fas fa-sliders-h me-1"></i> System Settings
-                            </a>
-                        </li>
                         <li>
                             <a class="dropdown-item <?php if ($current_page == 'reporting_periods.php') echo 'active'; ?>" href="<?php echo APP_URL; ?>/app/views/admin/periods/reporting_periods.php">
                                 <i class="fas fa-calendar-alt me-1"></i> Reporting Periods

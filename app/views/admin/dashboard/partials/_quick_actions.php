@@ -19,13 +19,6 @@
                     $periodId = $current_period['period_id'] ?? 0;
                     ?>
                     <div class="col-lg-3 col-md-4 col-6">
-                        <a href="<?php echo view_url('admin', 'programs/assign_programs.php'); ?>" class="btn btn-outline-success w-100 d-flex flex-column align-items-center justify-content-center quick-action-btn border-success">
-                            <i class="fas fa-tasks fa-2x"></i>
-                            <span class="mt-2">Assign Programs</span>
-                        </a>
-                    </div>
-
-                    <div class="col-lg-3 col-md-4 col-6">
                         <a href="<?php echo view_url('admin', 'periods/reporting_periods.php'); ?>" class="btn <?php echo $periodOpen ? 'btn-outline-danger' : 'btn-outline-success'; ?> w-100 d-flex flex-column align-items-center justify-content-center quick-action-btn <?php echo $periodOpen ? 'border-danger' : 'border-success'; ?>">
                             <i class="fas fa-calendar-alt fa-2x"></i>
                             <span class="mt-2"><?php echo $periodOpen ? 'Manage Periods' : 'Manage Periods'; ?></span>

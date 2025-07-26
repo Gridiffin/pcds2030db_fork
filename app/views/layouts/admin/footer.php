@@ -97,11 +97,6 @@ $quick_links = [
         'icon' => 'fas fa-file-alt'
     ],
     [
-        'title' => 'System Settings',
-        'url' => APP_URL . '/app/views/admin/settings/system_settings.php',
-        'icon' => 'fas fa-cog'
-    ],
-    [
         'title' => 'Programs',
         'url' => APP_URL . '/app/views/admin/programs/programs.php',
         'icon' => 'fas fa-project-diagram'

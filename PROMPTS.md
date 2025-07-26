@@ -1,10 +1,21 @@
-- for quick finalize modal you dont have to pop out the modal to choose which period of submissions to be viewed bcs the users literally already choose which submission reporting period they want to finalize in the quick finalize modal.
-- html body.d-flex.flex-column.min-vh-100 footer.footer-modern div.footer-container div.footer-bottom div.footer-status span.status-indicator
-- this status indicator is appearing in the wrong place. the html showed that it is in the footer but in program modules it appear at the left side of the screen
-- remove program type filter. repalce ratin filter with status. view programs should show the program status not program rating in the program boxes. (<div class="status-info">
-                <div class="status-circle status-pending"></div>
-                <span class="status-text">On Track for Year</span>
-            </div>)
+- in programs overview in admin side, dont separate programs according to "ASsigned and "agency create" anymore, just show recent 5 programs in one list
+- rewrite the entire outcomes overview section to fit with current deisgn of outcomes (e.g. outcomes are now cannot be created by anyone so the button creat new outcome should be removed)
+- remove recent submissions section
+- remove assign programs button from quick actions section.
+- view and edit outcome are using a common.bundle.css should be using its own edit outcome bundle
+- the copy email button in manage users doesnt work
+- remove bulk assign initiatives from programs page
+- reporting period page doesnt show anything aside from the header, footer and navbar 
+17:29:22.691 Uncaught TypeError: can't access property "innerHTML", tableContainer is null
+    loadPeriods http://localhost/pcds2030_dashboard_fork/assets/js/admin/periods-management.js:77
+    <anonymous> http://localhost/pcds2030_dashboard_fork/assets/js/admin/periods-management.js:8
+    jQuery 13
+periods-management.js:77:5
+    loadPeriods http://localhost/pcds2030_dashboard_fork/assets/js/admin/periods-management.js:77
+    <anonymous> http://localhost/pcds2030_dashboard_fork/assets/js/admin/periods-management.js:8
+    jQuery 13
 
-- the tootip for initative name taht pops out from the initative number overflowed out of the screen
-- the css of quick finalize modal should not be inline
+
+- separate all the programs modules to use their own bundle per page just like how it is in agency side. (e.g view programs has its own bundle, edit program has its own bundle, etc)
+- remove refresh data button in all admin pages. keep the other buttons and elements intact
+- remove system settings page out of admin views

@@ -81,15 +81,7 @@ $header_config = [
         ]
     ],
     'variant' => 'green',
-    'actions' => [
-        [
-            'text' => 'Refresh Data',
-            'url' => '#',
-            'id' => 'refreshPage',
-            'class' => 'btn-light',
-            'icon' => 'fas fa-sync-alt'
-        ]
-    ]
+    'actions' => []
 ];
 
 // Include the admin base layout

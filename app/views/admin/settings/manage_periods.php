@@ -36,15 +36,7 @@ $header_config = [
     'title' => 'Manage Reporting Periods',
     'subtitle' => 'Admin interface to manage reporting periods',
     'variant' => 'green',
-    'actions' => [
-        [
-            'url' => '#',
-            'text' => 'Refresh',
-            'icon' => 'fas fa-sync-alt',
-            'class' => 'btn-outline-primary',
-            'id' => 'refreshPage'
-        ]
-    ]
+    'actions' => []
 ];
 
 // Include modern page header

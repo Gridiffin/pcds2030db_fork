@@ -6,17 +6,10 @@
 // Import users-specific CSS bundle
 import '../../css/admin/users/users.css';
 
-// Users functionality is handled by manage_users.js loaded separately
+// Import the actual users functionality
+import './manage_users.js';
 
 // Users initialization
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Admin Users loaded');
-    
-    // Initialize users-specific features
-    initializeUsers();
+    console.log('Admin Users bundle loaded with manage_users functionality');
 });
-
-function initializeUsers() {
-    // Users-specific initialization code
-    console.log('Users module initialized');
-}

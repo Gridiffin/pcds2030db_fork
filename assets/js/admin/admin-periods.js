@@ -6,17 +6,10 @@
 // Import periods-specific CSS bundle
 import '../../css/admin/periods/periods.css';
 
-// Periods functionality is handled by reporting_periods.js loaded separately
+// Import the actual periods functionality
+import './periods-management.js';
 
 // Periods initialization
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Admin Periods loaded');
-    
-    // Initialize periods-specific features
-    initializePeriods();
+    console.log('Admin Periods bundle loaded with periods-management functionality');
 });
-
-function initializePeriods() {
-    // Periods-specific initialization code
-    console.log('Periods module initialized');
-}

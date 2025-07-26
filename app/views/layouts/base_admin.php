@@ -103,6 +103,14 @@ $bodyClass = $bodyClass ?? '';
     <!-- Chart.js - Ensure it's always loaded before dashboard scripts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     
+    <!-- Global JavaScript constants -->
+    <script>
+        // Make APP_URL available globally for all JavaScript bundles
+        window.APP_URL = '<?php echo APP_URL; ?>';
+        // Legacy support
+        const APP_URL = window.APP_URL;
+    </script>
+
     <!-- JS Bundle - loads after all other scripts -->
     <?php if ($jsBundle): ?>
     <script type="module" src="<?php echo APP_URL; ?>/dist/js/<?php echo htmlspecialchars($jsBundle); ?>.bundle.js"></script>

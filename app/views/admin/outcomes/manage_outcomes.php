@@ -66,15 +66,7 @@ $header_config = [
         ]
     ],
     'variant' => 'green',
-    'actions' => [
-        [
-            'text' => 'Refresh',
-            'url' => '#',
-            'id' => 'refreshPage',
-            'class' => 'btn-light',
-            'icon' => 'fas fa-sync-alt'
-        ]
-    ]
+    'actions' => []
 ];
 
 // Add create button if outcome creation is allowed

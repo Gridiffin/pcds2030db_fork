@@ -127,14 +127,7 @@ $header_config = [
         ]
     ],
     'variant' => 'green',
-    'actions' => [
-        [
-            'text' => 'Bulk Assign Initiatives',
-            'url' => 'bulk_assign_initiatives.php',
-            'class' => 'btn-light',
-            'icon' => 'fas fa-link'
-        ]
-    ]
+    'actions' => []
 ];
 
 // Set content file that contains the main page content

@@ -15,41 +15,41 @@
                 <div class="row gx-4 gy-4">
                     <!-- Outcomes Statistics Cards -->
                     <div class="col-lg-3 col-md-6">
-                        <div class="card bg-primary text-white h-100">
+                        <div class="card bg-primary text-dark h-100">
                             <div class="card-body text-center">
-                                <i class="fas fa-clipboard-list fa-3x mb-3"></i>
-                                <h4><?php echo $outcomes_stats['total_outcomes']; ?></h4>
-                                <p class="mb-0">Total Outcomes</p>
+                                <i class="fas fa-clipboard-list fa-3x mb-3 text-dark"></i>
+                                <h4 class="text-dark"><?php echo $outcomes_stats['total_outcomes']; ?></h4>
+                                <p class="mb-0 text-dark">Total Outcomes</p>
                             </div>
                         </div>
                     </div>
                     
                     <div class="col-lg-3 col-md-6">
-                        <div class="card bg-success text-white h-100">
+                        <div class="card bg-success text-dark h-100">
                             <div class="card-body text-center">
-                                <i class="fas fa-check-square fa-3x mb-3"></i>
-                                <h4><?php echo $outcomes_stats['total_outcomes']; ?></h4>
-                                <p class="mb-0">Total Outcomes</p>
+                                <i class="fas fa-check-square fa-3x mb-3 text-dark"></i>
+                                <h4 class="text-dark"><?php echo $outcomes_stats['total_outcomes']; ?></h4>
+                                <p class="mb-0 text-dark">Total Outcomes</p>
                             </div>
                         </div>
                     </div>
                     
                     <div class="col-lg-3 col-md-6">
-                        <div class="card bg-warning text-white h-100">
+                        <div class="card bg-warning text-dark h-100">
                             <div class="card-body text-center">
-                                <i class="fas fa-file-alt fa-3x mb-3"></i>
-                                <h4><?php echo $outcomes_stats['draft_outcomes'] ?? 0; ?></h4>
-                                <p class="mb-0">Drafts</p>
+                                <i class="fas fa-file-alt fa-3x mb-3 text-dark"></i>
+                                <h4 class="text-dark"><?php echo $outcomes_stats['draft_outcomes'] ?? 0; ?></h4>
+                                <p class="mb-0 text-dark">Drafts</p>
                             </div>
                         </div>
                     </div>
                     
                     <div class="col-lg-3 col-md-6">
-                        <div class="card bg-info text-white h-100">
+                        <div class="card bg-info text-dark h-100">
                             <div class="card-body text-center">
-                                <i class="fas fa-building fa-3x mb-3"></i>
-                                <h4><?php echo $outcomes_stats['sectors_with_outcomes'] ?? 0; ?></h4>
-                                <p class="mb-0">Sectors</p>
+                                <i class="fas fa-building fa-3x mb-3 text-dark"></i>
+                                <h4 class="text-dark"><?php echo $outcomes_stats['sectors_with_outcomes'] ?? 0; ?></h4>
+                                <p class="mb-0 text-dark">Sectors</p>
                             </div>
                         </div>
                     </div>
@@ -63,13 +63,10 @@
                                 <span class="badge bg-primary me-2" style="min-width: 90px;">Manage</span>
                                 <span class="fw-bold">Outcomes Management</span>
                             </div>
-                            <p class="text-muted mb-3">View, edit, and manage all outcomes data across sectors</p>
+                            <p class="text-muted mb-3">View and manage all outcomes data across sectors</p>
                             <div class="d-flex gap-2">
                                 <a href="<?php echo view_url('admin', 'outcomes/manage_outcomes.php'); ?>" class="btn btn-sm btn-outline-primary">
                                     <i class="fas fa-cogs me-1"></i> Manage Outcomes
-                                </a>
-                                <a href="<?php echo view_url('admin', 'outcomes/create_outcome_flexible.php'); ?>" class="btn btn-sm btn-outline-success">
-                                    <i class="fas fa-plus-circle me-1"></i> Create New
                                 </a>
                             </div>
                         </div>

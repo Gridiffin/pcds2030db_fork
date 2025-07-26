@@ -4,8 +4,10 @@
  */
 
 $(document).ready(function() {
-    // Load periods on page load
-    loadPeriods();
+    // Only load periods if we're on the right page
+    if (document.getElementById('periodsTable')) {
+        loadPeriods();
+    }
     
     // Handle add period form submission
     $('#savePeriod').on('click', function() {
@@ -72,6 +74,12 @@ $(document).ready(function() {
  */
 function loadPeriods() {
     const tableContainer = document.getElementById('periodsTable');
+    
+    // Check if element exists
+    if (!tableContainer) {
+        console.error('Element with ID "periodsTable" not found');
+        return;
+    }
     
     // Show loading indicator
     tableContainer.innerHTML = `

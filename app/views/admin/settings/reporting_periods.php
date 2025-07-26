@@ -170,10 +170,6 @@ function get_admin_quarter_display_name($quarter_val) {
         <h5 class="card-title m-0">Periods</h5>
         <div class="ms-auto d-flex align-items-center">
             <input type="text" id="periodSearch" class="form-control form-control-sm me-2 w-auto" placeholder="Search periods...">
-            <button class="btn btn-light border border-primary text-primary" id="refreshPage">
-                <i class="fas fa-sync-alt me-1"></i>
-                Refresh
-            </button>
         </div>
     </div>
     
