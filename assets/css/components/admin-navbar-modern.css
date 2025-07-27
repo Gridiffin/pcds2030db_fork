@@ -1,0 +1,265 @@
+/**
+ * Modern Admin Navbar Styles
+ * Enhanced navbar with organized dropdown menus for better admin navigation
+ */
+
+/* Navigation dropdown styles */
+.nav-dropdown {
+    position: relative; 
+}
+
+.nav-dropdown .dropdown-toggle {
+    background: none;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.85);
+    text-decoration: none;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.nav-dropdown .dropdown-toggle:hover,
+.nav-dropdown .dropdown-toggle:focus {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.nav-dropdown .dropdown-toggle.active {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+}
+
+.nav-dropdown .dropdown-chevron {
+    font-size: 0.75rem;
+    transition: transform 0.2s ease;
+}
+
+.nav-dropdown .dropdown-toggle[aria-expanded="true"] .dropdown-chevron {
+    transform: rotate(180deg);
+}
+
+/* Dropdown menu styles */
+.dropdown-menu-modern {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 220px;
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 0.5rem 0;
+    z-index: 1050;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s ease;
+}
+
+.dropdown-menu-modern.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown-item-modern {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    color: #374151;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.15s ease;
+    border: none;
+    background: none;
+    width: 100%;
+}
+
+.dropdown-item-modern:hover,
+.dropdown-item-modern:focus {
+    background: #f3f4f6;
+    color: #1f2937;
+}
+
+.dropdown-item-modern.active {
+    background: #e0f2fe;
+    color: #0277bd;
+}
+
+.dropdown-item-modern .dropdown-icon {
+    width: 16px;
+    text-align: center;
+    color: #6b7280;
+    transition: color 0.15s ease;
+}
+
+.dropdown-item-modern:hover .dropdown-icon,
+.dropdown-item-modern.active .dropdown-icon {
+    color: currentColor;
+}
+
+/* Enhanced user dropdown styles */
+.user-info-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 0.5rem;
+}
+
+.user-avatar-large {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.user-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.user-name-display {
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-role {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-top: 0.125rem;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 991.98px) {
+    .dropdown-menu-modern {
+        position: static;
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        background: rgba(255, 255, 255, 0.05);
+        margin-top: 0.5rem;
+        margin-left: 1rem;
+        width: calc(100% - 2rem);
+    }
+    
+    .dropdown-item-modern {
+        color: rgba(255, 255, 255, 0.85);
+        padding: 0.5rem 1rem;
+    }
+    
+    .dropdown-item-modern:hover,
+    .dropdown-item-modern:focus {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+    }
+    
+    .dropdown-item-modern.active {
+        background: rgba(255, 255, 255, 0.15);
+        color: white;
+    }
+    
+    .dropdown-item-modern .dropdown-icon {
+        color: rgba(255, 255, 255, 0.7);
+    }
+    
+    .user-info-header {
+        background: rgba(255, 255, 255, 0.05);
+        border-bottom-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .user-name-display {
+        color: white;
+    }
+    
+    .user-role {
+        color: rgba(255, 255, 255, 0.7);
+    }
+    
+    .user-avatar-large {
+        background: rgba(255, 255, 255, 0.2);
+    }
+}
+
+/* Improved spacing for navbar items */
+.navbar-nav-modern .nav-item-modern:not(:last-child) {
+    margin-right: 0.25rem;
+}
+
+.navbar-nav-modern .nav-dropdown:not(:last-child) {
+    margin-right: 0.25rem;
+}
+
+/* Enhanced active states */
+.nav-link-modern.active {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+}
+
+.nav-link-modern.active .nav-icon {
+    color: white;
+}
+
+/* Dropdown positioning adjustments for different screen sizes */
+@media (min-width: 1200px) {
+    .dropdown-menu-modern {
+        min-width: 240px;
+    }
+}
+
+@media (max-width: 768px) {
+    .dropdown-menu-modern {
+        min-width: 200px;
+    }
+}
+
+/* Animation improvements */
+.nav-dropdown .dropdown-toggle,
+.dropdown-item-modern {
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dropdown-menu-modern {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Focus states for accessibility */
+.nav-dropdown .dropdown-toggle:focus-visible,
+.dropdown-item-modern:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.5);
+    outline-offset: 2px;
+}
+
+/* Improved brand responsiveness */
+@media (max-width: 480px) {
+    .brand-text[data-ultra-short-text] {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 1200px) and (min-width: 481px) {
+    .brand-text[data-short-text] {
+        font-size: 1.1rem;
+    }
+}

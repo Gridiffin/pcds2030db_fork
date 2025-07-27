@@ -96,11 +96,24 @@ if ($has_data) {
     
     $tableRows = array_map(function($row) use ($columns) {
         $rowData = [];
-        foreach ($columns as $col) {
-            $colId = $col['id'] ?? $col;
-            $colLabel = $col['label'] ?? $col;
-            $rowData[$colLabel] = $row['data'][$colId] ?? '';
+        
+        // Handle different data structures
+        if (isset($row['data'])) {
+            // New structure: row has 'data' property
+            foreach ($columns as $col) {
+                $colId = $col['id'] ?? $col;
+                $colLabel = $col['label'] ?? $col;
+                $rowData[$colLabel] = $row['data'][$colId] ?? '';
+            }
+        } else {
+            // Database structure: row contains column values directly
+            foreach ($columns as $col) {
+                $colId = $col['id'] ?? $col;
+                $colLabel = $col['label'] ?? $col;
+                $rowData[$colLabel] = $row[$colId] ?? '';
+            }
         }
+        
         return [
             'label' => $row['label'] ?? $row['month'] ?? '',
             'data' => $rowData

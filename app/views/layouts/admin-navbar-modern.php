@@ -75,39 +75,101 @@ if (!function_exists('format_time_ago')) {
     }
 }
 
-// Admin navigation items
+// Admin navigation items with organized dropdowns
 $nav_items = [
     [
         'url' => APP_URL . '/app/views/admin/dashboard/dashboard.php',
         'label' => 'Dashboard',
         'icon' => 'fas fa-tachometer-alt',
         'active_pages' => ['dashboard.php']
-    ],
-    [
-        'url' => APP_URL . '/app/views/admin/programs/programs.php',
-        'label' => 'Programs',
-        'icon' => 'fas fa-project-diagram',
-        'active_pages' => ['programs.php', 'create_program.php', 'edit_program.php', 'program_details.php']
-    ],
-    [
-        'url' => APP_URL . '/app/views/admin/users/manage_users.php',
-        'label' => 'Users',
-        'icon' => 'fas fa-users',
-        'active_pages' => ['manage_users.php', 'add_user.php', 'edit_user.php']
-    ],
-    [
-        'url' => APP_URL . '/app/views/admin/reports/generate_reports.php',
-        'label' => 'Reports',
-        'icon' => 'fas fa-chart-bar',
-        'active_pages' => ['generate_reports.php', 'reports.php', 'generate_report.php', 'view_report.php']
-    ],
-    [
-        'url' => APP_URL . '/app/views/admin/settings/system_settings.php',
-        'label' => 'Settings',
-        'icon' => 'fas fa-cog',
-        'active_pages' => ['system_settings.php', 'settings.php', 'email_settings.php', 'audit_log.php', 'reporting_periods.php', 'manage_periods.php']
     ]
 ];
+
+// Dropdown navigation items
+$dropdown_items = [
+    'content' => [
+        'label' => 'Content Management',
+        'icon' => 'fas fa-folder-open',
+        'items' => [
+            [
+                'url' => APP_URL . '/app/views/admin/programs/programs.php',
+                'label' => 'Programs',
+                'icon' => 'fas fa-project-diagram',
+                'active_pages' => ['programs.php', 'create_program.php', 'edit_program.php', 'program_details.php', 'add_submission.php', 'bulk_assign_initiatives.php']
+            ],
+            [
+                'url' => APP_URL . '/app/views/admin/outcomes/manage_outcomes.php',
+                'label' => 'Outcomes',
+                'icon' => 'fas fa-chart-line',
+                'active_pages' => ['manage_outcomes.php']
+            ]
+        ]
+    ],
+    'users' => [
+        'label' => 'User Management',
+        'icon' => 'fas fa-users-cog',
+        'items' => [
+            [
+                'url' => APP_URL . '/app/views/admin/users/manage_users.php',
+                'label' => 'Manage Users',
+                'icon' => 'fas fa-users',
+                'active_pages' => ['manage_users.php']
+            ],
+            [
+                'url' => APP_URL . '/app/views/admin/users/add_user.php',
+                'label' => 'Add User',
+                'icon' => 'fas fa-user-plus',
+                'active_pages' => ['add_user.php']
+            ]
+        ]
+    ],
+    'reports' => [
+        'label' => 'Reports & Analytics',
+        'icon' => 'fas fa-chart-bar',
+        'items' => [
+            [
+                'url' => APP_URL . '/app/views/admin/reports/generate_reports.php',
+                'label' => 'Generate Reports',
+                'icon' => 'fas fa-file-alt',
+                'active_pages' => ['generate_reports.php', 'reports.php', 'generate_report.php', 'view_report.php']
+            ]
+        ]
+    ],
+    'system' => [
+        'label' => 'System',
+        'icon' => 'fas fa-cogs',
+        'items' => [
+            [
+                'url' => APP_URL . '/app/views/admin/settings/system_settings.php',
+                'label' => 'System Settings',
+                'icon' => 'fas fa-sliders-h',
+                'active_pages' => ['system_settings.php', 'settings.php', 'email_settings.php']
+            ],
+            [
+                'url' => APP_URL . '/app/views/admin/periods/reporting_periods.php',
+                'label' => 'Reporting Periods',
+                'icon' => 'fas fa-calendar-alt',
+                'active_pages' => ['reporting_periods.php', 'manage_periods.php']
+            ],
+            [
+                'url' => APP_URL . '/app/views/admin/settings/audit_log.php',
+                'label' => 'Audit Log',
+                'icon' => 'fas fa-clipboard-list',
+                'active_pages' => ['audit_log.php']
+            ]
+        ]
+    ]
+];
+
+// Helper function to check if dropdown should be active
+function is_dropdown_active($dropdown_items, $current_page) {
+    foreach ($dropdown_items['items'] as $item) {
+        if (in_array($current_page, $item['active_pages'])) {
+            return true;
+        }
+    }
+    return false;
+}
 
 // Get user initials for avatar
 $user_initials = '';
@@ -146,6 +208,7 @@ $user_initials = strtoupper($user_initials);
 
         <!-- Navigation Menu -->
         <ul class="navbar-nav-modern" role="menubar">
+            <!-- Dashboard -->
             <?php foreach ($nav_items as $item): ?>
                 <?php $is_active = in_array($current_page, $item['active_pages']); ?>
                 <li class="nav-item-modern" role="none">
@@ -156,6 +219,36 @@ $user_initials = strtoupper($user_initials);
                         <i class="<?php echo $item['icon']; ?> nav-icon" aria-hidden="true"></i>
                         <?php echo $item['label']; ?>
                     </a>
+                </li>
+            <?php endforeach; ?>
+            
+            <!-- Dropdown Menus -->
+            <?php foreach ($dropdown_items as $dropdown_key => $dropdown): ?>
+                <?php $is_dropdown_active = is_dropdown_active($dropdown, $current_page); ?>
+                <li class="nav-item-modern nav-dropdown" role="none">
+                    <button class="nav-link-modern dropdown-toggle <?php echo $is_dropdown_active ? 'active' : ''; ?>" 
+                            type="button"
+                            aria-expanded="false"
+                            data-dropdown="<?php echo $dropdown_key; ?>"
+                            role="menuitem"
+                            aria-haspopup="true">
+                        <i class="<?php echo $dropdown['icon']; ?> nav-icon" aria-hidden="true"></i>
+                        <?php echo $dropdown['label']; ?>
+                        <i class="fas fa-chevron-down dropdown-chevron" aria-hidden="true"></i>
+                    </button>
+                    
+                    <div class="dropdown-menu-modern" role="menu" data-dropdown-menu="<?php echo $dropdown_key; ?>">
+                        <?php foreach ($dropdown['items'] as $item): ?>
+                            <?php $is_active = in_array($current_page, $item['active_pages']); ?>
+                            <a href="<?php echo $item['url']; ?>" 
+                               class="dropdown-item-modern <?php echo $is_active ? 'active' : ''; ?>"
+                               role="menuitem"
+                               <?php echo $is_active ? 'aria-current="page"' : ''; ?>>
+                                <i class="<?php echo $item['icon']; ?> dropdown-icon" aria-hidden="true"></i>
+                                <?php echo $item['label']; ?>
+                            </a>
+                        <?php endforeach; ?>
+                    </div>
                 </li>
             <?php endforeach; ?>
         </ul>
@@ -250,17 +343,21 @@ $user_initials = strtoupper($user_initials);
                 </button>
 
                 <div class="user-dropdown" role="menu" aria-labelledby="user-toggle">
+                    <div class="user-info-header">
+                        <div class="user-avatar-large"><?php echo $user_initials; ?></div>
+                        <div class="user-details">
+                            <div class="user-name-display"><?php echo htmlspecialchars($_SESSION['fullname'] ?? $_SESSION['username']); ?></div>
+                            <div class="user-role">Administrator</div>
+                        </div>
+                    </div>
+                    <div class="user-dropdown-divider" role="separator"></div>
                     <a href="#" class="user-dropdown-item" role="menuitem">
                         <i class="fas fa-user item-icon" aria-hidden="true"></i>
                         Profile
                     </a>
                     <a href="<?php echo APP_URL; ?>/app/views/admin/settings/system_settings.php" class="user-dropdown-item" role="menuitem">
                         <i class="fas fa-cog item-icon" aria-hidden="true"></i>
-                        Admin Settings
-                    </a>
-                    <a href="<?php echo APP_URL; ?>/app/views/admin/users/manage_users.php" class="user-dropdown-item" role="menuitem">
-                        <i class="fas fa-users item-icon" aria-hidden="true"></i>
-                        Manage Users
+                        Settings
                     </a>
                     <div class="user-dropdown-divider" role="separator"></div>
                     <a href="<?php echo APP_URL; ?>/logout.php" class="user-dropdown-item" role="menuitem">
@@ -290,6 +387,31 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Navigation dropdowns
+    const dropdownToggles = document.querySelectorAll('[data-dropdown]');
+    const dropdownMenus = document.querySelectorAll('[data-dropdown-menu]');
+    
+    dropdownToggles.forEach(toggle => {
+        toggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const dropdownKey = this.dataset.dropdown;
+            const dropdownMenu = document.querySelector(`[data-dropdown-menu="${dropdownKey}"]`);
+            const isExpanded = this.getAttribute('aria-expanded') === 'true';
+            
+            // Close all other dropdowns
+            closeAllNavDropdowns();
+            closeNotificationsDropdown();
+            closeUserDropdown();
+            
+            // Toggle this dropdown
+            this.setAttribute('aria-expanded', !isExpanded);
+            if (dropdownMenu) {
+                dropdownMenu.classList.toggle('show');
+            }
+            this.classList.toggle('active');
+        });
+    });
+    
     // Notifications dropdown
     const notificationsToggle = document.querySelector('[data-toggle="notifications-dropdown"]');
     const notificationsDropdown = document.querySelector('.notifications-dropdown');
@@ -299,7 +421,8 @@ document.addEventListener('DOMContentLoaded', function() {
             e.stopPropagation();
             const isExpanded = this.getAttribute('aria-expanded') === 'true';
             
-            // Close user dropdown if open
+            // Close other dropdowns
+            closeAllNavDropdowns();
             closeUserDropdown();
             
             this.setAttribute('aria-expanded', !isExpanded);
@@ -316,7 +439,8 @@ document.addEventListener('DOMContentLoaded', function() {
             e.stopPropagation();
             const isExpanded = this.getAttribute('aria-expanded') === 'true';
             
-            // Close notifications dropdown if open
+            // Close other dropdowns
+            closeAllNavDropdowns();
             closeNotificationsDropdown();
             
             this.setAttribute('aria-expanded', !isExpanded);
@@ -327,11 +451,24 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Close dropdowns when clicking outside
     document.addEventListener('click', function() {
+        closeAllNavDropdowns();
         closeNotificationsDropdown();
         closeUserDropdown();
     });
     
     // Helper functions
+    function closeAllNavDropdowns() {
+        dropdownToggles.forEach(toggle => {
+            toggle.setAttribute('aria-expanded', 'false');
+            toggle.classList.remove('active');
+            const dropdownKey = toggle.dataset.dropdown;
+            const dropdownMenu = document.querySelector(`[data-dropdown-menu="${dropdownKey}"]`);
+            if (dropdownMenu) {
+                dropdownMenu.classList.remove('show');
+            }
+        });
+    }
+    
     function closeNotificationsDropdown() {
         if (notificationsToggle && notificationsDropdown) {
             notificationsToggle.setAttribute('aria-expanded', 'false');

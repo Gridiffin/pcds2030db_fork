@@ -187,6 +187,18 @@ function detect_bundle_name() {
         if (strpos($request_uri, '/reports/') !== false) {
             return 'admin-reports';
         }
+        if (strpos($request_uri, '/outcomes/') !== false) {
+            if ($page === 'view_outcome' || $page === 'edit_outcome') {
+                return 'admin-outcomes';
+            }
+            return 'admin-outcomes';
+        }
+        if (strpos($request_uri, '/users/') !== false) {
+            return 'admin-users';
+        }
+        if (strpos($request_uri, '/periods/') !== false) {
+            return 'admin-periods';
+        }
         return 'admin-common';
     }
     

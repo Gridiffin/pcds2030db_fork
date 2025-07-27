@@ -1,6 +1,10 @@
 /**
  * Admin Dashboard JavaScript
+ * Uses modular CSS import: dashboard.css (~70kB vs 352kB main.css)
  */
+
+// Import dashboard-specific CSS bundle
+import '../../css/admin/dashboard/dashboard.css';
 
 document.addEventListener('DOMContentLoaded', function() {
     // Handle refresh button click
@@ -75,10 +79,8 @@ document.addEventListener('DOMContentLoaded', function() {
         mainContent.parentNode.insertBefore(notification, mainContent);
     }
     
-    // Add animation to stat cards
-    document.querySelectorAll('.stat-card').forEach((card, index) => {
-        setTimeout(() => {
-            card.classList.add('animate__animated', 'animate__fadeInUp');
-        }, index * 100);
+    // Simple card initialization without animations
+    document.querySelectorAll('.stat-card').forEach((card) => {
+        card.style.opacity = '1';
     });
 });

@@ -272,7 +272,8 @@ if (typeof window.ReportUI !== 'undefined') {
                 
                 // Set download link
                 if (result.pptx_path) {
-                    elements.downloadLink.href = `../../download.php?type=report&file=${result.pptx_path}`;
+                    const appUrl = window.APP_URL || window.ReportGeneratorConfig?.appUrl || '';
+                    elements.downloadLink.href = `${appUrl}/download.php?type=report&file=${result.pptx_path}`;
                 }
                   // Re-enable generate button
                 elements.generateBtn.disabled = false;

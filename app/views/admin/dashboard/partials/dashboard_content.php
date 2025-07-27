@@ -30,10 +30,6 @@
             <!-- Outcomes Overview Section -->
             <?php require_once __DIR__ . '/_outcomes_overview.php'; ?>
 
-            <!-- Recent Submissions -->
-            <div class="row">
-                <?php require_once __DIR__ . '/_recent_submissions.php'; ?>
-            </div>
         </div>
     </section>
 </main>

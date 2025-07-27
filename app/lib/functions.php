@@ -566,4 +566,22 @@ function log_activity($user_id, $action) {
     return $success;
     */
 }
+
+/**
+ * Format file size in human readable format
+ * @param int $bytes File size in bytes
+ * @return string Formatted file size
+ */
+function format_file_size($bytes) {
+    if ($bytes == 0) return '0 B';
+    
+    $units = ['B', 'KB', 'MB', 'GB'];
+    $bytes = max($bytes, 0);
+    $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
+    $pow = min($pow, count($units) - 1);
+    
+    $bytes /= pow(1024, $pow);
+    
+    return round($bytes, 2) . ' ' . $units[$pow];
+}
 ?>

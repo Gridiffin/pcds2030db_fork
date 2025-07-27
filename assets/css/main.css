@@ -28,7 +28,6 @@
 @import 'components/navbar-modern.css';
 @import 'components/footer-modern.css';
 @import 'components/responsive-performance-table.css';
-@import 'components/admin-performance-table.css';
 @import 'components/period-performance.css';
 @import 'components/bulk-assignment.css';
 @import 'components/status-grid.css';
@@ -67,7 +66,7 @@
 @import 'components/toast.css';
 @import 'components/rating-indicators.css';
 @import 'components/sectors-view.css'; /* Sectors view component styles */
-@import 'components/admin.css'; /* Add the new admin components CSS */
+@import 'components/admin-common.css'; /* Consolidated admin components CSS */
 @import 'components/program-details.css'; /* Program details component styling */
 @import 'components/enhanced-program-details.css'; /* Enhanced program details styling */
 @import 'components/progress.css'; /* Progress indicators with forest theme */

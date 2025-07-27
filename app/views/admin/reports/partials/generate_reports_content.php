@@ -9,6 +9,8 @@
 <!-- JavaScript Configuration -->
 <script>
     window.ReportGeneratorConfig = <?php echo json_encode($jsConfig, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
+    // Set global APP_URL for compatibility with existing scripts
+    window.APP_URL = window.ReportGeneratorConfig.appUrl;
 </script>
 
 <!-- Main Page Content -->
@@ -113,9 +115,151 @@
                                     </div>
                                 </div>
 
-                                <!-- Rest of the form content continues here -->
-                                <!-- This is a very long form, so I'll include the key sections -->
-                                
+                                <!-- Program Selection Section -->
+                                <div class="mb-4">
+                                    <label class="form-label">
+                                        <i class="fas fa-list-check me-1"></i>Select Programs to Include
+                                        <small class="text-muted">(Optional - Multi-agency reports supported)</small>
+                                    </label>
+                                    <!-- Enhanced Filter Bar with Integrated Agency Filtering -->
+                                    <div class="filter-bar border rounded p-3 mb-3 bg-light">
+                                        <div class="row align-items-center">
+                                            <div class="col-md-8">
+                                                <div class="row g-2">
+                                                    <div class="col-md-6">
+                                                        <div class="input-group input-group-sm">
+                                                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                                            <input type="text" 
+                                                                   class="form-control" 
+                                                                   id="programSearchInput" 
+                                                                   placeholder="Search programs, numbers, agencies...">
+                                                            <button class="btn btn-outline-secondary" 
+                                                                    type="button" 
+                                                                    id="clearSearchBtn"
+                                                                    title="Clear search">
+                                                                <i class="fas fa-times"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="program-count-display">
+                                                            <span class="badge bg-info" id="programCountBadge">
+                                                                <i class="fas fa-list me-1"></i>
+                                                                <span id="programCount">0</span> programs found
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="bulk-actions d-flex gap-2 justify-content-end">
+                                                    <button type="button" 
+                                                            class="btn btn-outline-primary btn-sm" 
+                                                            id="selectAllPrograms"
+                                                            title="Select all visible programs">
+                                                        <i class="fas fa-check-square me-1"></i>Select All
+                                                    </button>
+                                                    <button type="button" 
+                                                            class="btn btn-outline-secondary btn-sm" 
+                                                            id="clearAllPrograms"
+                                                            title="Clear all selections">
+                                                        <i class="fas fa-square me-1"></i>Clear All
+                                                    </button>
+                                                    <button type="button" 
+                                                            class="btn btn-outline-warning btn-sm" 
+                                                            id="resetAllFilters"
+                                                            title="Reset all filters">
+                                                        <i class="fas fa-undo me-1"></i>Reset
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- Integrated Agency Filter Row -->
+                                        <div class="row mt-2">
+                                            <div class="col-12">
+                                                <div class="agency-filter-section">
+                                                    <small class="text-muted fw-bold">
+                                                        <i class="fas fa-building me-1"></i>Filter by Agency:
+                                                    </small>
+                                                    <div class="mt-1" id="agencyFilterTags">
+                                                        <button type="button" class="btn btn-outline-primary btn-sm me-1 mb-1 agency-filter-btn active" data-agency-id="all">
+                                                            <i class="fas fa-globe me-1"></i>All Agencies
+                                                        </button>
+                                                        <!-- Agency filter buttons will be populated here -->
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <div class="alert alert-info border-info">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            <strong>Multi-agency reports:</strong> You can select programs from different agencies for one report. 
+                                            Use the agency filters above to quickly find programs, or search by agency name.
+                                            If no programs are selected, all filtered programs will be included.
+                                        </div>
+                                    </div>
+                                    <div id="programSelector" class="program-selector">
+                                        <div class="program-selector-container border rounded p-3" 
+                                             style="max-height: 300px; overflow-y: auto;" 
+                                             role="region" 
+                                             aria-label="Program selection">
+                                            <div class="alert alert-light text-center">
+                                                <i class="fas fa-arrow-up me-2"></i>
+                                                Please select a reporting period above to load available programs.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Target Selection Section -->
+                                <div class="mb-4" id="targetSelectionSection" style="display: none;">
+                                    <label class="form-label">
+                                        <i class="fas fa-bullseye me-1"></i>Select Targets to Include
+                                        <small class="text-muted">(Optional - Choose specific targets per program)</small>
+                                    </label>
+                                    <div class="target-selection-info mb-3">
+                                        <div class="alert alert-info border-info">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            <strong>Target Selection:</strong> Review and select specific targets to include in your report. 
+                                            All targets are selected by default. Uncheck targets you want to exclude.
+                                        </div>
+                                    </div>
+                                    <div class="target-selector-controls mb-3">
+                                        <div class="d-flex gap-2">
+                                            <button type="button" 
+                                                    class="btn btn-outline-success btn-sm" 
+                                                    id="selectAllTargets"
+                                                    title="Select all targets">
+                                                <i class="fas fa-check-square me-1"></i>Select All Targets
+                                            </button>
+                                            <button type="button" 
+                                                    class="btn btn-outline-secondary btn-sm" 
+                                                    id="clearAllTargets"
+                                                    title="Deselect all targets">
+                                                <i class="fas fa-square me-1"></i>Deselect All
+                                            </button>
+                                            <div class="ms-auto">
+                                                <span class="badge bg-primary" id="selectedTargetCount">
+                                                    <i class="fas fa-bullseye me-1"></i>
+                                                    <span id="targetCount">0</span> targets selected
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div id="targetSelector" class="target-selector">
+                                        <div class="target-selector-container border rounded p-3" 
+                                             style="max-height: 400px; overflow-y: auto;" 
+                                             role="region" 
+                                             aria-label="Target selection">
+                                            <div class="alert alert-light text-center">
+                                                <i class="fas fa-arrow-up me-2"></i>
+                                                Please select programs above to load available targets.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <!-- Report Details -->
                                 <div class="mb-3">
                                     <label for="reportName" class="form-label">
@@ -132,6 +276,37 @@
                                     <div class="invalid-feedback">Please enter a report name.</div>
                                 </div>
                                 
+                                <div class="mb-3">
+                                    <label for="reportDescription" class="form-label">
+                                        <i class="fas fa-align-left me-1"></i>Description
+                                        <small class="text-muted">(Optional)</small>
+                                    </label>
+                                    <textarea class="form-control" 
+                                              id="reportDescription" 
+                                              name="description" 
+                                              rows="3" 
+                                              maxlength="1000"
+                                              placeholder="Brief description of the report content"></textarea>
+                                    <div class="form-text">Maximum 1000 characters</div>
+                                </div>
+                                            
+                                <!-- Report Options -->
+                                <div class="mb-4">
+                                    <div class="form-check">
+                                        <input type="checkbox" 
+                                               class="form-check-input" 
+                                               id="isPublic" 
+                                               name="is_public" 
+                                               value="1">
+                                        <label class="form-check-label" for="isPublic">
+                                            <i class="fas fa-share-alt me-1"></i>Make available to agencies
+                                        </label>
+                                        <div class="form-text">
+                                            When enabled, agencies will be able to view and download this report.
+                                        </div>
+                                    </div>
+                                </div>
+                                
                                 <!-- Generate Button -->
                                 <div class="d-grid">
                                     <button type="submit" 
@@ -146,6 +321,7 @@
                     </div>
                     
                     <!-- Status and Message sections -->
+                    <!-- Generation Status Alert -->
                     <div class="alert alert-info mt-3 d-none" id="generationStatus" role="alert">
                         <div class="d-flex align-items-center">
                             <div class="spinner-border spinner-border-sm text-primary me-3" role="status">
@@ -156,6 +332,33 @@
                                 <p class="mb-0" id="statusMessage">Preparing report data...</p>
                             </div>
                         </div>
+                    </div>
+                    
+                    <!-- Success Alert -->
+                    <div class="alert alert-success mt-3 d-none" id="successMessage" role="alert">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-check-circle me-2"></i>Report Generated Successfully
+                        </h6>
+                        <p class="mb-3">Your report has been generated and saved successfully.</p>
+                        <div class="d-flex gap-2">
+                            <a href="#" id="downloadLink" class="btn btn-success btn-sm">
+                                <i class="fas fa-download me-1"></i>Download PPTX
+                            </a>
+                            <button type="button" class="btn btn-outline-primary btn-sm" id="generateAnotherBtn">
+                                <i class="fas fa-plus me-1"></i>Generate Another
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Error Alert -->
+                    <div class="alert alert-danger mt-3 d-none" id="errorMessage" role="alert">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Error
+                        </h6>
+                        <p id="errorText" class="mb-3">Something went wrong. Please try again.</p>
+                        <button type="button" class="btn btn-outline-danger btn-sm" id="retryBtn">
+                            <i class="fas fa-redo me-1"></i>Try Again
+                        </button>
                     </div>
                 </div>
             </div>

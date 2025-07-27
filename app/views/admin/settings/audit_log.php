@@ -29,7 +29,7 @@ if (!is_admin()) {
 $pageTitle = 'Audit Log';
 
 // Set up variables for base layout
-$cssBundle = 'main';
+$cssBundle = 'admin-settings'; // Use modular admin-settings CSS bundle (~75kB vs 352kB)
 $jsBundle = 'admin-common';
 $additionalStyles = [
     'https://fonts.googleapis.com/icon?family=Material+Icons',
@@ -47,4 +47,4 @@ $header_config = [
 
 // Set content file that contains the main page content
 $contentFile = __DIR__ . '/partials/audit_log_content.php';
-include PROJECT_ROOT_PATH . '/app/views/layouts/base.php';
+require_once PROJECT_ROOT_PATH . 'app/views/layouts/base_admin.php';

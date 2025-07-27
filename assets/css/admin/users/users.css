@@ -1,0 +1,365 @@
+/**
+ * Admin Users CSS Entry Point
+ * Base + user management components  
+ * Replaces main.css import for users module (~80kB vs 352kB)
+ */
+
+/* Import shared admin foundation */
+@import '../shared/base.css';
+
+/* User management specific styles */
+.user-form-container {
+    background: var(--color-white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--color-gray-200);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.user-form-container h3 {
+    color: var(--text-primary);
+    font-weight: var(--font-weight-semibold);
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--forest-deep);
+}
+
+.user-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .user-form-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+/* User table enhancements */
+.user-management-table {
+    background: var(--color-white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--color-gray-200);
+    overflow: hidden;
+}
+
+.user-management-table .table {
+    margin-bottom: 0;
+}
+
+.user-management-table .table th {
+    background: var(--forest-deep);
+    color: white;
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.8125rem;
+    padding: 1rem 0.75rem;
+    border: none;
+}
+
+.user-management-table .table td {
+    padding: 1rem 0.75rem;
+    vertical-align: middle;
+    border-top: 1px solid var(--color-gray-100);
+}
+
+.user-management-table .table tbody tr:hover {
+    background: rgba(var(--forest-light-rgb), 0.05);
+}
+
+/* User status indicators */
+.user-status-active {
+    color: var(--color-success);
+    font-weight: var(--font-weight-medium);
+}
+
+.user-status-inactive {
+    color: var(--color-danger);
+    font-weight: var(--font-weight-medium);
+}
+
+.user-role-badge {
+    padding: 0.375rem 0.75rem;
+    border-radius: var(--radius-md);
+    font-size: 0.8125rem;
+    font-weight: var(--font-weight-medium);
+    text-transform: uppercase;
+    letter-spacing: 0.25px;
+}
+
+.user-role-badge.admin {
+    background: rgba(var(--color-danger-rgb), 0.1);
+    color: var(--color-danger);
+}
+
+.user-role-badge.focal {
+    background: rgba(var(--forest-deep-rgb), 0.1);
+    color: var(--forest-deep);
+}
+
+.user-role-badge.agency {
+    background: rgba(var(--color-info-rgb), 0.1);
+    color: var(--color-info);
+}
+
+/* User action buttons */
+.user-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+}
+
+.user-actions .btn {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8125rem;
+}
+
+/* Password strength indicator */
+.password-strength {
+    margin-top: 0.5rem;
+    height: 0.25rem;
+    background: var(--color-gray-200);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.password-strength-bar {
+    height: 100%;
+    transition: width var(--transition-normal), background-color var(--transition-normal);
+    border-radius: var(--radius-sm);
+}
+
+.password-strength-bar.weak {
+    background: var(--color-danger);
+}
+
+.password-strength-bar.medium {
+    background: var(--color-warning);
+}
+
+.password-strength-bar.strong {
+    background: var(--color-success);
+}
+
+.password-strength-text {
+    font-size: 0.8125rem;
+    margin-top: 0.25rem;
+    font-weight: var(--font-weight-medium);
+}
+
+/* User search and filters */
+.user-filters {
+    background: var(--color-white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--color-gray-200);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.user-filters h4 {
+    color: var(--text-primary);
+    font-weight: var(--font-weight-semibold);
+    margin-bottom: 1rem;
+}
+
+.user-filters-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr auto;
+    gap: 1rem;
+    align-items: end;
+}
+
+@media (max-width: 992px) {
+    .user-filters-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .user-filters-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+}
+
+/* User statistics */
+.user-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.user-stat-card {
+    background: var(--color-white);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--color-gray-200);
+    text-align: center;
+    transition: all var(--transition-normal);
+}
+
+.user-stat-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.user-stat-card .stat-number {
+    font-size: 2rem;
+    font-weight: var(--font-weight-bold);
+    color: var(--forest-deep);
+    line-height: 1;
+    margin-bottom: 0.5rem;
+}
+
+.user-stat-card .stat-label {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: var(--font-weight-medium);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* User import/export */
+.user-bulk-actions {
+    background: var(--color-white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--color-gray-200);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.user-bulk-actions h4 {
+    color: var(--text-primary);
+    font-weight: var(--font-weight-semibold);
+    margin-bottom: 1rem;
+}
+
+.bulk-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+.bulk-action-item {
+    padding: 1rem;
+    border: 1px solid var(--color-gray-200);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+}
+
+.bulk-action-item:hover {
+    border-color: var(--forest-deep);
+    background: rgba(var(--forest-light-rgb), 0.05);
+}
+
+.bulk-action-item h5 {
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: var(--font-weight-semibold);
+    margin-bottom: 0.5rem;
+}
+
+.bulk-action-item p {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+}
+
+/* User activity log */
+.user-activity-log {
+    background: var(--color-white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--color-gray-200);
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.activity-log-header {
+    background: var(--forest-deep);
+    color: white;
+    padding: 1rem 1.5rem;
+    font-weight: var(--font-weight-semibold);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.activity-log-item {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--color-gray-100);
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.activity-log-item:last-child {
+    border-bottom: none;
+}
+
+.activity-log-time {
+    color: var(--text-secondary);
+    font-size: 0.8125rem;
+    white-space: nowrap;
+    font-weight: var(--font-weight-medium);
+}
+
+.activity-log-action {
+    flex: 1;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.activity-log-action strong {
+    color: var(--forest-deep);
+    font-weight: var(--font-weight-semibold);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .user-form-container {
+        padding: 1.5rem;
+    }
+    
+    .user-stats {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .user-management-table .table th,
+    .user-management-table .table td {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    .user-actions {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    
+    .user-actions .btn {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+}

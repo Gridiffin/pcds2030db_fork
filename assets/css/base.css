@@ -12,9 +12,21 @@
 @import url("components/ui/tooltip.css");
 @import url("components/quick-finalize-modal.css");
 @import url("layout/page_header.css");
+@import url("components/admin-navbar-modern.css");
+@import url("components/admin-common.css");
+@import url("components/shared-modals.css");
 
-/* Import new admin styles */
+/* Import new admin programs styles */
+@import url("admin/programs/view_programs.css");
+@import url("admin/programs/edit_program.css");
+@import url("admin/programs/add_submission.css");
+@import url("admin/programs/bulk_assign_initiatives.css");
 @import url("admin/programs/programs.css");
+
+/* Import overhauled admin programs styles */
+@import url("admin/programs/admin-view-programs.css");
+@import url("admin/programs/admin-program-details.css");
+@import url("admin/programs/admin-view-submissions.css");
 
 /**
  * Base Styles

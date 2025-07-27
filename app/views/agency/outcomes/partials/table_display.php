@@ -35,15 +35,24 @@
                             <?php 
                                 $columnId = is_array($column) ? ($column['id'] ?? $column['label']) : $column;
                                 $columnLabel = is_array($column) ? ($column['label'] ?? $column['id']) : $column;
-                                $value = $row['data'][$columnId] ?? '';
                                 
-                                // Try alternative column matching
-                                if (empty($value)) {
-                                    $value = $row['data'][$columnLabel] ?? '';
+                                // Handle different data structures
+                                $value = '';
+                                if (isset($row['data'])) {
+                                    // New structure: row has 'data' property
+                                    $value = $row['data'][$columnId] ?? $row['data'][$columnLabel] ?? '';
+                                } else {
+                                    // Database structure: row contains column values directly
+                                    $value = $row[$columnId] ?? $row[$columnLabel] ?? '';
+                                }
+                                
+                                // Format numeric values
+                                if (is_numeric($value) && $value != 0) {
+                                    $value = number_format($value, 2);
                                 }
                             ?>
                             <td class="text-center cell-numeric">
-                                <?php if (!empty($value)): ?>
+                                <?php if (!empty($value) && $value !== '0.00'): ?>
                                     <?= htmlspecialchars($value) ?>
                                 <?php else: ?>
                                     <span class="text-muted">—</span>

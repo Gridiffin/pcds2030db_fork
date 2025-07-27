@@ -30,14 +30,8 @@ $pageTitle = 'Reporting Periods Management';
 $currentPage = 'periods';
 
 // Set up variables for base layout
-$cssBundle = 'main';
-$jsBundle = 'admin-common';
-$additionalStyles = [
-    asset_url('css', 'admin/periods.css')
-];
-$additionalScripts = [
-    asset_url('js', 'admin/periods-management.js')
-];
+$cssBundle = 'admin-periods'; // Use admin-periods CSS bundle for proper styling
+$jsBundle = null; // No JavaScript bundle - use direct scripts
 
 // Configure modern page header
 $header_config = [
@@ -55,5 +49,8 @@ $header_config = [
     ]
 ];
 
-include PROJECT_ROOT_PATH . '/app/views/layouts/base.php';
+// Set content file that contains the main page content
+$contentFile = __DIR__ . '/partials/reporting_periods_content.php';
+
+require_once PROJECT_ROOT_PATH . 'app/views/layouts/base_admin.php';
 ?>

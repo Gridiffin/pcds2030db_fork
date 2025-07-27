@@ -1,7 +1,11 @@
 /**
  * Manage Users Page - Custom Implementation
  * Fixed password validation issue
+ * Uses modular CSS import: users.css (~80kB vs 352kB main.css)
  */
+
+// Import users-specific CSS bundle
+import '../../css/admin/users/users.css';
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize Bootstrap tooltips
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
@@ -288,25 +292,169 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Copy email button functionality with inline feedback
-    document.querySelectorAll('.btn-copy-email').forEach(function(btn) {
-        btn.addEventListener('click', function(e) {
-            var emailSpan = btn.closest('.d-flex').querySelector('.user-email');
-            var copiedFeedback = btn.parentNode.querySelector('.copied-feedback');
-            var email = emailSpan ? emailSpan.getAttribute('data-email') : '';
-            if (email) {
-                navigator.clipboard.writeText(email).then(function() {
-                    if (copiedFeedback) {
-                        copiedFeedback.style.display = 'inline-block';
-                        setTimeout(function() {
-                            copiedFeedback.style.display = 'none';
-                        }, 1200);
+    function initializeCopyEmailButtons() {
+        const copyButtons = document.querySelectorAll('.btn-copy-email');
+        console.log('Found copy email buttons:', copyButtons.length);
+        
+        copyButtons.forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Copy email button clicked');
+                
+                var emailSpan = btn.closest('.d-flex').querySelector('.user-email');
+                var copiedFeedback = btn.parentNode.querySelector('.copied-feedback');
+                var email = emailSpan ? emailSpan.getAttribute('data-email') : '';
+                
+                console.log('Email to copy:', email);
+                
+                if (email && email !== '' && email !== '-') {
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(email).then(function() {
+                            console.log('Email copied successfully');
+                            if (copiedFeedback) {
+                                copiedFeedback.style.display = 'inline-block';
+                                setTimeout(function() {
+                                    copiedFeedback.style.display = 'none';
+                                }, 1200);
+                            }
+                            btn.querySelector('i').classList.add('text-success');
+                            setTimeout(function() {
+                                btn.querySelector('i').classList.remove('text-success');
+                            }, 1200);
+                        }).catch(function(err) {
+                            console.error('Failed to copy email: ', err);
+                            alert('Failed to copy email to clipboard');
+                        });
+                    } else {
+                        // Fallback for older browsers
+                        const textArea = document.createElement('textarea');
+                        textArea.value = email;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        try {
+                            document.execCommand('copy');
+                            console.log('Email copied using fallback method');
+                            if (copiedFeedback) {
+                                copiedFeedback.style.display = 'inline-block';
+                                setTimeout(function() {
+                                    copiedFeedback.style.display = 'none';
+                                }, 1200);
+                            }
+                        } catch (err) {
+                            console.error('Fallback copy failed:', err);
+                            alert('Failed to copy email to clipboard');
+                        }
+                        document.body.removeChild(textArea);
                     }
-                    btn.querySelector('i').classList.add('text-success');
-                    setTimeout(function() {
-                        btn.querySelector('i').classList.remove('text-success');
-                    }, 1200);
-                });
-            }
+                } else {
+                    console.log('No valid email found to copy');
+                    alert('No email address found');
+                }
+            });
         });
-    });
+    }
+    
+    // Initialize copy email buttons
+    initializeCopyEmailButtons();
+
+    // Toggle active status functionality
+    function initializeToggleButtons() {
+        const toggleButtons = document.querySelectorAll('.toggle-active-btn');
+        console.log('Found toggle buttons:', toggleButtons.length);
+        
+        toggleButtons.forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Toggle button clicked');
+                
+                const userId = this.getAttribute('data-user-id');
+                const username = this.getAttribute('data-username');
+                const currentStatus = this.getAttribute('data-status') === '1';
+                const newStatus = currentStatus ? 0 : 1;
+                const actionText = currentStatus ? 'deactivate' : 'activate';
+                
+                console.log('Toggle user:', { userId, username, currentStatus, newStatus, actionText });
+                
+                if (confirm(`Are you sure you want to ${actionText} user "${username}"?`)) {
+                    console.log('User confirmed action');
+                    
+                    // Check if window.APP_URL is available
+                    const appUrl = window.APP_URL || '';
+                    if (!appUrl) {
+                        console.error('APP_URL not defined');
+                        alert('Configuration error: APP_URL not defined');
+                        return;
+                    }
+                    
+                    // Send AJAX request to toggle status
+                    fetch(appUrl + '/app/ajax/toggle_user_status.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `user_id=${encodeURIComponent(userId)}&status=${encodeURIComponent(newStatus)}`
+                    })
+                    .then(response => {
+                        console.log('Response received:', response.status);
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Response data:', data);
+                        if (data.success) {
+                            // Update the button appearance and data
+                            this.setAttribute('data-status', newStatus);
+                            const icon = this.querySelector('i');
+                            const statusSpan = this.closest('tr').querySelector('.user-status, .badge');
+                            
+                            if (newStatus === 1) {
+                                icon.className = 'fas fa-toggle-on text-success';
+                                this.title = 'Deactivate User';
+                                if (statusSpan) {
+                                    if (statusSpan.classList.contains('badge')) {
+                                        statusSpan.className = 'badge bg-success';
+                                        statusSpan.textContent = 'Active';
+                                    } else {
+                                        statusSpan.className = 'user-status active';
+                                        statusSpan.textContent = 'Active';
+                                    }
+                                }
+                            } else {
+                                icon.className = 'fas fa-toggle-off text-secondary';
+                                this.title = 'Activate User';
+                                if (statusSpan) {
+                                    if (statusSpan.classList.contains('badge')) {
+                                        statusSpan.className = 'badge bg-danger';
+                                        statusSpan.textContent = 'Inactive';
+                                    } else {
+                                        statusSpan.className = 'user-status inactive';
+                                        statusSpan.textContent = 'Inactive';
+                                    }
+                                }
+                            }
+                            
+                            console.log(`User ${username} has been ${actionText}d successfully`);
+                            alert(`User ${username} has been ${actionText}d successfully`);
+                        } else {
+                            console.error('Server error:', data.message);
+                            alert('Error: ' + (data.message || 'Failed to update user status'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Fetch error:', error);
+                        alert('An error occurred while updating user status: ' + error.message);
+                    });
+                } else {
+                    console.log('User cancelled action');
+                }
+            });
+        });
+    }
+    
+    // Initialize toggle buttons
+    initializeToggleButtons();
 });

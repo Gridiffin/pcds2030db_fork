@@ -115,26 +115,25 @@ $agency_users = array_filter($all_users, function($user) {
     return $user['role'] === 'agency' || $user['role'] === 'focal';
 });
 
-// Set up variables for base layout
-$cssBundle = 'main'; // Use main CSS bundle which includes all necessary styles
+// Set up variables for base_admin layout
+$pageTitle = 'Manage Users';
+$cssBundle = 'admin-users';
 $jsBundle = 'admin-users';
-$additionalStyles = [
-    // Add admin-specific CSS files that may not be in the main bundle
-    APP_URL . '/assets/css/admin/admin-common.css',
-    APP_URL . '/assets/css/admin/users.css',
-    APP_URL . '/assets/css/custom/admin.css'
-];
-$additionalScripts = [
-    APP_URL . '/assets/js/admin/user_form_manager.js',
-    APP_URL . '/assets/js/admin/user_table_manager.js',
-    APP_URL . '/assets/js/admin/simple_users.js',
-    APP_URL . '/assets/js/admin/manage_users.js'
-];
 
 // Configure modern page header
 $header_config = [
     'title' => 'User Management',
     'subtitle' => 'Create and manage user accounts for the system',
+    'breadcrumb' => [
+        [
+            'text' => 'Home',
+            'url' => APP_URL . '/app/views/admin/dashboard/dashboard.php'
+        ],
+        [
+            'text' => 'Users',
+            'url' => null // Current page, no link
+        ]
+    ],
     'variant' => 'green',
     'actions' => [
         [
@@ -149,4 +148,4 @@ $header_config = [
 // Set content file that contains the main page content
 $contentFile = __DIR__ . '/partials/manage_users_content.php';
 
-include PROJECT_ROOT_PATH . '/app/views/layouts/base.php';
+require_once PROJECT_ROOT_PATH . 'app/views/layouts/base_admin.php';
