@@ -129,6 +129,8 @@ $additionalStyles = [
 $additionalScripts = [
     // External dependencies (must load first)
     'https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs/dist/pptxgen.bundle.js',
+    // URL helpers (must load before any modules that use apiUrl)
+    APP_URL . '/assets/js/url_helpers.js',
     // Report modules (must load before report-generator.js)
     APP_URL . '/assets/js/report-modules/report-ui.js',
     APP_URL . '/assets/js/report-modules/report-api.js',
