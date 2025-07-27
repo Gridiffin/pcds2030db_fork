@@ -3,8 +3,8 @@
  * Dedicated styles for the admin programs listing page
  */
 
-/* Import admin shared base styles */
-@import '../shared/base.css';
+/* Import admin programs CSS with modern box components */
+@import './programs.css';
 
 /* Program Tables */
 .programs-table {

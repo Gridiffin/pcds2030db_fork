@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Modern Box Style Guide</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* CSS Variables - these should match your project's variables */
+        :root {
+            --color-primary: #2563eb;
+            --color-secondary: #6b7280;
+            --color-success: #10b981;
+            --color-warning: #f59e0b;
+            --color-danger: #ef4444;
+            --color-info: #06b6d4;
+            --color-gray-600: #4b5563;
+            
+            --forest-light: #9ebc8a;
+            --forest-light-rgb: 158, 188, 138;
+            --forest-medium: #7a9b69;
+            --forest-deep: #537d5d;
+            --forest-deep-rgb: 83, 125, 93;
+            --forest-ultra-light: #f0f7ed;
+            
+            --radius-base: 0.5rem;
+            --space-1: 0.25rem;
+            --space-2: 0.5rem;
+            --space-3: 0.75rem;
+            --space-4: 1rem;
+            --space-5: 1.25rem;
+            --space-6: 1.5rem;
+            --space-12: 3rem;
+            
+            --font-size-sm: 0.875rem;
+            --font-size-base: 1rem;
+            --font-size-lg: 1.125rem;
+            --font-weight-medium: 500;
+            --font-weight-semibold: 600;
+            
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            
+            --transition-base: all 0.3s ease;
+            --transition-fast: all 0.15s ease;
+        }
+    </style>
+    <link href="admin-modern-box.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container my-5">
+        <h1 class="mb-4">Admin Modern Box Style Guide</h1>
+        <p class="text-muted mb-5">Modern box components for admin program listings based on agency design patterns.</p>
+
+        <!-- Draft Program Example -->
+        <h2 class="mb-3">Draft Program Example</h2>
+        <div class="admin-program-box">
+            <div class="admin-draft-indicator">DRAFT</div>
+            <div class="admin-program-box-content">
+                <div class="admin-program-header">
+                    <div class="admin-program-title-section">
+                        <div class="admin-program-number">P001</div>
+                        <div>
+                            <h3 class="admin-program-name">Environmental Conservation Initiative</h3>
+                            <p class="admin-program-description">A comprehensive program focused on sustainable environmental practices and conservation efforts.</p>
+                        </div>
+                    </div>
+                    <div class="admin-action-info">
+                        <button class="admin-action-btn" onclick="toggleAdminDropdown(this)">
+                            <i class="fas fa-cog"></i>
+                            Actions
+                            <i class="fas fa-chevron-down ms-1"></i>
+                        </button>
+                        <div class="admin-dropdown-menu-custom">
+                            <a href="#" class="admin-dropdown-item-custom">
+                                <i class="fas fa-eye"></i>
+                                View Program
+                            </a>
+                            <a href="#" class="admin-dropdown-item-custom">
+                                <i class="fas fa-cog"></i>
+                                Edit Program
+                            </a>
+                            <a href="#" class="admin-dropdown-item-custom">
+                                <i class="fas fa-plus"></i>
+                                Add Submission
+                            </a>
+                            <button class="admin-dropdown-item-custom danger">
+                                <i class="fas fa-trash"></i>
+                                Delete Program
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="admin-program-meta-row">
+                    <div class="admin-agency-info">
+                        <div class="admin-agency-icon">DEP</div>
+                        <span>Department of Environment</span>
+                    </div>
+                    <div class="admin-initiative-info">
+                        <div class="admin-initiative-badge">Climate Action Initiative</div>
+                    </div>
+                    <div class="admin-status-info">
+                        <div class="admin-status-circle admin-status-draft"></div>
+                        <span class="admin-status-text">Draft</span>
+                    </div>
+                    <div class="admin-date-info">
+                        <i class="fas fa-calendar"></i>
+                        <span>Created: 2024-01-15</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Finalized Program Example -->
+        <h2 class="mb-3 mt-5">Finalized Program Example</h2>
+        <div class="admin-program-box">
+            <div class="admin-finalized-indicator">FINALIZED</div>
+            <div class="admin-program-box-content">
+                <div class="admin-program-header">
+                    <div class="admin-program-title-section">
+                        <div class="admin-program-number">P002</div>
+                        <div>
+                            <h3 class="admin-program-name">Digital Transformation Program</h3>
+                            <p class="admin-program-description">Modernizing government services through digital technology adoption and process optimization.</p>
+                        </div>
+                    </div>
+                    <div class="admin-action-info">
+                        <button class="admin-action-btn" onclick="toggleAdminDropdown(this)">
+                            <i class="fas fa-cog"></i>
+                            Actions
+                            <i class="fas fa-chevron-down ms-1"></i>
+                        </button>
+                        <div class="admin-dropdown-menu-custom">
+                            <a href="#" class="admin-dropdown-item-custom">
+                                <i class="fas fa-eye"></i>
+                                View Program
+                            </a>
+                            <button class="admin-dropdown-item-custom border-0 bg-transparent text-start w-100">
+                                <i class="fas fa-file-alt"></i>
+                                View Submission
+                            </button>
+                            <a href="#" class="admin-dropdown-item-custom">
+                                <i class="fas fa-cog"></i>
+                                Edit Program
+                            </a>
+                            <a href="#" class="admin-dropdown-item-custom">
+                                <i class="fas fa-edit"></i>
+                                Edit Submission
+                            </a>
+                            <button class="admin-dropdown-item-custom border-0 bg-transparent text-start w-100">
+                                <i class="fas fa-check-circle text-success"></i>
+                                Review & Finalize
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="admin-program-meta-row">
+                    <div class="admin-agency-info">
+                        <div class="admin-agency-icon">DIT</div>
+                        <span>Department of Information Technology</span>
+                    </div>
+                    <div class="admin-initiative-info">
+                        <div class="admin-initiative-badge">Digital Government Initiative</div>
+                    </div>
+                    <div class="admin-status-info">
+                        <div class="admin-status-circle admin-status-finalized"></div>
+                        <span class="admin-status-text">Finalized</span>
+                    </div>
+                    <div class="admin-rating-badge bg-success text-white">
+                        <i class="fas fa-star"></i>
+                        Excellent (4.8/5)
+                    </div>
+                    <div class="admin-date-info">
+                        <i class="fas fa-calendar"></i>
+                        <span>Finalized: 2024-02-20</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Template Program Example -->
+        <h2 class="mb-3 mt-5">Template Program Example</h2>
+        <div class="admin-program-box">
+            <div class="admin-template-indicator">TEMPLATE</div>
+            <div class="admin-program-box-content">
+                <div class="admin-program-header">
+                    <div class="admin-program-title-section">
+                        <div class="admin-program-number">T001</div>
+                        <div>
+                            <h3 class="admin-program-name">Standard Program Template</h3>
+                            <p class="admin-program-description">A reusable template for creating new programs with predefined structure and guidelines.</p>
+                        </div>
+                    </div>
+                    <div class="admin-action-info">
+                        <button class="admin-action-btn" onclick="toggleAdminDropdown(this)">
+                            <i class="fas fa-cog"></i>
+                            Actions
+                            <i class="fas fa-chevron-down ms-1"></i>
+                        </button>
+                        <div class="admin-dropdown-menu-custom">
+                            <a href="#" class="admin-dropdown-item-custom">
+                                <i class="fas fa-eye"></i>
+                                View Template
+                            </a>
+                            <a href="#" class="admin-dropdown-item-custom">
+                                <i class="fas fa-copy"></i>
+                                Use Template
+                            </a>
+                            <a href="#" class="admin-dropdown-item-custom">
+                                <i class="fas fa-cog"></i>
+                                Edit Template
+                            </a>
+                            <button class="admin-dropdown-item-custom danger">
+                                <i class="fas fa-trash"></i>
+                                Delete Template
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="admin-program-meta-row">
+                    <div class="admin-agency-info">
+                        <div class="admin-agency-icon">ALL</div>
+                        <span>All Agencies</span>
+                    </div>
+                    <div class="admin-initiative-info">
+                        <div class="admin-no-initiative">
+                            <i class="fas fa-info-circle"></i>
+                            No specific initiative
+                        </div>
+                    </div>
+                    <div class="admin-status-info">
+                        <div class="admin-status-circle admin-status-template"></div>
+                        <span class="admin-status-text">Template</span>
+                    </div>
+                    <div class="admin-date-info">
+                        <i class="fas fa-calendar"></i>
+                        <span>Created: 2024-01-01</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Program with Dropdown Actions -->
+        <h2 class="mb-3 mt-5">Program with Dropdown Actions</h2>
+        <div class="admin-program-box">
+            <div class="admin-program-box-content">
+                <div class="admin-program-header">
+                    <div class="admin-program-title-section">
+                        <div class="admin-program-number">P003</div>
+                        <div>
+                            <h3 class="admin-program-name">Healthcare Improvement Program</h3>
+                            <p class="admin-program-description">Enhancing healthcare services through improved infrastructure and training programs.</p>
+                        </div>
+                    </div>
+                    <div class="admin-action-info">
+                        <button class="admin-action-btn" onclick="toggleDropdown('dropdown1')">
+                            <i class="fas fa-ellipsis-v"></i>
+                            Actions
+                        </button>
+                        <div class="admin-dropdown-menu-custom" id="dropdown1">
+                            <button class="admin-dropdown-item-custom">
+                                <i class="fas fa-edit"></i>
+                                Edit Program
+                            </button>
+                            <button class="admin-dropdown-item-custom">
+                                <i class="fas fa-copy"></i>
+                                Duplicate
+                            </button>
+                            <button class="admin-dropdown-item-custom">
+                                <i class="fas fa-download"></i>
+                                Export
+                            </button>
+                            <button class="admin-dropdown-item-custom danger">
+                                <i class="fas fa-trash"></i>
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="admin-program-meta-row">
+                    <div class="admin-agency-info">
+                        <div class="admin-agency-icon">DOH</div>
+                        <span>Department of Health</span>
+                    </div>
+                    <div class="admin-initiative-info">
+                        <div class="admin-initiative-badge">Health Improvement Initiative</div>
+                    </div>
+                    <div class="admin-status-info">
+                        <div class="admin-status-circle admin-status-active"></div>
+                        <span class="admin-status-text">Active</span>
+                    </div>
+                    <div class="admin-users-info">
+                        <span class="admin-users-label">Editors:</span>
+                        <div class="admin-users-avatars">
+                            <img src="https://via.placeholder.com/24x24/007bff/ffffff?text=J" alt="User" class="admin-user-avatar">
+                            <img src="https://via.placeholder.com/24x24/28a745/ffffff?text=M" alt="User" class="admin-user-avatar">
+                            <img src="https://via.placeholder.com/24x24/dc3545/ffffff?text=S" alt="User" class="admin-user-avatar">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty State Example -->
+        <h2 class="mb-3 mt-5">Empty State Example</h2>
+        <div class="admin-programs-empty-state">
+            <div class="empty-icon">
+                <i class="fas fa-folder-open"></i>
+            </div>
+            <h3 class="empty-title">No Programs Found</h3>
+            <p class="empty-description">There are no programs matching your current filters. Try adjusting your search criteria or create a new program.</p>
+        </div>
+
+        <!-- Card Headers Examples -->
+        <h2 class="mb-3 mt-5">Card Header Examples</h2>
+        
+        <div class="card admin-draft-programs-card mb-3">
+            <div class="card-header">
+                <h4 class="admin-view-programs-card-title">
+                    <i class="fas fa-edit"></i>
+                    Draft Programs
+                </h4>
+            </div>
+            <div class="card-body">
+                <p>Draft programs are works in progress that haven't been finalized yet.</p>
+            </div>
+        </div>
+
+        <div class="card admin-finalized-programs-card mb-3">
+            <div class="card-header">
+                <h4 class="admin-view-programs-card-title">
+                    <i class="fas fa-check-circle"></i>
+                    Finalized Programs
+                </h4>
+            </div>
+            <div class="card-body">
+                <p>Finalized programs are completed and ready for implementation.</p>
+            </div>
+        </div>
+
+        <div class="card admin-template-programs-card mb-3">
+            <div class="card-header">
+                <h4 class="admin-view-programs-card-title">
+                    <i class="fas fa-file-alt"></i>
+                    Template Programs
+                </h4>
+            </div>
+            <div class="card-body">
+                <p>Template programs are reusable structures for creating new programs.</p>
+            </div>
+        </div>
+
+        <!-- Usage Instructions -->
+        <h2 class="mb-3 mt-5">Usage Instructions</h2>
+        <div class="alert alert-info">
+            <h5>Getting Started</h5>
+            <ol>
+                <li>Import the admin-modern-box.css file in your admin programs CSS</li>
+                <li>Use the <code>.admin-program-box</code> class as the main container</li>
+                <li>Add the <code>.admin-program-box-content</code> for inner content</li>
+                <li>Use appropriate status indicators (<code>.admin-draft-indicator</code>, etc.)</li>
+                <li>Customize colors and spacing using CSS variables</li>
+            </ol>
+        </div>
+
+        <div class="alert alert-warning">
+            <h5>CSS Variables Required</h5>
+            <p>Make sure your project defines the required CSS variables for colors, spacing, and typography. These should be available in your base.css or shared styles.</p>
+        </div>
+    </div>
+
+    <script>
+        // Global toggle dropdown function for admin custom dropdowns (based on agency implementation)
+        window.toggleAdminDropdown = function(button) {
+            const dropdown = button.nextElementSibling;
+            if (!dropdown || !dropdown.classList.contains('admin-dropdown-menu-custom')) {
+                return;
+            }
+            
+            // Find the program box container
+            const programBox = button.closest('.admin-program-box');
+            
+            // Close all other dropdowns first and remove dropdown-active class
+            document.querySelectorAll('.admin-dropdown-menu-custom.show').forEach(menu => {
+                if (menu !== dropdown) {
+                    menu.classList.remove('show');
+                    const otherProgramBox = menu.closest('.admin-program-box');
+                    if (otherProgramBox) {
+                        otherProgramBox.classList.remove('admin-dropdown-active');
+                    }
+                }
+            });
+            
+            // Toggle current dropdown
+            const isShowing = dropdown.classList.contains('show');
+            dropdown.classList.toggle('show');
+            
+            // Update program box state
+            if (programBox) {
+                if (isShowing) {
+                    programBox.classList.remove('admin-dropdown-active');
+                    // Remove body class if no dropdowns are open
+                    if (!document.querySelector('.admin-dropdown-menu-custom.show')) {
+                        document.body.classList.remove('admin-dropdown-open');
+                    }
+                } else {
+                    programBox.classList.add('admin-dropdown-active');
+                    // Add body class when dropdown opens
+                    document.body.classList.add('admin-dropdown-open');
+                }
+            }
+            
+            // Close dropdown when clicking outside
+            setTimeout(() => {
+                document.addEventListener('click', function closeDropdown(event) {
+                    if (!button.contains(event.target) && !dropdown.contains(event.target)) {
+                        dropdown.classList.remove('show');
+                        if (programBox) {
+                            programBox.classList.remove('admin-dropdown-active');
+                            // Remove body class if no dropdowns are open
+                            if (!document.querySelector('.admin-dropdown-menu-custom.show')) {
+                                document.body.classList.remove('admin-dropdown-open');
+                            }
+                        }
+                        document.removeEventListener('click', closeDropdown);
+                    }
+                });
+            }, 0);
+        };
+
+        // Legacy support for existing function calls
+        function toggleDropdown(dropdownId) {
+            const dropdown = document.getElementById(dropdownId);
+            const button = dropdown?.previousElementSibling;
+            if (button) {
+                toggleAdminDropdown(button);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -10,18 +10,21 @@ import '../../../css/admin/programs/view_programs.css';
 import '../../utilities/initialization.js';
 import '../../utilities/dropdown_init.js';
 
+// Import admin modern box dropdown functionality
+import '../admin-modern-box-dropdown.js';
+
 // Import main utilities including showToast
 import '../../main.js';
 
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize page components
     initializeFilters();
-    initializeProgramTables();
+    initializeProgramBoxes();
     initializeBulkActions();
     initializeQuickActions();
     initializeDeleteModal();
     
-    console.log('Admin view programs page initialized');
+    console.log('Admin view programs page with modern boxes initialized');
 });
 
 /**
@@ -88,25 +91,175 @@ function resetFilters() {
 }
 
 /**
- * Initialize program tables functionality
+ * Initialize program boxes functionality
  */
-function initializeProgramTables() {
-    // Initialize DataTables if available
-    if (typeof DataTable !== 'undefined') {
-        const tables = document.querySelectorAll('.programs-table table');
-        tables.forEach(table => {
-            new DataTable(table, {
-                pageLength: 25,
-                responsive: true,
-                columnDefs: [
-                    { orderable: false, targets: -1 } // Disable sorting on actions column
-                ]
-            });
-        });
+function initializeProgramBoxes() {
+    // Initialize modern box interactions
+    initializeProgramBoxFiltering();
+    initializeProgramBoxSorting();
+    
+    // Initialize program selection (if needed for bulk actions)
+    initializeProgramSelection();
+    
+    console.log('Program boxes initialized');
+}
+
+/**
+ * Initialize program box filtering
+ */
+function initializeProgramBoxFiltering() {
+    const searchInput = document.getElementById('finalizedProgramSearch');
+    const ratingFilter = document.getElementById('finalizedRatingFilter');
+    const typeFilter = document.getElementById('finalizedTypeFilter');
+    const agencyFilter = document.getElementById('finalizedAgencyFilter');
+    const initiativeFilter = document.getElementById('finalizedInitiativeFilter');
+    const resetButton = document.getElementById('resetFinalizedFilters');
+    
+    // Add event listeners for real-time filtering
+    if (searchInput) {
+        searchInput.addEventListener('input', debounce(filterProgramBoxes, 300));
     }
     
-    // Initialize program selection
-    initializeProgramSelection();
+    [ratingFilter, typeFilter, agencyFilter, initiativeFilter].forEach(filter => {
+        if (filter) {
+            filter.addEventListener('change', filterProgramBoxes);
+        }
+    });
+    
+    if (resetButton) {
+        resetButton.addEventListener('click', function() {
+            // Reset all filters
+            if (searchInput) searchInput.value = '';
+            [ratingFilter, typeFilter, agencyFilter, initiativeFilter].forEach(filter => {
+                if (filter) filter.value = '';
+            });
+            filterProgramBoxes();
+        });
+    }
+}
+
+/**
+ * Filter program boxes based on current filter values
+ */
+function filterProgramBoxes() {
+    const searchValue = document.getElementById('finalizedProgramSearch')?.value.toLowerCase() || '';
+    const ratingValue = document.getElementById('finalizedRatingFilter')?.value || '';
+    const typeValue = document.getElementById('finalizedTypeFilter')?.value || '';
+    const agencyValue = document.getElementById('finalizedAgencyFilter')?.value || '';
+    const initiativeValue = document.getElementById('finalizedInitiativeFilter')?.value || '';
+    
+    const programBoxes = document.querySelectorAll('.admin-program-box');
+    let visibleCount = 0;
+    
+    programBoxes.forEach(box => {
+        let isVisible = true;
+        
+        // Text search
+        if (searchValue) {
+            const programName = box.querySelector('.admin-program-name')?.textContent.toLowerCase() || '';
+            const programNumber = box.querySelector('.admin-program-number')?.textContent.toLowerCase() || '';
+            const searchText = programName + ' ' + programNumber;
+            
+            if (!searchText.includes(searchValue)) {
+                isVisible = false;
+            }
+        }
+        
+        // Rating filter
+        if (ratingValue) {
+            const boxRating = box.getAttribute('data-status') || '';
+            const ratingMap = {
+                'target-achieved': 'monthly_target_achieved',
+                'on-track-yearly': 'on_track_for_year',
+                'severe-delay': 'severe_delay',
+                'not-started': 'not_started'
+            };
+            
+            if (ratingMap[ratingValue] !== boxRating) {
+                isVisible = false;
+            }
+        }
+        
+        // Type filter
+        if (typeValue) {
+            const boxType = box.getAttribute('data-program-type') || '';
+            if (boxType !== typeValue) {
+                isVisible = false;
+            }
+        }
+        
+        // Agency filter
+        if (agencyValue) {
+            const boxAgency = box.getAttribute('data-agency-id') || '';
+            if (boxAgency !== agencyValue) {
+                isVisible = false;
+            }
+        }
+        
+        // Initiative filter
+        if (initiativeValue) {
+            if (initiativeValue === 'no-initiative') {
+                const boxInitiative = box.getAttribute('data-initiative-id') || '0';
+                if (boxInitiative !== '0') {
+                    isVisible = false;
+                }
+            } else {
+                const boxInitiative = box.getAttribute('data-initiative-id') || '0';
+                if (boxInitiative !== initiativeValue) {
+                    isVisible = false;
+                }
+            }
+        }
+        
+        // Show/hide box
+        box.style.display = isVisible ? 'block' : 'none';
+        if (isVisible) visibleCount++;
+    });
+    
+    // Update count
+    const countElement = document.getElementById('finalized-count');
+    if (countElement) {
+        countElement.textContent = visibleCount;
+    }
+    
+    // Show empty state if no results
+    updateEmptyState(visibleCount === 0);
+}
+
+/**
+ * Initialize program box sorting
+ */
+function initializeProgramBoxSorting() {
+    // This would be implemented if sorting functionality is needed
+    // For now, programs are sorted by the server query
+    console.log('Program box sorting initialized (server-side sorted)');
+}
+
+/**
+ * Update empty state display
+ */
+function updateEmptyState(isEmpty) {
+    const container = document.getElementById('finalizedProgramsContainer');
+    if (!container) return;
+    
+    let emptyState = container.querySelector('.admin-programs-empty-state');
+    
+    if (isEmpty && !emptyState) {
+        // Create empty state
+        emptyState = document.createElement('div');
+        emptyState.className = 'admin-programs-empty-state';
+        emptyState.innerHTML = `
+            <div class="empty-icon">
+                <i class="fas fa-search"></i>
+            </div>
+            <h3 class="empty-title">No Programs Found</h3>
+            <p class="empty-description">No programs match your current filter criteria. Try adjusting your filters or search terms.</p>
+        `;
+        container.appendChild(emptyState);
+    } else if (!isEmpty && emptyState) {
+        // Remove empty state
+        emptyState.remove();
+    }
 }
 
 /**
@@ -457,6 +610,7 @@ function showToast(title, message, type = 'info') {
 window.AdminViewPrograms = {
     applyFilters,
     resetFilters,
+    filterProgramBoxes,
     confirmSingleDelete,
     confirmBulkDelete,
     cloneProgram,

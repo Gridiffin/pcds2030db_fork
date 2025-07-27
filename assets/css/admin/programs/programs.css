@@ -9,6 +9,7 @@
 
 /* Programs-specific components */
 @import '../../components/bulk-assignment.css';
+@import '../../components/admin-modern-box.css';
 
 /* =================================== */
 /* Card Layout & Headers               */
