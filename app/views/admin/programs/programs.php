@@ -1,20 +1,17 @@
 <?php
 /**
- * Admin View: Programs
- *
- * This file is the main view for the admin programs page.
- * It ensures the controller has run to provide data, then includes the necessary partials.
+ * Admin View Programs - Overhauled Version
+ * 
+ * Interface for admin users to view all finalized programs across agencies.
+ * Modular structure with base.php layout following agency side patterns.
  */
 
-// Define the project root path correctly by navigating up from the current file's directory.
+// Define project root path for consistent file references
 if (!defined('PROJECT_ROOT_PATH')) {
-    define('PROJECT_ROOT_PATH', rtrim(dirname(dirname(dirname(dirname(__DIR__)))), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
+    define('PROJECT_ROOT_PATH', dirname(dirname(dirname(dirname(__DIR__)))) . DIRECTORY_SEPARATOR);
 }
 
-// Include the main config file which defines global constants like APP_URL.
-require_once PROJECT_ROOT_PATH . 'app/config/config.php';
-
-// Include necessary libraries
+// Include necessary files
 require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
@@ -26,118 +23,105 @@ if (!is_admin()) {
     exit;
 }
 
-// Ensure the controller has run and prepared the data. If not, load it.
-if (!isset($programs_with_drafts)) {
-    require_once PROJECT_ROOT_PATH . 'app/controllers/AdminProgramsController.php';
+// Get message from session if available
+$message = $_SESSION['message'] ?? '';
+$messageType = $_SESSION['message_type'] ?? 'info';
+
+// Clear message from session
+if (isset($_SESSION['message'])) {
+    unset($_SESSION['message']);
+    unset($_SESSION['message_type']);
 }
 
-// Set up variables for base_admin layout
-$pageTitle = 'Admin Programs';
-$cssBundle = 'admin-view-programs'; // Specific bundle for view programs page
+// Initialize program arrays
+$programs = [];
+$programs_with_submissions = [];
+
+// Get all finalized programs across all agencies (admin sees everything)
+$query = "SELECT DISTINCT p.*, 
+                 i.initiative_name,
+                 i.initiative_number,
+                 i.initiative_id,
+                 latest_sub.is_draft,
+                 latest_sub.period_id,
+                 latest_sub.submission_id as latest_submission_id,
+                 latest_sub.submitted_at,
+                 latest_sub.submitted_by,
+                 rp.period_type,
+                 rp.period_number,
+                 rp.year as period_year,
+                 a.agency_name,
+                 su.fullname as submitted_by_name,
+                 COALESCE(latest_sub.submitted_at, p.created_at) as updated_at
+          FROM programs p 
+          LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
+          LEFT JOIN agency a ON p.agency_id = a.agency_id
+          LEFT JOIN (
+              SELECT ps1.*
+              FROM program_submissions ps1
+              INNER JOIN (
+                  SELECT program_id, MAX(submission_id) as max_submission_id
+                  FROM program_submissions
+                  WHERE is_deleted = 0 AND is_draft = 0
+                  GROUP BY program_id
+              ) ps2 ON ps1.program_id = ps2.program_id AND ps1.submission_id = ps2.max_submission_id
+              WHERE ps1.is_draft = 0
+          ) latest_sub ON p.program_id = latest_sub.program_id
+          LEFT JOIN reporting_periods rp ON latest_sub.period_id = rp.period_id
+          LEFT JOIN users su ON latest_sub.submitted_by = su.user_id
+          WHERE p.is_deleted = 0 
+          AND latest_sub.submission_id IS NOT NULL
+          ORDER BY a.agency_name, p.program_name";
+
+$stmt = $conn->prepare($query);
+$stmt->execute();
+$result = $stmt->get_result();
+while ($row = $result->fetch_assoc()) {
+    $programs[] = $row;
+    $programs_with_submissions[] = $row;
+}
+
+// Get all agencies for filtering
+$agencies = [];
+$agencies_query = "SELECT agency_id, agency_name FROM agency ORDER BY agency_name";
+$result = $conn->query($agencies_query);
+while ($agency = $result->fetch_assoc()) {
+    $agencies[] = $agency;
+}
+
+// Get all active initiatives for filtering
+$active_initiatives = [];
+$initiatives_query = "SELECT initiative_id, initiative_name, initiative_number FROM initiatives ORDER BY initiative_name";
+$result = $conn->query($initiatives_query);
+while ($initiative = $result->fetch_assoc()) {
+    $active_initiatives[] = $initiative;
+}
+
+
+// Set up base layout variables
+$pageTitle = 'Admin Programs Overview';
+$cssBundle = 'admin-view-programs'; // Vite bundle for admin view programs page
 $jsBundle = 'admin-view-programs';
-
-// Inline script to handle delete functionality  
-$inlineScripts = '
-console.log("DEBUG: CSS Bundle set to: admin-view-programs");
-console.log("DEBUG: Expected CSS file: /dist/css/admin-view-programs.bundle.css");
-
-// Define triggerDeleteFromModal function globally
-window.triggerDeleteFromModal = function(programId, programName) {
-    console.log("triggerDeleteFromModal called with:", { programId, programName });
-    
-    // First, close the "More Actions" modal if it\'s open
-    const moreActionsModal = document.getElementById("moreActionsModal");
-    if (moreActionsModal) {
-        const moreActionsModalInstance = bootstrap.Modal.getInstance(moreActionsModal);
-        if (moreActionsModalInstance) {
-            moreActionsModalInstance.hide();
-        }
-    }
-    
-    // Wait a bit for the first modal to close, then show delete modal
-    setTimeout(function() {
-        const deleteModal = document.getElementById("deleteModal");
-        if (!deleteModal) {
-            console.error("Delete modal not found");
-            return;
-        }
-
-        const programNameDisplay = deleteModal.querySelector("#program-name-display");
-        const programIdInput = deleteModal.querySelector("#program-id-input");
-
-        if (programNameDisplay) {
-            programNameDisplay.textContent = programName;
-            console.log("Set program name display to:", programName);
-        } else {
-            console.error("Program name display element not found");
-        }
-        
-        if (programIdInput) {
-            programIdInput.value = programId;
-            console.log("Set program ID input to:", programId);
-        } else {
-            console.error("Program ID input element not found");
-        }
-
-        const modal = new bootstrap.Modal(deleteModal);
-        modal.show();
-    }, 300); // Wait 300ms for the first modal to fully close
-};
-
-// Handle form submission to close modal and show loading state
-document.addEventListener("DOMContentLoaded", function() {
-    const deleteForm = document.getElementById("delete-program-form");
-    if (deleteForm) {
-        deleteForm.addEventListener("submit", function(e) {
-            console.log("Form submitted with program_id:", document.getElementById("program-id-input").value);
-            
-            // Get the modal instance
-            const deleteModal = document.getElementById("deleteModal");
-            const modalInstance = bootstrap.Modal.getInstance(deleteModal);
-            
-            // Show loading state
-            const submitBtn = deleteForm.querySelector("button[type=submit]");
-            if (submitBtn) {
-                submitBtn.innerHTML = "<i class=\"fas fa-spinner fa-spin me-2\"></i>Deleting...";
-                submitBtn.disabled = true;
-            }
-            
-            // Close the modal after a brief delay to show the loading state
-            setTimeout(function() {
-                if (modalInstance) {
-                    modalInstance.hide();
-                }
-            }, 500);
-        });
-    }
-});
-
-console.log("Delete function loaded successfully");
-';
 
 // Configure modern page header
 $header_config = [
-    'title' => $pageTitle,
-    'subtitle' => 'View and manage programs across all agencies',
+    'title' => 'Programs Overview',
+    'subtitle' => 'View and manage finalized programs across all agencies',
     'breadcrumb' => [
         [
             'text' => 'Home',
-            'url' => APP_URL . '/app/views/admin/dashboard/dashboard.php'
+            'url' => APP_URL . '/index.php?page=admin_dashboard'
         ],
         [
             'text' => 'Programs',
             'url' => null // Current page, no link
         ]
     ],
-    'variant' => 'green',
-    'actions' => []
+    'variant' => 'green'
 ];
 
-// Set content file that contains the main page content
+// Set content file for base layout
 $contentFile = __DIR__ . '/partials/programs_content.php';
 
+// Include base layout - it will render header, nav, content, and footer
 require_once PROJECT_ROOT_PATH . 'app/views/layouts/base_admin.php';
-
-
-
-

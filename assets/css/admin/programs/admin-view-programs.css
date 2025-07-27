@@ -1,0 +1,147 @@
+/**
+ * Admin View Programs CSS
+ * Styles for admin programs overview page
+ */
+
+/* Admin-specific program styles */
+.admin-program {
+    border-left: 4px solid var(--admin-primary-color, #007bff);
+}
+
+.admin-program .program-box-content {
+    padding: 1.25rem;
+}
+
+/* Agency information styling */
+.agency-info {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.agency-badge {
+    background-color: #e3f2fd;
+    color: #1976d2;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
+/* Finalization info styling */
+.finalization-info {
+    display: flex;
+    align-items: center;
+    font-size: 0.875rem;
+    color: #666;
+}
+
+.finalization-info i {
+    margin-right: 0.5rem;
+}
+
+/* Admin actions styling */
+.admin-actions .btn-group {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.admin-actions .btn {
+    border: none;
+    font-weight: 500;
+}
+
+/* Filter section enhancements */
+.filters-section {
+    background-color: #f8f9fa;
+    border-radius: 8px 8px 0 0;
+}
+
+.filter-summary {
+    background-color: #fff;
+    padding: 0.5rem 1rem;
+    border-radius: 0 0 8px 8px;
+    border-top: 1px solid #dee2e6;
+}
+
+/* Program metadata display */
+.program-meta-row {
+    display: grid;
+    grid-template-columns: auto auto 1fr auto auto;
+    gap: 1rem;
+    align-items: center;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #f0f0f0;
+    font-size: 0.875rem;
+}
+
+/* Empty state improvements */
+.programs-empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #6c757d;
+}
+
+.programs-empty-state .empty-icon {
+    font-size: 3rem;
+    color: #dee2e6;
+    margin-bottom: 1rem;
+}
+
+.programs-empty-state .empty-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #495057;
+}
+
+.programs-empty-state .empty-description {
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .program-meta-row {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+        text-align: center;
+    }
+    
+    .agency-badge {
+        justify-content: center;
+    }
+    
+    .admin-actions .btn-group {
+        width: 100%;
+    }
+    
+    .admin-actions .btn {
+        flex: 1;
+    }
+}
+
+/* Content card styling */
+.content-card {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    background-color: #fff;
+}
+
+.content-card .card-body {
+    padding: 0;
+}
+
+/* Program count badges */
+.simple-badge {
+    background-color: #6c757d;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-left: 0.5rem;
+}

@@ -1,9 +1,9 @@
 <?php
 /**
- * Enhanced Edit Submission Page (Admin)
+ * Enhanced Admin Edit Submission Page
  * 
- * Allows admin users to edit existing submissions or add new ones based on period selection.
- * Features a period selector at the top and dynamic content based on selected period.
+ * Allows admin users to edit existing submissions for any program.
+ * Refactored to use base_admin.php layout following agency side patterns.
  */
 
 // Define project root path for consistent file references
@@ -16,12 +16,8 @@ require_once PROJECT_ROOT_PATH . 'app/config/config.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/agencies/programs.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/agencies/program_permissions.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/admins/core.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/admins/program_management.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/admins/statistics.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/initiative_functions.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/admins/index.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/admins/admin_edit_submission_data.php';
 
 // Verify user is an admin
 if (!is_admin()) {
@@ -29,242 +25,121 @@ if (!is_admin()) {
     exit;
 }
 
-// Get program ID from URL
+// Get parameters from URL
 $program_id = isset($_GET['program_id']) ? intval($_GET['program_id']) : 0;
+$period_id = isset($_GET['period_id']) ? intval($_GET['period_id']) : 0;
 
+// Validate required parameters
 if (!$program_id) {
-    $_SESSION['message'] = 'No program specified.';
+    $_SESSION['message'] = 'Missing required parameter (program_id).';
     $_SESSION['message_type'] = 'danger';
     header('Location: programs.php');
     exit;
 }
 
-// Get program details
-$program = get_admin_program_details($program_id);
-if (!$program) {
-    $_SESSION['message'] = 'Program not found.';
+// If no period_id provided, show period selection
+if (!$period_id) {
+    // Get available periods for this program to show selection
+    require_once PROJECT_ROOT_PATH . 'app/lib/admins/admin_program_details_data.php';
+    $program_data = get_admin_program_details($program_id);
+    
+    if (!$program_data) {
+        $_SESSION['message'] = 'Program not found or access denied.';
+        $_SESSION['message_type'] = 'danger';
+        header('Location: programs.php');
+        exit;
+    }
+    
+    // Extract data for period selection
+    $program = $program_data['program'] ?? null;
+    $agency_info = $program_data['agency_info'] ?? null;
+    $all_periods = $program_data['all_periods'] ?? [];
+    $latest_by_period = $program_data['latest_by_period'] ?? [];
+    
+    // Set up base layout variables for period selection
+    $pageTitle = 'Select Reporting Period';
+    if ($program) {
+        $pageTitle .= ' - ' . ($program['program_name'] ?? 'Unknown Program');
+    }
+    $cssBundle = 'admin-edit-submission';
+    $jsBundle = 'admin-edit-submission';
+    
+    // Configure page header for period selection
+    $header_config = [
+        'title' => 'Select Reporting Period',
+        'subtitle' => ($program['program_name'] ?? 'Unknown Program') . ' - ' . ($agency_info['agency_name'] ?? 'Unknown Agency'),
+        'variant' => 'white',
+        'actions' => [
+            [
+                'url' => 'program_details.php?id=' . $program_id,
+                'text' => 'Back to Program Details',
+                'icon' => 'fas fa-arrow-left',
+                'class' => 'btn-outline-secondary'
+            ]
+        ]
+    ];
+    
+    // Set content file for period selection
+    $contentFile = __DIR__ . '/partials/admin_select_submission_period_content.php';
+    
+    // Include base layout for period selection
+    require_once PROJECT_ROOT_PATH . 'app/views/layouts/base_admin.php';
+    exit;
+}
+
+// Get all edit submission data using the admin data helper
+$edit_data = get_admin_edit_submission_data($program_id, $period_id);
+
+if (!$edit_data) {
+    $_SESSION['message'] = 'Program or submission not found or access denied.';
     $_SESSION['message_type'] = 'danger';
     header('Location: programs.php');
     exit;
 }
 
-// Admin users have full editing permissions
+// Extract data for easier access in views
+$program = $edit_data['program'];
+$agency_info = $edit_data['agency_info'];
+$submission = $edit_data['submission'];
+$period = $edit_data['period'];
+$targets = $edit_data['targets'];
+$attachments = $edit_data['attachments'];
+$is_new_submission = $edit_data['is_new_submission'];
+
+// Admin can edit all submissions
 $can_edit = true;
+$can_view = true;
 
-// Get reporting periods for dropdown
-$reporting_periods = get_reporting_periods_for_dropdown(true);
-
-// Get existing submissions for this program to show which periods are already covered
-$existing_submissions_query = "SELECT ps.period_id, ps.is_draft, ps.is_submitted, ps.submission_id,
-                                     rp.year, rp.period_type, rp.period_number, rp.status
-                              FROM program_submissions ps
-                              JOIN reporting_periods rp ON ps.period_id = rp.period_id
-                              WHERE ps.program_id = ? AND ps.is_deleted = 0
-                              ORDER BY rp.year DESC, rp.period_number ASC";
-$stmt = $conn->prepare($existing_submissions_query);
-$stmt->bind_param("i", $program_id);
-$stmt->execute();
-$existing_submissions = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-
-// Create a map of period_id to submission for quick lookup
-$submissions_by_period = [];
-foreach ($existing_submissions as $submission) {
-    $submissions_by_period[$submission['period_id']] = $submission;
-}
-
-// Set page title
-$pageTitle = 'Edit Submission - ' . $program['program_name'];
-
-// Additional CSS for edit submission page
-$additionalCSS = [
-    APP_URL . '/assets/css/agency/edit_submission.css',
-];
-
-// Include header
-require_once '../../layouts/header.php';
+// Set up base layout variables
+$pageTitle = 'Edit Submission - ' . $program['program_name'] . ' (' . $period['period_display'] . ')';
+$cssBundle = 'admin-edit-submission'; // Vite bundle for admin edit submission page
+$jsBundle = 'admin-edit-submission';
 
 // Configure modern page header
 $header_config = [
-    'title' => 'Edit Submission (Admin)',
-    'subtitle' => 'Edit submissions for ' . htmlspecialchars($program['program_name']) . ' | Agency: ' . ($program['agency_name'] ?? 'Unknown'),
-    'variant' => 'admin',
+    'title' => $is_new_submission ? 'Add New Submission' : 'Edit Submission',
+    'subtitle' => $program['program_name'] . ' - ' . $agency_info['agency_name'] . ' (' . $period['period_display'] . ')',
+    'variant' => 'white',
     'actions' => [
         [
-            'url' => 'programs.php',
-            'text' => 'Back to Programs',
+            'url' => 'view_submissions.php?program_id=' . $program_id,
+            'text' => 'Back to Submissions',
             'icon' => 'fas fa-arrow-left',
             'class' => 'btn-outline-secondary'
         ]
     ]
 ];
 
-// Include modern page header
-require_once '../../layouts/page_header.php';
-?>
+// Add additional actions
+$header_config['actions'][] = [
+    'url' => 'program_details.php?id=' . $program_id,
+    'text' => 'Program Details',
+    'icon' => 'fas fa-info-circle',
+    'class' => 'btn-info'
+];
 
-<!-- Remove fixed and sticky info bar markup -->
+// Set content file for base layout
+$contentFile = __DIR__ . '/partials/admin_edit_submission_content.php';
 
-<div class="container-fluid">
-    <!-- Remove .row and column wrappers for single-column layout -->
-    <!-- Main content and history sidebar will be rendered inside the main card/form -->
-    <!-- Error/Success Messages -->
-    <?php if (isset($_SESSION['message'])): ?>
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                showToast('<?= ucfirst($_SESSION['message_type']) ?>', <?= json_encode($_SESSION['message']) ?>, '<?= $_SESSION['message_type'] ?>');
-            });
-        </script>
-        <?php 
-        unset($_SESSION['message']);
-        unset($_SESSION['message_type']);
-        ?>
-    <?php endif; ?>
-
-    <!-- Program Info Card -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header">
-            <h5 class="card-title mb-0">
-                <i class="fas fa-info-circle me-2"></i>
-                Program Information
-            </h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <strong>Program Name:</strong> <?php echo htmlspecialchars($program['program_name']); ?><br>
-                    <strong>Program Number:</strong> <?php echo htmlspecialchars($program['program_number'] ?? 'Not assigned'); ?><br>
-                    <strong>Initiative:</strong> 
-                    <?php if (!empty($program['initiative_name'])): ?>
-                        <?php echo htmlspecialchars($program['initiative_name']); ?>
-                        <?php if (!empty($program['initiative_number'])): ?>
-                            (<?php echo htmlspecialchars($program['initiative_number']); ?>)
-                        <?php endif; ?>
-                    <?php else: ?>
-                        <span class="text-muted">Not linked</span>
-                    <?php endif; ?><br>
-                    <strong>Agency:</strong> <?php echo htmlspecialchars($program['agency_name'] ?? 'Unknown'); ?>
-                </div>
-                <div class="col-md-6">
-                    <strong>Description:</strong> <?php echo htmlspecialchars($program['program_description'] ?? 'No description'); ?><br>
-                    <strong>Created:</strong> <?php echo date('M j, Y', strtotime($program['created_at'])); ?><br>
-                    <strong>Existing Submissions:</strong> <?php echo count($existing_submissions); ?>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Period Selector Card -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header">
-            <h5 class="card-title mb-0">
-                <i class="fas fa-calendar-alt me-2"></i>
-                Select Reporting Period
-            </h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-8">
-                    <label for="period_selector" class="form-label">
-                        Reporting Period <span class="text-danger">*</span>
-                    </label>
-                    <select class="form-select" id="period_selector" required>
-                        <option value="">Choose a reporting period...</option>
-                        <?php foreach ($reporting_periods as $period): ?>
-                            <?php 
-                            $has_submission = isset($submissions_by_period[$period['period_id']]);
-                            $submission = $has_submission ? $submissions_by_period[$period['period_id']] : null;
-                            ?>
-                            <option value="<?php echo $period['period_id']; ?>"
-                                    data-has-submission="<?php echo $has_submission ? 'true' : 'false'; ?>"
-                                    data-submission-id="<?php echo $has_submission ? $submission['submission_id'] : ''; ?>"
-                                    data-status="<?php echo $period['status']; ?>">
-                                <?php echo htmlspecialchars($period['display_name']); ?>
-                                <?php if ($period['status'] == 'open'): ?>
-                                    (Open)
-                                <?php endif; ?>
-                                <?php if ($has_submission): ?>
-                                    - <?php echo $submission['is_draft'] ? 'Draft' : 'Finalized'; ?>
-                                <?php else: ?>
-                                    - No Submission
-                                <?php endif; ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                    <div class="form-text">
-                        <i class="fas fa-calendar me-1"></i>
-                        Select a reporting period to edit existing submission or add a new one.
-                    </div>
-                </div>
-                <div class="col-md-4 d-flex align-items-end">
-                    <div class="period-status-display">
-                        <!-- Period status will be displayed here -->
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Dynamic Content Area -->
-    <div id="dynamic-content">
-        <!-- Content will be loaded here based on period selection -->
-        <div class="text-center py-5">
-            <div class="mb-3">
-                <i class="fas fa-calendar-alt fa-3x text-muted"></i>
-            </div>
-            <h5 class="text-muted">Select a Reporting Period</h5>
-            <p class="text-muted">Choose a reporting period from the dropdown above to view or edit submissions.</p>
-        </div>
-    </div>
-</div>
-
-<!-- Loading Spinner Template -->
-<template id="loading-template">
-    <div class="text-center py-5">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
-        </div>
-        <p class="mt-3 text-muted">Loading submission data...</p>
-    </div>
-</template>
-
-<!-- No Submission Template -->
-<template id="no-submission-template">
-    <div class="card shadow-sm">
-        <div class="card-header">
-            <h5 class="card-title mb-0">
-                <i class="fas fa-plus-circle me-2"></i>
-                Add New Submission
-            </h5>
-        </div>
-        <div class="card-body">
-            <div class="text-center py-4">
-                <div class="mb-3">
-                    <i class="fas fa-folder-open fa-3x text-muted"></i>
-                </div>
-                <h6 class="text-muted">No Submission Found</h6>
-                <p class="text-muted mb-3">There is no submission for this reporting period. You can create a new one.</p>
-                <button type="button" id="add-new-submission-btn" class="btn btn-primary">
-                    <i class="fas fa-plus me-2"></i> Add New Submission
-                </button>
-            </div>
-        </div>
-    </div>
-</template>
-
-<script>
-// Pass PHP variables to JavaScript
-window.programId = <?php echo $program_id; ?>;
-window.APP_URL = '<?php echo APP_URL; ?>';
-window.submissionsByPeriod = <?php echo json_encode($submissions_by_period); ?>;
-window.currentUserRole = '<?php echo $_SESSION['role'] ?? ''; ?>';
-window.programName = <?= json_encode($program['program_name']) ?>;
-window.programNumber = <?= json_encode($program['program_number'] ?? '') ?>;
-window.initiativeNumber = <?= json_encode($program['initiative_number'] ?? '') ?>;
-</script>
-
-<script src="<?php echo asset_url('js/agency', 'edit_submission.js'); ?>"></script>
-
-<?php
-// Include footer
-require_once '../../layouts/footer.php';
-?> 
+// Include base layout
+require_once PROJECT_ROOT_PATH . 'app/views/layouts/base_admin.php';

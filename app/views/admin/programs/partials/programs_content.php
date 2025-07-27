@@ -9,10 +9,8 @@
 <?php endif; ?>
 
 <?php
-// Include the partials for each program table.
-require_once __DIR__ . '/_draft_programs_table.php';
+// Include only finalized programs table for admin view
 require_once __DIR__ . '/_finalized_programs_table.php';
-require_once __DIR__ . '/_template_programs_table.php';
 require_once __DIR__ . '/_modals.php';
 ?>
 
