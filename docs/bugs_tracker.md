@@ -5,6 +5,82 @@
 
 ## Recent Bugs Fixed
 
+### 30. Agency View Outcomes Graph Data Structure Mismatch (2025-07-27)
+
+- **Problem:** "View details" functionality for graph type outcomes not working on agency side, while KPI outcomes work correctly
+- **Root Cause Analysis:**
+  - **Data Structure Mismatch**: Agency view outcome code expects nested data structure but database stores flat structure
+  - **Database Structure**: Graph outcomes stored as `{"rows": [{"2022": 408531176.77, "month": "January"}], "columns": ["2022", "2023"]}`
+  - **Code Expectation**: Agency code expects `{"rows": [{"label": "January", "data": {"2022": 408531176.77}}], "columns": [...]}`
+  - **KPI vs Graph**: KPI outcomes work because they use different processing logic
+- **Impact:**
+  - **Medium Severity**: Graph outcome details not displayable on agency side
+  - **Scope**: All graph-type outcomes in agency view outcome page
+  - **User Experience**: Agency users cannot view graph outcome data details
+- **Solution - Data Structure Compatibility:**
+  1. **Updated Data Processing Logic:**
+     - Modified `view_outcome.php` to handle both data structures (nested and flat)
+     - Added fallback logic to check for direct column values in row data
+     - Maintained backward compatibility with existing data formats
+  2. **Enhanced Table Display:**
+     - Updated `table_display.php` to handle both data structure formats
+     - Added proper numeric formatting for graph data values
+     - Improved empty value handling with proper fallbacks
+  3. **Code Changes:**
+     ```php
+     // Handle different data structures
+     if (isset($row['data'])) {
+         // New structure: row has 'data' property
+         $value = $row['data'][$columnId] ?? '';
+     } else {
+         // Database structure: row contains column values directly
+         $value = $row[$columnId] ?? '';
+     }
+     ```
+- **Files Modified:**
+  - `app/views/agency/outcomes/view_outcome.php` - Enhanced data processing logic
+  - `app/views/agency/outcomes/partials/table_display.php` - Added dual structure support
+- **Testing:** Graph outcome details should now display correctly on agency side with proper data formatting
+- **Prevention:** Ensure consistent data structure handling across admin and agency outcome views
+- **Related Issues**: Resolves agency-side graph outcome viewing while maintaining KPI outcome functionality
+
+### 29. Function Redeclaration Error - Duplicate format_file_size() Function (2025-07-27)
+
+- **Problem:** Fatal error preventing application from loading:
+  ```
+  Fatal error: Cannot redeclare format_file_size() (previously declared in C:\laragon\www\pcds2030_dashboard_fork\app\lib\functions.php:575) in C:\laragon\www\pcds2030_dashboard_fork\app\lib\agencies\program_attachments.php on line 517
+  ```
+- **Root Cause Analysis:**
+  - **Duplicate Function Declaration**: `format_file_size()` function declared in both:
+    - `app/lib/functions.php` at line 575 (global utility function)
+    - `app/lib/agencies/program_attachments.php` at line 517 (duplicate implementation)
+  - **Pattern Recognition**: Same issue pattern as previously resolved in Bug #18 with `submission_data.php`
+  - **Include Chain**: Both files being included in the same execution context causing redeclaration
+- **Impact:**
+  - **Critical Severity**: Application completely broken - fatal error on load
+  - **Scope**: All pages that include both functions.php and program_attachments.php
+  - **User Experience**: Complete application failure
+- **Solution - Remove Duplicate Function:**
+  1. **Analyzed Function Usage:**
+     - Multiple files expect `format_file_size()` to be available from `functions.php`
+     - Admin files already reference "function is available from functions.php"
+     - `functions.php` is the appropriate location for shared utility functions
+  2. **Removed Duplicate:**
+     - Removed entire `format_file_size()` function from `program_attachments.php`
+     - Replaced with comment: "Note: format_file_size() function is available from functions.php"
+     - Preserved the more robust implementation in `functions.php` (handles edge cases better)
+  3. **Function Implementations Compared:**
+     - `functions.php`: More robust with zero-byte handling and better edge case management
+     - `program_attachments.php`: Simpler implementation, less error handling
+- **Files Modified:**
+  - `app/lib/agencies/program_attachments.php` - Removed duplicate function declaration
+- **Prevention:**
+  - Use `function_exists()` checks before declaring utility functions if needed in multiple contexts
+  - Keep shared utility functions only in `functions.php`
+  - Document function availability in files that depend on external functions
+- **Related Issues**: Follows same resolution pattern as Bug #18 (submission_data.php duplicate function removal)
+- **Testing:** Application should now load without fatal errors, with all file size formatting working correctly
+
 ### 28. Admin Programs Path Issues - Incorrect Include Paths (2025-07-25)
 
 - **Problem:** Multiple admin programs pages throwing "Failed to open stream: No such file or directory" errors causing:
@@ -68,6 +144,7 @@
   - **User Experience**: Admin cannot delete programs or use modal interactions
   - **Scope**: Affected admin programs management page
 - **Solution - Admin Bundle Fix:**
+
   1. **Added main.js Import to Admin Entry Point:**
      - `assets/js/admin/programs.js` - Added `import '../main.js'` for shared utilities
      - Added `import './programs_delete.js'` for specific delete modal functionality
@@ -86,6 +163,7 @@
   3. **Rebuilt Vite Bundles:**
      - Admin programs bundle now includes all necessary utilities
      - Bundle properly sized with shared utilities
+
 - **Files Modified:**
   - **JavaScript Entry Point**: `assets/js/admin/programs.js` updated with main.js import
   - **Vite Bundles**: Rebuilt admin-programs bundle with updated dependencies

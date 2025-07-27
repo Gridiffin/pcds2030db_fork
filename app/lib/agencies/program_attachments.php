@@ -508,23 +508,7 @@ function get_program_attachment_count($program_id) {
     return intval($row['count']);
 }
 
-/**
- * Format file size for display
- *
- * @param int $size File size in bytes
- * @return string Formatted size
- */
-function format_file_size($size) {
-    $units = ['B', 'KB', 'MB', 'GB'];
-    $unit_index = 0;
-    
-    while ($size >= 1024 && $unit_index < count($units) - 1) {
-        $size /= 1024;
-        $unit_index++;
-    }
-    
-    return round($size, 2) . ' ' . $units[$unit_index];
-}
+// Note: format_file_size() function is available from functions.php
 
 /**
  * Get attachment for secure download
