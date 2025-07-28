@@ -19,6 +19,7 @@ require_once '../lib/functions.php';
 require_once '../lib/agencies/programs.php';
 require_once '../lib/admins/core.php';
 require_once '../lib/admins/statistics.php';
+require_once '../lib/notifications_core.php';
 
 // Set JSON header
 header('Content-Type: application/json');
@@ -443,6 +444,15 @@ try {
 
         // Commit transaction
         $conn->commit();
+
+        // Send notifications after successful transaction
+        if ($is_update) {
+            // Notify submission edited
+            notify_submission_edited($submission_id, $program_id, $_SESSION['user_id'], $changes ?? []);
+        } else {
+            // Notify submission created
+            notify_submission_created($submission_id, $program_id, $_SESSION['user_id'], $period_id);
+        }
 
         echo json_encode([
             'success' => true,

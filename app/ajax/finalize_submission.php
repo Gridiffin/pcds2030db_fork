@@ -8,6 +8,7 @@ require_once '../config/config.php';
 require_once '../lib/db_connect.php';
 require_once '../lib/session.php';
 require_once '../lib/functions.php';
+require_once '../lib/notifications_core.php';
 
 // Ensure user is authenticated and is a focal user
 if (!is_focal_user()) {
@@ -103,6 +104,9 @@ try {
     
     // Commit transaction
     $conn->commit();
+    
+    // Send finalization notifications
+    notify_submission_finalized($submission_id, $program_id, $_SESSION['user_id']);
     
     echo json_encode([
         'success' => true,

@@ -4,6 +4,69 @@
  * Renders a single notification with all interactive elements
  */
 
+// Helper functions for notification rendering
+if (!function_exists('get_priority_class')) {
+    function get_priority_class($priority) {
+        $classes = [
+            'low' => 'priority-low',
+            'normal' => 'priority-normal',
+            'high' => 'priority-high',
+            'urgent' => 'priority-urgent'
+        ];
+        return $classes[$priority] ?? 'priority-normal';
+    }
+}
+
+if (!function_exists('get_priority_badge_color')) {
+    function get_priority_badge_color($priority) {
+        $colors = [
+            'low' => 'info',
+            'normal' => 'secondary',
+            'high' => 'warning',
+            'urgent' => 'danger'
+        ];
+        return $colors[$priority] ?? 'secondary';
+    }
+}
+
+if (!function_exists('get_type_icon')) {
+    function get_type_icon($type) {
+        $icons = [
+            'system' => 'fas fa-cog',
+            'update' => 'fas fa-sync',
+            'reminder' => 'fas fa-bell',
+            'alert' => 'fas fa-exclamation-triangle',
+            'info' => 'fas fa-info-circle',
+            'success' => 'fas fa-check-circle',
+            'warning' => 'fas fa-exclamation-circle',
+            'error' => 'fas fa-times-circle',
+            'assigned_program' => 'fas fa-tasks',
+            'deadline' => 'fas fa-clock',
+            'feedback' => 'fas fa-comment'
+        ];
+        return $icons[$type] ?? 'fas fa-bell';
+    }
+}
+
+if (!function_exists('get_type_badge_color')) {
+    function get_type_badge_color($type) {
+        $colors = [
+            'system' => 'secondary',
+            'update' => 'primary',
+            'reminder' => 'info',
+            'alert' => 'warning',
+            'info' => 'info',
+            'success' => 'success',
+            'warning' => 'warning',
+            'error' => 'danger',
+            'assigned_program' => 'primary',
+            'deadline' => 'warning',
+            'feedback' => 'success'
+        ];
+        return $colors[$type] ?? 'secondary';
+    }
+}
+
 $isUnread = ($notification['read_at'] ?? null) === null;
 $timeAgo = format_time_ago($notification['created_at']);
 $priorityClass = get_priority_class($notification['priority'] ?? 'normal');
@@ -11,10 +74,10 @@ $typeIcon = get_type_icon($notification['type'] ?? 'info');
 $typeBadgeColor = get_type_badge_color($notification['type'] ?? 'info');
 ?>
 
-<div class="notification-item <?php echo $isUnread ? 'unread' : 'read'; ?>" data-id="<?php echo htmlspecialchars($notification['id']); ?>">
+<div class="notification-item <?php echo $isUnread ? 'unread' : 'read'; ?>" data-id="<?php echo htmlspecialchars($notification['notification_id'] ?? ''); ?>">
     <!-- Selection Checkbox -->
     <div class="notification-select">
-        <input type="checkbox" class="notification-checkbox" value="<?php echo htmlspecialchars($notification['id']); ?>">
+        <input type="checkbox" class="notification-checkbox" value="<?php echo htmlspecialchars($notification['notification_id'] ?? ''); ?>">
     </div>
 
     <!-- Notification Icon -->
@@ -121,72 +184,4 @@ $typeBadgeColor = get_type_badge_color($notification['type'] ?? 'info');
 </div>
 
 <?php
-/**
- * Helper functions for notification rendering
- */
-
-function format_time_ago($timestamp) {
-    $time = time() - strtotime($timestamp);
-    
-    if ($time < 60) return 'Just now';
-    if ($time < 3600) return floor($time / 60) . 'm ago';
-    if ($time < 86400) return floor($time / 3600) . 'h ago';
-    if ($time < 604800) return floor($time / 86400) . 'd ago';
-    
-    return date('M j', strtotime($timestamp));
-}
-
-function get_priority_class($priority) {
-    $classes = [
-        'low' => 'priority-low',
-        'normal' => 'priority-normal',
-        'high' => 'priority-high',
-        'urgent' => 'priority-urgent'
-    ];
-    return $classes[$priority] ?? 'priority-normal';
-}
-
-function get_priority_badge_color($priority) {
-    $colors = [
-        'low' => 'info',
-        'normal' => 'secondary',
-        'high' => 'warning',
-        'urgent' => 'danger'
-    ];
-    return $colors[$priority] ?? 'secondary';
-}
-
-function get_type_icon($type) {
-    $icons = [
-        'system' => 'fas fa-cog',
-        'update' => 'fas fa-sync',
-        'reminder' => 'fas fa-bell',
-        'alert' => 'fas fa-exclamation-triangle',
-        'info' => 'fas fa-info-circle',
-        'success' => 'fas fa-check-circle',
-        'warning' => 'fas fa-exclamation-circle',
-        'error' => 'fas fa-times-circle',
-        'assigned_program' => 'fas fa-tasks',
-        'deadline' => 'fas fa-clock',
-        'feedback' => 'fas fa-comment'
-    ];
-    return $icons[$type] ?? 'fas fa-bell';
-}
-
-function get_type_badge_color($type) {
-    $colors = [
-        'system' => 'secondary',
-        'update' => 'primary',
-        'reminder' => 'info',
-        'alert' => 'warning',
-        'info' => 'info',
-        'success' => 'success',
-        'warning' => 'warning',
-        'error' => 'danger',
-        'assigned_program' => 'primary',
-        'deadline' => 'warning',
-        'feedback' => 'success'
-    ];
-    return $colors[$type] ?? 'secondary';
-}
 ?>

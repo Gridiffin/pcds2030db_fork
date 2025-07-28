@@ -18,6 +18,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/agencies/index.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/agencies/program_permissions.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/audit_log.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/notifications_core.php';
 
 // Verify user is an agency
 if (!is_agency()) {
@@ -42,8 +43,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['program_id'])) {
         exit;
     }
     
-    // Get program details for logging
-    $query = "SELECT program_name FROM programs WHERE program_id = ? AND is_deleted = 0";
+    // Get program details for logging and notifications
+    $query = "SELECT p.program_name, p.program_number, p.agency_id, a.agency_name 
+              FROM programs p 
+              JOIN agency a ON p.agency_id = a.agency_id 
+              WHERE p.program_id = ? AND p.is_deleted = 0";
     $stmt = $conn->prepare($query);
     $stmt->bind_param("i", $program_id);
     $stmt->execute();
@@ -61,6 +65,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['program_id'])) {
     
     $program = $result->fetch_assoc();
     $program_name = $program['program_name'];
+    $program_data = [
+        'program_name' => $program['program_name'],
+        'program_number' => $program['program_number'],
+        'agency_id' => $program['agency_id'],
+        'agency_name' => $program['agency_name']
+    ];
     
     // Begin transaction
     $conn->begin_transaction();
@@ -102,6 +112,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['program_id'])) {
         
         // Log the successful deletion
         log_audit_action('delete_program', "Program Name: $program_name | Program ID: $program_id", 'success', $user_id);
+        
+        // Send notification for program deletion
+        notify_program_deleted($program_id, $user_id, $program_data);
     } catch (Exception $e) {
         // Rollback on error
         $conn->rollback();

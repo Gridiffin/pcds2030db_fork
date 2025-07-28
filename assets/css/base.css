@@ -29,6 +29,9 @@
 @import url("admin/programs/admin-program-details.css");
 @import url("admin/programs/admin-view-submissions.css");
 
+/* Import admin notifications styles */
+@import url("admin/notifications/manage_notifications.css");
+
 /**
  * Base Styles
  * Contains core styling elements for the application

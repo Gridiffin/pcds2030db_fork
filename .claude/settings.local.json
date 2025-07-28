@@ -20,7 +20,10 @@
       "WebFetch(domain:i.ibb.co)",
       "Bash(mv:*)",
       "Bash(node:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(composer require:*)",
+      "Bash(curl:*)",
+      "Bash(unzip:*)"
     ],
     "deny": []
   }

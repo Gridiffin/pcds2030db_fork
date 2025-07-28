@@ -13,7 +13,23 @@ define('DB_PASS', ''); // Change this to your MySQL password (default for XAMPP 
 define('DB_NAME', 'pcds2030_db'); // Updated to use pcds2030_db database
 
 // Application settings
-define('APP_NAME', 'PCDS2030 Dashboard Forestry Sector'); 
+define('APP_NAME', 'PCDS2030 Dashboard Forestry Sector');
+
+// Environment configuration
+if (!defined('ENVIRONMENT')) {
+    // Check for environment variable first
+    $env = $_SERVER['ENVIRONMENT'] ?? $_ENV['ENVIRONMENT'] ?? null;
+    
+    if ($env) {
+        define('ENVIRONMENT', $env);
+    } else {
+        // Auto-detect based on server characteristics
+        $is_local = in_array($_SERVER['HTTP_HOST'] ?? '', ['localhost', '127.0.0.1', 'pcds2030.local']);
+        $is_development = $is_local || strpos($_SERVER['SERVER_NAME'] ?? '', 'localhost') !== false;
+        
+        define('ENVIRONMENT', $is_development ? 'development' : 'production');
+    }
+} 
 
 // Dynamic APP_URL detection for better cross-environment compatibility
 if (!defined('APP_URL')) {
@@ -251,7 +267,21 @@ if (!defined('BASE_URL')) {
     }
 }
 
-// Error reporting 
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+// Environment-specific configurations
+if (ENVIRONMENT === 'production') {
+    // Production settings
+    error_reporting(E_ERROR | E_WARNING | E_PARSE);
+    ini_set('display_errors', 0);
+    ini_set('log_errors', 1);
+    
+    // Disable test file access in production
+    define('TESTING_ENABLED', false);
+} else {
+    // Development settings
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
+    
+    // Enable test file access in development
+    define('TESTING_ENABLED', true);
+}
 ?>
