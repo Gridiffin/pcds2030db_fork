@@ -10,6 +10,7 @@
 
 #quickFinalizeModal .modal-backdrop {
     z-index: 2147483646 !important;
+    display: none; /* Hide by default */
 }
 
 #quickFinalizeModal .modal-dialog {
@@ -18,6 +19,11 @@
 
 #quickFinalizeModal .modal-content {
     z-index: 2147483647 !important;
+}
+
+/* Only show modal backdrop when modal is active */
+body.modal-open #quickFinalizeModal .modal-backdrop {
+    display: block;
 }
 
 /* Nuclear approach - force all other elements down */

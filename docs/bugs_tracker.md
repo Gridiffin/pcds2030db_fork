@@ -801,13 +801,13 @@
 
 ### 3. Vite Module/ESM Issues
 
-- **Problem:** JS errors like “export declarations may only appear at top level of a module” and `window.validateEmail is not a function`.
-- **Cause:** Vite bundles are ES modules; old UMD/global export patterns don’t work.
+- **Problem:** JS errors like "export declarations may only appear at top level of a module" and `window.validateEmail is not a function`.
+- **Cause:** Vite bundles are ES modules; old UMD/global export patterns don't work.
 - **Solution:** Converted all JS to ES module syntax, used named imports/exports, and loaded scripts with `type="module"`.
 
 ### 4. JS Not Running or No Response
 
-- **Problem:** No console logs, no validation, or no AJAX when clicking “Sign In.”
+- **Problem:** No console logs, no validation, or no AJAX when clicking "Sign In."
 - **Cause:** JS not running due to caching, wrong script path, or event listeners not attaching due to missing IDs/classes.
 - **Solution:** Ensured correct script tag, hard refreshed, matched IDs, and added debug logs.
 
@@ -2182,3 +2182,131 @@ Program Details UI Enhancement - Replace Targets Section with Quick Actions (202
 - **Data Integrity**: Complete cleanup of all related records prevents orphaned data
 - **User Experience**: Clear success/error messages instead of cryptic database errors
 - **Maintainability**: Well-documented deletion order for future modifications
+
+### 2024-12-19 - Black Background Issue on View Programs Page
+
+**Problem**: The view programs page was showing a weird black background that covered the entire page, making it difficult to see the content.
+
+**Root Cause**: Multiple CSS files had modal backdrop styles that were creating black background elements (`background-color: #000`) that were visible even when no modal was active. The modal backdrop elements were not properly hidden by default.
+
+**Files Affected**:
+- `assets/css/components/modals-modern.css`
+- `assets/css/components/shared-modals.css`
+- `assets/css/components/quick-finalize-modal.css`
+- `assets/css/components/modals.css`
+- `assets/css/admin/shared/base.css`
+- `assets/css/agency/finalization-tutorial.css`
+
+**Solution**: Added proper CSS rules to ensure modal backdrops are hidden by default and only shown when a modal is actually active:
+
+1. Added `display: none;` to all `.modal-backdrop` selectors by default
+2. Added `display: block;` only when `body.modal-open` class is present
+3. Added fallback rules `body:not(.modal-open) .modal-backdrop` to force hiding when no modal is active
+
+**Code Changes**:
+```css
+/* Before */
+.modal-backdrop {
+    background-color: #000;
+    opacity: 0.5;
+}
+
+/* After */
+.modal-backdrop {
+    background-color: #000;
+    opacity: 0.5;
+    display: none; /* Hide by default */
+}
+
+/* Only show modal backdrop when modal is active */
+body.modal-open .modal-backdrop {
+    display: block;
+}
+
+/* Ensure modal backdrop is hidden when no modal is active */
+body:not(.modal-open) .modal-backdrop {
+    display: none !important;
+    opacity: 0 !important;
+}
+```
+
+**Status**: ✅ FIXED
+
+**Testing**: The view programs page should now display without any black background overlay, and modals should still work properly when triggered.
+
+---
+
+### 2024-12-19 - Black Background Issue on Status Info Badge
+
+**Problem**: The status info badge (the "Active" status indicator) on the view programs page was showing a black background instead of the proper colored background.
+
+**Root Cause**: 
+1. Multiple CSS files had modal backdrop styles that were creating black background elements (`background-color: #000`) that were visible even when no modal was active.
+2. Status circle CSS classes were conflicting between different files - `view_programs.css` had badge styles while `programs-modern-box.css` had circle styles, both using the same class names (`.status-active`, `.status-inactive`).
+3. Status badges had background colors that were causing visual issues.
+
+**Files Affected**:
+- `assets/css/components/modals-modern.css`
+- `assets/css/components/shared-modals.css`
+- `assets/css/components/quick-finalize-modal.css`
+- `assets/css/components/modals.css`
+- `assets/css/admin/shared/base.css`
+- `assets/css/agency/finalization-tutorial.css`
+- `assets/css/components/programs-modern-box.css`
+- `assets/css/agency/programs/view_programs.css`
+
+**Solution**: 
+1. Fixed modal backdrop visibility by adding proper CSS rules to ensure modal backdrops are hidden by default and only shown when a modal is actually active.
+2. Fixed status circle styling conflicts by making the selectors more specific (`.status-circle.status-active` instead of just `.status-active`).
+3. Removed background colors from status badges, keeping only the colored dots for status indication.
+
+**Code Changes**:
+```css
+/* Modal backdrop fix */
+.modal-backdrop {
+    display: none; /* Hide by default */
+}
+
+body.modal-open .modal-backdrop {
+    display: block; /* Only show when modal is active */
+}
+
+body:not(.modal-open) .modal-backdrop {
+    display: none !important;
+    opacity: 0 !important;
+}
+
+/* Status circle fix - colored dots only */
+.status-circle.status-active {
+    background: #2E7D32; /* Green dot for active status */
+}
+
+.status-circle.status-inactive {
+    background: #6C757D; /* Gray dot for inactive status */
+}
+
+.status-circle.status-pending {
+    background: #ED6C02; /* Orange dot for pending status */
+}
+
+.status-circle.status-completed {
+    background: #0288D1; /* Blue dot for completed status */
+}
+
+/* Status text - no background, just colored text */
+.status-active {
+    color: #155724; /* Green text */
+}
+
+.status-inactive {
+    color: #721c24; /* Red text */
+}
+```
+
+**Status**: ✅ FIXED
+
+**Testing**: The status info should now display with:
+- ✅ Colored dots for status indication (green for active, gray for inactive, etc.)
+- ✅ No background colors on the status text/badges
+- ✅ Clean, minimal appearance with just the colored dots
+- ✅ Modals still work properly when triggered

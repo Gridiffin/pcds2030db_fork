@@ -22,6 +22,12 @@
 
 #submissionSelectionModal .modal-backdrop {
     z-index: 9998 !important;
+    display: none; /* Hide by default */
+}
+
+/* Only show modal backdrop when modal is active */
+body.modal-open #submissionSelectionModal .modal-backdrop {
+    display: block;
 }
 
 /* Tutorial Modal Styles */

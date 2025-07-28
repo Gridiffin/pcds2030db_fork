@@ -13,47 +13,54 @@ $is_assigned = isset($program['is_assigned']) && $program['is_assigned'] ? true 
 // Include rating helpers for status mapping
 require_once PROJECT_ROOT_PATH . 'app/lib/rating_helpers.php';
 
-// Use rating directly from database (no conversion needed)
-$current_rating = isset($program['rating']) ? $program['rating'] : 'not_started';
+// Use status directly from database (no conversion needed)
+$current_status = isset($program['status']) ? $program['status'] : 'active';
 
-// Map database rating values to display labels, classes, and icons
-$rating_map = [
-    'not_started' => [
-        'label' => 'Not Started', 
-        'class' => 'secondary',
-        'icon' => 'fas fa-hourglass-start',
-        'circle_class' => 'status-inactive'
+// Map database status values to display labels, classes, and icons
+$status_map = [
+    'active' => [
+        'label' => 'Active', 
+        'class' => 'success',
+        'icon' => 'fas fa-play-circle',
+        'circle_class' => 'status-active'
     ],
-    'on_track_for_year' => [
-        'label' => 'On Track for Year', 
+    'on_hold' => [
+        'label' => 'On Hold', 
         'class' => 'warning',
-        'icon' => 'fas fa-calendar-check',
+        'icon' => 'fas fa-pause-circle',
         'circle_class' => 'status-pending'
     ],
-    'monthly_target_achieved' => [
-        'label' => 'Monthly Target Achieved', 
-        'class' => 'success',
+    'completed' => [
+        'label' => 'Completed', 
+        'class' => 'primary',
         'icon' => 'fas fa-check-circle',
         'circle_class' => 'status-completed'
     ],
-    'severe_delay' => [
-        'label' => 'Severe Delays', 
+    'delayed' => [
+        'label' => 'Delayed', 
         'class' => 'danger',
         'icon' => 'fas fa-exclamation-triangle',
         'circle_class' => 'status-pending'
+    ],
+    'cancelled' => [
+        'label' => 'Cancelled', 
+        'class' => 'secondary',
+        'icon' => 'fas fa-times-circle',
+        'circle_class' => 'status-inactive'
     ]
 ];
 
-// Set default if rating is not in our map
-if (!isset($rating_map[$current_rating])) {
-    $current_rating = 'not_started';
+// Set default if status is not in our map
+if (!isset($status_map[$current_status])) {
+    $current_status = 'active';
 }
 
-$rating_order = [
-    'monthly_target_achieved' => 1,
-    'on_track_for_year' => 2,
-    'severe_delay' => 3,
-    'not_started' => 4
+$status_order = [
+    'completed' => 1,
+    'active' => 2,
+    'on_hold' => 3,
+    'delayed' => 4,
+    'cancelled' => 5
 ];
 
 // Determine status indicator class
@@ -66,8 +73,8 @@ if ($is_draft) {
 ?>
 
 <div class="program-box <?php echo $is_draft ? 'draft-program' : ''; ?>" 
-     data-status="<?php echo $current_rating; ?>" 
-     data-status-order="<?php echo $rating_order[$current_rating] ?? 999; ?>"
+     data-status="<?php echo $current_status; ?>" 
+     data-status-order="<?php echo $status_order[$current_status] ?? 999; ?>"
      data-initiative="<?php echo !empty($program['initiative_name']) ? htmlspecialchars($program['initiative_name']) : 'zzz_no_initiative'; ?>"
      data-initiative-id="<?php echo $program['initiative_id'] ?? '0'; ?>">
     
@@ -205,8 +212,8 @@ if ($is_draft) {
             <!-- Status -->
             <?php if ($show_rating): ?>
             <div class="status-info">
-                <div class="status-circle <?php echo $rating_map[$current_rating]['circle_class']; ?>"></div>
-                <span class="status-text"><?php echo $rating_map[$current_rating]['label']; ?></span>
+                <div class="status-circle <?php echo $status_map[$current_status]['circle_class']; ?>"></div>
+                <span class="status-text"><?php echo $status_map[$current_status]['label']; ?></span>
             </div>
             <?php endif; ?>
 

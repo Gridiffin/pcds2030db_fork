@@ -11,6 +11,18 @@
   height: 100%;
   background-color: rgba(var(--forest-deep-rgb), 0.4);
   z-index: 1040;
+  display: none; /* Hide by default */
+}
+
+/* Only show modal backdrop when modal is active */
+body.modal-open .modal-backdrop {
+  display: block;
+}
+
+/* Ensure modal backdrop is hidden when no modal is active */
+body:not(.modal-open) .modal-backdrop {
+  display: none !important;
+  opacity: 0 !important;
 }
 
 /* Modal container */

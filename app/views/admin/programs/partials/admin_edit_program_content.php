@@ -215,22 +215,24 @@
                                 <dt class="col-5">Current Rating:</dt>
                                 <dd class="col-7">
                                     <?php
-                                    $rating_labels = [
-                                        'not_started' => 'Not Started',
-                                        'on_track_for_year' => 'On Track for Year',
-                                        'monthly_target_achieved' => 'Monthly Target Achieved',
-                                        'severe_delay' => 'Severe Delays'
+                                    $status_labels = [
+                                        'active' => 'Active',
+                                        'on_hold' => 'On Hold',
+                                        'completed' => 'Completed',
+                                        'delayed' => 'Delayed',
+                                        'cancelled' => 'Cancelled'
                                     ];
-                                    $rating_classes = [
-                                        'not_started' => 'secondary',
-                                        'on_track_for_year' => 'warning',
-                                        'monthly_target_achieved' => 'success',
-                                        'severe_delay' => 'danger'
+                                    $status_classes = [
+                                        'active' => 'success',
+                                        'on_hold' => 'warning',
+                                        'completed' => 'primary',
+                                        'delayed' => 'danger',
+                                        'cancelled' => 'secondary'
                                     ];
-                                    $current_rating = $program['rating'] ?? 'not_started';
+                                    $current_status = $program['status'] ?? 'active';
                                     ?>
-                                    <span class="badge bg-<?php echo $rating_classes[$current_rating]; ?>">
-                                        <?php echo $rating_labels[$current_rating]; ?>
+                                    <span class="badge bg-<?php echo $status_classes[$current_status]; ?>">
+                                        <?php echo $status_labels[$current_status]; ?>
                                     </span>
                                 </dd>
                             </dl>

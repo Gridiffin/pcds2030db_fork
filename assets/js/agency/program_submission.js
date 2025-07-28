@@ -5,7 +5,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Rating pill selection (updated from status to rating terminology)
     const ratingPills = document.querySelectorAll('.rating-pill, .status-pill'); // Support both for backward compatibility
-    const ratingInput = document.getElementById('rating') || document.getElementById('status'); // Support both field names
+    const statusInput = document.getElementById('status');
     
     if (ratingPills.length && ratingInput) {
         // Set up click handler for each pill

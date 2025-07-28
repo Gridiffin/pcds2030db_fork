@@ -68,20 +68,18 @@ if (empty($programs)): ?>
             <td><?php echo htmlspecialchars($program['agency_name']); ?></td>
             <td class="text-center">
                 <?php 
-                $rating_map = [
-                    'on-track' => ['label' => 'On Track', 'class' => 'warning'],
-                    'on-track-yearly' => ['label' => 'On Track for Year', 'class' => 'warning'],
-                    'target-achieved' => ['label' => 'Monthly Target Achieved', 'class' => 'success'],
-                    'delayed' => ['label' => 'Delayed', 'class' => 'danger'],
-                    'severe-delay' => ['label' => 'Severe Delays', 'class' => 'danger'],
+                $status_map = [
+                    'active' => ['label' => 'Active', 'class' => 'success'],
+                    'on_hold' => ['label' => 'On Hold', 'class' => 'warning'],
                     'completed' => ['label' => 'Completed', 'class' => 'primary'],
-                    'not-started' => ['label' => 'Not Started', 'class' => 'secondary']
+                    'delayed' => ['label' => 'Delayed', 'class' => 'danger'],
+                    'cancelled' => ['label' => 'Cancelled', 'class' => 'secondary']
                 ];
-                $current_rating = isset($program['rating']) ? $program['rating'] : 'not-started';
-                if (!isset($rating_map[$current_rating])) {
-                    $current_rating = 'not-started';
+                $current_status = isset($program['status']) ? $program['status'] : 'active';
+                if (!isset($status_map[$current_status])) {
+                    $current_status = 'active';
                 }
-                echo '<span class="badge bg-' . $rating_map[$current_rating]['class'] . '">' . $rating_map[$current_rating]['label'] . '</span>';
+                echo '<span class="badge bg-' . $status_map[$current_status]['class'] . '">' . $status_map[$current_status]['label'] . '</span>';
                 ?>
             </td>
             <td class="text-center">

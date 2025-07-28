@@ -653,10 +653,6 @@ class EnhancedProgramDetails {
       'cancelled': {
         class: 'bg-secondary',
         icon: 'fas fa-times-circle'
-      },
-      'not_started': {
-        class: 'bg-light text-dark',
-        icon: 'fas fa-clock'
       }
     };
 

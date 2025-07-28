@@ -173,21 +173,6 @@
     flex-shrink: 0;
 }
 
-.status-active {
-    background: var(--color-success);
-}
-
-.status-inactive {
-    background: var(--color-secondary);
-}
-
-.status-pending {
-    background: var(--color-warning);
-}
-
-.status-completed {
-    background: var(--color-info);
-}
 
 .status-text {
     font-weight: var(--font-weight-medium);

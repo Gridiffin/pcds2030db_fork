@@ -90,10 +90,10 @@
                             <i class="fas fa-lightbulb me-1"></i>Initiative 
                             <i class="fas fa-sort ms-1"></i>
                         </th>
-                        <th class="sortable" data-sort="rating">
-                            <i class="fas fa-chart-line me-1"></i>Progress Rating 
-                            <i class="fas fa-sort ms-1"></i>
-                        </th>
+                                                        <th class="sortable" data-sort="status">
+                                    <i class="fas fa-info-circle me-1"></i>Status
+                                    <i class="fas fa-sort ms-1"></i>
+                                </th>
                         <th class="sortable" data-sort="date">
                             <i class="fas fa-clock me-1"></i>Last Updated 
                             <i class="fas fa-sort ms-1"></i>
@@ -115,35 +115,40 @@
                             $is_assigned = isset($program['is_assigned']) && $program['is_assigned'] ? true : false;
                             
                             // Use rating directly from database (no conversion needed)
-                            $current_rating = isset($program['rating']) ? $program['rating'] : 'not_started';
+                            $current_status = isset($program['status']) ? $program['status'] : 'active';
                             
-                            // Map database rating values to display labels, classes, and icons
-                            $rating_map = [
-                                'not_started' => [
-                                    'label' => 'Not Started', 
-                                    'class' => 'secondary',
-                                    'icon' => 'fas fa-hourglass-start'
-                                ],
-                                'on_track_for_year' => [
-                                    'label' => 'On Track for Year', 
-                                    'class' => 'warning',
-                                    'icon' => 'fas fa-calendar-check'
-                                ],
-                                'monthly_target_achieved' => [
-                                    'label' => 'Monthly Target Achieved', 
+                            // Map database status values to display labels, classes, and icons
+                            $status_map = [
+                                'active' => [
+                                    'label' => 'Active', 
                                     'class' => 'success',
+                                    'icon' => 'fas fa-play-circle'
+                                ],
+                                'on_hold' => [
+                                    'label' => 'On Hold', 
+                                    'class' => 'warning',
+                                    'icon' => 'fas fa-pause-circle'
+                                ],
+                                'completed' => [
+                                    'label' => 'Completed', 
+                                    'class' => 'primary',
                                     'icon' => 'fas fa-check-circle'
                                 ],
-                                'severe_delay' => [
-                                    'label' => 'Severe Delays', 
+                                'delayed' => [
+                                    'label' => 'Delayed', 
                                     'class' => 'danger',
                                     'icon' => 'fas fa-exclamation-triangle'
+                                ],
+                                'cancelled' => [
+                                    'label' => 'Cancelled', 
+                                    'class' => 'secondary',
+                                    'icon' => 'fas fa-times-circle'
                                 ]
                             ];
                             
-                            // Set default if rating is not in our map
-                            if (!isset($rating_map[$current_rating])) {
-                                $current_rating = 'not_started';
+                            // Set default if status is not in our map
+                            if (!isset($status_map[$current_status])) {
+                                $current_status = 'active';
                             }
                             
                             // Check if this is a draft
@@ -202,20 +207,21 @@
                                         </span>
                                     <?php endif; ?>
                                 </td>
-                                <!-- Rating column -->
-                                <td data-rating="<?php echo $current_rating; ?>" data-rating-order="<?php 
-                                    $rating_order = [
-                                        'monthly_target_achieved' => 1,
-                                        'on_track_for_year' => 2,
-                                        'severe_delay' => 3,
-                                        'not_started' => 4
+                                <!-- Status column -->
+                                <td data-status="<?php echo $current_status; ?>" data-status-order="<?php 
+                                    $status_order = [
+                                        'completed' => 1,
+                                        'active' => 2,
+                                        'on_hold' => 3,
+                                        'delayed' => 4,
+                                        'cancelled' => 5
                                     ];
-                                    echo $rating_order[$current_rating] ?? 999;
+                                    echo $status_order[$current_status] ?? 999;
                                 ?>">
-                                    <span class="badge bg-<?php echo $rating_map[$current_rating]['class']; ?> rating-badge" 
-                                          title="<?php echo $rating_map[$current_rating]['label']; ?>">
-                                        <i class="<?php echo $rating_map[$current_rating]['icon']; ?> me-1"></i>
-                                        <?php echo $rating_map[$current_rating]['label']; ?>
+                                    <span class="badge bg-<?php echo $status_map[$current_status]['class']; ?> status-badge" 
+                                          title="<?php echo $status_map[$current_status]['label']; ?>">
+                                        <i class="<?php echo $status_map[$current_status]['icon']; ?> me-1"></i>
+                                        <?php echo $status_map[$current_status]['label']; ?>
                                     </span>
                                 </td>
                                 <!-- Date column -->

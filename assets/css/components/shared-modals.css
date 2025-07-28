@@ -277,6 +277,18 @@
 .modal-backdrop {
   background-color: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(2px);
+  display: none; /* Hide by default */
+}
+
+/* Only show modal backdrop when modal is active */
+body.modal-open .modal-backdrop {
+  display: block;
+}
+
+/* Ensure modal backdrop is hidden when no modal is active */
+body:not(.modal-open) .modal-backdrop {
+  display: none !important;
+  opacity: 0 !important;
 }
 
 /* Focus Management */

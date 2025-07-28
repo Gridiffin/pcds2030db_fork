@@ -75,13 +75,13 @@ function sortTable(table, sortBy, direction) {
             
             return direction === 'asc' ? aInitiative.localeCompare(bInitiative) : bInitiative.localeCompare(aInitiative);
         }
-        else if (sortBy === 'rating') {
-            // Sort by rating (column 3) using data attributes
-            const aRatingElement = a.querySelector('td:nth-child(3)');
-            const bRatingElement = b.querySelector('td:nth-child(3)');
+        else if (sortBy === 'status') {
+            // Sort by status (column 3) using data attributes
+            const aStatusElement = a.querySelector('td:nth-child(3)');
+            const bStatusElement = b.querySelector('td:nth-child(3)');
             
-            const aOrder = parseInt(aRatingElement?.getAttribute('data-rating-order') || '999');
-            const bOrder = parseInt(bRatingElement?.getAttribute('data-rating-order') || '999');
+            const aOrder = parseInt(aStatusElement?.getAttribute('data-status-order') || '999');
+            const bOrder = parseInt(bStatusElement?.getAttribute('data-status-order') || '999');
             
             return direction === 'asc' ? aOrder - bOrder : bOrder - aOrder;
         }

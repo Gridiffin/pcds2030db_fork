@@ -137,29 +137,35 @@
                                 <!-- Program Rating - Only visible to focal users -->
                                 <?php if (is_focal_user()): ?>
                                 <div class="mb-4">
-                                    <label for="rating" class="form-label">
-                                        Program Rating <span class="text-danger">*</span>
+                                    <label for="status" class="form-label">
+                                        Program Status <span class="text-danger">*</span>
                                     </label>
-                                    <select class="form-select" id="rating" name="rating" required>
-                                        <option value="">Select a rating</option>
+                                    <select class="form-select" id="status" name="status" required>
+                                        <option value="">Select a status</option>
                                         <?php 
-                                        $current_rating = $_POST['rating'] ?? $program['rating'] ?? RATING_NOT_STARTED;
-                                        $rating_options = get_rating_options();
-                                        foreach ($rating_options as $value => $label): 
+                                        $current_status = $_POST['status'] ?? $program['status'] ?? 'active';
+                                        $status_options = [
+                                            'active' => 'Active',
+                                            'on_hold' => 'On Hold',
+                                            'completed' => 'Completed',
+                                            'delayed' => 'Delayed',
+                                            'cancelled' => 'Cancelled'
+                                        ];
+                                        foreach ($status_options as $value => $label): 
                                         ?>
-                                            <option value="<?php echo htmlspecialchars($value); ?>" <?php echo $current_rating == $value ? 'selected' : ''; ?>>
+                                            <option value="<?php echo htmlspecialchars($value); ?>" <?php echo $current_status == $value ? 'selected' : ''; ?>>
                                                 <?php echo htmlspecialchars($label); ?>
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
                                     <div class="form-text">
-                                        <i class="fas fa-chart-line me-1"></i>
-                                        Summarized rating of this program
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Current status of this program
                                     </div>
                                 </div>
                                 <?php else: ?>
-                                <!-- Hidden rating field for non-focal users -->
-                                <input type="hidden" name="rating" value="<?php echo htmlspecialchars($program['rating'] ?? RATING_NOT_STARTED); ?>">
+                                <!-- Hidden status field for non-focal users -->
+                                <input type="hidden" name="status" value="<?php echo htmlspecialchars($program['status'] ?? 'active'); ?>">
                                 <?php endif; ?>
                             </div>
 

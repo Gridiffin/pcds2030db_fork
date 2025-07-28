@@ -142,7 +142,7 @@ function initProgramSubmission() {
     } else {
         // Fallback implementation
         const ratingPills = document.querySelectorAll('.rating-pill, .status-pill'); // Support both for backward compatibility
-        const ratingInput = document.getElementById('rating') || document.getElementById('status'); // Support both field names
+        const statusInput = document.getElementById('status');
         
         if (ratingPills.length && ratingInput) {
             ratingPills.forEach(pill => {
@@ -241,7 +241,7 @@ function validateProgramForm(e) {
 function validateProgramSubmission(e) {
     const form = e.target.closest('form');
     const target = form.querySelector('#target').value.trim();
-    const rating = form.querySelector('#rating, #status').value.trim(); // Support both field names
+            const status = form.querySelector('#status').value.trim();
     
     let isValid = true;
     let errorMessage = '';
@@ -256,7 +256,7 @@ function validateProgramSubmission(e) {
         isValid = false;
         errorMessage += 'Rating is required for final submission.<br>';
         showValidationError('rating', 'Rating is required');
-        showValidationError('status', 'Rating is required'); // Support both field names
+        showValidationError('status', 'Status is required');
     }
     
     if (!isValid) {

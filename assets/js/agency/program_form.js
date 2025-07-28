@@ -43,15 +43,15 @@ function initCharacterCounter() {
 function validateProgramForm() {
     const programName = document.getElementById('program_name');
     const target = document.getElementById('target');
-    const rating = document.getElementById('rating') || document.getElementById('status'); // Support both field names
-    const ratingDate = document.getElementById('rating_date') || document.getElementById('status_date'); // Support both field names
+    const status = document.getElementById('status');
+    const statusDate = document.getElementById('status_date');
     const description = document.getElementById('description');
     
     let isValid = true;
     let errorMessage = '';
     
     // Clear previous errors
-    [programName, target, rating, ratingDate].forEach(field => {
+    [programName, target, status, statusDate].forEach(field => {
         if (field) clearValidationError(field.id);
     });
     
@@ -69,20 +69,18 @@ function validateProgramForm() {
         showValidationError('target', 'Target is required');
     }
     
-    // Validate rating selection
-    if (!rating.value) {
+    // Validate status selection
+    if (!status.value) {
         isValid = false;
-        errorMessage += 'Rating is required.<br>';
-        showValidationError('rating', 'Rating is required');
-        showValidationError('status', 'Rating is required'); // Support both field names
+        errorMessage += 'Status is required.<br>';
+        showValidationError('status', 'Status is required');
     }
     
-    // Validate rating date
-    if (!ratingDate.value) {
+    // Validate status date
+    if (!statusDate.value) {
         isValid = false;
-        errorMessage += 'Rating date is required.<br>';
-        showValidationError('rating_date', 'Rating date is required');
-        showValidationError('status_date', 'Rating date is required'); // Support both field names
+        errorMessage += 'Status date is required.<br>';
+        showValidationError('status_date', 'Status date is required');
     }
     
     // Validate description length

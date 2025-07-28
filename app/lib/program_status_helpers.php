@@ -9,29 +9,12 @@
 require_once 'rating_helpers.php';
 
 /**
- * Get full status info (label, class, icon) for program status (legacy and new schema)
+ * Get full status info (label, class, icon) for program status
  *
- * @param string $status The status value (legacy or new)
+ * @param string $status The status value
  * @return array [label, class, icon]
  */
 function get_program_status_info($status) {
-    // Normalize legacy values to new schema
-    $legacy_map = [
-        'not-started' => 'active',
-        'not_started' => 'active',
-        'on-track' => 'active',
-        'on-track-yearly' => 'active',
-        'target-achieved' => 'completed',
-        'monthly_target_achieved' => 'completed',
-        'severe-delay' => 'delayed',
-        'severe_delay' => 'delayed',
-        'delayed' => 'delayed',
-        'completed' => 'completed',
-        'cancelled' => 'cancelled',
-        'on_hold' => 'on_hold',
-        'active' => 'active',
-    ];
-    $normalized = $legacy_map[$status] ?? $status;
     $map = [
         'active' => [
             'label' => 'Active',
@@ -60,14 +43,14 @@ function get_program_status_info($status) {
         ],
     ];
     // Default fallback
-    if (!isset($map[$normalized])) {
+    if (!isset($map[$status])) {
         return [
             'label' => ucwords(str_replace(['_', '-'], ' ', $status)),
             'class' => 'secondary',
             'icon' => 'fas fa-question-circle',
         ];
     }
-    return $map[$normalized];
+    return $map[$status];
 }
 
 /**

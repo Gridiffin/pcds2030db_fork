@@ -489,10 +489,18 @@
     height: 100vh;
     background-color: #000;
     opacity: 0.5;
+    display: none; /* Hide by default */
 }
 
 .modal-backdrop.show {
     opacity: 0.5;
+    display: block; /* Only show when modal is active */
+}
+
+/* Ensure modal backdrop is hidden when no modal is active */
+body:not(.modal-open) .modal-backdrop {
+    display: none !important;
+    opacity: 0 !important;
 }
 
 /* === Accessibility === */

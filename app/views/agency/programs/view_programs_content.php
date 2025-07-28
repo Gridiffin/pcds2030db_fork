@@ -59,10 +59,11 @@
                         <label for="globalStatusFilter" class="form-label">Status</label>
                         <select class="form-select" id="globalStatusFilter">
                             <option value="">All Status</option>
-                            <option value="monthly_target_achieved">Monthly Target Achieved</option>
-                            <option value="on_track_for_year">On Track for Year</option>
-                            <option value="severe_delay">Severe Delays</option>
-                            <option value="not_started">Not Started</option>
+                            <option value="active">Active</option>
+                            <option value="on_hold">On Hold</option>
+                            <option value="completed">Completed</option>
+                            <option value="delayed">Delayed</option>
+                            <option value="cancelled">Cancelled</option>
                         </select>
                     </div>
 

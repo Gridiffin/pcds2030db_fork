@@ -630,7 +630,7 @@
     width: 22%;
 }
 
-.table td:nth-child(3) { /* Rating Column */
+.table td:nth-child(3) { /* Status Column */
     width: 15%;
 }
 
