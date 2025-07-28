@@ -191,11 +191,21 @@ document.addEventListener('DOMContentLoaded', function() {
     // Mobile navigation toggle
     const mobileToggle = document.getElementById('adminNavbarToggle');
     const navbarNav = document.getElementById('adminNavbarNav');
+    const navbar = document.getElementById('adminNavbar');
     
     if (mobileToggle && navbarNav) {
-        mobileToggle.addEventListener('click', function() {
+        mobileToggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
             this.classList.toggle('active');
             navbarNav.classList.toggle('show');
+            
+            // Prevent body scroll when mobile menu is open
+            if (navbarNav.classList.contains('show')) {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = '';
+            }
         });
     }
 
@@ -205,9 +215,11 @@ document.addEventListener('DOMContentLoaded', function() {
     dropdownToggles.forEach(toggle => {
         toggle.addEventListener('click', function(e) {
             e.preventDefault();
+            e.stopPropagation();
             const dropdown = this.closest('.admin-navbar-dropdown');
+            const isInMobileNav = this.closest('.admin-navbar-nav');
             
-            // Close other dropdowns
+            // Close other dropdowns (except when in mobile nav and this is a nav dropdown)
             document.querySelectorAll('.admin-navbar-dropdown.show').forEach(otherDropdown => {
                 if (otherDropdown !== dropdown) {
                     otherDropdown.classList.remove('show');
@@ -216,21 +228,71 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Toggle current dropdown
             dropdown.classList.toggle('show');
+            
+            // For mobile nav dropdowns, ensure proper scrolling if needed
+            if (isInMobileNav && dropdown.classList.contains('show')) {
+                setTimeout(() => {
+                    const dropdownMenu = dropdown.querySelector('.admin-navbar-dropdown-menu');
+                    if (dropdownMenu) {
+                        dropdownMenu.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                }, 300);
+            }
+        });
+        
+        // Add touch event for better mobile responsiveness
+        toggle.addEventListener('touchend', function(e) {
+            // Prevent the click event from firing after touchend
+            e.preventDefault();
+            this.click();
         });
     });
 
-    // Close dropdowns when clicking outside
+    // Close mobile menu and dropdowns when clicking outside
     document.addEventListener('click', function(e) {
+        // Close dropdowns
         if (!e.target.closest('.admin-navbar-dropdown')) {
             document.querySelectorAll('.admin-navbar-dropdown.show').forEach(dropdown => {
                 dropdown.classList.remove('show');
             });
         }
+        
+        // Close mobile menu if clicking outside navbar
+        if (!e.target.closest('.admin-navbar') && navbarNav && navbarNav.classList.contains('show')) {
+            navbarNav.classList.remove('show');
+            mobileToggle.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    });
+
+    // Close mobile menu when clicking on nav links
+    const navLinks = document.querySelectorAll('.admin-navbar-nav-link:not(.admin-navbar-dropdown-toggle)');
+    navLinks.forEach(link => {
+        link.addEventListener('click', function() {
+            if (navbarNav && navbarNav.classList.contains('show')) {
+                navbarNav.classList.remove('show');
+                mobileToggle.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        });
+    });
+
+    // Handle window resize
+    window.addEventListener('resize', function() {
+        if (window.innerWidth > 992) {
+            // Reset mobile menu state on larger screens
+            if (navbarNav) {
+                navbarNav.classList.remove('show');
+            }
+            if (mobileToggle) {
+                mobileToggle.classList.remove('active');
+            }
+            document.body.style.overflow = '';
+        }
     });
 
     // Navbar scroll effect
     let lastScrollY = window.scrollY;
-    const navbar = document.getElementById('adminNavbar');
     
     window.addEventListener('scroll', function() {
         if (window.scrollY > 50) {
@@ -241,7 +303,41 @@ document.addEventListener('DOMContentLoaded', function() {
         lastScrollY = window.scrollY;
     });
 
+    // Touch support for better mobile experience
+    let touchStartY = 0;
+    document.addEventListener('touchstart', function(e) {
+        touchStartY = e.touches[0].clientY;
+    });
+
+    document.addEventListener('touchend', function(e) {
+        const touchEndY = e.changedTouches[0].clientY;
+        const touchDiff = touchStartY - touchEndY;
+        
+        // Close mobile menu on significant downward swipe
+        if (touchDiff < -50 && navbarNav && navbarNav.classList.contains('show')) {
+            navbarNav.classList.remove('show');
+            mobileToggle.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    });
+
     // Add body class for navbar padding
     document.body.classList.add('has-admin-navbar');
+
+    // Improve keyboard navigation
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            // Close mobile menu and dropdowns on Escape key
+            if (navbarNav && navbarNav.classList.contains('show')) {
+                navbarNav.classList.remove('show');
+                mobileToggle.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+            
+            document.querySelectorAll('.admin-navbar-dropdown.show').forEach(dropdown => {
+                dropdown.classList.remove('show');
+            });
+        }
+    });
 });
 </script>
