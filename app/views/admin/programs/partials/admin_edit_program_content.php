@@ -25,6 +25,9 @@
                     <a href="program_details.php?id=<?php echo $program_id; ?>" class="btn btn-outline-secondary">
                         <i class="fas fa-times me-2"></i>Cancel
                     </a>
+                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                        <i class="fas fa-trash me-2"></i>Delete Program
+                    </button>
                     <button type="submit" form="editProgramForm" class="btn btn-success">
                         <i class="fas fa-check-circle me-2"></i>Update Program
                     </button>
@@ -262,6 +265,26 @@
                                 
                                 <hr class="my-2">
                                 
+                                <?php 
+                                // Check if user can delete: admin, focal user, or program creator
+                                $can_delete = is_admin();
+                                if (!$can_delete) {
+                                    // Include program permissions for non-admin users
+                                    require_once PROJECT_ROOT_PATH . 'app/lib/agencies/program_permissions.php';
+                                    $can_delete = is_focal_user() || is_program_creator($program_id);
+                                }
+                                ?>
+                                
+                                <?php if ($can_delete): ?>
+                                <button type="button" class="btn btn-outline-danger btn-sm delete-program-btn" 
+                                        data-id="<?php echo $program_id; ?>" 
+                                        data-name="<?php echo htmlspecialchars($program['program_name']); ?>"
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#deleteModal">
+                                    <i class="fas fa-trash me-2"></i>Delete Program
+                                </button>
+                                <?php endif; ?>
+                                
                                 <a href="programs.php" class="btn btn-outline-secondary btn-sm">
                                     <i class="fas fa-list me-2"></i>All Programs
                                 </a>
@@ -272,9 +295,71 @@
             </div>
         </form>
     </div>
+
+    <?php if ($can_delete): ?>
+    <!-- Delete Program Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">
+                        <i class="fas fa-exclamation-triangle text-danger me-2"></i>Delete Program
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Warning:</strong> This action cannot be undone.
+                    </div>
+                    <p>Are you sure you want to delete the program:</p>
+                    <p class="fw-bold text-danger" id="program-name-display"></p>
+                    <p class="text-muted small">This will permanently remove the program and all associated data including submissions, attachments, and history records.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <form method="POST" action="delete_program.php" style="display: inline;">
+                        <input type="hidden" name="program_id" id="program-id-input" value="">
+                        <input type="hidden" name="confirm_delete" value="1">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash me-2"></i>Delete Program
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
 </main>
 
 <script>
+// Initialize delete button functionality
+document.addEventListener('DOMContentLoaded', function() {
+    initDeleteButton();
+});
+
+function initDeleteButton() {
+    const deleteButton = document.querySelector('.delete-program-btn');
+    
+    if (deleteButton) {
+        deleteButton.addEventListener('click', function(e) {
+            const programId = this.getAttribute('data-id');
+            const programName = this.getAttribute('data-name');
+            
+            // Set the program details in the modal
+            const programNameDisplay = document.getElementById('program-name-display');
+            const programIdInput = document.getElementById('program-id-input');
+            
+            if (programNameDisplay && programIdInput) {
+                programNameDisplay.textContent = programName;
+                programIdInput.value = programId;
+            }
+        });
+    }
+}
+
 // Form validation and submission
 document.getElementById('editProgramForm').addEventListener('submit', function(e) {
     const submitBtn = this.querySelector('button[type="submit"]');

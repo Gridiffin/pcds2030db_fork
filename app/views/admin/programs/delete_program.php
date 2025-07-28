@@ -11,6 +11,7 @@ require_once ROOT_PATH . 'app/lib/db_connect.php';
 require_once ROOT_PATH . 'app/lib/session.php';
 require_once ROOT_PATH . 'app/lib/functions.php';
 require_once ROOT_PATH . 'app/lib/admins/index.php';
+require_once ROOT_PATH . 'app/lib/agencies/program_permissions.php';
 require_once ROOT_PATH . 'app/lib/audit_log.php';
 
 // Verify user is admin
@@ -58,6 +59,24 @@ if ($result->num_rows === 0) {
 }
 
 $program = $result->fetch_assoc();
+
+// Check role-based permissions: only admin, focal users, or program creators can delete
+$can_delete = is_admin();
+
+// If not an admin, check if user is focal or program creator
+if (!$can_delete) {
+    $can_delete = is_focal_user() || is_program_creator($program_id);
+}
+
+if (!$can_delete) {
+    // Log failed deletion attempt - unauthorized
+    log_audit_action('delete_program_failed', "Program ID: $program_id | Error: Unauthorized access - user not admin, focal, or program creator", 'failure', $_SESSION['user_id']);
+    
+    $_SESSION['message'] = 'You do not have permission to delete this program. Only admins, focal users, and program creators can delete programs.';
+    $_SESSION['message_type'] = 'danger';
+    header('Location: programs.php' . ($current_period_id ? '?period_id=' . $current_period_id : ''));
+    exit;
+}
 
 // Process deletion
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
