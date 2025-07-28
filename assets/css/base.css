@@ -15,6 +15,7 @@
 @import url("components/admin-navbar-modern.css");
 @import url("components/admin-common.css");
 @import url("components/shared-modals.css");
+@import url("components/command-palette.css");
 
 /* Import new admin programs styles */
 @import url("admin/programs/view_programs.css");

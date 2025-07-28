@@ -40,6 +40,59 @@
             </div>
         </div>
 
+        <!-- Unified Filters Section -->
+        <div class="content-card shadow-sm mb-3">
+            <div class="card-body pb-0">
+                <div class="row g-3">
+                    <!-- Search Filter -->
+                    <div class="col-md-4 col-sm-12">
+                        <label for="globalProgramSearch" class="form-label">Search Programs</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            <input type="text" class="form-control" id="globalProgramSearch" 
+                                   placeholder="Search by program name or number">
+                        </div>
+                    </div>
+
+                    <!-- Status Filter -->
+                    <div class="col-md-2 col-sm-6">
+                        <label for="globalStatusFilter" class="form-label">Status</label>
+                        <select class="form-select" id="globalStatusFilter">
+                            <option value="">All Status</option>
+                            <option value="monthly_target_achieved">Monthly Target Achieved</option>
+                            <option value="on_track_for_year">On Track for Year</option>
+                            <option value="severe_delay">Severe Delays</option>
+                            <option value="not_started">Not Started</option>
+                        </select>
+                    </div>
+
+                    <!-- Initiative Filter -->
+                    <div class="col-md-3 col-sm-6">
+                        <label for="globalInitiativeFilter" class="form-label">Initiative</label>
+                        <select class="form-select" id="globalInitiativeFilter">
+                            <option value="">All Initiatives</option>
+                            <option value="no-initiative">Not Linked to Initiative</option>
+                            <?php foreach ($active_initiatives as $initiative): ?>
+                                <option value="<?php echo $initiative['initiative_id']; ?>">
+                                    <?php echo htmlspecialchars($initiative['initiative_name']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <!-- Reset Button -->
+                    <div class="col-md-1 col-sm-12 d-flex align-items-end">
+                        <button id="resetGlobalFilters" class="btn btn-outline-secondary w-100">
+                            <i class="fas fa-undo me-1"></i> Reset
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Filter Badges -->
+                <div id="globalFilterBadges" class="filter-badges mt-2"></div>
+            </div>
+        </div>
+
         <!-- Tab Navigation - Pill Design -->
         <div class="pill-tabs-container forest-theme mb-3">
             <nav class="nav-tabs-pill" id="programTabs" role="tablist">
@@ -49,15 +102,15 @@
                 ?>
                 <button class="nav-link <?php echo $active_tab === 'draft' ? 'active' : ''; ?>" id="draft-tab" data-bs-toggle="tab" data-bs-target="#draft-programs" type="button" role="tab" aria-controls="draft-programs" aria-selected="<?php echo $active_tab === 'draft' ? 'true' : 'false'; ?>">
                     Draft Submissions
-                    <span class="simple-badge"><?php echo count($programs_with_drafts); ?></span>
+                    <span class="simple-badge" id="draft-count"><?php echo count($programs_with_drafts); ?></span>
                 </button>
                 <button class="nav-link <?php echo $active_tab === 'finalized' ? 'active' : ''; ?>" id="finalized-tab" data-bs-toggle="tab" data-bs-target="#finalized-programs" type="button" role="tab" aria-controls="finalized-programs" aria-selected="<?php echo $active_tab === 'finalized' ? 'true' : 'false'; ?>">
                     Finalized Submissions
-                    <span class="simple-badge"><?php echo count($programs_with_submissions); ?></span>
+                    <span class="simple-badge" id="finalized-count"><?php echo count($programs_with_submissions); ?></span>
                 </button>
                 <button class="nav-link <?php echo $active_tab === 'templates' ? 'active' : ''; ?>" id="templates-tab" data-bs-toggle="tab" data-bs-target="#template-programs" type="button" role="tab" aria-controls="template-programs" aria-selected="<?php echo $active_tab === 'templates' ? 'true' : 'false'; ?>">
                     Program Templates
-                    <span class="simple-badge"><?php echo count($programs_without_submissions); ?></span>
+                    <span class="simple-badge" id="empty-count"><?php echo count($programs_without_submissions); ?></span>
                 </button>
             </nav>
         </div>
@@ -90,12 +143,6 @@
                             </div>
                         </div>
             
-                        <!-- Draft Programs Filters -->
-                        <?php 
-                        $filters = ['status'];
-                        $filterPrefix = 'draft';
-                        require_once __DIR__ . '/partials/program_filters.php'; 
-                        ?>
                         
                         <div class="p-4">
                             <div class="programs-container" id="draftProgramsContainer">
@@ -136,12 +183,6 @@
                             </h5>
                         </div>
                         
-                        <!-- Finalized Programs Filters -->
-                        <?php 
-                        $filters = ['status'];
-                        $filterPrefix = 'finalized';
-                        require_once __DIR__ . '/partials/program_filters.php'; 
-                        ?>
                         
                         <div class="p-4">
                             <div class="programs-container" id="finalizedProgramsContainer">
@@ -182,12 +223,6 @@
                             </h5>
                         </div>
                         
-                        <!-- Empty Programs Filters -->
-                        <?php 
-                        $filters = []; // No rating filter for templates
-                        $filterPrefix = 'empty';
-                        require_once __DIR__ . '/partials/program_filters.php'; 
-                        ?>
                         
                         <div class="p-4">
                             <div class="programs-container" id="emptyProgramsContainer">

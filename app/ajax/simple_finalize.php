@@ -14,9 +14,14 @@ require_once '../lib/agencies/core.php';
 // Set JSON header
 header('Content-Type: application/json');
 
-// Check if user is logged in
+// Check if user is logged in and is a focal user
 if (!isset($_SESSION['user_id'])) {
     echo json_encode(['success' => false, 'message' => 'Not authenticated']);
+    exit;
+}
+
+if (!is_focal_user()) {
+    echo json_encode(['success' => false, 'message' => 'Access denied. Only focal users can finalize submissions.']);
     exit;
 }
 

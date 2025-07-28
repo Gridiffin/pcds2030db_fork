@@ -10,7 +10,7 @@ $tableId = $tableId ?? '';
 $filterPrefix = $filterPrefix ?? '';
 ?>
 
-<div class="card-body pb-0">
+<div class="card-body pb-0" style="display: block !important; visibility: visible !important;">
     <div class="row g-3">
         <!-- Search Filter -->
         <div class="col-md-4 col-sm-12">

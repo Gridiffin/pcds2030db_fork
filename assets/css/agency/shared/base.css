@@ -16,6 +16,7 @@
 @import '../../layout/page_header.css';         /* Page headers */
 @import '../../components/navbar-modern.css';   /* Modern navbar styles */
 @import '../../components/footer-modern.css';   /* Modern footer styles */
+@import '../../components/command-palette.css'; /* Command palette functionality */
 
 /* Modern components - Primary */
 @import '../../components/cards-modern.css';

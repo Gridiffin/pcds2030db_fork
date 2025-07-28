@@ -10,9 +10,9 @@ require_once '../lib/session.php';
 require_once '../lib/functions.php';
 
 // Ensure user is authenticated and is a focal user
-if (!is_agency()) {
+if (!is_focal_user()) {
     http_response_code(403);
-    echo json_encode(['success' => false, 'message' => 'Access denied']);
+    echo json_encode(['success' => false, 'message' => 'Access denied. Only focal users can finalize submissions.']);
     exit;
 }
 

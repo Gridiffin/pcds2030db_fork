@@ -27,6 +27,7 @@
 @import 'components/pagination-modern.css';
 @import 'components/navbar-modern.css';
 @import 'components/footer-modern.css';
+@import 'components/command-palette.css';
 @import 'components/responsive-performance-table.css';
 @import 'components/period-performance.css';
 @import 'components/bulk-assignment.css';

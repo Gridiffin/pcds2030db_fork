@@ -148,13 +148,16 @@ $user_initials = strtoupper($user_initials);
 
         <!-- Actions Section -->
         <div class="navbar-actions-modern">
-            <!-- Search -->
+            <!-- Command Palette Search -->
             <div class="navbar-search-modern">
                 <i class="fas fa-search navbar-search-icon" aria-hidden="true"></i>
                 <input type="search" 
                        class="navbar-search-input" 
-                       placeholder="Search..."
-                       aria-label="Search the dashboard">
+                       placeholder="Search for actions or press Ctrl+K..."
+                       aria-label="Quick actions - search for things you can do"
+                       autocomplete="off"
+                       spellcheck="false">
+                <!-- Command palette will be inserted here by JavaScript -->
             </div>
 
             <!-- Public Reports -->
@@ -379,3 +382,6 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('resize', updateBrandText);
 });
 </script>
+
+<!-- Command Palette Script -->
+<script src="<?php echo APP_URL; ?>/assets/js/components/command-palette.js"></script>

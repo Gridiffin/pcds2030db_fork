@@ -70,6 +70,8 @@ window.toggleDropdown = function(button) {
 };
 
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔍 View Programs: DOM loaded, initializing filters...');
+    
     // Initialize delete functionality
     initDeleteButtons();
     
@@ -101,46 +103,47 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize box sorting (sorting will be implemented differently for horizontal boxes)
     // TODO: Implement sorting for horizontal box layout if needed
     // For now, we'll comment this out as the sorting logic needs to be redesigned for boxes
-      // Initialize draft table filters
-    const draftSearchInput = document.getElementById('draftProgramSearch');
-    const draftRatingFilter = document.getElementById('draftRatingFilter');
-    const draftTypeFilter = document.getElementById('draftTypeFilter');
-    const draftInitiativeFilter = document.getElementById('draftInitiativeFilter');
-    const resetDraftFiltersBtn = document.getElementById('resetDraftFilters');
+    // Initialize global filters that work across all tabs
+    const globalSearchInput = document.getElementById('globalProgramSearch');
+    const globalStatusFilter = document.getElementById('globalStatusFilter');
+    const globalInitiativeFilter = document.getElementById('globalInitiativeFilter');
+    const resetGlobalFiltersBtn = document.getElementById('resetGlobalFilters');
     
-    if (draftSearchInput) draftSearchInput.addEventListener('keyup', function() { applyFilters('draft'); });
-    if (draftRatingFilter) draftRatingFilter.addEventListener('change', function() { applyFilters('draft'); });
-    if (draftTypeFilter) draftTypeFilter.addEventListener('change', function() { applyFilters('draft'); });
-    if (draftInitiativeFilter) draftInitiativeFilter.addEventListener('change', function() { applyFilters('draft'); });
+    console.log('🔍 View Programs: Filter elements found:', {
+        searchInput: !!globalSearchInput,
+        statusFilter: !!globalStatusFilter,
+        initiativeFilter: !!globalInitiativeFilter,
+        resetBtn: !!resetGlobalFiltersBtn
+    });
     
-    if (resetDraftFiltersBtn) {
-        resetDraftFiltersBtn.addEventListener('click', function() {
-            if (draftSearchInput) draftSearchInput.value = '';
-            if (draftRatingFilter) draftRatingFilter.value = '';
-            if (draftTypeFilter) draftTypeFilter.value = '';
-            if (draftInitiativeFilter) draftInitiativeFilter.value = '';
-            applyFilters('draft');
+    if (globalSearchInput) {
+        globalSearchInput.addEventListener('input', debounce(function(event) { 
+            console.log('🔍 Search input changed:', event.target.value);
+            applyGlobalFilters(); 
+        }, 300));
+    }
+    
+    if (globalStatusFilter) {
+        globalStatusFilter.addEventListener('change', function() { 
+            console.log('🔍 Status filter changed:', this.value);
+            applyGlobalFilters(); 
         });
     }
-      // Initialize finalized table filters
-    const finalizedSearchInput = document.getElementById('finalizedProgramSearch');
-    const finalizedRatingFilter = document.getElementById('finalizedRatingFilter');
-    const finalizedTypeFilter = document.getElementById('finalizedTypeFilter');
-    const finalizedInitiativeFilter = document.getElementById('finalizedInitiativeFilter');
-    const resetFinalizedFiltersBtn = document.getElementById('resetFinalizedFilters');
     
-    if (finalizedSearchInput) finalizedSearchInput.addEventListener('keyup', function() { applyFilters('finalized'); });
-    if (finalizedRatingFilter) finalizedRatingFilter.addEventListener('change', function() { applyFilters('finalized'); });
-    if (finalizedTypeFilter) finalizedTypeFilter.addEventListener('change', function() { applyFilters('finalized'); });
-    if (finalizedInitiativeFilter) finalizedInitiativeFilter.addEventListener('change', function() { applyFilters('finalized'); });
+    if (globalInitiativeFilter) {
+        globalInitiativeFilter.addEventListener('change', function() { 
+            console.log('🔍 Initiative filter changed:', this.value);
+            applyGlobalFilters(); 
+        });
+    }
     
-    if (resetFinalizedFiltersBtn) {
-        resetFinalizedFiltersBtn.addEventListener('click', function() {
-            if (finalizedSearchInput) finalizedSearchInput.value = '';
-            if (finalizedRatingFilter) finalizedRatingFilter.value = '';
-            if (finalizedTypeFilter) finalizedTypeFilter.value = '';
-            if (finalizedInitiativeFilter) finalizedInitiativeFilter.value = '';
-            applyFilters('finalized');
+    if (resetGlobalFiltersBtn) {
+        resetGlobalFiltersBtn.addEventListener('click', function() {
+            console.log('🔍 Reset filters clicked');
+            if (globalSearchInput) globalSearchInput.value = '';
+            if (globalStatusFilter) globalStatusFilter.value = '';
+            if (globalInitiativeFilter) globalInitiativeFilter.value = '';
+            applyGlobalFilters();
         });
     }
     
@@ -173,228 +176,179 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
+    
+    console.log('🔍 View Programs: Initialization complete');
 });
 
-// Handle filtering for specific container
-function applyFilters(containerType) {
-    const containerId = containerType === 'draft' ? 'draftProgramsContainer' : 
-                       (containerType === 'finalized' ? 'finalizedProgramsContainer' : 'emptyProgramsContainer');
-    const filterBadgesId = containerType === 'draft' ? 'draftFilterBadges' : 
-                          (containerType === 'finalized' ? 'finalizedFilterBadges' : 'emptyFilterBadges');
+// Handle global filtering across all tabs
+function applyGlobalFilters() {
+    console.log('🔍 applyGlobalFilters called');
     
-    const searchInput = document.getElementById(containerType + 'ProgramSearch');
-    const ratingFilter = document.getElementById(containerType + 'RatingFilter');
-    const typeFilter = document.getElementById(containerType + 'TypeFilter');
-    const initiativeFilter = document.getElementById(containerType + 'InitiativeFilter');
+    const searchText = document.getElementById('globalProgramSearch')?.value.toLowerCase() || '';
+    const statusValue = document.getElementById('globalStatusFilter')?.value || '';
+    const initiativeValue = document.getElementById('globalInitiativeFilter')?.value || '';
     
-    const searchText = searchInput ? searchInput.value.toLowerCase() : '';
-    const ratingValue = ratingFilter ? ratingFilter.value : '';
-    const typeValue = typeFilter ? typeFilter.value : '';
-    const initiativeValue = initiativeFilter ? initiativeFilter.value : '';
+    console.log('🔍 Filter values:', { searchText, statusValue, initiativeValue });
     
-    // Clear existing filter badges
-    const filterBadgesContainer = document.getElementById(filterBadgesId);
-    if (filterBadgesContainer) {
-        filterBadgesContainer.innerHTML = '';
-    }
-      // Create filter badges if filters are applied
-    if (searchText || ratingValue || typeValue || initiativeValue) {
-        let badgesHtml = '<span class="badge-label">Active filters:</span>';
-        
-        if (searchText) {
-            badgesHtml += `<span class="filter-badge">"${searchText}" <i class="fas fa-times remove-filter" data-filter="search" data-container="${containerType}"></i></span>`;
-        }
-        
-        if (ratingValue) {
-            const ratingLabel = document.getElementById(containerType + 'RatingFilter').options[document.getElementById(containerType + 'RatingFilter').selectedIndex].text;
-            badgesHtml += `<span class="filter-badge">${ratingLabel} <i class="fas fa-times remove-filter" data-filter="rating" data-container="${containerType}"></i></span>`;
-        }
-        
-        if (typeValue) {
-            const typeLabel = document.getElementById(containerType + 'TypeFilter').options[document.getElementById(containerType + 'TypeFilter').selectedIndex].text;
-            badgesHtml += `<span class="filter-badge">${typeLabel} <i class="fas fa-times remove-filter" data-filter="type" data-container="${containerType}"></i></span>`;
-        }
-        
-        if (initiativeValue) {
-            const initiativeLabel = document.getElementById(containerType + 'InitiativeFilter').options[document.getElementById(containerType + 'InitiativeFilter').selectedIndex].text;
-            badgesHtml += `<span class="filter-badge">${initiativeLabel} <i class="fas fa-times remove-filter" data-filter="initiative" data-container="${containerType}"></i></span>`;
-        }
-        
-        if (filterBadgesContainer) {
-            filterBadgesContainer.innerHTML = badgesHtml;
-            
-            // Add click handlers for filter badge removal
-            filterBadgesContainer.querySelectorAll('.remove-filter').forEach(icon => {
-                icon.addEventListener('click', function() {
-                    const filterType = this.getAttribute('data-filter');
-                    const containerType = this.getAttribute('data-container');
-                      if (filterType === 'search') {
-                        document.getElementById(containerType + 'ProgramSearch').value = '';
-                    } else if (filterType === 'rating') {
-                        document.getElementById(containerType + 'RatingFilter').value = '';
-                    } else if (filterType === 'type') {
-                        document.getElementById(containerType + 'TypeFilter').value = '';
-                    } else if (filterType === 'initiative') {
-                        document.getElementById(containerType + 'InitiativeFilter').value = '';
-                    }
-                    
-                    applyFilters(containerType);
-                });            });
-        }
+    // Update filter badges
+    updateGlobalFilterBadges(searchText, statusValue, initiativeValue);
+    
+    // Apply filters to all containers
+    applyFiltersToContainer('draftProgramsContainer', searchText, statusValue, initiativeValue);
+    applyFiltersToContainer('finalizedProgramsContainer', searchText, statusValue, initiativeValue);
+    applyFiltersToContainer('emptyProgramsContainer', searchText, statusValue, initiativeValue);
+    
+    // Update counters
+    updateFilteredCounters();
+    
+    console.log('🔍 applyGlobalFilters completed');
+}
+
+// Apply filters to a specific container
+function applyFiltersToContainer(containerId, searchText, statusValue, initiativeValue) {
+    const container = document.getElementById(containerId);
+    if (!container) {
+        console.log(`🔍 Container not found: ${containerId}`);
+        return;
     }
     
-    // Apply filters to program boxes
-    const programBoxes = document.querySelectorAll(`#${containerId} .program-box`);
+    const programBoxes = container.querySelectorAll('.program-box');
+    console.log(`🔍 Found ${programBoxes.length} program boxes in ${containerId}`);
     
-    programBoxes.forEach((box, index) => {
-        // Get program data from the program box data attributes
-        const programNameElement = box.querySelector('.program-name');
-        if (!programNameElement) return;
+    let visibleCount = 0;
+    let hiddenCount = 0;
+    
+    programBoxes.forEach(box => {
+        let visible = true;
         
-        const programNameInBox = programNameElement.textContent.trim();
-        
-        // Find matching program in allPrograms array
-        let currentProgram = null;
-        if (typeof allPrograms !== 'undefined') {
-            currentProgram = allPrograms.find(p => {
-                const programDisplayName = (p.program_number ? p.program_number + ' ' : '') + p.program_name;
-                return programDisplayName === programNameInBox || p.program_name === programNameInBox;
-            });
+        // Search filter
+        if (searchText && searchText.trim() !== '') {
+            const programName = box.querySelector('.program-name')?.textContent.toLowerCase() || '';
+            const programNumber = box.querySelector('.program-number')?.textContent.toLowerCase() || '';
+            const initiativeName = box.querySelector('.initiative-badge, .initiative-icon')?.textContent.toLowerCase() || '';
+            
+            visible = visible && (
+                programName.includes(searchText) ||
+                programNumber.includes(searchText) ||
+                initiativeName.includes(searchText)
+            );
         }
         
-        // Fallback to DOM parsing if program not found in data
-        if (!currentProgram) {
-            const programNameElement = box.querySelector('.program-name');
-            const programName = programNameElement?.textContent.toLowerCase() || '';
-              // Extract program number from the number badge if it exists
-            const programNumberBadge = box.querySelector('.program-number');
-            const programNumber = programNumberBadge ? programNumberBadge.textContent.toLowerCase() : '';
-            
-            // Get initiative information from the initiative section
-            const initiativeElement = box.querySelector('.initiative-info');
-            const initiativeText = initiativeElement?.textContent.trim().toLowerCase() || '';
-            const hasInitiative = initiativeElement?.querySelector('.initiative-icon, .initiative-badge') !== null;
-            
-            // Get rating from status section
-            const ratingElement = box.querySelector('.status-info .status-text');
-            const ratingText = ratingElement?.textContent.trim().toLowerCase() || '';
-            const programType = box.getAttribute('data-program-type') || '';
-            
-            // Map display text back to rating values for comparison
-            const ratingMap = {
-                'monthly target achieved': 'target-achieved',
-                'on track for year': 'on-track-yearly',
-                'on track': 'on-track',
-                'severe delays': 'severe-delay',
-                'delayed': 'delayed',
-                'completed': 'completed',
-                'not started': 'not-started'
-            };
-            
-            const normalizedRating = ratingMap[ratingText] || ratingText;
-            
-            // Apply all filters using DOM data
-            let showRow = true;
-            
-            // Text search filter - search in both program name and program number
-            if (searchText && !programName.includes(searchText) && !programNumber.includes(searchText)) {
-                showRow = false;
-            }
-            
-            // Rating filter
-            if (ratingValue && normalizedRating !== ratingValue) {
-                showRow = false;
-            }
-              // Type filter
-            if (typeValue && programType !== typeValue) {
-                showRow = false;
-            }
-            
-            // Initiative filter (fallback DOM method)
-            if (initiativeValue) {
-                if (initiativeValue === 'no-initiative') {
-                    // Show only programs without initiatives
-                    if (hasInitiative) {
-                        showRow = false;
-                    }
-                } else {
-                    // Show only programs with the specific initiative
-                    // Check if the initiative text contains the selected initiative name
-                    const selectedInitiativeElement = document.querySelector(`#${tableType}InitiativeFilter option[value="${initiativeValue}"]`);
-                    const selectedInitiativeName = selectedInitiativeElement ? selectedInitiativeElement.textContent.toLowerCase() : '';
-                    
-                    if (!hasInitiative || !initiativeText.includes(selectedInitiativeName)) {
-                        showRow = false;
-                    }
-                }
-            }
-            
-            // Show or hide the box by adding/removing d-none class
-            // This is compatible with the pagination utility
-            if (showRow) {
-                box.classList.remove('d-none');
-            } else {
-                box.classList.add('d-none');
-            }
-            return;
+        // Status filter
+        if (statusValue && statusValue !== '') {
+            const rating = box.getAttribute('data-status') || '';
+            visible = visible && (rating === statusValue);
         }
         
-        // Use program data for filtering (preferred method)
-        let showRow = true;
-        
-        // Text search filter - search in both program name and program number
-        if (searchText) {
-            const searchInName = currentProgram.program_name.toLowerCase().includes(searchText);
-            const searchInNumber = currentProgram.program_number ? currentProgram.program_number.toLowerCase().includes(searchText) : false;
-            if (!searchInName && !searchInNumber) {
-                showRow = false;
-            }
-        }
-        
-        // Rating filter
-        if (ratingValue && currentProgram.rating !== ratingValue) {
-            showRow = false;
-        }
-          // Type filter
-        if (typeValue) {
-            const isAssigned = currentProgram.is_assigned == 1;
-            const programType = isAssigned ? 'assigned' : 'created';
-            if (programType !== typeValue) {
-                showRow = false;
-            }
-        }
-        
-        // Initiative filter using initiative_id
-        if (initiativeValue) {
+        // Initiative filter
+        if (initiativeValue && initiativeValue !== '') {
+            const initiativeId = box.getAttribute('data-initiative-id') || '0';
+            
             if (initiativeValue === 'no-initiative') {
-                // Show only programs without initiatives
-                if (currentProgram.initiative_id && currentProgram.initiative_id !== null) {
-                    showRow = false;
-                }
+                visible = visible && (initiativeId === '0' || initiativeId === '');
             } else {
-                // Show only programs with the specific initiative ID
-                if (!currentProgram.initiative_id || currentProgram.initiative_id != initiativeValue) {
-                    showRow = false;
-                }
+                visible = visible && (initiativeId === initiativeValue);
             }
         }
         
-        // Show or hide the box by adding/removing d-none class
-        // This is compatible with the pagination utility
-        if (showRow) {
-            box.classList.remove('d-none');
+        // Show/hide program box
+        if (visible) {
+            box.style.display = '';
+            visibleCount++;
         } else {
-            box.classList.add('d-none');
+            box.style.display = 'none';
+            hiddenCount++;
         }
     });
     
-    // Update "no results" message if needed
+    console.log(`🔍 ${containerId}: ${visibleCount} visible, ${hiddenCount} hidden`);
+    
+    // Update "no results" message
     updateNoResultsMessage(containerId);
     
     // Update pagination after filtering
-    if (window.tablePaginations[containerId]) {
+    if (window.tablePaginations && window.tablePaginations[containerId]) {
         window.tablePaginations[containerId].onFilterChange();
     }
+}
+
+// Update global filter badges
+function updateGlobalFilterBadges(searchText, statusValue, initiativeValue) {
+    const filterBadgesContainer = document.getElementById('globalFilterBadges');
+    if (!filterBadgesContainer) return;
+    
+    filterBadgesContainer.innerHTML = '';
+    
+    if (searchText || statusValue || initiativeValue) {
+        let badgesHtml = '<span class="badge-label">Active filters:</span>';
+        
+        if (searchText) {
+            badgesHtml += `<span class="filter-badge">"${searchText}" <i class="fas fa-times remove-filter" data-filter="search"></i></span>`;
+        }
+        
+        if (statusValue) {
+            const statusLabel = document.getElementById('globalStatusFilter').options[document.getElementById('globalStatusFilter').selectedIndex].text;
+            badgesHtml += `<span class="filter-badge">${statusLabel} <i class="fas fa-times remove-filter" data-filter="status"></i></span>`;
+        }
+        
+        if (initiativeValue) {
+            const initiativeLabel = document.getElementById('globalInitiativeFilter').options[document.getElementById('globalInitiativeFilter').selectedIndex].text;
+            badgesHtml += `<span class="filter-badge">${initiativeLabel} <i class="fas fa-times remove-filter" data-filter="initiative"></i></span>`;
+        }
+        
+        filterBadgesContainer.innerHTML = badgesHtml;
+        
+        // Add click handlers for filter badge removal
+        filterBadgesContainer.querySelectorAll('.remove-filter').forEach(icon => {
+            icon.addEventListener('click', function() {
+                const filterType = this.getAttribute('data-filter');
+                
+                if (filterType === 'search') {
+                    document.getElementById('globalProgramSearch').value = '';
+                } else if (filterType === 'status') {
+                    document.getElementById('globalStatusFilter').value = '';
+                } else if (filterType === 'initiative') {
+                    document.getElementById('globalInitiativeFilter').value = '';
+                }
+                
+                applyGlobalFilters();
+            });
+        });
+    }
+}
+
+// Update filtered counters
+function updateFilteredCounters() {
+    setTimeout(() => {
+        const draftBoxes = document.querySelectorAll('#draftProgramsContainer .program-box:not([style*="display: none"])');
+        const finalizedBoxes = document.querySelectorAll('#finalizedProgramsContainer .program-box:not([style*="display: none"])');
+        const emptyBoxes = document.querySelectorAll('#emptyProgramsContainer .program-box:not([style*="display: none"])');
+        
+        const draftCount = draftBoxes.length;
+        const finalizedCount = finalizedBoxes.length;
+        const emptyCount = emptyBoxes.length;
+        
+        const draftCountEl = document.getElementById('draft-count');
+        const finalizedCountEl = document.getElementById('finalized-count');
+        const emptyCountEl = document.getElementById('empty-count');
+        
+        if (draftCountEl) draftCountEl.textContent = draftCount;
+        if (finalizedCountEl) finalizedCountEl.textContent = finalizedCount;
+        if (emptyCountEl) emptyCountEl.textContent = emptyCount;
+    }, 50);
+}
+
+// Debounce utility function
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
 }
 
 /**
@@ -512,13 +466,18 @@ function updateNoResultsMessage(containerId) {
     if (!container) return;
     
     // Check if there are any visible boxes (not hidden by filters)
-    const visibleBoxes = Array.from(container.querySelectorAll('.program-box:not(.d-none)'));
+    const visibleBoxes = Array.from(container.querySelectorAll('.program-box')).filter(box => 
+        box.style.display !== 'none'
+    );
+    
+    console.log(`🔍 ${containerId}: Checking for no results message. Visible boxes: ${visibleBoxes.length}`);
     
     // If all boxes are filtered out
     if (visibleBoxes.length === 0) {
         // Check if we already have a "no results" message
         let noResultsMessage = container.querySelector('.no-filter-results');
-          if (!noResultsMessage) {
+        if (!noResultsMessage) {
+            console.log(`🔍 ${containerId}: Creating no results message`);
             noResultsMessage = document.createElement('div');
             noResultsMessage.className = 'no-filter-results programs-empty-state';
             noResultsMessage.innerHTML = `
@@ -534,6 +493,7 @@ function updateNoResultsMessage(containerId) {
         // Remove any existing "no results" message if we have visible boxes
         const noResultsMessage = container.querySelector('.no-filter-results');
         if (noResultsMessage) {
+            console.log(`🔍 ${containerId}: Removing no results message`);
             noResultsMessage.remove();
         }
     }
