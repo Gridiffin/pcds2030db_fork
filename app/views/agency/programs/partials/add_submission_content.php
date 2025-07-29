@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <?php
 /**
  * Content partial for the Add Submission page.
@@ -115,7 +116,7 @@ require_once PROJECT_ROOT_PATH . '/app/helpers/vite-helpers.php';
                     </h5>
                 </div>
                 <div class="card-body">
-                    <form method="post" id="addSubmissionForm" data-program-id="<?php echo htmlspecialchars($program_id); ?>" data-program-number="<?php echo htmlspecialchars($program['program_number'] ?? ''); ?>">
+                    <form method="post" enctype="multipart/form-data" id="addSubmissionForm" data-program-id="<?php echo htmlspecialchars($program_id); ?>" data-program-number="<?php echo htmlspecialchars($program['program_number'] ?? ''); ?>">
                         <div class="row">
                             <div class="col-md-8">
                                 <!-- Reporting Period Selection -->

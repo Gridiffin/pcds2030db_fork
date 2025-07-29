@@ -373,6 +373,7 @@ class AdminUsersTest extends TestCase
 
         // Include the users functions
         require_once PROJECT_ROOT_PATH . '/app/lib/admins/users.php';
+        require_once PROJECT_ROOT_PATH . '/app/lib/user_functions.php'; // For get_user_by_id function
 
         $result = get_user_by_id($this->mockConn, 1);
         
@@ -400,6 +401,7 @@ class AdminUsersTest extends TestCase
 
         // Include the users functions
         require_once PROJECT_ROOT_PATH . '/app/lib/admins/users.php';
+        require_once PROJECT_ROOT_PATH . '/app/lib/user_functions.php'; // For get_user_by_id function
 
         $result = get_user_by_id($this->mockConn, 999);
         
