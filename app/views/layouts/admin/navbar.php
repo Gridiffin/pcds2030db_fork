@@ -161,14 +161,6 @@ $notification_count = 0; // TODO: Implement notification counting
                     </div>
                 </div>
                 <div class="admin-navbar-dropdown-menu">
-                    <a href="<?php echo APP_URL; ?>/index.php?page=admin_profile" class="admin-navbar-dropdown-item">
-                        <i class="fas fa-user"></i>
-                        Profile Settings
-                    </a>
-                    <a href="<?php echo APP_URL; ?>/index.php?page=admin_preferences" class="admin-navbar-dropdown-item">
-                        <i class="fas fa-cog"></i>
-                        Preferences
-                    </a>
                     <a href="<?php echo APP_URL; ?>/logout.php" class="admin-navbar-dropdown-item">
                         <i class="fas fa-sign-out-alt"></i>
                         Logout
