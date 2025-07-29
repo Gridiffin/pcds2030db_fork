@@ -7,6 +7,32 @@
 /* Import shared admin foundation */
 @import '../shared/base.css';
 
+/* Modal centering styles */
+#deleteUserModal {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+}
+
+#deleteUserModal .modal-dialog {
+    margin: 0 auto !important;
+    max-width: 500px !important;
+    width: 90% !important;
+    position: relative !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+}
+
+/* Ensure modal backdrop covers full screen */
+.modal-backdrop {
+    z-index: 1040 !important;
+}
+
+#deleteUserModal {
+    z-index: 1050 !important;
+}
+
 /* User management specific styles */
 .user-form-container {
     background: var(--color-white);
