@@ -53,23 +53,71 @@ export default class NotificationsInteractions {
      * Setup filter button interactions
      */
     setupFilterButtons() {
+        console.log('Setting up filter buttons...');
+        
+        // Use event delegation for better reliability
         document.addEventListener('click', (e) => {
-            if (e.target.matches('.notifications-filter-btn')) {
+            const filterBtn = e.target.closest('.notifications-filter-btn');
+            
+            if (filterBtn) {
                 e.preventDefault();
+                e.stopPropagation();
                 
-                const filter = e.target.dataset.filter;
+                console.log('Filter button clicked:', filterBtn);
+                
+                const filter = filterBtn.dataset.filter;
+                console.log('Filter value:', filter);
+                
                 if (filter) {
                     // Update active state
                     document.querySelectorAll('.notifications-filter-btn').forEach(btn => {
-                        btn.classList.remove('active');
+                        btn.classList.remove('active', 'btn-primary');
+                        btn.classList.add('btn-outline-primary');
                     });
-                    e.target.classList.add('active');
+                    
+                    filterBtn.classList.remove('btn-outline-primary');
+                    filterBtn.classList.add('active', 'btn-primary');
+                    
+                    console.log('Updated button states, applying filter:', filter);
+                    
+                    // Apply filter
+                    this.app.applyFilter(filter);
+                } else {
+                    console.warn('No filter value found in button dataset');
+                }
+            }
+        });
+        
+        // Also handle direct button clicks for better compatibility
+        document.querySelectorAll('.notifications-filter-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                console.log('Direct filter button click:', btn);
+                
+                const filter = btn.dataset.filter;
+                console.log('Direct filter value:', filter);
+                
+                if (filter) {
+                    // Update active state
+                    document.querySelectorAll('.notifications-filter-btn').forEach(b => {
+                        b.classList.remove('active', 'btn-primary');
+                        b.classList.add('btn-outline-primary');
+                    });
+                    
+                    btn.classList.remove('btn-outline-primary');
+                    btn.classList.add('active', 'btn-primary');
+                    
+                    console.log('Updated button states (direct), applying filter:', filter);
                     
                     // Apply filter
                     this.app.applyFilter(filter);
                 }
-            }
+            });
         });
+        
+        console.log('Filter buttons setup complete');
     }
     
     /**
@@ -268,8 +316,7 @@ export default class NotificationsInteractions {
                 e.preventDefault();
                 const notificationId = e.target.dataset.id;
                 if (notificationId) {
-                    // Implement mark as unread functionality
-                    this.handleMarkAsUnread([notificationId]);
+                    this.app.markAsUnread([notificationId]);
                 }
             }
         });

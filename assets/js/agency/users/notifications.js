@@ -12,12 +12,17 @@ import '../../../css/agency/users/notifications.css';
  */
 class NotificationsApp {
     constructor() {
-        this.currentPage = 1;
-        this.perPage = 10;
-        this.currentFilter = 'all';
+        // Initialize from configuration if available
+        const config = window.notificationsConfig || {};
+        
+        this.currentPage = config.currentPage || 1;
+        this.perPage = config.perPage || 10;
+        this.currentFilter = config.currentFilter || 'all';
         this.searchQuery = '';
         this.selectedNotifications = new Set();
         this.isLoading = false;
+        
+        console.log('NotificationsApp initialized with config:', config);
         
         // Initialize modules
         this.logic = new NotificationsLogic(this);
@@ -53,7 +58,7 @@ class NotificationsApp {
             // Initialize UI interactions
             this.interactions.init();
             
-            // Load initial notifications
+            // Load initial notifications (JavaScript will handle empty state)
             this.loadNotifications();
             
             // Setup periodic refresh for new notifications
@@ -81,7 +86,11 @@ class NotificationsApp {
                 search: this.searchQuery
             };
             
+            console.log('loadNotifications called with params:', params);
+            
             const response = await this.ajax.getNotifications(params);
+            
+            console.log('loadNotifications response:', response);
             
             if (response.success) {
                 this.logic.renderNotifications(response.data);
@@ -167,11 +176,16 @@ class NotificationsApp {
      * Apply filter
      */
     applyFilter(filter) {
+        console.log('applyFilter called with filter:', filter, 'currentFilter:', this.currentFilter);
+        
         if (filter !== this.currentFilter) {
+            console.log('Filter changed from', this.currentFilter, 'to', filter);
             this.currentFilter = filter;
             this.currentPage = 1; // Reset to first page
             this.selectedNotifications.clear();
             this.loadNotifications();
+        } else {
+            console.log('Filter unchanged, no action taken');
         }
     }
     
@@ -187,6 +201,49 @@ class NotificationsApp {
     }
     
     /**
+     * Mark notifications as unread
+     */
+    async markAsUnread(notificationIds) {
+        try {
+            this.setLoading(true);
+            
+            const response = await this.ajax.markNotificationsUnread(notificationIds);
+            
+            if (response.success) {
+                // Update UI immediately for better user experience
+                notificationIds.forEach(id => {
+                    this.logic.markNotificationAsUnread(id);
+                });
+                
+                // Update stats from response if available
+                if (response.unread_count !== undefined) {
+                    this.logic.updateStats({
+                        unread: response.unread_count,
+                        total: response.total_count || this.logic.elements.totalCount?.textContent
+                    });
+                }
+                
+                // Check if we need to remove notifications from the list due to filtering
+                if (this.currentFilter === 'read') {
+                    // If we're on "read only" filter, remove the unread notifications from the list
+                    notificationIds.forEach(id => {
+                        this.logic.removeNotificationFromList(id);
+                    });
+                }
+                
+                this.showSuccess(`${notificationIds.length} notification(s) marked as unread`);
+            } else {
+                throw new Error(response.message || 'Failed to mark notifications as unread');
+            }
+        } catch (error) {
+            console.error('Failed to mark notifications as unread:', error);
+            this.showError('Failed to mark notifications as unread. Please try again.');
+        } finally {
+            this.setLoading(false);
+        }
+    }
+    
+    /**
      * Mark notifications as read
      */
     async markAsRead(notificationIds) {
@@ -196,7 +253,27 @@ class NotificationsApp {
             const response = await this.ajax.markNotificationsRead(notificationIds);
             
             if (response.success) {
-                this.loadNotifications(); // Refresh to show updated status
+                // Update UI immediately for better user experience
+                notificationIds.forEach(id => {
+                    this.logic.markNotificationAsRead(id);
+                });
+                
+                // Update stats from response if available
+                if (response.unread_count !== undefined) {
+                    this.logic.updateStats({
+                        unread: response.unread_count,
+                        total: response.total_count || this.logic.elements.totalCount?.textContent
+                    });
+                }
+                
+                // Check if we need to remove notifications from the list due to filtering
+                if (this.currentFilter === 'unread') {
+                    // If we're on "unread only" filter, remove the read notifications from the list
+                    notificationIds.forEach(id => {
+                        this.logic.removeNotificationFromList(id);
+                    });
+                }
+                
                 this.showSuccess(`${notificationIds.length} notification(s) marked as read`);
             } else {
                 throw new Error(response.message || 'Failed to mark notifications as read');

@@ -67,7 +67,7 @@ if (!function_exists('get_type_badge_color')) {
     }
 }
 
-$isUnread = ($notification['read_at'] ?? null) === null;
+$isUnread = ($notification['read_status'] ?? 0) === 0;
 $timeAgo = format_time_ago($notification['created_at']);
 $priorityClass = get_priority_class($notification['priority'] ?? 'normal');
 $typeIcon = get_type_icon($notification['type'] ?? 'info');
@@ -147,14 +147,14 @@ $typeBadgeColor = get_type_badge_color($notification['type'] ?? 'info');
             <ul class="dropdown-menu dropdown-menu-end">
                 <?php if ($isUnread): ?>
                     <li>
-                        <button class="dropdown-item mark-read-btn" data-id="<?php echo htmlspecialchars($notification['id']); ?>">
+                        <button class="dropdown-item mark-read-btn" data-id="<?php echo htmlspecialchars($notification['notification_id'] ?? ''); ?>">
                             <i class="fas fa-eye me-2"></i>
                             Mark as Read
                         </button>
                     </li>
                 <?php else: ?>
                     <li>
-                        <button class="dropdown-item mark-unread-btn" data-id="<?php echo htmlspecialchars($notification['id']); ?>">
+                        <button class="dropdown-item mark-unread-btn" data-id="<?php echo htmlspecialchars($notification['notification_id'] ?? ''); ?>">
                             <i class="fas fa-eye-slash me-2"></i>
                             Mark as Unread
                         </button>
@@ -173,7 +173,7 @@ $typeBadgeColor = get_type_badge_color($notification['type'] ?? 'info');
                 <li><hr class="dropdown-divider"></li>
                 
                 <li>
-                    <button class="dropdown-item text-danger delete-notification-btn" data-id="<?php echo htmlspecialchars($notification['id']); ?>">
+                    <button class="dropdown-item text-danger delete-notification-btn" data-id="<?php echo htmlspecialchars($notification['notification_id'] ?? ''); ?>">
                         <i class="fas fa-trash me-2"></i>
                         Delete
                     </button>

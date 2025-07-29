@@ -4,11 +4,90 @@
 export default class NotificationsAjax {
     constructor(app) {
         this.app = app;
-        this.baseUrl = window.location.origin;
+        // Use configuration baseUrl if available, otherwise detect it
+        this.baseUrl = this.getBaseUrl();
         this.defaultHeaders = {
             'Content-Type': 'application/json',
             'X-Requested-With': 'XMLHttpRequest'
         };
+    }
+    
+    /**
+     * Get the base URL from configuration or detect it
+     */
+    getBaseUrl() {
+        // Check if we have a configuration with baseUrl
+        if (window.notificationsConfig && window.notificationsConfig.baseUrl) {
+            const configUrl = window.notificationsConfig.baseUrl;
+            console.log('Using base URL from configuration:', configUrl);
+            return configUrl;
+        }
+        
+        // Fallback to detection
+        return this.detectBaseUrl();
+    }
+    
+    /**
+     * Detect the base URL for AJAX requests
+     * More robust approach that handles different URL patterns
+     */
+    detectBaseUrl() {
+        // Get the current page URL and path
+        const currentUrl = window.location.href;
+        const currentPath = window.location.pathname;
+        const currentOrigin = window.location.origin;
+        
+        console.log('Current URL:', currentUrl);
+        console.log('Current path:', currentPath);
+        console.log('Current origin:', currentOrigin);
+        
+        // Method 1: Check if URL contains pcds2030_dashboard_fork
+        if (currentUrl.includes('/pcds2030_dashboard_fork/') || currentPath.includes('/pcds2030_dashboard_fork/')) {
+            const baseUrl = currentOrigin + '/pcds2030_dashboard_fork';
+            console.log('Method 1: Detected pcds2030_dashboard_fork in URL, using base URL:', baseUrl);
+            return baseUrl;
+        }
+        
+        // Method 2: Check for index.php with pcds2030_dashboard_fork in path
+        if (currentPath.includes('pcds2030_dashboard_fork')) {
+            // Extract everything up to and including pcds2030_dashboard_fork
+            const pathParts = currentPath.split('/');
+            const projectIndex = pathParts.findIndex(part => part === 'pcds2030_dashboard_fork');
+            if (projectIndex >= 0) {
+                const projectPath = pathParts.slice(0, projectIndex + 1).join('/');
+                const baseUrl = currentOrigin + projectPath;
+                console.log('Method 2: Extracted project path, using base URL:', baseUrl);
+                return baseUrl;
+            }
+        }
+        
+        // Method 3: Check script tag src for bundle path (as fallback)
+        const scriptTags = document.querySelectorAll('script[src*="agency-notifications.bundle.js"]');
+        if (scriptTags.length > 0) {
+            const bundleSrc = scriptTags[0].src;
+            console.log('Found bundle script src:', bundleSrc);
+            
+            if (bundleSrc.includes('/pcds2030_dashboard_fork/')) {
+                const baseUrl = currentOrigin + '/pcds2030_dashboard_fork';
+                console.log('Method 3: Detected from script src, using base URL:', baseUrl);
+                return baseUrl;
+            }
+        }
+        
+        // Method 4: Try to detect from any link or form action
+        const links = document.querySelectorAll('a[href], form[action]');
+        for (const element of links) {
+            const url = element.href || element.action;
+            if (url && url.includes('/pcds2030_dashboard_fork/')) {
+                const baseUrl = currentOrigin + '/pcds2030_dashboard_fork';
+                console.log('Method 4: Detected from DOM element, using base URL:', baseUrl);
+                return baseUrl;
+            }
+        }
+        
+        // Fallback: Use current origin
+        console.log('Using fallback origin as base URL:', currentOrigin);
+        return currentOrigin;
     }
     
     /**
@@ -17,6 +96,7 @@ export default class NotificationsAjax {
     async getNotifications(params = {}) {
         try {
             const url = this.buildUrl('/app/ajax/get_user_notifications.php', params);
+            console.log('Fetching notifications from:', url); // Debug log
             
             const response = await fetch(url, {
                 method: 'GET',
@@ -29,7 +109,17 @@ export default class NotificationsAjax {
             }
             
             const data = await response.json();
-            return this.handleResponse(data);
+            
+            if (data.success) {
+                return {
+                    success: true,
+                    data: data.notifications,
+                    pagination: data.pagination,
+                    stats: data.stats
+                };
+            } else {
+                return data;
+            }
             
         } catch (error) {
             console.error('Failed to fetch notifications:', error);
@@ -46,13 +136,14 @@ export default class NotificationsAjax {
      */
     async markNotificationsRead(notificationIds) {
         try {
-            const response = await fetch('/app/ajax/mark_notifications_read.php', {
+            const formData = new FormData();
+            formData.append('action', 'mark_read');
+            formData.append('notification_ids', JSON.stringify(notificationIds));
+            
+            const response = await fetch(this.baseUrl + '/app/ajax/notifications.php', {
                 method: 'POST',
-                headers: this.defaultHeaders,
                 credentials: 'same-origin',
-                body: JSON.stringify({
-                    notification_ids: notificationIds
-                })
+                body: formData
             });
             
             if (!response.ok) {
@@ -73,15 +164,49 @@ export default class NotificationsAjax {
     }
     
     /**
+     * Mark specific notifications as unread
+     */
+    async markNotificationsUnread(notificationIds) {
+        try {
+            const formData = new FormData();
+            formData.append('action', 'mark_unread');
+            formData.append('notification_ids', JSON.stringify(notificationIds));
+            
+            const response = await fetch(this.baseUrl + '/app/ajax/notifications.php', {
+                method: 'POST',
+                credentials: 'same-origin',
+                body: formData
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            return this.handleResponse(data);
+            
+        } catch (error) {
+            console.error('Failed to mark notifications as unread:', error);
+            return {
+                success: false,
+                message: 'Failed to mark notifications as unread. Please try again.',
+                error: error.message
+            };
+        }
+    }
+    
+    /**
      * Mark all notifications as read
      */
     async markAllNotificationsRead() {
         try {
-            const response = await fetch('/app/ajax/mark_all_notifications_read.php', {
+            const formData = new FormData();
+            formData.append('action', 'mark_all_read');
+            
+            const response = await fetch(this.baseUrl + '/app/ajax/notifications.php', {
                 method: 'POST',
-                headers: this.defaultHeaders,
                 credentials: 'same-origin',
-                body: JSON.stringify({})
+                body: formData
             });
             
             if (!response.ok) {
@@ -106,13 +231,14 @@ export default class NotificationsAjax {
      */
     async deleteNotifications(notificationIds) {
         try {
-            const response = await fetch('/app/ajax/delete_notifications.php', {
+            const formData = new FormData();
+            formData.append('action', 'delete_notification');
+            formData.append('notification_id', notificationIds[0]); // Single notification for now
+            
+            const response = await fetch(this.baseUrl + '/app/ajax/notifications.php', {
                 method: 'POST',
-                headers: this.defaultHeaders,
                 credentials: 'same-origin',
-                body: JSON.stringify({
-                    notification_ids: notificationIds
-                })
+                body: formData
             });
             
             if (!response.ok) {
@@ -137,7 +263,7 @@ export default class NotificationsAjax {
      */
     async getNotificationStats() {
         try {
-            const response = await fetch('/app/ajax/get_notification_stats.php', {
+            const response = await fetch(this.baseUrl + '/app/ajax/get_notification_stats.php', {
                 method: 'GET',
                 headers: this.defaultHeaders,
                 credentials: 'same-origin'
@@ -165,7 +291,7 @@ export default class NotificationsAjax {
      */
     async createNotification(notificationData) {
         try {
-            const response = await fetch('/app/ajax/create_notification.php', {
+            const response = await fetch(this.baseUrl + '/app/ajax/create_notification.php', {
                 method: 'POST',
                 headers: this.defaultHeaders,
                 credentials: 'same-origin',
@@ -194,7 +320,7 @@ export default class NotificationsAjax {
      */
     async updateNotificationPreferences(preferences) {
         try {
-            const response = await fetch('/app/ajax/update_notification_preferences.php', {
+            const response = await fetch(this.baseUrl + '/app/ajax/update_notification_preferences.php', {
                 method: 'POST',
                 headers: this.defaultHeaders,
                 credentials: 'same-origin',
@@ -270,7 +396,7 @@ export default class NotificationsAjax {
      */
     async sendTestNotification(testData) {
         try {
-            const response = await fetch('/app/ajax/send_test_notification.php', {
+            const response = await fetch(this.baseUrl + '/app/ajax/send_test_notification.php', {
                 method: 'POST',
                 headers: this.defaultHeaders,
                 credentials: 'same-origin',
@@ -298,7 +424,14 @@ export default class NotificationsAjax {
      * Build URL with query parameters
      */
     buildUrl(endpoint, params = {}) {
-        const url = new URL(endpoint, this.baseUrl);
+        // Remove leading slash from endpoint to make it relative
+        const relativeEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+        
+        // Construct the full URL properly
+        const fullUrl = `${this.baseUrl}/${relativeEndpoint}`;
+        const url = new URL(fullUrl);
+        
+        console.log('buildUrl - endpoint:', endpoint, 'baseUrl:', this.baseUrl, 'fullUrl:', fullUrl);
         
         Object.keys(params).forEach(key => {
             if (params[key] !== undefined && params[key] !== null && params[key] !== '') {
@@ -306,7 +439,9 @@ export default class NotificationsAjax {
             }
         });
         
-        return url.toString();
+        const finalUrl = url.toString();
+        console.log('buildUrl - final URL:', finalUrl);
+        return finalUrl;
     }
     
     /**

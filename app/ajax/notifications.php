@@ -52,6 +52,10 @@ try {
             handle_mark_read($user_id);
             break;
             
+        case 'mark_unread':
+            handle_mark_unread($user_id);
+            break;
+            
         case 'mark_all_read':
             handle_mark_all_read($user_id);
             break;
@@ -124,7 +128,20 @@ function handle_get_notifications($user_id) {
  * Mark specific notifications as read
  */
 function handle_mark_read($user_id) {
-    $notification_ids = $_POST['notification_ids'] ?? [];
+    $notification_ids_raw = $_POST['notification_ids'] ?? '';
+    
+    if (empty($notification_ids_raw)) {
+        echo json_encode(['success' => false, 'message' => 'No notification IDs provided']);
+        return;
+    }
+    
+    // Decode JSON string to array
+    $notification_ids = json_decode($notification_ids_raw, true);
+    
+    if (!is_array($notification_ids)) {
+        echo json_encode(['success' => false, 'message' => 'Invalid notification IDs format']);
+        return;
+    }
     
     if (empty($notification_ids)) {
         echo json_encode(['success' => false, 'message' => 'No notification IDs provided']);
@@ -229,6 +246,55 @@ function handle_delete_notification($user_id) {
         ]);
     } else {
         echo json_encode(['success' => false, 'message' => 'Failed to delete notification']);
+    }
+}
+
+/**
+ * Mark notifications as unread
+ */
+function handle_mark_unread($user_id) {
+    $notification_ids_raw = $_POST['notification_ids'] ?? '';
+    
+    if (empty($notification_ids_raw)) {
+        echo json_encode(['success' => false, 'message' => 'No notification IDs provided']);
+        return;
+    }
+    
+    // Decode JSON string to array
+    $notification_ids = json_decode($notification_ids_raw, true);
+    
+    if (!is_array($notification_ids)) {
+        echo json_encode(['success' => false, 'message' => 'Invalid notification IDs format']);
+        return;
+    }
+    
+    if (empty($notification_ids)) {
+        echo json_encode(['success' => false, 'message' => 'No notification IDs provided']);
+        return;
+    }
+    
+    // Ensure all IDs are integers
+    $notification_ids = array_map('intval', $notification_ids);
+    $notification_ids = array_filter($notification_ids, function($id) { return $id > 0; });
+    
+    if (empty($notification_ids)) {
+        echo json_encode(['success' => false, 'message' => 'Invalid notification IDs']);
+        return;
+    }
+    
+    $success = mark_notifications_unread($user_id, $notification_ids);
+    
+    if ($success) {
+        // Get updated unread count
+        $stats = get_notification_stats($user_id);
+        
+        echo json_encode([
+            'success' => true,
+            'message' => 'Notifications marked as unread',
+            'unread_count' => $stats['unread']
+        ]);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Failed to mark notifications as unread']);
     }
 }
 ?>
