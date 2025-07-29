@@ -1,0 +1,91 @@
+<br />
+<b>Fatal error</b>:  Uncaught Error: Call to undefined function log_audit() in C:\laragon\www\pcds2030_dashboard_fork\app\lib\user_functions.php:145
+Stack trace:
+#0 C:\laragon\www\pcds2030_dashboard_fork\app\handlers\profile_handler.php(134): update_user_profile(Object(mysqli), 12, Array)
+#1 {main}
+  thrown in <b>C:\laragon\www\pcds2030_dashboard_fork\app\lib\user_functions.php</b> on line <b>145</b><br />
+<br />
+<b>Fatal error</b>:  Uncaught Error: Call to undefined function log_audit() in C:\laragon\www\pcds2030_dashboard_fork\app\lib\user_functions.php:145
+Stack trace:
+#0 C:\laragon\www\pcds2030_dashboard_fork\app\handlers\profile_handler.php(135): update_user_profile(Object(mysqli), 12, Array)
+#1 {main}
+  thrown in <b>C:\laragon\www\pcds2030_dashboard_fork\app\lib\user_functions.php</b> on line <b>145</b><br />
+[START] profile_handler.php
+[INCLUDED FILES]
+[POST DATA] {"csrf_token":"8e66ad2393e70f7fd006f6767458243e38810345c71cf68debc7f05db0b10993","username":"1245","email":"user@test.gov.my","fullname":"Test User","password":"","confirm_password":""}
+[TRY BLOCK ENTERED]
+[VALIDATION COMPLETE] []
+[UPDATING PROFILE] {"username":"1245","email":"user@test.gov.my","fullname":"Test User"}
+[ACCIDENTAL OUTPUT] <br />
+<b>Fatal error</b>:  Uncaught Error: Call to undefined function log_audit() in C:\laragon\www\pcds2030_dashboard_fork\app\lib\user_functions.php:145
+Stack trace:
+#0 C:\laragon\www\pcds2030_dashboard_fork\app\handlers\profile_handler.php(150): update_user_profile(Object(mysqli), 12, Array)
+#1 {main}
+  thrown in <b>C:\laragon\www\pcds2030_dashboard_fork\app\lib\user_functions.php</b> on line <b>145</b><br />
+
+[START] profile_handler.php
+[INCLUDED FILES]
+[POST DATA] {"csrf_token":"8e66ad2393e70f7fd006f6767458243e38810345c71cf68debc7f05db0b10993","username":"1245","email":"user@test.gov.my","fullname":"qwer","password":"","confirm_password":""}
+[TRY BLOCK ENTERED]
+[VALIDATION COMPLETE] []
+[UPDATING PROFILE] {"username":"1245","email":"user@test.gov.my","fullname":"qwer"}
+[ACCIDENTAL OUTPUT] <br />
+<b>Fatal error</b>:  Uncaught Error: Call to undefined function log_audit() in C:\laragon\www\pcds2030_dashboard_fork\app\lib\user_functions.php:145
+Stack trace:
+#0 C:\laragon\www\pcds2030_dashboard_fork\app\handlers\profile_handler.php(150): update_user_profile(Object(mysqli), 12, Array)
+#1 {main}
+  thrown in <b>C:\laragon\www\pcds2030_dashboard_fork\app\lib\user_functions.php</b> on line <b>145</b><br />
+
+[START] profile_handler.php
+[INCLUDED FILES]
+[POST DATA] {"csrf_token":"8e66ad2393e70f7fd006f6767458243e38810345c71cf68debc7f05db0b10993","username":"qwer","email":"user@test.gov.my","fullname":"Test User","password":"","confirm_password":""}
+[TRY BLOCK ENTERED]
+[VALIDATION COMPLETE] []
+[UPDATING PROFILE] {"username":"qwer","email":"user@test.gov.my","fullname":"Test User"}
+[ACCIDENTAL OUTPUT] <br />
+<b>Fatal error</b>:  Uncaught Error: Call to undefined function log_audit() in C:\laragon\www\pcds2030_dashboard_fork\app\lib\user_functions.php:145
+Stack trace:
+#0 C:\laragon\www\pcds2030_dashboard_fork\app\handlers\profile_handler.php(150): update_user_profile(Object(mysqli), 12, Array)
+#1 {main}
+  thrown in <b>C:\laragon\www\pcds2030_dashboard_fork\app\lib\user_functions.php</b> on line <b>145</b><br />
+
+[START] profile_handler.php
+[INCLUDED FILES]
+[POST DATA] {"csrf_token":"8e66ad2393e70f7fd006f6767458243e38810345c71cf68debc7f05db0b10993","username":"12345","email":"user@test.gov.my","fullname":"1235","password":"","confirm_password":""}
+[TRY BLOCK ENTERED]
+[VALIDATION COMPLETE] []
+[UPDATING PROFILE] {"username":"12345","email":"user@test.gov.my","fullname":"1235"}
+[ACCIDENTAL OUTPUT] <br />
+<b>Fatal error</b>:  Uncaught Error: Call to undefined function log_audit() in C:\laragon\www\pcds2030_dashboard_fork\app\lib\user_functions.php:150
+Stack trace:
+#0 C:\laragon\www\pcds2030_dashboard_fork\app\handlers\profile_handler.php(150): update_user_profile(Object(mysqli), 12, Array)
+#1 {main}
+  thrown in <b>C:\laragon\www\pcds2030_dashboard_fork\app\lib\user_functions.php</b> on line <b>150</b><br />
+
+[START] profile_handler.php
+[INCLUDED FILES]
+[POST DATA] {"csrf_token":"8e66ad2393e70f7fd006f6767458243e38810345c71cf68debc7f05db0b10993","username":"user","email":"user@test.gov.my","fullname":"12414","password":"","confirm_password":""}
+[TRY BLOCK ENTERED]
+[VALIDATION COMPLETE] []
+[UPDATING PROFILE] {"username":"user","email":"user@test.gov.my","fullname":"12414"}
+[UPDATE SUCCESS] {"success":true,"message":"Profile updated successfully","errors":[],"updated_fields":["username","email","fullname"]}
+[FINAL RESPONSE] {"success":true,"message":"Profile updated successfully","errors":[],"updated_fields":["username","email","fullname"]}
+[ACCIDENTAL OUTPUT] {"success":true,"message":"Profile updated successfully","errors":[],"updated_fields":["username","email","fullname"]}
+[START] profile_handler.php
+[INCLUDED FILES]
+[POST DATA] {"csrf_token":"8e66ad2393e70f7fd006f6767458243e38810345c71cf68debc7f05db0b10993","username":"user","email":"user@test.gov.my","fullname":"test agency","password":"","confirm_password":""}
+[TRY BLOCK ENTERED]
+[VALIDATION COMPLETE] []
+[UPDATING PROFILE] {"username":"user","email":"user@test.gov.my","fullname":"test agency"}
+[UPDATE SUCCESS] {"success":true,"message":"Profile updated successfully","errors":[],"updated_fields":["username","email","fullname"]}
+[FINAL RESPONSE] {"success":true,"message":"Profile updated successfully","errors":[],"updated_fields":["username","email","fullname"]}
+[ACCIDENTAL OUTPUT] {"success":true,"message":"Profile updated successfully","errors":[],"updated_fields":["username","email","fullname"]}
+[START] profile_handler.php
+[INCLUDED FILES]
+[POST DATA] {"csrf_token":"8e66ad2393e70f7fd006f6767458243e38810345c71cf68debc7f05db0b10993","username":"user","email":"user@test.gov.my","fullname":"test agency","password":"user1234","confirm_password":"user1234"}
+[TRY BLOCK ENTERED]
+[VALIDATION COMPLETE] []
+[UPDATING PROFILE] {"username":"user","email":"user@test.gov.my","fullname":"test agency","password":"user1234"}
+[UPDATE SUCCESS] {"success":true,"message":"Profile updated successfully","errors":[],"updated_fields":["username","email","fullname","password"]}
+[FINAL RESPONSE] {"success":true,"message":"Profile updated successfully","errors":[],"updated_fields":["username","email","fullname","password"]}
+[ACCIDENTAL OUTPUT] {"success":true,"message":"Profile updated successfully","errors":[],"updated_fields":["username","email","fullname","password"]}

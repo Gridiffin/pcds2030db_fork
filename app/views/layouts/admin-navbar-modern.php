@@ -351,7 +351,7 @@ $user_initials = strtoupper($user_initials);
                         </div>
                     </div>
                     <div class="user-dropdown-divider" role="separator"></div>
-                    <a href="#" class="user-dropdown-item" role="menuitem">
+                    <a href="<?php echo APP_URL; ?>/app/views/agency/users/profile.php" class="user-dropdown-item" role="menuitem">
                         <i class="fas fa-user item-icon" aria-hidden="true"></i>
                         Profile
                     </a>
