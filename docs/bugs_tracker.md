@@ -1246,3 +1246,73 @@ $admin_users_query = "SELECT user_id FROM users WHERE role = 'admin' AND is_acti
 - Verify database schema matches code assumptions
 
 ---
+
+### Bug #40: Notification URLs Incorrect - Using Non-Existent Page Routes
+
+**Date Found**: 2025-07-29 16:15:00  
+**Status**: ✅ FIXED  
+**Severity**: Medium  
+**Impact**: Notification links were broken and led to 404 errors
+
+### Problem Description
+Notification URLs were using incorrect page routes that don't exist in the system:
+- Using: `/index.php?page=agency_program_details&id={program_id}`
+- Using: `/index.php?page=admin_program_details&id={program_id}`
+- Using: `/index.php?page=agency_edit_submission&program_id={program_id}&submission_id={submission_id}`
+
+These routes don't exist in the routing system, causing 404 errors when users clicked on notification links.
+
+### Root Cause Analysis
+1. **Incorrect URL format**: Notification functions were using page-based routing that doesn't exist
+2. **Wrong path structure**: The system uses direct file paths, not page parameters
+3. **Missing APP_URL prefix**: URLs were using absolute paths without the proper base URL
+4. **Multiple functions affected**: All notification functions had the same URL issue
+
+### Investigation Process
+1. **URL pattern analysis**: Searched for how program details are actually accessed in the system
+2. **File structure check**: Found correct paths in program row links and navigation
+3. **Consistent pattern**: All program details links use direct file paths with APP_URL prefix
+4. **Base URL verification**: Confirmed that APP_URL is required for proper web navigation
+
+### Solution Applied
+**File**: `app/lib/notifications_core.php`  
+**Functions**: All notification functions  
+**Lines**: Multiple locations
+
+Fixed all notification URLs to use correct direct file paths with APP_URL:
+
+**Before:**
+```php
+$action_url = "/index.php?page=agency_program_details&id={$program_id}";
+$admin_action_url = "/index.php?page=admin_program_details&id={$program_id}";
+```
+
+**After:**
+```php
+$action_url = APP_URL . "/app/views/agency/programs/program_details.php?id={$program_id}";
+$admin_action_url = APP_URL . "/app/views/admin/programs/program_details.php?id={$program_id}";
+```
+
+**Functions Fixed:**
+- `notify_program_created()` - Program creation notifications
+- `notify_program_edited()` - Program edit notifications  
+- `notify_submission_created()` - Submission creation notifications
+- `notify_submission_edited()` - Submission edit notifications
+- `notify_submission_finalized()` - Submission finalization notifications
+- `notify_program_assignment()` - Program assignment notifications
+
+### Testing
+- ✅ Notification function works correctly
+- ✅ URLs are properly formatted with APP_URL prefix
+- ✅ Agency notifications point to correct program details page
+- ✅ Admin notifications point to correct admin program details page
+- ✅ All notification types now have working links
+- ✅ URLs resolve to correct web paths
+
+### Prevention
+- Use APP_URL + direct file paths instead of page-based routing for notifications
+- Verify URL patterns match existing navigation links in the system
+- Test notification links after any routing changes
+- Always include APP_URL prefix for web-accessible URLs
+
+---

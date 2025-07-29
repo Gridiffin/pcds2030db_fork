@@ -1,12 +1,12 @@
 <?php
 /**
- * Core Notification System
+ * Notification System Core Functions
  * 
  * Centralized notification trigger functions for program and submission actions.
- * Integrates with the existing audit log system and notification infrastructure.
+ * These functions handle creating notifications for various system events.
  */
 
-// Define PROJECT_ROOT_PATH if not already defined
+// Define project root path for consistent file references
 if (!defined('PROJECT_ROOT_PATH')) {
     // Use absolute path resolution that works regardless of working directory
     $current_file = __FILE__;
@@ -14,11 +14,68 @@ if (!defined('PROJECT_ROOT_PATH')) {
     define('PROJECT_ROOT_PATH', $project_root . DIRECTORY_SEPARATOR);
 }
 
-require_once PROJECT_ROOT_PATH . 'app' . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'config.php';
-require_once PROJECT_ROOT_PATH . 'app' . DIRECTORY_SEPARATOR . 'lib' . DIRECTORY_SEPARATOR . 'db_connect.php';
-require_once PROJECT_ROOT_PATH . 'app' . DIRECTORY_SEPARATOR . 'lib' . DIRECTORY_SEPARATOR . 'functions.php';
-require_once PROJECT_ROOT_PATH . 'app' . DIRECTORY_SEPARATOR . 'lib' . DIRECTORY_SEPARATOR . 'agencies' . DIRECTORY_SEPARATOR . 'notifications.php';
-require_once PROJECT_ROOT_PATH . 'app' . DIRECTORY_SEPARATOR . 'lib' . DIRECTORY_SEPARATOR . 'audit_log.php';
+// Include required files
+require_once PROJECT_ROOT_PATH . 'app/config/config.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/audit_log.php';
+
+/**
+ * Generate a dynamic notification URL that works across all environments
+ * @param string $type The type of URL ('agency_program', 'admin_program', 'agency_submission', 'admin_submission')
+ * @param int $id The ID (program_id or submission_id)
+ * @param array $additional_params Additional URL parameters
+ * @return string The complete URL
+ */
+function generate_notification_url($type, $id, $additional_params = []) {
+    // Build the base path dynamically
+    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    
+    // Get the current script path to determine the base directory
+    $script_name = $_SERVER['SCRIPT_NAME'] ?? '';
+    $base_path = '';
+    
+    // Extract base path from current script location
+    if (strpos($script_name, '/app/') !== false) {
+        // We're in the app directory, go up to project root
+        $path_parts = explode('/', trim($script_name, '/'));
+        $app_index = array_search('app', $path_parts);
+        if ($app_index !== false) {
+            $base_path = '/' . implode('/', array_slice($path_parts, 0, $app_index));
+        }
+    } elseif (strpos($script_name, '/pcds2030_dashboard_fork/') !== false) {
+        $base_path = '/pcds2030_dashboard_fork';
+    } elseif (strpos($script_name, '/pcds2030_dashboard/') !== false) {
+        $base_path = '/pcds2030_dashboard';
+    }
+    
+    // Build the URL based on type
+    $url_path = '';
+    switch ($type) {
+        case 'agency_program':
+            $url_path = $base_path . '/app/views/agency/programs/program_details.php?id=' . $id;
+            break;
+        case 'admin_program':
+            $url_path = $base_path . '/app/views/admin/programs/program_details.php?id=' . $id;
+            break;
+        case 'agency_submission':
+            $url_path = $base_path . '/app/views/agency/programs/program_details.php?id=' . $id;
+            break;
+        case 'admin_submission':
+            $url_path = $base_path . '/app/views/admin/programs/program_details.php?id=' . $id;
+            break;
+        default:
+            // Fallback to program details
+            $url_path = $base_path . '/app/views/agency/programs/program_details.php?id=' . $id;
+    }
+    
+    // Add additional parameters if any
+    if (!empty($additional_params)) {
+        $url_path .= '&' . http_build_query($additional_params);
+    }
+    
+    return $protocol . '://' . $host . $url_path;
+}
 
 /**
  * Notify when a program is created
@@ -68,7 +125,7 @@ function notify_program_created($program_id, $creator_user_id, $program_data) {
         $agency_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         
         $message = "New program '{$program['program_name']}' created by {$creator_name}";
-        $action_url = "/index.php?page=agency_program_details&id={$program_id}";
+        $action_url = generate_notification_url('agency_program', $program_id);
         
         foreach ($agency_users as $user) {
             create_notification($user['user_id'], $message, 'program_created', $action_url);
@@ -81,7 +138,7 @@ function notify_program_created($program_id, $creator_user_id, $program_data) {
         $admin_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         
         $admin_message = "New program '{$program['program_name']}' created by {$creator_name} ({$program['agency_name']})";
-        $admin_action_url = "/index.php?page=admin_program_details&id={$program_id}";
+        $admin_action_url = generate_notification_url('admin_program', $program_id);
         
         foreach ($admin_users as $user) {
             create_notification($user['user_id'], $admin_message, 'program_created', $admin_action_url);
@@ -148,20 +205,20 @@ function notify_program_edited($program_id, $editor_user_id, $changes = []) {
         
         $changes_summary = empty($changes) ? '' : ' (Changes: ' . implode(', ', array_keys($changes)) . ')';
         $message = "Program '{$program['program_name']}' updated by {$editor_name}{$changes_summary}";
-        $action_url = "/index.php?page=agency_program_details&id={$program_id}";
+        $action_url = generate_notification_url('agency_program', $program_id);
         
         foreach ($assigned_users as $user) {
             create_notification($user['user_id'], $message, 'program_edited', $action_url);
         }
         
         // Notify admin users
-        $admin_users_query = "SELECT user_id FROM users WHERE role = 'admin' AND status = 'active'";
+        $admin_users_query = "SELECT user_id FROM users WHERE role = 'admin' AND is_active = 1";
         $stmt = $conn->prepare($admin_users_query);
         $stmt->execute();
         $admin_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         
         $admin_message = "Program '{$program['program_name']}' updated by {$editor_name} ({$program['agency_name']}){$changes_summary}";
-        $admin_action_url = "/index.php?page=admin_program_details&id={$program_id}";
+        $admin_action_url = generate_notification_url('admin_program', $program_id);
         
         foreach ($admin_users as $user) {
             create_notification($user['user_id'], $admin_message, 'program_edited', $admin_action_url);
@@ -204,7 +261,7 @@ function notify_program_deleted($program_id, $deleter_user_id, $program_data) {
         $deleter_name = $deleter['fullname'] ?? $deleter['username'] ?? 'Unknown User';
         
         // Get agency users (excluding the deleter)
-        $agency_users_query = "SELECT user_id FROM users WHERE agency_id = ? AND user_id != ? AND status = 'active'";
+        $agency_users_query = "SELECT user_id FROM users WHERE agency_id = ? AND user_id != ? AND is_active = 1";
         $stmt = $conn->prepare($agency_users_query);
         $stmt->bind_param('ii', $program_data['agency_id'], $deleter_user_id);
         $stmt->execute();
@@ -217,7 +274,7 @@ function notify_program_deleted($program_id, $deleter_user_id, $program_data) {
         }
         
         // Notify admin users
-        $admin_users_query = "SELECT user_id FROM users WHERE role = 'admin' AND status = 'active'";
+        $admin_users_query = "SELECT user_id FROM users WHERE role = 'admin' AND is_active = 1";
         $stmt = $conn->prepare($admin_users_query);
         $stmt->execute();
         $admin_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
@@ -292,14 +349,14 @@ function notify_submission_created($submission_id, $program_id, $creator_user_id
         
         $period_text = $details['period_type'] . ' ' . $details['year'];
         $message = "New submission created for '{$details['program_name']}' ({$period_text}) by {$creator_name}";
-        $action_url = "/index.php?page=agency_edit_submission&program_id={$program_id}&submission_id={$submission_id}";
+        $action_url = generate_notification_url('agency_program', $program_id);
         
         foreach ($assigned_users as $user) {
             create_notification($user['user_id'], $message, 'submission_created', $action_url);
         }
         
         // Notify focal users of the agency
-        $focal_users_query = "SELECT user_id FROM users WHERE agency_id = ? AND role = 'focal' AND user_id != ? AND status = 'active'";
+        $focal_users_query = "SELECT user_id FROM users WHERE agency_id = ? AND role = 'focal' AND user_id != ? AND is_active = 1";
         $stmt = $conn->prepare($focal_users_query);
         $stmt->bind_param('ii', $details['agency_id'], $creator_user_id);
         $stmt->execute();
@@ -310,13 +367,13 @@ function notify_submission_created($submission_id, $program_id, $creator_user_id
         }
         
         // Notify admin users
-        $admin_users_query = "SELECT user_id FROM users WHERE role = 'admin' AND status = 'active'";
+        $admin_users_query = "SELECT user_id FROM users WHERE role = 'admin' AND is_active = 1";
         $stmt = $conn->prepare($admin_users_query);
         $stmt->execute();
         $admin_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         
         $admin_message = "New submission created for '{$details['program_name']}' ({$period_text}) by {$creator_name} ({$details['agency_name']})";
-        $admin_action_url = "/index.php?page=admin_edit_submission&program_id={$program_id}&submission_id={$submission_id}";
+        $admin_action_url = generate_notification_url('admin_program', $program_id);
         
         foreach ($admin_users as $user) {
             create_notification($user['user_id'], $admin_message, 'submission_created', $admin_action_url);
@@ -389,7 +446,7 @@ function notify_submission_edited($submission_id, $program_id, $editor_user_id, 
         $changes_summary = empty($changes) ? '' : ' - Changes: ' . implode(', ', array_keys($changes));
         
         $message = "Submission updated for '{$details['program_name']}' ({$period_text}) {$status_text} by {$editor_name}{$changes_summary}";
-        $action_url = "/index.php?page=agency_edit_submission&program_id={$program_id}&submission_id={$submission_id}";
+        $action_url = generate_notification_url('agency_program', $program_id);
         
         foreach ($assigned_users as $user) {
             create_notification($user['user_id'], $message, 'submission_edited', $action_url);
@@ -397,7 +454,7 @@ function notify_submission_edited($submission_id, $program_id, $editor_user_id, 
         
         // Notify focal users if submission is finalized
         if (!$details['is_draft']) {
-            $focal_users_query = "SELECT user_id FROM users WHERE agency_id = ? AND role = 'focal' AND user_id != ? AND status = 'active'";
+            $focal_users_query = "SELECT user_id FROM users WHERE agency_id = ? AND role = 'focal' AND user_id != ? AND is_active = 1";
             $stmt = $conn->prepare($focal_users_query);
             $stmt->bind_param('ii', $details['agency_id'], $editor_user_id);
             $stmt->execute();
@@ -409,13 +466,13 @@ function notify_submission_edited($submission_id, $program_id, $editor_user_id, 
         }
         
         // Notify admin users
-        $admin_users_query = "SELECT user_id FROM users WHERE role = 'admin' AND status = 'active'";
+        $admin_users_query = "SELECT user_id FROM users WHERE role = 'admin' AND is_active = 1";
         $stmt = $conn->prepare($admin_users_query);
         $stmt->execute();
         $admin_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         
         $admin_message = "Submission updated for '{$details['program_name']}' ({$period_text}) {$status_text} by {$editor_name} ({$details['agency_name']}){$changes_summary}";
-        $admin_action_url = "/index.php?page=admin_edit_submission&program_id={$program_id}&submission_id={$submission_id}";
+        $admin_action_url = generate_notification_url('admin_program', $program_id);
         
         foreach ($admin_users as $user) {
             create_notification($user['user_id'], $admin_message, 'submission_edited', $admin_action_url);
@@ -473,7 +530,7 @@ function notify_submission_deleted($submission_id, $program_id, $deleter_user_id
         }
         
         // Notify focal users
-        $focal_users_query = "SELECT user_id FROM users WHERE agency_id = ? AND role = 'focal' AND user_id != ? AND status = 'active'";
+        $focal_users_query = "SELECT user_id FROM users WHERE agency_id = ? AND role = 'focal' AND user_id != ? AND is_active = 1";
         $stmt = $conn->prepare($focal_users_query);
         $stmt->bind_param('ii', $submission_data['agency_id'], $deleter_user_id);
         $stmt->execute();
@@ -484,7 +541,7 @@ function notify_submission_deleted($submission_id, $program_id, $deleter_user_id
         }
         
         // Notify admin users
-        $admin_users_query = "SELECT user_id FROM users WHERE role = 'admin' AND status = 'active'";
+        $admin_users_query = "SELECT user_id FROM users WHERE role = 'admin' AND is_active = 1";
         $stmt = $conn->prepare($admin_users_query);
         $stmt->execute();
         $admin_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
@@ -549,7 +606,7 @@ function notify_submission_finalized($submission_id, $program_id, $finalizer_use
         $finalizer_name = $finalizer['fullname'] ?? $finalizer['username'] ?? 'Unknown User';
         
         // Get all agency users (excluding finalizer)
-        $agency_users_query = "SELECT user_id FROM users WHERE agency_id = ? AND user_id != ? AND status = 'active'";
+        $agency_users_query = "SELECT user_id FROM users WHERE agency_id = ? AND user_id != ? AND is_active = 1";
         $stmt = $conn->prepare($agency_users_query);
         $stmt->bind_param('ii', $details['agency_id'], $finalizer_user_id);
         $stmt->execute();
@@ -557,20 +614,20 @@ function notify_submission_finalized($submission_id, $program_id, $finalizer_use
         
         $period_text = $details['period_type'] . ' ' . $details['year'];
         $message = "Submission for '{$details['program_name']}' ({$period_text}) has been finalized by {$finalizer_name}";
-        $action_url = "/index.php?page=agency_view_submissions&program_id={$program_id}";
+        $action_url = generate_notification_url('agency_program', $program_id);
         
         foreach ($agency_users as $user) {
             create_notification($user['user_id'], $message, 'submission_finalized', $action_url);
         }
         
         // Notify admin users - this is important for report generation
-        $admin_users_query = "SELECT user_id FROM users WHERE role = 'admin' AND status = 'active'";
+        $admin_users_query = "SELECT user_id FROM users WHERE role = 'admin' AND is_active = 1";
         $stmt = $conn->prepare($admin_users_query);
         $stmt->execute();
         $admin_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         
         $admin_message = "Submission for '{$details['program_name']}' ({$period_text}) finalized by {$finalizer_name} ({$details['agency_name']}) - Ready for reporting";
-        $admin_action_url = "/index.php?page=admin_view_submissions&program_id={$program_id}";
+        $admin_action_url = generate_notification_url('admin_program', $program_id);
         
         foreach ($admin_users as $user) {
             create_notification($user['user_id'], $admin_message, 'submission_finalized', $admin_action_url);
@@ -630,7 +687,7 @@ function notify_program_assignment($program_id, $assigned_user_id, $assigner_use
         
         // Notify the assigned user
         $message = "You have been assigned as {$assignment_type} for program '{$program['program_name']}' by {$assigner_name}";
-        $action_url = "/index.php?page=agency_program_details&id={$program_id}";
+        $action_url = generate_notification_url('agency_program', $program_id);
         
         create_notification($assigned_user_id, $message, 'program_assignment', $action_url);
         
@@ -658,13 +715,13 @@ function notify_program_assignment($program_id, $assigned_user_id, $assigner_use
         }
         
         // Notify admin users
-        $admin_users_query = "SELECT user_id FROM users WHERE role = 'admin' AND status = 'active'";
+        $admin_users_query = "SELECT user_id FROM users WHERE role = 'admin' AND is_active = 1";
         $stmt = $conn->prepare($admin_users_query);
         $stmt->execute();
         $admin_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         
         $admin_message = "{$assigned_user_name} assigned as {$assignment_type} for program '{$program['program_name']}' by {$assigner_name} ({$program['agency_name']})";
-        $admin_action_url = "/index.php?page=admin_program_details&id={$program_id}";
+        $admin_action_url = generate_notification_url('admin_program', $program_id);
         
         foreach ($admin_users as $user) {
             create_notification($user['user_id'], $admin_message, 'program_assignment', $admin_action_url);
@@ -713,7 +770,7 @@ function notify_system_wide($message, $type = 'system', $action_url = null, $sen
     
     try {
         // Get all active users
-        $users_query = "SELECT user_id FROM users WHERE status = 'active'";
+        $users_query = "SELECT user_id FROM users WHERE is_active = 1";
         $stmt = $conn->prepare($users_query);
         $stmt->execute();
         $users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
