@@ -1179,3 +1179,70 @@
 **UI/UX Issues (1 bug):**
 
 - Bug #13: Fixed Navbar Overlapping Page Header
+
+### Bug #39: Program Creation Notifications Not Working - Missing Notification Call in create_simple_program Function
+
+**Date Found**: 2025-07-29 15:45:00  
+**Status**: ✅ FIXED  
+**Severity**: Medium  
+**Impact**: Users not receiving notifications when programs are created
+
+### Problem Description
+Creating a new program through the web interface was not triggering notifications. Users were not receiving notifications about new program creations, even though the audit logs were being created correctly.
+
+### Root Cause Analysis
+1. **Missing notification call**: The `create_simple_program()` function in `app/lib/agencies/programs.php` was missing the `notify_program_created()` call
+2. **Function inconsistency**: Other program creation functions (`create_wizard_program_draft`, `create_agency_program`) had the notification call, but `create_simple_program` did not
+3. **Main interface affected**: The web interface (`create_program.php`) uses `create_simple_program()`, so all program creations through the UI were not generating notifications
+4. **Database column mismatch**: The notification function was looking for `status = 'active'` but the users table has `is_active = 1`
+
+### Investigation Process
+1. **Database analysis**: Found recent program creation audit logs but no corresponding notifications
+2. **Function comparison**: Compared all program creation functions and found `create_simple_program` was missing notification call
+3. **Interface tracing**: Confirmed that `create_program.php` calls `create_simple_program()`
+4. **Database schema check**: Discovered users table uses `is_active` column, not `status`
+
+### Solution Applied
+**File**: `app/lib/agencies/programs.php`  
+**Function**: `create_simple_program()`  
+**Lines**: 398-405
+
+Added the missing notification call after the audit log:
+```php
+// Send notification for program creation
+$program_data = [
+    'program_name' => $program_name,
+    'program_number' => $program_number,
+    'agency_id' => $agency_id,
+    'initiative_id' => $initiative_id
+];
+notify_program_created($program_id, $user_id, $program_data);
+```
+
+**File**: `app/lib/notifications_core.php`  
+**Function**: `notify_program_created()`  
+**Lines**: 58, 72
+
+Fixed database column references:
+```php
+// Changed from: status = 'active'
+// Changed to: is_active = 1
+$agency_users_query = "SELECT user_id FROM users WHERE agency_id = ? AND user_id != ? AND is_active = 1";
+$admin_users_query = "SELECT user_id FROM users WHERE role = 'admin' AND is_active = 1";
+```
+
+### Testing
+- ✅ Notification system is functional (confirmed with test notifications)
+- ✅ Program creation is working (confirmed with audit logs)
+- ✅ Notification call added to the correct function
+- ✅ Database column references fixed
+- ✅ All program creation functions now have consistent notification calls
+- ✅ Test notification created successfully for existing program
+
+### Prevention
+- Ensure all program creation functions include notification calls
+- Add code review checklist for notification functionality
+- Consider adding automated tests for notification triggers
+- Verify database schema matches code assumptions
+
+---

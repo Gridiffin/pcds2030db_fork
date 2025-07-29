@@ -397,6 +397,16 @@ function create_simple_program($data) {
         
         $conn->commit();
         log_audit_action('create_program', "Program Name: $program_name | Program ID: $program_id | Program Number: $program_number", 'success', $user_id);
+        
+        // Send notification for program creation
+        $program_data = [
+            'program_name' => $program_name,
+            'program_number' => $program_number,
+            'agency_id' => $agency_id,
+            'initiative_id' => $initiative_id
+        ];
+        notify_program_created($program_id, $user_id, $program_data);
+        
         return [
             'success' => true, 
             'message' => 'Program template created successfully. Add progress reports for specific periods when ready to report progress.',

@@ -13,6 +13,7 @@ if (!defined('PROJECT_ROOT_PATH')) {
 require_once PROJECT_ROOT_PATH . 'app' . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'config.php';
 require_once PROJECT_ROOT_PATH . 'app' . DIRECTORY_SEPARATOR . 'lib' . DIRECTORY_SEPARATOR . 'db_connect.php';
 require_once PROJECT_ROOT_PATH . 'app' . DIRECTORY_SEPARATOR . 'lib' . DIRECTORY_SEPARATOR . 'functions.php';
+require_once PROJECT_ROOT_PATH . 'app' . DIRECTORY_SEPARATOR . 'lib' . DIRECTORY_SEPARATOR . 'audit_log.php';
 
 /**
  * Get user notifications

@@ -8,7 +8,10 @@
 
 // Define PROJECT_ROOT_PATH if not already defined
 if (!defined('PROJECT_ROOT_PATH')) {
-    define('PROJECT_ROOT_PATH', dirname(dirname(dirname(dirname(__FILE__)))) . DIRECTORY_SEPARATOR);
+    // Use absolute path resolution that works regardless of working directory
+    $current_file = __FILE__;
+    $project_root = dirname(dirname(dirname($current_file))); // Go up 3 levels: lib -> app -> pcds2030_dashboard_fork
+    define('PROJECT_ROOT_PATH', $project_root . DIRECTORY_SEPARATOR);
 }
 
 require_once PROJECT_ROOT_PATH . 'app' . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'config.php';
@@ -58,7 +61,7 @@ function notify_program_created($program_id, $creator_user_id, $program_data) {
         $creator_name = $creator['fullname'] ?? $creator['username'] ?? 'Unknown User';
         
         // Notify agency users (excluding the creator)
-        $agency_users_query = "SELECT user_id FROM users WHERE agency_id = ? AND user_id != ? AND status = 'active'";
+        $agency_users_query = "SELECT user_id FROM users WHERE agency_id = ? AND user_id != ? AND is_active = 1";
         $stmt = $conn->prepare($agency_users_query);
         $stmt->bind_param('ii', $program['agency_id'], $creator_user_id);
         $stmt->execute();
@@ -72,7 +75,7 @@ function notify_program_created($program_id, $creator_user_id, $program_data) {
         }
         
         // Notify all admin users
-        $admin_users_query = "SELECT user_id FROM users WHERE role = 'admin' AND status = 'active'";
+        $admin_users_query = "SELECT user_id FROM users WHERE role = 'admin' AND is_active = 1";
         $stmt = $conn->prepare($admin_users_query);
         $stmt->execute();
         $admin_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
