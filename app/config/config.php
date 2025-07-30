@@ -6,88 +6,81 @@
  * This file should be excluded from version control.
  */
 
-// Database configuration
-define('DB_HOST', 'localhost');
-define('DB_USER', 'root'); // Change this to your MySQL username (default for XAMPP is 'root')
-define('DB_PASS', ''); // Change this to your MySQL password (default for XAMPP is often empty '')
-define('DB_NAME', 'pcds2030_db'); // Updated to use pcds2030_db database
+// Database configuration - Dynamic based on environment
+$host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+if ($host === 'www.sarawakforestry.com' || $host === 'sarawakforestry.com') {
+    // Production database settings
+    define('DB_HOST', 'localhost:3306');
+    define('DB_USER', 'sarawak3_admin1');
+    define('DB_PASS', 'attendance33**');
+    define('DB_NAME', 'pcds2030_db');
+} else {
+    // Local development database settings
+    define('DB_HOST', 'localhost');
+    define('DB_USER', 'root'); // Default for XAMPP/Laragon
+    define('DB_PASS', ''); // Default for XAMPP/Laragon (empty)
+    define('DB_NAME', 'pcds2030_db');
+}
 
 // Application settings
-define('APP_NAME', 'PCDS2030 Dashboard Forestry Sector');
-
-// Environment configuration
-if (!defined('ENVIRONMENT')) {
-    // Check for environment variable first
-    $env = $_SERVER['ENVIRONMENT'] ?? $_ENV['ENVIRONMENT'] ?? null;
-    
-    if ($env) {
-        define('ENVIRONMENT', $env);
-    } else {
-        // Auto-detect based on server characteristics
-        $is_local = in_array($_SERVER['HTTP_HOST'] ?? '', ['localhost', '127.0.0.1', 'pcds2030.local']);
-        $is_development = $is_local || strpos($_SERVER['SERVER_NAME'] ?? '', 'localhost') !== false;
-        
-        define('ENVIRONMENT', $is_development ? 'development' : 'production');
-    }
-} 
+define('APP_NAME', 'PCDS2030 Dashboard Forestry Sector'); 
 
 // Dynamic APP_URL detection for better cross-environment compatibility
 if (!defined('APP_URL')) {
     // Check if we're running from command line
     if (php_sapi_name() === 'cli') {
-        define('APP_URL', 'http://localhost/pcds2030_dashboard_fork'); // Default for CLI
+        define('APP_URL', 'https://www.sarawakforestry.com/pcds2030'); // Default for CLI
     } else {
         // Detect the correct APP_URL based on current request
         $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
         
-        // Get the directory path of the application
-        $script_name = $_SERVER['SCRIPT_NAME'] ?? '';
-        $request_uri = $_SERVER['REQUEST_URI'] ?? '';
-        
-        // Extract the base path by finding the common directory structure
-        $app_path = '';
-        
-        // Check for the new fork directory name first
-        if (strpos($script_name, '/pcds2030_dashboard_fork/') !== false) {
-            // If script is in pcds2030_dashboard_fork folder
-            $app_path = '/pcds2030_dashboard_fork';
-        } elseif (strpos($script_name, '/pcds2030_dashboard/') !== false) {
-            // If script is in pcds2030_dashboard folder (fallback)
-            $app_path = '/pcds2030_dashboard';
-        } elseif (strpos($script_name, '/') !== false) {
-            // Try to detect from script path
-            $path_parts = explode('/', trim($script_name, '/'));
-            if (count($path_parts) > 0) {
-                // Check if we're in a subdirectory
-                foreach ($path_parts as $part) {
-                    if (in_array($part, ['app', 'views', 'admin', 'agency'])) {
-                        break;
-                    }
-                    if (!empty($part)) {
-                        $app_path .= '/' . $part;
+        // Production cPanel detection first
+        if ($host === 'www.sarawakforestry.com' || $host === 'sarawakforestry.com') {
+            define('APP_URL', 'https://www.sarawakforestry.com/pcds2030');
+        } else {
+            // Local development detection
+            $script_name = $_SERVER['SCRIPT_NAME'] ?? '';
+            $app_path = '';
+            
+            // Check for local development directory names
+            if (strpos($script_name, '/pcds2030_dashboard_fork/') !== false) {
+                $app_path = '/pcds2030_dashboard_fork';
+            } elseif (strpos($script_name, '/pcds2030_dashboard/') !== false) {
+                $app_path = '/pcds2030_dashboard';
+            } else {
+                // Fallback detection for other local setups
+                $path_parts = explode('/', trim($script_name, '/'));
+                if (count($path_parts) > 0) {
+                    foreach ($path_parts as $part) {
+                        if (in_array($part, ['app', 'views', 'admin', 'agency'])) {
+                            break;
+                        }
+                        if (!empty($part)) {
+                            $app_path .= '/' . $part;
+                        }
                     }
                 }
             }
-        }
-        
-        // Fallback to document root detection
-        if (empty($app_path)) {
-            $document_root = $_SERVER['DOCUMENT_ROOT'] ?? '';
-            $current_dir = dirname(dirname(dirname(__FILE__)));
-            if (!empty($document_root) && strpos($current_dir, $document_root) === 0) {
-                $app_path = str_replace($document_root, '', $current_dir);
-                $app_path = str_replace('\\', '/', $app_path); // Windows compatibility
+            
+            // Fallback to document root detection
+            if (empty($app_path)) {
+                $document_root = $_SERVER['DOCUMENT_ROOT'] ?? '';
+                $current_dir = dirname(dirname(dirname(__FILE__)));
+                if (!empty($document_root) && strpos($current_dir, $document_root) === 0) {
+                    $app_path = str_replace($document_root, '', $current_dir);
+                    $app_path = str_replace('\\\\', '/', $app_path); // Windows compatibility
+                }
             }
+            
+            // Ensure app_path doesn't end with slash and starts with slash
+            $app_path = '/' . trim($app_path, '/');
+            if ($app_path === '/') {
+                $app_path = '';
+            }
+            
+            define('APP_URL', $protocol . '://' . $host . $app_path);
         }
-        
-        // Ensure app_path doesn't end with slash and starts with slash
-        $app_path = '/' . trim($app_path, '/');
-        if ($app_path === '/') {
-            $app_path = '';
-        }
-        
-        define('APP_URL', $protocol . '://' . $host . $app_path);
     }
 }
 
@@ -211,77 +204,68 @@ define('REPORT_PATH', ROOT_PATH . 'app/reports/');
 if (!defined('BASE_URL')) {
     // Check if we're running from command line
     if (php_sapi_name() === 'cli') {
-        define('BASE_URL', '/pcds2030_dashboard_fork'); // Default for CLI
+        define('BASE_URL', '/pcds2030'); // Production path for CLI
     } else {
-        // Use the same logic as APP_URL but just the path part
-        $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
         
-        // Get the directory path of the application
-        $script_name = $_SERVER['SCRIPT_NAME'] ?? '';
-        $request_uri = $_SERVER['REQUEST_URI'] ?? '';
-        
-        // Extract the base path by finding the common directory structure
-        $base_path = '';
-        
-        // Check for the new fork directory name first
-        if (strpos($script_name, '/pcds2030_dashboard_fork/') !== false) {
-            // If script is in pcds2030_dashboard_fork folder
-            $base_path = '/pcds2030_dashboard_fork';
-        } elseif (strpos($script_name, '/pcds2030_dashboard/') !== false) {
-            // If script is in pcds2030_dashboard folder (fallback)
-            $base_path = '/pcds2030_dashboard';
-        } elseif (strpos($script_name, '/') !== false) {
-            // Try to detect from script path
-            $path_parts = explode('/', trim($script_name, '/'));
-            if (count($path_parts) > 0) {
-                // Check if we're in a subdirectory
-                foreach ($path_parts as $part) {
-                    if (in_array($part, ['app', 'views', 'admin', 'agency'])) {
-                        break;
-                    }
-                    if (!empty($part)) {
-                        $base_path .= '/' . $part;
+        // Production cPanel detection first
+        if ($host === 'www.sarawakforestry.com' || $host === 'sarawakforestry.com') {
+            define('BASE_URL', '/pcds2030');
+        } else {
+            // Local development detection
+            $script_name = $_SERVER['SCRIPT_NAME'] ?? '';
+            $base_path = '';
+            
+            // Check for local development directory names
+            if (strpos($script_name, '/pcds2030_dashboard_fork/') !== false) {
+                $base_path = '/pcds2030_dashboard_fork';
+            } elseif (strpos($script_name, '/pcds2030_dashboard/') !== false) {
+                $base_path = '/pcds2030_dashboard';
+            } else {
+                // Fallback detection for other local setups
+                $path_parts = explode('/', trim($script_name, '/'));
+                if (count($path_parts) > 0) {
+                    foreach ($path_parts as $part) {
+                        if (in_array($part, ['app', 'views', 'admin', 'agency'])) {
+                            break;
+                        }
+                        if (!empty($part)) {
+                            $base_path .= '/' . $part;
+                        }
                     }
                 }
             }
-        }
-        
-        // Fallback to document root detection
-        if (empty($base_path)) {
-            $document_root = $_SERVER['DOCUMENT_ROOT'] ?? '';
-            $current_dir = dirname(dirname(dirname(__FILE__)));
-            if (!empty($document_root) && strpos($current_dir, $document_root) === 0) {
-                $base_path = str_replace($document_root, '', $current_dir);
-                $base_path = str_replace('\\', '/', $base_path); // Windows compatibility
+            
+            // Fallback to document root detection
+            if (empty($base_path)) {
+                $document_root = $_SERVER['DOCUMENT_ROOT'] ?? '';
+                $current_dir = dirname(dirname(dirname(__FILE__)));
+                if (!empty($document_root) && strpos($current_dir, $document_root) === 0) {
+                    $base_path = str_replace($document_root, '', $current_dir);
+                    $base_path = str_replace('\\\\', '/', $base_path); // Windows compatibility
+                }
             }
+            
+            // Ensure base_path doesn't end with slash and starts with slash
+            $base_path = '/' . trim($base_path, '/');
+            if ($base_path === '/') {
+                $base_path = '';
+            }
+            
+            define('BASE_URL', $base_path);
         }
-        
-        // Ensure base_path doesn't end with slash and starts with slash
-        $base_path = '/' . trim($base_path, '/');
-        if ($base_path === '/') {
-            $base_path = '';
-        }
-        
-        define('BASE_URL', $base_path);
     }
 }
 
-// Environment-specific configurations
-if (ENVIRONMENT === 'production') {
-    // Production settings
-    error_reporting(E_ERROR | E_WARNING | E_PARSE);
-    ini_set('display_errors', 0);
-    ini_set('log_errors', 1);
-    
-    // Disable test file access in production
-    define('TESTING_ENABLED', false);
-} else {
-    // Development settings
+// Error reporting - disable for production to prevent headers already sent issues
+if ($_SERVER['HTTP_HOST'] === 'localhost' || strpos($_SERVER['HTTP_HOST'], 'laragon') !== false) {
+    // Development environment
     error_reporting(E_ALL);
     ini_set('display_errors', 1);
-    
-    // Enable test file access in development
-    define('TESTING_ENABLED', true);
+} else {
+    // Production environment - disable error display to prevent header issues
+    error_reporting(E_ALL);
+    ini_set('display_errors', 0);
+    ini_set('log_errors', 1);
 }
 ?>

