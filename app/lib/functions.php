@@ -27,7 +27,7 @@ function get_period_display_name($period) {
     if ($type === 'quarter') {
         return "Q{$num}-{$year}";
     } elseif ($type === 'half') {
-        return "H{$num}-{$year}";
+        return "Half Yearly {$num}-{$year}";
     } elseif ($type === 'yearly') {
         return "Yearly-{$year}";
     } else {
@@ -565,6 +565,34 @@ function log_activity($user_id, $action) {
     $stmt->close();
     return $success;
     */
+}
+
+/**
+ * Safely set session message, preventing notification-related messages from being stored
+ * @param string $message The message to set
+ * @param string $type The message type (success, error, warning, info)
+ * @return void
+ */
+function set_session_message($message, $type = 'info') {
+    // Check if this is a notification-related message that should not be stored in session
+    $notification_keywords = ['New program', 'created by', 'System Administrator', 'notification', 'unread'];
+    $is_notification_message = false;
+    
+    foreach ($notification_keywords as $keyword) {
+        if (stripos($message, $keyword) !== false) {
+            $is_notification_message = true;
+            break;
+        }
+    }
+    
+    // Only set session message if it's not a notification-related message
+    if (!$is_notification_message) {
+        $_SESSION['message'] = $message;
+        $_SESSION['message_type'] = $type;
+    } else {
+        // Log that we prevented a notification message from being stored in session
+        error_log("Prevented notification message from being stored in session: $message");
+    }
 }
 
 /**

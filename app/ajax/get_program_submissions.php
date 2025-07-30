@@ -10,6 +10,7 @@ require_once '../lib/session.php';
 require_once '../lib/db_connect.php';
 require_once '../lib/functions.php';
 require_once '../lib/agencies/programs.php';
+require_once '../lib/agencies/program_permissions.php';
 
 // Set JSON content type
 header('Content-Type: application/json');

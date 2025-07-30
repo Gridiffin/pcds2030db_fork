@@ -223,6 +223,10 @@ if (typeof window.ReportUI !== 'undefined') {
         console.log('Final selected programs for report generation:', selectedProgramIds);
         console.log('Final program orders:', programOrders);
         
+        // Additional debug info
+        console.log('Program orders as JSON string:', JSON.stringify(programOrders));
+        console.log('Number of programs with orders:', Object.keys(programOrders).length);
+        
         // Hide existing messages and show status
         elements.successMessage.classList.add('d-none');
         elements.errorMessage.classList.add('d-none');

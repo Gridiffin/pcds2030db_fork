@@ -75,6 +75,24 @@ $stmt->close();
 $message = '';
 $messageType = '';
 
+// Get message from session if available (for error messages from redirects)
+if (isset($_SESSION['message'])) {
+    $message = $_SESSION['message'];
+    $messageType = $_SESSION['message_type'] ?? 'info';
+    
+    // Clear message from session
+    unset($_SESSION['message']);
+    unset($_SESSION['message_type']);
+}
+
+// Additional cleanup: Clear any notification-related session messages that might have been set elsewhere
+if (isset($_SESSION['notification_message'])) {
+    unset($_SESSION['notification_message']);
+}
+if (isset($_SESSION['notification_type'])) {
+    unset($_SESSION['notification_type']);
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $submission_data = [
         'program_id' => $program_id,

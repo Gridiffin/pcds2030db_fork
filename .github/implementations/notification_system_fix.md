@@ -97,3 +97,120 @@ if ($program['restrict_editors']) {
 **After:** All agency users get notified by default → **Full transparency**
 
 This fix addresses the fundamental issue you identified and ensures the notification system works as expected for all scenarios. 
+
+## Toast Notification Spam Fix (2024-06-13)
+
+**Problem:** Toast notifications for unread notifications would pop up on every page load, causing annoyance and overriding important toasts.
+
+**Solution:**
+- The notification system now tracks the initial load and will **not show toasts for unread notifications on the first page load**.
+- Toasts will only be shown for new notifications that arrive after the page is loaded (e.g., via polling or push).
+- This prevents repeated toast spam and ensures only new, relevant notifications are shown as toasts.
+
+**File updated:**
+- `assets/js/components/notification-system.js`
+
+**How it works:**
+- On first load, the notification system sets a flag (`_initialLoad = true`).
+- When notifications are updated, toasts are only shown if `_initialLoad` is `false` (i.e., after the first update).
+- This ensures toasts are only shown for new notifications, not for all unread notifications on every refresh.
+
+**Result:**
+- No more repeated toast spam for unread notifications.
+- Important toasts (like "program created") are no longer overridden by old unread notifications.
+- UX is much improved for all users.
+
+---
+
+## Session Message Spam Fix (2024-06-13)
+
+**Problem:** Notification messages were being stored in session and displayed as toasts on every page load, causing persistent toast spam.
+
+**Solution:**
+- Added comprehensive checks to prevent notification-related messages from being stored in session.
+- Added filtering in the view to prevent notification messages from being displayed as toasts.
+- Added a safe session message function that prevents notification messages from being stored.
+
+**Files updated:**
+- `app/views/agency/programs/view_programs.php` - Added comprehensive session cleanup
+- `app/views/agency/programs/view_programs_content.php` - Added notification message filtering
+- `app/views/agency/programs/add_submission.php` - Added comprehensive session cleanup
+- `app/views/agency/programs/partials/add_submission_content.php` - Added notification message filtering
+- `app/views/agency/programs/create_program.php` - Added notification message filtering
+- `app/views/agency/programs/partials/edit_program_content.php` - Added notification message filtering
+- `app/views/admin/programs/view_programs_content.php` - Added notification message filtering
+- `app/views/admin/programs/add_submission.php` - Added notification message filtering
+- `app/views/admin/programs/partials/programs_content.php` - Added notification message filtering
+- `app/lib/agencies/notifications.php` - Added documentation about not storing in session
+- `app/lib/functions.php` - Added `set_session_message()` function
+
+**How it works:**
+- The system now checks for notification-related keywords before storing messages in session.
+- Notification messages are filtered out and not displayed as toasts.
+- Session cleanup is more comprehensive to prevent persistent messages.
+
+**Result:**
+- No more persistent session messages causing toast spam.
+- Notification messages are properly handled through the notification system only.
+- Clean separation between session messages and notification messages.
+
+--- 
+
+---
+
+## Dropdown Button Fix (2024-06-13)
+
+**Problem:** The "View Submission" and "Review & Finalize" buttons in the program dropdown menu were causing 404 errors because they tried to use AJAX endpoints that had URL construction issues.
+
+**Solution:**
+- Created a proper submission selection modal that matches the one in program details
+- Fixed the AJAX URL construction to use the correct base URL
+- Made the dropdown buttons open the same modal as the program details page
+
+**Files updated:**
+- `app/views/agency/programs/partials/program_row.php` - Changed dropdown buttons to use `openSubmissionModal()`
+- `app/views/agency/programs/view_programs_content.php` - Added submission modal and JavaScript functions
+
+**How it works:**
+- "View Submission" dropdown button now calls `openSubmissionModal(programId)`
+- "Review & Finalize" dropdown button now calls `openSubmissionModal(programId)`
+- The modal loads submission data via AJAX using the correct URL construction
+- Users can select a submission period and navigate to view it
+
+**Result:**
+- No more 404 errors from dropdown buttons
+- Exact same modal experience as the program details page
+- Proper URL construction that works in all environments
+
+--- 
+
+---
+
+## Dropdown Auto-Close Improvement (2024-06-13)
+
+**Problem:** When users selected options from the dropdown menu, the dropdown remained open, creating visual clutter and potentially interfering with modals and other UI elements.
+
+**Solution:**
+- Added automatic dropdown closing functionality when any dropdown option is selected
+- Created `closeDropdownAndOpenModal()` function for modal-triggering options
+- Created `closeDropdownAndNavigate()` function for navigation options
+- Updated all dropdown items to use these functions
+
+**Files updated:**
+- `app/views/agency/programs/partials/program_row.php` - Updated all dropdown items to use auto-close functions
+- `app/views/agency/programs/view_programs_content.php` - Added dropdown closing JavaScript functions
+
+**How it works:**
+- **View Program**: Closes dropdown and navigates to program details
+- **View Submission**: Closes dropdown and opens submission modal
+- **Edit Program**: Closes dropdown and navigates to edit page
+- **Add Submission**: Closes dropdown and navigates to add submission page
+- **Edit Submission**: Closes dropdown and navigates to edit submission page
+- **Review & Finalize**: Closes dropdown and opens submission modal
+
+**Result:**
+- Cleaner UI with no lingering dropdowns
+- Better space management for modals and other elements
+- Improved user experience with automatic cleanup
+
+--- 

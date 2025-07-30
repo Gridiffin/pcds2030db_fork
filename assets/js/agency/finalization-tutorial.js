@@ -580,8 +580,10 @@ class SubmissionSelectionModal {
             }
             
             // Fetch all submissions for the program from the API
+            // Use a more robust URL construction method
             const baseUrl = window.APP_URL || '';
-            const response = await fetch(`${baseUrl}/app/ajax/get_program_submissions.php?program_id=${programId}`);
+            const apiUrl = baseUrl ? `${baseUrl}/app/ajax/get_program_submissions.php` : '/app/ajax/get_program_submissions.php';
+            const response = await fetch(`${apiUrl}?program_id=${programId}`);
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);

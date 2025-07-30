@@ -473,6 +473,10 @@ function create_notification($user_id, $message, $type = 'system', $action_url =
         return false;
     }
     
+    // IMPORTANT: Do not store notification messages in session
+    // Notifications should only be stored in the database, not in session messages
+    // This prevents notification messages from appearing as toast notifications on page load
+    
     $query = "INSERT INTO notifications (user_id, message, type, action_url, read_status, created_at) 
               VALUES (?, ?, ?, ?, 0, NOW())";
     

@@ -94,10 +94,60 @@
                                             </label>
                                             <select class="form-select" id="periodSelect" name="period_id" required>
                                                 <option value="">Select Reporting Period</option>
-                                                <?php foreach ($periods as $period): ?>
-                                                    <option value="<?php echo htmlspecialchars($period['period_id']); ?>">
-                                                        <?php echo htmlspecialchars(get_period_display_name($period)); ?>
-                                                    </option>
+                                                <?php 
+                                                // Group periods by type and year for better organization
+                                                $groupedPeriods = [];
+                                                foreach ($periods as $period) {
+                                                    $year = $period['year'];
+                                                    $type = $period['period_type'];
+                                                    
+                                                    if (!isset($groupedPeriods[$year])) {
+                                                        $groupedPeriods[$year] = ['quarter' => [], 'half' => [], 'yearly' => []];
+                                                    }
+                                                    $groupedPeriods[$year][$type][] = $period;
+                                                }
+                                                
+                                                // Sort years in descending order
+                                                krsort($groupedPeriods);
+                                                
+                                                foreach ($groupedPeriods as $year => $types): ?>
+                                                    <optgroup label="<?php echo $year; ?>">
+                                                        <?php if (!empty($types['half'])): ?>
+                                                            <optgroup label="&nbsp;&nbsp;Half Yearly">
+                                                                <?php 
+                                                                // Sort half yearly periods by period number
+                                                                usort($types['half'], function($a, $b) { return $b['period_number'] - $a['period_number']; });
+                                                                foreach ($types['half'] as $period): ?>
+                                                                    <option value="<?php echo htmlspecialchars($period['period_id']); ?>">
+                                                                        &nbsp;&nbsp;&nbsp;&nbsp;<?php echo htmlspecialchars(get_period_display_name($period)); ?>
+                                                                    </option>
+                                                                <?php endforeach; ?>
+                                                            </optgroup>
+                                                        <?php endif; ?>
+                                                        
+                                                        <?php if (!empty($types['quarter'])): ?>
+                                                            <optgroup label="&nbsp;&nbsp;Quarters">
+                                                                <?php 
+                                                                // Sort quarterly periods by period number (descending)
+                                                                usort($types['quarter'], function($a, $b) { return $b['period_number'] - $a['period_number']; });
+                                                                foreach ($types['quarter'] as $period): ?>
+                                                                    <option value="<?php echo htmlspecialchars($period['period_id']); ?>">
+                                                                        &nbsp;&nbsp;&nbsp;&nbsp;<?php echo htmlspecialchars(get_period_display_name($period)); ?>
+                                                                    </option>
+                                                                <?php endforeach; ?>
+                                                            </optgroup>
+                                                        <?php endif; ?>
+                                                        
+                                                        <?php if (!empty($types['yearly'])): ?>
+                                                            <optgroup label="&nbsp;&nbsp;Yearly">
+                                                                <?php foreach ($types['yearly'] as $period): ?>
+                                                                    <option value="<?php echo htmlspecialchars($period['period_id']); ?>">
+                                                                        &nbsp;&nbsp;&nbsp;&nbsp;<?php echo htmlspecialchars(get_period_display_name($period)); ?>
+                                                                    </option>
+                                                                <?php endforeach; ?>
+                                                            </optgroup>
+                                                        <?php endif; ?>
+                                                    </optgroup>
                                                 <?php endforeach; ?>
                                             </select>
                                             <div class="invalid-feedback">Please select a reporting period.</div>

@@ -35,7 +35,7 @@ class NotificationSystem {
         this.unreadCount = 0;
         this.isPolling = false;
         this.pollTimer = null;
-        
+        this._initialLoad = true; // <-- Add flag to track initial load
         this.init();
     }
     
@@ -130,17 +130,18 @@ class NotificationSystem {
         this.updateBadge();
         this.updateDropdown();
         
-        // Check for new notifications
-        if (unreadCount > previousUnreadCount && previousUnreadCount > 0) {
+        // Only show toasts for new notifications after initial load
+        if (!this._initialLoad && unreadCount > previousUnreadCount && previousUnreadCount >= 0) {
             const newNotifications = notifications.slice(0, unreadCount - previousUnreadCount);
-            console.log('New notifications detected:', newNotifications.length, 'but toasts are disabled for better UX');
+            console.log('New notifications detected:', newNotifications.length, 'showing toasts for these only after initial load');
             newNotifications.forEach(notification => {
-                // showToast is disabled for better UX
+                // showToast is disabled for better UX, but you can enable it here if needed
                 if (this.options.onNewNotification) {
                     this.options.onNewNotification(notification);
                 }
             });
         }
+        this._initialLoad = false; // <-- Set flag to false after first update
     }
     
     updateBadge() {
