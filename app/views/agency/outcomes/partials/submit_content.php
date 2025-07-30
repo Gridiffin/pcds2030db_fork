@@ -36,6 +36,10 @@ require_once PROJECT_ROOT_PATH . 'app/views/layouts/page_header.php';
                                class="outcome-action-btn btn-primary">
                                 <i class="fas fa-eye"></i> View Details
                             </a>
+                            <a href="<?= $outcome['type'] === 'kpi' ? 'edit_kpi.php' : 'edit_outcome.php' ?>?id=<?= htmlspecialchars($outcome['id']) ?>" 
+                               class="outcome-action-btn btn-warning ms-2">
+                                <i class="fas fa-edit"></i> Edit <?= $outcome['type'] === 'kpi' ? 'KPI' : 'Outcome' ?>
+                            </a>
                         </div>
                     </div>
                 </div>

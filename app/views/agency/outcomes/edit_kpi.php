@@ -1,9 +1,8 @@
 <?php
 /**
- * Edit Outcome Details - Agency Version
- * 
- * Agency interface to edit outcome details with support for flexible table structures
- * Based on working admin implementation
+ * Edit KPI Outcome - Agency Version
+ *
+ * Dedicated page for editing KPI-type outcomes only.
  */
 
 // Define project root path for consistent file references
@@ -11,7 +10,6 @@ if (!defined('PROJECT_ROOT_PATH')) {
     define('PROJECT_ROOT_PATH', dirname(dirname(dirname(dirname(__DIR__)))) . DIRECTORY_SEPARATOR);
 }
 
-// Include necessary files
 require_once PROJECT_ROOT_PATH . 'app/config/config.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
@@ -24,11 +22,6 @@ if (!is_agency()) {
     exit;
 }
 
-// Initialize variables
-$message = '';
-$message_type = '';
-
-// Get outcome ID from URL
 $outcome_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 if ($outcome_id === 0) {
     $_SESSION['error_message'] = 'Outcome not found or already deleted.';
@@ -36,7 +29,6 @@ if ($outcome_id === 0) {
     exit;
 }
 
-// Fetch outcome from new outcomes table
 $outcome = get_outcome_by_id($outcome_id);
 if (!$outcome) {
     $_SESSION['error_message'] = 'Outcome not found or already deleted.';
@@ -44,48 +36,57 @@ if (!$outcome) {
     exit;
 }
 
-// Ensure this is not a KPI outcome (KPI outcomes use edit_kpi.php)
-if ($outcome['type'] === 'kpi') {
-    $_SESSION['error_message'] = 'KPI outcomes should be edited using the KPI edit page.';
-    header('Location: edit_kpi.php?id=' . $outcome_id);
+if ($outcome['type'] !== 'kpi') {
+    $_SESSION['error_message'] = 'This page is only for editing KPI outcomes.';
+    header('Location: submit_outcomes.php');
     exit;
 }
 
-// Handle form submission
+// --- POST handling for saving KPI outcome ---
+$success_message = '';
+$error_message = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $code = isset($_POST['code']) ? trim($_POST['code']) : '';
-    $type = isset($_POST['type']) ? trim($_POST['type']) : '';
-    $title = isset($_POST['title']) ? trim($_POST['title']) : '';
-    $description = isset($_POST['description']) ? trim($_POST['description']) : '';
-    $post_data = [];
-    if (isset($_POST['data'])) {
-        $decoded = json_decode($_POST['data'], true);
-        if (is_array($decoded)) {
-            $post_data = $decoded;
-        }
-    }
-    
-    $update_result = update_outcome_full($outcome_id, $code, $type, $title, $description, $post_data);
-    if ($update_result) {
-        header('Location: view_outcome.php?id=' . $outcome_id . '&saved=1');
-        exit;
+    $title = trim($_POST['title'] ?? '');
+    $description = trim($_POST['description'] ?? '');
+    $data = $_POST['data'] ?? [];
+    // Basic validation
+    if ($title === '') {
+        $error_message = 'Title is required.';
     } else {
-        $message = 'Error updating outcome.';
-        $message_type = 'danger';
+        // Use existing code and type
+        $code = $outcome['code'];
+        $type = $outcome['type'];
+        // Sanitize data array
+        $clean_data = [];
+        foreach ($data as $item) {
+            $clean_data[] = [
+                'description' => trim($item['description'] ?? ''),
+                'value' => trim($item['value'] ?? ''),
+                'unit' => trim($item['unit'] ?? ''),
+                'extra' => trim($item['extra'] ?? ''),
+            ];
+        }
+        $result = update_outcome_full($outcome_id, $code, $type, $title, $description, $clean_data);
+        if ($result) {
+            $success_message = 'KPI outcome updated successfully.';
+            // Refresh outcome data
+            $outcome = get_outcome_by_id($outcome_id);
+        } else {
+            $error_message = 'Failed to update KPI outcome. Please try again.';
+        }
     }
 }
 
 // Set up base layout variables
-$pageTitle = 'Edit Outcome';
+$pageTitle = 'Edit KPI Outcome';
 $cssBundle = 'outcomes'; // CSS bundle for outcomes module
-$jsBundle = 'agency-edit-outcomes';
+$jsBundle = 'agency-edit-kpi';
 $bodyClass = 'outcomes-page';
 
 // Configure modern page header
-$is_draft = isset($outcome['is_draft']) ? $outcome['is_draft'] : 0;
 $header_config = [
-    'title' => 'Edit Outcome',
-    'subtitle' => 'Edit existing outcome with dynamic table structure' . ($is_draft ? ' (Draft)' : ' (Submitted)'),
+    'title' => 'Edit KPI Outcome',
+    'subtitle' => 'Update KPI details and data',
     'breadcrumb' => [
         [
             'text' => 'Home',
@@ -96,7 +97,7 @@ $header_config = [
             'url' => 'submit_outcomes.php'
         ],
         [
-            'text' => 'Edit Outcome',
+            'text' => 'Edit KPI',
             'url' => null // Current page, no link
         ]
     ],
@@ -113,15 +114,12 @@ $header_config = [
             'text' => 'View Outcome',
             'icon' => 'fas fa-eye',
             'class' => 'btn-outline-info'
-        ],
-        [
-            'html' => '<span class="badge ' . ($is_draft ? 'bg-warning text-dark' : 'bg-success') . '"><i class="fas ' . ($is_draft ? 'fa-edit' : 'fa-check') . ' me-1"></i>' . ($is_draft ? 'Draft' : 'Submitted') . '</span>'
         ]
     ]
 ];
 
 // Set content file for base layout
-$contentFile = __DIR__ . '/partials/edit_outcome_content.php';
+$contentFile = __DIR__ . '/partials/edit_kpi_content.php';
 
 // Include the base layout
-require_once PROJECT_ROOT_PATH . 'app/views/layouts/base.php';
+require_once PROJECT_ROOT_PATH . 'app/views/layouts/base.php'; 

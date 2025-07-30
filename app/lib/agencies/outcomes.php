@@ -83,6 +83,34 @@ function update_outcome_data_by_code($code, $data) {
 }
 
 /**
+ * Update all outcome fields by ID in the new outcomes table
+ * @param int $id
+ * @param string $code
+ * @param string $type
+ * @param string $title
+ * @param string $description
+ * @param array $data
+ * @return bool
+ */
+function update_outcome_full($id, $code, $type, $title, $description, $data) {
+    global $conn;
+    $data_json = json_encode($data);
+    $query = "UPDATE outcomes SET code = ?, type = ?, title = ?, description = ?, data = ?, updated_at = NOW() WHERE id = ?";
+    $stmt = $conn->prepare($query);
+    if (!$stmt) {
+        error_log("Error preparing update_outcome_full: " . $conn->error);
+        return false;
+    }
+    $stmt->bind_param("sssssi", $code, $type, $title, $description, $data_json, $id);
+    $success = $stmt->execute();
+    if (!$success) {
+        error_log("Error executing update_outcome_full: " . $stmt->error);
+    }
+    $stmt->close();
+    return $success;
+}
+
+/**
  * Parse outcome JSON data
  * @param string $json_data
  * @return array|null

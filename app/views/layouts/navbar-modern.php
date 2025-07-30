@@ -92,7 +92,7 @@ $nav_items = [
         'url' => APP_URL . '/app/views/agency/outcomes/submit_outcomes.php',
         'label' => 'Outcomes',
         'icon' => 'fas fa-chart-line',
-        'active_pages' => ['submit_outcomes.php', 'create_outcome_flexible.php', 'view_outcome.php', 'edit_outcomes.php', 'create_outcomes_detail.php', 'update_metric_detail.php']
+        'active_pages' => ['submit_outcomes.php', 'create_outcome_flexible.php', 'view_outcome.php', 'edit_outcome.php', 'create_outcomes_detail.php', 'update_metric_detail.php']
     ]
 ];
 

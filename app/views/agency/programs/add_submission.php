@@ -53,8 +53,22 @@ if (!can_edit_program($program_id)) {
     exit;
 }
 
-// Get reporting periods for dropdown
-$reporting_periods = get_reporting_periods_for_dropdown(true);
+// Get reporting periods for dropdown (excluding half-yearly periods)
+$reporting_periods = [];
+$where_clause = "WHERE period_type != 'half'";
+$query = "SELECT period_id, year, period_type, period_number, status FROM reporting_periods
+          $where_clause
+          ORDER BY year DESC, period_type ASC, period_number DESC";
+$result = $conn->query($query);
+if ($result) {
+    while ($row = $result->fetch_assoc()) {
+        // Add derived fields for backward compatibility
+        $row = add_derived_period_fields($row);
+        // Format the period name for display in the dropdown
+        $row['display_name'] = get_period_display_name($row);
+        $reporting_periods[] = $row;
+    }
+}
 
 // Get existing submissions for this program
 $stmt = $conn->prepare("
