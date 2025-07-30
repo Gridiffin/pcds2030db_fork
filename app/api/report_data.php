@@ -266,12 +266,32 @@ if (!$stmt) {
 $stmt->bind_param($program_param_types, ...$program_params);
 $stmt->execute();
 $programs_result = $stmt->get_result();
-$programs = [];
+$programs_by_id = []; // Use associative array to consolidate by program_id
+
 while ($program = $programs_result->fetch_assoc()) {
+    $program_id = (int)$program['program_id'];
     $submission_id = $program['submission_id'];
+    
+    // Initialize program entry if not exists
+    if (!isset($programs_by_id[$program_id])) {
+        $programs_by_id[$program_id] = [
+            'program_id' => $program_id,
+            'program_name' => (string)($program['program_name'] ?? ''),
+            'rating' => (string)($program['rating'] ?? 'not_started'),
+            'initiative_id' => (int)($program['initiative_id'] ?? 0),
+            'initiative_name' => (string)($program['initiative_name'] ?? ''),
+            'period_id' => (int)($program['period_id'] ?? 0),
+            'period_number' => (int)($program['period_number'] ?? 0),
+            'period_type' => (string)($program['period_type'] ?? ''),
+            'year' => (int)($program['year'] ?? 0),
+            'targets' => [],
+            'submissions' => [] // Track multiple submissions for half-yearly periods
+        ];
+    }
+    
+    // Fetch targets for this submission
     $targets = [];
     if ($submission_id) {
-        // Fetch targets for this submission
         $target_stmt = $conn->prepare("SELECT target_id, target_number, target_description, status_indicator, status_description, remarks, start_date, end_date FROM program_targets WHERE submission_id = ? AND is_deleted = 0");
         $target_stmt->bind_param("i", $submission_id);
         $target_stmt->execute();
@@ -289,20 +309,42 @@ while ($program = $programs_result->fetch_assoc()) {
             ];
         }
         $target_stmt->close();
+        
+        // Add submission info with its targets
+        $programs_by_id[$program_id]['submissions'][] = [
+            'submission_id' => (int)$submission_id,
+            'period_id' => (int)($program['period_id'] ?? 0),
+            'period_number' => (int)($program['period_number'] ?? 0),
+            'period_type' => (string)($program['period_type'] ?? ''),
+            'targets' => $targets
+        ];
     }
-    $programs[] = [
-        'program_id' => (int)$program['program_id'],
-        'program_name' => (string)($program['program_name'] ?? ''),
-        'rating' => (string)($program['rating'] ?? 'not_started'),
-        'initiative_id' => (int)($program['initiative_id'] ?? 0),
-        'initiative_name' => (string)($program['initiative_name'] ?? ''),
-        'period_id' => (int)($program['period_id'] ?? 0),
-        'period_number' => (int)($program['period_number'] ?? 0),
-        'period_type' => (string)($program['period_type'] ?? ''),
-        'year' => (int)($program['year'] ?? 0),
-        'targets' => $targets
-    ];
+    
+    // Merge all targets from all submissions into the main targets array
+    $programs_by_id[$program_id]['targets'] = array_merge($programs_by_id[$program_id]['targets'], $targets);
 }
+
+// Convert back to indexed array and remove duplicates
+$programs = [];
+foreach ($programs_by_id as $program) {
+    // Remove the submissions array as it's only used for processing
+    unset($program['submissions']);
+    
+    // Remove duplicate targets by target_id
+    $unique_targets = [];
+    $seen_target_ids = [];
+    foreach ($program['targets'] as $target) {
+        if (!in_array($target['target_id'], $seen_target_ids)) {
+            $unique_targets[] = $target;
+            $seen_target_ids[] = $target['target_id'];
+        }
+    }
+    $program['targets'] = $unique_targets;
+    
+    $programs[] = $program;
+}
+
+error_log("Consolidated " . count($programs) . " unique programs from " . $programs_result->num_rows . " database rows");
 
 // Add debug logging
 error_log("Fetching programs for sector_id: {$sector_id} and period_id: {$period_id}");

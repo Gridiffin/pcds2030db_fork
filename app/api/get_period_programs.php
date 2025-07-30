@@ -145,12 +145,37 @@ try {    // Get programs that have non-draft submissions for this period (only l
     $result = $stmt->get_result();
     $program_count = $result->num_rows;
     
-    error_log("Found {$program_count} non-draft programs matching criteria");    $programs = [];
+    error_log("Found {$program_count} non-draft programs matching criteria");
+    
+    $programs = [];
+    $programs_by_id = []; // Use to consolidate programs with multiple submissions
+    
     while ($program = $result->fetch_assoc()) {
-        if (!isset($programs[$program['sector_id']])) {
-            $programs[$program['sector_id']] = [
+        $sector_id = 1; // Always Forestry Sector
+        $program_id = (int)$program['program_id'];
+        
+        // Initialize sector if not exists
+        if (!isset($programs[$sector_id])) {
+            $programs[$sector_id] = [
                 'sector_name' => $program['sector_name'],
                 'programs' => []
+            ];
+        }
+        
+        // Initialize program consolidation if not exists
+        if (!isset($programs_by_id[$program_id])) {
+            $programs_by_id[$program_id] = [
+                'program_id' => $program_id,
+                'program_name' => $program['program_name'],
+                'program_number' => $program['program_number'],
+                'initiative_id' => $program['initiative_id'],
+                'initiative_name' => $program['initiative_name'],
+                'initiative_number' => $program['initiative_number'],
+                'agency_name' => $program['agency_name'],
+                'owner_agency_id' => $program['owner_agency_id'],
+                'submission_id' => $program['submission_id'], // Use first submission_id found
+                'targets' => [],
+                'all_targets' => [] // Collect targets from all submissions
             ];
         }
         
@@ -182,19 +207,32 @@ try {    // Get programs that have non-draft submissions for this period (only l
             $target_stmt->close();
         }
         
-        $programs[$program['sector_id']]['programs'][] = [
-            'program_id' => $program['program_id'],
-            'program_name' => $program['program_name'],
-            'program_number' => $program['program_number'],
-            'initiative_id' => $program['initiative_id'],
-            'initiative_name' => $program['initiative_name'],
-            'initiative_number' => $program['initiative_number'],
-            'agency_name' => $program['agency_name'],
-            'owner_agency_id' => $program['owner_agency_id'],
-            'submission_id' => $program['submission_id'],
-            'targets' => $targets
-        ];
+        // Add targets to the consolidated list
+        $programs_by_id[$program_id]['all_targets'] = array_merge($programs_by_id[$program_id]['all_targets'], $targets);
     }
+    
+    // Process consolidated programs and remove duplicates
+    foreach ($programs_by_id as $program_id => $program_data) {
+        // Remove duplicate targets by target_id
+        $unique_targets = [];
+        $seen_target_ids = [];
+        foreach ($program_data['all_targets'] as $target) {
+            if (!in_array($target['target_id'], $seen_target_ids)) {
+                $unique_targets[] = $target;
+                $seen_target_ids[] = $target['target_id'];
+            }
+        }
+        
+        // Set the final targets and remove temporary all_targets
+        $program_data['targets'] = $unique_targets;
+        unset($program_data['all_targets']);
+        
+        // Add to sector programs
+        $programs[1]['programs'][] = $program_data;
+    }
+    
+    $consolidated_count = count($programs[1]['programs'] ?? []);
+    error_log("Consolidated {$program_count} database rows into {$consolidated_count} unique programs");
     
     // If no programs found, still return the sector info
     if (empty($programs)) {
