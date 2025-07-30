@@ -43,7 +43,7 @@
 </div>
 </main>
 
-<?php if ($is_finalize_mode && is_focal_user()): ?>
+<?php if (is_focal_user() && isset($submission['is_draft']) && $submission['is_draft']): ?>
 <!-- Finalization Confirmation Modal -->
 <div class="modal fade" id="finalizationModal" tabindex="-1" aria-labelledby="finalizationModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -111,22 +111,32 @@ document.addEventListener('DOMContentLoaded', function() {
             const modal = bootstrap.Modal.getInstance(document.getElementById('finalizationModal'));
             if (modal) modal.hide();
             
-            // Show loading state on header button
-            const headerBtn = document.querySelector('a[onclick*="confirmFinalization"]');
-            if (headerBtn) {
-                headerBtn.style.pointerEvents = 'none';
-                headerBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Finalizing...';
-            }
+            // Show loading state on finalize buttons (both header and any other buttons)
+            const finalizeButtons = document.querySelectorAll('a[onclick*="confirmFinalization"], button[onclick*="confirmFinalization"]');
+            finalizeButtons.forEach(btn => {
+                if (btn.tagName === 'A') {
+                    btn.style.pointerEvents = 'none';
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Finalizing...';
+                } else {
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Finalizing...';
+                }
+            });
             
             // Get submission ID from the current submission data
             const submissionId = <?php echo isset($submission['submission_id']) ? $submission['submission_id'] : 'null'; ?>;
             
             if (!submissionId) {
                 alert('Error: Unable to identify submission for finalization.');
-                if (headerBtn) {
-                    headerBtn.style.pointerEvents = 'auto';
-                    headerBtn.innerHTML = '<i class="fas fa-check-circle me-1"></i> Finalize Submission';
-                }
+                finalizeButtons.forEach(btn => {
+                    if (btn.tagName === 'A') {
+                        btn.style.pointerEvents = 'auto';
+                        btn.innerHTML = '<i class="fas fa-check-circle me-1"></i> Finalize Submission';
+                    } else {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Finalize Submission';
+                    }
+                });
                 return;
             }
             
@@ -188,11 +198,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('Finalization error:', error);
                 alert('Error: ' + error.message);
                 
-                // Re-enable button
-                if (headerBtn) {
-                    headerBtn.style.pointerEvents = 'auto';
-                    headerBtn.innerHTML = '<i class="fas fa-check-circle me-1"></i> Finalize Submission';
-                }
+                // Re-enable buttons
+                finalizeButtons.forEach(btn => {
+                    if (btn.tagName === 'A') {
+                        btn.style.pointerEvents = 'auto';
+                        btn.innerHTML = '<i class="fas fa-check-circle me-1"></i> Finalize Submission';
+                    } else {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Finalize Submission';
+                    }
+                });
             });
         });
     }

@@ -54,8 +54,8 @@ if (!can_edit_program($program_id)) {
     exit;
 }
 
-// Get reporting periods for dropdown
-$reporting_periods = get_reporting_periods_for_dropdown(true);
+// Get reporting periods for dropdown (excluding half-yearly and yearly periods)
+$reporting_periods = get_reporting_periods_for_submissions(true);
 
 // Get existing submissions for this program to show which periods are already covered
 $existing_submissions_query = "SELECT ps.period_id, ps.is_draft, ps.is_submitted, ps.submission_id,

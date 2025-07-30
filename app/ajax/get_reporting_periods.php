@@ -21,7 +21,7 @@ if (!$program_id) {
 }
 
 $periods = [];
-$reporting_periods = get_reporting_periods_for_dropdown(true);
+$reporting_periods = get_reporting_periods_for_submissions(true);
 
 // Get all submissions for this program
 $existing_submissions_query = "SELECT ps.period_id, ps.is_draft, ps.is_submitted, ps.submission_id

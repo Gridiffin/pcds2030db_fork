@@ -576,13 +576,6 @@ $contentFile = null;
                                 <i class="fas fa-edit me-2"></i>Edit This Submission
                             </a>
                             
-                            <?php if ($submission['is_draft']): ?>
-                                <button type="button" class="btn btn-success" 
-                                        onclick="submitSubmission(<?php echo $submission['submission_id']; ?>)">
-                                    <i class="fas fa-paper-plane me-2"></i>Submit for Review
-                                </button>
-                            <?php endif; ?>
-                            
                             <a href="add_submission.php?program_id=<?php echo $program_id; ?>" 
                                class="btn btn-outline-primary">
                                 <i class="fas fa-plus me-2"></i>Add New Submission
@@ -607,14 +600,6 @@ $contentFile = null;
 </div>
 
 <script>
-// Submit submission functionality
-function submitSubmission(submissionId) {
-    if (confirm('Are you sure you want to submit this submission for review? Once submitted, you may not be able to edit it.')) {
-        // Add loading state and redirect to submission handler
-        window.location.href = `submit_submission.php?submission_id=${submissionId}&program_id=<?php echo $program_id; ?>`;
-    }
-}
-
 // Pass PHP variables to JavaScript
 window.programId = <?php echo $program_id; ?>;
 window.periodId = <?php echo $period_id; ?>;

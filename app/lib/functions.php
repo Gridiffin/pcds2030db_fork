@@ -388,6 +388,34 @@ function get_reporting_periods_for_dropdown($include_inactive = false) {
 }
 
 /**
+ * Get reporting periods for submissions (excludes half-yearly and yearly periods)
+ * 
+ * @param bool $include_inactive Whether to include inactive periods
+ * @return array Array of reporting periods suitable for submission forms
+ */
+function get_reporting_periods_for_submissions($include_inactive = false) {
+    global $conn;
+    $where_clause = $include_inactive ? "WHERE period_type NOT IN ('half', 'yearly')" : "WHERE status = 'open' AND period_type NOT IN ('half', 'yearly')";
+    $query = "SELECT period_id, year, period_type, period_number, status FROM reporting_periods
+              $where_clause
+              ORDER BY year DESC, period_type ASC, period_number DESC";
+    $result = $conn->query($query);
+    if (!$result) {
+        error_log("Error fetching reporting periods for submissions: " . $conn->error);
+        return [];
+    }
+    $periods = [];
+    while ($row = $result->fetch_assoc()) {
+        // Add derived fields for backward compatibility
+        $row = add_derived_period_fields($row);
+        // Format the period name for display in the dropdown
+        $row['display_name'] = get_period_display_name($row);
+        $periods[] = $row;
+    }
+    return $periods;
+}
+
+/**
  * Get a specific reporting period by ID
  * 
  * @param int $period_id The ID of the reporting period to retrieve

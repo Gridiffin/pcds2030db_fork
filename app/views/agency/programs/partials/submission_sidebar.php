@@ -128,20 +128,6 @@
     <div class="card-body">
         <div class="d-grid gap-2">
             <?php if ($can_edit): ?>
-                <!-- Edit Submission -->
-                <a href="edit_submission.php?program_id=<?php echo $program_id; ?>&period_id=<?php echo $period_id; ?>" 
-                   class="btn btn-primary">
-                    <i class="fas fa-edit me-2"></i>Edit Submission
-                </a>
-                
-                <!-- Submit for Review (if draft) -->
-                <?php if ($submission['is_draft'] && !$submission['is_submitted']): ?>
-                    <button type="button" class="btn btn-success" 
-                            onclick="submitSubmission(<?php echo $submission['submission_id']; ?>)">
-                        <i class="fas fa-paper-plane me-2"></i>Submit for Review
-                    </button>
-                <?php endif; ?>
-                
                 <!-- Add New Submission -->
                 <a href="add_submission.php?program_id=<?php echo $program_id; ?>" 
                    class="btn btn-outline-primary">

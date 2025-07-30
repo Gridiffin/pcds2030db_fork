@@ -108,7 +108,7 @@ function get_admin_program_details_view_data($program_id) {
         }
     }
     
-    // Get all reporting periods for this program (submission history)
+    // Get all reporting periods for this program (submission history) - excluding half-yearly and yearly
     $all_periods = [];
     $periods_query = "SELECT DISTINCT rp.period_id, rp.period_type, rp.period_number, rp.year,
                              ps.submission_id, ps.is_draft, ps.submitted_at,
@@ -117,6 +117,7 @@ function get_admin_program_details_view_data($program_id) {
                       LEFT JOIN program_submissions ps ON rp.period_id = ps.period_id 
                           AND ps.program_id = ? AND ps.is_deleted = 0 AND ps.is_draft = 0
                       LEFT JOIN users u ON ps.submitted_by = u.user_id
+                      WHERE rp.period_type NOT IN ('half', 'yearly')
                       ORDER BY rp.year DESC, rp.period_number DESC";
     
     $stmt = $conn->prepare($periods_query);
@@ -129,7 +130,7 @@ function get_admin_program_details_view_data($program_id) {
         $all_periods[] = $period;
     }
     
-    // Get submission history (finalized only for admin)
+    // Get submission history (finalized only for admin) - excluding half-yearly and yearly
     $submission_history = [];
     $history_query = "SELECT ps.*, 
                              rp.period_type, rp.period_number, rp.year,
@@ -140,6 +141,7 @@ function get_admin_program_details_view_data($program_id) {
                       WHERE ps.program_id = ? 
                       AND ps.is_deleted = 0 
                       AND ps.is_draft = 0
+                      AND rp.period_type NOT IN ('half', 'yearly')
                       ORDER BY ps.submission_id DESC";
     
     $stmt = $conn->prepare($history_query);
