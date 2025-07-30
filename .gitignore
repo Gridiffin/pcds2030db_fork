@@ -1,2 +1,12 @@
 node_modules
 dist/
+
+# IDE and Editor folders
+.claude/
+.cursor/
+.vscode/
+.kiro/
+.windsurf/
+
+# GitHub specific folders
+.github/
