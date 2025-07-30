@@ -474,22 +474,5 @@ function delete_user($user_id) {
  * @param integer $user_id
  * @return array|null
  */
-function get_user_by_id(mysqli $conn, int $user_id): ?array {
-    $sql = "SELECT u.*, a.agency_name 
-            FROM users u 
-            LEFT JOIN agency a ON u.agency_id = a.agency_id
-            WHERE u.user_id = ?";
-    $stmt = $conn->prepare($sql);
-    if (!$stmt) {
-        error_log("Prepare failed: (" . $conn->errno . ") " . $conn->error);
-        return null;
-    }
-    $stmt->bind_param("i", $user_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    if ($result && $result->num_rows > 0) {
-        return $result->fetch_assoc();
-    }
-    return null;
-}
+// get_user_by_id removed. Use app/lib/user_functions.php for agency user fetching.
 ?>

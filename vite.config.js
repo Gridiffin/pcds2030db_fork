@@ -49,6 +49,7 @@ export default defineConfig({
                 'agency-submit-outcomes': path.resolve(__dirname, 'assets/js/agency/outcomes/submit_outcomes.js'),
                 'agency-reports': path.resolve(__dirname, 'assets/js/agency/reports/reports.js'),
                 'agency-notifications': path.resolve(__dirname, 'assets/js/agency/users/notifications.js'),
+                'agency-users-profile': path.resolve(__dirname, 'assets/js/agency/users/profile-bundle.js'),
             },
             output: {
                 entryFileNames: 'js/[name].bundle.js',

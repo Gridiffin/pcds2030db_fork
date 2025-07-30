@@ -341,7 +341,6 @@ $user_initials = strtoupper($user_initials);
                     <span class="user-name"><?php echo htmlspecialchars($_SESSION['fullname'] ?? $_SESSION['username']); ?></span>
                     <i class="fas fa-chevron-down user-chevron" aria-hidden="true"></i>
                 </button>
-
                 <div class="user-dropdown" role="menu" aria-labelledby="user-toggle">
                     <div class="user-info-header">
                         <div class="user-avatar-large"><?php echo $user_initials; ?></div>
@@ -350,15 +349,6 @@ $user_initials = strtoupper($user_initials);
                             <div class="user-role">Administrator</div>
                         </div>
                     </div>
-                    <div class="user-dropdown-divider" role="separator"></div>
-                    <a href="#" class="user-dropdown-item" role="menuitem">
-                        <i class="fas fa-user item-icon" aria-hidden="true"></i>
-                        Profile
-                    </a>
-                    <a href="<?php echo APP_URL; ?>/app/views/admin/settings/system_settings.php" class="user-dropdown-item" role="menuitem">
-                        <i class="fas fa-cog item-icon" aria-hidden="true"></i>
-                        Settings
-                    </a>
                     <div class="user-dropdown-divider" role="separator"></div>
                     <a href="<?php echo APP_URL; ?>/logout.php" class="user-dropdown-item" role="menuitem">
                         <i class="fas fa-sign-out-alt item-icon" aria-hidden="true"></i>

@@ -80,7 +80,23 @@ $header_config = [
             'text' => 'Back to Outcomes',
             'icon' => 'fas fa-arrow-left',
             'class' => 'btn-outline-secondary'
-        ]
+        ],
+        // Add edit button based on outcome type
+        (
+            $outcome['type'] === 'kpi'
+            ? [
+                'url' => 'edit_kpi.php?id=' . $outcome_id,
+                'text' => 'Edit KPI',
+                'icon' => 'fas fa-edit',
+                'class' => 'btn-primary'
+            ]
+            : [
+                'url' => 'edit_outcome.php?id=' . $outcome_id,
+                'text' => 'Edit Outcome',
+                'icon' => 'fas fa-edit',
+                'class' => 'btn-primary'
+            ]
+        )
     ]
 ];
 

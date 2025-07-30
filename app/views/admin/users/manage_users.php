@@ -87,10 +87,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $message_type = 'danger';
                 }
                 break;            case 'delete_user':
-                // Redirect to process_user.php which handles the actual deletion
-                $_SESSION['user_id_to_delete'] = $_POST['user_id'];
-                header('Location: ../../../handlers/admin/process_user.php?action=delete_user&user_id=' . $_POST['user_id']);
-                exit;
+                $result = delete_user($_POST['user_id']);
+                if (isset($result['success'])) {
+                    $message = $result['message'] ?? 'User deleted successfully.';
+                    $message_type = 'success';
+                } else {
+                    $message = $result['error'] ?? 'Failed to delete user.';
+                    $message_type = 'danger';
+                }
+                break;
         }
         
         // If this was an AJAX request, return JSON response instead of setting message variables

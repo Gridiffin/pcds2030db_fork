@@ -18,7 +18,7 @@ if (file_exists(dirname(__FILE__) . '/core.php')) {
 
 // Include audit logging
 require_once dirname(__DIR__) . '/audit_log.php';
-require_once dirname(__DIR__) . '/admins/users.php'; // Add this to use get_user_by_id
+require_once dirname(__DIR__) . '/user_functions.php'; // Add this to use get_user_by_id
 require_once dirname(__DIR__) . '/notifications_core.php';
 
 // Include numbering helpers for hierarchical program numbering

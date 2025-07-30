@@ -457,4 +457,190 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize toggle buttons
     initializeToggleButtons();
+
+    // Delete User functionality
+    function initializeDeleteButtons() {
+        const deleteButtons = document.querySelectorAll('.delete-user-btn');
+        console.log('Found delete buttons:', deleteButtons.length);
+        
+        deleteButtons.forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Delete button clicked');
+                
+                const userId = this.getAttribute('data-user-id');
+                const username = this.getAttribute('data-username');
+                
+                console.log('Delete user:', { userId, username });
+                
+                                // Show custom centered confirmation modal
+                showDeleteConfirmationModal(username, userId, this);
+            });
+        });
+    }
+    
+    // Function to show centered delete confirmation modal
+    function showDeleteConfirmationModal(username, userId, deleteButton) {
+        // Create modal HTML with proper centering
+        const modalHTML = `
+            <div class="modal fade" id="deleteUserModal" tabindex="-1" aria-labelledby="deleteUserModalLabel" aria-hidden="true" style="display: flex !important; align-items: center !important; justify-content: center !important;">
+                <div class="modal-dialog modal-dialog-centered" style="margin: 0 auto !important; max-width: 500px !important;">
+                    <div class="modal-content">
+                        <div class="modal-header bg-danger text-white">
+                            <h5 class="modal-title" id="deleteUserModalLabel">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                Delete User
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="mb-3">
+                                Are you sure you want to delete the user <strong>"${username}"</strong>?
+                            </p>
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Warning:</strong> This action cannot be undone.
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fas fa-times me-2"></i>
+                                Cancel
+                            </button>
+                            <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                                <i class="fas fa-trash me-2"></i>
+                                Delete User
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remove existing modal if any
+        const existingModal = document.getElementById('deleteUserModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        // Add modal to body
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Get modal element
+        const modal = document.getElementById('deleteUserModal');
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        
+        // Show modal with proper centering
+        const bsModal = new bootstrap.Modal(modal, {
+            backdrop: 'static',
+            keyboard: false
+        });
+        
+        // Ensure modal is centered
+        modal.style.display = 'flex';
+        modal.style.alignItems = 'center';
+        modal.style.justifyContent = 'center';
+        modal.style.padding = '0';
+        
+        bsModal.show();
+        
+        // Force centering after modal is shown
+        setTimeout(() => {
+            const dialog = modal.querySelector('.modal-dialog');
+            if (dialog) {
+                dialog.style.margin = '0 auto';
+                dialog.style.position = 'relative';
+                dialog.style.top = '50%';
+                dialog.style.transform = 'translateY(-50%)';
+            }
+        }, 10);
+        
+        // Handle confirm button click
+        confirmBtn.addEventListener('click', function() {
+            console.log('User confirmed deletion');
+            
+            // Hide modal
+            bsModal.hide();
+            
+            // Check if window.APP_URL is available
+            const appUrl = window.APP_URL || '';
+            if (!appUrl) {
+                console.error('APP_URL not defined');
+                alert('Configuration error: APP_URL not defined');
+                return;
+            }
+            
+            // Create form data for deletion
+            const formData = new FormData();
+            formData.append('action', 'delete_user');
+            formData.append('user_id', userId);
+            formData.append('ajax_request', '1');
+            
+            // Send AJAX request to delete user
+            fetch(window.location.href, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                console.log('Response received:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Response data:', data);
+                if (data.success) {
+                    console.log(`User ${username} has been deleted successfully`);
+                    
+                    // Show success message
+                    if (typeof window.showToast === 'function') {
+                        window.showToast('Success', `User "${username}" has been deleted successfully.`, 'success');
+                    } else {
+                        alert(`User "${username}" has been deleted successfully.`);
+                    }
+                    
+                    // Remove the row from the table with animation
+                    const row = deleteButton.closest('tr');
+                    if (row) {
+                        row.style.backgroundColor = '#ffe6e6';
+                        row.style.transition = 'all 0.5s';
+                        
+                        setTimeout(() => {
+                            row.style.opacity = '0';
+                            row.style.transform = 'translateX(20px)';
+                            
+                            setTimeout(() => {
+                                row.remove();
+                            }, 500);
+                        }, 300);
+                    }
+                } else {
+                    console.error('Server error:', data.error);
+                    if (typeof window.showToast === 'function') {
+                        window.showToast('Error', data.error || 'Failed to delete user', 'danger');
+                    } else {
+                        alert('Error: ' + (data.error || 'Failed to delete user'));
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+                if (typeof window.showToast === 'function') {
+                    window.showToast('Error', 'An error occurred while deleting user: ' + error.message, 'danger');
+                } else {
+                    alert('An error occurred while deleting user: ' + error.message);
+                }
+            });
+        });
+        
+        // Handle modal hidden event to clean up
+        modal.addEventListener('hidden.bs.modal', function() {
+            modal.remove();
+        });
+    }
+    
+    // Initialize delete buttons
+    initializeDeleteButtons();
 });
