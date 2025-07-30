@@ -213,6 +213,7 @@
                                 <?php else: ?>
                                     <?php foreach ($programs_with_submissions as $program): 
                                         $show_rating = true;
+                                        $from_finalized_table = true;
                                         require __DIR__ . '/partials/program_row.php';
                                     endforeach; ?>
                                 <?php endif; ?>

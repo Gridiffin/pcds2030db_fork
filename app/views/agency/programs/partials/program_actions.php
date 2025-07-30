@@ -17,6 +17,7 @@
     </div>
     <div class="card-body-modern">
         <div class="row">
+            <?php if ($is_draft || !$has_submissions): ?>
             <div class="col-md-6 mb-3">
                 <a href="<?php echo APP_URL; ?>/app/views/agency/programs/add_submission.php?program_id=<?php echo $program['program_id']; ?>" 
                    class="btn-modern btn-outline-success-modern w-100">
@@ -31,6 +32,7 @@
                 </a>
                 <small class="text-muted d-block mt-1">Modify program information and settings</small>
             </div>
+            <?php endif; ?>
             <?php if ($has_submissions): ?>
             <div class="col-md-6 mb-3">
                 <button type="button" class="btn-modern btn-outline-info-modern w-100" data-bs-toggle="modal" data-bs-target="#selectSubmissionModal">

@@ -97,8 +97,8 @@ $header_config = [
     ]
 ];
 
-// Add edit button if user can edit
-if ($can_edit) {
+// Add edit button if user can edit and latest submission is not finalized
+if ($can_edit && ($is_draft || !$has_submissions)) {
     $header_config['actions'][] = [
         'url' => 'edit_program.php?id=' . $program_id,
         'text' => 'Edit Program',
