@@ -18,6 +18,7 @@ if (!defined('PROJECT_ROOT_PATH')) {
 require_once PROJECT_ROOT_PATH . 'app/config/config.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/audit_log.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/agencies/notifications.php';
 
 /**
  * Generate a dynamic notification URL that works across all environments
@@ -172,7 +173,7 @@ function notify_program_edited($program_id, $editor_user_id, $changes = []) {
     
     try {
         // Get program details
-        $program_query = "SELECT p.program_name, p.agency_id, a.agency_name 
+        $program_query = "SELECT p.program_name, p.agency_id, a.agency_name, p.restrict_editors
                          FROM programs p 
                          JOIN agency a ON p.agency_id = a.agency_id 
                          WHERE p.program_id = ?";
@@ -195,29 +196,42 @@ function notify_program_edited($program_id, $editor_user_id, $changes = []) {
         
         $editor_name = $editor['fullname'] ?? $editor['username'] ?? 'Unknown User';
         
-        // Get program editors and viewers (excluding the editor)
-        $assigned_users_query = "SELECT DISTINCT user_id FROM program_user_assignments 
-                                WHERE program_id = ? AND user_id != ? AND assignment_type IN ('editor', 'viewer')";
-        $stmt = $conn->prepare($assigned_users_query);
-        $stmt->bind_param('ii', $program_id, $editor_user_id);
-        $stmt->execute();
-        $assigned_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-        
-        $changes_summary = empty($changes) ? '' : ' (Changes: ' . implode(', ', array_keys($changes)) . ')';
-        $message = "Program '{$program['program_name']}' updated by {$editor_name}{$changes_summary}";
+        $message = "Program '{$program['program_name']}' was edited by {$editor_name}";
         $action_url = generate_notification_url('agency_program', $program_id);
         
-        foreach ($assigned_users as $user) {
-            create_notification($user['user_id'], $message, 'program_edited', $action_url);
+        // Determine who to notify based on program restrictions
+        if ($program['restrict_editors']) {
+            // If editing is restricted, notify only assigned users
+            $assigned_users_query = "SELECT DISTINCT user_id FROM program_user_assignments 
+                                   WHERE program_id = ? AND user_id != ? AND role IN ('editor', 'viewer') AND is_active = 1";
+            $stmt = $conn->prepare($assigned_users_query);
+            $stmt->bind_param('ii', $program_id, $editor_user_id);
+            $stmt->execute();
+            $assigned_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+            
+            foreach ($assigned_users as $user) {
+                create_notification($user['user_id'], $message, 'program_edited', $action_url);
+            }
+        } else {
+            // If editing is not restricted, notify all agency users (excluding editor)
+            $agency_users_query = "SELECT user_id FROM users WHERE agency_id = ? AND user_id != ? AND is_active = 1";
+            $stmt = $conn->prepare($agency_users_query);
+            $stmt->bind_param('ii', $program['agency_id'], $editor_user_id);
+            $stmt->execute();
+            $agency_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+            
+            foreach ($agency_users as $user) {
+                create_notification($user['user_id'], $message, 'program_edited', $action_url);
+            }
         }
         
-        // Notify admin users
+        // Notify all admin users
         $admin_users_query = "SELECT user_id FROM users WHERE role = 'admin' AND is_active = 1";
         $stmt = $conn->prepare($admin_users_query);
         $stmt->execute();
         $admin_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         
-        $admin_message = "Program '{$program['program_name']}' updated by {$editor_name} ({$program['agency_name']}){$changes_summary}";
+        $admin_message = "Program '{$program['program_name']}' was edited by {$editor_name} ({$program['agency_name']})";
         $admin_action_url = generate_notification_url('admin_program', $program_id);
         
         foreach ($admin_users as $user) {
@@ -245,12 +259,27 @@ function notify_program_edited($program_id, $editor_user_id, $changes = []) {
 function notify_program_deleted($program_id, $deleter_user_id, $program_data) {
     global $conn;
     
-    if (!$program_id || !$deleter_user_id || !$program_data) {
+    if (!$program_id || !$deleter_user_id) {
         error_log("notify_program_deleted: Missing required parameters");
         return false;
     }
     
     try {
+        // Get program details and agency information
+        $program_query = "SELECT p.program_name, p.agency_id, p.restrict_editors, a.agency_name 
+                         FROM programs p 
+                         JOIN agency a ON p.agency_id = a.agency_id 
+                         WHERE p.program_id = ?";
+        $stmt = $conn->prepare($program_query);
+        $stmt->bind_param('i', $program_id);
+        $stmt->execute();
+        $program = $stmt->get_result()->fetch_assoc();
+        
+        if (!$program) {
+            error_log("notify_program_deleted: Program not found: $program_id");
+            return false;
+        }
+        
         // Get deleter information
         $deleter_query = "SELECT username, fullname FROM users WHERE user_id = ?";
         $stmt = $conn->prepare($deleter_query);
@@ -260,29 +289,46 @@ function notify_program_deleted($program_id, $deleter_user_id, $program_data) {
         
         $deleter_name = $deleter['fullname'] ?? $deleter['username'] ?? 'Unknown User';
         
-        // Get agency users (excluding the deleter)
-        $agency_users_query = "SELECT user_id FROM users WHERE agency_id = ? AND user_id != ? AND is_active = 1";
-        $stmt = $conn->prepare($agency_users_query);
-        $stmt->bind_param('ii', $program_data['agency_id'], $deleter_user_id);
-        $stmt->execute();
-        $agency_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $message = "Program '{$program['program_name']}' was deleted by {$deleter_name}";
+        $action_url = generate_notification_url('agency_program', $program_id);
         
-        $message = "Program '{$program_data['program_name']}' has been deleted by {$deleter_name}";
-        
-        foreach ($agency_users as $user) {
-            create_notification($user['user_id'], $message, 'program_deleted', null);
+        // Determine who to notify based on program restrictions
+        if ($program['restrict_editors']) {
+            // If editing was restricted, notify only assigned users
+            $assigned_users_query = "SELECT DISTINCT user_id FROM program_user_assignments 
+                                   WHERE program_id = ? AND user_id != ? AND role IN ('editor', 'viewer') AND is_active = 1";
+            $stmt = $conn->prepare($assigned_users_query);
+            $stmt->bind_param('ii', $program_id, $deleter_user_id);
+            $stmt->execute();
+            $assigned_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+            
+            foreach ($assigned_users as $user) {
+                create_notification($user['user_id'], $message, 'program_deleted', $action_url);
+            }
+        } else {
+            // If editing was not restricted, notify all agency users (excluding deleter)
+            $agency_users_query = "SELECT user_id FROM users WHERE agency_id = ? AND user_id != ? AND is_active = 1";
+            $stmt = $conn->prepare($agency_users_query);
+            $stmt->bind_param('ii', $program['agency_id'], $deleter_user_id);
+            $stmt->execute();
+            $agency_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+            
+            foreach ($agency_users as $user) {
+                create_notification($user['user_id'], $message, 'program_deleted', $action_url);
+            }
         }
         
-        // Notify admin users
+        // Notify all admin users
         $admin_users_query = "SELECT user_id FROM users WHERE role = 'admin' AND is_active = 1";
         $stmt = $conn->prepare($admin_users_query);
         $stmt->execute();
         $admin_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         
-        $admin_message = "Program '{$program_data['program_name']}' deleted by {$deleter_name} ({$program_data['agency_name']})";
+        $admin_message = "Program '{$program['program_name']}' was deleted by {$deleter_name} ({$program['agency_name']})";
+        $admin_action_url = generate_notification_url('admin_program', $program_id);
         
         foreach ($admin_users as $user) {
-            create_notification($user['user_id'], $admin_message, 'program_deleted', null);
+            create_notification($user['user_id'], $admin_message, 'program_deleted', $admin_action_url);
         }
         
         // Log the notification action
@@ -301,7 +347,7 @@ function notify_program_deleted($program_id, $deleter_user_id, $program_data) {
  * @param int $submission_id Submission ID that was created
  * @param int $program_id Program ID the submission belongs to
  * @param int $creator_user_id User who created the submission
- * @param int $period_id Reporting period ID
+ * @param int $period_id Period ID for the submission
  * @return bool Success status
  */
 function notify_submission_created($submission_id, $program_id, $creator_user_id, $period_id) {
@@ -314,7 +360,7 @@ function notify_submission_created($submission_id, $program_id, $creator_user_id
     
     try {
         // Get submission and program details
-        $details_query = "SELECT p.program_name, p.agency_id, a.agency_name, rp.period_type, rp.year
+        $details_query = "SELECT p.program_name, p.agency_id, p.restrict_editors, a.agency_name, rp.period_type, rp.year
                          FROM programs p 
                          JOIN agency a ON p.agency_id = a.agency_id
                          JOIN program_submissions ps ON p.program_id = ps.program_id
@@ -339,23 +385,37 @@ function notify_submission_created($submission_id, $program_id, $creator_user_id
         
         $creator_name = $creator['fullname'] ?? $creator['username'] ?? 'Unknown User';
         
-        // Get program editors and viewers (excluding creator)
-        $assigned_users_query = "SELECT DISTINCT user_id FROM program_user_assignments 
-                                WHERE program_id = ? AND user_id != ? AND assignment_type IN ('editor', 'viewer')";
-        $stmt = $conn->prepare($assigned_users_query);
-        $stmt->bind_param('ii', $program_id, $creator_user_id);
-        $stmt->execute();
-        $assigned_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-        
         $period_text = $details['period_type'] . ' ' . $details['year'];
         $message = "New submission created for '{$details['program_name']}' ({$period_text}) by {$creator_name}";
         $action_url = generate_notification_url('agency_program', $program_id);
         
-        foreach ($assigned_users as $user) {
-            create_notification($user['user_id'], $message, 'submission_created', $action_url);
+        // Determine who to notify based on program restrictions
+        if ($details['restrict_editors']) {
+            // If editing is restricted, notify only assigned users
+            $assigned_users_query = "SELECT DISTINCT user_id FROM program_user_assignments 
+                                   WHERE program_id = ? AND user_id != ? AND role IN ('editor', 'viewer') AND is_active = 1";
+            $stmt = $conn->prepare($assigned_users_query);
+            $stmt->bind_param('ii', $program_id, $creator_user_id);
+            $stmt->execute();
+            $assigned_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+            
+            foreach ($assigned_users as $user) {
+                create_notification($user['user_id'], $message, 'submission_created', $action_url);
+            }
+        } else {
+            // If editing is not restricted, notify all agency users (excluding creator)
+            $agency_users_query = "SELECT user_id FROM users WHERE agency_id = ? AND user_id != ? AND is_active = 1";
+            $stmt = $conn->prepare($agency_users_query);
+            $stmt->bind_param('ii', $details['agency_id'], $creator_user_id);
+            $stmt->execute();
+            $agency_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+            
+            foreach ($agency_users as $user) {
+                create_notification($user['user_id'], $message, 'submission_created', $action_url);
+            }
         }
         
-        // Notify focal users of the agency
+        // Notify focal users of the agency (always, regardless of restrictions)
         $focal_users_query = "SELECT user_id FROM users WHERE agency_id = ? AND role = 'focal' AND user_id != ? AND is_active = 1";
         $stmt = $conn->prepare($focal_users_query);
         $stmt->bind_param('ii', $details['agency_id'], $creator_user_id);
@@ -408,7 +468,7 @@ function notify_submission_edited($submission_id, $program_id, $editor_user_id, 
     
     try {
         // Get submission and program details
-        $details_query = "SELECT p.program_name, p.agency_id, a.agency_name, rp.period_type, rp.year, ps.is_draft
+        $details_query = "SELECT p.program_name, p.agency_id, p.restrict_editors, a.agency_name, rp.period_type, rp.year
                          FROM programs p 
                          JOIN agency a ON p.agency_id = a.agency_id
                          JOIN program_submissions ps ON p.program_id = ps.program_id
@@ -433,36 +493,45 @@ function notify_submission_edited($submission_id, $program_id, $editor_user_id, 
         
         $editor_name = $editor['fullname'] ?? $editor['username'] ?? 'Unknown User';
         
-        // Get program editors and viewers (excluding editor)
-        $assigned_users_query = "SELECT DISTINCT user_id FROM program_user_assignments 
-                                WHERE program_id = ? AND user_id != ? AND assignment_type IN ('editor', 'viewer')";
-        $stmt = $conn->prepare($assigned_users_query);
-        $stmt->bind_param('ii', $program_id, $editor_user_id);
-        $stmt->execute();
-        $assigned_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-        
         $period_text = $details['period_type'] . ' ' . $details['year'];
-        $status_text = $details['is_draft'] ? '(Draft)' : '(Finalized)';
-        $changes_summary = empty($changes) ? '' : ' - Changes: ' . implode(', ', array_keys($changes));
-        
-        $message = "Submission updated for '{$details['program_name']}' ({$period_text}) {$status_text} by {$editor_name}{$changes_summary}";
+        $message = "Submission for '{$details['program_name']}' ({$period_text}) was edited by {$editor_name}";
         $action_url = generate_notification_url('agency_program', $program_id);
         
-        foreach ($assigned_users as $user) {
-            create_notification($user['user_id'], $message, 'submission_edited', $action_url);
-        }
-        
-        // Notify focal users if submission is finalized
-        if (!$details['is_draft']) {
-            $focal_users_query = "SELECT user_id FROM users WHERE agency_id = ? AND role = 'focal' AND user_id != ? AND is_active = 1";
-            $stmt = $conn->prepare($focal_users_query);
-            $stmt->bind_param('ii', $details['agency_id'], $editor_user_id);
+        // Determine who to notify based on program restrictions
+        if ($details['restrict_editors']) {
+            // If editing is restricted, notify only assigned users
+            $assigned_users_query = "SELECT DISTINCT user_id FROM program_user_assignments 
+                                   WHERE program_id = ? AND user_id != ? AND role IN ('editor', 'viewer') AND is_active = 1";
+            $stmt = $conn->prepare($assigned_users_query);
+            $stmt->bind_param('ii', $program_id, $editor_user_id);
             $stmt->execute();
-            $focal_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+            $assigned_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
             
-            foreach ($focal_users as $user) {
+            foreach ($assigned_users as $user) {
                 create_notification($user['user_id'], $message, 'submission_edited', $action_url);
             }
+        } else {
+            // If editing is not restricted, notify all agency users (excluding editor)
+            $agency_users_query = "SELECT user_id FROM users WHERE agency_id = ? AND user_id != ? AND is_active = 1";
+            $stmt = $conn->prepare($agency_users_query);
+            $stmt->bind_param('ii', $details['agency_id'], $editor_user_id);
+            $stmt->execute();
+            $agency_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+            
+            foreach ($agency_users as $user) {
+                create_notification($user['user_id'], $message, 'submission_edited', $action_url);
+            }
+        }
+        
+        // Notify focal users of the agency (always, regardless of restrictions)
+        $focal_users_query = "SELECT user_id FROM users WHERE agency_id = ? AND role = 'focal' AND user_id != ? AND is_active = 1";
+        $stmt = $conn->prepare($focal_users_query);
+        $stmt->bind_param('ii', $details['agency_id'], $editor_user_id);
+        $stmt->execute();
+        $focal_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        
+        foreach ($focal_users as $user) {
+            create_notification($user['user_id'], $message, 'submission_edited', $action_url);
         }
         
         // Notify admin users
@@ -471,7 +540,7 @@ function notify_submission_edited($submission_id, $program_id, $editor_user_id, 
         $stmt->execute();
         $admin_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         
-        $admin_message = "Submission updated for '{$details['program_name']}' ({$period_text}) {$status_text} by {$editor_name} ({$details['agency_name']}){$changes_summary}";
+        $admin_message = "Submission for '{$details['program_name']}' ({$period_text}) was edited by {$editor_name} ({$details['agency_name']})";
         $admin_action_url = generate_notification_url('admin_program', $program_id);
         
         foreach ($admin_users as $user) {
@@ -500,12 +569,27 @@ function notify_submission_edited($submission_id, $program_id, $editor_user_id, 
 function notify_submission_deleted($submission_id, $program_id, $deleter_user_id, $submission_data) {
     global $conn;
     
-    if (!$submission_id || !$program_id || !$deleter_user_id || !$submission_data) {
+    if (!$submission_id || !$program_id || !$deleter_user_id) {
         error_log("notify_submission_deleted: Missing required parameters");
         return false;
     }
     
     try {
+        // Get program details
+        $program_query = "SELECT p.program_name, p.agency_id, p.restrict_editors, a.agency_name 
+                         FROM programs p 
+                         JOIN agency a ON p.agency_id = a.agency_id 
+                         WHERE p.program_id = ?";
+        $stmt = $conn->prepare($program_query);
+        $stmt->bind_param('i', $program_id);
+        $stmt->execute();
+        $program = $stmt->get_result()->fetch_assoc();
+        
+        if (!$program) {
+            error_log("notify_submission_deleted: Program not found: $program_id");
+            return false;
+        }
+        
         // Get deleter information
         $deleter_query = "SELECT username, fullname FROM users WHERE user_id = ?";
         $stmt = $conn->prepare($deleter_query);
@@ -515,29 +599,44 @@ function notify_submission_deleted($submission_id, $program_id, $deleter_user_id
         
         $deleter_name = $deleter['fullname'] ?? $deleter['username'] ?? 'Unknown User';
         
-        // Get program editors and viewers (excluding deleter)
-        $assigned_users_query = "SELECT DISTINCT user_id FROM program_user_assignments 
-                                WHERE program_id = ? AND user_id != ? AND assignment_type IN ('editor', 'viewer')";
-        $stmt = $conn->prepare($assigned_users_query);
-        $stmt->bind_param('ii', $program_id, $deleter_user_id);
-        $stmt->execute();
-        $assigned_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $message = "Submission for '{$program['program_name']}' was deleted by {$deleter_name}";
+        $action_url = generate_notification_url('agency_program', $program_id);
         
-        $message = "Submission for '{$submission_data['program_name']}' ({$submission_data['period_text']}) has been deleted by {$deleter_name}";
-        
-        foreach ($assigned_users as $user) {
-            create_notification($user['user_id'], $message, 'submission_deleted', null);
+        // Determine who to notify based on program restrictions
+        if ($program['restrict_editors']) {
+            // If editing is restricted, notify only assigned users
+            $assigned_users_query = "SELECT DISTINCT user_id FROM program_user_assignments 
+                                   WHERE program_id = ? AND user_id != ? AND role IN ('editor', 'viewer') AND is_active = 1";
+            $stmt = $conn->prepare($assigned_users_query);
+            $stmt->bind_param('ii', $program_id, $deleter_user_id);
+            $stmt->execute();
+            $assigned_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+            
+            foreach ($assigned_users as $user) {
+                create_notification($user['user_id'], $message, 'submission_deleted', $action_url);
+            }
+        } else {
+            // If editing is not restricted, notify all agency users (excluding deleter)
+            $agency_users_query = "SELECT user_id FROM users WHERE agency_id = ? AND user_id != ? AND is_active = 1";
+            $stmt = $conn->prepare($agency_users_query);
+            $stmt->bind_param('ii', $program['agency_id'], $deleter_user_id);
+            $stmt->execute();
+            $agency_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+            
+            foreach ($agency_users as $user) {
+                create_notification($user['user_id'], $message, 'submission_deleted', $action_url);
+            }
         }
         
-        // Notify focal users
+        // Notify focal users of the agency (always, regardless of restrictions)
         $focal_users_query = "SELECT user_id FROM users WHERE agency_id = ? AND role = 'focal' AND user_id != ? AND is_active = 1";
         $stmt = $conn->prepare($focal_users_query);
-        $stmt->bind_param('ii', $submission_data['agency_id'], $deleter_user_id);
+        $stmt->bind_param('ii', $program['agency_id'], $deleter_user_id);
         $stmt->execute();
         $focal_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         
         foreach ($focal_users as $user) {
-            create_notification($user['user_id'], $message, 'submission_deleted', null);
+            create_notification($user['user_id'], $message, 'submission_deleted', $action_url);
         }
         
         // Notify admin users
@@ -546,10 +645,11 @@ function notify_submission_deleted($submission_id, $program_id, $deleter_user_id
         $stmt->execute();
         $admin_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         
-        $admin_message = "Submission for '{$submission_data['program_name']}' ({$submission_data['period_text']}) deleted by {$deleter_name} ({$submission_data['agency_name']})";
+        $admin_message = "Submission for '{$program['program_name']}' was deleted by {$deleter_name} ({$program['agency_name']})";
+        $admin_action_url = generate_notification_url('admin_program', $program_id);
         
         foreach ($admin_users as $user) {
-            create_notification($user['user_id'], $admin_message, 'submission_deleted', null);
+            create_notification($user['user_id'], $admin_message, 'submission_deleted', $admin_action_url);
         }
         
         // Log the notification action
@@ -580,7 +680,7 @@ function notify_submission_finalized($submission_id, $program_id, $finalizer_use
     
     try {
         // Get submission and program details
-        $details_query = "SELECT p.program_name, p.agency_id, a.agency_name, rp.period_type, rp.year
+        $details_query = "SELECT p.program_name, p.agency_id, p.restrict_editors, a.agency_name, rp.period_type, rp.year
                          FROM programs p 
                          JOIN agency a ON p.agency_id = a.agency_id
                          JOIN program_submissions ps ON p.program_id = ps.program_id
@@ -605,28 +705,54 @@ function notify_submission_finalized($submission_id, $program_id, $finalizer_use
         
         $finalizer_name = $finalizer['fullname'] ?? $finalizer['username'] ?? 'Unknown User';
         
-        // Get all agency users (excluding finalizer)
-        $agency_users_query = "SELECT user_id FROM users WHERE agency_id = ? AND user_id != ? AND is_active = 1";
-        $stmt = $conn->prepare($agency_users_query);
-        $stmt->bind_param('ii', $details['agency_id'], $finalizer_user_id);
-        $stmt->execute();
-        $agency_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-        
         $period_text = $details['period_type'] . ' ' . $details['year'];
-        $message = "Submission for '{$details['program_name']}' ({$period_text}) has been finalized by {$finalizer_name}";
+        $message = "Submission for '{$details['program_name']}' ({$period_text}) was finalized by {$finalizer_name}";
         $action_url = generate_notification_url('agency_program', $program_id);
         
-        foreach ($agency_users as $user) {
+        // Determine who to notify based on program restrictions
+        if ($details['restrict_editors']) {
+            // If editing is restricted, notify only assigned users
+            $assigned_users_query = "SELECT DISTINCT user_id FROM program_user_assignments 
+                                   WHERE program_id = ? AND user_id != ? AND role IN ('editor', 'viewer') AND is_active = 1";
+            $stmt = $conn->prepare($assigned_users_query);
+            $stmt->bind_param('ii', $program_id, $finalizer_user_id);
+            $stmt->execute();
+            $assigned_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+            
+            foreach ($assigned_users as $user) {
+                create_notification($user['user_id'], $message, 'submission_finalized', $action_url);
+            }
+        } else {
+            // If editing is not restricted, notify all agency users (excluding finalizer)
+            $agency_users_query = "SELECT user_id FROM users WHERE agency_id = ? AND user_id != ? AND is_active = 1";
+            $stmt = $conn->prepare($agency_users_query);
+            $stmt->bind_param('ii', $details['agency_id'], $finalizer_user_id);
+            $stmt->execute();
+            $agency_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+            
+            foreach ($agency_users as $user) {
+                create_notification($user['user_id'], $message, 'submission_finalized', $action_url);
+            }
+        }
+        
+        // Notify focal users of the agency (always, regardless of restrictions)
+        $focal_users_query = "SELECT user_id FROM users WHERE agency_id = ? AND role = 'focal' AND user_id != ? AND is_active = 1";
+        $stmt = $conn->prepare($focal_users_query);
+        $stmt->bind_param('ii', $details['agency_id'], $finalizer_user_id);
+        $stmt->execute();
+        $focal_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        
+        foreach ($focal_users as $user) {
             create_notification($user['user_id'], $message, 'submission_finalized', $action_url);
         }
         
-        // Notify admin users - this is important for report generation
+        // Notify admin users
         $admin_users_query = "SELECT user_id FROM users WHERE role = 'admin' AND is_active = 1";
         $stmt = $conn->prepare($admin_users_query);
         $stmt->execute();
         $admin_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         
-        $admin_message = "Submission for '{$details['program_name']}' ({$period_text}) finalized by {$finalizer_name} ({$details['agency_name']}) - Ready for reporting";
+        $admin_message = "Submission for '{$details['program_name']}' ({$period_text}) was finalized by {$finalizer_name} ({$details['agency_name']})";
         $admin_action_url = generate_notification_url('admin_program', $program_id);
         
         foreach ($admin_users as $user) {
@@ -693,7 +819,7 @@ function notify_program_assignment($program_id, $assigned_user_id, $assigner_use
         
         // Notify other editors and viewers of the program (excluding assigned user and assigner)
         $other_users_query = "SELECT DISTINCT user_id FROM program_user_assignments 
-                             WHERE program_id = ? AND user_id NOT IN (?, ?) AND assignment_type IN ('editor', 'viewer')";
+                             WHERE program_id = ? AND user_id NOT IN (?, ?) AND role IN ('editor', 'viewer') AND is_active = 1";
         $stmt = $conn->prepare($other_users_query);
         $stmt->bind_param('iii', $program_id, $assigned_user_id, $assigner_user_id);
         $stmt->execute();

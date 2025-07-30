@@ -19,6 +19,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/agencies/programs.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/agencies/program_permissions.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/initiative_functions.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/notifications_core.php';
 
 // Verify user is an agency
 if (!is_agency()) {
@@ -98,6 +99,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $result = create_program_submission($submission_data);
 
     if (isset($result['success']) && $result['success']) {
+        // Send submission creation notification
+        if (isset($result['submission_id']) && function_exists('notify_submission_created')) {
+            $notification_result = notify_submission_created($result['submission_id'], $program_id, $_SESSION['user_id'], $submission_data['period_id']);
+            error_log("Notification result for submission {$result['submission_id']}: " . ($notification_result ? 'SUCCESS' : 'FAILED'));
+        }
+        
         $_SESSION['message'] = $result['message'];
         $_SESSION['message_type'] = 'success';
         header('Location: view_programs.php');
@@ -124,7 +131,7 @@ $header_config = [
             'url' => 'view_programs.php',
             'text' => 'Back to Programs',
             'icon' => 'fas fa-arrow-left',
-            'class' => 'btn-outline-secondary'
+            'class' => 'btn-primary'
         ]
     ]
 ];

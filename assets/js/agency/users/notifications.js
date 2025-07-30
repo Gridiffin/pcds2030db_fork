@@ -383,8 +383,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // Check if we're on a notifications page
     const notificationsContainer = document.querySelector('.notifications-container');
     
-    if (notificationsContainer) {
+    // Additional check to ensure we're actually on a notifications page
+    const isNotificationPage = notificationsContainer && 
+        (window.location.pathname.includes('/notifications') || 
+         window.location.pathname.includes('/all_notifications') ||
+         document.body.classList.contains('notifications-page'));
+    
+    if (isNotificationPage) {
+        console.log('Initializing NotificationsApp on notifications page');
         window.notificationsApp = new NotificationsApp();
+    } else if (notificationsContainer) {
+        console.log('Notifications container found but not on notifications page - skipping initialization');
     }
 });
 

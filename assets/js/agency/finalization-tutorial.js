@@ -570,30 +570,30 @@ class SubmissionSelectionModal {
     
     async loadSubmissions(programId) {
         try {
-            // For now, we'll use the program data from the global variable
-            // In a real implementation, you might want to fetch from an API
-            const program = window.allPrograms?.find(p => p.program_id == programId);
+            // Check if user has access to submission data (focal users only for finalization)
+            const isFocalUser = window.userRole === 'focal' || window.isFocalUser === true;
             
-            if (!program) {
-                throw new Error('Program not found');
+            if (!isFocalUser && this.isFinalizationMode) {
+                // Non-focal users shouldn't access finalization features
+                this.showErrorState('You do not have permission to access this feature.');
+                return;
             }
             
-            // Create mock submission data based on available information
-            // In a real implementation, this would come from an API call
-            const submissions = [];
+            // Fetch all submissions for the program from the API
+            const baseUrl = window.APP_URL || '';
+            const response = await fetch(`${baseUrl}/app/ajax/get_program_submissions.php?program_id=${programId}`);
             
-            if (program.period_id && program.latest_submission_id) {
-                // We have at least one submission
-                submissions.push({
-                    period_id: program.period_id,
-                    submission_id: program.latest_submission_id,
-                    period_display: program.period_display || `Period ${program.period_id}`,
-                    is_draft: program.is_draft || false,
-                    is_draft_label: program.is_draft ? 'Draft' : 'Finalized',
-                    submitted_at: program.submitted_at || new Date().toISOString(),
-                    submitted_by_name: 'Current User'
-                });
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
+            
+            const data = await response.json();
+            
+            if (!data.success) {
+                throw new Error(data.error || 'Failed to load submissions');
+            }
+            
+            const submissions = data.submissions || [];
             
             if (submissions.length === 0) {
                 this.showEmptyState();
@@ -614,17 +614,25 @@ class SubmissionSelectionModal {
         const html = submissions.map(submission => {
             const statusClass = submission.is_draft ? 'warning' : 'success';
             const statusText = submission.is_draft_label || (submission.is_draft ? 'Draft' : 'Finalized');
-            const submittedDate = new Date(submission.submitted_at).toLocaleDateString();
+            
+            // Handle different date field names from the API
+            const dateField = submission.submitted_at || submission.effective_date || submission.created_at;
+            const submittedDate = dateField ? 
+                (submission.formatted_date || new Date(dateField).toLocaleDateString()) : 
+                'Not submitted';
+            
+            // Handle different period ID field names
+            const periodId = submission.period_id || submission.reporting_period_id;
             
             return `
                 <div class="list-group-item submission-item" 
-                     onclick="navigateToSubmission(${programId}, ${submission.period_id})"
+                     onclick="navigateToSubmission(${programId}, ${periodId})"
                      data-program-id="${programId}" 
-                     data-period-id="${submission.period_id}">
+                     data-period-id="${periodId}">
                     <div class="submission-header">
                         <div class="submission-period">
                             <i class="fas fa-calendar-alt me-2 text-primary"></i>
-                            ${this.escapeHtml(submission.period_display)}
+                            ${this.escapeHtml(submission.period_display || `Period ${periodId}`)}
                         </div>
                         <span class="badge bg-${statusClass} submission-status">
                             ${this.escapeHtml(statusText)}
@@ -632,7 +640,7 @@ class SubmissionSelectionModal {
                     </div>
                     <div class="submission-meta">
                         <i class="fas fa-user me-1"></i>
-                        Submitted by: ${this.escapeHtml(submission.submitted_by_name)}
+                        Submitted by: ${this.escapeHtml(submission.submitted_by_name || 'Unknown')}
                         <span class="mx-2">|</span>
                         <i class="fas fa-clock me-1"></i>
                         ${submittedDate}

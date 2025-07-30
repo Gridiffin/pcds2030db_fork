@@ -92,7 +92,7 @@ $header_config = [
             'url' => $backUrl,
             'text' => $source === 'all_sectors' ? 'Back to All Sectors' : 'Back to My Programs',
             'icon' => 'fas fa-arrow-left',
-            'class' => 'btn-outline-secondary'
+            'class' => 'btn-primary'
         ]
     ]
 ];

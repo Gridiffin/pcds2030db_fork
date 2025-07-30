@@ -133,8 +133,9 @@ class NotificationSystem {
         // Check for new notifications
         if (unreadCount > previousUnreadCount && previousUnreadCount > 0) {
             const newNotifications = notifications.slice(0, unreadCount - previousUnreadCount);
+            console.log('New notifications detected:', newNotifications.length, 'but toasts are disabled for better UX');
             newNotifications.forEach(notification => {
-                this.showToast(notification);
+                // showToast is disabled for better UX
                 if (this.options.onNewNotification) {
                     this.options.onNewNotification(notification);
                 }
@@ -236,56 +237,9 @@ class NotificationSystem {
     }
     
     showToast(notification) {
-        if (!this.options.enableToasts) return;
-        
-        const toastContainer = document.querySelector('.toast-container');
-        if (!toastContainer) return;
-        
-        const toastId = 'toast-' + notification.notification_id;
-        const icon = this.getNotificationIcon(notification.type);
-        
-        const toastHtml = `
-            <div id="${toastId}" class="toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true">
-                <div class="d-flex">
-                    <div class="toast-body d-flex align-items-center">
-                        <i class="fas fa-${icon} text-primary me-2"></i>
-                        <div>
-                            <div class="fw-bold">New Notification</div>
-                            <div class="small">${this.escapeHtml(notification.message.substring(0, 80))}${notification.message.length > 80 ? '...' : ''}</div>
-                        </div>
-                    </div>
-                    <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
-            </div>
-        `;
-        
-        toastContainer.insertAdjacentHTML('beforeend', toastHtml);
-        
-        const toastElement = document.getElementById(toastId);
-        const toast = new bootstrap.Toast(toastElement, {
-            autohide: true,
-            delay: 5000
-        });
-        
-        // Add click handler to navigate to action URL
-        if (notification.action_url) {
-            toastElement.addEventListener('click', () => {
-                window.location.href = notification.action_url;
-            });
-            toastElement.style.cursor = 'pointer';
-        }
-        
-        toast.show();
-        
-        // Remove element after it's hidden
-        toastElement.addEventListener('hidden.bs.toast', () => {
-            toastElement.remove();
-        });
-        
-        // Play sound if enabled
-        if (this.options.enableSound) {
-            this.playNotificationSound();
-        }
+        // Toast notifications are disabled to prevent spam and improve UX
+        console.log('Toast notification blocked for better UX:', notification.message);
+        return;
     }
     
     async markAsRead(notificationId) {
@@ -491,12 +445,18 @@ class NotificationSystem {
     }
 }
 
-// Auto-initialize on DOM ready
+// Auto-initialize on DOM ready - DISABLED FOR BETTER UX
 document.addEventListener('DOMContentLoaded', () => {
-    // Only initialize if notification elements exist
-    if (document.querySelector('.notification-badge') || document.querySelector('.notification-dropdown')) {
-        window.notificationSystem = new NotificationSystem();
-    }
+    // Notification system completely disabled to prevent toast spam
+    console.log('Notification system auto-initialization disabled for better UX');
+    
+    // Only initialize if explicitly requested
+    // if (document.querySelector('.notification-badge') || document.querySelector('.notification-dropdown')) {
+    //     window.notificationSystem = new NotificationSystem({
+    //         enableToasts: false,
+    //         enablePolling: false
+    //     });
+    // }
 });
 
 // Add required CSS

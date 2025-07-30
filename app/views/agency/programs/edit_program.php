@@ -22,6 +22,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/initiative_functions.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/numbering_helpers.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/rating_helpers.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/program_status_helpers.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/notifications_core.php';
 
 // Verify user is an agency
 if (!is_agency()) {
@@ -77,6 +78,10 @@ $message = '';
 $messageType = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Track changes for notification context
+    $changes = [];
+    $original_program = $program; // Current program data from earlier fetch
+    
     $program_data = [
         'program_id' => $program_id,
         'program_name' => $_POST['program_name'] ?? '',
@@ -87,6 +92,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'initiative_id' => !empty($_POST['initiative_id']) ? intval($_POST['initiative_id']) : null,
         'rating' => $_POST['rating'] ?? 'not_started'
     ];
+    
+    // Track changes for meaningful notifications
+    if (($original_program['program_name'] ?? '') !== $program_data['program_name']) {
+        $changes['program_name'] = $program_data['program_name'];
+    }
+    if (($original_program['program_number'] ?? '') !== $program_data['program_number']) {
+        $changes['program_number'] = $program_data['program_number'];
+    }
+    if (($original_program['brief_description'] ?? '') !== $program_data['brief_description']) {
+        $changes['brief_description'] = 'updated';
+    }
+    if (($original_program['start_date'] ?? '') !== $program_data['start_date']) {
+        $changes['start_date'] = $program_data['start_date'];
+    }
+    if (($original_program['end_date'] ?? '') !== $program_data['end_date']) {
+        $changes['end_date'] = $program_data['end_date'];
+    }
+    if (($original_program['initiative_id'] ?? null) !== $program_data['initiative_id']) {
+        $changes['initiative'] = 'updated';
+    }
+    if (($original_program['rating'] ?? '') !== $program_data['rating']) {
+        $changes['rating'] = $program_data['rating'];
+    }
     
     // Update program using simplified function
     $result = update_simple_program($program_data);
@@ -117,6 +145,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     remove_user_from_program($program_id, $assignment['user_id']);
                 }
             }
+        }
+        
+        // Send program edit notifications
+        if (!empty($changes) && function_exists('notify_program_edited')) {
+            notify_program_edited($program_id, $_SESSION['user_id'], $changes);
         }
         
         // Set success message and redirect

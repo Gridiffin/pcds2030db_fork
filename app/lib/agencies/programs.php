@@ -1576,6 +1576,7 @@ function create_program_submission($data) {
         $is_draft = isset($_POST['save_as_draft']) ? 1 : 0;
         $is_submitted = isset($_POST['submit']) ? 1 : 0;
         $submitted_by = $_SESSION['user_id'] ?? null;
+        $submitted_at = date('Y-m-d H:i:s');
         
         $stmt = $conn->prepare($submission_query);
         $stmt->bind_param("iiissss", 
@@ -1585,7 +1586,7 @@ function create_program_submission($data) {
             $is_submitted,
             $data['description'],
             $submitted_by,
-            date('Y-m-d H:i:s')
+            $submitted_at
         );
         
         if (!$stmt->execute()) {
