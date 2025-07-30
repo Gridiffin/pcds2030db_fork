@@ -1,1 +1,0 @@
-- [x] Remove get_all_agency_groups and $agency_groups from add_user.php (agency dropdown now uses get_all_agencies only) 
