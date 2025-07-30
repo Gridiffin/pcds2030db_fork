@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let globalProgramSelections = new Map(); // Tracks selected programs and their order
     let globalTargetSelections = new Map(); // Tracks selected targets per program
     let allProgramTargets = []; // Stores targets for all selected programs
-    let nextOrderNumber = 1;
+    // Note: nextOrderNumber removed - order is now calculated dynamically
     let allLoadedPrograms = []; // Stores all programs fetched from the API for a period
     let filteredPrograms = []; // Stores programs after applying filters
     let selectedAgencyIds = []; // Stores IDs of selected agencies for filtering
@@ -546,47 +546,52 @@ document.addEventListener('DOMContentLoaded', function() {
             const programNumber = programContainer.getAttribute('data-program-number');
             
             if (checkbox.checked) {
-                // Add to global selections
-                if (!globalProgramSelections.has(programId)) {
-                    globalProgramSelections.set(programId, {
-                        selected: true,
-                        order: nextOrderNumber++,
-                        agency: agencyName,
-                        program_name: programName,
-                        program_number: programNumber
-                    });
-                } else {
-                    const selection = globalProgramSelections.get(programId);
-                    selection.selected = true;
-                    if (!selection.order) {
-                        selection.order = nextOrderNumber++;
-                    }
-                }
+                // Calculate the next available order based on currently selected programs
+                const currentlySelected = Array.from(globalProgramSelections.values()).filter(p => p.selected);
+                const nextOrder = currentlySelected.length + 1;
                 
-                const orderValue = globalProgramSelections.get(programId).order;
+                // Add to global selections with the next sequential order
+                globalProgramSelections.set(programId, {
+                    selected: true,
+                    order: nextOrder,
+                    agency: agencyName,
+                    program_name: programName,
+                    program_number: programNumber
+                });
+                
                 if (orderInput) {
                     orderInput.style.display = 'inline-block';
-                    orderInput.value = orderValue;
+                    orderInput.value = nextOrder;
                 }
                 
                 if (orderBadge) {
-                    orderBadge.textContent = orderValue;
+                    orderBadge.textContent = nextOrder;
                     orderBadge.classList.add('active');
                 }
             } else {
-                // Update global selections
+                console.log(`=== DESELECTING PROGRAM ${programId} ===`);
+                
+                // Mark as deselected in global selections
                 if (globalProgramSelections.has(programId)) {
                     globalProgramSelections.get(programId).selected = false;
+                    console.log(`Marked program ${programId} as deselected`);
                 }
                 
                 if (orderInput) {
                     orderInput.style.display = 'none';
+                    orderInput.value = '';
                 }
                 
                 if (orderBadge) {
                     orderBadge.textContent = '#';
                     orderBadge.classList.remove('active');
                 }
+                
+                // Small delay to ensure DOM updates are complete, then renumber
+                setTimeout(() => {
+                    console.log('Starting renumbering after deselection...');
+                    renumberSelectedPrograms();
+                }, 50);
             }
             
             // Update window reference
@@ -823,31 +828,41 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Dynamically renumber all selected programs to maintain sequential order
         function renumberSelectedPrograms() {
-            // Get all checked checkboxes and their corresponding order inputs
-            const checkedBoxes = document.querySelectorAll('#programSelector input[name="selected_program_ids[]"]:checked');
-            const programsWithOrder = [];
+            console.log('=== RENUMBERING PROGRAMS ===');
             
-            // Collect all selected programs with their current order
-            checkedBoxes.forEach(checkbox => {
-                const programId = checkbox.value;
-                const orderInput = document.getElementById(`order_${programId}`);
-                if (orderInput) {
-                    const currentOrder = parseInt(orderInput.value) || 999; // Use 999 for empty/invalid values
-                    programsWithOrder.push({
-                        checkbox: checkbox,
-                        orderInput: orderInput,
-                        currentOrder: currentOrder,
-                        programId: programId
-                    });
+            // Get all currently selected programs from global state
+            const selectedPrograms = [];
+            
+            // Collect selected programs from global state
+            globalProgramSelections.forEach((data, programId) => {
+                if (data.selected) {
+                    const checkbox = document.querySelector(`#programSelector input[value="${programId}"]`);
+                    const orderInput = document.getElementById(`order_${programId}`);
+                    
+                    if (checkbox && checkbox.checked && orderInput && orderInput.style.display !== 'none') {
+                        selectedPrograms.push({
+                            programId: programId,
+                            checkbox: checkbox,
+                            orderInput: orderInput,
+                            currentOrder: data.order || 999,
+                            data: data
+                        });
+                        console.log(`Found selected program ${programId} with current order ${data.order}`);
+                    }
                 }
             });
             
+            console.log(`Total selected programs found: ${selectedPrograms.length}`);
+            
             // Sort by current order to maintain user's intended sequence
-            programsWithOrder.sort((a, b) => a.currentOrder - b.currentOrder);
+            selectedPrograms.sort((a, b) => a.currentOrder - b.currentOrder);
             
             // Renumber sequentially starting from 1
-            programsWithOrder.forEach((program, index) => {
+            selectedPrograms.forEach((program, index) => {
                 const newOrder = index + 1;
+                console.log(`Updating program ${program.programId} from order ${program.currentOrder} to ${newOrder}`);
+                
+                // Update the input field
                 program.orderInput.value = newOrder;
                 
                 // Update the badge
@@ -855,6 +870,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (orderBadge) {
                     orderBadge.textContent = newOrder;
                     orderBadge.classList.add('active');
+                }
+                
+                // Update global state
+                program.data.order = newOrder;
+                globalProgramSelections.set(program.programId, program.data);
+            });
+            
+            // Force update window reference
+            window.globalProgramSelections = globalProgramSelections;
+            
+            console.log(`=== RENUMBERING COMPLETE: ${selectedPrograms.length} programs ===`);
+            
+            // Debug: Log final state
+            globalProgramSelections.forEach((data, id) => {
+                if (data.selected) {
+                    console.log(`Final state - Program ${id}: Order ${data.order}`);
                 }
             });
         }
@@ -1229,10 +1260,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     const programNumber = container.dataset.programNumber;
                     const agencyName = container.dataset.agencyName;
                     
+                    // Calculate next available order
+                    const currentlySelected = Array.from(globalProgramSelections.values()).filter(p => p.selected);
+                    const nextOrder = currentlySelected.length + 1;
+                    
                     // Add to global selections
                     globalProgramSelections.set(programId, {
                         selected: true,
-                        order: nextOrderNumber++,
+                        order: nextOrder,
                         program_name: programName,
                         program_number: programNumber,
                         agency: agencyName
@@ -1263,10 +1298,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // Load targets for newly selected programs
         loadTargets();
     }
-    function clearAllProgramSelections() {
+    
+    // Make clearAllProgramSelections globally accessible
+    window.clearAllProgramSelections = function() {
         // Clear global selections state
         globalProgramSelections.clear();
-        nextOrderNumber = 1;
 
         // Update UI
         const allCheckboxes = document.querySelectorAll('.program-checkbox');
@@ -1373,10 +1409,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 const orderBadge = container.querySelector('.program-order-badge');
                 
                 if (this.checked) {
+                    // Calculate next available order
+                    const currentlySelected = Array.from(globalProgramSelections.values()).filter(p => p.selected);
+                    const nextOrder = currentlySelected.length + 1;
+                    
                     // Program selected
                     globalProgramSelections.set(programId, {
                         selected: true,
-                        order: nextOrderNumber++,
+                        order: nextOrder,
                         program_name: programName,
                         program_number: programNumber,
                         agency: agencyName
@@ -1391,6 +1431,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 } else {
                     // Program deselected
+                    console.log(`=== DESELECTING PROGRAM ${programId} (attachProgramEventListeners) ===`);
+                    
                     if (globalProgramSelections.has(programId)) {
                         globalProgramSelections.set(programId, {
                             ...globalProgramSelections.get(programId),
@@ -1405,6 +1447,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         orderBadge.classList.remove('active');
                         orderBadge.textContent = '#';
                     }
+                    
+                    // Renumber remaining selected programs after a small delay
+                    setTimeout(() => {
+                        console.log('Starting renumbering after deselection (attachProgramEventListeners)...');
+                        renumberSelectedPrograms();
+                    }, 50);
                 }
                 applyAllFilters(); // Re-render to update the selected banner
                 
@@ -1413,26 +1461,88 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
         
-        // Handle order input changes
+        // Handle order input changes with immediate updates
         orderInputs.forEach(input => {
+            let orderUpdateTimeout;
+            
             input.addEventListener('input', function() {
-                const programId = parseInt(this.id.replace('order_', ''));
+                const programId = this.id.replace('order_', '');
                 const newOrder = parseInt(this.value) || 1;
                 
+                console.log(`Manual order change: Program ${programId} → Order ${newOrder}`);
+                
+                // Clear previous timeout
+                if (orderUpdateTimeout) {
+                    clearTimeout(orderUpdateTimeout);
+                }
+                
+                // Update immediately for visual feedback
                 if (globalProgramSelections.has(programId)) {
                     const programData = globalProgramSelections.get(programId);
                     programData.order = newOrder;
                     globalProgramSelections.set(programId, programData);
                     
-                    // Update badge
+                    console.log(`Updated program ${programId} to order ${newOrder} in global state`);
+                    
+                    // Update badge immediately
                     const container = this.closest('.program-checkbox-container');
                     const orderBadge = container?.querySelector('.program-order-badge');
                     if (orderBadge) {
                         orderBadge.textContent = newOrder;
                     }
+                } else {
+                    console.log(`Program ${programId} not found in global selections`);
                 }
+                
+                // Debounced validation to check for conflicts
+                orderUpdateTimeout = setTimeout(() => {
+                    console.log('Running conflict validation after manual order change');
+                    updateOrderNumbers();
+                }, 800);
+            });
+            
+            // Handle blur for immediate conflict resolution
+            input.addEventListener('blur', function() {
+                if (orderUpdateTimeout) {
+                    clearTimeout(orderUpdateTimeout);
+                }
+                console.log('Manual order input blur - running conflict validation');
+                updateOrderNumbers();
             });
         });
+        
+        // Function to validate and fix order conflicts without full renumbering
+        function validateAndFixOrderConflicts() {
+            const selectedPrograms = Array.from(globalProgramSelections.entries())
+                .filter(([id, data]) => data.selected)
+                .map(([id, data]) => ({ id, data }));
+            
+            const orderCounts = new Map();
+            const conflictedPrograms = [];
+            
+            // Count how many programs have each order number
+            selectedPrograms.forEach(({ id, data }) => {
+                const order = data.order;
+                if (orderCounts.has(order)) {
+                    orderCounts.set(order, orderCounts.get(order) + 1);
+                } else {
+                    orderCounts.set(order, 1);
+                }
+            });
+            
+            // Find programs with conflicting orders
+            selectedPrograms.forEach(({ id, data }) => {
+                if (orderCounts.get(data.order) > 1) {
+                    conflictedPrograms.push(id);
+                }
+            });
+            
+            // Only renumber if there are actual conflicts
+            if (conflictedPrograms.length > 0) {
+                console.log('Order conflicts detected, fixing...', conflictedPrograms);
+                updateOrderNumbers();
+            }
+        }
     }
 
 // Integrated Agency Filtering Functions
@@ -1943,7 +2053,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Clear program selections
-        clearAllProgramSelections();
+        window.clearAllProgramSelections();
         
         // Scroll to top of generate form
         const generateSection = document.getElementById('generateReportSection');

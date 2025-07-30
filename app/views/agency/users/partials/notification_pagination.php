@@ -5,11 +5,11 @@
  */
 
 $currentPage = $pagination['current_page'] ?? 1;
-$lastPage = $pagination['last_page'] ?? 1;
-$total = $pagination['total'] ?? 0;
+$lastPage = $pagination['total_pages'] ?? 1;
+$total = $pagination['total_count'] ?? 0;
 $perPage = $pagination['per_page'] ?? 10;
-$from = $pagination['from'] ?? 0;
-$to = $pagination['to'] ?? 0;
+$from = (($currentPage - 1) * $perPage) + 1;
+$to = min($currentPage * $perPage, $total);
 ?>
 
 <div class="notifications-pagination">

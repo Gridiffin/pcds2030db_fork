@@ -49,6 +49,64 @@
     border: 1px solid var(--color-gray-200);
 }
 
+/* Enhanced period selector styling */
+#periodSelect {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+#periodSelect optgroup {
+    font-weight: 600;
+    font-size: 0.95em;
+    color: #2c5530;
+    background-color: #f8f9fa;
+    padding: 0.25rem 0;
+}
+
+#periodSelect optgroup[label*="Half Yearly"] {
+    background-color: #e3f2fd;
+    color: #1565c0;
+}
+
+#periodSelect optgroup[label*="Quarters"] {
+    background-color: #fff3e0;
+    color: #ef6c00;
+}
+
+#periodSelect optgroup[label*="Yearly"] {
+    background-color: #f3e5f5;
+    color: #7b1fa2;
+}
+
+#periodSelect option {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9em;
+}
+
+#periodSelect option:hover,
+#periodSelect option:focus {
+    background-color: #e8f5e8;
+}
+
+/* Handle many periods with scrollable container */
+.period-selector-container {
+    position: relative;
+}
+
+.period-selector-container::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-left: 0.3rem solid transparent;
+    border-right: 0.3rem solid transparent;
+    border-top: 0.3rem solid #6c757d;
+    pointer-events: none;
+}
+
 .report-option-group h4 {
     color: var(--text-primary);
     font-size: 1.125rem;

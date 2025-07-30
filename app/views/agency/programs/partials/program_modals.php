@@ -45,9 +45,16 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p class="text-muted mb-3">Choose which quarterly submission you want to view:</p>
+                <p class="text-muted mb-3">Choose which submission period you want to view:</p>
                 
                 <?php if (!empty($submission_history['submissions'])): ?>
+                    <!-- Debug info (remove in production) -->
+                    <?php if (isset($_GET['debug']) && $_GET['debug'] == 1): ?>
+                        <div class="alert alert-info small mb-3">
+                            <strong>Debug:</strong> Found <?php echo count($submission_history['submissions']); ?> submission(s) total.
+                        </div>
+                    <?php endif; ?>
+                    
                     <div class="list-group">
                         <?php foreach ($submission_history['submissions'] as $submission): ?>
                             <div class="list-group-item list-group-item-action submission-option" 
@@ -59,7 +66,10 @@
                                  style="cursor: pointer;">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
-                                        <h6 class="mb-1"><?php echo htmlspecialchars($submission['period_display'] ?? 'Unknown Period'); ?></h6>
+                                        <h6 class="mb-1">
+                                            <i class="fas fa-calendar-alt me-2 text-primary"></i>
+                                            <?php echo htmlspecialchars($submission['period_display'] ?? 'Unknown Period'); ?>
+                                        </h6>
                                         <small class="text-muted">
                                             <i class="fas fa-user me-1"></i>
                                             <?php echo htmlspecialchars($submission['submitted_by_name'] ?? 'Unknown'); ?>
@@ -71,15 +81,25 @@
                                         <span class="badge bg-<?php echo ($submission['is_draft'] ? 'warning' : 'success'); ?>">
                                             <?php echo $submission['is_draft'] ? 'Draft' : 'Finalized'; ?>
                                         </span>
+                                        <i class="fas fa-chevron-right ms-2 text-muted"></i>
                                     </div>
                                 </div>
                             </div>
                         <?php endforeach; ?>
                     </div>
+                    
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Click on any period above to view that submission's details. 
+                            All submission periods for this program are shown.
+                        </small>
+                    </div>
                 <?php else: ?>
                     <div class="text-center text-muted p-4">
                         <i class="fas fa-folder-open fa-2x mb-2"></i>
                         <p>No submissions found for this program.</p>
+                        <small>Create your first submission to see it listed here.</small>
                     </div>
                 <?php endif; ?>
             </div>

@@ -5,6 +5,64 @@
 
 ## Recent Bugs Fixed
 
+### 31. Notifications AJAX 404 Error - Incorrect Base Path Detection for Direct File Access (2025-07-27)
+
+- **Problem:** Notifications system failing with 404 errors when trying to fetch notifications:
+  ```
+  XHRGET http://localhost/app/ajax/get_user_notifications.php?page=1&per_page=10&filter=all
+  [HTTP/1.1 404 Not Found 4ms]
+  Failed to fetch notifications: Error: HTTP error! status: 404
+  ```
+- **Root Cause Analysis:**
+  - **Direct File Access Pattern**: Application uses direct file access instead of routing (e.g., `/app/views/agency/users/all_notifications.php`)
+  - **Base Path Detection Issue**: JavaScript AJAX module not correctly detecting the project root when accessing files directly
+  - **URL Construction**: Requests going to `/app/ajax/get_user_notifications.php` instead of `/pcds2030_dashboard_fork/app/ajax/get_user_notifications.php`
+  - **Path Detection Logic**: Original logic didn't account for direct file access patterns
+- **Impact:**
+  - **Medium Severity**: Notifications not loading, breaking user experience
+  - **Scope**: All agency users trying to access notifications via direct file access
+  - **User Experience**: Empty notifications page with console errors
+- **Solution - Enhanced Base Path Detection for Direct File Access:**
+  1. **Improved Path Detection Logic:**
+     - Enhanced `detectBaseUrl()` method to handle direct file access patterns
+     - Added specific logic for `/app/views/` path detection
+     - Extracts project root by going up from the `app` directory
+  2. **Code Changes:**
+     ```javascript
+     detectBaseUrl() {
+         const currentPath = window.location.pathname;
+         const currentOrigin = window.location.origin;
+         
+         // Check if we're accessing a file directly (like /app/views/agency/users/all_notifications.php)
+         if (currentPath.includes('/app/views/')) {
+             // Extract the project root by going up from /app/views/
+             const pathParts = currentPath.split('/');
+             const appIndex = pathParts.indexOf('app');
+             if (appIndex > 0) {
+                 // Get everything before 'app'
+                 const projectPath = pathParts.slice(0, appIndex).join('/');
+                 return currentOrigin + projectPath;
+             }
+         }
+         
+         // Other detection logic...
+     }
+     ```
+  3. **Added Debug Logging:**
+     - Added console.log statements to track path detection process
+     - Helps identify path construction issues in future
+- **Files Modified:**
+  - `assets/js/agency/users/ajax.js` - Enhanced base path detection for direct file access
+- **Testing:** 
+  - Rebuilt Vite assets with `npm run build`
+  - Notifications should now load correctly from the proper URL
+  - Console should show correct URL being fetched
+- **Prevention:** 
+  - Use dynamic path detection for all AJAX requests
+  - Test in both routing and direct file access scenarios
+  - Add debug logging for URL construction issues
+- **Related Issues**: Similar to previous path issues in Bug #28, but specific to direct file access patterns
+
 ### 30. Agency View Outcomes Graph Data Structure Mismatch (2025-07-27)
 
 - **Problem:** "View details" functionality for graph type outcomes not working on agency side, while KPI outcomes work correctly
@@ -1122,1191 +1180,139 @@
 
 - Bug #13: Fixed Navbar Overlapping Page Header
 
+### Bug #39: Program Creation Notifications Not Working - Missing Notification Call in create_simple_program Function
+
+**Date Found**: 2025-07-29 15:45:00  
+**Status**: ✅ FIXED  
+**Severity**: Medium  
+**Impact**: Users not receiving notifications when programs are created
+
+### Problem Description
+Creating a new program through the web interface was not triggering notifications. Users were not receiving notifications about new program creations, even though the audit logs were being created correctly.
+
+### Root Cause Analysis
+1. **Missing notification call**: The `create_simple_program()` function in `app/lib/agencies/programs.php` was missing the `notify_program_created()` call
+2. **Function inconsistency**: Other program creation functions (`create_wizard_program_draft`, `create_agency_program`) had the notification call, but `create_simple_program` did not
+3. **Main interface affected**: The web interface (`create_program.php`) uses `create_simple_program()`, so all program creations through the UI were not generating notifications
+4. **Database column mismatch**: The notification function was looking for `status = 'active'` but the users table has `is_active = 1`
+
+### Investigation Process
+1. **Database analysis**: Found recent program creation audit logs but no corresponding notifications
+2. **Function comparison**: Compared all program creation functions and found `create_simple_program` was missing notification call
+3. **Interface tracing**: Confirmed that `create_program.php` calls `create_simple_program()`
+4. **Database schema check**: Discovered users table uses `is_active` column, not `status`
+
+### Solution Applied
+**File**: `app/lib/agencies/programs.php`  
+**Function**: `create_simple_program()`  
+**Lines**: 398-405
+
+Added the missing notification call after the audit log:
+```php
+// Send notification for program creation
+$program_data = [
+    'program_name' => $program_name,
+    'program_number' => $program_number,
+    'agency_id' => $agency_id,
+    'initiative_id' => $initiative_id
+];
+notify_program_created($program_id, $user_id, $program_data);
 ```
 
-**Status: ✅ ALL RESOLVED** - Module ready for production use.
-
----
-
-# Reports & Notifications Module Refactor - Problems & Solutions Log
-
-**Date:** 2025-07-20
-
-## Problems & Solutions During Reports & Notifications Refactor
-
-### 1. Undefined PROJECT_ROOT_PATH Constant
-
-- **Problem:** `Fatal error: Uncaught Error: Undefined constant "PROJECT_ROOT_PATH" in C:\laragon\www\pcds2030_dashboard_fork\app\lib\agencies
-otifications.php:8`
-- **Cause:** The notifications.php file was created with `require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';` but PROJECT_ROOT_PATH constant was not defined before the file was included.
-- **Root Cause Pattern:** This is a recurring pattern from previous refactors (Bug #10, #11 in initiatives module) - path constants not being properly defined when creating new lib files.
-- **Solution:** Need to either define PROJECT_ROOT_PATH before including the file, or use relative paths with __DIR__, or include the constant definition within the file.
-
-### 2. Function Redeclaration Error
-
-- **Problem:** `Fatal error: Cannot redeclare get_public_reports() (previously declared in C:\laragon\www\pcds2030_dashboard_fork\app\lib\agencies\core.php:45) in C:\laragon\www\pcds2030_dashboard_fork\app\lib\agencies
-eports.php on line 75`
-- **Cause:** The `get_public_reports()` function exists in both `core.php` and `reports.php`, causing a PHP fatal error when both files are included.
-- **Root Cause Pattern:** Function name collision due to not checking existing function names before creating new ones in modular lib files.
-- **Solution:** Either rename one of the functions or use function_exists() checks, or consolidate functions to avoid duplication.
-
-### 3. File Include Order Dependencies
-
-- **Problem:** These errors occur because the refactored notification view tries to include notifications.php, which has dependencies and conflicts with existing files.
-- **Cause:** The modular refactor created new lib files without checking existing function names and dependency patterns.
-- **Solution:** Need to audit all function names and ensure proper include order and dependency management.
-
-**Pattern Recognition:** Both errors follow the same patterns seen in previous refactors:
-- **Path Constants** (similar to initiatives Bug #10, #11): PROJECT_ROOT_PATH definition issues
-- **Function Collisions** (new pattern): Not checking existing function names when creating modular files
-
----
-
-**Next Steps for Resolution:**
-1. ✅ Fix PROJECT_ROOT_PATH definition in notifications.php
-2. ✅ Resolve function name collision between core.php and reports.php
-3. ✅ Audit all new lib files for function name conflicts
-4. ✅ Test the refactored modules to ensure they work properly
-
-**Status: ✅ ALL RESOLVED** - Function conflicts resolved, path constants fixed, both modules ready for testing.
-
-### 4. Fixed Navbar Overlapping Header Content ✅ RESOLVED
-
-- **Problem:** Navigation bar is covering parts of the page header content, causing text and elements to be hidden behind the fixed navbar.
-- **Cause:** Fixed navbar with `position: fixed` requires body padding to offset its height, but the refactored CSS modules aren't including the necessary `body { padding-top: 70px; }` rule.
-- **Root Cause Pattern:** This is the same issue as initiatives Bug #13. The fixed navbar pattern needs consistent body padding across all modules.
-- **Solution:** Added proper body padding rules to both reports and notifications CSS modules with responsive adjustments (70px for desktop, 85px for mobile).
-
-### 5. Database Connection Null Error ✅ RESOLVED
-
-- **Problem:** `Fatal error: Uncaught Error: Call to a member function query() on null in C:\laragon\www\pcds2030_dashboard_fork\app\lib\functions.php:106`
-- **Cause:** The `$conn` database connection variable is null when `auto_manage_reporting_periods()` is called from session.php. The database connection isn't established before functions.php is loaded.
-- **Root Cause Pattern:** Include order dependency - functions.php assumes $conn exists but db_connect.php isn't included first.
-- **Solution:** Updated include order in `all_notifications.php`, `notifications.php`, and `reports.php` to include: config.php → db_connect.php → functions.php.
-
-### 6. Reports and Notifications Navbar Overlap ✅ RESOLVED
-
-- **Problem:** Both public reports page and notifications page have their headers covered by the fixed navbar, making content inaccessible.
-- **Cause:** Missing body class application and CSS navbar offset rules not properly applied to these specific pages.
-- **Root Cause Pattern:** Base layout system needed to support dynamic body classes for page-specific styling.
-- **Solution:**
-  1. Enhanced base layout (`app/views/layouts/base.php`) to support both `$bodyClass` and `$pageClass` variables
-  2. Added navbar offset CSS to reports module (`assets/css/agency/reports/reports.css`) with `body.reports-page` selector
-  3. Updated both `public_reports.php` and `view_reports.php` to set `$bodyClass = 'reports-page'`
-  4. Confirmed notifications already had proper `$pageClass = 'notifications-page'` set
-
-### 7. Reports Bundle Path Double Extension ✅ RESOLVED
-
-- **Problem:** Reports pages show 404 errors for CSS/JS bundles with doubled extensions (`.bundle.css.bundle.css` and `.bundle.js.bundle.js`).
-- **Cause:** Base layout expects bundle names without extensions (`$cssBundle = 'agency-reports'`) but reports files were setting full paths with extensions (`$cssBundle = 'agency/reports.bundle.css'`).
-- **Root Cause Pattern:** Inconsistent bundle naming convention - base layout automatically adds `/dist/css/` and `.bundle.css`.
-- **Solution:**
-  1. Updated `view_reports.php` and `public_reports.php` to use correct bundle names: `$cssBundle = 'agency-reports'` and `$jsBundle = 'agency-reports'`
-  2. Added missing favicon.ico to both assets/images and assets/img directories (different layouts use different paths)
-  3. Bundle paths now correctly resolve to `/dist/css/agency-reports.bundle.css` and `/dist/js/agency-reports.bundle.js`
-
-### 8. Missing Reports AJAX Endpoints ✅ RESOLVED
-
-- **Problem:** Reports JavaScript modules showing 404 errors for missing AJAX endpoints: `get_public_reports.php` and `get_reports.php`.
-- **Cause:** JavaScript modules were created with AJAX functionality but corresponding backend endpoints were never created.
-- **Root Cause Pattern:** Frontend-backend mismatch during modular refactoring - JavaScript expects AJAX endpoints that don't exist.
-- **Solution:**
-  1. Created `app/ajax/get_public_reports.php` - returns public reports available for agency download
-  2. Created `app/ajax/get_reports.php` - returns reports for specific period and agency
-  3. Both endpoints follow existing AJAX patterns with proper authentication and error handling
-
-### 9. AJAX Endpoints Missing Function Includes ✅ RESOLVED
-
-- **Problem:** `PHP Fatal error: Call to undefined function is_agency() in get_public_reports.php:14`
-- **Cause:** AJAX endpoints missing required includes for agency core functions like `is_agency()`.
-- **Root Cause Pattern:** New AJAX files created without full dependency chain - missing `agencies/core.php` include.
-- **Solution:**
-  1. Added `require_once '../lib/agencies/core.php';` to both `get_public_reports.php` and `get_reports.php`
-  2. Added `require_once '../lib/admins/core.php';` to match working AJAX endpoint patterns
-  3. Enhanced error messages to provide specific feedback: "User not logged in" vs "Access denied. User role: X"
-  4. Ensures all agency helper functions are available for authentication checks
-
-### 10. Reports Database Schema Mismatch ✅ RESOLVED
-
-- **Problem:** `Unknown column 'agency_id' in 'where clause'` when loading public reports via AJAX.
-- **Cause:** Reports functions in `agencies/reports.php` assume `reports` table has `agency_id` column, but it doesn't exist in current database schema.
-- **Root Cause Pattern:** Functions created based on assumed schema without verifying actual database structure.
-- **Solution:**
-  1. Updated `get_public_reports.php` to use working `get_public_reports()` function from `core.php`
-  2. Updated `public_reports.php` view to use correct function
-  3. Modified `get_reports.php` to return empty array with informative message until schema is clarified
-  4. Identified that agency-specific reports feature needs database schema review
-
-**Schema Issue:** The `reports` table appears to only have `is_public` column for filtering, not `agency_id`. Agency-specific reports functionality may need database migration to add proper agency associations.
-
-**Testing Results:**
-- ✅ Functions now defined and callable
-- ✅ Public reports loading without SQL errors
-- ✅ Better error messages for debugging
-- 🔄 Agency-specific reports feature pending schema review
-
-**Testing Results:**
-- ✅ Database connection exists
-- ✅ Database query successful
-- ✅ Navbar padding added to reports CSS (6.36 kB bundle size)
-- ✅ Base layout supports dynamic body classes
-- ✅ Bundle paths corrected to use proper naming convention
-- ✅ Favicon.ico added to prevent 404 errors
-- ✅ All assets rebuild successfully (25 modules transformed)
-
-**Status: ✅ ALL RESOLVED** - Header overlap fixed for all modules, bundle paths corrected, database connection established, modules ready for production.
-
-### 11. Notifications Page Missing Bundle Configuration ✅ RESOLVED
-
-- **Problem:** Notifications page loads content but CSS/JS bundles not being requested in network tab, resulting in missing styles and functionality.
-- **Cause:** Notifications page missing `$cssBundle` and `$jsBundle` configuration variables, and missing `session.php` include.
-- **Root Cause Pattern:** Incomplete page configuration during refactoring - page content working but assets not loaded.
-- **Solution:**
-  1. Added missing bundle configuration: `$cssBundle = 'notifications'` and `$jsBundle = 'notifications'`
-  2. Added missing `session.php` include to match working pages pattern
-  3. Bundles already exist in dist/ directory (notifications.bundle.css and notifications.bundle.js)
-
-**Testing Results:**
-- ✅ Bundle configuration added to notifications page
-- ✅ Include order fixed to match working patterns
-- ✅ Bundles exist and ready to load
-
----
-
-# Previous Bugs Tracker (pre-initiatives refactor)
-
----
-
-# Previous Bugs Tracker (pre-initiatives refactor)
-
-## [2024-07-15] Fatal error: Unknown column 'users_assigned' in 'where clause' (User Deletion)
-
-- **File:** app/lib/admins/users.php
-- **Line:** 421 (delete_user function)
-- **Error:**
-  - Fatal error: Uncaught mysqli_sql_exception: Unknown column 'users_assigned' in 'where clause'
-- **Cause:**
-  - The code checked for program ownership using a non-existent 'users_assigned' column in the 'programs' table.
-  - The actual schema uses 'created_by' to track program ownership.
-- **Fix:**
-  - Updated the code to use 'created_by' instead of 'users_assigned' in the SQL query.
-  - No database changes required.
-- **Status:** Fixed in code, 2024-07-15.
-
-## [2024-07-19] Outcome Edit Not Saving Latest Edits (Admin Outcome Edit)
-
-- **File:** app/views/admin/outcomes/edit_outcome.php
-- **Error:**
-  - When editing the outcome table (cells, row/column names) and clicking "Save Changes" while still editing a contenteditable field, the latest changes were not saved.
-- **Cause:**
-  - The JavaScript collected data from the DOM on form submit, but if a contenteditable cell was still focused, its latest value was not committed to the DOM and thus not included in the data sent to the backend.
-- **Fix:**
-  - On form submission, all `.editable-hint` elements are programmatically blurred before collecting data, ensuring the latest edits are committed and saved.
-- **Status:** Fixed in code, 2024-07-19.
-
-### 18. Admin Nav Dropdowns Not Working on Manage Initiatives Page (2025-07-21)
-
-- **Problem:** On the admin `manage_initiatives.php` page, navigation dropdowns (Programs, Initiatives, Settings) were not responsive/clickable, even though the rest of the page loaded fine.
-- **Cause:** Bootstrap dropdowns were not being initialized, likely due to a race condition or missed initialization caused by the order of script execution. No direct JS errors or conflicts were found in the page-specific bundle or layout. All required assets were loaded, but Bootstrap's data-API initialization was not always firing reliably.
-- **Solution:** Added a fallback script at the end of `footer.php` to force re-initialization of all dropdowns after DOMContentLoaded. This ensures that all dropdowns are initialized even if the automatic data-API initialization fails for any reason.
-- **Files Fixed:**
-  - `app/views/layouts/footer.php` (added fallback dropdown initialization script)
-- **Prevention:** For any future issues with Bootstrap component initialization, add a forced re-initialization as a robust fallback after all scripts have loaded.
-
-### 19. Create Program Footer Positioning Issue (2025-07-21)
-
-- **Problem:** Footer appearing between header and content instead of at the bottom of the page in create program module.
-- **Cause:** The create program file was mixing old and new layout patterns. It was including `base.php` correctly but then had all content HTML directly in the file instead of using a content file, plus manually including the footer at the end.
-- **Root Issue:** Incomplete migration to base.php layout pattern - the file was partially refactored but still contained old layout structure.
-- **Solution:**
-  1. Removed all inline HTML content from main file
-  2. Set `$contentFile = 'partials/create_program_content.php'` to use proper content file pattern
-  3. Removed manual footer include at end of file
-  4. Moved all content to proper partials structure
-  5. Updated base layout integration to follow established pattern
-- **Files Fixed:**
-  - `app/views/agency/programs/create_program.php` (proper base layout usage)
-  - Created modular partials in `app/views/agency/programs/partials/`
-  - Added proper CSS/JS bundling with Vite
-- **Prevention:** Always use complete base.php layout pattern - either old layout (header/footer includes) OR new layout (base.php with content file), never mix both patterns.
-
----
-
-# Add Submission Module Refactor - Summary & Learnings
-
-**Date:** 2025-07-22
-
-## Refactor Summary
-
-- **Module:** `app/views/agency/programs/add_submission.php`
-- **Goal:** Refactor the "Add Submission" page to align with modern best practices, including using the base layout, modular assets (CSS/JS), and Vite bundling.
-
-### Changes Implemented
-
-1.  **Layout & Structure:**
-    *   Converted the page to use the `base.php` layout system, replacing the old `header.php`/`footer.php` includes.
-    *   Created a content partial (`partials/add_submission_content.php`) to separate HTML markup from PHP logic.
-    *   This fixed the footer positioning and ensures a consistent page structure.
-
-2.  **Asset Management:**
-    *   Created a new CSS file (`assets/css/agency/programs/add_submission.css`) and added the standard navbar padding fix to prevent content overlap.
-    *   Moved the JavaScript file to a modular location (`assets/js/agency/programs/add_submission.js`) and converted it to an ES module.
-    *   Added a new entry to `vite.config.js` (`agency-programs-add-submission`) and rebuilt the assets.
-
-3.  **Code Quality:**
-    *   Corrected the `PROJECT_ROOT_PATH` definition to prevent path resolution errors.
-    *   Modified the JavaScript to read data from `data-*` attributes on the form instead of relying on global `window` variables, improving encapsulation.
-
-### Bugs & Issues Encountered
-
-- **Build Failure:** The `npm run build` command initially failed due to an incorrect file path in `vite.config.js` for a different module (`create_program.js` instead of `create.js`).
-- **Solution:** Corrected the path in the Vite config, which allowed the build to complete successfully. This highlights the importance of verifying all entry points during a build.
-
-**Result:** The "Add Submission" page is now fully modernized, maintainable, and consistent with the rest of the refactored application.
-
-### 20. Bundle Name Mismatch in View Programs - More Actions Button Not Working (Again) (2025-07-22)
-
-- **Problem:** The "More Actions" button in the view programs page was not responding to clicks. No modal/popup was appearing when clicked.
-- **Cause:** **Exact same issue as Bug #19** - Bundle name mismatch between the PHP view file and the Vite configuration. The view programs page was trying to load bundles named `'agency-view-programs'` but the actual Vite bundles were named `'agency-programs-view'`.
-- **Root Issue:** This is a **recurring pattern** - when refactoring pages to use the base layout system, bundle names in PHP files are not being updated to match the Vite configuration entry names.
-- **Solution:** Updated `$cssBundle` and `$jsBundle` in `app/views/agency/programs/view_programs.php` from `'agency-view-programs'` to `'agency-programs-view'` to match the Vite config.
-- **Files Fixed:** `app/views/agency/programs/view_programs.php`
-- **Prevention:**
-- **Prevention:**
-  - **Always verify bundle names** in PHP view files match the entry names in `vite.config.js`
-  - **Create a checklist** for bundle name verification during refactoring
-  - **Consider standardizing naming convention** (e.g., always `module-section-page` format)
-  - **Add validation** to catch bundle name mismatches during build process
-
-### 25. View Submissions Refactoring - MVC Architecture Implementation (2025-07-22)
-
-- **Problem:** Database queries were scattered throughout view files instead of following proper MVC architecture. The `view_submissions.php` file contained direct database queries in both the main view and partials.
-- **Cause:** Original development approach mixed data access logic with presentation logic, violating separation of concerns principles.
-- **Root Issue:** Not following the established refactoring standards: "Database operations only in `lib/` (models/helpers), Views display data only - no business logic"
-- **Solution:**
-  1. **Created data helper**: `app/lib/agencies/submission_data.php` to centralize all submission-related data queries
-  2. **Refactored main view**: Replaced direct database queries with single `get_submission_view_data()` call
-  3. **Cleaned up partials**: Removed database queries from `submission_sidebar.php` partial
-  4. **Created API endpoint**: `app/api/agency/submit_submission.php` for submission actions (JSON only)
-  5. **Updated JavaScript**: Used dynamic base path for API calls instead of hardcoded paths
-- **Architecture Improvements:**
-  - **Data Flow**: Controller/Handler → Model/Helper → View → Assets ✅
-  - **Database operations**: Only in `lib/` directory ✅
-  - **Views**: Display data only, no business logic ✅
-  - **AJAX endpoints**: Return JSON only ✅
-- **Files Created:**
-  - `app/lib/agencies/submission_data.php` (centralized data access)
-  - `app/api/agency/submit_submission.php` (JSON API endpoint)
-- **Files Refactored:**
-  - `app/views/agency/programs/view_submissions.php` (removed queries, uses data helper)
-  - `app/views/agency/programs/partials/submission_sidebar.php` (removed queries)
-  - `assets/js/agency/programs/view_submissions.js` (dynamic API paths)
-- **Benefits:**
-  - **Maintainability**: Database logic centralized and reusable
-  - **Testability**: Data access functions can be unit tested
-  - **Security**: Consistent parameter validation and access control
-  - **Performance**: Optimized queries with single data fetch
-- **Prevention:** Always follow MVC principles during refactoring. Use data helpers for complex queries. Keep views presentation-only.
-
-### 25. Program Details Page Refactoring - Complete Modular Architecture Implementation (2025-07-23)
-
-- **Problem:** The agency-side program details page was a monolithic 893-line file with mixed concerns, inline styles/scripts, and poor maintainability. This violated established best practices and made the code difficult to maintain and extend.
-- **Root Issue:** Lack of modular architecture, separation of concerns, and proper asset management following the project's established patterns.
-- **Impact:**
-  - **High Maintenance Cost:** Single large file was difficult to debug and modify
-  - **Poor Performance:** No asset bundling, multiple HTTP requests for resources
-  - **Code Duplication:** Repeated logic across different sections
-  - **Inconsistent Styling:** Mixed inline and external styles
-  - **Poor Testability:** Monolithic structure made unit testing difficult
-- **Solution Implemented:**
-  1. **Modular Architecture:** Broke down monolithic file into 7 focused partials:
-     - `program_overview.php` - Basic program info, status, hold points
-     - `program_targets.php` - Targets & achievements display
-     - `program_timeline.php` - Submission history & related programs
-     - `program_sidebar.php` - Statistics, attachments, quick info
-     - `program_actions.php` - Quick action buttons
-     - `program_modals.php` - All modal dialogs
-     - `program_details_content.php` - Main content wrapper
-  2. **Enhanced Data Layer:** Improved `program_details_data.php` with:
-     - Centralized data fetching logic
-     - Fixed function redeclaration (`get_program_attachments()`)
-     - Added helper functions (`formatFileSize()`)
-     - Better error handling and validation
-  3. **Asset Bundling:** Implemented proper Vite bundling:
-     - `agency-program-details.bundle.css` (110.91 kB, gzipped: 20.15 kB)
-     - `agency-program-details.bundle.js` (11.93 kB, gzipped: 3.61 kB)
-  4. **Base Layout Integration:** Used consistent `base.php` layout system
-  5. **Enhanced Features:**
-     - Interactive timeline with animations
-     - Status management with hold point tracking
-     - Toast notifications for better UX
-     - Mobile-responsive design
-     - AJAX-powered submission operations
-- **Files Created/Modified:**
-  - **Main Controller:** `app/views/agency/programs/program_details.php` (reduced from 893 to 95 lines)
-  - **Partials:** 7 new modular partial files in `partials/` directory
-  - **Data Helper:** Enhanced `app/lib/agencies/program_details_data.php`
-  - **CSS Bundle:** `assets/css/agency/programs/program-details.css`
-  - **JS Bundle:** Enhanced `assets/js/agency/enhanced_program_details.js`
-  - **Documentation:** `.github/implementations/agency/program_details_refactor.md`
-- **Performance Improvements:**
-  - **90% reduction in main file size** (893 → 95 lines)
-  - **Optimized asset loading** with single bundled CSS/JS files
-  - **Reduced HTTP requests** through proper bundling
-  - **Improved caching** with versioned asset files
-- **Features Preserved:** 100% feature parity maintained including:
-  - Program information display
-  - Status management and hold points
-  - Targets & achievements
-  - Submission timeline
-  - Related programs
-  - Attachments management
-  - Quick actions
-  - Permission system
-  - Modal dialogs
-- **Testing Results:**
-  - ✅ All assets load correctly
-  - ✅ Base layout integration works
-  - ✅ Interactive features function properly
-  - ✅ Mobile responsiveness confirmed
-  - ✅ Permission system intact
-  - ✅ No function redeclaration errors
-  - ✅ Backward compatibility maintained
-- **Prevention:** This refactoring establishes a template for future page refactoring. All new pages should follow this modular architecture pattern with proper separation of concerns, asset bundling, and base layout integration.
-- **Future Benefits:** The new modular structure makes it easy to:
-  - Add new features without affecting existing code
-  - Test individual components in isolation
-  - Reuse components across different pages
-  - Maintain consistent styling and behavior
-  - Optimize performance through targeted improvements
-### 26. P
-rogram Details Refactoring - Post-Implementation Bug Fixes (2025-07-23)
-
-- **Problem:** After the successful program details refactoring, several runtime errors occurred due to IDE autofix corruption and missing data structure handling:
-  1. **PHP Fatal Error:** `Call to undefined function formatFileSize()` in program_sidebar.php
-  2. **PHP Warning:** `Undefined array key "reporting_period_id"` in program_timeline.php
-  3. **File Corruption:** IDE autofix corrupted the program_details_data.php file structure
-- **Root Cause:**
-  1. **IDE Autofix Issue:** Kiro IDE autofix moved the `formatFileSize()` function outside PHP tags and corrupted file structure
-  2. **Data Structure Mismatch:** Submission history data structure uses different key names than expected
-  3. **Missing Null Checks:** Timeline partial didn't handle missing array keys gracefully
-- **Impact:**
-  - **Critical:** Program details page completely broken with fatal errors
-  - **High Severity:** Users unable to view program information
-  - **Medium Severity:** PHP warnings in error logs
-- **Solution:**
-  1. **Fixed File Corruption:**
-     - Moved `formatFileSize()` function back inside PHP tags
-     - Fixed malformed comment structure in program_details_data.php
-     - Restored proper PHP file closing tag
-  2. **Fixed Array Key Issues:**
-     - Added null coalescing operators for `reporting_period_id` → `$submission['reporting_period_id'] ?? $submission['period_id'] ?? ''`
-     - Added null check for `is_draft` → `$submission['is_draft'] ?? false`
-     - Implemented defensive programming for timeline data access
-  3. **Enhanced Error Handling:**
-     - Added proper fallback values for missing data
-     - Implemented graceful degradation for timeline features
-- **Files Fixed:**
-  - `app/lib/agencies/program_details_data.php` (fixed function placement and file structure)
-  - `app/views/agency/programs/partials/program_timeline.php` (added null coalescing operators)
-- **Testing Results:**
-  - ✅ `formatFileSize()` function now accessible in partials
-  - ✅ Timeline displays without PHP warnings
-  - ✅ Program details page loads successfully
-  - ✅ All interactive features working properly
-- **Prevention:**
-  - Always test pages after IDE autofix operations
-  - Use null coalescing operators for array access in views
-  - Implement defensive programming practices for data structure access
-  - Add proper error handling for missing or malformed data
-- **Lesson Learned:** IDE autofix can sometimes corrupt file structure, especially with mixed HTML/PHP files. Always verify file integrity after automated fixes.### 27. Func
-tion Redeclaration Error - get_submission_attachments() Duplicate (2025-07-23)
-
-- **Problem:** Fatal error after IDE autofix: `Cannot redeclare get_submission_attachments() (previously declared in submission_data.php:116) in program_attachments.php on line 307`
-- **Root Cause:** Two different functions with the same name `get_submission_attachments()` but different signatures:
-  1. `submission_data.php` - `get_submission_attachments($program_id, $submission_id)` - Gets attachments for a submission
-  2. `program_attachments.php` - `get_submission_attachments($submission_id)` - Gets attachments with user details
-- **Impact:**
-  - **Critical:** Fatal error preventing program details page from loading
-  - **High Severity:** Function name collision causing PHP to crash
-- **Solution:**
-  1. **Renamed conflicting function** in `program_attachments.php`:
-     - `get_submission_attachments($submission_id)` → `get_submission_attachments_with_details($submission_id)`
-  2. **Verified function usage**: Confirmed the renamed function is not called elsewhere
-  3. **Maintained functionality**: Both functions serve different purposes and are now properly differentiated
-- **Files Fixed:**
-  - `app/lib/agencies/program_attachments.php` (renamed function to avoid collision)
-- **Function Purposes:**
-  - `get_submission_attachments($program_id, $submission_id)` - Used by submission data helper
-  - `get_submission_attachments_with_details($submission_id)` - Extended version with user information
-- **Testing Results:**
-  - ✅ No syntax errors in all PHP files
-  - ✅ Function redeclaration error resolved
-  - ✅ Both functions maintain their intended functionality
-  - ✅ Program details page loads without errors
-- **Prevention:**
-  - Use more descriptive function names to avoid collisions
-  - Implement function_exists() checks before declaring functions
-  - Consider using namespaces for better organization
-  - Regular code review to catch naming conflicts early
-- **Pattern Recognition:** This is the second function redeclaration issue in this refactoring (first was `get_program_attachments()`), indicating a need for better function naming conventions and conflict detection.### 28.
-Program Details UI Enhancement - Replace Targets Section with Quick Actions (2025-07-23)
-
-- **Request:** User requested to remove the targets section from the program details page and replace it with the quick actions section for better user workflow.
-- **Analysis:** The targets section was taking up valuable space in the main content area, while quick actions were relegated to the bottom of the page. Moving quick actions to the main content area improves user accessibility and workflow efficiency.
-- **Implementation:**
-  1. **Restructured Content Layout:**
-     - Removed `program_targets.php` from main content area
-     - Moved `program_actions.php` from bottom section to main content area (between overview and timeline)
-     - Added read-only notice for users without edit permissions
-  2. **Enhanced Read-Only Experience:**
-     - Created styled read-only actions notice card for non-editors
-     - Added appropriate messaging and lock icon for visual clarity
-     - Maintained consistent card styling with other components
-  3. **CSS Enhancements:**
-     - Added `.read-only-actions-notice` styling for non-editor users
-     - Adjusted quick actions card styling for main content area placement
-     - Added responsive adjustments for mobile devices
-     - Optimized button sizing for main content flow
-- **Files Modified:**
-  - `app/views/agency/programs/partials/program_details_content.php` (restructured layout)
-  - `assets/css/agency/programs/program-details.css` (added new styling)
-- **User Experience Improvements:**
-  - **Better Workflow:** Quick actions now prominently displayed in main content
-  - **Cleaner Interface:** Removed redundant targets section that duplicated submission data
-  - **Clear Permissions:** Read-only users see clear indication of their access level
-  - **Consistent Design:** Maintained visual consistency with other page components
-- **Asset Bundle Update:**
-  - CSS bundle size: 111.55 kB (increased by ~0.6 kB for new styling)
-  - All styling properly bundled and optimized
-- **Testing Results:**
-  - ✅ Quick actions prominently displayed for editors
-  - ✅ Read-only notice properly shown for non-editors
-  - ✅ Responsive design works on mobile devices
-  - ✅ Visual consistency maintained across the page
-- **Benefits:**
-  - **Improved Accessibility:** Key actions are now more prominent and easier to find
-  - **Better UX Flow:** Users can quickly access program management functions
-  - **Cleaner Design:** Removed redundant information display
-  - **Clear Permissions:** Users understand their access level immediately
+**File**: `app/lib/notifications_core.php`  
+**Function**: `notify_program_created()`  
+**Lines**: 58, 72
+
+Fixed database column references:
+```php
+// Changed from: status = 'active'
+// Changed to: is_active = 1
+$agency_users_query = "SELECT user_id FROM users WHERE agency_id = ? AND user_id != ? AND is_active = 1";
+$admin_users_query = "SELECT user_id FROM users WHERE role = 'admin' AND is_active = 1";
 ```
-
-### 29. Program Details Enhancement - Dynamic Submission Selection by Quarter (2025-07-23)
-
-- **Request:** User requested to change "View Latest Submission" to "View Submission" with a modal that allows users to pick which submission by quarter they want to view.
-- **Analysis:** The previous implementation only showed the latest submission, limiting users' ability to review historical quarterly reports. This enhancement provides better access to all submission history.
-- **Implementation:**
-  1. **Updated Quick Actions Button:**
-     - Changed text from "View Latest Submission" to "View Submission"
-     - Updated description to "Select and view a progress report by quarter"
-     - Changed modal target from `#viewSubmissionModal` to `#selectSubmissionModal`
-  2. **Created Submission Selection Modal:**
-     - New modal `#selectSubmissionModal` displays all available submissions
-     - Shows submission period, status (Draft/Finalized), submitter, and date
-     - Interactive list items with hover effects and click handlers
-     - Responsive design for mobile devices
-  3. **Enhanced View Submission Modal:**
-     - Made modal content dynamic and loaded via JavaScript
-     - Updated modal title to show selected period
-     - Added loading state with spinner
-     - Simplified content structure for better UX
-  4. **JavaScript Functionality:**
-     - Added `handleSubmissionSelection()` method to process user selection
-     - Added `loadSubmissionDetails()` method for dynamic content loading
-     - Added `renderSubmissionDetails()` method for modal content rendering
-     - Added `formatRating()` helper method for rating display
-     - Implemented modal chaining (selection → view)
-- **Files Modified:**
-  - `app/views/agency/programs/partials/program_actions.php` (updated button)
-  - `app/views/agency/programs/partials/program_modals.php` (added selection modal, updated view modal)
-  - `assets/js/agency/enhanced_program_details.js` (added submission selection functionality)
-  - `assets/css/agency/programs/program-details.css` (added modal styling)
-- **User Experience Improvements:**
-  - **Better Access:** Users can now view any quarterly submission, not just the latest
-  - **Clear Selection:** Visual list of all submissions with status indicators
-  - **Smooth Workflow:** Modal chaining provides seamless user experience
-  - **Loading States:** Clear feedback during content loading
-  - **Responsive Design:** Works well on both desktop and mobile devices
-- **Technical Features:**
-  - **Dynamic Content:** Modal content loaded based on user selection
-  - **Data Attributes:** Submission data stored in HTML data attributes for JavaScript access
-  - **Modal Chaining:** Selection modal closes and view modal opens smoothly
-  - **Error Handling:** Graceful handling of loading failures
-  - **Accessibility:** Proper ARIA labels and keyboard navigation support
-- **Asset Bundle Updates:**
-  - CSS bundle: 112.51 kB (↑1 kB for modal styling)
-  - JS bundle: 15.18 kB (↑3.25 kB for new functionality)
-- **Testing Results:**
-  - ✅ Submission selection modal displays all available submissions
-  - ✅ Click handlers work correctly for submission selection
-  - ✅ View modal loads with selected submission data
-  - ✅ Modal chaining works smoothly
-  - ✅ Responsive design works on mobile devices
-  - ✅ Loading states provide good user feedback
-- **Benefits:**
-  - **Enhanced Accessibility:** Users can access complete submission history
-  - **Better UX:** Clear, intuitive selection process
-  - **Improved Workflow:** Streamlined process for viewing different quarters
-  - **Future-Ready:** Foundation for more advanced submission management features
-
-### 30. Database Schema Error - Unknown Column 'rp.period_name' in submission_data.php (2025-07-23)
-
-- **Problem:** Fatal error when accessing submission data: `Unknown column 'rp.period_name' in 'field list'` in submission_data.php line 56.
-- **Root Cause:** The query in `get_submission_view_data()` was trying to select `rp.period_name` from the `reporting_periods` table, but this column doesn't exist in the database schema. The `reporting_periods` table uses `year`, `period_type`, and `period_number` columns instead.
-- **Impact:**
-  - **Critical:** Complete failure when viewing submission details
-  - **High Severity:** Users unable to access program submission data
-  - **Blocking:** Prevented testing of new submission selection feature
-- **Analysis:** The `reporting_periods` table structure:
-  - **Actual columns:** `period_id`, `year`, `period_type`, `period_number`, `start_date`, `end_date`, `status`
-  - **Missing column:** `period_name` (doesn't exist)
-  - **Solution:** Generate `period_name` dynamically using CASE statement like other queries
-- **Solution:**
-  1. **Fixed Query Structure:** Replaced direct `rp.period_name` selection with dynamic generation:
-     ```sql
-     CASE
-        WHEN rp.period_type = 'quarter' THEN CONCAT('Q', rp.period_number, ' ', rp.year)
-        WHEN rp.period_type = 'half' THEN CONCAT('H', rp.period_number, ' ', rp.year)
-        WHEN rp.period_type = 'yearly' THEN CONCAT('Y', rp.period_number, ' ', rp.year)
-        ELSE CONCAT(rp.period_type, ' ', rp.period_number, ' ', rp.year)
-     END as period_name
-     ```
-  2. **Updated period_display:** Modified to use the generated period_name in the display format
-  3. **Added Required Columns:** Included `year`, `period_type`, `period_number` in SELECT for proper data access
-- **Files Fixed:**
-  - `app/lib/agencies/submission_data.php` (fixed query in `get_submission_view_data()` function)
-- **Pattern Recognition:** This follows the same pattern used successfully in:
-  - `app/lib/agencies/programs.php` (lines 856-857, 961-962)
-  - Other queries that work with reporting_periods table
-- **Testing Results:**
-  - ✅ Query executes without errors
-  - ✅ Period names generate correctly (Q1 2024, H2 2024, etc.)
-  - ✅ Period display format works properly
-  - ✅ Submission data loads successfully
-- **Prevention:**
-  - Always verify column names against actual database schema
-  - Use consistent query patterns across the codebase
-  - Test database queries after schema changes
-  - Document table structures for reference
-- **Root Issue:** Inconsistency between assumed database schema and actual table structure. This suggests the need for better database documentation and schema validation.**Databas
-  e Schema Validation (2025-07-23):**
-- ✅ **Confirmed**: `reporting_periods` table structure from database dump validates the fix
-- ✅ **Table columns**: `period_id`, `year`, `period_type`, `period_number`, `start_date`, `end_date`, `status`, `created_at`, `updated_at`
-- ✅ **ENUM values**: `period_type` ENUM('quarter','half','yearly') matches CASE statement logic
-- ✅ **Missing column confirmed**: No `period_name` column exists in actual database schema
-- ✅ **Fix validated**: Dynamic generation using CASE statement is the correct approach###
-
-31. Database Schema Error - Unknown Column 'program_id' in program_attachments Table (2025-07-23)
-
-- **Problem:** Fatal error when accessing submission attachments: `Unknown column 'program_id' in 'where clause'` in submission_data.php line 137.
-- **Root Cause:** The `get_submission_attachments()` function was trying to filter by `program_id` in the `program_attachments` table, but this column doesn't exist in the database schema.
-- **Impact:**
-  - **Critical:** Complete failure when viewing submission details with attachments
-  - **High Severity:** Users unable to access program submission data that includes file attachments
-  - **Blocking:** Prevented submission viewing functionality from working
-- **Analysis:** The `program_attachments` table structure from database schema:
-  - **Actual columns:** `attachment_id`, `submission_id`, `file_name`, `file_path`, `file_size`, `file_type`, `uploaded_by`, `uploaded_at`, `is_deleted`
-  - **Missing column:** `program_id` (doesn't exist)
-  - **Relationship:** Attachments are linked to programs through `submission_id` → `program_submissions` → `program_id`
-- **Solution:**
-
-  1. **Updated Query Logic:** Removed `program_id` filter from WHERE clause since it doesn't exist:
-
-     ```sql
-     -- Before (BROKEN):
-     WHERE program_id = ? AND submission_id = ? AND is_deleted = 0
-
-     -- After (FIXED):
-     WHERE submission_id = ? AND is_deleted = 0
-     ```
-
-  2. **Maintained API Compatibility:** Kept `$program_id` parameter for backward compatibility but added comment explaining it's not used
-  3. **Simplified Query:** Since `submission_id` is unique and already provides the necessary filtering, `program_id` was redundant anyway
-
-- **Files Fixed:**
-  - `app/lib/agencies/submission_data.php` (fixed query in `get_submission_attachments()` function)
-- **Database Schema Validation:**
-  - ✅ **Confirmed**: `program_attachments` table structure from database dump validates the fix
-  - ✅ **Foreign Key**: `submission_id` properly references `program_submissions.submission_id`
-  - ✅ **Relationship**: Program linkage works through submission relationship
-- **Testing Results:**
-  - ✅ Query executes without errors
-  - ✅ Attachments load correctly for submissions
-  - ✅ API compatibility maintained
-  - ✅ No data loss or functionality impact
-- **Prevention:**
-  - Always verify column names against actual database schema before writing queries
-  - Use database documentation or schema inspection tools
-  - Test queries with actual database structure
-- **Pattern Recognition:** This is the second database schema mismatch in the same session, indicating a systematic issue where code assumptions don't match actual database structure. This suggests the need for better database documentation and schema validation processes.### 32.
-  PHP Warnings - Undefined Array Key 'period_status' in submission_overview.php (2025-07-23)
-
-- **Problem:** PHP warnings when viewing submission details:
-  ```
-  PHP Warning: Undefined array key "period_status" in submission_overview.php on line 32
-  PHP Warning: Undefined array key "period_status" in submission_overview.php on line 33
-  PHP Deprecated: ucfirst(): Passing null to parameter #1 ($string) of type string is deprecated
-  ```
-- **Root Cause:** The submission_overview.php partial was trying to access `$submission['period_status']` but this key wasn't being selected in the database query in `get_submission_view_data()`.
-- **Impact:**
-  - **Medium Severity:** PHP warnings in error logs
-  - **Low Severity:** Period status badge not displaying correctly
-  - **User Experience:** Missing period status information in submission overview
-- **Analysis:**
-  - The `reporting_periods` table has a `status` column with ENUM values ('open', 'closed')
-  - The query was not selecting this column, causing undefined array key access
-  - The view was expecting this data to display period status badges
-- **Solution:**
-  1. **Enhanced Database Query:** Added `rp.status as period_status` to the SELECT statement in `get_submission_view_data()`
-  2. **Added Defensive Programming:** Added null coalescing operator and proper variable handling:
-     ```php
-     $period_status = $submission['period_status'] ?? 'closed';
-     $period_status_display = ucfirst($period_status);
-     ```
-  3. **Added HTML Escaping:** Used `htmlspecialchars()` for output security
-  4. **Provided Default Value:** Default to 'closed' if period_status is not available
-- **Files Fixed:**
-  - `app/lib/agencies/submission_data.php` (added `rp.status as period_status` to query)
-  - `app/views/agency/programs/partials/submission_overview.php` (added null checks and proper variable handling)
-- **Testing Results:**
-  - ✅ PHP warnings eliminated
-  - ✅ Period status badge displays correctly
-  - ✅ Proper fallback behavior for missing data
-  - ✅ HTML output properly escaped
-- **Prevention:**
-  - Always use null coalescing operators when accessing array keys that might not exist
-  - Ensure database queries select all data that views expect to use
-  - Add proper error handling and default values for optional data
-  - Use defensive programming practices in view files
-- **Pattern Recognition:** This follows the same pattern as the previous database schema issues - views expecting data that wasn't being provided by the data layer. This reinforces the need for better data contract validation between models and views.
-
-#
-
-# Bug #15: Program Attachments Showing "Unknown file" Instead of Actual Filename
-
-**Date:** 2025-01-23  
-**Status:** FIXED  
-**Severity:** Medium  
-**Reporter:** User
-
-### Problem
-
-- Uploaded files in program submissions were displaying as "Unknown file" instead of showing the actual filename
-- Issue occurred in the submission view page where attachments are displayed
-
-### Root Cause
-
-- Database field name mismatch: Views were trying to access `$attachment['filename']` but the database field is `file_name`
-- The `get_submission_attachments()` function was returning raw database fields without proper formatting
-- Inconsistent field naming between different attachment functions
-
-### Solution
-
-1. **Fixed field name references in view files:**
-
-   - Updated `app/views/agency/programs/partials/submission_sidebar.php` line 28
-   - Updated `app/views/agency/programs/view_submissions_original.php` line 470
-   - Changed `$attachment['filename']` to `$attachment['file_name']`
-
-2. **Enhanced `get_submission_attachments()` function:**
-
-   - Added proper data formatting similar to `get_program_attachments()`
-   - Included user information with LEFT JOIN to users table
-   - Added both `filename` and `file_name` fields for compatibility
-   - Added `file_size_formatted` field with proper formatting
-   - Added `format_file_size()` helper function
-
-3. **Improved data consistency:**
-   - Ensured all attachment functions return consistent field names
-   - Added proper fallback values for missing data
-
-### Files Modified
-
-- `app/views/agency/programs/partials/submission_sidebar.php`
-- `app/views/agency/programs/view_submissions_original.php`
-- `app/lib/agencies/submission_data.php`
 
 ### Testing
-
-- Verified that uploaded files now display their actual filenames
-- Confirmed file size formatting works correctly
-- Tested with different file types and names
-
-### Additional Fix
-
-**Date:** 2025-01-23 (Follow-up)  
-**Issue:** Function redeclaration error after initial fix
-
-- Fatal error: Cannot redeclare format_file_size() in program_attachments.php on line 517
-- Caused by duplicate function definition in submission_data.php
-
-**Resolution:**
-
-- Removed duplicate `format_file_size()` function from `submission_data.php`
-- Used existing function from `program_attachments.php` (already included via require_once)
-- Verified no syntax errors remain
+- ✅ Notification system is functional (confirmed with test notifications)
+- ✅ Program creation is working (confirmed with audit logs)
+- ✅ Notification call added to the correct function
+- ✅ Database column references fixed
+- ✅ All program creation functions now have consistent notification calls
+- ✅ Test notification created successfully for existing program
 
 ### Prevention
-
-- Standardized field naming conventions across all attachment-related functions
-- Added proper data formatting in helper functions to prevent raw database field exposure
-- Ensured no duplicate function definitions across included files
+- Ensure all program creation functions include notification calls
+- Add code review checklist for notification functionality
+- Consider adding automated tests for notification triggers
+- Verify database schema matches code assumptions
 
 ---
 
-# Bug #26: Header Visibility Issues - Breadcrumbs Hidden and Navbar Overlap (2025-01-27)
+### Bug #40: Notification URLs Incorrect - Using Non-Existent Page Routes
 
-**Date:** 2025-01-27  
-**Status:** FIXED  
-**Severity:** High  
-**Reporter:** User
+**Date Found**: 2025-07-29 16:15:00  
+**Status**: ✅ FIXED  
+**Severity**: Medium  
+**Impact**: Notification links were broken and led to 404 errors
 
-### Problem
+### Problem Description
+Notification URLs were using incorrect page routes that don't exist in the system:
+- Using: `/index.php?page=agency_program_details&id={program_id}`
+- Using: `/index.php?page=admin_program_details&id={program_id}`
+- Using: `/index.php?page=agency_edit_submission&program_id={program_id}&submission_id={submission_id}`
 
-- **Breadcrumb Visibility**: Breadcrumbs in page headers were not fully visible due to positioning issues
-- **Navbar Overlap**: Fixed navbar was covering content below it, requiring excessive padding
-- **Text Contrast**: Header text colors didn't provide sufficient contrast against backgrounds
+These routes don't exist in the routing system, causing 404 errors when users clicked on notification links.
 
-### Root Cause
+### Root Cause Analysis
+1. **Incorrect URL format**: Notification functions were using page-based routing that doesn't exist
+2. **Wrong path structure**: The system uses direct file paths, not page parameters
+3. **Missing APP_URL prefix**: URLs were using absolute paths without the proper base URL
+4. **Multiple functions affected**: All notification functions had the same URL issue
 
-1. **Fixed Navbar Positioning**: The navbar used `position: fixed` which created overlap issues with page content
-2. **Insufficient Top Padding**: Page headers didn't have enough space to accommodate the fixed navbar
-3. **Poor Text Contrast**: White text on light backgrounds made content hard to read
+### Investigation Process
+1. **URL pattern analysis**: Searched for how program details are actually accessed in the system
+2. **File structure check**: Found correct paths in program row links and navigation
+3. **Consistent pattern**: All program details links use direct file paths with APP_URL prefix
+4. **Base URL verification**: Confirmed that APP_URL is required for proper web navigation
 
-### Solution
+### Solution Applied
+**File**: `app/lib/notifications_core.php`  
+**Functions**: All notification functions  
+**Lines**: Multiple locations
 
-1. **Converted Navbar to Sticky Positioning**:
+Fixed all notification URLs to use correct direct file paths with APP_URL:
 
-   - Changed navbar from `position: fixed` to `position: sticky` in `navigation.css`
-   - Added `top: 0` for sticky behavior when scrolling
-   - Eliminated the need for body padding-top compensation
+**Before:**
+```php
+$action_url = "/index.php?page=agency_program_details&id={$program_id}";
+$admin_action_url = "/index.php?page=admin_program_details&id={$program_id}";
+```
 
-2. **Adjusted Header Padding**:
+**After:**
+```php
+$action_url = APP_URL . "/app/views/agency/programs/program_details.php?id={$program_id}";
+$admin_action_url = APP_URL . "/app/views/admin/programs/program_details.php?id={$program_id}";
+```
 
-   - Added appropriate top padding (`1rem 0 1.5rem`) for sticky navbar
-   - Updated responsive breakpoints: `0.75rem 0 1rem` for tablet, `0.5rem 0 0.75rem` for mobile
-   - Maintained proper spacing without excessive padding
+**Functions Fixed:**
+- `notify_program_created()` - Program creation notifications
+- `notify_program_edited()` - Program edit notifications  
+- `notify_submission_created()` - Submission creation notifications
+- `notify_submission_edited()` - Submission edit notifications
+- `notify_submission_finalized()` - Submission finalization notifications
+- `notify_program_assignment()` - Program assignment notifications
 
-3. **Improved Text Contrast**:
-
-   - Ensured all header text elements use white color for better visibility
-   - Maintained theme variants (light, dark, primary, secondary) with proper contrast
-   - Updated breadcrumb separators and hover states for consistency
-
-4. **Fixed Missing Breadcrumbs**:
-   - Added breadcrumb configuration to all major pages (dashboard, programs, outcomes, initiatives)
-   - Created standardized breadcrumb helper functions in `app/lib/breadcrumb_helpers.php`
-   - Ensured breadcrumb HTML is properly rendered in page headers
-
-### Files Modified
-
-- `assets/css/layout/navigation.css` - Changed navbar positioning from fixed to sticky
-- `assets/css/layout/page_header.css` - Adjusted padding and improved text contrast
-- `app/views/agency/dashboard/dashboard.php` - Added breadcrumb configuration
-- `app/views/agency/programs/view_programs.php` - Added breadcrumb configuration
-- `app/views/agency/outcomes/submit_outcomes.php` - Added breadcrumb configuration
-- `app/views/agency/initiatives/initiatives.php` - Added breadcrumb configuration
-- `app/views/admin/dashboard/dashboard.php` - Added breadcrumb configuration
-- `app/lib/breadcrumb_helpers.php` - Created breadcrumb helper functions
-- `docs/bugs_tracker.md` - Documented the fix
-
-### Testing Results
-
-- ✅ Breadcrumbs are now fully visible on all pages
-- ✅ No content is hidden behind the navbar
-- ✅ Text has proper contrast against all background colors
-- ✅ Responsive design works correctly on all screen sizes
-- ✅ Theme variants maintain proper contrast ratios
+### Testing
+- ✅ Notification function works correctly
+- ✅ URLs are properly formatted with APP_URL prefix
+- ✅ Agency notifications point to correct program details page
+- ✅ Admin notifications point to correct admin program details page
+- ✅ All notification types now have working links
+- ✅ URLs resolve to correct web paths
 
 ### Prevention
-
-- Use static positioning for navigation when possible to avoid overlap issues
-- Test header visibility across all theme variants and screen sizes
-- Ensure proper contrast ratios for accessibility compliance
-- Document layout changes to prevent regression issues
-
-### Impact
-
-- **User Experience**: Improved navigation clarity and content visibility
-- **Accessibility**: Better contrast ratios for text readability
-- **Maintainability**: Simplified layout without complex positioning workarounds
-- **Performance**: Reduced CSS complexity and eliminated unnecessary padding
-
-### 27. Program Interface Functionality Issues - Multiple JavaScript Event Listener Problems (2025-07-24)
-
-- **Problem:** Multiple functionality issues across program interfaces as documented in PROBLEMS.md:
-
-  1. Continue button in delete modal (view_programs.php) - no feedback when clicked
-  2. Change Status button in program details - no event listener
-  3. Delete functionality in program details quick actions - wrong implementation (deleting submission instead of program)
-  4. View submission flow in program details - not redirecting to correct page after quarter selection
-  5. Save and exit button in edit submission - redirecting to dashboard instead of view_programs.php
-
-- **Root Cause Analysis:**
-
-  - **Missing Event Listeners**: Continue button in delete modal had no JavaScript event listener
-  - **Status Button Logic**: Change Status button was properly implemented but status logic was already working
-  - **Wrong Modal Target**: Delete button in program details was targeting submission deletion instead of program deletion
-  - **Flow Logic Error**: View submission flow was showing modal instead of redirecting to submission view page
-  - **Redirect Logic Error**: Save and exit redirect was hardcoded to wrong destination
-
-- **Error Patterns:**
-
-  ```javascript
-  // Console log from PROBLEMS.md:
-  [DEBUG] Delete button clicked { programId: "15", programName: "program testing 2" }
-  // But no further action occurred due to missing continue button handler
-  ```
-
-- **Impact:**
-
-  - **High Severity**: Critical user workflow functionality broken
-  - **User Experience**: Delete operations failing, incorrect navigation flow, wrong redirects
-  - **Scope**: Affected view programs, program details, and edit submission pages
-
-- **Solution - Complete Interface Functionality Fix:**
-
-  1. **Fixed Continue Button in Delete Modal (view_programs.js):**
-
-     ```javascript
-     // Added event listeners for continue and confirm buttons
-     continueBtn.addEventListener("click", function () {
-       deleteStep1.style.display = "none";
-       deleteStep2.style.display = "block";
-       continueBtn.style.display = "none";
-       confirmBtn.style.display = "inline-block";
-     });
-
-     confirmBtn.addEventListener("click", function () {
-       deleteForm.submit();
-     });
-     ```
-
-  2. **Verified Change Status Button (program_details.js):**
-
-     - Status button was already properly implemented with event listener
-     - `openEditStatusModal()` functionality was working correctly
-     - Modal structure was present in program_modals.php
-
-  3. **Fixed Delete Program vs Delete Submission Issue:**
-
-     - **program_actions.php**: Changed button target from `#deleteSubmissionModal` to `#deleteProgramModal`
-     - **program_modals.php**: Added new `deleteProgramModal` with proper program deletion form
-     - **enhanced_program_details.js**: Added `handleDeleteProgram()` method with form submission
-
-  4. **Fixed View Submission Flow (enhanced_program_details.js):**
-
-     ```javascript
-     handleSubmissionSelection(submissionOption) {
-         // Changed from showing modal to direct redirect
-         window.location.href = `view_submissions.php?program_id=${this.programId}&period_id=${periodId}`;
-     }
-     ```
-
-  5. **Fixed Save and Exit Redirect (edit_submission.js):**
-     ```javascript
-     if (submitter && submitter.name === "save_and_exit") {
-       if (window.currentUserRole === "admin") {
-         window.location.href =
-           window.APP_URL + "/app/views/admin/programs/programs.php";
-       } else {
-         // Fixed: Redirect to view programs instead of dashboard
-         window.location.href =
-           window.APP_URL + "/app/views/agency/programs/view_programs.php";
-       }
-     }
-     ```
-
-- **Files Modified:**
-
-  - `assets/js/agency/view_programs.js` - Added delete modal event listeners
-  - `app/views/agency/programs/partials/program_actions.php` - Changed delete button target
-  - `app/views/agency/programs/partials/program_modals.php` - Added delete program modal
-  - `assets/js/agency/enhanced_program_details.js` - Added delete program handler and fixed submission flow
-  - `assets/js/agency/edit_submission.js` - Fixed save and exit redirect
-
-- **Testing Approach:**
-
-  - Test complete delete flow: trigger → continue → confirm → actual deletion
-  - Verify status change modal opens and submits correctly
-  - Test program deletion vs submission deletion functionality
-  - Verify view submission flow redirects to correct page with parameters
-  - Test save and exit redirect goes to view_programs.php
-
-- **Prevention Measures:**
-  - Ensure all modal buttons have corresponding JavaScript event listeners
-  - Verify modal targets match intended functionality (program vs submission operations)
-  - Test complete user workflows end-to-end, not just individual components
-  - Use consistent redirect patterns across similar operations
-
-### Impact
-
-- **User Experience**: Complete program management workflows now function correctly
-- **Data Integrity**: Proper differentiation between program and submission deletion
-- **Navigation Flow**: Correct redirect patterns maintain user context
-- **Maintainability**: Clear separation of concerns between different operation types
-
-### 28. Delete Program Path Resolution Error - Incorrect PROJECT_ROOT_PATH (2025-07-24)
-
-- **Problem:** Fatal error when attempting to delete a program:
-
-  ```
-  Warning: require_once(C:\laragon\www\pcds2030_dashboard_fork\app\app/config/config.php): Failed to open stream: No such file or directory
-  Fatal error: Failed opening required 'C:\laragon\www\pcds2030_dashboard_fork\app\app/config/config.php'
-  ```
-
-- **Root Cause Analysis:**
-
-  - **Path Calculation Error**: `delete_program.php` used incorrect `PROJECT_ROOT_PATH` calculation
-  - **Directory Level Mismatch**: Used `dirname(dirname(dirname(__DIR__)))` (3 levels up) instead of `dirname(dirname(dirname(dirname(__DIR__))))` (4 levels up)
-  - **Inconsistency**: Other files in same directory (`view_programs.php`) used correct 4-level path
-
-- **Error Pattern:**
-
-  ```php
-  // Incorrect (3 levels up from app/views/agency/programs/):
-  define('PROJECT_ROOT_PATH', rtrim(dirname(dirname(dirname(__DIR__))), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
-  // Results in: /app/views/agency/ instead of /
-  ```
-
-- **Impact:**
-
-  - **High Severity**: Program deletion functionality completely broken
-  - **User Experience**: Delete operations failing with fatal PHP errors
-  - **Scope**: Affected all attempts to delete programs from program details page
-
-- **Solution - Corrected PROJECT_ROOT_PATH Calculation:**
-
-  ```php
-  // Fixed: Consistent with other files in same directory
-  if (!defined('PROJECT_ROOT_PATH')) {
-      define('PROJECT_ROOT_PATH', dirname(dirname(dirname(dirname(__DIR__)))) . DIRECTORY_SEPARATOR);
-  }
-  ```
-
-- **Files Modified:**
-
-  - `app/views/agency/programs/delete_program.php` - Fixed PROJECT_ROOT_PATH calculation
-
-- **Verification:**
-
-  - Confirmed `app/config/config.php` exists at expected location
-  - Path calculation now matches other files in same directory
-  - All required files should now be found correctly
-
-- **Prevention Measures:**
-  - Use consistent PROJECT_ROOT_PATH calculation across files in same directory
-  - Verify file includes work during development testing
-  - Consider creating a shared include file for path constants
-
-### Impact
-
-- **Functionality**: Program deletion now works without fatal PHP errors
-- **Consistency**: All files in same directory use identical path calculation
-- **Reliability**: Proper error handling and file inclusion
-
-### 29. Program Deletion Foreign Key Constraint Failures (2025-07-24)
-
-- **Problem:** Program deletion failing with foreign key constraint errors:
-
-  ```
-  Danger: Failed to delete program: Cannot delete or update a parent row: a foreign key constraint fails (`pcds2030_db`.`program_hold_points`, CONSTRAINT `program_hold_points_ibfk_1` FOREIGN KEY (`program_id`) REFERENCES `programs` (`program_id`))
-  ```
-
-- **Root Cause Analysis:**
-
-  - **Missing Related Record Deletion**: Delete logic only handled `program_submissions` but missed other related tables
-  - **Foreign Key Constraints**: Tables `program_hold_points` and `program_status_history` don't have `ON DELETE CASCADE`
-  - **Incomplete Transaction**: Attempting to delete parent record before cleaning up child records
-
-- **Tables with Foreign Key Constraints to `programs.program_id`:**
-
-  1. **program_submissions** - ✅ Has `ON DELETE CASCADE` (auto-handled)
-  2. **program_user_assignments** - ✅ Has `ON DELETE CASCADE` (auto-handled)
-  3. **program_hold_points** - ❌ No cascade, needs manual deletion
-  4. **program_status_history** - ❌ No cascade, needs manual deletion
-
-- **Impact:**
-
-  - **High Severity**: Program deletion completely broken for programs with status history or hold points
-  - **User Experience**: Delete operations failing with cryptic database errors
-  - **Data Integrity**: Incomplete deletion attempts leaving orphaned records
-
-- **Solution - Complete Cascading Deletion Logic:**
-
-  ```php
-  // Delete related records in correct order to avoid foreign key constraints
-
-  // 1. Delete program hold points
-  $delete_hold_points = "DELETE FROM program_hold_points WHERE program_id = ?";
-
-  // 2. Delete program status history
-  $delete_status_history = "DELETE FROM program_status_history WHERE program_id = ?";
-
-  // 3. Delete program submissions (keeping for completeness)
-  $delete_submissions = "DELETE FROM program_submissions WHERE program_id = ?";
-
-  // Note: program_user_assignments auto-deleted via ON DELETE CASCADE
-
-  // 4. Finally delete the program itself
-  $delete_program = "DELETE FROM programs WHERE program_id = ?";
-  ```
-
-- **Files Modified:**
-
-  - `app/views/agency/programs/delete_program.php` - Added complete related record deletion
-
-- **Deletion Order Logic:**
-
-  1. **program_hold_points** - Delete first (no dependencies)
-  2. **program_status_history** - Delete second (no dependencies)
-  3. **program_submissions** - Delete third (may have attachments/targets)
-  4. **program_user_assignments** - Auto-deleted via CASCADE
-  5. **programs** - Delete last (parent record)
-
-- **Transaction Safety:**
-
-  - All deletions wrapped in database transaction
-  - Rollback on any failure to maintain data consistency
-  - Proper error logging for troubleshooting
-
-- **Prevention Measures:**
-  - Always analyze foreign key constraints before implementing deletion logic
-  - Consider adding `ON DELETE CASCADE` to appropriate foreign key constraints
-  - Test deletion with records that have related data
-  - Document all related tables for future reference
-
-### Impact
-
-- **Functionality**: Program deletion now works correctly for all programs regardless of related data
-- **Data Integrity**: Complete cleanup of all related records prevents orphaned data
-- **User Experience**: Clear success/error messages instead of cryptic database errors
-- **Maintainability**: Well-documented deletion order for future modifications
-
-### 2024-12-19 - Black Background Issue on View Programs Page
-
-**Problem**: The view programs page was showing a weird black background that covered the entire page, making it difficult to see the content.
-
-**Root Cause**: Multiple CSS files had modal backdrop styles that were creating black background elements (`background-color: #000`) that were visible even when no modal was active. The modal backdrop elements were not properly hidden by default.
-
-**Files Affected**:
-- `assets/css/components/modals-modern.css`
-- `assets/css/components/shared-modals.css`
-- `assets/css/components/quick-finalize-modal.css`
-- `assets/css/components/modals.css`
-- `assets/css/admin/shared/base.css`
-- `assets/css/agency/finalization-tutorial.css`
-
-**Solution**: Added proper CSS rules to ensure modal backdrops are hidden by default and only shown when a modal is actually active:
-
-1. Added `display: none;` to all `.modal-backdrop` selectors by default
-2. Added `display: block;` only when `body.modal-open` class is present
-3. Added fallback rules `body:not(.modal-open) .modal-backdrop` to force hiding when no modal is active
-
-**Code Changes**:
-```css
-/* Before */
-.modal-backdrop {
-    background-color: #000;
-    opacity: 0.5;
-}
-
-/* After */
-.modal-backdrop {
-    background-color: #000;
-    opacity: 0.5;
-    display: none; /* Hide by default */
-}
-
-/* Only show modal backdrop when modal is active */
-body.modal-open .modal-backdrop {
-    display: block;
-}
-
-/* Ensure modal backdrop is hidden when no modal is active */
-body:not(.modal-open) .modal-backdrop {
-    display: none !important;
-    opacity: 0 !important;
-}
-```
-
-**Status**: ✅ FIXED
-
-**Testing**: The view programs page should now display without any black background overlay, and modals should still work properly when triggered.
+- Use APP_URL + direct file paths instead of page-based routing for notifications
+- Verify URL patterns match existing navigation links in the system
+- Test notification links after any routing changes
+- Always include APP_URL prefix for web-accessible URLs
 
 ---
-
-### 2024-12-19 - Black Background Issue on Status Info Badge
-
-**Problem**: The status info badge (the "Active" status indicator) on the view programs page was showing a black background instead of the proper colored background.
-
-**Root Cause**: 
-1. Multiple CSS files had modal backdrop styles that were creating black background elements (`background-color: #000`) that were visible even when no modal was active.
-2. Status circle CSS classes were conflicting between different files - `view_programs.css` had badge styles while `programs-modern-box.css` had circle styles, both using the same class names (`.status-active`, `.status-inactive`).
-3. Status badges had background colors that were causing visual issues.
-
-**Files Affected**:
-- `assets/css/components/modals-modern.css`
-- `assets/css/components/shared-modals.css`
-- `assets/css/components/quick-finalize-modal.css`
-- `assets/css/components/modals.css`
-- `assets/css/admin/shared/base.css`
-- `assets/css/agency/finalization-tutorial.css`
-- `assets/css/components/programs-modern-box.css`
-- `assets/css/agency/programs/view_programs.css`
-
-**Solution**: 
-1. Fixed modal backdrop visibility by adding proper CSS rules to ensure modal backdrops are hidden by default and only shown when a modal is actually active.
-2. Fixed status circle styling conflicts by making the selectors more specific (`.status-circle.status-active` instead of just `.status-active`).
-3. Removed background colors from status badges, keeping only the colored dots for status indication.
-
-**Code Changes**:
-```css
-/* Modal backdrop fix */
-.modal-backdrop {
-    display: none; /* Hide by default */
-}
-
-body.modal-open .modal-backdrop {
-    display: block; /* Only show when modal is active */
-}
-
-body:not(.modal-open) .modal-backdrop {
-    display: none !important;
-    opacity: 0 !important;
-}
-
-/* Status circle fix - colored dots only */
-.status-circle.status-active {
-    background: #2E7D32; /* Green dot for active status */
-}
-
-.status-circle.status-inactive {
-    background: #6C757D; /* Gray dot for inactive status */
-}
-
-.status-circle.status-pending {
-    background: #ED6C02; /* Orange dot for pending status */
-}
-
-.status-circle.status-completed {
-    background: #0288D1; /* Blue dot for completed status */
-}
-
-/* Status text - no background, just colored text */
-.status-active {
-    color: #155724; /* Green text */
-}
-
-.status-inactive {
-    color: #721c24; /* Red text */
-}
-```
-
-**Status**: ✅ FIXED
-
-**Testing**: The status info should now display with:
-- ✅ Colored dots for status indication (green for active, gray for inactive, etc.)
-- ✅ No background colors on the status text/badges
-- ✅ Clean, minimal appearance with just the colored dots
-- ✅ Modals still work properly when triggered

@@ -110,7 +110,8 @@ if ($is_draft) {
                 </button>
                 <div class="dropdown-menu-custom">
                     <!-- View Program (Always Available) -->
-                    <a href="program_details.php?id=<?php echo $program['program_id']; ?>" 
+                    <a href="javascript:void(0);" 
+                       onclick="closeDropdownAndNavigate('program_details.php?id=<?php echo $program['program_id']; ?>')"
                        class="dropdown-item-custom"
                        title="View detailed program information including submissions, targets, and progress">
                         <i class="fas fa-eye"></i>
@@ -132,7 +133,7 @@ if ($is_draft) {
                         <!-- View Submission (Available when program has submissions) -->
                         <button type="button" 
                                 class="dropdown-item-custom border-0 bg-transparent text-start w-100" 
-                                onclick="openSubmissionSelection(<?php echo $program['program_id']; ?>)"
+                                onclick="closeDropdownAndOpenModal(<?php echo $program['program_id']; ?>)"
                                 title="View submission details for different reporting periods">
                             <i class="fas fa-file-alt"></i>
                             View Submission
@@ -141,7 +142,8 @@ if ($is_draft) {
 
                     <?php if ($can_edit): ?>
                         <!-- Edit Program (Available for all states) -->
-                        <a href="edit_program.php?id=<?php echo $program['program_id']; ?>" 
+                        <a href="javascript:void(0);" 
+                           onclick="closeDropdownAndNavigate('edit_program.php?id=<?php echo $program['program_id']; ?>')"
                            class="dropdown-item-custom"
                            title="Modify program details, targets, and basic information">
                             <i class="fas fa-cog"></i>
@@ -150,7 +152,8 @@ if ($is_draft) {
 
                         <?php if ($program_state === 'template'): ?>
                             <!-- Add Submission (Template state only) -->
-                            <a href="add_submission.php?program_id=<?php echo $program['program_id']; ?>" 
+                            <a href="javascript:void(0);" 
+                               onclick="closeDropdownAndNavigate('add_submission.php?program_id=<?php echo $program['program_id']; ?>')"
                                class="dropdown-item-custom"
                                title="Add a new submission for this program">
                                 <i class="fas fa-plus"></i>
@@ -158,7 +161,8 @@ if ($is_draft) {
                             </a>
                         <?php else: ?>
                             <!-- Edit Submission (Draft and Finalized states) -->
-                            <a href="edit_submission.php?program_id=<?php echo $program['program_id']; ?>" 
+                            <a href="javascript:void(0);" 
+                               onclick="closeDropdownAndNavigate('edit_submission.php?program_id=<?php echo $program['program_id']; ?>')"
                                class="dropdown-item-custom"
                                title="Edit the latest submission for this program">
                                 <i class="fas fa-edit"></i>
@@ -169,7 +173,7 @@ if ($is_draft) {
                                 <!-- Review & Finalize Submission (Draft state only, focal users only) -->
                                 <button type="button" 
                                         class="dropdown-item-custom border-0 bg-transparent text-start w-100" 
-                                        onclick="openSubmissionSelection(<?php echo $program['program_id']; ?>, true)"
+                                        onclick="closeDropdownAndOpenModal(<?php echo $program['program_id']; ?>)"
                                         title="Review full submission details and finalize">
                                     <i class="fas fa-check-circle text-success"></i>
                                     Review & Finalize

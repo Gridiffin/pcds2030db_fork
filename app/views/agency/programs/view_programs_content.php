@@ -9,11 +9,26 @@
     <div class="container-fluid">
         <!-- Toast Notification for Program Creation/Deletion -->
         <?php if (!empty($message)): ?>
+            <?php
+            // Check if this is a notification-related message that should not be shown as a toast
+            $notification_keywords = ['New program', 'created by', 'System Administrator', 'notification'];
+            $is_notification_message = false;
+            foreach ($notification_keywords as $keyword) {
+                if (stripos($message, $keyword) !== false) {
+                    $is_notification_message = true;
+                    break;
+                }
+            }
+            
+            // Only show toast if it's not a notification-related message
+            if (!$is_notification_message):
+            ?>
             <script>
                 document.addEventListener('DOMContentLoaded', function() {
                     showToast('<?= ucfirst($messageType) ?>', <?= json_encode($message) ?>, '<?= $messageType ?>');
                 });
             </script>
+            <?php endif; ?>
         <?php endif; ?>
         
         <!-- Show success message when redirected from program creation -->
@@ -264,9 +279,6 @@
         <!-- Simple Finalize Modal (New Implementation) -->
         <?php require_once __DIR__ . '/partials/simple_finalize_modal.php'; ?>
         
-        <!-- Submission Selection Modal -->
-        <?php require_once __DIR__ . '/partials/submission_selection_modal.php'; ?>
-
         <!-- JavaScript data and initialization -->
         <script>
             // Make program data available to JavaScript
@@ -276,3 +288,202 @@
         </script>
     </div>
 </main>
+
+<!-- Submission Selection Modal -->
+<div class="modal fade" id="submissionSelectionModal" tabindex="-1" aria-labelledby="submissionSelectionModalLabel" aria-hidden="true" style="z-index: 1060;">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="submissionSelectionModalLabel">Select Submission to View</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted mb-3">Choose which submission period you want to view:</p>
+                <div id="submissionListContainer">
+                    <div class="text-center p-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Loading submissions...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Get the correct base path from PHP
+const basePath = '<?php echo APP_URL; ?>';
+
+// Function to close dropdown and open submission modal
+function closeDropdownAndOpenModal(programId) {
+    // Close all open custom dropdowns
+    const dropdowns = document.querySelectorAll('.dropdown-menu-custom.show');
+    dropdowns.forEach(dropdown => {
+        dropdown.classList.remove('show');
+    });
+    
+    // Remove dropdown-active class from all program boxes
+    const programBoxes = document.querySelectorAll('.program-box.dropdown-active');
+    programBoxes.forEach(box => {
+        box.classList.remove('dropdown-active');
+    });
+    
+    // Small delay to ensure dropdown is closed before opening modal
+    setTimeout(() => {
+        openSubmissionModal(programId);
+    }, 100);
+}
+
+// Function to close dropdown and navigate
+function closeDropdownAndNavigate(url) {
+    // Close all open custom dropdowns
+    const dropdowns = document.querySelectorAll('.dropdown-menu-custom.show');
+    dropdowns.forEach(dropdown => {
+        dropdown.classList.remove('show');
+    });
+    
+    // Remove dropdown-active class from all program boxes
+    const programBoxes = document.querySelectorAll('.program-box.dropdown-active');
+    programBoxes.forEach(box => {
+        box.classList.remove('dropdown-active');
+    });
+    
+    // Navigate to the URL
+    window.location.href = url;
+}
+
+// Function to open submission modal and load submissions
+function openSubmissionModal(programId) {
+    // Show the modal
+    const modal = new bootstrap.Modal(document.getElementById('submissionSelectionModal'));
+    modal.show();
+    
+    // Load submissions for this program
+    loadSubmissionsForModal(programId);
+}
+
+// Function to load submissions via AJAX
+async function loadSubmissionsForModal(programId) {
+    const container = document.getElementById('submissionListContainer');
+    
+    try {
+        // Use the base path from PHP
+        const apiUrl = `${basePath}/app/ajax/get_program_submissions.php`;
+        
+        console.log('API URL:', apiUrl); // Debug log
+        
+        const response = await fetch(`${apiUrl}?program_id=${programId}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (!data.success) {
+            throw new Error(data.error || 'Failed to load submissions');
+        }
+        
+        const submissions = data.submissions || [];
+        
+        console.log('Submissions data:', submissions); // Debug log
+        
+        if (submissions.length === 0) {
+            container.innerHTML = `
+                <div class="text-center text-muted p-4">
+                    <i class="fas fa-folder-open fa-2x mb-2"></i>
+                    <p>No submissions found for this program.</p>
+                    <small>Create your first submission to see it listed here.</small>
+                </div>
+            `;
+            return;
+        }
+        
+        // Render submissions list
+        const html = submissions.map(submission => {
+            console.log('Processing submission:', submission); // Debug log for each submission
+            
+            const statusClass = submission.is_draft ? 'warning' : 'success';
+            const statusText = submission.is_draft ? 'Draft' : 'Finalized';
+            const periodId = submission.period_id || submission.reporting_period_id;
+            
+            console.log('Status class:', statusClass, 'Status text:', statusText); // Debug log
+            
+            return `
+                <div class="list-group-item list-group-item-action submission-option" 
+                     onclick="navigateToSubmission(${programId}, ${periodId})"
+                     data-submission-id="${submission.submission_id || ''}"
+                     data-period-id="${periodId}"
+                     style="cursor: pointer;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">
+                                <i class="fas fa-calendar-alt me-2 text-primary"></i>
+                                ${submission.period_display || `Period ${periodId}`}
+                            </h6>
+                            <small class="text-muted">
+                                <i class="fas fa-user me-1"></i>
+                                ${submission.submitted_by_name || 'Unknown'}
+                                <i class="fas fa-clock ms-2 me-1"></i>
+                                ${submission.formatted_date || ''}
+                            </small>
+                        </div>
+                        <div>
+                            <span class="badge bg-${statusClass}">
+                                ${statusText}
+                            </span>
+                            <i class="fas fa-chevron-right ms-2 text-muted"></i>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        console.log('Generated HTML:', html); // Debug log
+        
+        container.innerHTML = `
+            <div class="list-group">
+                ${html}
+            </div>
+            <div class="mt-3">
+                <small class="text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Click on any period above to view that submission's details. 
+                    All submission periods for this program are shown.
+                </small>
+            </div>
+        `;
+        
+        // Force a small delay to ensure the DOM is updated
+        setTimeout(() => {
+            console.log('Modal content updated successfully');
+        }, 100);
+        
+    } catch (error) {
+        console.error('Error loading submissions:', error);
+        container.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Error loading submissions: ${error.message}
+            </div>
+        `;
+    }
+}
+
+// Function to navigate to submission
+function navigateToSubmission(programId, periodId) {
+    // Close the modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('submissionSelectionModal'));
+    modal.hide();
+    
+    // Navigate to the submission using the base path from PHP
+    const submissionUrl = `${basePath}/app/views/agency/programs/edit_submission.php?program_id=${programId}&period_id=${periodId}`;
+    
+    window.location.href = submissionUrl;
+}
+</script>

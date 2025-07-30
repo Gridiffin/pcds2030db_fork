@@ -74,4 +74,43 @@ if ($agency_id) {
             </div>
         </div>
     </div>
-</div> 
+</div>
+
+<!-- Success Modal -->
+<?php if (isset($showSuccessModal) && $showSuccessModal): ?>
+<!-- Program Creation Success Modal -->
+<div class="modal fade" id="programSuccessModal" tabindex="-1" aria-labelledby="programSuccessModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="programSuccessModalLabel">
+                    <i class="fas fa-check-circle me-2"></i>Program Created Successfully!
+                </h5>
+            </div>
+            <div class="modal-body text-center py-4">
+                <div class="mb-4">
+                    <i class="fas fa-clipboard-list text-success" style="font-size: 3rem;"></i>
+                </div>
+                <h6 class="mb-3">Your program template is ready!</h6>
+                <p class="text-muted mb-4">Would you like to add your first submission now, or return to view your programs?</p>
+            </div>
+            <div class="modal-footer justify-content-center border-0 pb-4">
+                <a href="add_submission.php?program_id=<?php echo $created_program_id; ?>" class="btn btn-success me-2">
+                    <i class="fas fa-plus me-1"></i>Add First Submission
+                </a>
+                <a href="view_programs.php?created=1" class="btn btn-outline-secondary">
+                    <i class="fas fa-list me-1"></i>View All Programs
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Show the success modal
+    var successModal = new bootstrap.Modal(document.getElementById('programSuccessModal'));
+    successModal.show();
+});
+</script>
+<?php endif; ?> 

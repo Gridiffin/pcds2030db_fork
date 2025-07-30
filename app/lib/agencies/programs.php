@@ -19,6 +19,7 @@ if (file_exists(dirname(__FILE__) . '/core.php')) {
 // Include audit logging
 require_once dirname(__DIR__) . '/audit_log.php';
 require_once dirname(__DIR__) . '/user_functions.php'; // Add this to use get_user_by_id
+require_once dirname(__DIR__) . '/notifications_core.php';
 
 // Include numbering helpers for hierarchical program numbering
 require_once dirname(__DIR__) . '/numbering_helpers.php';
@@ -168,6 +169,16 @@ function create_agency_program($data) {
         $description = $validated['description'] ?? '';
         $sub_stmt->bind_param("iissss", $program_id, $period_id, $description, $start_date, $end_date, $user_id);
         $sub_stmt->execute();
+        
+        // Send notification for program creation
+        $program_data = [
+            'program_name' => $program_name,
+            'program_number' => $program_number,
+            'agency_id' => $agency_id,
+            'initiative_id' => $initiative_id
+        ];
+        notify_program_created($program_id, $user_id, $program_data);
+        
         return [
             'success' => true,
             'message' => 'Program created successfully',
@@ -267,6 +278,16 @@ function create_wizard_program_draft($data) {
         }
         $conn->commit();
         log_audit_action('create_program', "Program Name: $program_name | Program ID: $program_id", 'success', $user_id);
+        
+        // Send notification for program creation
+        $program_data = [
+            'program_name' => $program_name,
+            'program_number' => $program_number,
+            'agency_id' => $agency_id,
+            'initiative_id' => $initiative_id
+        ];
+        notify_program_created($program_id, $user_id, $program_data);
+        
         return [
             'success' => true, 
             'message' => 'Program draft created successfully',
@@ -376,6 +397,16 @@ function create_simple_program($data) {
         
         $conn->commit();
         log_audit_action('create_program', "Program Name: $program_name | Program ID: $program_id | Program Number: $program_number", 'success', $user_id);
+        
+        // Send notification for program creation
+        $program_data = [
+            'program_name' => $program_name,
+            'program_number' => $program_number,
+            'agency_id' => $agency_id,
+            'initiative_id' => $initiative_id
+        ];
+        notify_program_created($program_id, $user_id, $program_data);
+        
         return [
             'success' => true, 
             'message' => 'Program template created successfully. Add progress reports for specific periods when ready to report progress.',
@@ -1545,6 +1576,7 @@ function create_program_submission($data) {
         $is_draft = isset($_POST['save_as_draft']) ? 1 : 0;
         $is_submitted = isset($_POST['submit']) ? 1 : 0;
         $submitted_by = $_SESSION['user_id'] ?? null;
+        $submitted_at = date('Y-m-d H:i:s');
         
         $stmt = $conn->prepare($submission_query);
         $stmt->bind_param("iiissss", 
@@ -1554,7 +1586,7 @@ function create_program_submission($data) {
             $is_submitted,
             $data['description'],
             $submitted_by,
-            date('Y-m-d H:i:s')
+            $submitted_at
         );
         
         if (!$stmt->execute()) {

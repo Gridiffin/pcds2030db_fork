@@ -7,13 +7,28 @@
 
 <main>
     <div class="container-fluid">
-        <!-- Toast Notification -->
+        <!-- Error/Success Messages -->
         <?php if (!empty($message)): ?>
+            <?php
+            // Check if this is a notification-related message that should not be shown as a toast
+            $notification_keywords = ['New program', 'created by', 'System Administrator', 'notification'];
+            $is_notification_message = false;
+            foreach ($notification_keywords as $keyword) {
+                if (stripos($message, $keyword) !== false) {
+                    $is_notification_message = true;
+                    break;
+                }
+            }
+            
+            // Only show toast if it's not a notification-related message
+            if (!$is_notification_message):
+            ?>
             <script>
                 document.addEventListener('DOMContentLoaded', function() {
                     showToast('<?= ucfirst($messageType) ?>', <?= json_encode($message) ?>, '<?= $messageType ?>');
                 });
             </script>
+            <?php endif; ?>
         <?php endif; ?>
 
         <!-- Main Content Card -->

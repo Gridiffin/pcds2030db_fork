@@ -9,6 +9,7 @@ require_once '../config/config.php';
 require_once '../lib/db_connect.php';
 require_once '../lib/session.php';
 require_once '../lib/functions.php';
+require_once '../lib/notifications_core.php';
 // Ensure is_focal() is available
 if (!function_exists('is_focal')) {
     /**
@@ -238,10 +239,41 @@ function handleDelete($input) {
         return;
     }
     $submission_id = intval($input['submission_id']);
+    
+    // Get submission data before deletion for notifications
+    $query = "SELECT ps.submission_id, ps.program_id, p.program_name, p.agency_id, a.agency_name, 
+                     rp.period_type, rp.year, ps.is_draft
+              FROM program_submissions ps
+              JOIN programs p ON ps.program_id = p.program_id
+              JOIN agency a ON p.agency_id = a.agency_id
+              JOIN reporting_periods rp ON ps.period_id = rp.period_id
+              WHERE ps.submission_id = ? AND ps.is_deleted = 0";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param('i', $submission_id);
+    $stmt->execute();
+    $submission_data = $stmt->get_result()->fetch_assoc();
+    
+    if (!$submission_data) {
+        http_response_code(404);
+        echo json_encode(['error' => 'Submission not found or already deleted']);
+        return;
+    }
+    
+    // Prepare submission data for notification
+    $notification_data = [
+        'program_name' => $submission_data['program_name'],
+        'agency_id' => $submission_data['agency_id'],
+        'agency_name' => $submission_data['agency_name'],
+        'period_text' => $submission_data['period_type'] . ' ' . $submission_data['year']
+    ];
+    
     $sql = "UPDATE program_submissions SET is_deleted = 1 WHERE submission_id = ?";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param('i', $submission_id);
     if ($stmt->execute()) {
+        // Send deletion notifications
+        notify_submission_deleted($submission_id, $submission_data['program_id'], $_SESSION['user_id'], $notification_data);
+        
         echo json_encode(['success' => true]);
     } else {
         http_response_code(500);

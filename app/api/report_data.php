@@ -215,6 +215,33 @@ if (!empty($selected_program_ids_raw)) {
     }
 }
 
+// Prepare custom order case statement if program orders are provided
+$order_by_clause = "p.program_name"; // Default alphabetical order
+if (!empty($program_orders) && !empty($selected_program_ids)) {
+    $case_parts = [];
+    $valid_orders = 0;
+    
+    // Validate program orders and create case statements
+    foreach ($program_orders as $prog_id => $order) {
+        $prog_id = (int)$prog_id;
+        $order = (int)$order;
+        
+        if (in_array($prog_id, $selected_program_ids) && $prog_id > 0 && $order > 0) {
+            $case_parts[] = "WHEN p.program_id = {$prog_id} THEN {$order}";
+            $valid_orders++;
+        }
+    }
+    
+    if (!empty($case_parts)) {
+        $order_by_clause = "CASE " . implode(" ", $case_parts) . " ELSE 999999 END, p.program_name";
+        error_log("Using custom order by clause with {$valid_orders} valid program orders");
+    } else {
+        error_log("No valid program orders found, using default alphabetical order");
+    }
+} else {
+    error_log("No program orders provided or no programs selected, using default alphabetical order");
+}
+
 // Simplified: Fetch submissions for each program and period (no more multiple submissions per program/period)
 $programs_query = "
     SELECT p.program_id, p.program_name, p.rating, i.initiative_id, i.initiative_name,
@@ -226,7 +253,7 @@ $programs_query = "
     LEFT JOIN reporting_periods rp ON ps.period_id = rp.period_id
     LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
     WHERE $program_filter_condition
-    ORDER BY p.program_name";
+    ORDER BY $order_by_clause";
 
 $stmt = $conn->prepare($programs_query);
 if (!$stmt) {

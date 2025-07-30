@@ -149,6 +149,36 @@ function initInteractiveElements() {
  * @param {number} duration - Duration in milliseconds (default: 5000)
  */
 function showToast(title, message, type = 'info', duration = 5000) {
+    // Debug logging for program modules to identify toast sources
+    const currentPath = window.location.pathname;
+    const isProgramModule = currentPath.includes('/programs/') || currentPath.includes('program');
+    
+    if (isProgramModule) {
+        console.group('🔍 TOAST DEBUG - Program Module');
+        console.log('Path:', currentPath);
+        console.log('Title:', title);
+        console.log('Message:', message);
+        console.log('Type:', type);
+        console.log('Stack trace:', new Error().stack);
+        console.groupEnd();
+    }
+    
+    // Filter out notification-related toasts that can override action feedback
+    const notificationKeywords = ['notification', 'unread', 'new message', 'alert', 'you have'];
+    const titleLower = (title || '').toLowerCase();
+    const messageLower = (message || '').toLowerCase();
+    
+    // Check if this is a notification toast that should be suppressed
+    const isNotificationToast = notificationKeywords.some(keyword => 
+        titleLower.includes(keyword) || messageLower.includes(keyword)
+    );
+    
+    // Log suppressed notification toasts for debugging
+    if (isNotificationToast) {
+        console.log('🚫 Toast suppressed to prevent override of action feedback:', { title, message, type, isProgramModule });
+        return;
+    }
+    
     // Create toast container if it doesn't exist
     let toastContainer = document.getElementById('toast-container');
     if (!toastContainer) {
@@ -233,6 +263,21 @@ function showToast(title, message, type = 'info', duration = 5000) {
  * Shows a toast notification with an optional action button
  */
 function showToastWithAction(title, message, type = 'info', duration = 5000, action = null) {
+    // Debug logging for program modules to identify toast sources
+    const currentPath = window.location.pathname;
+    const isProgramModule = currentPath.includes('/programs/') || currentPath.includes('program');
+    
+    if (isProgramModule) {
+        console.group('🔍 TOAST DEBUG - Program Module (WithAction)');
+        console.log('Path:', currentPath);
+        console.log('Title:', title);
+        console.log('Message:', message);
+        console.log('Type:', type);
+        console.log('Action:', action);
+        console.log('Stack trace:', new Error().stack);
+        console.groupEnd();
+    }
+    
     // Create toast container if it doesn't exist
     let toastContainer = document.getElementById('toast-container');
     if (!toastContainer) {
