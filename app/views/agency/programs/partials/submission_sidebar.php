@@ -127,7 +127,7 @@
     </div>
     <div class="card-body">
         <div class="d-grid gap-2">
-            <?php if ($can_edit): ?>
+            <?php if ($can_edit && (isset($submission['is_draft']) && $submission['is_draft'])): ?>
                 <!-- Add New Submission -->
                 <a href="add_submission.php?program_id=<?php echo $program_id; ?>" 
                    class="btn btn-outline-primary">

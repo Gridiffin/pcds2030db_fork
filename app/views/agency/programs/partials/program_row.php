@@ -140,8 +140,16 @@ if ($is_draft) {
                         </button>
                     <?php endif; ?>
 
-                    <?php if ($can_edit): ?>
-                        <!-- Edit Program (Available for all states) -->
+                    <?php
+                    // Hide edit buttons for normal users if finalized
+                    $is_focal = is_focal_user();
+                    $from_finalized_table = $from_finalized_table ?? false;
+                    // Hide edit/add buttons if rendering from finalized table
+                    // For quick actions: hide edit program and add submission for finalized table
+                    if ($can_edit && ($program_state !== 'finalized' || $is_focal) && !$from_finalized_table) :
+                    ?>
+                        <!-- Edit Program (Available for all states except finalized for normal users) -->
+                        <?php if (!$from_finalized_table): ?>
                         <a href="javascript:void(0);" 
                            onclick="closeDropdownAndNavigate('edit_program.php?id=<?php echo $program['program_id']; ?>')"
                            class="dropdown-item-custom"
@@ -149,8 +157,9 @@ if ($is_draft) {
                             <i class="fas fa-cog"></i>
                             Edit Program
                         </a>
+                        <?php endif; ?>
 
-                        <?php if ($program_state === 'template'): ?>
+                        <?php if ($program_state === 'template' && !$from_finalized_table): ?>
                             <!-- Add Submission (Template state only) -->
                             <a href="javascript:void(0);" 
                                onclick="closeDropdownAndNavigate('add_submission.php?program_id=<?php echo $program['program_id']; ?>')"
@@ -159,8 +168,9 @@ if ($is_draft) {
                                 <i class="fas fa-plus"></i>
                                 Add Submission
                             </a>
-                        <?php else: ?>
+                        <?php elseif ($program_state !== 'template'): ?>
                             <!-- Edit Submission (Draft and Finalized states) -->
+                            <?php if ($program_state !== 'finalized' || $is_focal): ?>
                             <a href="javascript:void(0);" 
                                onclick="closeDropdownAndNavigate('edit_submission.php?program_id=<?php echo $program['program_id']; ?>')"
                                class="dropdown-item-custom"
@@ -168,8 +178,9 @@ if ($is_draft) {
                                 <i class="fas fa-edit"></i>
                                 Edit Submission
                             </a>
+                            <?php endif; ?>
 
-                            <?php if ($program_state === 'draft' && is_focal_user()): ?>
+                            <?php if ($program_state === 'draft' && $is_focal): ?>
                                 <!-- Review & Finalize Submission (Draft state only, focal users only) -->
                                 <button type="button" 
                                         class="dropdown-item-custom border-0 bg-transparent text-start w-100" 
@@ -180,6 +191,18 @@ if ($is_draft) {
                                 </button>
                             <?php endif; ?>
                         <?php endif; ?>
+                    <?php endif; ?>
+
+                    <?php
+                    // Add Unsubmit button for focal users on finalized submissions
+                    if ($program_state === 'finalized' && $is_focal && isset($program['latest_submission_id'])): ?>
+                        <button type="button"
+                                class="dropdown-item-custom border-0 bg-transparent text-start w-100 text-danger"
+                                onclick="unsubmitSubmission(<?php echo $program['latest_submission_id']; ?>, this)"
+                                title="Return this finalized submission to draft status for further editing">
+                            <i class="fas fa-undo"></i>
+                            Unsubmit (Return to Draft)
+                        </button>
                     <?php endif; ?>
                 </div>
             </div>
