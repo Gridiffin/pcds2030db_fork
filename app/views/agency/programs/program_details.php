@@ -75,6 +75,12 @@ $allSectorsUrl = APP_URL . '/app/views/agency/sectors/view_all_sectors.php';
 $myProgramsUrl = APP_URL . '/app/views/agency/programs/view_programs.php';
 $backUrl = $source === 'all_sectors' ? $allSectorsUrl : $myProgramsUrl;
 
+
+// Extract additional variables for easier access in views/partials
+$is_draft = $program_data['is_draft'];
+$alert_flags = $program_data['alert_flags'];
+$related_programs = $program_data['related_programs'];
+
 // Configure modern page header
 $program_display_name = '';
 if (!empty($program['program_number'])) {
@@ -106,11 +112,6 @@ if ($can_edit && ($is_draft || !$has_submissions)) {
         'class' => 'btn-primary'
     ];
 }
-
-// Extract additional variables for easier access in partials
-$is_draft = $program_data['is_draft'];
-$alert_flags = $program_data['alert_flags'];
-$related_programs = $program_data['related_programs'];
 
 // Set content file for base layout
 $contentFile = __DIR__ . '/partials/program_details_content.php';
